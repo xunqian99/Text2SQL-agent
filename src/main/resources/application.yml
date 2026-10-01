@@ -1,0 +1,103 @@
+# Text2SQL Agent 配置。
+#
+# 三条阅读线索：
+#   1. spring.datasource.*  连接 PostgreSQL（只读查询用）
+#   2. spring.ai.model.*    显式关闭 Spring AI 自动配置，见下面的详细说明
+#   3. agent.*              项目自己的参数，对应 AgentProperties
+
+server:
+  port: 8080
+
+spring:
+  application:
+    name: text2sql-agent
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/olist
+    username: text2sql
+    password: text2sql
+    hikari:
+      # 评估是串行的，5 个连接绰绰有余。池子开大没有收益，
+      # 反而会在数据库端占用更多资源，掩盖连接泄漏问题。
+      maximum-pool-size: 5
+      connection-timeout: 10000
+
+  # ---------------------------------------------------------------------------
+  # 关闭 Spring AI 的 OpenAI 自动配置。
+  #
+  # 为什么必须显式关闭：spring-ai-starter-model-openai 会在启动时
+  # 自动创建一个 OpenAiChatModel Bean。它与本项目手写的装配（见
+  # LlmSqlGenerator）冲突，而且没配 API Key 时会在启动阶段直接失败。
+  #
+  # 这些开关的默认值是 openai（matchIfMissing=true），所以「不配置」
+  # 等于「开启」。必须写成 none 才真正关掉。
+  #
+  # 代价：Spring AI 提供的自动配置能力不能用了，全部改成手工装配。
+  # 换来的是「没 Key 也能启动」，这是评估器自检能离线运行的前提。
+  # ---------------------------------------------------------------------------
+  ai:
+    model:
+      chat: none
+      embedding: none
+      image: none
+      audio:
+        speech: none
+        transcription: none
+      moderation: none
+
+agent:
+  db:
+    # 结果集行数上限。设 200 的理由：评估集里最大的 gold_result 是 73 行，
+    # 200 有足够余量；同时 200 行 × 若干列的结果集在 JSON 响应里也只有几十 KB。
+    max-rows: 200
+    query-timeout-seconds: 10
+
+  guard:
+    # APPEND = 模型忘写 LIMIT 时自动补上；REJECT = 直接判定非法。
+    # 默认 APPEND，理由见 AgentProperties.Guard 的说明。
+    limit-mode: APPEND
+
+  llm:
+    provider: openai-compatible
+    # 默认 DeepSeek，因为它兼容 OpenAI 协议且价格低，适合跑 200 条评估。
+    # 换成通义/智谱/OpenAI 只需要改这两行。
+    base-url: https://api.deepseek.com
+    model: deepseek-chat
+    temperature: 0.0
+    max-tokens: 1024
+    timeout-seconds: 60
+    # API Key 从环境变量读，绝不写进这个文件。
+    # 启动前设置：$env:AGENT_LLM_API_KEY="sk-..."
+    api-key: ${AGENT_LLM_API_KEY:}
+    # 成本单价（元 / 千 token）。填真实单价后，评估报告里的成本数字才有意义。
+    # 留 0 表示只统计 token 不估算金额。
+    input-price-per-1k: 0.0
+    output-price-per-1k: 0.0
+
+  prompt:
+    # 是否把数据画像（行数、时间范围）塞进上下文。默认开。
+    # 关掉它可以让 T3 时间层整层归零，是一个值得做的消融实验。
+    include-data-profile: true
+    include-foreign-keys: true
+
+  eval:
+    # 默认关闭。跑评估时用命令行开启：
+    #   mvn spring-boot:run -Dspring-boot.run.arguments="--agent.eval.enabled=true --agent.eval.limit=50"
+    enabled: false
+    dir: data/eval
+    out-dir: reports
+    # 0 = 全部。阶段 1 验收用 50。
+    limit: 0
+    # 空 = 全部难度层。可以写 T1,T2 或 single_table_basic。
+    layers: []
+    # true = 用 gold_sql 冒充模型输出，验证评估器本身没 bug。必须先跑通这个。
+    dry-run: false
+    # true = 当场执行 gold_sql 得到期望结果（推荐）。false = 读 gold_results.json 快照。
+    recompute-gold: true
+
+logging:
+  level:
+    root: INFO
+    com.text2sql.agent: INFO
+    # 打开可以看 Hikari 连接池与 SQL 执行细节，排查问题时用。
+    org.springframework.jdbc.core: INFO

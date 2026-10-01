@@ -1,0 +1,33 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: text2sql-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: olist
+      POSTGRES_USER: text2sql
+      POSTGRES_PASSWORD: text2sql
+      # 中文排序与编码
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+      TZ: Asia/Shanghai
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # 只读挂载原始 CSV，供 COPY 导入使用
+      - ../data/raw/olist:/data/olist:ro
+      - ../data/schema:/data/schema:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U text2sql -d olist"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    command:
+      - "postgres"
+      # 记录慢查询，便于后续分析 text2sql 生成的 SQL 性能
+      - "-c"
+      - "log_min_duration_statement=1000"
+
+volumes:
+  pgdata:
+    name: text2sql-pgdata

@@ -1,0 +1,261 @@
+Pager usage is off.
+### TABLES
+          table_name          
+------------------------------
+ brands
+ campaign_products
+ campaigns
+ coupon_usages
+ coupons
+ customers
+ geolocation
+ inventory
+ inventory_movements
+ member_levels
+ member_snapshot
+ members
+ order_items
+ order_payments
+ order_reviews
+ orders
+ product_category_translation
+ product_price_history
+ products
+ referrals
+ refund_items
+ refunds
+ regions
+ search_logs
+ sellers
+ settlement_items
+ settlements
+ shipment_tracking
+ shipments
+ shipping_addresses
+ support_tickets
+ ticket_categories
+ ticket_messages
+ user_tag_map
+ user_tags
+ warehouses
+(36 rows)
+
+### COLUMNS
+                                                      col                                                       
+----------------------------------------------------------------------------------------------------------------
+ brands.brand_id : integer NOT NULL
+ brands.brand_name : character varying NOT NULL
+ brands.country : character varying
+ campaign_products.campaign_id : integer NOT NULL
+ campaign_products.product_id : character varying NOT NULL
+ campaigns.campaign_id : integer NOT NULL
+ campaigns.campaign_name : character varying NOT NULL
+ campaigns.campaign_type : character varying
+ campaigns.start_date : date
+ campaigns.end_date : date
+ campaigns.budget : numeric
+ campaigns.status : smallint  -- 活动状态：1=草稿 2=进行中 3=已结束 4=已取消
+ coupon_usages.usage_id : bigint NOT NULL
+ coupon_usages.coupon_id : integer NOT NULL
+ coupon_usages.order_id : character varying NOT NULL
+ coupon_usages.member_id : bigint
+ coupon_usages.used_at : timestamp without time zone
+ coupon_usages.discount_amount : numeric
+ coupons.coupon_id : integer NOT NULL
+ coupons.coupon_code : character varying NOT NULL
+ coupons.campaign_id : integer
+ coupons.discount_type : character varying  -- 折扣类型：fixed=满减 percent=折扣
+ coupons.discount_value : numeric
+ coupons.min_order_amount : numeric
+ coupons.valid_from : date
+ coupons.valid_to : date
+ customers.customer_id : character varying NOT NULL
+ customers.customer_unique_id : character varying NOT NULL
+ customers.customer_zip_code_prefix : integer
+ customers.customer_city : character varying
+ customers.customer_state : character varying
+ geolocation.geolocation_zip_code_prefix : integer
+ geolocation.geolocation_lat : numeric
+ geolocation.geolocation_lng : numeric
+ geolocation.geolocation_city : character varying
+ geolocation.geolocation_state : character varying
+ inventory.warehouse_id : integer NOT NULL
+ inventory.product_id : character varying NOT NULL
+ inventory.quantity : integer
+ inventory.safety_stock : integer
+ inventory.updated_at : timestamp without time zone
+ inventory_movements.movement_id : bigint NOT NULL
+ inventory_movements.warehouse_id : integer NOT NULL
+ inventory_movements.product_id : character varying NOT NULL
+ inventory_movements.movement_type : smallint  -- 出入库类型：1=入库 2=出库 3=退货入库 4=盘亏
+ inventory_movements.quantity : integer
+ inventory_movements.moved_at : timestamp without time zone
+ member_levels.level_id : integer NOT NULL
+ member_levels.level_code : character varying NOT NULL
+ member_levels.level_name : character varying NOT NULL
+ member_levels.discount_rate : numeric
+ member_snapshot.snapshot_id : bigint NOT NULL
+ member_snapshot.member_id : bigint
+ member_snapshot.snapshot_date : date
+ member_snapshot.level_id : integer
+ member_snapshot.points : integer
+ members.member_id : bigint NOT NULL
+ members.customer_unique_id : character varying NOT NULL
+ members.level_id : integer
+ members.status : smallint NOT NULL  -- 会员状态：1=正常 2=冻结 3=注销
+ members.points : integer
+ members.register_date : date
+ members.last_login_date : date
+ order_items.order_id : character varying NOT NULL
+ order_items.order_item_id : integer NOT NULL
+ order_items.product_id : character varying NOT NULL
+ order_items.seller_id : character varying NOT NULL
+ order_items.shipping_limit_date : timestamp without time zone
+ order_items.price : numeric NOT NULL
+ order_items.freight_value : numeric NOT NULL
+ order_payments.order_id : character varying NOT NULL
+ order_payments.payment_sequential : integer NOT NULL
+ order_payments.payment_type : character varying
+ order_payments.payment_installments : integer
+ order_payments.payment_value : numeric
+ order_reviews.review_id : character varying NOT NULL
+ order_reviews.order_id : character varying NOT NULL
+ order_reviews.review_score : integer
+ order_reviews.review_comment_title : character varying
+ order_reviews.review_comment_message : text
+ order_reviews.review_creation_date : timestamp without time zone
+ order_reviews.review_answer_timestamp : timestamp without time zone
+ orders.order_id : character varying NOT NULL
+ orders.customer_id : character varying NOT NULL
+ orders.order_status : character varying NOT NULL
+ orders.order_purchase_timestamp : timestamp without time zone
+ orders.order_approved_at : timestamp without time zone
+ orders.order_delivered_carrier_date : timestamp without time zone
+ orders.order_delivered_customer_date : timestamp without time zone
+ orders.order_estimated_delivery_date : timestamp without time zone
+ product_category_translation.product_category_name : character varying NOT NULL
+ product_category_translation.product_category_name_english : character varying
+ product_price_history.history_id : bigint NOT NULL
+ product_price_history.product_id : character varying NOT NULL
+ product_price_history.old_price : numeric
+ product_price_history.new_price : numeric
+ product_price_history.changed_at : timestamp without time zone
+ products.product_id : character varying NOT NULL
+ products.product_category_name : character varying
+ products.product_name_lenght : integer
+ products.product_description_lenght : integer
+ products.product_photos_qty : integer
+ products.product_weight_g : integer
+ products.product_length_cm : integer
+ products.product_height_cm : integer
+ products.product_width_cm : integer
+ referrals.referral_id : bigint NOT NULL
+ referrals.referrer_member_id : bigint NOT NULL
+ referrals.invitee_member_id : bigint
+ referrals.invite_code : character varying
+ referrals.created_at : timestamp without time zone
+ referrals.converted_at : timestamp without time zone
+ referrals.reward_amount : numeric
+ refund_items.refund_id : bigint NOT NULL
+ refund_items.order_id : character varying NOT NULL
+ refund_items.order_item_id : integer NOT NULL
+ refund_items.refund_qty : integer
+ refund_items.refund_value : numeric
+ refunds.refund_id : bigint NOT NULL
+ refunds.order_id : character varying NOT NULL
+ refunds.refund_amount : numeric
+ refunds.reason_code : character varying  -- 退款原因代码：CUST=客户取消 QUAL=质量问题 LATE=配送超时 OTHER=其他
+ refunds.status : smallint  -- 退款状态：1=待审核 2=已通过 3=已拒绝 4=已退款
+ refunds.requested_at : timestamp without time zone
+ refunds.completed_at : timestamp without time zone
+ regions.region_code : character varying NOT NULL
+ regions.region_name : character varying NOT NULL
+ regions.macro_region : character varying
+ search_logs.log_id : bigint NOT NULL
+ search_logs.member_id : bigint
+ search_logs.keyword : character varying
+ search_logs.result_count : integer
+ search_logs.clicked_product_id : character varying
+ search_logs.searched_at : timestamp without time zone
+ sellers.seller_id : character varying NOT NULL
+ sellers.seller_zip_code_prefix : integer
+ sellers.seller_city : character varying
+ sellers.seller_state : character varying
+ settlement_items.settlement_id : bigint NOT NULL
+ settlement_items.order_id : character varying NOT NULL
+ settlement_items.order_item_id : integer NOT NULL
+ settlement_items.gross_amount : numeric
+ settlement_items.commission_rate : numeric
+ settlement_items.commission_amount : numeric
+ settlements.settlement_id : bigint NOT NULL
+ settlements.seller_id : character varying NOT NULL
+ settlements.period_start : date
+ settlements.period_end : date
+ settlements.total_amount : numeric
+ settlements.commission : numeric
+ settlements.net_amount : numeric
+ settlements.status : smallint  -- 结算状态：1=待结算 2=已结算 3=已打款
+ settlements.paid_at : timestamp without time zone
+ shipment_tracking.tracking_id : bigint NOT NULL
+ shipment_tracking.shipment_id : bigint NOT NULL
+ shipment_tracking.event_time : timestamp without time zone
+ shipment_tracking.event_code : character varying
+ shipment_tracking.location : character varying
+ shipments.shipment_id : bigint NOT NULL
+ shipments.order_id : character varying NOT NULL
+ shipments.warehouse_id : integer
+ shipments.carrier : character varying
+ shipments.shipped_at : timestamp without time zone
+ shipments.delivered_at : timestamp without time zone
+ shipments.status : smallint  -- 发货状态：1=待发货 2=运输中 3=已签收 4=异常
+ shipping_addresses.address_id : bigint NOT NULL
+ shipping_addresses.customer_id : character varying NOT NULL
+ shipping_addresses.zip_code_prefix : integer
+ shipping_addresses.city : character varying
+ shipping_addresses.state : character varying
+ shipping_addresses.is_default : boolean
+ support_tickets.ticket_id : bigint NOT NULL
+ support_tickets.order_id : character varying
+ support_tickets.member_id : bigint
+ support_tickets.category_id : integer
+ support_tickets.priority : smallint  -- 优先级：1=低 2=中 3=高 4=紧急
+ support_tickets.status : smallint  -- 工单状态：1=待处理 2=处理中 3=已解决 4=已关闭
+ support_tickets.created_at : timestamp without time zone
+ support_tickets.resolved_at : timestamp without time zone
+ ticket_categories.category_id : integer NOT NULL
+ ticket_categories.category_name : character varying NOT NULL
+ ticket_categories.sla_hours : integer
+ ticket_messages.message_id : bigint NOT NULL
+ ticket_messages.ticket_id : bigint NOT NULL
+ ticket_messages.sender_type : character varying
+ ticket_messages.content : text
+ ticket_messages.created_at : timestamp without time zone
+ user_tag_map.member_id : bigint NOT NULL
+ user_tag_map.tag_id : integer NOT NULL
+ user_tag_map.tagged_at : date
+ user_tags.tag_id : integer NOT NULL
+ user_tags.tag_code : character varying NOT NULL
+ user_tags.tag_name : character varying NOT NULL
+ warehouses.warehouse_id : integer NOT NULL
+ warehouses.warehouse_name : character varying NOT NULL
+ warehouses.region_code : character varying
+ warehouses.capacity : integer
+(197 rows)
+
+### FOREIGN_KEYS
+                              fk                              
+--------------------------------------------------------------
+ campaign_products.campaign_id -> campaigns.campaign_id
+ coupon_usages.coupon_id -> coupons.coupon_id
+ coupons.campaign_id -> campaigns.campaign_id
+ members.level_id -> member_levels.level_id
+ order_items.order_id -> orders.order_id
+ order_items.product_id -> products.product_id
+ order_items.seller_id -> sellers.seller_id
+ order_payments.order_id -> orders.order_id
+ order_reviews.order_id -> orders.order_id
+ orders.customer_id -> customers.customer_id
+ shipments.warehouse_id -> warehouses.warehouse_id
+ support_tickets.category_id -> ticket_categories.category_id
+(12 rows)
+

@@ -1,0 +1,325 @@
+# 难度层 2：单表聚合（40 条）
+# 覆盖：COUNT/SUM/AVG/MIN/MAX、GROUP BY、HAVING、条件聚合
+# 这一层的陷阱是"粒度"：order_items 一行是一个商品，直接 SUM 和按订单 SUM 结果不同。
+
+- id: T2-001
+  difficulty: single_table_agg
+  tags: [聚合, 求和]
+  question: 所有订单明细的商品金额加起来一共是多少？
+  gold_sql: |
+    SELECT SUM(price) FROM order_items;
+
+- id: T2-002
+  difficulty: single_table_agg
+  tags: [聚合, 求和]
+  question: 所有订单的运费总额是多少？
+  gold_sql: |
+    SELECT SUM(freight_value) FROM order_items;
+
+- id: T2-003
+  difficulty: single_table_agg
+  tags: [聚合, 平均]
+  question: 订单明细的平均商品价格是多少？
+  gold_sql: |
+    SELECT ROUND(AVG(price), 2) FROM order_items;
+
+- id: T2-004
+  difficulty: single_table_agg
+  tags: [聚合, 平均]
+  question: 平均每个订单有多少条明细？
+  gold_sql: |
+    SELECT ROUND(AVG(cnt), 4) FROM (
+      SELECT order_id, COUNT(*) AS cnt FROM order_items GROUP BY order_id
+    ) t;
+  notes: 必须先按订单聚合再求平均，直接对 order_items 求 AVG 是错的。
+
+- id: T2-005
+  difficulty: single_table_agg
+  tags: [聚合, 分组]
+  question: 每种订单状态各有多少笔订单？按数量从多到少排列。
+  gold_sql: |
+    SELECT order_status, COUNT(*) AS cnt
+    FROM orders GROUP BY order_status ORDER BY cnt DESC;
+
+- id: T2-006
+  difficulty: single_table_agg
+  tags: [聚合, 分组]
+  question: 每种支付方式各有多少笔支付记录？
+  gold_sql: |
+    SELECT payment_type, COUNT(*) AS cnt
+    FROM order_payments GROUP BY payment_type ORDER BY cnt DESC;
+
+- id: T2-007
+  difficulty: single_table_agg
+  tags: [聚合, 分组]
+  question: 每个评价分数各有多少条评价？
+  gold_sql: |
+    SELECT review_score, COUNT(*) AS cnt
+    FROM order_reviews GROUP BY review_score ORDER BY review_score;
+
+- id: T2-008
+  difficulty: single_table_agg
+  tags: [聚合, 分组, 排序]
+  question: 客户数量最多的 5 个州是哪些？各有多少客户？
+  gold_sql: |
+    SELECT customer_state, COUNT(*) AS cnt
+    FROM customers GROUP BY customer_state ORDER BY cnt DESC LIMIT 5;
+
+- id: T2-009
+  difficulty: single_table_agg
+  tags: [聚合, 分组, 排序]
+  question: 商品数量最多的 10 个类目是哪些？
+  gold_sql: |
+    SELECT product_category_name, COUNT(*) AS cnt
+    FROM products
+    WHERE product_category_name IS NOT NULL
+    GROUP BY product_category_name ORDER BY cnt DESC LIMIT 10;
+
+- id: T2-010
+  difficulty: single_table_agg
+  tags: [聚合, 分组]
+  question: 每个州的卖家各有多少个？按数量倒序。
+  gold_sql: |
+    SELECT seller_state, COUNT(*) AS cnt
+    FROM sellers GROUP BY seller_state ORDER BY cnt DESC;
+
+- id: T2-011
+  difficulty: single_table_agg
+  tags: [聚合, 分组, 求和]
+  question: 每个卖家的商品销售总额是多少？取金额最高的 10 个卖家。
+  gold_sql: |
+    SELECT seller_id, ROUND(SUM(price), 2) AS total
+    FROM order_items GROUP BY seller_id ORDER BY total DESC LIMIT 10;
+
+- id: T2-012
+  difficulty: single_table_agg
+  tags: [聚合, 分组, 求和]
+  question: 每个卖家的运费收入合计是多少？取最高的 10 个。
+  gold_sql: |
+    SELECT seller_id, ROUND(SUM(freight_value), 2) AS total
+    FROM order_items GROUP BY seller_id ORDER BY total DESC LIMIT 10;
+
+- id: T2-013
+  difficulty: single_table_agg
+  tags: [条件聚合]
+  question: 已送达订单和已取消订单各有多少笔？
+  gold_sql: |
+    SELECT
+      COUNT(*) FILTER (WHERE order_status = 'delivered') AS delivered,
+      COUNT(*) FILTER (WHERE order_status = 'canceled')  AS canceled
+    FROM orders;
+
+- id: T2-014
+  difficulty: single_table_agg
+  tags: [条件聚合]
+  question: 支付方式里信用卡和 boleto 各占多少笔？
+  gold_sql: |
+    SELECT
+      COUNT(*) FILTER (WHERE payment_type = 'credit_card') AS credit_card,
+      COUNT(*) FILTER (WHERE payment_type = 'boleto')      AS boleto
+    FROM order_payments;
+
+- id: T2-015
+  difficulty: single_table_agg
+  tags: [聚合, 平均]
+  question: 每个会员等级的平均积分是多少？
+  gold_sql: |
+    SELECT level_id, ROUND(AVG(points), 2) AS avg_points
+    FROM members GROUP BY level_id ORDER BY level_id;
+
+- id: T2-016
+  difficulty: single_table_agg
+  tags: [聚合, 分组]
+  question: 每种会员状态各有多少人？
+  gold_sql: |
+    SELECT status, COUNT(*) AS cnt FROM members GROUP BY status ORDER BY status;
+
+- id: T2-017
+  difficulty: single_table_agg
+  tags: [聚合, 分组]
+  question: 每个大区各包含多少个州？
+  gold_sql: |
+    SELECT macro_region, COUNT(*) AS cnt
+    FROM regions GROUP BY macro_region ORDER BY cnt DESC;
+
+- id: T2-018
+  difficulty: single_table_agg
+  tags: [聚合, 分组]
+  question: 每种营销活动类型各有多少个活动？
+  gold_sql: |
+    SELECT campaign_type, COUNT(*) AS cnt
+    FROM campaigns GROUP BY campaign_type ORDER BY cnt DESC;
+
+- id: T2-019
+  difficulty: single_table_agg
+  tags: [聚合, 分组, 求和]
+  question: 每个活动的预算总额是多少？
+  gold_sql: |
+    SELECT campaign_id, budget FROM campaigns ORDER BY budget DESC;
+
+- id: T2-020
+  difficulty: single_table_agg
+  tags: [聚合, 分组]
+  question: 每种折扣类型的优惠券各有多少张？
+  gold_sql: |
+    SELECT discount_type, COUNT(*) AS cnt
+    FROM coupons GROUP BY discount_type ORDER BY cnt DESC;
+
+- id: T2-021
+  difficulty: single_table_agg
+  tags: [聚合, 分组]
+  question: 每个退款原因各有多少笔退款？
+  gold_sql: |
+    SELECT reason_code, COUNT(*) AS cnt
+    FROM refunds GROUP BY reason_code ORDER BY cnt DESC;
+
+- id: T2-022
+  difficulty: single_table_agg
+  tags: [聚合, 求和]
+  question: 退款总金额是多少？
+  gold_sql: |
+    SELECT ROUND(SUM(refund_amount), 2) FROM refunds;
+
+- id: T2-023
+  difficulty: single_table_agg
+  tags: [聚合, 求和, 过滤]
+  question: 已经退款的订单，退款金额合计是多少？
+  gold_sql: |
+    SELECT ROUND(SUM(refund_amount), 2) FROM refunds WHERE status = 4;
+
+- id: T2-024
+  difficulty: single_table_agg
+  tags: [聚合, 分组]
+  question: 每个仓库各有多少条库存记录？
+  gold_sql: |
+    SELECT warehouse_id, COUNT(*) AS cnt
+    FROM inventory GROUP BY warehouse_id ORDER BY warehouse_id;
+
+- id: T2-025
+  difficulty: single_table_agg
+  tags: [聚合, 求和]
+  question: 所有仓库的库存总数量是多少？
+  gold_sql: |
+    SELECT SUM(quantity) FROM inventory;
+
+- id: T2-026
+  difficulty: single_table_agg
+  tags: [聚合, 分组, 求和]
+  question: 每个仓库的库存总数量是多少？
+  gold_sql: |
+    SELECT warehouse_id, SUM(quantity) AS total_qty
+    FROM inventory GROUP BY warehouse_id ORDER BY warehouse_id;
+
+- id: T2-027
+  difficulty: single_table_agg
+  tags: [聚合, 分组]
+  question: 每种库存变动类型各有多少条记录？
+  gold_sql: |
+    SELECT movement_type, COUNT(*) AS cnt
+    FROM inventory_movements GROUP BY movement_type ORDER BY movement_type;
+
+- id: T2-028
+  difficulty: single_table_agg
+  tags: [聚合, 分组]
+  question: 每家承运商各承担了多少个发货单？
+  gold_sql: |
+    SELECT carrier, COUNT(*) AS cnt
+    FROM shipments GROUP BY carrier ORDER BY cnt DESC;
+
+- id: T2-029
+  difficulty: single_table_agg
+  tags: [聚合, 分组]
+  question: 每种发货状态各有多少个发货单？
+  gold_sql: |
+    SELECT status, COUNT(*) AS cnt FROM shipments GROUP BY status ORDER BY status;
+
+- id: T2-030
+  difficulty: single_table_agg
+  tags: [聚合, 分组]
+  question: 每个工单分类各有多少个工单？
+  gold_sql: |
+    SELECT category_id, COUNT(*) AS cnt
+    FROM support_tickets GROUP BY category_id ORDER BY category_id;
+
+- id: T2-031
+  difficulty: single_table_agg
+  tags: [聚合, 分组]
+  question: 每个优先级的工单各有多少个？
+  gold_sql: |
+    SELECT priority, COUNT(*) AS cnt
+    FROM support_tickets GROUP BY priority ORDER BY priority;
+
+- id: T2-032
+  difficulty: single_table_agg
+  tags: [聚合, 分组]
+  question: 每种结算状态各有多少张结算单？
+  gold_sql: |
+    SELECT status, COUNT(*) AS cnt FROM settlements GROUP BY status ORDER BY status;
+
+- id: T2-033
+  difficulty: single_table_agg
+  tags: [聚合, 求和]
+  question: 平台支付给卖家的结算净额合计是多少？
+  gold_sql: |
+    SELECT ROUND(SUM(net_amount), 2) FROM settlements;
+
+- id: T2-034
+  difficulty: single_table_agg
+  tags: [聚合, 求和]
+  question: 平台从卖家那里收取的佣金总额是多少？
+  gold_sql: |
+    SELECT ROUND(SUM(commission), 2) FROM settlements;
+
+- id: T2-035
+  difficulty: single_table_agg
+  tags: [聚合, 分组, 排序]
+  question: 搜索次数最多的 10 个关键词是哪些？
+  gold_sql: |
+    SELECT keyword, COUNT(*) AS cnt
+    FROM search_logs GROUP BY keyword ORDER BY cnt DESC LIMIT 10;
+
+- id: T2-036
+  difficulty: single_table_agg
+  tags: [HAVING]
+  question: 商品数量超过 1500 个的类目有哪些？
+  gold_sql: |
+    SELECT product_category_name, COUNT(*) AS cnt
+    FROM products
+    WHERE product_category_name IS NOT NULL
+    GROUP BY product_category_name
+    HAVING COUNT(*) > 1500
+    ORDER BY cnt DESC;
+
+- id: T2-037
+  difficulty: single_table_agg
+  tags: [HAVING]
+  question: 订单数超过 5000 的州有哪些？
+  gold_sql: |
+    SELECT customer_state, COUNT(*) AS cnt
+    FROM customers GROUP BY customer_state
+    HAVING COUNT(*) > 5000 ORDER BY cnt DESC;
+
+- id: T2-038
+  difficulty: single_table_agg
+  tags: [聚合, 最值]
+  question: 订单明细里最贵的一件商品价格是多少？最便宜的呢？
+  gold_sql: |
+    SELECT MAX(price) AS max_price, MIN(price) AS min_price FROM order_items;
+
+- id: T2-039
+  difficulty: single_table_agg
+  tags: [条件聚合, 比率]
+  question: 好评（4 分及以上）占所有评价的比例是多少？
+  gold_sql: |
+    SELECT ROUND(
+      COUNT(*) FILTER (WHERE review_score >= 4)::NUMERIC / COUNT(*), 4
+    ) AS good_rate
+    FROM order_reviews;
+
+- id: T2-040
+  difficulty: single_table_agg
+  tags: [聚合, 分组, 求和]
+  question: 每个支付方式收上来的钱合计是多少？
+  gold_sql: |
+    SELECT payment_type, ROUND(SUM(payment_value), 2) AS total
+    FROM order_payments GROUP BY payment_type ORDER BY total DESC;

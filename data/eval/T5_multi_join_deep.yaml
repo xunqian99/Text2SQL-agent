@@ -1,0 +1,302 @@
+# 难度层 5：深层多表 join（20 条，4 张表以上）
+# 覆盖：事实表-维度表-维度表的多跳、自连接（同一张表 join 两次）、桥接表、跨真实表与扩展表
+#
+# 这一层的坑：
+#   1. 多跳关联中间少一层桥接表（如 products -> brands 必须经过 product_brand_map）
+#   2. 同一张表 join 两次必须用不同别名（referrals 的推荐人与被推荐人）
+#   3. 深层 join 容易行数放大，聚合必须用 COUNT(DISTINCT ...) 而不是 COUNT(*)
+#   4. 真实 Olist 表与扩展表通过 customer_unique_id / member_id 连接，不是 customer_id
+
+- id: T5-001
+  difficulty: multi_join_deep
+  tags: [join, 分组, 求和, 会员]
+  question: 每个宏观区域下，各会员等级的商品销售额分别是多少？按销售额从高到低排序。
+  gold_sql: |
+    SELECT r.macro_region, ml.level_name, ROUND(SUM(oi.price), 2) AS gmv
+    FROM orders o
+    JOIN customers c ON c.customer_id = o.customer_id
+    JOIN regions r ON r.region_code = c.customer_state
+    JOIN members m ON m.customer_unique_id = c.customer_unique_id
+    JOIN member_levels ml ON ml.level_id = m.level_id
+    JOIN order_items oi ON oi.order_id = o.order_id
+    GROUP BY 1, 2 ORDER BY gmv DESC;
+  notes: 六表链路：orders -> customers -> regions，同时 customers -> members -> member_levels，最后到 order_items。地理维度和会员维度交叉分析。销售额口径为 order_items.price 之和，不含运费。
+
+- id: T5-002
+  difficulty: multi_join_deep
+  tags: [join, 会员, 求和]
+  question: 每个会员等级对应的商品销售额是多少？
+  gold_sql: |
+    SELECT ml.level_name, ROUND(SUM(oi.price), 2) AS sales
+    FROM orders o
+    JOIN customers c ON c.customer_id = o.customer_id
+    JOIN members m ON m.customer_unique_id = c.customer_unique_id
+    JOIN member_levels ml ON ml.level_id = m.level_id
+    JOIN order_items oi ON oi.order_id = o.order_id
+    GROUP BY 1 ORDER BY sales DESC;
+  notes: 关键点是 members 关联 customers 必须用 customer_unique_id（人级别），不能用 customer_id（订单级别）。用错会大量丢数据。
+
+- id: T5-003
+  difficulty: multi_join_deep
+  tags: [join, 退款, 翻译表]
+  question: 用英文类目名统计退款金额，哪些类目退款最多？取前 15。
+  gold_sql: |
+    SELECT t.product_category_name_english, COUNT(DISTINCT r.refund_id) AS refund_cnt, ROUND(SUM(ri.refund_value), 2) AS refund_amt
+    FROM refunds r
+    JOIN refund_items ri ON ri.refund_id = r.refund_id
+    JOIN order_items oi ON oi.order_id = ri.order_id AND oi.order_item_id = ri.order_item_id
+    JOIN products p ON p.product_id = oi.product_id
+    JOIN product_category_translation t ON t.product_category_name = p.product_category_name
+    GROUP BY 1 ORDER BY refund_amt DESC LIMIT 15;
+  notes: refund_items 要回连 order_items 才能拿到 product_id，必须同时匹配 order_id 和 order_item_id 两个键。
+
+- id: T5-004
+  difficulty: multi_join_deep
+  tags: [join, 物流, 分组]
+  question: 每个仓库所在区域的发货单量和覆盖订单数分别是多少？
+  gold_sql: |
+    SELECT r.region_name, COUNT(DISTINCT s.shipment_id) AS shipments, COUNT(DISTINCT o.order_id) AS orders
+    FROM shipments s
+    JOIN warehouses w ON w.warehouse_id = s.warehouse_id
+    JOIN regions r ON r.region_code = w.region_code
+    JOIN orders o ON o.order_id = s.order_id
+    JOIN customers c ON c.customer_id = o.customer_id
+    GROUP BY 1 ORDER BY shipments DESC;
+  notes: 仓库属于发货地，regions 这里描述的是仓库所在区域，不是客户所在区域。
+
+- id: T5-005
+  difficulty: multi_join_deep
+  tags: [join, 优惠券, 活动]
+  question: 每个优惠券活动带来的有效订单数和商品销售额是多少？取前 10。
+  gold_sql: |
+    SELECT ca.campaign_name, COUNT(DISTINCT cu.order_id) AS used_orders, ROUND(SUM(oi.price), 2) AS gmv
+    FROM coupon_usages cu
+    JOIN coupons cp ON cp.coupon_id = cu.coupon_id
+    JOIN campaigns ca ON ca.campaign_id = cp.campaign_id
+    JOIN orders o ON o.order_id = cu.order_id
+    JOIN order_items oi ON oi.order_id = cu.order_id
+    WHERE o.order_status NOT IN ('canceled', 'unavailable')
+    GROUP BY 1 ORDER BY gmv DESC LIMIT 10;
+  notes: 有效订单口径排除 canceled 和 unavailable。活动 -> 券 -> 使用记录 -> 订单 是四跳链路。
+
+- id: T5-006
+  difficulty: multi_join_deep
+  tags: [join, 客服, 会员]
+  question: 物流延迟类工单按客户所在州和会员等级分布，列出前 20 组。
+  gold_sql: |
+    SELECT c.customer_state, ml.level_name, COUNT(DISTINCT st.ticket_id) AS tickets
+    FROM support_tickets st
+    JOIN ticket_categories tc ON tc.category_id = st.category_id
+    JOIN orders o ON o.order_id = st.order_id
+    JOIN customers c ON c.customer_id = o.customer_id
+    JOIN members m ON m.member_id = st.member_id
+    JOIN member_levels ml ON ml.level_id = m.level_id
+    WHERE tc.category_name = '物流延迟'
+    GROUP BY 1, 2 ORDER BY tickets DESC LIMIT 20;
+  notes: 工单同时挂了 order_id 和 member_id，两条路径都要走通才是完整的客户画像。
+
+- id: T5-007
+  difficulty: multi_join_deep
+  tags: [join, 搜索, 类目]
+  question: 有商品点击的搜索记录中，哪些关键词最常点到哪个英文类目的商品？取前 20。
+  gold_sql: |
+    SELECT sl.keyword, t.product_category_name_english, COUNT(*) AS clicks
+    FROM search_logs sl
+    JOIN products p ON p.product_id = sl.clicked_product_id
+    JOIN product_category_translation t ON t.product_category_name = p.product_category_name
+    JOIN members m ON m.member_id = sl.member_id
+    JOIN member_levels ml ON ml.level_id = m.level_id
+    WHERE sl.clicked_product_id IS NOT NULL
+    GROUP BY 1, 2 ORDER BY clicks DESC LIMIT 20;
+  notes: 必须过滤 clicked_product_id IS NULL，否则会把「只搜不点」的记录算成点击。
+
+- id: T5-008
+  difficulty: multi_join_deep
+  tags: [join, 自连接, 推荐]
+  question: 按推荐人和被推荐人的会员等级组合统计推荐关系数量和奖励金额。
+  gold_sql: |
+    SELECT mlr.level_name AS referrer_level, mli.level_name AS invitee_level,
+           COUNT(*) AS referrals, ROUND(SUM(rf.reward_amount), 2) AS reward
+    FROM referrals rf
+    JOIN members mr ON mr.member_id = rf.referrer_member_id
+    JOIN member_levels mlr ON mlr.level_id = mr.level_id
+    JOIN members mi ON mi.member_id = rf.invitee_member_id
+    JOIN member_levels mli ON mli.level_id = mi.level_id
+    GROUP BY 1, 2 ORDER BY referrals DESC;
+  notes: members 和 member_levels 各 join 两次，必须用不同别名，否则无法区分推荐人和被推荐人。
+
+- id: T5-009
+  difficulty: multi_join_deep
+  tags: [join, 库存, 品牌]
+  question: 库存低于安全库存的商品，按仓库、区域、品牌统计数量，列出前 20。
+  gold_sql: |
+    SELECT w.warehouse_name, r.region_name, b.brand_name, COUNT(*) AS low_stock_items
+    FROM inventory i
+    JOIN warehouses w ON w.warehouse_id = i.warehouse_id
+    JOIN regions r ON r.region_code = w.region_code
+    JOIN product_brand_map pbm ON pbm.product_id = i.product_id AND pbm.is_current
+    JOIN brands b ON b.brand_id = pbm.brand_id
+    WHERE i.quantity < i.safety_stock
+    GROUP BY 1, 2, 3 ORDER BY low_stock_items DESC LIMIT 20;
+  notes: products 到 brands 没有直接外键，必须经过 product_brand_map 桥接表，且只取 is_current 为真的当前映射。
+
+- id: T5-010
+  difficulty: multi_join_deep
+  tags: [join, 结算, 卖家]
+  question: 每个卖家结算明细覆盖了多少个英文商品类目、佣金合计多少？取佣金前 20。
+  gold_sql: |
+    SELECT st.seller_id, COUNT(DISTINCT t.product_category_name_english) AS category_cnt,
+           ROUND(SUM(si.commission_amount), 2) AS commission
+    FROM settlements st
+    JOIN settlement_items si ON si.settlement_id = st.settlement_id
+    JOIN order_items oi ON oi.order_id = si.order_id AND oi.order_item_id = si.order_item_id
+    JOIN products p ON p.product_id = oi.product_id
+    JOIN product_category_translation t ON t.product_category_name = p.product_category_name
+    GROUP BY 1 ORDER BY commission DESC LIMIT 20;
+  notes: settlement_items 用 (order_id, order_item_id) 复合键回连 order_items，只匹配 order_id 会串行放大。
+
+- id: T5-011
+  difficulty: multi_join_deep
+  tags: [join, 品牌, 销售额]
+  question: 品牌销售额排名前 10 是哪些？销售额按商品金额统计。
+  gold_sql: |
+    SELECT b.brand_name, ROUND(SUM(oi.price), 2) AS sales
+    FROM order_items oi
+    JOIN product_brand_map pbm ON pbm.product_id = oi.product_id AND pbm.is_current
+    JOIN brands b ON b.brand_id = pbm.brand_id
+    JOIN orders o ON o.order_id = oi.order_id
+    JOIN customers c ON c.customer_id = o.customer_id
+    GROUP BY 1 ORDER BY sales DESC LIMIT 10;
+  notes: 一个商品在 product_brand_map 里可能有历史品牌映射，必须用 is_current 过滤，否则同一商品会被重复计入多个品牌。
+
+- id: T5-012
+  difficulty: multi_join_deep
+  tags: [join, 标签, 用户画像]
+  question: 每类用户标签覆盖多少会员、这些会员订单的平均商品单价是多少？
+  gold_sql: |
+    SELECT ut.tag_name, COUNT(DISTINCT m.member_id) AS members, ROUND(AVG(oi.price), 2) AS avg_item_price
+    FROM user_tag_map utm
+    JOIN user_tags ut ON ut.tag_id = utm.tag_id
+    JOIN members m ON m.member_id = utm.member_id
+    JOIN customers c ON c.customer_unique_id = m.customer_unique_id
+    JOIN orders o ON o.customer_id = c.customer_id
+    JOIN order_items oi ON oi.order_id = o.order_id
+    GROUP BY 1 ORDER BY members DESC;
+  notes: 一个会员可能有多个标签，COUNT(DISTINCT member_id) 才能得到去重人数。
+
+- id: T5-013
+  difficulty: multi_join_deep
+  tags: [join, 活动, 商品]
+  question: 每个营销活动关联商品实际带来的订单数和销售额，取前 10。
+  gold_sql: |
+    SELECT ca.campaign_name, COUNT(DISTINCT oi.order_id) AS orders, ROUND(SUM(oi.price), 2) AS gmv
+    FROM campaign_products cp
+    JOIN campaigns ca ON ca.campaign_id = cp.campaign_id
+    JOIN order_items oi ON oi.product_id = cp.product_id
+    JOIN orders o ON o.order_id = oi.order_id
+    JOIN customers c ON c.customer_id = o.customer_id
+    GROUP BY 1 ORDER BY gmv DESC LIMIT 10;
+  notes: 这是「活动挂了哪些商品 -> 这些商品卖了多少钱」，不是「用了券的订单」，与 T5-005 口径不同。
+
+- id: T5-014
+  difficulty: multi_join_deep
+  tags: [join, 快照, 会员]
+  question: 当前等级与最近一次会员快照等级不一致的会员有多少？按等级组合统计。
+  gold_sql: |
+    SELECT ml_cur.level_name AS current_level, ml_snap.level_name AS snapshot_level,
+           COUNT(DISTINCT ms.member_id) AS member_cnt
+    FROM member_snapshot ms
+    JOIN members m ON m.member_id = ms.member_id
+    JOIN member_levels ml_cur ON ml_cur.level_id = m.level_id
+    JOIN member_levels ml_snap ON ml_snap.level_id = ms.level_id
+    WHERE ms.level_id <> m.level_id
+    GROUP BY 1, 2 ORDER BY member_cnt DESC;
+  notes: member_snapshot 是冗余快照表，用于对比历史等级；这里故意查询两者不一致的会员，属于典型数据质量问题场景。
+
+- id: T5-015
+  difficulty: multi_join_deep
+  tags: [join, 物流轨迹, 分组]
+  question: 物流轨迹事件类型按客户所在州分布，列出前 20 组（按发货单去重）。
+  gold_sql: |
+    SELECT st.event_code, c.customer_state, COUNT(DISTINCT s.shipment_id) AS shipments
+    FROM shipment_tracking st
+    JOIN shipments s ON s.shipment_id = st.shipment_id
+    JOIN orders o ON o.order_id = s.order_id
+    JOIN customers c ON c.customer_id = o.customer_id
+    JOIN order_items oi ON oi.order_id = o.order_id
+    GROUP BY 1, 2 ORDER BY shipments DESC LIMIT 20;
+  notes: 一个发货单有多条轨迹事件，COUNT(DISTINCT shipment_id) 才是发货单数，COUNT(*) 是事件数。
+
+- id: T5-016
+  difficulty: multi_join_deep
+  tags: [join, 退款, 原因]
+  question: 按英文类目和退款原因统计退款笔数与退款金额，列出前 20。
+  gold_sql: |
+    SELECT t.product_category_name_english, r.reason_code,
+           COUNT(DISTINCT r.refund_id) AS refunds, ROUND(SUM(ri.refund_value), 2) AS amt
+    FROM refunds r
+    JOIN refund_items ri ON ri.refund_id = r.refund_id
+    JOIN order_items oi ON oi.order_id = ri.order_id AND oi.order_item_id = ri.order_item_id
+    JOIN products p ON p.product_id = oi.product_id
+    JOIN product_category_translation t ON t.product_category_name = p.product_category_name
+    GROUP BY 1, 2 ORDER BY amt DESC LIMIT 20;
+  notes: reason_code 是缩写代码（CUST/QUAL/LATE/OTHER），列注释里有中文含义，答案里保留原始代码。
+
+- id: T5-017
+  difficulty: multi_join_deep
+  tags: [join, 客服, 优先级]
+  question: 各工单类目、优先级的工单数和消息条数分别是多少？
+  gold_sql: |
+    SELECT tc.category_name, st.priority, COUNT(DISTINCT st.ticket_id) AS tickets,
+           COUNT(tm.message_id) AS messages
+    FROM support_tickets st
+    JOIN ticket_categories tc ON tc.category_id = st.category_id
+    JOIN ticket_messages tm ON tm.ticket_id = st.ticket_id
+    JOIN members m ON m.member_id = st.member_id
+    JOIN member_levels ml ON ml.level_id = m.level_id
+    GROUP BY 1, 2 ORDER BY tickets DESC;
+  notes: priority 是数字代码（1=低 2=中 3=高 4=紧急），列注释里有含义。工单数与消息数必须用不同聚合函数，否则会被 join 放大。
+
+- id: T5-018
+  difficulty: multi_join_deep
+  tags: [join, 地址, 分组]
+  question: 默认收货地址所在州和客户登记州是否一致的订单量对比，列出前 20。
+  gold_sql: |
+    SELECT sa.state AS addr_state, c.customer_state, COUNT(DISTINCT o.order_id) AS orders
+    FROM shipping_addresses sa
+    JOIN customers c ON c.customer_id = sa.customer_id
+    JOIN orders o ON o.customer_id = c.customer_id
+    JOIN order_items oi ON oi.order_id = o.order_id
+    WHERE sa.is_default
+    GROUP BY 1, 2 ORDER BY orders DESC LIMIT 20;
+  notes: 这是数据一致性探查题，addr_state 与 customer_state 不一致代表地址库与客户主数据有偏差。
+
+- id: T5-019
+  difficulty: multi_join_deep
+  tags: [join, 价格变动, 商品]
+  question: 发生过价格变动的商品，按类目统计平均涨跌幅和关联订单数，取订单数前 20。
+  gold_sql: |
+    SELECT p.product_category_name,
+           ROUND(AVG(pph.new_price - pph.old_price), 2) AS avg_price_change,
+           COUNT(DISTINCT oi.order_id) AS orders
+    FROM product_price_history pph
+    JOIN products p ON p.product_id = pph.product_id
+    JOIN order_items oi ON oi.product_id = pph.product_id
+    JOIN orders o ON o.order_id = oi.order_id
+    JOIN customers c ON c.customer_id = o.customer_id
+    GROUP BY 1 ORDER BY orders DESC LIMIT 20;
+  notes: 一个商品可能有多条价格变动记录，avg_price_change 是变动幅度均值，不是当前价与历史价之差。
+
+- id: T5-020
+  difficulty: multi_join_deep
+  tags: [join, 库存, 出入库]
+  question: 按宏观区域和出入库类型统计库存变动笔数与数量合计。
+  gold_sql: |
+    SELECT r.macro_region, im.movement_type, COUNT(*) AS movements, SUM(im.quantity) AS qty
+    FROM inventory_movements im
+    JOIN inventory i ON i.warehouse_id = im.warehouse_id AND i.product_id = im.product_id
+    JOIN warehouses w ON w.warehouse_id = im.warehouse_id
+    JOIN regions r ON r.region_code = w.region_code
+    JOIN products p ON p.product_id = im.product_id
+    GROUP BY 1, 2 ORDER BY movements DESC;
+  notes: movement_type 是数字代码（1=入库 2=出库 3=退货入库 4=盘亏），答案保留原始代码。

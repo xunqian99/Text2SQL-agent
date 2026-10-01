@@ -1,0 +1,304 @@
+# 难度层 1：单表基础查询（40 条）
+# 覆盖：过滤、排序、去重、NULL 判断、简单计数
+# 这一层用来验证链路是否通畅。如果这层准确率都上不去，问题在工程而不在检索。
+#
+# notes 字段记录口径假设。标 【需确认】 的条目需要用户审核业务口径。
+
+- id: T1-001
+  difficulty: single_table_basic
+  tags: [计数]
+  question: 一共有多少笔订单？
+  gold_sql: |
+    SELECT COUNT(*) FROM orders;
+
+- id: T1-002
+  difficulty: single_table_basic
+  tags: [过滤, 时间]
+  question: 2018 年下单的订单有多少笔？
+  gold_sql: |
+    SELECT COUNT(*) FROM orders
+    WHERE order_purchase_timestamp >= '2018-01-01'
+      AND order_purchase_timestamp < '2019-01-01';
+  notes: 时间口径取 order_purchase_timestamp（下单时间），非支付或送达时间。
+
+- id: T1-003
+  difficulty: single_table_basic
+  tags: [过滤, 枚举]
+  question: 已取消的订单有多少笔？
+  gold_sql: |
+    SELECT COUNT(*) FROM orders WHERE order_status = 'canceled';
+
+- id: T1-004
+  difficulty: single_table_basic
+  tags: [计数, 去重]
+  question: 一共有多少个不同的客户（按自然人统计，同一人多次下单只算一个）？
+  gold_sql: |
+    SELECT COUNT(DISTINCT customer_unique_id) FROM customers;
+  notes: 客户表 99441 行是「订单级」客户，customer_unique_id 去重后是 96096 个自然人。这是 customer_id 与 customer_unique_id 的经典区别。
+
+- id: T1-005
+  difficulty: single_table_basic
+  tags: [过滤, 数值]
+  question: 单价超过 1000 的订单明细有多少条？
+  gold_sql: |
+    SELECT COUNT(*) FROM order_items WHERE price > 1000;
+  notes: 价格口径取 order_items.price（商品单价，不含运费），不是 freight_value，也不是订单总价 payment_value。
+
+- id: T1-006
+  difficulty: single_table_basic
+  tags: [计数]
+  question: 商品表里有多少个商品？
+  gold_sql: |
+    SELECT COUNT(*) FROM products;
+
+- id: T1-007
+  difficulty: single_table_basic
+  tags: [计数]
+  question: 一共有多少个卖家？
+  gold_sql: |
+    SELECT COUNT(*) FROM sellers;
+
+- id: T1-008
+  difficulty: single_table_basic
+  tags: [去重]
+  question: 客户分布在多少个不同的城市？
+  gold_sql: |
+    SELECT COUNT(DISTINCT customer_city) FROM customers;
+
+- id: T1-009
+  difficulty: single_table_basic
+  tags: [过滤]
+  question: 圣保罗州（SP）的客户有多少个？
+  gold_sql: |
+    SELECT COUNT(*) FROM customers WHERE customer_state = 'SP';
+
+- id: T1-010
+  difficulty: single_table_basic
+  tags: [去重, 枚举]
+  question: 订单状态一共有几种？
+  gold_sql: |
+    SELECT COUNT(DISTINCT order_status) FROM orders;
+
+- id: T1-011
+  difficulty: single_table_basic
+  tags: [去重]
+  question: 商品类目一共有多少个？
+  gold_sql: |
+    SELECT COUNT(DISTINCT product_category_name) FROM products;
+
+- id: T1-012
+  difficulty: single_table_basic
+  tags: [排序, 限制]
+  question: 价格最高的 10 条订单明细是哪些？
+  gold_sql: |
+    SELECT order_id, order_item_id, price
+    FROM order_items ORDER BY price DESC LIMIT 10;
+
+- id: T1-013
+  difficulty: single_table_basic
+  tags: [排序, 限制]
+  question: 运费最高的 5 条订单明细是哪几条？
+  gold_sql: |
+    SELECT order_id, order_item_id, freight_value
+    FROM order_items ORDER BY freight_value DESC LIMIT 5;
+
+- id: T1-014
+  difficulty: single_table_basic
+  tags: [过滤]
+  question: 评价分数为 1 分的评价有多少条？
+  gold_sql: |
+    SELECT COUNT(*) FROM order_reviews WHERE review_score = 1;
+
+- id: T1-015
+  difficulty: single_table_basic
+  tags: [过滤, 枚举]
+  question: 使用信用卡支付的记录有多少条？
+  gold_sql: |
+    SELECT COUNT(*) FROM order_payments WHERE payment_type = 'credit_card';
+
+- id: T1-016
+  difficulty: single_table_basic
+  tags: [排序, 限制]
+  question: 分期数最多的那一笔支付分了多少期？
+  gold_sql: |
+    SELECT order_id, payment_installments
+    FROM order_payments ORDER BY payment_installments DESC LIMIT 1;
+
+- id: T1-017
+  difficulty: single_table_basic
+  tags: [过滤, 数值]
+  question: 重量超过 5000 克的商品有多少个？
+  gold_sql: |
+    SELECT COUNT(*) FROM products WHERE product_weight_g > 5000;
+
+- id: T1-018
+  difficulty: single_table_basic
+  tags: [过滤, 数值]
+  question: 订单明细里运费超过 50 的有多少条？
+  gold_sql: |
+    SELECT COUNT(*) FROM order_items WHERE freight_value > 50;
+  notes: 运费字段是 freight_value，与商品价格 price 分开统计。运费的 NULL 判断和数值过滤是两回事，这里考的是数值过滤。
+
+- id: T1-019
+  difficulty: single_table_basic
+  tags: [NULL 判断]
+  question: 还没有送达客户的订单有多少笔？
+  gold_sql: |
+    SELECT COUNT(*) FROM orders WHERE order_delivered_customer_date IS NULL;
+  notes: 包含已取消、处理中等所有未送达状态。
+
+- id: T1-020
+  difficulty: single_table_basic
+  tags: [NULL 判断]
+  question: 带文字标题的评价有多少条？
+  gold_sql: |
+    SELECT COUNT(*) FROM order_reviews WHERE review_comment_title IS NOT NULL;
+
+- id: T1-021
+  difficulty: single_table_basic
+  tags: [过滤]
+  question: 里约热内卢州（RJ）的卖家有多少个？
+  gold_sql: |
+    SELECT COUNT(*) FROM sellers WHERE seller_state = 'RJ';
+
+- id: T1-022
+  difficulty: single_table_basic
+  tags: [过滤, 数值]
+  question: 价格低于 10 元的订单明细有多少条？
+  gold_sql: |
+    SELECT COUNT(*) FROM order_items WHERE price < 10;
+
+- id: T1-023
+  difficulty: single_table_basic
+  tags: [NULL 判断]
+  question: 没有填写类目的商品有多少个？
+  gold_sql: |
+    SELECT COUNT(*) FROM products WHERE product_category_name IS NULL;
+
+- id: T1-024
+  difficulty: single_table_basic
+  tags: [过滤, 枚举]
+  question: 黄金会员有多少人？
+  gold_sql: |
+    SELECT COUNT(*) FROM members WHERE level_id = 3;
+  notes: member_levels 表定义 level_id=3 为 GOLD（黄金会员）。
+
+- id: T1-025
+  difficulty: single_table_basic
+  tags: [过滤, 枚举]
+  question: 状态为冻结的会员有多少人？
+  gold_sql: |
+    SELECT COUNT(*) FROM members WHERE status = 2;
+  notes: members.status 是数字代码：1=正常 2=冻结 3=注销，模型必须知道映射才能写对。
+
+- id: T1-026
+  difficulty: single_table_basic
+  tags: [排序, 限制]
+  question: 积分最高的 10 个会员是谁？
+  gold_sql: |
+    SELECT member_id, points FROM members ORDER BY points DESC LIMIT 10;
+
+- id: T1-027
+  difficulty: single_table_basic
+  tags: [计数]
+  question: 一共有几个仓库？
+  gold_sql: |
+    SELECT COUNT(*) FROM warehouses;
+
+- id: T1-028
+  difficulty: single_table_basic
+  tags: [排序, 限制]
+  question: 容量最大的仓库是哪一个？
+  gold_sql: |
+    SELECT warehouse_id, warehouse_name, capacity
+    FROM warehouses ORDER BY capacity DESC LIMIT 1;
+
+- id: T1-029
+  difficulty: single_table_basic
+  tags: [过滤, 枚举]
+  question: 已经完成退款的退款单有多少笔？
+  gold_sql: |
+    SELECT COUNT(*) FROM refunds WHERE status = 4;
+  notes: refunds.status：1=待审核 2=已通过 3=已拒绝 4=已退款。
+
+- id: T1-030
+  difficulty: single_table_basic
+  tags: [过滤, 枚举]
+  question: 因为质量问题发起的退款有多少笔？
+  gold_sql: |
+    SELECT COUNT(*) FROM refunds WHERE reason_code = 'QUAL';
+  notes: reason_code 是缩写代码，QUAL=质量问题，模型需要靠注释或语义层才能理解。
+
+- id: T1-031
+  difficulty: single_table_basic
+  tags: [计数]
+  question: 一共有多少张优惠券？
+  gold_sql: |
+    SELECT COUNT(*) FROM coupons;
+
+- id: T1-032
+  difficulty: single_table_basic
+  tags: [过滤, 枚举]
+  question: 满减类型的优惠券有多少张？
+  gold_sql: |
+    SELECT COUNT(*) FROM coupons WHERE discount_type = 'fixed';
+
+- id: T1-033
+  difficulty: single_table_basic
+  tags: [过滤, 枚举]
+  question: 紧急优先级的客服工单有多少个？
+  gold_sql: |
+    SELECT COUNT(*) FROM support_tickets WHERE priority = 4;
+  notes: support_tickets.priority：1=低 2=中 3=高 4=紧急。
+
+- id: T1-034
+  difficulty: single_table_basic
+  tags: [计数]
+  question: 客服工单一共有几个分类？
+  gold_sql: |
+    SELECT COUNT(*) FROM ticket_categories;
+
+- id: T1-035
+  difficulty: single_table_basic
+  tags: [过滤, 比较]
+  question: 库存数量低于安全库存的记录有多少条？
+  gold_sql: |
+    SELECT COUNT(*) FROM inventory WHERE quantity < safety_stock;
+
+- id: T1-036
+  difficulty: single_table_basic
+  tags: [过滤, 枚举]
+  question: 出库类型的库存变动记录有多少条？
+  gold_sql: |
+    SELECT COUNT(*) FROM inventory_movements WHERE movement_type = 2;
+  notes: inventory_movements.movement_type：1=入库 2=出库 3=退货入库 4=盘亏。
+
+- id: T1-037
+  difficulty: single_table_basic
+  tags: [去重]
+  question: 搜索日志里一共出现过多少个不同的搜索关键词？
+  gold_sql: |
+    SELECT COUNT(DISTINCT keyword) FROM search_logs;
+
+- id: T1-038
+  difficulty: single_table_basic
+  tags: [去重, 过滤]
+  question: 有多少个州属于「Sudeste」这个大区？
+  gold_sql: |
+    SELECT COUNT(*) FROM regions WHERE macro_region = 'Sudeste';
+  notes: 巴西 27 个州分布在 5 个大区，Sudeste 是其中之一。
+
+- id: T1-039
+  difficulty: single_table_basic
+  tags: [过滤, 枚举]
+  question: 已经结束的营销活动有多少个？
+  gold_sql: |
+    SELECT COUNT(*) FROM campaigns WHERE status = 3;
+  notes: campaigns.status：1=草稿 2=进行中 3=已结束 4=已取消。
+
+- id: T1-040
+  difficulty: single_table_basic
+  tags: [去重]
+  question: 发生过价格调整的商品有多少个？
+  gold_sql: |
+    SELECT COUNT(DISTINCT product_id) FROM product_price_history;

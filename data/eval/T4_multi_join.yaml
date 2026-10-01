@@ -1,0 +1,478 @@
+# 难度层 4：多表 join（45 条，2-3 张表）
+# 覆盖：内连接、外连接、聚合后连接、多跳关联
+#
+# 这一层的坑：
+#   1. join 顺序和类型选错会导致行数放大（geolocation 表一个邮编对应多个坐标点）
+#   2. 聚合后再 join 与先 join 再聚合，结果不同
+#   3. LEFT JOIN 与 INNER JOIN 的选择会直接改变结果
+
+- id: T4-001
+  difficulty: multi_join
+  tags: [join, 计数]
+  question: 每个客户的订单数量是多少？取订单最多的 10 个客户。
+  gold_sql: |
+    SELECT c.customer_unique_id, COUNT(*) AS cnt
+    FROM orders o JOIN customers c ON c.customer_id = o.customer_id
+    GROUP BY 1 ORDER BY cnt DESC LIMIT 10;
+
+- id: T4-002
+  difficulty: multi_join
+  tags: [join, 分组, 求和]
+  question: 每个州的商品销售额是多少？
+  gold_sql: |
+    SELECT c.customer_state, ROUND(SUM(oi.price), 2) AS sales
+    FROM orders o
+    JOIN customers c ON c.customer_id = o.customer_id
+    JOIN order_items oi ON oi.order_id = o.order_id
+    GROUP BY 1 ORDER BY sales DESC;
+  notes: 销售额按客户所在州统计，取 order_items.price 之和。
+
+- id: T4-003
+  difficulty: multi_join
+  tags: [join, 分组]
+  question: 每个商品类目的订单数量是多少？
+  gold_sql: |
+    SELECT p.product_category_name, COUNT(DISTINCT oi.order_id) AS order_cnt
+    FROM order_items oi JOIN products p ON p.product_id = oi.product_id
+    WHERE p.product_category_name IS NOT NULL
+    GROUP BY 1 ORDER BY order_cnt DESC;
+  notes: 用 COUNT(DISTINCT order_id) 而不是 COUNT(*)，因为一个订单可能包含同类目多个商品。
+
+- id: T4-004
+  difficulty: multi_join
+  tags: [join, 翻译表]
+  question: 用英文类目名统计，哪个类目的销售额最高？
+  gold_sql: |
+    SELECT t.product_category_name_english, ROUND(SUM(oi.price), 2) AS sales
+    FROM order_items oi
+    JOIN products p ON p.product_id = oi.product_id
+    JOIN product_category_translation t ON t.product_category_name = p.product_category_name
+    GROUP BY 1 ORDER BY sales DESC LIMIT 1;
+  notes: 类目名是葡萄牙语，必须 join 翻译表才能用英文表达。
+
+- id: T4-005
+  difficulty: multi_join
+  tags: [join, 分组, 求和]
+  question: 每个卖家的订单数量是多少？取前 10 名。
+  gold_sql: |
+    SELECT oi.seller_id, COUNT(DISTINCT oi.order_id) AS order_cnt
+    FROM order_items oi GROUP BY 1 ORDER BY order_cnt DESC LIMIT 10;
+
+- id: T4-006
+  difficulty: multi_join
+  tags: [join, 分组]
+  question: 每个卖家所在的州和该州卖家的总销售额是多少？
+  gold_sql: |
+    SELECT s.seller_state, ROUND(SUM(oi.price), 2) AS sales
+    FROM order_items oi JOIN sellers s ON s.seller_id = oi.seller_id
+    GROUP BY 1 ORDER BY sales DESC;
+
+- id: T4-007
+  difficulty: multi_join
+  tags: [join, 外连接, 计数]
+  question: 有多少个商品从来没有发生过价格变动？
+  gold_sql: |
+    SELECT COUNT(*)
+    FROM products p
+    LEFT JOIN product_price_history h ON h.product_id = p.product_id
+    WHERE h.product_id IS NULL;
+  notes: 必须用 LEFT JOIN + IS NULL 找「没有关联记录」的商品。若写成 INNER JOIN，结果会变成「有过价格变动的商品数」，含义完全相反。
+
+- id: T4-008
+  difficulty: multi_join
+  tags: [join, 外连接, 计数]
+  question: 有多少个会员从来没有被打过任何标签？
+  gold_sql: |
+    SELECT COUNT(*)
+    FROM members m
+    LEFT JOIN user_tag_map t ON t.member_id = m.member_id
+    WHERE t.member_id IS NULL;
+  notes: 用 LEFT JOIN + IS NULL 找未打标签的会员。注意 user_tag_map 是「一个会员多行」的表，直接 COUNT(*) 会重复计数，必须靠 IS NULL 过滤后每行只出现一次。
+
+- id: T4-009
+  difficulty: multi_join
+  tags: [join, 分组, 平均]
+  question: 每个支付方式的平均支付金额是多少？
+  gold_sql: |
+    SELECT payment_type, ROUND(AVG(payment_value), 2) AS avg_value
+    FROM order_payments WHERE payment_type IS NOT NULL
+    GROUP BY 1 ORDER BY avg_value DESC;
+
+- id: T4-010
+  difficulty: multi_join
+  tags: [join, 分组]
+  question: 每个订单状态的商品销售总额是多少？
+  gold_sql: |
+    SELECT o.order_status, ROUND(SUM(oi.price), 2) AS sales
+    FROM orders o JOIN order_items oi ON oi.order_id = o.order_id
+    GROUP BY 1 ORDER BY sales DESC;
+
+- id: T4-011
+  difficulty: multi_join
+  tags: [join, 分组, 平均]
+  question: 每个订单状态的平均评价分是多少？
+  gold_sql: |
+    SELECT o.order_status, ROUND(AVG(r.review_score), 2) AS avg_score
+    FROM orders o JOIN order_reviews r ON r.order_id = o.order_id
+    GROUP BY 1 ORDER BY avg_score DESC;
+
+- id: T4-012
+  difficulty: multi_join
+  tags: [join, 分组]
+  question: 每个州的评价平均分是多少？取评价数最多的 10 个州。
+  gold_sql: |
+    SELECT c.customer_state, ROUND(AVG(r.review_score), 2) AS avg_score, COUNT(*) AS cnt
+    FROM order_reviews r
+    JOIN orders o ON o.order_id = r.order_id
+    JOIN customers c ON c.customer_id = o.customer_id
+    GROUP BY 1 ORDER BY cnt DESC LIMIT 10;
+
+- id: T4-013
+  difficulty: multi_join
+  tags: [join, 过滤]
+  question: 差评（1 分或 2 分）的订单里，各州分别有多少笔？
+  gold_sql: |
+    SELECT c.customer_state, COUNT(*) AS cnt
+    FROM order_reviews r
+    JOIN orders o ON o.order_id = r.order_id
+    JOIN customers c ON c.customer_id = o.customer_id
+    WHERE r.review_score <= 2
+    GROUP BY 1 ORDER BY cnt DESC;
+
+- id: T4-014
+  difficulty: multi_join
+  tags: [join, 分组]
+  question: 每种支付方式的评价平均分是多少？
+  gold_sql: |
+    SELECT p.payment_type, ROUND(AVG(r.review_score), 2) AS avg_score
+    FROM order_payments p
+    JOIN order_reviews r ON r.order_id = p.order_id
+    GROUP BY 1 ORDER BY avg_score DESC;
+
+- id: T4-015
+  difficulty: multi_join
+  tags: [join, 分组, 求和]
+  question: 每个大区的订单数量是多少？
+  gold_sql: |
+    SELECT r.macro_region, COUNT(*) AS cnt
+    FROM orders o
+    JOIN customers c ON c.customer_id = o.customer_id
+    JOIN regions r ON r.region_code = c.customer_state
+    GROUP BY 1 ORDER BY cnt DESC;
+  notes: 需要三跳：orders -> customers -> regions，靠 state 代码关联。
+
+- id: T4-016
+  difficulty: multi_join
+  tags: [join, 分组, 求和]
+  question: 每个大区的商品销售额是多少？
+  gold_sql: |
+    SELECT r.macro_region, ROUND(SUM(oi.price), 2) AS sales
+    FROM orders o
+    JOIN customers c ON c.customer_id = o.customer_id
+    JOIN regions r ON r.region_code = c.customer_state
+    JOIN order_items oi ON oi.order_id = o.order_id
+    GROUP BY 1 ORDER BY sales DESC;
+
+- id: T4-017
+  difficulty: multi_join
+  tags: [join, 分组]
+  question: 每个会员等级对应的订单数量是多少？
+  gold_sql: |
+    SELECT m.level_id, COUNT(*) AS cnt
+    FROM orders o
+    JOIN customers c ON c.customer_id = o.customer_id
+    JOIN members m ON m.customer_unique_id = c.customer_unique_id
+    GROUP BY 1 ORDER BY 1;
+  notes: 关键：orders 连 customers 用 customer_id，customers 连 members 必须用 customer_unique_id，用错字段会导致 join 不中。
+
+- id: T4-018
+  difficulty: multi_join
+  tags: [join, 分组, 求和]
+  question: 每个会员等级的用户消费总额是多少？
+  gold_sql: |
+    SELECT m.level_id, ROUND(SUM(oi.price), 2) AS sales
+    FROM orders o
+    JOIN customers c ON c.customer_id = o.customer_id
+    JOIN members m ON m.customer_unique_id = c.customer_unique_id
+    JOIN order_items oi ON oi.order_id = o.order_id
+    GROUP BY 1 ORDER BY 1;
+
+- id: T4-019
+  difficulty: multi_join
+  tags: [join, 分组]
+  question: 每种用户标签下各有多少会员？
+  gold_sql: |
+    SELECT t.tag_name, COUNT(DISTINCT m.member_id) AS cnt
+    FROM user_tag_map m JOIN user_tags t ON t.tag_id = m.tag_id
+    GROUP BY 1 ORDER BY cnt DESC;
+
+- id: T4-020
+  difficulty: multi_join
+  tags: [join, 分组]
+  question: 打了"高价值用户"标签的会员一共下了多少单？
+  gold_sql: |
+    SELECT COUNT(DISTINCT o.order_id) AS cnt
+    FROM user_tag_map tm
+    JOIN user_tags t ON t.tag_id = tm.tag_id
+    JOIN members m ON m.member_id = tm.member_id
+    JOIN customers c ON c.customer_unique_id = m.customer_unique_id
+    JOIN orders o ON o.customer_id = c.customer_id
+    WHERE t.tag_code = 'HIGH_VALUE';
+
+- id: T4-021
+  difficulty: multi_join
+  tags: [join, 分组]
+  question: 每个活动带来的用券次数是多少？
+  gold_sql: |
+    SELECT c.campaign_name, COUNT(*) AS cnt
+    FROM coupon_usages cu
+    JOIN coupons cp ON cp.coupon_id = cu.coupon_id
+    JOIN campaigns c ON c.campaign_id = cp.campaign_id
+    GROUP BY 1 ORDER BY cnt DESC;
+
+- id: T4-022
+  difficulty: multi_join
+  tags: [join, 求和]
+  question: 通过优惠券一共优惠了多少钱？
+  gold_sql: |
+    SELECT ROUND(SUM(discount_amount), 2) FROM coupon_usages;
+
+- id: T4-023
+  difficulty: multi_join
+  tags: [join, 分组, 求和]
+  question: 每种折扣类型的优惠券分别带来了多少优惠金额？
+  gold_sql: |
+    SELECT c.discount_type, ROUND(SUM(cu.discount_amount), 2) AS total
+    FROM coupon_usages cu JOIN coupons c ON c.coupon_id = cu.coupon_id
+    GROUP BY 1 ORDER BY total DESC;
+
+- id: T4-024
+  difficulty: multi_join
+  tags: [join, 分组]
+  question: 每个仓库负责了多少个发货单？
+  gold_sql: |
+    SELECT w.warehouse_name, COUNT(*) AS cnt
+    FROM shipments s JOIN warehouses w ON w.warehouse_id = s.warehouse_id
+    GROUP BY 1 ORDER BY cnt DESC;
+
+- id: T4-025
+  difficulty: multi_join
+  tags: [join, 分组]
+  question: 每个大区的仓库容量合计是多少？
+  gold_sql: |
+    SELECT r.macro_region, SUM(w.capacity) AS total_capacity
+    FROM warehouses w JOIN regions r ON r.region_code = w.region_code
+    GROUP BY 1 ORDER BY total_capacity DESC;
+
+- id: T4-026
+  difficulty: multi_join
+  tags: [join, 分组, 平均]
+  question: 每家承运商的平均配送时长是多少天？
+  gold_sql: |
+    SELECT carrier,
+           ROUND(AVG(EXTRACT(EPOCH FROM (delivered_at - shipped_at)) / 86400), 2) AS avg_days
+    FROM shipments
+    WHERE delivered_at IS NOT NULL AND shipped_at IS NOT NULL
+    GROUP BY 1 ORDER BY avg_days;
+
+- id: T4-027
+  difficulty: multi_join
+  tags: [join, 分组]
+  question: 每个仓库的库存总量和平均库存量分别是多少？
+  gold_sql: |
+    SELECT w.warehouse_name, SUM(i.quantity) AS total_qty, ROUND(AVG(i.quantity), 2) AS avg_qty
+    FROM inventory i JOIN warehouses w ON w.warehouse_id = i.warehouse_id
+    GROUP BY 1 ORDER BY total_qty DESC;
+
+- id: T4-028
+  difficulty: multi_join
+  tags: [join, 分组]
+  question: 每个工单分类的平均处理时长是多少小时？
+  gold_sql: |
+    SELECT tc.category_name,
+           ROUND(AVG(EXTRACT(EPOCH FROM (st.resolved_at - st.created_at)) / 3600), 2) AS avg_hours
+    FROM support_tickets st
+    JOIN ticket_categories tc ON tc.category_id = st.category_id
+    WHERE st.resolved_at IS NOT NULL
+    GROUP BY 1 ORDER BY avg_hours DESC;
+
+- id: T4-029
+  difficulty: multi_join
+  tags: [join, 分组]
+  question: 每个州的客服工单数量是多少？
+  gold_sql: |
+    SELECT c.customer_state, COUNT(*) AS cnt
+    FROM support_tickets st
+    JOIN orders o ON o.order_id = st.order_id
+    JOIN customers c ON c.customer_id = o.customer_id
+    GROUP BY 1 ORDER BY cnt DESC;
+
+- id: T4-030
+  difficulty: multi_join
+  tags: [join, 分组]
+  question: 每个卖家的结算总额是多少？取前 10 名。
+  gold_sql: |
+    SELECT seller_id, ROUND(SUM(total_amount), 2) AS total
+    FROM settlements GROUP BY 1 ORDER BY total DESC LIMIT 10;
+
+- id: T4-031
+  difficulty: multi_join
+  tags: [join, 分组, 求和]
+  question: 每个州的卖家结算净额合计是多少？
+  gold_sql: |
+    SELECT s.seller_state, ROUND(SUM(st.net_amount), 2) AS total
+    FROM settlements st JOIN sellers s ON s.seller_id = st.seller_id
+    GROUP BY 1 ORDER BY total DESC;
+
+- id: T4-032
+  difficulty: multi_join
+  tags: [join, 分组]
+  question: 每个类目下发生过多少次退款？
+  gold_sql: |
+    SELECT p.product_category_name, COUNT(DISTINCT rf.refund_id) AS cnt
+    FROM refunds rf
+    JOIN order_items oi ON oi.order_id = rf.order_id
+    JOIN products p ON p.product_id = oi.product_id
+    WHERE p.product_category_name IS NOT NULL
+    GROUP BY 1 ORDER BY cnt DESC;
+
+- id: T4-033
+  difficulty: multi_join
+  tags: [join, 分组, 求和]
+  question: 每个退款原因的退款金额合计是多少？
+  gold_sql: |
+    SELECT reason_code, ROUND(SUM(refund_amount), 2) AS total
+    FROM refunds GROUP BY 1 ORDER BY total DESC;
+
+- id: T4-034
+  difficulty: multi_join
+  tags: [join, 分组]
+  question: 有过退款的订单占比是多少？
+  gold_sql: |
+    SELECT ROUND(
+      (SELECT COUNT(DISTINCT order_id) FROM refunds)::NUMERIC
+      / (SELECT COUNT(*) FROM orders), 4) AS refund_rate;
+
+- id: T4-035
+  difficulty: multi_join
+  tags: [join, 分组, 排序]
+  question: 客单价最高的 10 个客户是谁？客单价按订单平均金额算。
+  gold_sql: |
+    SELECT c.customer_unique_id,
+           ROUND(SUM(oi.price) / COUNT(DISTINCT o.order_id), 2) AS avg_order_value
+    FROM orders o
+    JOIN customers c ON c.customer_id = o.customer_id
+    JOIN order_items oi ON oi.order_id = o.order_id
+    GROUP BY 1
+    HAVING COUNT(DISTINCT o.order_id) >= 2
+    ORDER BY avg_order_value DESC LIMIT 10;
+  notes: 加了 HAVING 过滤只买过一单的客户，否则客单价会等于订单金额，没有统计意义。
+
+- id: T4-036
+  difficulty: multi_join
+  tags: [join, 分组]
+  question: 每个州的客户平均消费了多少？
+  gold_sql: |
+    SELECT c.customer_state,
+           ROUND(SUM(oi.price) / COUNT(DISTINCT c.customer_unique_id), 2) AS avg_per_customer
+    FROM orders o
+    JOIN customers c ON c.customer_id = o.customer_id
+    JOIN order_items oi ON oi.order_id = o.order_id
+    GROUP BY 1 ORDER BY avg_per_customer DESC;
+
+- id: T4-037
+  difficulty: multi_join
+  tags: [join, 分组]
+  question: 每个商品的图片数量和它的销量分别是多少？取销量前 10。
+  gold_sql: |
+    SELECT p.product_id, p.product_photos_qty, COUNT(*) AS sold
+    FROM order_items oi JOIN products p ON p.product_id = oi.product_id
+    GROUP BY 1, 2 ORDER BY sold DESC LIMIT 10;
+
+- id: T4-038
+  difficulty: multi_join
+  tags: [join, 分组]
+  question: 每个会员等级里有多少人打过"流失风险用户"标签？
+  gold_sql: |
+    SELECT m.level_id, COUNT(DISTINCT m.member_id) AS cnt
+    FROM members m
+    JOIN user_tag_map tm ON tm.member_id = m.member_id
+    JOIN user_tags t ON t.tag_id = tm.tag_id
+    WHERE t.tag_code = 'CHURN_RISK'
+    GROUP BY 1 ORDER BY 1;
+
+- id: T4-039
+  difficulty: multi_join
+  tags: [join, 分组]
+  question: 搜索后有点击的搜索记录占多少比例？
+  gold_sql: |
+    SELECT ROUND(
+      COUNT(*) FILTER (WHERE clicked_product_id IS NOT NULL)::NUMERIC / COUNT(*), 4) AS ctr
+    FROM search_logs;
+
+- id: T4-040
+  difficulty: multi_join
+  tags: [join, 外连接, 计数]
+  question: 有多少个商品从来没有进过任何仓库的库存表？
+  gold_sql: |
+    SELECT COUNT(*)
+    FROM products p
+    LEFT JOIN inventory i ON i.product_id = p.product_id
+    WHERE i.product_id IS NULL;
+  notes: 又一道反连接题，但关联表换成了库存表。原题（搜索点击但未下单的商品）在这份数据里答案恒为 0，已替换。
+
+- id: T4-041
+  difficulty: multi_join
+  tags: [join, 分组, 求和]
+  question: 每个品牌的商品有多少个？品牌的商品销售总额是多少？
+  gold_sql: |
+    SELECT b.brand_name, COUNT(DISTINCT oi.product_id) AS product_cnt,
+           ROUND(SUM(oi.price), 2) AS sales
+    FROM order_items oi
+    JOIN product_brand_map bm ON bm.product_id = oi.product_id
+    JOIN brands b ON b.brand_id = bm.brand_id
+    GROUP BY 1 ORDER BY sales DESC LIMIT 10;
+  notes: products 到 brands 没有直接外键，必须经过 product_brand_map 两跳。此题考察模型能否找到间接关联路径。
+
+- id: T4-042
+  difficulty: multi_join
+  tags: [join, 分组]
+  question: 发生过价格调整的商品里，有多少个商品的价格是上调的？
+  gold_sql: |
+    SELECT COUNT(DISTINCT product_id) FROM product_price_history WHERE new_price > old_price;
+
+- id: T4-043
+  difficulty: multi_join
+  tags: [join, 分组]
+  question: 每个发货状态的发货单平均有几条物流轨迹记录？
+  gold_sql: |
+    SELECT s.status, ROUND(AVG(t.cnt), 2) AS avg_events
+    FROM shipments s
+    JOIN (SELECT shipment_id, COUNT(*) AS cnt FROM shipment_tracking GROUP BY 1) t
+      ON t.shipment_id = s.shipment_id
+    GROUP BY 1 ORDER BY 1;
+
+- id: T4-044
+  difficulty: multi_join
+  tags: [join, 分组]
+  question: 每个大区有多少个客户？平均每人下多少单？
+  gold_sql: |
+    SELECT r.macro_region,
+           COUNT(DISTINCT c.customer_unique_id) AS customers,
+           ROUND(COUNT(o.order_id)::NUMERIC / COUNT(DISTINCT c.customer_unique_id), 2) AS orders_per_customer
+    FROM customers c
+    JOIN regions r ON r.region_code = c.customer_state
+    LEFT JOIN orders o ON o.customer_id = c.customer_id
+    GROUP BY 1 ORDER BY customers DESC;
+
+- id: T4-045
+  difficulty: multi_join
+  tags: [join, 分组]
+  question: 每个类目的平均商品重量是多少？取商品数最多的 10 个类目。
+  gold_sql: |
+    SELECT p.product_category_name,
+           COUNT(*) AS product_cnt,
+           ROUND(AVG(p.product_weight_g), 2) AS avg_weight
+    FROM products p
+    WHERE p.product_category_name IS NOT NULL AND p.product_weight_g IS NOT NULL
+    GROUP BY 1 ORDER BY product_cnt DESC LIMIT 10;

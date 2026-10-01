@@ -1,0 +1,318 @@
+# 难度层 3：时间窗口（30 条）
+# 覆盖：按月/季/年聚合、同比、环比、近 N 天、日期差
+# 数据范围：2016-09-04 至 2018-10-17，写 SQL 时不能超出这个区间
+#
+# 这一层的坑：
+#   1. 中文的"上个月""近 30 天"必须锚定到数据的最大日期，而不是 current_date
+#      （否则会查到空结果，因为数据是 2018 年的）
+#   2. 环比需要窗口函数 LAG，对模型是明显的能力考验
+
+- id: T3-001
+  difficulty: time_window
+  tags: [时间, 按月]
+  question: 每个月的订单数量是多少？按月份排序。
+  gold_sql: |
+    SELECT TO_CHAR(DATE_TRUNC('month', order_purchase_timestamp), 'YYYY-MM') AS month,
+           COUNT(*) AS cnt
+    FROM orders GROUP BY 1 ORDER BY 1;
+
+- id: T3-002
+  difficulty: time_window
+  tags: [时间, 按年]
+  question: 2017 年和 2018 年各有多少笔订单？
+  gold_sql: |
+    SELECT EXTRACT(YEAR FROM order_purchase_timestamp)::INT AS yr, COUNT(*) AS cnt
+    FROM orders
+    WHERE EXTRACT(YEAR FROM order_purchase_timestamp) IN (2017, 2018)
+    GROUP BY 1 ORDER BY 1;
+
+- id: T3-003
+  difficulty: time_window
+  tags: [时间, 按季]
+  question: 每个季度有多少笔订单？
+  gold_sql: |
+    SELECT TO_CHAR(order_purchase_timestamp, 'YYYY-"Q"Q') AS quarter, COUNT(*) AS cnt
+    FROM orders GROUP BY 1 ORDER BY 1;
+
+- id: T3-004
+  difficulty: time_window
+  tags: [时间, 过滤]
+  question: 2017 年 11 月的订单有多少笔？
+  gold_sql: |
+    SELECT COUNT(*) FROM orders
+    WHERE order_purchase_timestamp >= '2017-11-01'
+      AND order_purchase_timestamp < '2017-12-01';
+
+- id: T3-005
+  difficulty: time_window
+  tags: [时间, 按周]
+  question: 订单量最多的那一周是哪一周？有多少笔？
+  gold_sql: |
+    SELECT DATE_TRUNC('week', order_purchase_timestamp)::DATE AS week_start, COUNT(*) AS cnt
+    FROM orders GROUP BY 1 ORDER BY cnt DESC LIMIT 1;
+
+- id: T3-006
+  difficulty: time_window
+  tags: [时间, 按月, 求和]
+  question: 每个月的商品销售额是多少？
+  gold_sql: |
+    SELECT TO_CHAR(DATE_TRUNC('month', o.order_purchase_timestamp), 'YYYY-MM') AS month,
+           ROUND(SUM(oi.price), 2) AS sales
+    FROM orders o JOIN order_items oi ON oi.order_id = o.order_id
+    GROUP BY 1 ORDER BY 1;
+  notes: 销售额口径 = order_items.price 之和，不含运费。
+
+- id: T3-007
+  difficulty: time_window
+  tags: [时间, 按月, 求和]
+  question: 每个月的运费总额是多少？
+  gold_sql: |
+    SELECT TO_CHAR(DATE_TRUNC('month', o.order_purchase_timestamp), 'YYYY-MM') AS month,
+           ROUND(SUM(oi.freight_value), 2) AS freight
+    FROM orders o JOIN order_items oi ON oi.order_id = o.order_id
+    GROUP BY 1 ORDER BY 1;
+
+- id: T3-008
+  difficulty: time_window
+  tags: [时间, 平均]
+  question: 每个月的平均订单金额（按订单明细商品金额计）是多少？
+  gold_sql: |
+    SELECT TO_CHAR(DATE_TRUNC('month', o.order_purchase_timestamp), 'YYYY-MM') AS month,
+           ROUND(SUM(oi.price) / COUNT(DISTINCT o.order_id), 2) AS avg_order_value
+    FROM orders o JOIN order_items oi ON oi.order_id = o.order_id
+    GROUP BY 1 ORDER BY 1;
+  notes: 客单价 = 商品总额 / 去重订单数。分母用 COUNT(DISTINCT order_id) 而非 COUNT(*)，因为一个订单有多条明细。
+
+- id: T3-009
+  difficulty: time_window
+  tags: [时间, 按月, 过滤]
+  question: 2018 年每个月的订单量是多少？
+  gold_sql: |
+    SELECT TO_CHAR(DATE_TRUNC('month', order_purchase_timestamp), 'YYYY-MM') AS month,
+           COUNT(*) AS cnt
+    FROM orders
+    WHERE order_purchase_timestamp >= '2018-01-01'
+      AND order_purchase_timestamp < '2019-01-01'
+    GROUP BY 1 ORDER BY 1;
+
+- id: T3-010
+  difficulty: time_window
+  tags: [时间, 环比]
+  question: 每个月的订单量，以及相比上个月的变化量是多少？
+  gold_sql: |
+    WITH monthly AS (
+      SELECT DATE_TRUNC('month', order_purchase_timestamp) AS m, COUNT(*) AS cnt
+      FROM orders GROUP BY 1
+    )
+    SELECT TO_CHAR(m, 'YYYY-MM') AS month,
+           cnt,
+           cnt - LAG(cnt) OVER (ORDER BY m) AS mom_change
+    FROM monthly ORDER BY m;
+  notes: 环比用 LAG 窗口函数，是这一层的难点。
+
+- id: T3-011
+  difficulty: time_window
+  tags: [时间, 环比, 比率]
+  question: 每个月的订单量环比增长率是多少？
+  gold_sql: |
+    WITH monthly AS (
+      SELECT DATE_TRUNC('month', order_purchase_timestamp) AS m, COUNT(*) AS cnt
+      FROM orders GROUP BY 1
+    )
+    SELECT TO_CHAR(m, 'YYYY-MM') AS month,
+           cnt,
+           ROUND((cnt - LAG(cnt) OVER (ORDER BY m))::NUMERIC
+                 / NULLIF(LAG(cnt) OVER (ORDER BY m), 0), 4) AS mom_rate
+    FROM monthly ORDER BY m;
+  notes: 必须用 NULLIF 防除零，第一个月没有上月数据，结果应为 NULL。
+
+- id: T3-012
+  difficulty: time_window
+  tags: [时间, 同比]
+  question: 2018 年每个月的订单量相比 2017 年同期增长了多少？
+  gold_sql: |
+    WITH monthly AS (
+      SELECT EXTRACT(YEAR FROM order_purchase_timestamp)::INT AS yr,
+             EXTRACT(MONTH FROM order_purchase_timestamp)::INT AS mo,
+             COUNT(*) AS cnt
+      FROM orders
+      WHERE EXTRACT(YEAR FROM order_purchase_timestamp) IN (2017, 2018)
+      GROUP BY 1, 2
+    )
+    SELECT cur.mo AS month, prev.cnt AS y2017, cur.cnt AS y2018,
+           cur.cnt - prev.cnt AS yoy_change
+    FROM monthly cur
+    JOIN monthly prev ON prev.mo = cur.mo AND prev.yr = 2017
+    WHERE cur.yr = 2018
+    ORDER BY cur.mo;
+
+- id: T3-013
+  difficulty: time_window
+  tags: [时间, 近 N 天]
+  question: 数据里最后 90 天的订单有多少笔？
+  gold_sql: |
+    SELECT COUNT(*) FROM orders
+    WHERE order_purchase_timestamp > (SELECT MAX(order_purchase_timestamp) FROM orders) - INTERVAL '90 days';
+  notes: 锚定数据集最大日期而非 current_date。用 current_date 会返回 0，因为数据止于 2018 年 10 月。注意最后 30 天只有 8 笔订单且全部是 canceled，窗口取太短会失去区分度。
+
+- id: T3-014
+  difficulty: time_window
+  tags: [时间, 近 N 天, 分组]
+  question: 数据里最后 90 天，每周的商品销售额分别是多少？
+  gold_sql: |
+    WITH anchor AS (SELECT MAX(order_purchase_timestamp) AS mx FROM orders)
+    SELECT TO_CHAR(DATE_TRUNC('week', o.order_purchase_timestamp), 'YYYY-MM-DD') AS week_start,
+           ROUND(SUM(oi.price), 2) AS sales
+    FROM orders o
+    JOIN order_items oi ON oi.order_id = o.order_id
+    CROSS JOIN anchor a
+    WHERE o.order_purchase_timestamp > a.mx - INTERVAL '90 days'
+      AND o.order_purchase_timestamp <= a.mx
+    GROUP BY 1 ORDER BY 1;
+  notes: 最后 7 天只有 8 笔订单且全是 canceled，没有商品明细，答案恒为空。改成 90 天窗口并按周分组后才有区分度。锚点必须是数据集最大下单时间，不能用 current_date。
+
+- id: T3-015
+  difficulty: time_window
+  tags: [时间, 按小时]
+  question: 一天中哪个小时的订单最多？
+  gold_sql: |
+    SELECT EXTRACT(HOUR FROM order_purchase_timestamp)::INT AS hr, COUNT(*) AS cnt
+    FROM orders GROUP BY 1 ORDER BY cnt DESC LIMIT 1;
+
+- id: T3-016
+  difficulty: time_window
+  tags: [时间, 按星期]
+  question: 一周中星期几的订单量最多？
+  gold_sql: |
+    SELECT EXTRACT(DOW FROM order_purchase_timestamp)::INT AS dow, COUNT(*) AS cnt
+    FROM orders GROUP BY 1 ORDER BY cnt DESC LIMIT 1;
+  notes: PostgreSQL 的 DOW：0=周日 1=周一 ... 6=周六。
+
+- id: T3-017
+  difficulty: time_window
+  tags: [时间, 日期差]
+  question: 订单从下单到送达平均需要多少天？
+  gold_sql: |
+    SELECT ROUND(AVG(EXTRACT(EPOCH FROM (order_delivered_customer_date - order_purchase_timestamp)) / 86400), 2)
+    FROM orders WHERE order_delivered_customer_date IS NOT NULL;
+
+- id: T3-018
+  difficulty: time_window
+  tags: [时间, 日期差, 分组]
+  question: 每个州的平均配送时长是多少天？
+  gold_sql: |
+    SELECT c.customer_state,
+           ROUND(AVG(EXTRACT(EPOCH FROM (o.order_delivered_customer_date - o.order_purchase_timestamp)) / 86400), 2) AS avg_days
+    FROM orders o
+    JOIN customers c ON c.customer_id = o.customer_id
+    WHERE o.order_delivered_customer_date IS NOT NULL
+    GROUP BY 1 ORDER BY avg_days DESC;
+
+- id: T3-019
+  difficulty: time_window
+  tags: [时间, 日期差]
+  question: 实际送达时间晚于预计送达时间的订单有多少笔？
+  gold_sql: |
+    SELECT COUNT(*) FROM orders
+    WHERE order_delivered_customer_date > order_estimated_delivery_date;
+
+- id: T3-020
+  difficulty: time_window
+  tags: [时间, 日期差, 比率]
+  question: 超时送达的订单占已送达订单的比例是多少？
+  gold_sql: |
+    SELECT ROUND(
+      COUNT(*) FILTER (WHERE order_delivered_customer_date > order_estimated_delivery_date)::NUMERIC
+      / NULLIF(COUNT(*) FILTER (WHERE order_delivered_customer_date IS NOT NULL), 0), 4) AS late_rate
+    FROM orders;
+
+- id: T3-021
+  difficulty: time_window
+  tags: [时间, 按月, 计数]
+  question: 每个月的退款单数量是多少？
+  gold_sql: |
+    SELECT TO_CHAR(DATE_TRUNC('month', requested_at), 'YYYY-MM') AS month, COUNT(*) AS cnt
+    FROM refunds GROUP BY 1 ORDER BY 1;
+
+- id: T3-022
+  difficulty: time_window
+  tags: [时间, 按月, 求和]
+  question: 每个月的退款金额合计是多少？
+  gold_sql: |
+    SELECT TO_CHAR(DATE_TRUNC('month', requested_at), 'YYYY-MM') AS month,
+           ROUND(SUM(refund_amount), 2) AS total
+    FROM refunds GROUP BY 1 ORDER BY 1;
+
+- id: T3-023
+  difficulty: time_window
+  tags: [时间, 按月, 计数]
+  question: 每个月新增多少张客服工单？
+  gold_sql: |
+    SELECT TO_CHAR(DATE_TRUNC('month', created_at), 'YYYY-MM') AS month, COUNT(*) AS cnt
+    FROM support_tickets GROUP BY 1 ORDER BY 1;
+
+- id: T3-024
+  difficulty: time_window
+  tags: [时间, 日期差]
+  question: 客服工单从创建到解决平均需要多少小时？
+  gold_sql: |
+    SELECT ROUND(AVG(EXTRACT(EPOCH FROM (resolved_at - created_at)) / 3600), 2)
+    FROM support_tickets WHERE resolved_at IS NOT NULL;
+
+- id: T3-025
+  difficulty: time_window
+  tags: [时间, 过滤, 分组]
+  question: 2018 年上半年（1 到 6 月）每个州的订单量是多少？
+  gold_sql: |
+    SELECT c.customer_state, COUNT(*) AS cnt
+    FROM orders o JOIN customers c ON c.customer_id = o.customer_id
+    WHERE o.order_purchase_timestamp >= '2018-01-01'
+      AND o.order_purchase_timestamp < '2018-07-01'
+    GROUP BY 1 ORDER BY cnt DESC;
+
+- id: T3-026
+  difficulty: time_window
+  tags: [时间, 按月, 分组]
+  question: 每个月的评价平均分是多少？
+  gold_sql: |
+    SELECT TO_CHAR(DATE_TRUNC('month', review_creation_date), 'YYYY-MM') AS month,
+           ROUND(AVG(review_score), 2) AS avg_score
+    FROM order_reviews GROUP BY 1 ORDER BY 1;
+
+- id: T3-027
+  difficulty: time_window
+  tags: [时间, 按月, 计数]
+  question: 每个月的会员注册数量是多少？
+  gold_sql: |
+    SELECT TO_CHAR(DATE_TRUNC('month', register_date), 'YYYY-MM') AS month, COUNT(*) AS cnt
+    FROM members WHERE register_date IS NOT NULL GROUP BY 1 ORDER BY 1;
+
+- id: T3-028
+  difficulty: time_window
+  tags: [时间, 活跃]
+  question: 最近 30 天内有登录记录的会员有多少人？
+  gold_sql: |
+    SELECT COUNT(*) FROM members
+    WHERE last_login_date > (SELECT MAX(last_login_date) FROM members) - 30;
+  notes: 同样是相对数据集最大日期，不是 current_date。
+
+- id: T3-029
+  difficulty: time_window
+  tags: [时间, 按月, 求和]
+  question: 每个月的佣金收入是多少？
+  gold_sql: |
+    SELECT TO_CHAR(DATE_TRUNC('month', period_start), 'YYYY-MM') AS month,
+           ROUND(SUM(commission), 2) AS total
+    FROM settlements GROUP BY 1 ORDER BY 1;
+
+- id: T3-030
+  difficulty: time_window
+  tags: [时间, 分组, 季度]
+  question: 每个季度的有效订单量分别是多少？按季度排序。
+  gold_sql: |
+    SELECT TO_CHAR(DATE_TRUNC('quarter', order_purchase_timestamp), 'YYYY-"Q"Q') AS quarter,
+           COUNT(*) AS cnt
+    FROM orders
+    WHERE order_status NOT IN ('canceled', 'unavailable')
+    GROUP BY 1 ORDER BY 1;
+  notes: 与 T3-001（按月）区别在于时间粒度是季度，且这里额外排除了取消和不可用订单。
