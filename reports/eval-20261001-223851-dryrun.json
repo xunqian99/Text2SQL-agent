@@ -1,0 +1,201 @@
+{
+  "meta" : {
+    "timestamp" : "2026-10-01T22:38:51.2723982",
+    "promptVersion" : "p1-full-schema-v1",
+    "model" : "deepseek-chat",
+    "baseUrl" : "https://api.deepseek.com",
+    "dryRun" : true,
+    "itemCount" : 100,
+    "limit" : 0,
+    "layers" : [ ],
+    "split" : "dev",
+    "includeDataProfile" : true,
+    "includeForeignKeys" : true,
+    "limitMode" : "APPEND",
+    "maxRows" : 200,
+    "schemaTableCount" : 8,
+    "retrievalEnabled" : true,
+    "retrievalTopK" : 8
+  },
+  "overall" : {
+    "total" : 100,
+    "correct" : 95,
+    "executionAccuracy" : 0.95,
+    "sqlValid" : 95,
+    "sqlValidRate" : 0.95,
+    "rewrittenCount" : 54,
+    "avgPromptTokens" : 0.0,
+    "avgLatencyMs" : 61.1,
+    "p50LatencyMs" : 13,
+    "p95LatencyMs" : 263,
+    "avgCostYuan" : 0.0,
+    "totalCostYuan" : 0.0
+  },
+  "byLayer" : {
+    "single_table_basic" : {
+      "total" : 20,
+      "correct" : 20,
+      "executionAccuracy" : 1.0,
+      "sqlValid" : 20,
+      "sqlValidRate" : 1.0,
+      "rewrittenCount" : 0,
+      "avgPromptTokens" : 0.0,
+      "avgLatencyMs" : 16.7,
+      "p50LatencyMs" : 6,
+      "p95LatencyMs" : 45,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    },
+    "single_table_agg" : {
+      "total" : 20,
+      "correct" : 20,
+      "executionAccuracy" : 1.0,
+      "sqlValid" : 20,
+      "sqlValidRate" : 1.0,
+      "rewrittenCount" : 15,
+      "avgPromptTokens" : 0.0,
+      "avgLatencyMs" : 9.2,
+      "p50LatencyMs" : 7,
+      "p95LatencyMs" : 18,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    },
+    "time_window" : {
+      "total" : 14,
+      "correct" : 14,
+      "executionAccuracy" : 1.0,
+      "sqlValid" : 14,
+      "sqlValidRate" : 1.0,
+      "rewrittenCount" : 9,
+      "avgPromptTokens" : 0.0,
+      "avgLatencyMs" : 54.57,
+      "p50LatencyMs" : 14,
+      "p95LatencyMs" : 295,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    },
+    "multi_join" : {
+      "total" : 23,
+      "correct" : 23,
+      "executionAccuracy" : 1.0,
+      "sqlValid" : 23,
+      "sqlValidRate" : 1.0,
+      "rewrittenCount" : 16,
+      "avgPromptTokens" : 0.0,
+      "avgLatencyMs" : 66.0,
+      "p50LatencyMs" : 54,
+      "p95LatencyMs" : 212,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    },
+    "multi_join_deep" : {
+      "total" : 10,
+      "correct" : 6,
+      "executionAccuracy" : 0.6,
+      "sqlValid" : 6,
+      "sqlValidRate" : 0.6,
+      "rewrittenCount" : 3,
+      "avgPromptTokens" : 0.0,
+      "avgLatencyMs" : 75.2,
+      "p50LatencyMs" : 13,
+      "p95LatencyMs" : 278,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    },
+    "business_semantics" : {
+      "total" : 13,
+      "correct" : 12,
+      "executionAccuracy" : 0.9230769230769231,
+      "sqlValid" : 12,
+      "sqlValidRate" : 0.9230769230769231,
+      "rewrittenCount" : 11,
+      "avgPromptTokens" : 0.0,
+      "avgLatencyMs" : 196.77,
+      "p50LatencyMs" : 146,
+      "p95LatencyMs" : 677,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    }
+  },
+  "failures" : [ {
+    "id" : "T5-011",
+    "difficulty" : "multi_join_deep",
+    "tags" : [ "join", "品牌", "销售额" ],
+    "question" : "品牌销售额排名前 10 是哪些？销售额按商品金额统计。",
+    "status" : "REJECTED",
+    "generatedSql" : "SELECT b.brand_name, ROUND(SUM(oi.price), 2) AS sales\nFROM order_items oi\nJOIN product_brand_map pbm ON pbm.product_id = oi.product_id AND pbm.is_current\nJOIN brands b ON b.brand_id = pbm.brand_id\nJOIN orders o ON o.order_id = oi.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY 1 ORDER BY sales DESC LIMIT 10;\n",
+    "message" : "[UNKNOWN_TABLE] 引用了不存在的表：customers",
+    "latencyMs" : 4
+  }, {
+    "id" : "T5-015",
+    "difficulty" : "multi_join_deep",
+    "tags" : [ "join", "物流轨迹", "分组" ],
+    "question" : "物流轨迹事件类型按客户所在州分布，列出前 20 组（按发货单去重）。",
+    "status" : "REJECTED",
+    "generatedSql" : "SELECT st.event_code, c.customer_state, COUNT(DISTINCT s.shipment_id) AS shipments\nFROM shipment_tracking st\nJOIN shipments s ON s.shipment_id = st.shipment_id\nJOIN orders o ON o.order_id = s.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1, 2 ORDER BY shipments DESC LIMIT 20;\n",
+    "message" : "[UNKNOWN_TABLE] 引用了不存在的表：order_items",
+    "latencyMs" : 2
+  }, {
+    "id" : "T5-017",
+    "difficulty" : "multi_join_deep",
+    "tags" : [ "join", "客服", "优先级" ],
+    "question" : "各工单类目、优先级的工单数和消息条数分别是多少？",
+    "status" : "REJECTED",
+    "generatedSql" : "SELECT tc.category_name, st.priority, COUNT(DISTINCT st.ticket_id) AS tickets,\n       COUNT(tm.message_id) AS messages\nFROM support_tickets st\nJOIN ticket_categories tc ON tc.category_id = st.category_id\nJOIN ticket_messages tm ON tm.ticket_id = st.ticket_id\nJOIN members m ON m.member_id = st.member_id\nJOIN member_levels ml ON ml.level_id = m.level_id\nGROUP BY 1, 2 ORDER BY tickets DESC;\n",
+    "message" : "[UNKNOWN_TABLE] 引用了不存在的表：member_levels",
+    "latencyMs" : 2
+  }, {
+    "id" : "T5-020",
+    "difficulty" : "multi_join_deep",
+    "tags" : [ "join", "库存", "出入库" ],
+    "question" : "按宏观区域和出入库类型统计库存变动笔数与数量合计。",
+    "status" : "REJECTED",
+    "generatedSql" : "SELECT r.macro_region, im.movement_type, COUNT(*) AS movements, SUM(im.quantity) AS qty\nFROM inventory_movements im\nJOIN inventory i ON i.warehouse_id = im.warehouse_id AND i.product_id = im.product_id\nJOIN warehouses w ON w.warehouse_id = im.warehouse_id\nJOIN regions r ON r.region_code = w.region_code\nJOIN products p ON p.product_id = im.product_id\nGROUP BY 1, 2 ORDER BY movements DESC;\n",
+    "message" : "[UNKNOWN_TABLE] 引用了不存在的表：inventory",
+    "latencyMs" : 3
+  }, {
+    "id" : "T6-016",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "品牌" ],
+    "question" : "各品牌的商品数、动销商品数、销售额和动销率分别是多少？取销售额前 10。",
+    "status" : "REJECTED",
+    "generatedSql" : "WITH brand_products AS (\n  SELECT b.brand_id, b.brand_name, pbm.product_id\n  FROM brands b\n  JOIN product_brand_map pbm ON pbm.brand_id = b.brand_id AND pbm.is_current\n),\nsales AS (\n  SELECT bp.brand_id, COUNT(DISTINCT oi.product_id) AS sold_products,\n         SUM(oi.price) AS sales\n  FROM brand_products bp\n  JOIN order_items oi ON oi.product_id = bp.product_id\n  JOIN orders o ON o.order_id = oi.order_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n  GROUP BY 1\n),\ntotal AS (\n  SELECT brand_id, COUNT(*) AS product_cnt FROM brand_products GROUP BY 1\n)\nSELECT bp.brand_name, t.product_cnt, COALESCE(s.sold_products, 0) AS sold_products,\n       ROUND(COALESCE(s.sales, 0), 2) AS sales,\n       ROUND(100.0 * COALESCE(s.sold_products, 0) / t.product_cnt, 2) AS sell_through_pct\nFROM brands bp\nJOIN total t ON t.brand_id = bp.brand_id\nLEFT JOIN sales s ON s.brand_id = bp.brand_id\nORDER BY sales DESC LIMIT 10;\n",
+    "message" : "[UNKNOWN_TABLE] 引用了不存在的表：product_brand_map",
+    "latencyMs" : 3
+  } ],
+  "retrieval" : {
+    "evaluatedCount" : 100,
+    "fullRecallRate" : 0.95,
+    "tableRecallRate" : 0.9894999999999999,
+    "avgPrecision" : 0.29965476190476187,
+    "avgRetrievedTables" : 6.68,
+    "missedCount" : 0,
+    "avgDdlChars" : 1550.7,
+    "incompleteCases" : [ {
+      "id" : "T5-011",
+      "question" : "品牌销售额排名前 10 是哪些？销售额按商品金额统计。",
+      "missing" : [ "customers" ],
+      "retrieved" : [ "brands", "order_items", "orders", "product_brand_map", "products", "refund_items", "sellers", "settlement_items" ]
+    }, {
+      "id" : "T5-015",
+      "question" : "物流轨迹事件类型按客户所在州分布，列出前 20 组（按发货单去重）。",
+      "missing" : [ "order_items" ],
+      "retrieved" : [ "customers", "geolocation", "members", "orders", "shipment_tracking", "shipments", "shipping_addresses", "warehouses" ]
+    }, {
+      "id" : "T5-017",
+      "question" : "各工单类目、优先级的工单数和消息条数分别是多少？",
+      "missing" : [ "member_levels" ],
+      "retrieved" : [ "members", "order_items", "orders", "product_category_translation", "products", "support_tickets", "ticket_categories", "ticket_messages" ]
+    }, {
+      "id" : "T5-020",
+      "question" : "按宏观区域和出入库类型统计库存变动笔数与数量合计。",
+      "missing" : [ "inventory" ],
+      "retrieved" : [ "customers", "inventory_movements", "products", "regions", "sellers", "warehouses" ]
+    }, {
+      "id" : "T6-016",
+      "question" : "各品牌的商品数、动销商品数、销售额和动销率分别是多少？取销售额前 10。",
+      "missing" : [ "product_brand_map" ],
+      "retrieved" : [ "brands", "campaign_products", "inventory", "inventory_movements", "order_items", "orders", "products", "sellers" ]
+    } ]
+  }
+}

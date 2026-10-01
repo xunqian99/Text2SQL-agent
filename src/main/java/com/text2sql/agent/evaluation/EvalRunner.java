@@ -139,6 +139,8 @@ public class EvalRunner implements ApplicationRunner {
                 .collect(Collectors.groupingBy(ItemOutcome::difficulty, LinkedHashMap::new, Collectors.toList()));
         grouped.forEach((layer, list) -> byLayer.put(layer, aggregate(list)));
 
+        EvalReport.Retrieval retrieval = aggregateRetrieval(items, outcomes);
+
         EvalReport.Meta meta = new EvalReport.Meta(
                 LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
                 PromptTemplate.VERSION,
@@ -148,13 +150,75 @@ public class EvalRunner implements ApplicationRunner {
                 items.size(),
                 properties.getEval().getLimit(),
                 properties.getEval().getLayers(),
+                properties.getEval().getSplit(),
                 properties.getPrompt().isIncludeDataProfile(),
                 properties.getPrompt().isIncludeForeignKeys(),
                 properties.getGuard().getLimitMode().name(),
                 properties.getDb().getMaxRows(),
-                schemaTableCount);
+                schemaTableCount,
+                properties.getRetrieval().isEnabled(),
+                properties.getRetrieval().getTopK());
 
-        return new EvalReport(meta, aggregate(outcomes), byLayer, failures);
+        return new EvalReport(meta, aggregate(outcomes), byLayer, failures, retrieval);
+    }
+
+    /**
+     * 聚合检索层指标。
+     *
+     * <p><b>为什么期望表从 gold_sql 解析而不是从 AgentResponse 拿</b>
+     *
+     * <p>期望是「业务上该用哪些表」，它只由 gold_sql 决定，与检索有没有
+     * 真的召回到无关。如果从响应里推期望，就变成了「检索召回了什么，
+     * 什么就是期望」——召回率永远是 100%，指标失去意义。
+     *
+     * <p>解析失败的条目（期望表为空）会被排除在统计外，而不是计为失败。
+     * 理由见 {@link TableRecall#expectedTables}。
+     */
+    private EvalReport.Retrieval aggregateRetrieval(List<EvalItem> items, List<ItemOutcome> outcomes) {
+        int evaluated = 0;
+        int fullRecall = 0;
+        int missed = 0;
+        double recallSum = 0;
+        double precisionSum = 0;
+        double retrievedSum = 0;
+        double ddlSum = 0;
+        List<EvalReport.MissedCase> incompleteCases = new ArrayList<>();
+
+        for (int i = 0; i < outcomes.size(); i++) {
+            ItemOutcome outcome = outcomes.get(i);
+            EvalItem item = items.get(i);
+            TableRecall.Outcome recall = TableRecall.evaluate(item.goldSql(), outcome.retrievedTables());
+
+            ddlSum += outcome.ddlChars();
+            if (recall.expected().isEmpty()) {
+                continue;
+            }
+            evaluated++;
+            recallSum += (double) recall.hit() / recall.expected().size();
+            precisionSum += recall.precision();
+            retrievedSum += recall.retrieved().size();
+            if (recall.fullRecall()) {
+                fullRecall++;
+            }
+            if (recall.missed()) {
+                missed++;
+            }
+            // 记录所有不完整召回，而不只是完全漏召回。理由见 MissedCase 的说明。
+            if (!recall.fullRecall()) {
+                incompleteCases.add(new EvalReport.MissedCase(item.id(), item.question(),
+                        List.copyOf(recall.missing()), List.copyOf(recall.retrieved())));
+            }
+        }
+
+        return new EvalReport.Retrieval(
+                evaluated,
+                ratio(fullRecall, evaluated),
+                evaluated == 0 ? 0 : recallSum / evaluated,
+                evaluated == 0 ? 0 : precisionSum / evaluated,
+                evaluated == 0 ? 0 : retrievedSum / evaluated,
+                missed,
+                outcomes.isEmpty() ? 0 : round2(ddlSum / outcomes.size()),
+                List.copyOf(incompleteCases));
     }
 
     /**
@@ -240,12 +304,40 @@ public class EvalRunner implements ApplicationRunner {
         sb.append("\n");
         appendRow(sb, "分组", report.overall());
         report.byLayer().forEach((layer, o) -> appendRow(sb, layer, o));
+        appendRetrieval(sb, report);
         sb.append("\n失败案例数: ").append(report.failures().size()).append("\n");
         report.failures().stream().limit(10).forEach(f ->
                 sb.append(String.format("  - %s [%s] %s | %s%n",
                         f.id(), f.status(), truncate(f.question(), 30), truncate(f.message(), 60))));
         sb.append("=========================================\n");
         log.info(sb.toString());
+    }
+
+    /**
+     * 打印检索层指标。
+     *
+     * <p>分开打印而不是并进上面那张表，理由是这两组数字回答不同的问题：
+     * 上面是「答对了多少」，这里是「检索选对了多少」。混在一起看，
+     * 当准确率掉的时候无法立刻判断是检索退化还是模型退化。
+     */
+    private void appendRetrieval(StringBuilder sb, EvalReport report) {
+        EvalReport.Retrieval retrieval = report.retrieval();
+        if (retrieval == null || retrieval.evaluatedCount() == 0) {
+            return;
+        }
+        sb.append("\n---- 检索层指标 ----\n");
+        sb.append(String.format("表全召回率 : %6.2f%% (%d 条有效样本)%n",
+                retrieval.fullRecallRate() * 100, retrieval.evaluatedCount()));
+        sb.append(String.format("表平均召回 : %6.2f%%%n", retrieval.tableRecallRate() * 100));
+        sb.append(String.format("表精确率   : %6.2f%%%n", retrieval.avgPrecision() * 100));
+        sb.append(String.format("平均召回表 : %.2f 张（baseline 为全部表）%n",
+                retrieval.avgRetrievedTables()));
+        sb.append(String.format("平均 DDL   : %.0f 字符%n", retrieval.avgDdlChars()));
+        sb.append(String.format("完全漏召回 : %d 条%n", retrieval.missedCount()));
+        sb.append(String.format("不完整召回 : %d 条%n", retrieval.incompleteCases().size()));
+        retrieval.incompleteCases().stream().limit(15).forEach(c ->
+                sb.append(String.format("  - %s 漏 %s | %s%n",
+                        c.id(), c.missing(), truncate(c.question(), 40))));
     }
 
     private static void appendRow(StringBuilder sb, String label, EvalReport.Overall o) {
@@ -304,7 +396,8 @@ public class EvalRunner implements ApplicationRunner {
 
         static ItemOutcome goldBroken(EvalItem item, String message) {
             AgentResponse broken = AgentResponse.failed(item.question(),
-                    AgentResponse.Status.EXECUTION_FAILED, "gold_sql 执行失败：" + message, null, 0, null);
+                    AgentResponse.Status.EXECUTION_FAILED, "gold_sql 执行失败：" + message,
+                    null, 0, List.of(), 0, null);
             return new ItemOutcome(item, broken, false, List.of(), List.of());
         }
 
@@ -338,6 +431,15 @@ public class EvalRunner implements ApplicationRunner {
 
         int schemaTableCount() {
             return response.schemaTableCount();
+        }
+
+        List<String> retrievedTables() {
+            return response.retrievedTables() == null ? List.of() : response.retrievedTables();
+        }
+
+        /** 本次请求实际交给模型的 DDL 字符数，用来证明检索降低了上下文。 */
+        int ddlChars() {
+            return response.schemaDdlChars();
         }
 
         /**

@@ -60,8 +60,12 @@ agent:
   llm:
     provider: openai-compatible
     # 默认 DeepSeek，因为它兼容 OpenAI 协议且价格低，适合跑 200 条评估。
-    # 换成通义/智谱/OpenAI 只需要改这两行。
+    # 换成通义/千帆/智谱/OpenAI 只需要改 base-url、completions-path、model 三行。
     base-url: https://api.deepseek.com
+    # 补全端点路径。必须与 base-url 分开配：厂商之间路径不一样
+    # （通义 /v1/chat/completions，千帆 /v2/chat/completions），
+    # 写死在代码里就做不到「只改配置换厂商」。
+    completions-path: /v1/chat/completions
     model: deepseek-chat
     temperature: 0.0
     max-tokens: 1024
@@ -79,6 +83,41 @@ agent:
     # 关掉它可以让 T3 时间层整层归零，是一个值得做的消融实验。
     include-data-profile: true
     include-foreign-keys: true
+
+  retrieval:
+    # 阶段 2 的检索开关。false = 阶段 1 的全量 schema（baseline）；
+    # true = 按问题召回相关表。这个布尔值就是消融实验「+schema 检索」那一行。
+    #
+    # 默认 false 的理由：baseline 是验收的参照系，必须随时可复现。
+    # 优化要显式开启，而不是靠默认值悄悄生效。
+    #
+    # 跑检索版：
+    #   --agent.retrieval.enabled=true
+    enabled: false
+    # 交给模型的表数量上限。8 的取法：评估集里 4 表以上的问题只占 20 条，
+    # 且实测多表问题的 gold_sql 最多用到 6 张表，8 留了余量。
+    top-k: 8
+    # 关系扩展跳数。1 跳 = 带上直接命中表的外键邻居。
+    relation-hops: 1
+    # 每扩展一跳的分数衰减。0.4 让「直接命中」永远排在「扩展进来的」前面。
+    relation-decay: 0.4
+    # 最多从几张表出发做扩展，避免一个宽泛问题扩展出十几张表。
+    expansion-seed-limit: 3
+    # 单字别名（州/券/仓）的权重折扣，兼顾召回与误命中。
+    single-char-weight-factor: 0.5
+    # 连通性修复：Top-K 出来的表如果连不成一张图，自动补入关系图上
+    # 最短的桥接表。这是纯词法检索的结构性补丁——用户问「每个大区的
+    # 商品销售额」时不会说「客户」，但 customers 是 regions 与 orders
+    # 之间唯一的通路，漏了它 SQL 根本 join 不出来。
+    #
+    # 它和「把 top-k 调大」的区别：只补能消除不连通的那几张，
+    # 已经连通的问题一张都不补。代价是最终表数会变成
+    # top-k + bridge-repair-max-tables，这一点在报告里如实记录。
+    bridge-repair-enabled: true
+    # 最多额外补几张桥接表。不封顶会一路补到接近全量。
+    bridge-repair-max-tables: 2
+    # 英文标识符直接出现在问题里时的权重。
+    identifier-hit-weight: 1.5
 
   eval:
     # 默认关闭。跑评估时用命令行开启：

@@ -20,8 +20,20 @@ import org.springframework.stereotype.Component;
 public class PromptTemplate {
 
     /**
-     * 阶段 1 的 prompt 版本号。每次改动这里的文字都要 +1，并写进评估报告。
+     * prompt 版本号。每次改动这里的文字都要 +1，并写进评估报告。
      * 没有版本号，消融实验的数字就没有可比性。
+     *
+     * <p><b>阶段 2 为什么版本号没变</b>
+     *
+     * <p>这是刻意的，也是消融实验能不能成立的关键。阶段 2 改的是
+     * **上下文里有哪些表**，不是**这段文字怎么组织**。如果把版本号一起改掉，
+     * 「+schema 检索」那一行的数字就同时包含了「检索」和「prompt 措辞」
+     * 两个变量，准确率的提升无法归因给任何一个。
+     *
+     * <p>所以这里必须保持 {@code p1-full-schema-v1} 不变，让阶段 1 和
+     * 阶段 2 的报告在 prompt 这一列上完全一致。如果之后真的改了措辞
+     * （比如加一句「优先使用高置信度的表」），那才需要 +1，
+     * 并且要重跑阶段 1 的 baseline 才能对比。
      */
     public static final String VERSION = "p1-full-schema-v1";
 

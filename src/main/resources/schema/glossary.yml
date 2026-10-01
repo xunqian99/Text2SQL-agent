@@ -1,0 +1,704 @@
+# ============================================================================
+# Schema 中文语义词典（阶段 2 的核心资产）
+#
+# 为什么需要这个文件：
+#   实测 PostgreSQL 内置分词对中文完全无效——to_tsvector('english','统计每个州的订单数量')
+#   返回的是整串一个 token，pg_trgm 的 show_trgm('订单数量') 返回空数组。
+#   同时数据库里 37 张表只有 3 张有表注释、201 列只有 10 列有列注释，
+#   而表名列名全是英文。也就是说「中文问题」和「英文 schema」之间没有任何桥。
+#   这个文件就是那座桥：把中文说法显式映射到表、列、枚举值。
+#
+# 为什么不用 jieba / HanLP 这类通用分词器：
+#   通用分词器解决的是「把中文切成词」，但切出来的词仍然不认识
+#   「复购率」「GMV」「动销」这些业务黑话对应哪张表。垂直领域词典匹配
+#   把领域知识显式化，可审阅、可增删、可回归测试，而分词器是个黑盒。
+#   代价是词典要人工维护——所以它被单独放在资源文件里，改动不用碰代码。
+#
+# 维护方式：
+#   - aliases 里写「用户可能会怎么问」，不是「字段的正式中文名」。
+#   - 同义词越多召回越好，但不要写太泛的词（如「数据」「信息」），会引入噪声。
+#   - 枚举值必须写 value（数据库里存的值）和 label（中文含义）。
+#
+# 【需要用户审核】标了这句的地方，是我按常识推断的业务口径，请你确认。
+# ============================================================================
+
+# ============================================================================
+# 关系层：数据库外键之外的「约定关联」
+#
+# 为什么需要这一节：
+#   实测本库 37 张表只有 12 条真实外键约束。大量业务上必然存在的关联
+#   没有声明为外键——refunds.order_id -> orders.order_id、
+#   shipments.order_id -> orders.order_id、coupon_usages.member_id -> members.member_id
+#   全都不在 pg_constraint 里。
+#
+#   这直接推翻了一个常见说法：「外键是数据库自己声明的真相，比文档可靠」。
+#   真相是——外键只覆盖了「被声明的那部分真相」。历史遗留库、分库分表库、
+#   频繁变更的库，外键往往残缺甚至完全不用。只依赖外键构图，join 路径会断。
+#
+#   所以这里补一层人工核对的约定关联。它和外键的区别是：
+#   外键 = 数据库保证成立的约束；关系层 = 我们核对过数据后确认成立的关联。
+#   阶段 3 的 join 路径规划会同时用这两者，并优先走外键（更强）。
+#
+# 维护方式：from/to 写「表.列」，两端都必须真实存在。加错了会被单元测试拦住。
+# ============================================================================
+
+relations:
+  # 交易域内部
+  - { from: refunds.order_id,            to: orders.order_id }
+  - { from: refund_items.order_id,       to: orders.order_id }
+  - { from: refund_items.refund_id,      to: refunds.refund_id }
+  - { from: refund_items.order_item_id,  to: order_items.order_item_id }
+  - { from: shipments.order_id,          to: orders.order_id }
+  - { from: shipment_tracking.shipment_id, to: shipments.shipment_id }
+  - { from: coupon_usages.order_id,      to: orders.order_id }
+  - { from: coupon_usages.member_id,     to: members.member_id }
+  - { from: support_tickets.order_id,    to: orders.order_id }
+  - { from: support_tickets.member_id,   to: members.member_id }
+  - { from: ticket_messages.ticket_id,   to: support_tickets.ticket_id }
+  - { from: settlement_items.settlement_id, to: settlements.settlement_id }
+  - { from: settlement_items.order_id,   to: orders.order_id }
+  - { from: settlement_items.order_item_id, to: order_items.order_item_id }
+  - { from: settlements.seller_id,       to: sellers.seller_id }
+
+  # 用户域内部：members 与 customers 靠自然人标识打通，粒度不同
+  - { from: members.customer_unique_id,  to: customers.customer_unique_id }
+  - { from: member_snapshot.member_id,   to: members.member_id }
+  - { from: member_snapshot.level_id,    to: member_levels.level_id }
+  - { from: user_tag_map.member_id,      to: members.member_id }
+  - { from: user_tag_map.tag_id,         to: user_tags.tag_id }
+  - { from: referrals.referrer_member_id, to: members.member_id }
+  - { from: referrals.invitee_member_id, to: members.member_id }
+  - { from: shipping_addresses.customer_id, to: customers.customer_id }
+
+  # 商品域内部
+  - { from: product_brand_map.product_id, to: products.product_id }
+  - { from: product_price_history.product_id, to: products.product_id }
+  - { from: campaign_products.product_id, to: products.product_id }
+  # 这条边连接的是「值」而不是主键：类目翻译表的主键就是
+  # products.product_category_name 这个业务值。正因如此，任何外键约束
+  # 都表达不了它，product_category_translation 在关系图里是个孤点——
+  # 检索能靠「英文类目」这个词把它捞出来，但连通性修复无路可走，
+  # 于是 products 补不进来，SQL 里的 join 就断了。
+  - { from: product_category_translation.product_category_name, to: products.product_category_name }
+
+  # 履约域内部
+  - { from: inventory.warehouse_id,      to: warehouses.warehouse_id }
+  - { from: inventory.product_id,        to: products.product_id }
+  - { from: inventory_movements.warehouse_id, to: warehouses.warehouse_id }
+  - { from: inventory_movements.product_id,   to: products.product_id }
+
+  # 行为域
+  - { from: search_logs.member_id,       to: members.member_id }
+  - { from: search_logs.clicked_product_id, to: products.product_id }
+
+  # 区域：州代码是巴西数据的天然维度，跨多张表复用
+  - { from: warehouses.region_code,      to: regions.region_code }
+  - { from: customers.customer_state,    to: regions.region_code }
+  - { from: sellers.seller_state,        to: regions.region_code }
+
+  # 注意：这里刻意**没有**收录
+  #   geolocation.geolocation_zip_code_prefix -> customers.customer_zip_code_prefix
+  # 它数据上确实对得上，但一个邮编前缀对应多个坐标点，join 会把订单行数放大，
+  # 任何基于它的金额统计都是错的。把它放进关系层等于把模型往坑里推。
+  # 这类「能 join 但不能用」的边，正是「外键 + 人工关系」也覆盖不了的第三类知识，
+  # 需要靠语义层（阶段 4）显式禁止。
+
+tables:
+
+  # ---------------------------- 交易域 ----------------------------
+
+  orders:
+    # 「复购 / 复购率」必须挂在 orders 上：复购的定义是同一自然人
+    # （customers.customer_unique_id）出现 >= 2 笔订单，判断依据只存在于
+    # 订单事实表里。不收录它，问句「会员与非会员的复购率」就只命中 members，
+    # 而 members 到 orders 要两跳，Top-K 里挤不进来。
+    aliases: [订单, 订单表, 单量, 下单, 交易, 购买, 复购, 复购率, 回购]
+    comment: 订单主表，一行一笔订单
+    columns:
+      order_id:
+        aliases: [订单号, 订单编号, 单号]
+      customer_id:
+        aliases: [客户号, 客户编号]
+      order_status:
+        aliases: [订单状态, 状态]
+        enum:
+          - { value: "created", label: "已创建" }
+          - { value: "approved", label: "已审核" }
+          - { value: "invoiced", label: "已开票" }
+          - { value: "processing", label: "处理中" }
+          - { value: "shipped", label: "已发货" }
+          - { value: "delivered", label: "已送达" }
+          - { value: "unavailable", label: "不可用" }
+          - { value: "canceled", label: "已取消" }
+      order_purchase_timestamp:
+        aliases: [下单时间, 下单日期, 购买时间, 成交时间]
+      order_approved_at:
+        aliases: [审核时间, 支付通过时间]
+      order_delivered_carrier_date:
+        aliases: [发货时间, 交给承运商时间]
+      order_delivered_customer_date:
+        aliases: [送达时间, 签收时间, 收货时间]
+      order_estimated_delivery_date:
+        aliases: [预计送达时间, 承诺送达时间]
+
+  order_items:
+    aliases: [订单明细, 订单商品, 明细, 行项目, 商品行, 销量, 销售量, 销售]
+    comment: 订单明细表，一行一个商品，一个订单多行；金额统计要注意粒度
+    columns:
+      order_id:
+        aliases: [订单号]
+      order_item_id:
+        aliases: [明细序号, 行号]
+      product_id:
+        aliases: [商品号, 商品编号]
+      seller_id:
+        aliases: [卖家号, 商家号, 店铺号]
+      shipping_limit_date:
+        aliases: [发货截止时间, 最晚发货时间]
+      price:
+        aliases: [商品金额, 售价, 商品价格, 单价, 销售额, 销售金额, 销售总额,
+                  商品销售额, 消费, 消费额, 消费金额, 消费总额, 营收, 销售收入,
+                  成交金额, GMV]
+      freight_value:
+        aliases: [运费, 物流费, 邮费]
+
+  order_payments:
+    aliases: [支付, 支付记录, 付款, 收款]
+    comment: 支付表，一个订单可能有多笔支付（分期、组合支付）
+    columns:
+      payment_type:
+        aliases: [支付方式, 付款方式, 支付类型]
+        enum:
+          - { value: "credit_card", label: "信用卡" }
+          - { value: "boleto", label: "Boleto 票据" }
+          - { value: "voucher", label: "代金券" }
+          - { value: "debit_card", label: "借记卡" }
+          - { value: "not_defined", label: "未定义" }
+      payment_installments:
+        aliases: [分期数, 分期期数]
+      payment_value:
+        aliases: [支付金额, 实付金额, 付款金额]
+
+  order_reviews:
+    aliases: [评价, 评论, 评分, 晒单]
+    comment: 订单评价表，一行一条评价
+    columns:
+      review_score:
+        aliases: [评分, 打分, 星级, 好评率]
+      review_comment_title:
+        aliases: [评价标题]
+      review_comment_message:
+        aliases: [评价内容, 评论内容]
+      review_creation_date:
+        aliases: [评价时间]
+      review_answer_timestamp:
+        aliases: [评价回复时间]
+
+  # ---------------------------- 用户域 ----------------------------
+
+  customers:
+    # 「新客 / 老客」是相对时间口径：首次下单所在月即新客，其余为老客。
+    # 判定要用 customers.customer_unique_id 做去重单位，所以挂在这张表上。
+    # 「复购」同时挂在 orders 和 customers 上，是刻意的：
+    # 复购的**事实**在 orders（同一自然人 >= 2 笔订单），但复购的**去重单位**
+    # 是 customers.customer_unique_id——没有它连「同一个人」都定义不了。
+    # 实测：只挂 orders 时，问句「会员与非会员的复购率」里「会员」出现两次，
+    # members 得分翻倍，它的一圈邻居把 customers 挤出 Top-8，SQL 写不出来。
+    aliases: [客户, 顾客, 买家, 消费者, 用户, 新客, 老客, 回头客, 复购, 复购率]
+    comment: 客户表，customer_id 是订单级标识，customer_unique_id 才是自然人
+    columns:
+      customer_id:
+        aliases: [客户号, 客户标识]
+      customer_unique_id:
+        aliases: [自然人, 真实用户, 去重客户, 唯一客户]
+      customer_zip_code_prefix:
+        aliases: [邮编, 邮政编码]
+      customer_city:
+        aliases: [城市, 客户城市]
+      customer_state:
+        aliases: [州, 州份, 省份, 客户州]
+
+  members:
+    aliases: [会员, 注册会员, 会员用户]
+    comment: 会员表，以自然人（customer_unique_id）为单位，粒度与 customers 不同
+    columns:
+      member_id:
+        aliases: [会员号, 会员编号]
+      customer_unique_id:
+        aliases: [自然人, 真实用户]
+      level_id:
+        aliases: [会员等级, 等级]
+      status:
+        aliases: [会员状态]
+        enum:
+          - { value: "1", label: "正常" }
+          - { value: "2", label: "冻结" }
+          - { value: "3", label: "注销" }
+      points:
+        aliases: [积分, 会员积分]
+      register_date:
+        aliases: [注册日期, 注册时间, 入会时间]
+      last_login_date:
+        aliases: [最近登录, 最后登录日期, 活跃]
+
+  member_levels:
+    aliases: [会员等级, 等级定义, 等级规则, 会员级别]
+    comment: 会员等级定义表
+    columns:
+      level_code:
+        aliases: [等级编码, 等级代码]
+      level_name:
+        aliases: [等级名称]
+      discount_rate:
+        aliases: [折扣率, 会员折扣]
+
+  member_snapshot:
+    aliases: [会员快照, 会员历史, 等级快照]
+    comment: 会员每日快照表，与 members 信息重叠，属历史遗留冗余表
+    columns:
+      snapshot_date:
+        aliases: [快照日期]
+      points:
+        aliases: [积分]
+
+  user_tags:
+    aliases: [用户标签, 标签定义, 人群标签]
+    comment: 用户标签定义表
+    columns:
+      tag_code:
+        aliases: [标签编码]
+      tag_name:
+        aliases: [标签名称]
+        # 真实标签值。这类「值即业务黑话」的词必须进词典：
+        # 问句里说「打过"流失风险用户"标签」，字面上没有「用户标签」四个字，
+        # 靠表别名永远匹配不上，只能靠枚举 label 命中（权重也最高）。
+        enum:
+          - { value: "HIGH_VALUE", label: "高价值用户" }
+          - { value: "CHURN_RISK", label: "流失风险用户" }
+          - { value: "PRICE_SENSITIVE", label: "价格敏感用户" }
+          - { value: "NEW_USER", label: "新客" }
+          - { value: "REPEAT_BUYER", label: "复购用户" }
+          - { value: "REVIEW_ACTIVE", label: "活跃评价用户" }
+
+  user_tag_map:
+    # 「标签」这个裸词必须收录：问句「有多少个会员从来没有被打过任何标签」
+    # 里没有「打标签」这个连续词，也没有任何具体标签名，只有「标签」二字。
+    # 不收录它，整句话一个词都命不中标签体系，user_tag_map 永远进不来。
+    aliases: [用户打标, 标签关联, 用户标签关系, 打标签, 标签, 打标]
+    comment: 会员与标签的关联表
+    columns:
+      tagged_at:
+        aliases: [打标时间, 打标日期]
+
+  # ---------------------------- 商品域 ----------------------------
+
+  products:
+    aliases: [商品, 产品, 货品, 单品, 商品表]
+    comment: 商品表，注意 product_name_lenght / product_description_lenght 是原始数据集里的拼写错误，故意保留
+    columns:
+      product_id:
+        aliases: [商品号, 商品编号, 商品ID]
+      product_category_name:
+        aliases: [商品类目, 类目, 品类, 分类]
+      product_name_lenght:
+        aliases: [商品名长度]
+      product_description_lenght:
+        aliases: [商品描述长度]
+      product_photos_qty:
+        aliases: [图片数量, 商品图片数]
+      product_weight_g:
+        aliases: [重量, 商品重量, 克重]
+      product_length_cm:
+        aliases: [长度]
+      product_height_cm:
+        aliases: [高度]
+      product_width_cm:
+        aliases: [宽度]
+
+  product_category_translation:
+    aliases: [类目翻译, 品类英文名, 类目对照]
+    comment: 商品类目葡萄牙语到英语的翻译表
+    columns:
+      product_category_name:
+        aliases: [类目, 葡语类目]
+      product_category_name_english:
+        aliases: [英文类目, 类目英文名]
+
+  brands:
+    aliases: [品牌, 品牌表]
+    comment: 品牌表
+    columns:
+      brand_name:
+        aliases: [品牌名称]
+      country:
+        aliases: [品牌国家, 所属国家]
+
+  product_brand_map:
+    aliases: [商品品牌关联, 品牌归属, 商品品牌关系]
+    comment: 商品与品牌的关联表，一个商品可能先后归属不同品牌
+    columns:
+      is_current:
+        aliases: [当前品牌, 是否当前]
+      mapped_at:
+        aliases: [关联日期]
+
+  product_price_history:
+    # 「价格变动」是最常见的口语说法，第一版漏了它，导致
+    # 「发生过价格变动的商品」整句只有 products 命中，
+    # product_price_history 进不了 Top-K，涨跌幅无从算起。
+    aliases: [价格变更, 价格变动, 调价记录, 价格历史, 改价, 价格调整, 涨价, 降价, 涨跌幅]
+    comment: 商品价格变更历史表
+    columns:
+      old_price:
+        aliases: [原价, 旧价, 调整前价格]
+      new_price:
+        aliases: [新价, 现价, 调整后价格]
+      changed_at:
+        aliases: [调价时间, 变更时间]
+
+  sellers:
+    aliases: [卖家, 商家, 店铺, 供应商]
+    comment: 卖家表
+    columns:
+      seller_id:
+        aliases: [卖家号, 商家号]
+      seller_city:
+        aliases: [卖家城市]
+      seller_state:
+        aliases: [卖家州, 卖家省份]
+
+  # ---------------------------- 营销域 ----------------------------
+
+  campaigns:
+    aliases: [活动, 营销活动, 促销活动, 大促]
+    comment: 营销活动表
+    columns:
+      campaign_name:
+        aliases: [活动名称]
+      campaign_type:
+        aliases: [活动类型]
+      start_date:
+        aliases: [开始日期, 活动开始]
+      end_date:
+        aliases: [结束日期, 活动结束]
+      budget:
+        aliases: [预算, 活动预算]
+      status:
+        aliases: [活动状态]
+        enum:
+          - { value: "1", label: "草稿" }
+          - { value: "2", label: "进行中" }
+          - { value: "3", label: "已结束" }
+          - { value: "4", label: "已取消" }
+
+  coupons:
+    aliases: [优惠券, 券, 代金券, 折扣券]
+    comment: 优惠券表
+    columns:
+      coupon_code:
+        aliases: [券码, 优惠券码]
+      campaign_id:
+        aliases: [所属活动]
+      discount_type:
+        aliases: [折扣类型, 优惠方式]
+        enum:
+          - { value: "fixed", label: "满减" }
+          - { value: "percent", label: "折扣" }
+      discount_value:
+        aliases: [优惠额度, 折扣值]
+      min_order_amount:
+        aliases: [最低订单金额, 门槛, 使用门槛]
+      valid_from:
+        aliases: [生效日期, 有效期开始]
+      valid_to:
+        aliases: [失效日期, 有效期结束]
+
+  coupon_usages:
+    aliases: [用券记录, 优惠券使用, 领券核销, 券核销]
+    comment: 优惠券使用记录表
+    columns:
+      used_at:
+        aliases: [使用时间, 核销时间]
+      discount_amount:
+        aliases: [优惠金额, 抵扣金额, 减免金额]
+
+  campaign_products:
+    aliases: [活动商品, 参与活动的商品]
+    comment: 活动与商品的关联表
+
+  referrals:
+    aliases: [推荐, 裂变, 邀请, 拉新, 老带新]
+    comment: 会员推荐（裂变）记录表
+    columns:
+      referrer_member_id:
+        aliases: [推荐人, 邀请人]
+      invitee_member_id:
+        aliases: [被推荐人, 被邀请人]
+      invite_code:
+        aliases: [邀请码]
+      created_at:
+        aliases: [邀请时间, 创建时间]
+      converted_at:
+        aliases: [转化时间, 成单时间]
+      reward_amount:
+        aliases: [奖励金额, 返现金额]
+
+  # ---------------------------- 履约域 ----------------------------
+
+  shipments:
+    aliases: [发货, 发货单, 履约, 配送]
+    comment: 发货表
+    columns:
+      order_id:
+        aliases: [订单号]
+      warehouse_id:
+        aliases: [仓库]
+      carrier:
+        aliases: [承运商, 快递公司, 物流公司]
+      shipped_at:
+        aliases: [发货时间, 出库时间]
+      delivered_at:
+        aliases: [签收时间, 送达时间]
+      status:
+        aliases: [发货状态]
+        enum:
+          - { value: "1", label: "待发货" }
+          - { value: "2", label: "运输中" }
+          - { value: "3", label: "已签收" }
+          - { value: "4", label: "异常" }
+
+  shipment_tracking:
+    aliases: [物流轨迹, 轨迹, 物流详情, 跟踪记录]
+    comment: 物流轨迹表
+    columns:
+      event_time:
+        aliases: [轨迹时间, 物流节点时间]
+      event_code:
+        aliases: [轨迹类型, 节点类型]
+      location:
+        aliases: [轨迹地点, 所在城市]
+
+  warehouses:
+    aliases: [仓库, 仓, 仓储]
+    comment: 仓库表
+    columns:
+      warehouse_name:
+        aliases: [仓库名称]
+      region_code:
+        aliases: [所属区域, 大区]
+      capacity:
+        aliases: [容量, 仓库容量]
+
+  inventory:
+    aliases: [库存, 存货, 在库]
+    comment: 库存表，一行一个「仓库 × 商品」
+    columns:
+      quantity:
+        aliases: [库存量, 库存数量]
+      safety_stock:
+        aliases: [安全库存, 警戒库存]
+      updated_at:
+        aliases: [更新时间]
+
+  inventory_movements:
+    aliases: [出入库, 库存流水, 库存变动, 出入库记录]
+    comment: 库存出入库流水表
+    columns:
+      movement_type:
+        aliases: [出入库类型, 变动类型]
+        enum:
+          - { value: "1", label: "入库" }
+          - { value: "2", label: "出库" }
+          - { value: "3", label: "退货入库" }
+          - { value: "4", label: "盘亏" }
+      quantity:
+        aliases: [变动数量]
+      moved_at:
+        aliases: [变动时间, 出入库时间]
+
+  shipping_addresses:
+    aliases: [收货地址, 地址, 收货信息]
+    comment: 收货地址表
+    columns:
+      zip_code_prefix:
+        aliases: [邮编]
+      city:
+        aliases: [城市]
+      state:
+        aliases: [州, 省份]
+      is_default:
+        aliases: [默认地址, 是否默认]
+
+  regions:
+    aliases: [区域, 大区, 州份, 地区映射]
+    comment: 巴西州份到大区的映射，用于区域维度分析
+    columns:
+      region_code:
+        aliases: [州代码, 区域编码]
+      region_name:
+        aliases: [州名, 区域名称]
+      macro_region:
+        aliases: [大区, 宏观区域, 区域分组]
+
+  geolocation:
+    aliases: [地理位置, 经纬度, 坐标, 地理信息]
+    comment: 地理坐标表，一个邮编前缀对应多个坐标点，join 时会放大行数
+    columns:
+      geolocation_zip_code_prefix:
+        aliases: [邮编]
+      geolocation_lat:
+        aliases: [纬度]
+      geolocation_lng:
+        aliases: [经度]
+      geolocation_city:
+        aliases: [城市]
+      geolocation_state:
+        aliases: [州]
+
+  # ---------------------------- 客服域 ----------------------------
+
+  support_tickets:
+    aliases: [工单, 客服工单, 客诉, 投诉, 售后]
+    comment: 客服工单表
+    columns:
+      order_id:
+        aliases: [订单号]
+      member_id:
+        aliases: [会员]
+      category_id:
+        aliases: [工单分类]
+      priority:
+        aliases: [优先级, 紧急程度]
+        enum:
+          - { value: "1", label: "低" }
+          - { value: "2", label: "中" }
+          - { value: "3", label: "高" }
+          - { value: "4", label: "紧急" }
+      status:
+        aliases: [工单状态]
+        enum:
+          - { value: "1", label: "待处理" }
+          - { value: "2", label: "处理中" }
+          - { value: "3", label: "已解决" }
+          - { value: "4", label: "已关闭" }
+      created_at:
+        aliases: [创建时间, 提工单时间]
+      resolved_at:
+        aliases: [解决时间, 结单时间]
+
+  ticket_categories:
+    aliases: [工单分类, 客诉分类, 问题分类]
+    comment: 工单分类表
+    columns:
+      category_name:
+        aliases: [分类名称]
+        # 真实分类值，理由同 user_tags.tag_name：
+        # 「物流延迟类工单」在字面上不含「工单分类」，只能靠值命中。
+        enum:
+          - { value: "物流延迟", label: "物流延迟" }
+          - { value: "商品质量问题", label: "商品质量问题" }
+          - { value: "退款咨询", label: "退款咨询" }
+          - { value: "发票问题", label: "发票问题" }
+          - { value: "账号问题", label: "账号问题" }
+      sla_hours:
+        aliases: [响应时限, SLA 时长, 处理时限]
+
+  ticket_messages:
+    aliases: [工单消息, 工单对话, 客服会话]
+    comment: 工单消息表
+    columns:
+      sender_type:
+        aliases: [发送方, 消息来源]
+      content:
+        aliases: [消息内容, 对话内容]
+
+  # ---------------------------- 财务域 ----------------------------
+
+  refunds:
+    aliases: [退款, 退款单, 退货]
+    comment: 退款表
+    columns:
+      order_id:
+        aliases: [订单号]
+      refund_amount:
+        aliases: [退款金额]
+      reason_code:
+        aliases: [退款原因]
+        enum:
+          - { value: "CUST", label: "客户取消" }
+          - { value: "QUAL", label: "质量问题" }
+          - { value: "LATE", label: "配送超时" }
+          - { value: "OTHER", label: "其他" }
+      status:
+        aliases: [退款状态]
+        enum:
+          - { value: "1", label: "待审核" }
+          - { value: "2", label: "已通过" }
+          - { value: "3", label: "已拒绝" }
+          - { value: "4", label: "已退款" }
+      requested_at:
+        aliases: [申请时间, 退款申请时间]
+      completed_at:
+        aliases: [退款完成时间, 到账时间]
+
+  refund_items:
+    aliases: [退款明细, 退货明细]
+    comment: 退款明细表
+    columns:
+      refund_qty:
+        aliases: [退款数量, 退货数量]
+      refund_value:
+        aliases: [退款金额]
+
+  settlements:
+    aliases: [结算, 结算单, 对账, 账期]
+    comment: 卖家结算表
+    columns:
+      seller_id:
+        aliases: [卖家号, 商家号]
+      period_start:
+        aliases: [账期开始, 结算周期开始]
+      period_end:
+        aliases: [账期结束, 结算周期结束]
+      total_amount:
+        aliases: [结算总额, 交易总额]
+      commission:
+        aliases: [佣金, 平台佣金, 抽成]
+      net_amount:
+        aliases: [净额, 应结金额, 实结金额]
+      status:
+        aliases: [结算状态]
+        enum:
+          - { value: "1", label: "待结算" }
+          - { value: "2", label: "已结算" }
+          - { value: "3", label: "已打款" }
+      paid_at:
+        aliases: [打款时间, 付款时间]
+
+  settlement_items:
+    aliases: [结算明细, 对账明细]
+    comment: 结算明细表
+    columns:
+      gross_amount:
+        aliases: [含佣金额, 毛额, 成交额]
+      commission_rate:
+        aliases: [佣金率, 抽成比例]
+      commission_amount:
+        aliases: [佣金金额, 抽成金额]
+
+  # ---------------------------- 行为域 ----------------------------
+
+  search_logs:
+    aliases: [搜索日志, 搜索记录, 搜索行为, 关键词]
+    comment: 站内搜索日志表
+    columns:
+      member_id:
+        aliases: [会员]
+      keyword:
+        aliases: [搜索词, 关键词]
+      result_count:
+        aliases: [结果数, 搜索结果数]
+      clicked_product_id:
+        aliases: [点击商品, 点击的商品]
+      searched_at:
+        aliases: [搜索时间]

@@ -1,6 +1,7 @@
 package com.text2sql.agent.retrieval;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * 一次请求要用到的 schema 信息，是「检索层」唯一的输出类型。
@@ -15,8 +16,13 @@ import java.util.List;
 public record SchemaContext(
         List<Table> tables,
         List<ForeignKey> foreignKeys,
-        String dataProfile,
+        String dataProfile,   // 数据画像（可选，可能为空串）
         String ddlText) {
+
+    /** 本次上下文包含的表名，供评估层计算表召回率。 */
+    public List<String> tableNames() {
+        return tables.stream().map(Table::name).toList();
+    }
 
     /** 一张表。comment 是表级注释，多数表为空——这本身就是需要模型面对的噪声。 */
     public record Table(String name, String comment, List<Column> columns) {
@@ -37,5 +43,31 @@ public record SchemaContext(
 
     public int columnCount() {
         return tables.stream().mapToInt(t -> t.columns().size()).sum();
+    }
+
+    /**
+     * 从全量 schema 里切出子集，供检索层使用。
+     *
+     * <p><b>外键为什么要跟着过滤</b>：如果只留表不留边，模型看到
+     * {@code order_items} 和 {@code products} 却不知道它们怎么关联，
+     * 就会去猜 join 条件——而猜错的 join 照样能执行，错误是静默的。
+     * 外键本身占不了多少 token，留全反而更安全。
+     *
+     * <p><b>只保留两端都在子集里的边</b>，而不是把全库外键都塞进来：
+     * 后者会引入「表都没召回，却告诉模型它怎么 join」的矛盾信息。
+     *
+     * <p>被否掉的方案：在 provider 里手工拼一个新的 SchemaContext。
+     * 那样每加一个 provider 就要重写一遍过滤逻辑，且容易漏掉某一项
+     * （比如忘了重新渲染 ddlText，导致 prompt 里还是全量表）。
+     * 把「切子集」这个动作收敛到 record 自己的方法上，语义只有一份。
+     */
+    public SchemaContext subset(Set<String> tableNames, String ddlText) {
+        List<Table> kept = tables.stream()
+                .filter(t -> tableNames.contains(t.name()))
+                .toList();
+        List<ForeignKey> keptEdges = foreignKeys.stream()
+                .filter(fk -> tableNames.contains(fk.fromTable()) && tableNames.contains(fk.toTable()))
+                .toList();
+        return new SchemaContext(kept, keptEdges, dataProfile, ddlText);
     }
 }

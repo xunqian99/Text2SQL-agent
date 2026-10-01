@@ -52,8 +52,10 @@ public class SqlExecutor {
      * @throws SqlExecutionException 执行失败（语法错、表不存在、超时等）
      */
     public QueryResult execute(String sql) {
+        //写在配置文件里面的配置，最大允许行数，最长时间
         int maxRows = properties.getDb().getMaxRows();
         int timeout = properties.getDb().getQueryTimeoutSeconds();
+
         long started = System.nanoTime();
 
         try {
@@ -64,11 +66,13 @@ public class SqlExecutor {
                 ResultSetMetaData meta = rs.getMetaData();
                 int columnCount = meta.getColumnCount();
                 List<String> columns = new ArrayList<>(columnCount);
+                //读列名
                 for (int i = 1; i <= columnCount; i++) {
                     columns.add(meta.getColumnLabel(i));
                 }
                 List<List<String>> rows = new ArrayList<>();
                 while (rs.next()) {
+                    //读值
                     List<String> row = new ArrayList<>(columnCount);
                     for (int i = 1; i <= columnCount; i++) {
                         Object value = rs.getObject(i);

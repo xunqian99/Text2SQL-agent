@@ -53,8 +53,63 @@ public class EvalItemLoader {
      * 想只跑 T1、T2 却先取前 50 条，那 50 条可能全落在 T1 里，T2 一条都没跑到。
      */
     public List<EvalItem> load() {
-        return load(properties.getEval().getDir(), properties.getEval().getLayers(),
+        List<EvalItem> items = load(properties.getEval().getDir(), properties.getEval().getLayers(),
                 properties.getEval().getLimit());
+        return applySplit(items, properties.getEval().getSplit());
+    }
+
+    /**
+     * 按开发集 / 评估集切分。
+     *
+     * <p><b>为什么必须有这个切分，而不是「反正都一样」</b>
+     *
+     * <p>ROADMAP 5.5 的第一条硬原则是「评估集不能用来调 prompt / 调参」。
+     * 这条原则的价值在于：如果拿全部样本反复调，调到最后每个参数都是
+     * 为这批样本量身定做的，报出来的召回率不再代表「换个业务问题会怎样」。
+     * 面试时被问「90% 怎么来的」，「我看了 200 条失败案例然后针对性地补
+     * 词典」这个回答是站不住的——那本质上是把答案背下来了。
+     *
+     * <p><b>切分方式：按 id 取模，而不是按 id 区间</b>
+     *
+     * <p>被否掉的方案：T1-T3 当开发集、T4-T6 当评估集。它看似更符合直觉
+     * （先简单后难），但难度层分布会严重倾斜——开发集全是单表题，
+     * 用它调出来的检索参数在多表题上完全没有验证。而按 id 取模能让两个
+     * 子集的**难度层分布几乎一致**（每层的条目都均匀分到两边），
+     * 这样开发集上调出来的结论才有资格外推到评估集。
+     *
+     * <p>用 {@code id} 的哈希而不是行号：行号依赖 YAML 里的排列顺序，
+     * 调整文件顺序就会让切分结果整体漂移，历史数字失去可比性。
+     * id 是稳定标识，改排版不影响。
+     *
+     * <p>切分必须**确定性**：同一份代码、同一份评估集，任何时候跑出的
+     * 开发集都是同一批条目，否则「这次调参有效」无法复现。
+     *
+     * @param split {@code all} / {@code dev} / {@code eval}
+     */
+    private List<EvalItem> applySplit(List<EvalItem> items, String split) {
+        if (split == null || split.isBlank() || split.equalsIgnoreCase("all")) {
+            return items;
+        }
+        boolean wantDev = split.equalsIgnoreCase("dev");
+        List<EvalItem> filtered = new ArrayList<>();
+        for (EvalItem item : items) {
+            if (isDev(item.id()) == wantDev) {
+                filtered.add(item);
+            }
+        }
+        return List.copyOf(filtered);
+    }
+
+    /**
+     * 一条样本属于开发集还是评估集。
+     *
+     * <p>用 id 的稳定哈希取模，保证同一 id 永远落在同一侧。
+     */
+    static boolean isDev(String id) {
+        if (id == null) {
+            return false;
+        }
+        return Math.floorMod(id.hashCode(), 2) == 0;
     }
 
     public List<EvalItem> load(String dir, List<String> layers, int limit) {

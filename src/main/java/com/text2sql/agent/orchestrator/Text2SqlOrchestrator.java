@@ -73,6 +73,8 @@ public class Text2SqlOrchestrator {
         SchemaContext schema = schemaProvider.provide(question);
         long retrievalMs = elapsedMs(retrievalStarted);
         int tableCount = schema.tables().size();
+        List<String> retrievedTables = schema.tableNames();
+        int ddlChars = schema.ddlText() == null ? 0 : schema.ddlText().length();
 
         long generationStarted = System.nanoTime();
         GeneratedSql generated;
@@ -85,12 +87,13 @@ public class Text2SqlOrchestrator {
                     : AgentResponse.Status.GENERATION_FAILED;
             log.warn("生成失败（{}）：{}", e.getReason(), e.getMessage());
             return AgentResponse.failed(question, status, e.getMessage(), null, tableCount,
+                    retrievedTables, ddlChars,
                     timings(retrievalMs, generationMs, 0, 0, elapsedMs(totalStarted)));
         }
         long generationMs = elapsedMs(generationStarted);
 
         return validateAndExecute(question, generated.sql(), generated.call(), schema, tableCount,
-                retrievalMs, generationMs, totalStarted);
+                retrievedTables, ddlChars, retrievalMs, generationMs, totalStarted);
     }
 
     /**
@@ -111,11 +114,14 @@ public class Text2SqlOrchestrator {
         SchemaContext schema = schemaProvider.provide(question);
         long retrievalMs = elapsedMs(retrievalStarted);
         return validateAndExecute(question, sql, llmCall, schema, schema.tables().size(),
+                schema.tableNames(), schema.ddlText() == null ? 0 : schema.ddlText().length(),
                 retrievalMs, 0, totalStarted);
     }
 
     private AgentResponse validateAndExecute(String question, String sql, LlmCallRecord llmCall,
                                              SchemaContext schema, int tableCount,
+                                             List<String> retrievedTables,
+                                             int ddlChars,
                                              long retrievalMs, long generationMs, long totalStarted) {
         long validationStarted = System.nanoTime();
         ValidationResult validation = validator.validate(sql, schema);
@@ -127,6 +133,7 @@ public class Text2SqlOrchestrator {
                     .toList();
             log.info("SQL 被校验层拦下：{}", validation.describe());
             return AgentResponse.rejected(question, validation.sql(), violations, llmCall, tableCount,
+                    retrievedTables, ddlChars,
                     timings(retrievalMs, generationMs, validationMs, 0, elapsedMs(totalStarted)));
         }
 
@@ -141,6 +148,7 @@ public class Text2SqlOrchestrator {
             log.warn("SQL 执行失败：{}", e.getMessage());
             return AgentResponse.failed(question, AgentResponse.Status.EXECUTION_FAILED, e.getMessage(),
                     llmCall, tableCount,
+                    retrievedTables, ddlChars,
                     timings(retrievalMs, generationMs, validationMs, executionMs, elapsedMs(totalStarted)));
         }
         long executionMs = elapsedMs(executionStarted);
@@ -150,7 +158,7 @@ public class Text2SqlOrchestrator {
 
         return AgentResponse.success(question, validation.sql(), validation.rewritten(),
                 new AgentResponse.QueryOutcome(result.columns(), result.rows(), result.truncated()),
-                llmCall, tableCount, timings);
+                llmCall, tableCount, retrievedTables, ddlChars, timings);
     }
 
     private static AgentResponse.Timings timings(long retrieval, long generation, long validation,

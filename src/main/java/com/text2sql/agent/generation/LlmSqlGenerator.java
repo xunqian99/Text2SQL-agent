@@ -59,10 +59,14 @@ public class LlmSqlGenerator {
         if (this.chatModel == null) {
             log.warn("未配置 agent.llm.api-key，SQL 生成不可用；校验/执行/评估链路仍可正常运行。");
         } else {
-            log.info("LLM 已就绪：provider={} model={} baseUrl={}",
+            // 把完整端点打出来，而不是只打 baseUrl。厂商之间差别最大的就是路径
+            // （通义 /v1/chat/completions、千帆 /v2/chat/completions），
+            // 只打 baseUrl 时「路径配错了」在日志里看不出来，要等到 404 才发现。
+            log.info("LLM 已就绪：provider={} model={} endpoint={}{}",
                     properties.getLlm().getProvider(),
                     properties.getLlm().getModel(),
-                    properties.getLlm().getBaseUrl());
+                    properties.getLlm().getBaseUrl(),
+                    properties.getLlm().getCompletionsPath());
         }
     }
 
@@ -103,10 +107,12 @@ public class LlmSqlGenerator {
         }
         long latencyMs = (System.nanoTime() - started) / 1_000_000;
 
+        //获取模型的output
         String raw = extractText(response);
         LlmCallRecord record = buildRecord(response, promptChars, latencyMs);
         log.info("LLM 调用完成：{}", record.summary());
 
+        //将模型输出的sql进行提取，因为模型可能会生产sql之外的内容
         String sql = SqlExtractor.extract(raw);
         return new GeneratedSql(sql, raw, record);
     }
@@ -156,6 +162,7 @@ public class LlmSqlGenerator {
 
         OpenAiApi api = OpenAiApi.builder()
                 .baseUrl(properties.getLlm().getBaseUrl())
+                .completionsPath(properties.getLlm().getCompletionsPath())
                 .apiKey(apiKey)
                 .restClientBuilder(RestClient.builder().requestFactory(requestFactory))
                 .build();

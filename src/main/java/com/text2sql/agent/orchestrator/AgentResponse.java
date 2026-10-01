@@ -32,6 +32,12 @@ import java.util.List;
  * @param rewritten       校验层是否改写过 SQL
  * @param llmCall         LLM 调用记录；未调用（未配置或检索失败）时为 null
  * @param schemaTableCount 本次请求使用的 schema 表数量，用于对比检索前后的上下文规模
+ * @param retrievedTables 本次检索实际选中的表名。**表召回率就靠它算**——
+ *                        没有这个字段，评估器只能看到「表数量是 8」，
+ *                        无法回答「该用的那张表在不在里面」。
+ *                        注意：全量 provider 下它就是全部表名，
+ *                        因此这个字段在两种配置下语义一致（都是「模型看到了哪些表」），
+ *                        可以直接用来对比。
  * @param timings         各阶段耗时
  */
 public record AgentResponse(
@@ -46,6 +52,8 @@ public record AgentResponse(
         boolean rewritten,
         LlmCallRecord llmCall,
         int schemaTableCount,
+        List<String> retrievedTables,
+        int schemaDdlChars,
         Timings timings) {
 
     /**
@@ -89,22 +97,27 @@ public record AgentResponse(
     }
 
     public static AgentResponse success(String question, String sql, boolean rewritten, QueryOutcome outcome,
-                                        LlmCallRecord call, int schemaTableCount, Timings timings) {
+                                        LlmCallRecord call, int schemaTableCount,
+                                        List<String> retrievedTables, int schemaDdlChars, Timings timings) {
         return new AgentResponse(question, Status.SUCCESS, sql, null, List.of(),
                 outcome.columns(), outcome.rows(), outcome.truncated(), rewritten,
-                call, schemaTableCount, timings);
+                call, schemaTableCount, retrievedTables, schemaDdlChars, timings);
     }
 
     public static AgentResponse rejected(String question, String sql, List<String> violations,
-                                         LlmCallRecord call, int schemaTableCount, Timings timings) {
+                                         LlmCallRecord call, int schemaTableCount,
+                                         List<String> retrievedTables, int schemaDdlChars, Timings timings) {
         return new AgentResponse(question, Status.REJECTED, sql, String.join("; ", violations), violations,
-                List.of(), List.of(), false, false, call, schemaTableCount, timings);
+                List.of(), List.of(), false, false, call, schemaTableCount, retrievedTables,
+                schemaDdlChars, timings);
     }
 
     public static AgentResponse failed(String question, Status status, String message,
-                                       LlmCallRecord call, int schemaTableCount, Timings timings) {
+                                       LlmCallRecord call, int schemaTableCount,
+                                       List<String> retrievedTables, int schemaDdlChars, Timings timings) {
         return new AgentResponse(question, status, null, message, List.of(),
-                List.of(), List.of(), false, false, call, schemaTableCount, timings);
+                List.of(), List.of(), false, false, call, schemaTableCount, retrievedTables,
+                schemaDdlChars, timings);
     }
 
     /** 执行层结果的投影，避免 orchestrator 直接依赖 execution 包的 record。 */

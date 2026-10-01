@@ -19,6 +19,7 @@ public class AgentProperties {
     private Guard guard = new Guard();
     private Llm llm = new Llm();
     private Prompt prompt = new Prompt();
+    private Retrieval retrieval = new Retrieval();
     private Eval eval = new Eval();
 
     public Db getDb() {
@@ -51,6 +52,14 @@ public class AgentProperties {
 
     public void setPrompt(Prompt prompt) {
         this.prompt = prompt;
+    }
+
+    public Retrieval getRetrieval() {
+        return retrieval;
+    }
+
+    public void setRetrieval(Retrieval retrieval) {
+        this.retrieval = retrieval;
     }
 
     public Eval getEval() {
@@ -88,13 +97,25 @@ public class AgentProperties {
     }
 
     /**
-     * LLM 接入参数。默认走 OpenAI 兼容协议，因此 DeepSeek / 通义千问 / 智谱 / 本地 vLLM
-     * 只需要改 base-url 和 model，不用改代码。
+     * LLM 接入参数。默认走 OpenAI 兼容协议，因此 DeepSeek / 通义千问 / 千帆 / 智谱 /
+     * 本地 vLLM 只需要改 base-url、completions-path 和 model，不用改代码。
+     *
+     * <p>路径也要能配：各家「OpenAI 兼容」兼容的是请求体格式，路径并不统一
+     * （通义 /v1/chat/completions，千帆 /v2/chat/completions）。
      */
     public static class Llm {
 
         private String provider = "openai-compatible";
         private String baseUrl = "https://api.deepseek.com";
+
+        /**
+         * 补全端点路径。默认值与 Spring AI 内置的 OpenAI 默认值一致。
+         *
+         * <p>为什么必须外置：各家「OpenAI 兼容」兼容的是请求体格式，不是路径。
+         * 通义是 /v1/chat/completions，千帆是 /v2/chat/completions。
+         * 路径也能配，换厂商才真正做到只改配置、不改代码。
+         */
+        private String completionsPath = "/v1/chat/completions";
 
         /** 留空则整个应用仍可启动，只是 /api/ask 会返回明确的 503，而不是启动失败。 */
         private String apiKey = "";
@@ -122,6 +143,14 @@ public class AgentProperties {
 
         public void setBaseUrl(String baseUrl) {
             this.baseUrl = baseUrl;
+        }
+
+        public String getCompletionsPath() {
+            return completionsPath;
+        }
+
+        public void setCompletionsPath(String completionsPath) {
+            this.completionsPath = completionsPath;
         }
 
         public String getApiKey() {
@@ -279,6 +308,151 @@ public class AgentProperties {
         }
     }
 
+    /**
+     * 检索层参数（阶段 2）。
+     *
+     * <p><b>为什么 enabled 默认 false</b>
+     *
+     * <p>两个理由。一是「优化必须显式开启」：baseline 是验收的参照系，
+     * 它必须随时可复现，不能因为某个默认值变了就悄悄变成另一个东西。
+     * 二是消融实验需要这个开关——同一份代码、同一个数据库、同一个模型，
+     * 只改这一个布尔值，就能得到「+schema 检索」那一行的数字。
+     * 如果检索是默认行为，跑 baseline 反而要额外配一堆参数，很容易配错。
+     *
+     * <p>这些阈值都放在配置里而不是代码常量，是为了能在开发集上做小范围
+     * 网格搜索，并把这个过程写进 README——「我怎么调出这个数字的」
+     * 本身就是面试材料。
+     */
+    public static class Retrieval {
+
+        /** 是否启用检索版 provider。false = 走阶段 1 的全量 provider（baseline）。 */
+        private boolean enabled = false;
+
+        /** 最终交给模型的表数量上限。 */
+        private int topK = 8;
+
+        /** 关系扩展跳数。0 = 不扩展；1 = 只带一跳邻居；2 = 两跳。 */
+        private int relationHops = 1;
+
+        /** 每扩展一跳，分数乘以这个系数。衰减是为了让直接命中永远排在扩展项前面。 */
+        private double relationDecay = 0.4;
+
+        /**
+         * 最多从几张表出发做关系扩展。
+         *
+         * <p>不做这个限制的话，一个命中五张表的问题会扩展出十几张表，
+         * Top-K 形同虚设。取分数最高的几张出发，是把扩展预算花在
+         * 最可信的命中上。
+         */
+        private int expansionSeedLimit = 3;
+
+        /**
+         * 单字别名的权重折扣。
+         *
+         * <p>「州」「券」「仓」这类单字词召回价值高但误命中率也高
+         * （「广州」含「州」、「优惠」含「券」）。打折而不是禁用：
+         * 禁用会丢掉「各州的订单量」这类问法，那是真实存在的说法。
+         */
+        private double singleCharWeightFactor = 0.5;
+
+        /** 英文标识符（表名/列名）直接出现在问题里时的权重。 */
+        private double identifierHitWeight = 1.5;
+
+        /**
+         * 是否开启「连通性修复」：Top-K 出来的表如果连不成一张图，
+         * 自动补入关系图上的最短桥接表。
+         *
+         * <p>默认开启。它解决的是纯词法检索的结构性盲区——用户问
+         * 「每个大区的商品销售额」时不会说「客户」，而 {@code customers}
+         * 恰恰是连接 {@code regions} 和 {@code orders} 的唯一通路。
+         * 这个缺口补词典补不掉，只能靠图算法。
+         */
+        private boolean bridgeRepairEnabled = true;
+
+        /**
+         * 连通性修复最多额外补几张表。
+         *
+         * <p>上限存在的意义：多组件子图可能需要引入多张桥接表，
+         * 不封顶就会一路补到接近全量，把检索的意义抵消掉。
+         * 宁可保留不连通（模型会生成跑不通的 SQL，错误可见），
+         * 也不要悄悄把上下文撑爆。取 2 的实测依据：绝大多数
+         * 不连通情形只差一张中枢表。
+         */
+        private int bridgeRepairMaxTables = 2;
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public int getTopK() {
+            return topK;
+        }
+
+        public void setTopK(int topK) {
+            this.topK = topK;
+        }
+
+        public int getRelationHops() {
+            return relationHops;
+        }
+
+        public void setRelationHops(int relationHops) {
+            this.relationHops = relationHops;
+        }
+
+        public double getRelationDecay() {
+            return relationDecay;
+        }
+
+        public void setRelationDecay(double relationDecay) {
+            this.relationDecay = relationDecay;
+        }
+
+        public int getExpansionSeedLimit() {
+            return expansionSeedLimit;
+        }
+
+        public void setExpansionSeedLimit(int expansionSeedLimit) {
+            this.expansionSeedLimit = expansionSeedLimit;
+        }
+
+        public double getSingleCharWeightFactor() {
+            return singleCharWeightFactor;
+        }
+
+        public void setSingleCharWeightFactor(double singleCharWeightFactor) {
+            this.singleCharWeightFactor = singleCharWeightFactor;
+        }
+
+        public double getIdentifierHitWeight() {
+            return identifierHitWeight;
+        }
+
+        public void setIdentifierHitWeight(double identifierHitWeight) {
+            this.identifierHitWeight = identifierHitWeight;
+        }
+
+        public boolean isBridgeRepairEnabled() {
+            return bridgeRepairEnabled;
+        }
+
+        public void setBridgeRepairEnabled(boolean bridgeRepairEnabled) {
+            this.bridgeRepairEnabled = bridgeRepairEnabled;
+        }
+
+        public int getBridgeRepairMaxTables() {
+            return bridgeRepairMaxTables;
+        }
+
+        public void setBridgeRepairMaxTables(int bridgeRepairMaxTables) {
+            this.bridgeRepairMaxTables = bridgeRepairMaxTables;
+        }
+    }
+
     /** 评估运行器参数。默认关闭，避免正常启动时误跑 200 条评估。 */
     public static class Eval {
 
@@ -291,6 +465,22 @@ public class AgentProperties {
 
         /** 留空表示全部难度层；例如 [T1, T2] 只跑前两层。 */
         private List<String> layers = new ArrayList<>();
+
+        /**
+         * 开发集 / 评估集切分：{@code all} / {@code dev} / {@code eval}。
+         *
+         * <p><b>为什么需要它</b>
+         *
+         * <p>ROADMAP 5.5 的第一条硬原则是「评估集不能用来调参」。
+         * 如果只有一份 200 条的数据集，那么「看失败案例 → 补词典 →
+         * 重跑同一批 200 条」这个循环跑上几轮之后，报出来的召回率就是
+         * 对这批样本过拟合的结果，不再代表真实能力。
+         *
+         * <p>默认 {@code all}：阶段 1 的历史数字是在全部 200 条上跑的，
+         * 默认值改成 {@code dev} 会让「同一条命令的数字变了」，
+         * 破坏历史可比性。要分集训练时必须显式写 {@code --agent.eval.split=dev}。
+         */
+        private String split = "all";
 
         /**
          * 自检模式：用 gold_sql 冒充模型输出跑一遍评估。
@@ -356,6 +546,14 @@ public class AgentProperties {
 
         public void setLayers(List<String> layers) {
             this.layers = layers;
+        }
+
+        public String getSplit() {
+            return split;
+        }
+
+        public void setSplit(String split) {
+            this.split = split;
         }
 
         public boolean isDryRun() {
