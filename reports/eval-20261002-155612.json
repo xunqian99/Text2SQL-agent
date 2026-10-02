@@ -1,0 +1,619 @@
+{
+  "meta" : {
+    "timestamp" : "2026-10-02T15:56:12.5206644",
+    "promptVersion" : "p1-full-schema-v1",
+    "model" : "ernie-4.5-turbo-32k",
+    "baseUrl" : "https://qianfan.baidubce.com",
+    "dryRun" : false,
+    "itemCount" : 100,
+    "limit" : 0,
+    "layers" : [ ],
+    "split" : "dev",
+    "includeDataProfile" : true,
+    "includeForeignKeys" : true,
+    "limitMode" : "APPEND",
+    "maxRows" : 200,
+    "schemaTableCount" : 9,
+    "retrievalEnabled" : true,
+    "retrievalTopK" : 8
+  },
+  "overall" : {
+    "total" : 100,
+    "correct" : 48,
+    "executionAccuracy" : 0.48,
+    "sqlValid" : 97,
+    "sqlValidRate" : 0.97,
+    "rewrittenCount" : 0,
+    "avgPromptTokens" : 698.72,
+    "avgLatencyMs" : 4170.42,
+    "p50LatencyMs" : 3134,
+    "p95LatencyMs" : 9743,
+    "avgCostYuan" : 0.0,
+    "totalCostYuan" : 0.0
+  },
+  "byLayer" : {
+    "single_table_basic" : {
+      "total" : 20,
+      "correct" : 18,
+      "executionAccuracy" : 0.9,
+      "sqlValid" : 20,
+      "sqlValidRate" : 1.0,
+      "rewrittenCount" : 0,
+      "avgPromptTokens" : 664.0,
+      "avgLatencyMs" : 2116.4,
+      "p50LatencyMs" : 2020,
+      "p95LatencyMs" : 2822,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    },
+    "single_table_agg" : {
+      "total" : 20,
+      "correct" : 15,
+      "executionAccuracy" : 0.75,
+      "sqlValid" : 20,
+      "sqlValidRate" : 1.0,
+      "rewrittenCount" : 0,
+      "avgPromptTokens" : 624.75,
+      "avgLatencyMs" : 2277.05,
+      "p50LatencyMs" : 2096,
+      "p95LatencyMs" : 3840,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    },
+    "time_window" : {
+      "total" : 14,
+      "correct" : 7,
+      "executionAccuracy" : 0.5,
+      "sqlValid" : 14,
+      "sqlValidRate" : 1.0,
+      "rewrittenCount" : 0,
+      "avgPromptTokens" : 749.36,
+      "avgLatencyMs" : 3930.07,
+      "p50LatencyMs" : 3589,
+      "p95LatencyMs" : 8438,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    },
+    "multi_join" : {
+      "total" : 23,
+      "correct" : 5,
+      "executionAccuracy" : 0.21739130434782608,
+      "sqlValid" : 21,
+      "sqlValidRate" : 0.9130434782608695,
+      "rewrittenCount" : 0,
+      "avgPromptTokens" : 690.74,
+      "avgLatencyMs" : 4072.83,
+      "p50LatencyMs" : 3734,
+      "p95LatencyMs" : 6433,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    },
+    "multi_join_deep" : {
+      "total" : 10,
+      "correct" : 3,
+      "executionAccuracy" : 0.3,
+      "sqlValid" : 9,
+      "sqlValidRate" : 0.9,
+      "rewrittenCount" : 0,
+      "avgPromptTokens" : 767.1,
+      "avgLatencyMs" : 6706.9,
+      "p50LatencyMs" : 6143,
+      "p95LatencyMs" : 10229,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    },
+    "business_semantics" : {
+      "total" : 13,
+      "correct" : 0,
+      "executionAccuracy" : 0.0,
+      "sqlValid" : 13,
+      "sqlValidRate" : 1.0,
+      "rewrittenCount" : 0,
+      "avgPromptTokens" : 772.92,
+      "avgLatencyMs" : 8723.69,
+      "p50LatencyMs" : 5378,
+      "p95LatencyMs" : 23033,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    }
+  },
+  "failures" : [ {
+    "id" : "T1-026",
+    "difficulty" : "single_table_basic",
+    "tags" : [ "排序", "限制" ],
+    "question" : "积分最高的 10 个会员是谁？",
+    "status" : "SUCCESS",
+    "generatedSql" : "select m.member_id, m.customer_unique_id, m.points\nfrom members m\norder by m.points desc\nlimit 10",
+    "message" : null,
+    "latencyMs" : 1904
+  }, {
+    "id" : "T1-028",
+    "difficulty" : "single_table_basic",
+    "tags" : [ "排序", "限制" ],
+    "question" : "容量最大的仓库是哪一个？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT warehouse_name \nFROM warehouses \nORDER BY capacity DESC \nLIMIT 1;",
+    "message" : null,
+    "latencyMs" : 1348
+  }, {
+    "id" : "T2-003",
+    "difficulty" : "single_table_agg",
+    "tags" : [ "聚合", "平均" ],
+    "question" : "订单明细的平均商品价格是多少？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT AVG(price) as avg_product_price\nFROM order_items\nLIMIT 1;",
+    "message" : null,
+    "latencyMs" : 2231
+  }, {
+    "id" : "T2-012",
+    "difficulty" : "single_table_agg",
+    "tags" : [ "聚合", "分组", "求和" ],
+    "question" : "每个卖家的运费收入合计是多少？取最高的 10 个。",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n    s.seller_id, \n    s.seller_city, \n    s.seller_state, \n    SUM(oi.freight_value) AS total_freight_income\nFROM \n    order_items oi\nJOIN \n    sellers s ON oi.seller_id = s.seller_id\nGROUP BY \n    s.seller_id, s.seller_city, s.seller_state\nORDER BY \n    total_freight_income DESC\nLIMIT 10;",
+    "message" : null,
+    "latencyMs" : 4145
+  }, {
+    "id" : "T2-014",
+    "difficulty" : "single_table_agg",
+    "tags" : [ "条件聚合" ],
+    "question" : "支付方式里信用卡和 boleto 各占多少笔？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n    payment_type, \n    COUNT(*) as count\nFROM \n    order_payments\nWHERE \n    payment_type IN ('credit_card', 'boleto')\nGROUP BY \n    payment_type\nLIMIT 2;",
+    "message" : null,
+    "latencyMs" : 3840
+  }, {
+    "id" : "T2-030",
+    "difficulty" : "single_table_agg",
+    "tags" : [ "聚合", "分组" ],
+    "question" : "每个工单分类各有多少个工单？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT tc.category_name, COUNT(st.ticket_id) AS ticket_count\nFROM support_tickets st\nJOIN ticket_categories tc ON st.category_id = tc.category_id\nGROUP BY tc.category_name\nLIMIT 1000;",
+    "message" : null,
+    "latencyMs" : 3321
+  }, {
+    "id" : "T2-036",
+    "difficulty" : "single_table_agg",
+    "tags" : [ "HAVING" ],
+    "question" : "商品数量超过 1500 个的类目有哪些？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT p.product_category_name, SUM(i.quantity) as total_quantity\nFROM products p\nJOIN inventory i ON p.product_id = i.product_id\nGROUP BY p.product_category_name\nHAVING SUM(i.quantity) > 1500\nLIMIT 100;",
+    "message" : null,
+    "latencyMs" : 2813
+  }, {
+    "id" : "T3-008",
+    "difficulty" : "time_window",
+    "tags" : [ "时间", "平均" ],
+    "question" : "每个月的平均订单金额（按订单明细商品金额计）是多少？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n    DATE_TRUNC('month', o.order_purchase_timestamp) AS month,\n    AVG(oi.price) AS avg_order_item_price\nFROM \n    order_items oi\nJOIN \n    orders o ON oi.order_id = o.order_id\nGROUP BY \n    month\nORDER BY \n    month\nLIMIT 1000;",
+    "message" : null,
+    "latencyMs" : 4572
+  }, {
+    "id" : "T3-011",
+    "difficulty" : "time_window",
+    "tags" : [ "时间", "环比", "比率" ],
+    "question" : "每个月的订单量环比增长率是多少？",
+    "status" : "SUCCESS",
+    "generatedSql" : "WITH monthly_orders AS (\n  SELECT \n    date_trunc('month', order_purchase_timestamp) AS month,\n    COUNT(*) AS order_count\n  FROM orders\n  GROUP BY month\n  ORDER BY month\n),\nmonthly_growth AS (\n  SELECT \n    month,\n    order_count,\n    lag(order_count) OVER (ORDER BY month) AS prev_month_count\n  FROM monthly_orders\n)\nSELECT \n  month,\n  order_count,\n  prev_month_count,\n  CASE \n    WHEN prev_month_count IS NULL OR prev_month_count = 0 THEN NULL\n    ELSE ((order_count - prev_month_count) * 100.0 / prev_month_count)\n  END AS growth_rate_percent\nFROM monthly_growth\nORDER BY month\nLIMIT 24;",
+    "message" : null,
+    "latencyMs" : 8438
+  }, {
+    "id" : "T3-017",
+    "difficulty" : "time_window",
+    "tags" : [ "时间", "日期差" ],
+    "question" : "订单从下单到送达平均需要多少天？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT AVG(EXTRACT(DAY FROM (order_delivered_customer_date - order_purchase_timestamp))) AS avg_delivery_days\nFROM orders\nWHERE order_delivered_customer_date IS NOT NULL\nLIMIT 1;",
+    "message" : null,
+    "latencyMs" : 2795
+  }, {
+    "id" : "T3-020",
+    "difficulty" : "time_window",
+    "tags" : [ "时间", "日期差", "比率" ],
+    "question" : "超时送达的订单占已送达订单的比例是多少？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n    (COUNT(CASE WHEN o.order_delivered_customer_date > o.order_estimated_delivery_date THEN 1 END) * 100.0 / \n    COUNT(CASE WHEN o.order_delivered_customer_date IS NOT NULL THEN 1 END)) AS timeout_delivery_ratio\nFROM \n    orders o\nWHERE \n    o.order_delivered_customer_date IS NOT NULL\nLIMIT 1;",
+    "message" : null,
+    "latencyMs" : 4912
+  }, {
+    "id" : "T3-024",
+    "difficulty" : "time_window",
+    "tags" : [ "时间", "日期差" ],
+    "question" : "客服工单从创建到解决平均需要多少小时？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT AVG(EXTRACT(EPOCH FROM (resolved_at - created_at)) / 3600) AS avg_hours_to_resolve\nFROM support_tickets\nWHERE resolved_at IS NOT NULL\nLIMIT 1;",
+    "message" : null,
+    "latencyMs" : 2315
+  }, {
+    "id" : "T3-026",
+    "difficulty" : "time_window",
+    "tags" : [ "时间", "按月", "分组" ],
+    "question" : "每个月的评价平均分是多少？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n    DATE_TRUNC('month', orders.order_purchase_timestamp) AS month,\n    AVG(order_reviews.review_score) AS average_score\nFROM \n    order_reviews\nJOIN \n    orders ON order_reviews.order_id = orders.order_id\nGROUP BY \n    month\nORDER BY \n    month\nLIMIT 1000;",
+    "message" : null,
+    "latencyMs" : 4613
+  }, {
+    "id" : "T3-028",
+    "difficulty" : "time_window",
+    "tags" : [ "时间", "活跃" ],
+    "question" : "最近 30 天内有登录记录的会员有多少人？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT COUNT(DISTINCT member_id) \nFROM search_logs \nWHERE searched_at >= (SELECT MAX(searched_at) FROM search_logs) - INTERVAL '30 days' \nLIMIT 1;",
+    "message" : null,
+    "latencyMs" : 2364
+  }, {
+    "id" : "T4-001",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "计数" ],
+    "question" : "每个客户的订单数量是多少？取订单最多的 10 个客户。",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT c.customer_id, COUNT(o.order_id) AS order_count\nFROM customers c\nJOIN orders o ON c.customer_id = o.customer_id\nGROUP BY c.customer_id\nORDER BY order_count DESC\nLIMIT 10",
+    "message" : null,
+    "latencyMs" : 3092
+  }, {
+    "id" : "T4-003",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "分组" ],
+    "question" : "每个商品类目的订单数量是多少？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT p.product_category_name, COUNT(DISTINCT oi.order_id) AS order_count\nFROM products p\nJOIN order_items oi ON p.product_id = oi.product_id\nGROUP BY p.product_category_name\nORDER BY order_count DESC\nLIMIT 1000;",
+    "message" : null,
+    "latencyMs" : 3134
+  }, {
+    "id" : "T4-005",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "分组", "求和" ],
+    "question" : "每个卖家的订单数量是多少？取前 10 名。",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT s.seller_id, COUNT(o.order_id) AS order_count\nFROM sellers s\nJOIN order_items oi ON s.seller_id = oi.seller_id\nJOIN orders o ON oi.order_id = o.order_id\nGROUP BY s.seller_id\nORDER BY order_count DESC\nLIMIT 10",
+    "message" : null,
+    "latencyMs" : 3323
+  }, {
+    "id" : "T4-009",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "分组", "平均" ],
+    "question" : "每个支付方式的平均支付金额是多少？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT payment_type, AVG(payment_value) AS avg_payment_value\nFROM order_payments\nGROUP BY payment_type\nLIMIT 1000",
+    "message" : null,
+    "latencyMs" : 3092
+  }, {
+    "id" : "T4-012",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "分组" ],
+    "question" : "每个州的评价平均分是多少？取评价数最多的 10 个州。",
+    "status" : "REJECTED",
+    "generatedSql" : "SELECT \n    c.customer_state, \n    AVG(or.review_score) AS avg_review_score\nFROM \n    order_reviews or\nJOIN \n    orders o ON or.order_id = o.order_id\nJOIN \n    customers c ON o.customer_id = c.customer_id\nGROUP BY \n    c.customer_state\nORDER BY \n    COUNT(or.review_id) DESC\nLIMIT 10;",
+    "message" : "[PARSE_ERROR] SQL 无法解析：SELECT \n    c.customer_state, \n    AVG(or.review_score) AS avg_review_score\nFROM \n    order_reviews or\nJOIN \n    orders o ON or.order_id = o.order_id\nJOIN \n    customers c ON o.customer_id = c.customer_id\nGROUP BY \n    c.customer_state\nORDER BY \n    COUNT(or.review_id) DESC\nLIMIT 10;",
+    "latencyMs" : 5053
+  }, {
+    "id" : "T4-014",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "分组" ],
+    "question" : "每种支付方式的评价平均分是多少？",
+    "status" : "REJECTED",
+    "generatedSql" : "SELECT op.payment_type, AVG(or.review_score) as avg_review_score\nFROM order_payments op\nJOIN order_reviews or ON op.order_id = or.order_id\nGROUP BY op.payment_type\nLIMIT 1000;",
+    "message" : "[PARSE_ERROR] SQL 无法解析：SELECT op.payment_type, AVG(or.review_score) as avg_review_score\nFROM order_payments op\nJOIN order_reviews or ON op.order_id = or.order_id\nGROUP BY op.payment_type\nLIMIT 1000;",
+    "latencyMs" : 2904
+  }, {
+    "id" : "T4-016",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "分组", "求和" ],
+    "question" : "每个大区的商品销售额是多少？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n    r.macro_region, \n    SUM(oi.price) AS total_sales\nFROM \n    order_items oi\nJOIN \n    orders o ON oi.order_id = o.order_id\nJOIN \n    warehouses w ON (\n        SELECT warehouse_id \n        FROM shipments \n        WHERE order_id = oi.order_id \n        LIMIT 1\n    ) = w.warehouse_id\nJOIN \n    regions r ON w.region_code = r.region_code\nGROUP BY \n    r.macro_region\nLIMIT 1000;",
+    "message" : null,
+    "latencyMs" : 6433
+  }, {
+    "id" : "T4-018",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "分组", "求和" ],
+    "question" : "每个会员等级的用户消费总额是多少？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT ml.level_name, SUM(oi.price) AS total_consumption\nFROM member_levels ml\nJOIN members m ON ml.level_id = m.level_id\nJOIN customers c ON m.customer_unique_id = c.customer_unique_id\nJOIN orders o ON c.customer_id = o.customer_id\nJOIN order_items oi ON o.order_id = oi.order_id\nGROUP BY ml.level_name\nLIMIT 1000;",
+    "message" : null,
+    "latencyMs" : 4550
+  }, {
+    "id" : "T4-021",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "分组" ],
+    "question" : "每个活动带来的用券次数是多少？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n    c.campaign_id, \n    c.campaign_name, \n    COUNT(cu.usage_id) AS coupon_usage_count\nFROM \n    campaigns c\nJOIN \n    coupons co ON c.campaign_id = co.campaign_id\nJOIN \n    coupon_usages cu ON co.coupon_id = cu.coupon_id\nGROUP BY \n    c.campaign_id, c.campaign_name\nORDER BY \n    coupon_usage_count DESC\nLIMIT 1000;",
+    "message" : null,
+    "latencyMs" : 6045
+  }, {
+    "id" : "T4-027",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "分组" ],
+    "question" : "每个仓库的库存总量和平均库存量分别是多少？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n    w.warehouse_name, \n    SUM(i.quantity) AS total_inventory, \n    AVG(i.quantity) AS average_inventory\nFROM \n    inventory i\nJOIN \n    warehouses w ON i.warehouse_id = w.warehouse_id\nGROUP BY \n    w.warehouse_name\nLIMIT 1000;",
+    "message" : null,
+    "latencyMs" : 3372
+  }, {
+    "id" : "T4-029",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "分组" ],
+    "question" : "每个州的客服工单数量是多少？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT c.customer_state, COUNT(st.ticket_id) AS ticket_count\nFROM support_tickets st\nJOIN members m ON st.member_id = m.member_id\nJOIN customers c ON m.customer_unique_id = c.customer_unique_id\nGROUP BY c.customer_state\nLIMIT 1000;",
+    "message" : null,
+    "latencyMs" : 4640
+  }, {
+    "id" : "T4-030",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "分组" ],
+    "question" : "每个卖家的结算总额是多少？取前 10 名。",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT s.seller_id, s.seller_city, SUM(st.total_amount) AS total_settlement_amount\nFROM sellers s\nJOIN settlements st ON s.seller_id = st.seller_id\nGROUP BY s.seller_id, s.seller_city\nORDER BY total_settlement_amount DESC\nLIMIT 10;",
+    "message" : null,
+    "latencyMs" : 3694
+  }, {
+    "id" : "T4-032",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "分组" ],
+    "question" : "每个类目下发生过多少次退款？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT pc.product_category_name, COUNT(r.refund_id) AS refund_count\nFROM refunds r\nJOIN order_items oi ON r.order_id = oi.order_id\nJOIN products p ON oi.product_id = p.product_id\nJOIN product_category_translation pc ON p.product_category_name = pc.product_category_name\nGROUP BY pc.product_category_name\nLIMIT 1000;",
+    "message" : null,
+    "latencyMs" : 4548
+  }, {
+    "id" : "T4-034",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "分组" ],
+    "question" : "有过退款的订单占比是多少？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n    (COUNT(DISTINCT CASE WHEN r.order_id IS NOT NULL THEN o.order_id END) * 100.0 / COUNT(DISTINCT o.order_id)) AS refund_rate\nFROM \n    orders o\nLEFT JOIN \n    refunds r ON o.order_id = r.order_id\nLIMIT 1;",
+    "message" : null,
+    "latencyMs" : 4984
+  }, {
+    "id" : "T4-036",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "分组" ],
+    "question" : "每个州的客户平均消费了多少？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n    c.customer_state, \n    AVG(oi.price + oi.freight_value) AS avg_spending\nFROM \n    customers c\nJOIN \n    orders o ON c.customer_id = o.customer_id\nJOIN \n    order_items oi ON o.order_id = oi.order_id\nGROUP BY \n    c.customer_state\nLIMIT 1000;",
+    "message" : null,
+    "latencyMs" : 4455
+  }, {
+    "id" : "T4-038",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "分组" ],
+    "question" : "每个会员等级里有多少人打过\"流失风险用户\"标签？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT ml.level_name, COUNT(DISTINCT m.member_id) AS member_count\nFROM member_levels ml\nJOIN members m ON ml.level_id = m.level_id\nJOIN user_tag_map utm ON m.member_id = utm.member_id\nJOIN user_tags ut ON utm.tag_id = ut.tag_id\nWHERE ut.tag_name = '流失风险用户'\nGROUP BY ml.level_name\nLIMIT 1000;",
+    "message" : null,
+    "latencyMs" : 4927
+  }, {
+    "id" : "T4-041",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "分组", "求和" ],
+    "question" : "每个品牌的商品有多少个？品牌的商品销售总额是多少？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n    b.brand_name, \n    COUNT(DISTINCT pbm.product_id) AS product_count, \n    COALESCE(SUM(oi.price), 0) AS total_sales_amount\nFROM \n    brands b\nLEFT JOIN \n    product_brand_map pbm ON b.brand_id = pbm.brand_id AND pbm.is_current = true\nLEFT JOIN \n    products p ON pbm.product_id = p.product_id\nLEFT JOIN \n    order_items oi ON pbm.product_id = oi.product_id\nGROUP BY \n    b.brand_name\nORDER BY \n    product_count DESC, total_sales_amount DESC\nLIMIT 1000;",
+    "message" : null,
+    "latencyMs" : 6742
+  }, {
+    "id" : "T4-045",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "分组" ],
+    "question" : "每个类目的平均商品重量是多少？取商品数最多的 10 个类目。",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n    p.product_category_name, \n    AVG(p.product_weight_g) AS avg_weight\nFROM \n    products p\nGROUP BY \n    p.product_category_name\nORDER BY \n    COUNT(*) DESC\nLIMIT 10;",
+    "message" : null,
+    "latencyMs" : 2710
+  }, {
+    "id" : "T5-002",
+    "difficulty" : "multi_join_deep",
+    "tags" : [ "join", "会员", "求和" ],
+    "question" : "每个会员等级对应的商品销售额是多少？",
+    "status" : "EXECUTION_FAILED",
+    "generatedSql" : "SELECT ml.level_name, SUM(oi.price * oi.freight_value) AS total_sales\nFROM member_levels ml\nJOIN members m ON ml.level_id = m.level_id\nJOIN orders o ON o.customer_id = (\n    SELECT customer_id \n    FROM customers \n    WHERE customer_unique_id = m.customer_unique_id\n)\nJOIN order_items oi ON o.order_id = oi.order_id\nGROUP BY ml.level_name\nLIMIT 1000;",
+    "message" : "PreparedStatementCallback; bad SQL grammar [SELECT ml.level_name, SUM(oi.price * oi.freight_value) AS total_sales\nFROM member_levels ml\nJOIN members m ON ml.level_id = m.level_id\nJOIN orders o ON o.customer_id = (\n    SELECT customer_id \n    FROM customers \n    WHERE customer_unique_id = m.customer_unique_id\n)\nJOIN order_items oi ON o.order_id = oi.order_id\nGROUP BY ml.level_name\nLIMIT 1000;]",
+    "latencyMs" : 5535
+  }, {
+    "id" : "T5-004",
+    "difficulty" : "multi_join_deep",
+    "tags" : [ "join", "物流", "分组" ],
+    "question" : "每个仓库所在区域的发货单量和覆盖订单数分别是多少？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n    w.region_code, \n    COUNT(s.shipment_id) AS shipment_count, \n    COUNT(DISTINCT s.order_id) AS order_count\nFROM \n    shipments s\nJOIN \n    warehouses w ON s.warehouse_id = w.warehouse_id\nGROUP BY \n    w.region_code\nLIMIT 1000;",
+    "message" : null,
+    "latencyMs" : 4092
+  }, {
+    "id" : "T5-006",
+    "difficulty" : "multi_join_deep",
+    "tags" : [ "join", "客服", "会员" ],
+    "question" : "物流延迟类工单按客户所在州和会员等级分布，列出前 20 组。",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n    c.customer_state, \n    ml.level_name, \n    COUNT(*) as ticket_count\nFROM \n    support_tickets st\nJOIN \n    members m ON st.member_id = m.member_id\nJOIN \n    member_levels ml ON m.level_id = ml.level_id\nJOIN \n    orders o ON st.order_id = o.order_id\nJOIN \n    customers c ON o.customer_id = c.customer_id\nWHERE \n    st.category_id IN (\n        SELECT category_id \n        FROM ticket_categories \n        WHERE category_name LIKE '%物流%' OR category_name LIKE '%延迟%'\n    )\nGROUP BY \n    c.customer_state, ml.level_name\nORDER BY \n    ticket_count DESC\nLIMIT 20;",
+    "message" : null,
+    "latencyMs" : 7064
+  }, {
+    "id" : "T5-013",
+    "difficulty" : "multi_join_deep",
+    "tags" : [ "join", "活动", "商品" ],
+    "question" : "每个营销活动关联商品实际带来的订单数和销售额，取前 10。",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n    c.campaign_name, \n    COUNT(DISTINCT o.order_id) AS order_count, \n    SUM(oi.price * oi.order_item_id::numeric) AS sales_amount\nFROM \n    campaigns c\nJOIN \n    campaign_products cp ON c.campaign_id = cp.campaign_id\nJOIN \n    products p ON cp.product_id = p.product_id\nJOIN \n    order_items oi ON p.product_id = oi.product_id\nJOIN \n    orders o ON oi.order_id = o.order_id\nWHERE \n    o.order_purchase_timestamp BETWEEN c.start_date AND c.end_date\nGROUP BY \n    c.campaign_name\nORDER BY \n    sales_amount DESC\nLIMIT 10;",
+    "message" : null,
+    "latencyMs" : 7336
+  }, {
+    "id" : "T5-015",
+    "difficulty" : "multi_join_deep",
+    "tags" : [ "join", "物流轨迹", "分组" ],
+    "question" : "物流轨迹事件类型按客户所在州分布，列出前 20 组（按发货单去重）。",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n    c.customer_state, \n    st.event_code, \n    COUNT(DISTINCT s.shipment_id) AS shipment_count\nFROM \n    shipments s\nJOIN \n    orders o ON s.order_id = o.order_id\nJOIN \n    customers c ON o.customer_id = c.customer_id\nJOIN \n    shipment_tracking st ON s.shipment_id = st.shipment_id\nGROUP BY \n    c.customer_state, st.event_code\nORDER BY \n    shipment_count DESC\nLIMIT 20;",
+    "message" : null,
+    "latencyMs" : 6143
+  }, {
+    "id" : "T5-019",
+    "difficulty" : "multi_join_deep",
+    "tags" : [ "join", "价格变动", "商品" ],
+    "question" : "发生过价格变动的商品，按类目统计平均涨跌幅和关联订单数，取订单数前 20。",
+    "status" : "SUCCESS",
+    "generatedSql" : "WITH price_changes AS (\n  SELECT \n    p.product_id,\n    p.product_category_name,\n    (ph.new_price - ph.old_price) AS price_change\n  FROM \n    product_price_history ph\n  JOIN \n    products p ON ph.product_id = p.product_id\n),\ncategory_stats AS (\n  SELECT \n    pc.product_category_name,\n    AVG(pc.price_change) AS avg_price_change,\n    COUNT(DISTINCT oi.order_id) AS order_count\n  FROM \n    price_changes pc\n  JOIN \n    order_items oi ON pc.product_id = oi.product_id\n  JOIN \n    products p ON pc.product_id = p.product_id\n  GROUP BY \n    pc.product_category_name\n)\nSELECT \n  product_category_name,\n  avg_price_change,\n  order_count\nFROM \n  category_stats\nORDER BY \n  order_count DESC\nLIMIT 20;",
+    "message" : null,
+    "latencyMs" : 10229
+  }, {
+    "id" : "T5-020",
+    "difficulty" : "multi_join_deep",
+    "tags" : [ "join", "库存", "出入库" ],
+    "question" : "按宏观区域和出入库类型统计库存变动笔数与数量合计。",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n    r.macro_region, \n    CASE \n        WHEN im.movement_type = 1 THEN '入库' \n        WHEN im.movement_type = 2 THEN '出库' \n        WHEN im.movement_type = 3 THEN '退货入库' \n        WHEN im.movement_type = 4 THEN '盘亏' \n    END AS movement_type_desc, \n    COUNT(*) AS movement_count, \n    SUM(im.quantity) AS total_quantity \nFROM \n    inventory_movements im \nJOIN \n    warehouses w ON im.warehouse_id = w.warehouse_id \nJOIN \n    regions r ON w.region_code = r.region_code \nGROUP BY \n    r.macro_region, im.movement_type \nORDER BY \n    r.macro_region, im.movement_type \nLIMIT 1000;",
+    "message" : null,
+    "latencyMs" : 7421
+  }, {
+    "id" : "T6-001",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "GMV" ],
+    "question" : "统计 2018 年全站 GMV（含运费），以及不含运费的销售额，两者分别是多少？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n    SUM(oi.price + oi.freight_value) AS gmv_with_freight,\n    SUM(oi.price) AS gmv_without_freight\nFROM \n    order_items oi\nJOIN \n    orders o ON oi.order_id = o.order_id\nWHERE \n    EXTRACT(YEAR FROM o.order_purchase_timestamp) = 2018\nLIMIT 1;",
+    "message" : null,
+    "latencyMs" : 4149
+  }, {
+    "id" : "T6-003",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "复购率" ],
+    "question" : "复购率是多少？（下单 2 次及以上的用户占全部下单用户的比例）",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n    (COUNT(DISTINCT CASE WHEN order_count >= 2 THEN customer_id END) * 100.0 / COUNT(DISTINCT customer_id)) AS repurchase_rate\nFROM \n    (SELECT customer_id, COUNT(order_id) AS order_count \n     FROM orders \n     GROUP BY customer_id) AS customer_orders\nLIMIT 1;",
+    "message" : null,
+    "latencyMs" : 4469
+  }, {
+    "id" : "T6-005",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "会员渗透" ],
+    "question" : "会员用户贡献的订单占比是多少？（会员渗透率）",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n    (COUNT(DISTINCT CASE WHEN m.member_id IS NOT NULL THEN o.order_id END) * 100.0 / COUNT(DISTINCT o.order_id)) AS membership_penetration_rate\nFROM \n    orders o\nLEFT JOIN \n    members m ON o.customer_id = m.customer_unique_id\nLIMIT 1;",
+    "message" : null,
+    "latencyMs" : 4425
+  }, {
+    "id" : "T6-007",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "退款率" ],
+    "question" : "退款率是多少？（退款订单数 / 有效订单数）",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n    (COUNT(DISTINCT r.order_id) * 100.0 / COUNT(DISTINCT o.order_id)) AS refund_rate\nFROM \n    orders o\nLEFT JOIN \n    refunds r ON o.order_id = r.order_id\nWHERE \n    o.order_status IS NOT NULL\nLIMIT 1;",
+    "message" : null,
+    "latencyMs" : 4374
+  }, {
+    "id" : "T6-009",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "评分" ],
+    "question" : "低分订单（1-2 星）占比是多少？按客户所在州列出前 10。",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n    c.customer_state,\n    COUNT(DISTINCT CASE WHEN r.review_score BETWEEN 1 AND 2 THEN r.order_id END) * 100.0 / COUNT(DISTINCT r.order_id) AS low_score_percentage\nFROM \n    order_reviews r\nJOIN \n    orders o ON r.order_id = o.order_id\nJOIN \n    customers c ON o.customer_id = c.customer_id\nGROUP BY \n    c.customer_state\nORDER BY \n    low_score_percentage DESC\nLIMIT 10;",
+    "message" : null,
+    "latencyMs" : 5378
+  }, {
+    "id" : "T6-010",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "转化" ],
+    "question" : "搜索转化率是多少？（有点击的搜索记录 / 全部搜索记录）",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n    (COUNT(CASE WHEN clicked_product_id IS NOT NULL THEN 1 END) * 100.0 / COUNT(*)) AS conversion_rate\nFROM \n    search_logs\nLIMIT 1;",
+    "message" : null,
+    "latencyMs" : 2892
+  }, {
+    "id" : "T6-012",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "活跃用户" ],
+    "question" : "2018 年按月统计活跃下单用户数（MAU）。",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n    EXTRACT(MONTH FROM order_purchase_timestamp) AS month,\n    COUNT(DISTINCT customer_id) AS mau\nFROM \n    orders\nWHERE \n    EXTRACT(YEAR FROM order_purchase_timestamp) = 2018\nGROUP BY \n    month\nORDER BY \n    month\nLIMIT 12;",
+    "message" : null,
+    "latencyMs" : 4150
+  }, {
+    "id" : "T6-014",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "会员", "分层" ],
+    "question" : "各会员等级的用户数、人均订单数、人均 GMV 分别是多少？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n    ml.level_name,\n    COUNT(DISTINCT m.member_id) AS user_count,\n    COUNT(DISTINCT o.order_id) * 1.0 / NULLIF(COUNT(DISTINCT m.member_id), 0) AS avg_orders_per_user,\n    SUM(oi.price) * 1.0 / NULLIF(COUNT(DISTINCT m.member_id), 0) AS avg_gmv_per_user\nFROM \n    members m\nJOIN \n    member_levels ml ON m.level_id = ml.level_id\nLEFT JOIN \n    orders o ON m.customer_unique_id = (SELECT customer_unique_id FROM customers WHERE customer_id = o.customer_id)\nLEFT JOIN \n    order_items oi ON o.order_id = oi.order_id\nGROUP BY \n    ml.level_name\nLIMIT 1000;",
+    "message" : null,
+    "latencyMs" : 9336
+  }, {
+    "id" : "T6-016",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "品牌" ],
+    "question" : "各品牌的商品数、动销商品数、销售额和动销率分别是多少？取销售额前 10。",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n    b.brand_name,\n    COUNT(DISTINCT p.product_id) AS total_products,\n    COUNT(DISTINCT CASE WHEN oi.order_id IS NOT NULL THEN p.product_id END) AS sold_products,\n    COALESCE(SUM(CASE WHEN oi.order_id IS NOT NULL THEN oi.price * oi.order_item_id::numeric ELSE 0 END), 0) AS total_sales,\n    CASE \n        WHEN COUNT(DISTINCT p.product_id) = 0 THEN 0 \n        ELSE COUNT(DISTINCT CASE WHEN oi.order_id IS NOT NULL THEN p.product_id END)::numeric / COUNT(DISTINCT p.product_id) \n    END AS sold_rate\nFROM \n    brands b\nJOIN \n    product_brand_map pbm ON b.brand_id = pbm.brand_id AND pbm.is_current = true\nJOIN \n    products p ON pbm.product_id = p.product_id\nLEFT JOIN \n    order_items oi ON p.product_id = oi.product_id\nGROUP BY \n    b.brand_name\nORDER BY \n    total_sales DESC\nLIMIT 10;",
+    "message" : null,
+    "latencyMs" : 9743
+  }, {
+    "id" : "T6-018",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "复购", "会员" ],
+    "question" : "会员与非会员的复购率分别是多少？",
+    "status" : "SUCCESS",
+    "generatedSql" : "WITH \n-- 会员复购情况\nmember_repurchases AS (\n    SELECT \n        o1.customer_id,\n        COUNT(DISTINCT o1.order_id) AS total_orders,\n        COUNT(DISTINCT CASE WHEN o2.order_id IS NOT NULL THEN o1.order_id END) AS repurchase_orders\n    FROM \n        orders o1\n    LEFT JOIN \n        orders o2 ON o1.customer_id = o2.customer_id \n        AND o2.order_purchase_timestamp > o1.order_purchase_timestamp\n    JOIN \n        members m ON o1.customer_id = m.customer_unique_id\n    GROUP BY \n        o1.customer_id\n),\n-- 非会员复购情况\nnon_member_repurchases AS (\n    SELECT \n        o1.customer_id,\n        COUNT(DISTINCT o1.order_id) AS total_orders,\n        COUNT(DISTINCT CASE WHEN o2.order_id IS NOT NULL THEN o1.order_id END) AS repurchase_orders\n    FROM \n        orders o1\n    LEFT JOIN \n        orders o2 ON o1.customer_id = o2.customer_id \n        AND o2.order_purchase_timestamp > o1.order_purchase_timestamp\n    WHERE \n        o1.customer_id NOT IN (SELECT customer_unique_id FROM members)\n    GROUP BY \n        o1.customer_id\n)\n-- 计算复购率\nSELECT \n    '会员' AS customer_type,\n    COUNT(DISTINCT customer_id) AS customer_count,\n    SUM(total_orders) AS total_orders,\n    SUM(repurchase_orders) AS repurchase_orders,\n    CASE \n        WHEN SUM(total_orders) = 0 THEN 0 \n        ELSE SUM(repurchase_orders) * 100.0 / SUM(total_orders) \n    END AS repurchase_rate\nFROM \n    member_repurchases\nUNION ALL\nSELECT \n    '非会员' AS customer_type,\n    COUNT(DISTINCT customer_id) AS customer_count,\n    SUM(total_orders) AS total_orders,\n    SUM(repurchase_orders) AS repurchase_orders,\n    CASE \n        WHEN SUM(total_orders) = 0 THEN 0 \n        ELSE SUM(repurchase_orders) * 100.0 / SUM(total_orders) \n    END AS repurchase_rate\nFROM \n    non_member_repurchases\nLIMIT 2;",
+    "message" : null,
+    "latencyMs" : 23033
+  }, {
+    "id" : "T6-021",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "用户分层", "帕累托" ],
+    "question" : "按用户累计 GMV 排序，贡献前 20% 的用户占总 GMV 的比例是多少？",
+    "status" : "SUCCESS",
+    "generatedSql" : "WITH user_gmv AS (\n  SELECT \n    c.customer_unique_id,\n    SUM(oi.price) AS total_gmv\n  FROM \n    orders o\n  JOIN \n    customers c ON o.customer_id = c.customer_id\n  JOIN \n    order_items oi ON o.order_id = oi.order_id\n  GROUP BY \n    c.customer_unique_id\n),\nranked_users AS (\n  SELECT \n    customer_unique_id,\n    total_gmv,\n    PERCENT_RANK() OVER (ORDER BY total_gmv DESC) AS percentile\n  FROM \n    user_gmv\n),\ntop_20_percent AS (\n  SELECT \n    SUM(total_gmv) AS top_20_gmv\n  FROM \n    ranked_users\n  WHERE \n    percentile <= 0.2\n),\ntotal_gmv AS (\n  SELECT \n    SUM(total_gmv) AS all_gmv\n  FROM \n    user_gmv\n)\nSELECT \n  (top_20_gmv / all_gmv) * 100 AS top_20_percent_contribution\nFROM \n  top_20_percent, total_gmv\nLIMIT 1;",
+    "message" : null,
+    "latencyMs" : 12008
+  }, {
+    "id" : "T6-023",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "库存", "周转" ],
+    "question" : "各仓库的库存周转情况：当前库存量、近 90 天出库量、库存周转天数分别是多少？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n    w.warehouse_name,\n    COALESCE(i.current_quantity, 0) AS current_quantity,\n    COALESCE(o.outbound_quantity_90d, 0) AS outbound_quantity_90d,\n    CASE \n        WHEN COALESCE(o.outbound_quantity_90d, 0) = 0 THEN NULL\n        ELSE ROUND(i.current_quantity * 90.0 / o.outbound_quantity_90d, 2)\n    END AS inventory_turnover_days\nFROM \n    warehouses w\nLEFT JOIN \n    (SELECT warehouse_id, SUM(quantity) AS current_quantity FROM inventory GROUP BY warehouse_id) i\n    ON w.warehouse_id = i.warehouse_id\nLEFT JOIN \n    (SELECT \n        im.warehouse_id, \n        SUM(CASE WHEN im.movement_type = 2 THEN im.quantity ELSE 0 END) AS outbound_quantity_90d\n     FROM \n        inventory_movements im\n     WHERE \n        im.moved_at >= (SELECT MAX(order_purchase_timestamp) FROM orders) - INTERVAL '90 days'\n        AND im.moved_at <= (SELECT MAX(order_purchase_timestamp) FROM orders)\n     GROUP BY \n        im.warehouse_id\n    ) o\n    ON w.warehouse_id = o.warehouse_id\nORDER BY \n    w.warehouse_name\nLIMIT 1000;",
+    "message" : null,
+    "latencyMs" : 12189
+  }, {
+    "id" : "T6-025",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "增长", "新老客" ],
+    "question" : "2018 年每个月的 GMV 中，新客和老客各贡献多少？",
+    "status" : "SUCCESS",
+    "generatedSql" : "WITH \n-- 获取2018年所有订单\norders_2018 AS (\n    SELECT \n        order_id,\n        customer_id,\n        order_purchase_timestamp,\n        -- 计算价格总和（GMV）\n        (SELECT SUM(price) FROM order_items WHERE order_items.order_id = orders.order_id) AS gmv\n    FROM orders\n    WHERE order_purchase_timestamp >= '2018-01-01 00:00:00' \n    AND order_purchase_timestamp < '2019-01-01 00:00:00'\n),\n-- 获取每个客户的最早订单日期（判断是否为新客）\ncustomer_first_orders AS (\n    SELECT \n        customer_id,\n        MIN(order_purchase_timestamp) AS first_order_date\n    FROM orders\n    GROUP BY customer_id\n),\n-- 标记2018年订单中的新客和老客\nlabeled_orders AS (\n    SELECT \n        o.order_id,\n        o.customer_id,\n        o.order_purchase_timestamp,\n        o.gmv,\n        CASE \n            WHEN cfo.first_order_date >= '2018-01-01 00:00:00' \n                 AND cfo.first_order_date <= '2018-12-31 23:59:59' THEN 'new'\n            ELSE 'old'\n        END AS customer_type\n    FROM orders_2018 o\n    JOIN customer_first_orders cfo ON o.customer_id = cfo.customer_id\n)\n-- 按月份和新老客类型汇总GMV\nSELECT \n    EXTRACT(MONTH FROM order_purchase_timestamp) AS month,\n    customer_type,\n    SUM(gmv) AS total_gmv\nFROM labeled_orders\nGROUP BY month, customer_type\nORDER BY month, customer_type\nLIMIT 24;",
+    "message" : null,
+    "latencyMs" : 17262
+  } ],
+  "retrieval" : {
+    "evaluatedCount" : 100,
+    "fullRecallRate" : 0.96,
+    "tableRecallRate" : 0.9919999999999999,
+    "avgPrecision" : 0.30168650793650786,
+    "avgRetrievedTables" : 6.68,
+    "missedCount" : 0,
+    "avgDdlChars" : 1548.08,
+    "incompleteCases" : [ {
+      "id" : "T5-011",
+      "question" : "品牌销售额排名前 10 是哪些？销售额按商品金额统计。",
+      "missing" : [ "customers" ],
+      "retrieved" : [ "brands", "order_items", "orders", "product_brand_map", "products", "refund_items", "sellers", "settlement_items" ]
+    }, {
+      "id" : "T5-015",
+      "question" : "物流轨迹事件类型按客户所在州分布，列出前 20 组（按发货单去重）。",
+      "missing" : [ "order_items" ],
+      "retrieved" : [ "customers", "geolocation", "members", "orders", "shipment_tracking", "shipments", "shipping_addresses", "warehouses" ]
+    }, {
+      "id" : "T5-017",
+      "question" : "各工单类目、优先级的工单数和消息条数分别是多少？",
+      "missing" : [ "member_levels" ],
+      "retrieved" : [ "members", "order_items", "orders", "product_category_translation", "products", "support_tickets", "ticket_categories", "ticket_messages" ]
+    }, {
+      "id" : "T5-020",
+      "question" : "按宏观区域和出入库类型统计库存变动笔数与数量合计。",
+      "missing" : [ "inventory" ],
+      "retrieved" : [ "customers", "inventory_movements", "products", "regions", "sellers", "warehouses" ]
+    } ]
+  }
+}

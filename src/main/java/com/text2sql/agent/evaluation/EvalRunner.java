@@ -396,7 +396,7 @@ public class EvalRunner implements ApplicationRunner {
 
         static ItemOutcome goldBroken(EvalItem item, String message) {
             AgentResponse broken = AgentResponse.failed(item.question(),
-                    AgentResponse.Status.EXECUTION_FAILED, "gold_sql 执行失败：" + message,
+                    AgentResponse.Status.EXECUTION_FAILED, item.goldSql(), "gold_sql 执行失败：" + message,
                     null, 0, List.of(), 0, null);
             return new ItemOutcome(item, broken, false, List.of(), List.of());
         }

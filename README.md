@@ -8,29 +8,37 @@
 | 阶段 | 状态 |
 |---|---|
 | 阶段 0 地基（骨架 / 数据库 / 评估集） | 已完成 |
-| 阶段 1 端到端最小闭环 + baseline | 已完成（真实 baseline 待跑，Key 已配） |
-| 阶段 2 Schema 检索（词典 / 词法召回 / 连通性修复） | 已完成，验收达标 |
+| 阶段 1 端到端最小闭环 + baseline | 已完成（真实 baseline：47%） |
+| 阶段 2 Schema 检索（词典 / 词法召回 / 连通性修复） | 实现与评估已收尾（真实 Top-8：52%；原定 +8 个百分点目标未达成） |
 
-阶段 2 的实测数字（详见 [docs/ROADMAP.md](docs/ROADMAP.md) 第 11 节与
-[reports/README.md](reports/README.md)）：
+阶段 2 的实测数字（完整方法、报告来源与局限见
+[docs/EVALUATION.md](docs/EVALUATION.md)，路线与验收见
+[docs/ROADMAP.md](docs/ROADMAP.md) 第 11 节）：
 
 | 指标 | 数值 | 说明 |
 |---|---|---|
-| 单元测试 | 53/53 通过 | 校验 14 + 规范化 9 + 提取 7 + 检索 12 + 表召回 11 |
-| 评估器自检（dry-run，200 条） | 执行准确率 100% | 用 gold_sql 冒充模型输出，证明评估器本身无 bug |
-| 表召回率（Top-5，评估集 100 条） | **96.53%** | 验收线 90% |
-| 表召回率（Top-8，评估集 100 条） | 98.48% | 默认配置，多换 1.9 个百分点召回、约 400 字符上下文 |
-| 平均召回表数 | 4.78（全量 37.0） | 精确率从 5.24% 提到 35.99% |
-| 平均 DDL 字符 | 1185（全量 7401） | **下降 84%**，直接省 prompt token |
-| 真实 baseline / 检索版执行准确率 | 待测 | 需要千帆 Key 跑真实链路，预期 baseline 55%–65% |
+| 单元测试 | 63/63 通过 | 校验 19 + 规范化 14 + 提取 7 + 检索 12 + 表召回 11 |
+| 历史评估器自检（dry-run，200 条） | 执行准确率 100% | 用 gold_sql 输入链路；只说明已有样本自检通过，不是模型成绩 |
+| 表召回率（Top-5，评估集 100 条） | **96.53%** | 验收线 90%，检索层口径 |
+| 表召回率（Top-8，评估集 100 条） | **98.48%** | 阶段 2 最终归档配置（检索需显式开启） |
+| 平均召回表数 | 6.69（全量 37.0） | 平均精确率 5.05% → 28.42% |
+| 平均 DDL 字符 | 1580（全量 7401） | **下降 78.7%**，直接压缩 prompt 上下文 |
+| 真实 baseline 执行准确率 | **47%（47/100）** | 全量 37 张表 |
+| 真实 Top-8 检索版执行准确率 | **52%（52/100）** | 相比 baseline **+5 个百分点** |
+| SQL 有效率 | 78% → **92%** | 检索后提升 14 个百分点 |
+| 平均输入 token | 2315 → **709** | 下降约 69%；不包含输出 token |
+| 平均 / P95 延迟 | 4837 / 11721ms → **4443 / 8496ms** | 编排链路耗时，不含执行 gold_sql |
+| 金额成本 | 尚未有效估算 | 配置单价为 0，报告的 0 元不代表免费 |
 
 **为什么先跑 dry-run 而不是直接跑 baseline**：如果评估器自己有 bug，跑出来的
-准确率数字就是假的，而且会误导后续所有优化方向。用标准 SQL 自检一遍，把
-「评估器有问题」和「模型不准」这两件事分开——这是 100% 这个数字唯一的用途。
+准确率数字就可能失真，而且会误导后续优化方向。用标准 SQL 自检能发现已有样本
+上的链路问题，但不能证明评估器没有任何 bug，也不能排除真实结果的比对误判。
 
-**检索层的数字为什么可信**：200 条评估集按 id 哈希切成开发集 100 / 评估集 100，
-所有参数（topK、边权重、连通性修复开关）只在开发集上调，评估集只在验收时跑一次。
-检索的期望表不是人工另标的，而是从标准 SQL 解析出来的，避免「标注和答案分叉」。
+**评估边界**：200 条按 id 哈希切成 dev 100 / eval 100；期望表从标准 SQL 解析，
+避免「表标注与答案分叉」。历史诊断看过全部题目，eval 也已跑过多个配置，
+所以这些是内部迭代的单轮结果，不是从未见过的独立测试集成绩。
+保留历史 Top-5 的 54% 结果；选 Top-8 是参考 dev 上的召回与准确率取舍，
+不宣称 Top-8 在 eval 上优于 Top-5。
 
 ## 快速开始
 
@@ -59,9 +67,13 @@ python scripts/validate_eval_set.py
 # 不配 Key 也能启动：数据库、校验、评估链路都可用，只有 /api/ask 会返回 503
 mvn spring-boot:run
 
-# 配 Key 之后才真正能回答问题（Key 只走环境变量，不写进任何文件）
+# 默认 application.yml 使用 DeepSeek；配对应厂商的 Key 后才真正能回答问题
 $env:AGENT_LLM_API_KEY = "sk-..."
 mvn spring-boot:run
+
+# 本项目正式评估使用千帆：先配置本地 application-local.yml，再启用 local
+# 本地配置被 .gitignore 排除，切勿把真实 Key 提交到仓库
+mvn spring-boot:run "-Dspring-boot.run.arguments=--spring.profiles.active=local --agent.retrieval.enabled=true --agent.retrieval.top-k=8"
 ```
 
 两个接口：
@@ -78,32 +90,39 @@ Invoke-RestMethod -Method Post -Uri http://localhost:8080/api/ask `
   -ContentType "application/json; charset=utf-8" -Body $body
 ```
 
-响应里除了 `sql` 和 `rows`，还带 `llm`（token / 耗时 / 成本）与 `timings`
+响应里除了 `sql` 和 `rows`，还带 `llmCall`（token / 耗时 / 成本）与 `timings`
 （检索 / 生成 / 校验 / 执行分阶段耗时）——这是为了能回答「每次调用花了多少」
 和「瓶颈在哪一层」，而不是只给一个总耗时。
 
 ### 跑评估
 
 ```powershell
-# 1) 先自检：用 gold_sql 冒充模型输出，必须是 100%，否则评估器有 bug
-mvn spring-boot:run "-Dspring-boot.run.arguments=--agent.eval.enabled=true --agent.eval.dry-run=true"
+# 1) 全量自检：输入 gold_sql，不调用 LLM；非 100% 时先检查链路或评估集
+mvn spring-boot:run "-Dspring-boot.run.arguments=--agent.eval.enabled=true --agent.eval.dry-run=true --agent.eval.split=all --agent.eval.limit=0 --agent.retrieval.enabled=false"
 
-# 2) 调参只看开发集（检索开关、topK 都在这一份上试）
-mvn spring-boot:run "-Dspring-boot.run.arguments=--agent.eval.enabled=true --agent.eval.dry-run=true --agent.eval.split=dev --agent.retrieval.enabled=true"
+# 2) dev 真实链路：后续调参在这一份上试（需要千帆 Key）
+mvn spring-boot:run "-Dspring-boot.run.arguments=--spring.profiles.active=local --agent.eval.enabled=true --agent.eval.dry-run=false --agent.eval.split=dev --agent.eval.limit=0 --agent.retrieval.enabled=true --agent.retrieval.top-k=8"
 
-# 3) 验收才跑评估集，同一套配置只跑一次
-mvn spring-boot:run "-Dspring-boot.run.arguments=--agent.eval.enabled=true --agent.eval.split=eval --agent.retrieval.enabled=true --agent.retrieval.top-k=5"
+# 3) eval baseline：全量 schema，正式对照模型 ernie-4.5-turbo-32k
+mvn spring-boot:run "-Dspring-boot.run.arguments=--spring.profiles.active=local --agent.llm.model=ernie-4.5-turbo-32k --agent.eval.enabled=true --agent.eval.dry-run=false --agent.eval.split=eval --agent.eval.limit=0 --agent.retrieval.enabled=false"
 
-# 4) 真实链路（需要千帆 Key），先 baseline 再检索版，两行数字一起进消融表
-mvn spring-boot:run "-Dspring-boot.run.arguments=--agent.eval.enabled=true --agent.eval.split=eval --agent.retrieval.enabled=false --spring.profiles.active=local"
+# 4) eval 检索版：阶段 2 最终归档配置
+mvn spring-boot:run "-Dspring-boot.run.arguments=--spring.profiles.active=local --agent.llm.model=ernie-4.5-turbo-32k --agent.eval.enabled=true --agent.eval.dry-run=false --agent.eval.split=eval --agent.eval.limit=0 --agent.retrieval.enabled=true --agent.retrieval.top-k=8"
 ```
+
+`limit=0` 表示不截断，切分后才得到完整的 dev/eval 各 100 条。
+当前加载器先截断再切分，写 `limit=100` 会只留下约 50 条。
+PowerShell 命令末尾不要加 Linux 的 `\`。完整机器路径命令见评估文档；
+本轮正式报告已存在，无需为了文档收尾再次付费跑评估。
 
 报告落在 `reports/eval-<时间戳>.json`，里面同时记录 prompt 版本、模型名、
 配置开关、数据集切分和指标——数字离开配置就没有意义，两者必须绑在一起。
+正式结果与评估口径见 [docs/EVALUATION.md](docs/EVALUATION.md)。
 报告的字段含义与保留口径见 [reports/README.md](reports/README.md)。
 
-**评估纪律**：评估集不能用来调 prompt 或调参。一旦在 `split=eval` 上试过参数，
-那一行数字就作废了，后面所有消融实验都失去可比性。
+**后续评估纪律**：调 prompt 与参数只用 dev，先冻结配置再做 eval 阶段验收。
+既有 eval 结果仍保留作内部回归参照，但不能包装成严格无泄漏的泛化评估；
+需要这种证明时，应另建未见测试集。
 
 ## 数据
 
@@ -123,7 +142,7 @@ mvn spring-boot:run "-Dspring-boot.run.arguments=--agent.eval.enabled=true --age
 
 ## 评估集
 
-200 条中文问题，六层难度，每条都有人工审核过的标准 SQL：
+200 条中文问题，六层难度，每条都有标准 SQL；标有【需确认】的业务口径仍需用户审核：
 
 | 层 | 条数 | 考察 |
 |---|---|---|
@@ -154,7 +173,7 @@ mvn spring-boot:run "-Dspring-boot.run.arguments=--agent.eval.enabled=true --age
 ## 仓库结构
 
 ```
-├── docs/          ROADMAP（路线图）、EVAL_SET（评估集说明）
+├── docs/          ROADMAP（路线图）、EVAL_SET（评估集说明）、EVALUATION（实测与验收）
 ├── docker/        PostgreSQL + pgvector
 ├── data/
 │   ├── raw/       原始数据集（未入库，见 data/raw/README.md）

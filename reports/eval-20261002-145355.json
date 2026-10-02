@@ -1,0 +1,870 @@
+{
+  "meta" : {
+    "timestamp" : "2026-10-02T14:53:55.7907383",
+    "promptVersion" : "p1-full-schema-v1",
+    "model" : "ernie-4.5-turbo-128k",
+    "baseUrl" : "https://qianfan.baidubce.com",
+    "dryRun" : false,
+    "itemCount" : 100,
+    "limit" : 0,
+    "layers" : [ ],
+    "split" : "eval",
+    "includeDataProfile" : true,
+    "includeForeignKeys" : true,
+    "limitMode" : "APPEND",
+    "maxRows" : 200,
+    "schemaTableCount" : 7,
+    "retrievalEnabled" : true,
+    "retrievalTopK" : 5
+  },
+  "overall" : {
+    "total" : 100,
+    "correct" : 24,
+    "executionAccuracy" : 0.24,
+    "sqlValid" : 31,
+    "sqlValidRate" : 0.31,
+    "rewrittenCount" : 0,
+    "avgPromptTokens" : 176.33,
+    "avgLatencyMs" : 785.29,
+    "p50LatencyMs" : 137,
+    "p95LatencyMs" : 2590,
+    "avgCostYuan" : 0.0,
+    "totalCostYuan" : 0.0
+  },
+  "byLayer" : {
+    "single_table_basic" : {
+      "total" : 20,
+      "correct" : 16,
+      "executionAccuracy" : 0.8,
+      "sqlValid" : 20,
+      "sqlValidRate" : 1.0,
+      "rewrittenCount" : 0,
+      "avgPromptTokens" : 574.8,
+      "avgLatencyMs" : 2033.05,
+      "p50LatencyMs" : 1974,
+      "p95LatencyMs" : 2502,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    },
+    "single_table_agg" : {
+      "total" : 20,
+      "correct" : 8,
+      "executionAccuracy" : 0.4,
+      "sqlValid" : 11,
+      "sqlValidRate" : 0.55,
+      "rewrittenCount" : 0,
+      "avgPromptTokens" : 306.85,
+      "avgLatencyMs" : 1450.9,
+      "p50LatencyMs" : 1786,
+      "p95LatencyMs" : 3227,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    },
+    "time_window" : {
+      "total" : 16,
+      "correct" : 0,
+      "executionAccuracy" : 0.0,
+      "sqlValid" : 0,
+      "sqlValidRate" : 0.0,
+      "rewrittenCount" : 0,
+      "avgPromptTokens" : 0.0,
+      "avgLatencyMs" : 154.5,
+      "p50LatencyMs" : 136,
+      "p95LatencyMs" : 385,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    },
+    "multi_join" : {
+      "total" : 22,
+      "correct" : 0,
+      "executionAccuracy" : 0.0,
+      "sqlValid" : 0,
+      "sqlValidRate" : 0.0,
+      "rewrittenCount" : 0,
+      "avgPromptTokens" : 0.0,
+      "avgLatencyMs" : 132.68,
+      "p50LatencyMs" : 113,
+      "p95LatencyMs" : 234,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    },
+    "multi_join_deep" : {
+      "total" : 10,
+      "correct" : 0,
+      "executionAccuracy" : 0.0,
+      "sqlValid" : 0,
+      "sqlValidRate" : 0.0,
+      "rewrittenCount" : 0,
+      "avgPromptTokens" : 0.0,
+      "avgLatencyMs" : 154.3,
+      "p50LatencyMs" : 115,
+      "p95LatencyMs" : 287,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    },
+    "business_semantics" : {
+      "total" : 12,
+      "correct" : 0,
+      "executionAccuracy" : 0.0,
+      "sqlValid" : 0,
+      "sqlValidRate" : 0.0,
+      "rewrittenCount" : 0,
+      "avgPromptTokens" : 0.0,
+      "avgLatencyMs" : 159.67,
+      "p50LatencyMs" : 108,
+      "p95LatencyMs" : 756,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    }
+  },
+  "failures" : [ {
+    "id" : "T1-010",
+    "difficulty" : "single_table_basic",
+    "tags" : [ "去重", "枚举" ],
+    "question" : "订单状态一共有几种？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT DISTINCT order_status \nFROM orders \nLIMIT 1000;",
+    "message" : null,
+    "latencyMs" : 1677
+  }, {
+    "id" : "T1-012",
+    "difficulty" : "single_table_basic",
+    "tags" : [ "排序", "限制" ],
+    "question" : "价格最高的 10 条订单明细是哪些？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT order_items.order_item_id, order_items.order_id, order_items.product_id, order_items.price\nFROM order_items\nORDER BY order_items.price DESC\nLIMIT 10",
+    "message" : null,
+    "latencyMs" : 2439
+  }, {
+    "id" : "T1-016",
+    "difficulty" : "single_table_basic",
+    "tags" : [ "排序", "限制" ],
+    "question" : "分期数最多的那一笔支付分了多少期？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT payment_installments \nFROM order_payments \nORDER BY payment_installments DESC \nLIMIT 1;",
+    "message" : null,
+    "latencyMs" : 3320
+  }, {
+    "id" : "T1-030",
+    "difficulty" : "single_table_basic",
+    "tags" : [ "过滤", "枚举" ],
+    "question" : "因为质量问题发起的退款有多少笔？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT COUNT(*) \nFROM refunds \nWHERE reason_code = 'QUAL' AND status = 4\nLIMIT 1;",
+    "message" : null,
+    "latencyMs" : 1611
+  }, {
+    "id" : "T2-004",
+    "difficulty" : "single_table_agg",
+    "tags" : [ "聚合", "平均" ],
+    "question" : "平均每个订单有多少条明细？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT COUNT(order_item_id) / COUNT(DISTINCT order_id) AS avg_items_per_order\nFROM order_items\nLIMIT 1;",
+    "message" : null,
+    "latencyMs" : 2765
+  }, {
+    "id" : "T2-011",
+    "difficulty" : "single_table_agg",
+    "tags" : [ "聚合", "分组", "求和" ],
+    "question" : "每个卖家的商品销售总额是多少？取金额最高的 10 个卖家。",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT s.seller_id, s.seller_city, SUM(oi.price) AS total_sales\nFROM sellers s\nJOIN order_items oi ON s.seller_id = oi.seller_id\nGROUP BY s.seller_id, s.seller_city\nORDER BY total_sales DESC\nLIMIT 10",
+    "message" : null,
+    "latencyMs" : 4434
+  }, {
+    "id" : "T2-015",
+    "difficulty" : "single_table_agg",
+    "tags" : [ "聚合", "平均" ],
+    "question" : "每个会员等级的平均积分是多少？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT ml.level_name, AVG(m.points) AS avg_points\nFROM members m\nJOIN member_levels ml ON m.level_id = ml.level_id\nGROUP BY ml.level_name\nLIMIT 1000;",
+    "message" : null,
+    "latencyMs" : 2763
+  }, {
+    "id" : "T2-024",
+    "difficulty" : "single_table_agg",
+    "tags" : [ "聚合", "分组" ],
+    "question" : "每个仓库各有多少条库存记录？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-rai76w8t7c\"}",
+    "latencyMs" : 108
+  }, {
+    "id" : "T2-026",
+    "difficulty" : "single_table_agg",
+    "tags" : [ "聚合", "分组", "求和" ],
+    "question" : "每个仓库的库存总数量是多少？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-h6vsk9hzud\"}",
+    "latencyMs" : 119
+  }, {
+    "id" : "T2-028",
+    "difficulty" : "single_table_agg",
+    "tags" : [ "聚合", "分组" ],
+    "question" : "每家承运商各承担了多少个发货单？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-4qu30ghers\"}",
+    "latencyMs" : 114
+  }, {
+    "id" : "T2-031",
+    "difficulty" : "single_table_agg",
+    "tags" : [ "聚合", "分组" ],
+    "question" : "每个优先级的工单各有多少个？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-igxtfr99kv\"}",
+    "latencyMs" : 121
+  }, {
+    "id" : "T2-033",
+    "difficulty" : "single_table_agg",
+    "tags" : [ "聚合", "求和" ],
+    "question" : "平台支付给卖家的结算净额合计是多少？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-k8sejdemhr\"}",
+    "latencyMs" : 114
+  }, {
+    "id" : "T2-035",
+    "difficulty" : "single_table_agg",
+    "tags" : [ "聚合", "分组", "排序" ],
+    "question" : "搜索次数最多的 10 个关键词是哪些？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-nmcwvfjuum\"}",
+    "latencyMs" : 110
+  }, {
+    "id" : "T2-037",
+    "difficulty" : "single_table_agg",
+    "tags" : [ "HAVING" ],
+    "question" : "订单数超过 5000 的州有哪些？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-sdwxicxrap\"}",
+    "latencyMs" : 363
+  }, {
+    "id" : "T2-039",
+    "difficulty" : "single_table_agg",
+    "tags" : [ "条件聚合", "比率" ],
+    "question" : "好评（4 分及以上）占所有评价的比例是多少？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-7n5af61ena\"}",
+    "latencyMs" : 163
+  }, {
+    "id" : "T2-040",
+    "difficulty" : "single_table_agg",
+    "tags" : [ "聚合", "分组", "求和" ],
+    "question" : "每个支付方式收上来的钱合计是多少？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-t4tvggujiv\"}",
+    "latencyMs" : 128
+  }, {
+    "id" : "T3-001",
+    "difficulty" : "time_window",
+    "tags" : [ "时间", "按月" ],
+    "question" : "每个月的订单数量是多少？按月份排序。",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-hn2jcwh096\"}",
+    "latencyMs" : 220
+  }, {
+    "id" : "T3-003",
+    "difficulty" : "time_window",
+    "tags" : [ "时间", "按季" ],
+    "question" : "每个季度有多少笔订单？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-pv0hkaer6n\"}",
+    "latencyMs" : 118
+  }, {
+    "id" : "T3-005",
+    "difficulty" : "time_window",
+    "tags" : [ "时间", "按周" ],
+    "question" : "订单量最多的那一周是哪一周？有多少笔？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-kbpwtfetay\"}",
+    "latencyMs" : 136
+  }, {
+    "id" : "T3-007",
+    "difficulty" : "time_window",
+    "tags" : [ "时间", "按月", "求和" ],
+    "question" : "每个月的运费总额是多少？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-fcvi88xdre\"}",
+    "latencyMs" : 321
+  }, {
+    "id" : "T3-009",
+    "difficulty" : "time_window",
+    "tags" : [ "时间", "按月", "过滤" ],
+    "question" : "2018 年每个月的订单量是多少？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-wkunfwga0r\"}",
+    "latencyMs" : 385
+  }, {
+    "id" : "T3-010",
+    "difficulty" : "time_window",
+    "tags" : [ "时间", "环比" ],
+    "question" : "每个月的订单量，以及相比上个月的变化量是多少？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-yae1te0903\"}",
+    "latencyMs" : 118
+  }, {
+    "id" : "T3-012",
+    "difficulty" : "time_window",
+    "tags" : [ "时间", "同比" ],
+    "question" : "2018 年每个月的订单量相比 2017 年同期增长了多少？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-efne0x9hh5\"}",
+    "latencyMs" : 137
+  }, {
+    "id" : "T3-014",
+    "difficulty" : "time_window",
+    "tags" : [ "时间", "近 N 天", "分组" ],
+    "question" : "数据里最后 90 天，每周的商品销售额分别是多少？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-4iwa51mtsn\"}",
+    "latencyMs" : 156
+  }, {
+    "id" : "T3-016",
+    "difficulty" : "time_window",
+    "tags" : [ "时间", "按星期" ],
+    "question" : "一周中星期几的订单量最多？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-hq05z4rqab\"}",
+    "latencyMs" : 47
+  }, {
+    "id" : "T3-018",
+    "difficulty" : "time_window",
+    "tags" : [ "时间", "日期差", "分组" ],
+    "question" : "每个州的平均配送时长是多少天？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-q91j0tazup\"}",
+    "latencyMs" : 115
+  }, {
+    "id" : "T3-021",
+    "difficulty" : "time_window",
+    "tags" : [ "时间", "按月", "计数" ],
+    "question" : "每个月的退款单数量是多少？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-twuegs0jwb\"}",
+    "latencyMs" : 61
+  }, {
+    "id" : "T3-023",
+    "difficulty" : "time_window",
+    "tags" : [ "时间", "按月", "计数" ],
+    "question" : "每个月新增多少张客服工单？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-chii7z6vbm\"}",
+    "latencyMs" : 198
+  }, {
+    "id" : "T3-025",
+    "difficulty" : "time_window",
+    "tags" : [ "时间", "过滤", "分组" ],
+    "question" : "2018 年上半年（1 到 6 月）每个州的订单量是多少？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-hmdkjgitra\"}",
+    "latencyMs" : 150
+  }, {
+    "id" : "T3-027",
+    "difficulty" : "time_window",
+    "tags" : [ "时间", "按月", "计数" ],
+    "question" : "每个月的会员注册数量是多少？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-6b3acj86p8\"}",
+    "latencyMs" : 57
+  }, {
+    "id" : "T3-029",
+    "difficulty" : "time_window",
+    "tags" : [ "时间", "按月", "求和" ],
+    "question" : "每个月的佣金收入是多少？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-kr8nb0h3zn\"}",
+    "latencyMs" : 109
+  }, {
+    "id" : "T3-030",
+    "difficulty" : "time_window",
+    "tags" : [ "时间", "分组", "季度" ],
+    "question" : "每个季度的有效订单量分别是多少？按季度排序。",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-wjtqa77gzp\"}",
+    "latencyMs" : 144
+  }, {
+    "id" : "T4-002",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "分组", "求和" ],
+    "question" : "每个州的商品销售额是多少？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-de5ak578pu\"}",
+    "latencyMs" : 184
+  }, {
+    "id" : "T4-004",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "翻译表" ],
+    "question" : "用英文类目名统计，哪个类目的销售额最高？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-ev2dt6mknq\"}",
+    "latencyMs" : 113
+  }, {
+    "id" : "T4-006",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "分组" ],
+    "question" : "每个卖家所在的州和该州卖家的总销售额是多少？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-1d49sm0hh7\"}",
+    "latencyMs" : 105
+  }, {
+    "id" : "T4-008",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "外连接", "计数" ],
+    "question" : "有多少个会员从来没有被打过任何标签？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-v23yvwazp6\"}",
+    "latencyMs" : 55
+  }, {
+    "id" : "T4-011",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "分组", "平均" ],
+    "question" : "每个订单状态的平均评价分是多少？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-tn1rpjrmrg\"}",
+    "latencyMs" : 107
+  }, {
+    "id" : "T4-013",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "过滤" ],
+    "question" : "差评（1 分或 2 分）的订单里，各州分别有多少笔？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-1ry4ai6s5k\"}",
+    "latencyMs" : 234
+  }, {
+    "id" : "T4-015",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "分组", "求和" ],
+    "question" : "每个大区的订单数量是多少？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-rbrvjcgrvd\"}",
+    "latencyMs" : 113
+  }, {
+    "id" : "T4-017",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "分组" ],
+    "question" : "每个会员等级对应的订单数量是多少？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-r8ahdt3py7\"}",
+    "latencyMs" : 122
+  }, {
+    "id" : "T4-019",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "分组" ],
+    "question" : "每种用户标签下各有多少会员？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-1r8amegpst\"}",
+    "latencyMs" : 128
+  }, {
+    "id" : "T4-020",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "分组" ],
+    "question" : "打了\"高价值用户\"标签的会员一共下了多少单？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-95wk9tjx57\"}",
+    "latencyMs" : 109
+  }, {
+    "id" : "T4-022",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "求和" ],
+    "question" : "通过优惠券一共优惠了多少钱？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-xca3t79sdw\"}",
+    "latencyMs" : 113
+  }, {
+    "id" : "T4-024",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "分组" ],
+    "question" : "每个仓库负责了多少个发货单？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-mvd292j934\"}",
+    "latencyMs" : 109
+  }, {
+    "id" : "T4-026",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "分组", "平均" ],
+    "question" : "每家承运商的平均配送时长是多少天？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-ubhe1xa00b\"}",
+    "latencyMs" : 212
+  }, {
+    "id" : "T4-028",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "分组" ],
+    "question" : "每个工单分类的平均处理时长是多少小时？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-dzt26txsmk\"}",
+    "latencyMs" : 50
+  }, {
+    "id" : "T4-031",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "分组", "求和" ],
+    "question" : "每个州的卖家结算净额合计是多少？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-ge9qccnd4i\"}",
+    "latencyMs" : 113
+  }, {
+    "id" : "T4-033",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "分组", "求和" ],
+    "question" : "每个退款原因的退款金额合计是多少？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-ctppee17q4\"}",
+    "latencyMs" : 118
+  }, {
+    "id" : "T4-035",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "分组", "排序" ],
+    "question" : "客单价最高的 10 个客户是谁？客单价按订单平均金额算。",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-mytiy57b7w\"}",
+    "latencyMs" : 95
+  }, {
+    "id" : "T4-037",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "分组" ],
+    "question" : "每个商品的图片数量和它的销量分别是多少？取销量前 10。",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-xhb949nyei\"}",
+    "latencyMs" : 96
+  }, {
+    "id" : "T4-039",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "分组" ],
+    "question" : "搜索后有点击的搜索记录占多少比例？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-87abdkfhcd\"}",
+    "latencyMs" : 133
+  }, {
+    "id" : "T4-040",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "外连接", "计数" ],
+    "question" : "有多少个商品从来没有进过任何仓库的库存表？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-aiz9s8kun2\"}",
+    "latencyMs" : 418
+  }, {
+    "id" : "T4-042",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "分组" ],
+    "question" : "发生过价格调整的商品里，有多少个商品的价格是上调的？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-1prqwj19yq\"}",
+    "latencyMs" : 135
+  }, {
+    "id" : "T4-044",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "分组" ],
+    "question" : "每个大区有多少个客户？平均每人下多少单？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-fa56g6spfx\"}",
+    "latencyMs" : 57
+  }, {
+    "id" : "T5-001",
+    "difficulty" : "multi_join_deep",
+    "tags" : [ "join", "分组", "求和", "会员" ],
+    "question" : "每个宏观区域下，各会员等级的商品销售额分别是多少？按销售额从高到低排序。",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-g3te5tu0tm\"}",
+    "latencyMs" : 109
+  }, {
+    "id" : "T5-003",
+    "difficulty" : "multi_join_deep",
+    "tags" : [ "join", "退款", "翻译表" ],
+    "question" : "用英文类目名统计退款金额，哪些类目退款最多？取前 15。",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-p7r6ec34kv\"}",
+    "latencyMs" : 287
+  }, {
+    "id" : "T5-005",
+    "difficulty" : "multi_join_deep",
+    "tags" : [ "join", "优惠券", "活动" ],
+    "question" : "每个优惠券活动带来的有效订单数和商品销售额是多少？取前 10。",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-28b9tmp5cm\"}",
+    "latencyMs" : 156
+  }, {
+    "id" : "T5-007",
+    "difficulty" : "multi_join_deep",
+    "tags" : [ "join", "搜索", "类目" ],
+    "question" : "有商品点击的搜索记录中，哪些关键词最常点到哪个英文类目的商品？取前 20。",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-zqc4a5jzip\"}",
+    "latencyMs" : 115
+  }, {
+    "id" : "T5-009",
+    "difficulty" : "multi_join_deep",
+    "tags" : [ "join", "库存", "品牌" ],
+    "question" : "库存低于安全库存的商品，按仓库、区域、品牌统计数量，列出前 20。",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-t8esq8webn\"}",
+    "latencyMs" : 110
+  }, {
+    "id" : "T5-010",
+    "difficulty" : "multi_join_deep",
+    "tags" : [ "join", "结算", "卖家" ],
+    "question" : "每个卖家结算明细覆盖了多少个英文商品类目、佣金合计多少？取佣金前 20。",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-gg5iqphybf\"}",
+    "latencyMs" : 117
+  }, {
+    "id" : "T5-012",
+    "difficulty" : "multi_join_deep",
+    "tags" : [ "join", "标签", "用户画像" ],
+    "question" : "每类用户标签覆盖多少会员、这些会员订单的平均商品单价是多少？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-0ks2iic0dk\"}",
+    "latencyMs" : 256
+  }, {
+    "id" : "T5-014",
+    "difficulty" : "multi_join_deep",
+    "tags" : [ "join", "快照", "会员" ],
+    "question" : "当前等级与最近一次会员快照等级不一致的会员有多少？按等级组合统计。",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-15ia9wp7vz\"}",
+    "latencyMs" : 62
+  }, {
+    "id" : "T5-016",
+    "difficulty" : "multi_join_deep",
+    "tags" : [ "join", "退款", "原因" ],
+    "question" : "按英文类目和退款原因统计退款笔数与退款金额，列出前 20。",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-g3pzuqjp42\"}",
+    "latencyMs" : 57
+  }, {
+    "id" : "T5-018",
+    "difficulty" : "multi_join_deep",
+    "tags" : [ "join", "地址", "分组" ],
+    "question" : "默认收货地址所在州和客户登记州是否一致的订单量对比，列出前 20。",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-isc81gacwz\"}",
+    "latencyMs" : 274
+  }, {
+    "id" : "T6-002",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "有效订单" ],
+    "question" : "有效订单（排除已取消和不可用）的订单数、下单人数、客单价分别是多少？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-zmf5tcn970\"}",
+    "latencyMs" : 126
+  }, {
+    "id" : "T6-004",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "留存" ],
+    "question" : "首单在 2017 年上半年的用户，在 2017 年下半年是否再次下单？按月留存率是多少？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-7wwg286z3b\"}",
+    "latencyMs" : 34
+  }, {
+    "id" : "T6-006",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "履约" ],
+    "question" : "已送达订单的准时率是多少？（实际送达日期不晚于预计送达日期）",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-bkzi25qmaa\"}",
+    "latencyMs" : 104
+  }, {
+    "id" : "T6-008",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "动销率" ],
+    "question" : "商品动销率是多少？（有销量的商品数 / 全部商品数）",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-pd2s3tdcbv\"}",
+    "latencyMs" : 108
+  }, {
+    "id" : "T6-011",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "运费" ],
+    "question" : "运费占 GMV 的比例是多少？按宏观区域拆解。",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-bbprpzpp2g\"}",
+    "latencyMs" : 107
+  }, {
+    "id" : "T6-013",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "优惠" ],
+    "question" : "优惠券带来的 GMV 和优惠金额分别是多少？用券订单的折扣率是多少？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-w53cyukxxg\"}",
+    "latencyMs" : 122
+  }, {
+    "id" : "T6-015",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "客服", "SLA" ],
+    "question" : "各类工单的 SLA 达成率是多少？（解决时间不超过类目 SLA 小时数）",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-vx25h4zbkk\"}",
+    "latencyMs" : 109
+  }, {
+    "id" : "T6-017",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "推荐" ],
+    "question" : "推荐活动的转化率和人均奖励是多少？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-g3b8ifd7pd\"}",
+    "latencyMs" : 756
+  }, {
+    "id" : "T6-019",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "履约", "时效" ],
+    "question" : "各州的平均配送时长（下单到签收）是多少天？列出配送最慢的 10 个州。",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-4p5qzai0p0\"}",
+    "latencyMs" : 114
+  }, {
+    "id" : "T6-020",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "结算", "佣金" ],
+    "question" : "平台整体佣金率和各卖家佣金率分布（最低、平均、最高）分别是多少？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-gqkmvxsi63\"}",
+    "latencyMs" : 44
+  }, {
+    "id" : "T6-022",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "时间", "同比" ],
+    "question" : "2017 年和 2018 年各月 GMV 分别是多少？并计算 2018 年相对 2017 年同月的同比增长率。",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-j12ww66mh8\"}",
+    "latencyMs" : 104
+  }, {
+    "id" : "T6-024",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "客服", "归因" ],
+    "question" : "退款原因与客户评分的关系：各退款原因对应的平均评分和低分率是多少？",
+    "status" : "GENERATION_FAILED",
+    "generatedSql" : null,
+    "message" : "LLM 调用失败：403 - {\"error\":{\"code\":\"account_overdue\",\"message\":\"Access denied due to overdue account\",\"type\":\"access_denied\"},\"id\":\"as-tqiwqh5s9e\"}",
+    "latencyMs" : 188
+  } ],
+  "retrieval" : {
+    "evaluatedCount" : 100,
+    "fullRecallRate" : 0.89,
+    "tableRecallRate" : 0.9653333333333332,
+    "avgPrecision" : 0.3599047619047617,
+    "avgRetrievedTables" : 4.78,
+    "missedCount" : 0,
+    "avgDdlChars" : 1184.81,
+    "incompleteCases" : [ {
+      "id" : "T4-013",
+      "question" : "差评（1 分或 2 分）的订单里，各州分别有多少笔？",
+      "missing" : [ "order_reviews" ],
+      "retrieved" : [ "customers", "geolocation", "order_items", "orders", "shipping_addresses" ]
+    }, {
+      "id" : "T4-020",
+      "question" : "打了\"高价值用户\"标签的会员一共下了多少单？",
+      "missing" : [ "orders", "customers" ],
+      "retrieved" : [ "members", "search_logs", "support_tickets", "user_tag_map", "user_tags" ]
+    }, {
+      "id" : "T5-001",
+      "question" : "每个宏观区域下，各会员等级的商品销售额分别是多少？按销售额从高到低排序。",
+      "missing" : [ "customers" ],
+      "retrieved" : [ "member_levels", "members", "order_items", "orders", "regions", "sellers", "support_tickets" ]
+    }, {
+      "id" : "T5-007",
+      "question" : "有商品点击的搜索记录中，哪些关键词最常点到哪个英文类目的商品？取前 20。",
+      "missing" : [ "member_levels" ],
+      "retrieved" : [ "members", "order_items", "product_category_translation", "products", "search_logs", "support_tickets" ]
+    }, {
+      "id" : "T5-010",
+      "question" : "每个卖家结算明细覆盖了多少个英文商品类目、佣金合计多少？取佣金前 20。",
+      "missing" : [ "product_category_translation" ],
+      "retrieved" : [ "order_items", "products", "sellers", "settlement_items", "settlements" ]
+    }, {
+      "id" : "T5-012",
+      "question" : "每类用户标签覆盖多少会员、这些会员订单的平均商品单价是多少？",
+      "missing" : [ "user_tags", "user_tag_map", "customers" ],
+      "retrieved" : [ "members", "order_items", "orders", "search_logs", "support_tickets" ]
+    }, {
+      "id" : "T5-018",
+      "question" : "默认收货地址所在州和客户登记州是否一致的订单量对比，列出前 20。",
+      "missing" : [ "order_items" ],
+      "retrieved" : [ "customers", "geolocation", "members", "orders", "shipping_addresses" ]
+    }, {
+      "id" : "T6-002",
+      "question" : "有效订单（排除已取消和不可用）的订单数、下单人数、客单价分别是多少？",
+      "missing" : [ "order_items" ],
+      "retrieved" : [ "campaigns", "coupon_usages", "coupons", "customers", "order_payments", "order_reviews", "orders" ]
+    }, {
+      "id" : "T6-008",
+      "question" : "商品动销率是多少？（有销量的商品数 / 全部商品数）",
+      "missing" : [ "orders" ],
+      "retrieved" : [ "campaign_products", "inventory", "inventory_movements", "order_items", "products" ]
+    }, {
+      "id" : "T6-011",
+      "question" : "运费占 GMV 的比例是多少？按宏观区域拆解。",
+      "missing" : [ "customers" ],
+      "retrieved" : [ "order_items", "orders", "products", "regions", "sellers" ]
+    }, {
+      "id" : "T6-020",
+      "question" : "平台整体佣金率和各卖家佣金率分布（最低、平均、最高）分别是多少？",
+      "missing" : [ "settlements" ],
+      "retrieved" : [ "order_items", "orders", "sellers", "settlement_items", "support_tickets" ]
+    } ]
+  }
+}

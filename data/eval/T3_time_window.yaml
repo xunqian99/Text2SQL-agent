@@ -12,7 +12,7 @@
   tags: [时间, 按月]
   question: 每个月的订单数量是多少？按月份排序。
   gold_sql: |
-    SELECT TO_CHAR(DATE_TRUNC('month', order_purchase_timestamp), 'YYYY-MM') AS month,
+    SELECT DATE_TRUNC('month', order_purchase_timestamp) AS month,
            COUNT(*) AS cnt
     FROM orders GROUP BY 1 ORDER BY 1;
 
@@ -31,7 +31,7 @@
   tags: [时间, 按季]
   question: 每个季度有多少笔订单？
   gold_sql: |
-    SELECT TO_CHAR(order_purchase_timestamp, 'YYYY-"Q"Q') AS quarter, COUNT(*) AS cnt
+    SELECT DATE_TRUNC('quarter', order_purchase_timestamp) AS quarter, COUNT(*) AS cnt
     FROM orders GROUP BY 1 ORDER BY 1;
 
 - id: T3-004
@@ -56,7 +56,7 @@
   tags: [时间, 按月, 求和]
   question: 每个月的商品销售额是多少？
   gold_sql: |
-    SELECT TO_CHAR(DATE_TRUNC('month', o.order_purchase_timestamp), 'YYYY-MM') AS month,
+    SELECT DATE_TRUNC('month', o.order_purchase_timestamp) AS month,
            ROUND(SUM(oi.price), 2) AS sales
     FROM orders o JOIN order_items oi ON oi.order_id = o.order_id
     GROUP BY 1 ORDER BY 1;
@@ -67,7 +67,7 @@
   tags: [时间, 按月, 求和]
   question: 每个月的运费总额是多少？
   gold_sql: |
-    SELECT TO_CHAR(DATE_TRUNC('month', o.order_purchase_timestamp), 'YYYY-MM') AS month,
+    SELECT DATE_TRUNC('month', o.order_purchase_timestamp) AS month,
            ROUND(SUM(oi.freight_value), 2) AS freight
     FROM orders o JOIN order_items oi ON oi.order_id = o.order_id
     GROUP BY 1 ORDER BY 1;
@@ -77,7 +77,7 @@
   tags: [时间, 平均]
   question: 每个月的平均订单金额（按订单明细商品金额计）是多少？
   gold_sql: |
-    SELECT TO_CHAR(DATE_TRUNC('month', o.order_purchase_timestamp), 'YYYY-MM') AS month,
+    SELECT DATE_TRUNC('month', o.order_purchase_timestamp) AS month,
            ROUND(SUM(oi.price) / COUNT(DISTINCT o.order_id), 2) AS avg_order_value
     FROM orders o JOIN order_items oi ON oi.order_id = o.order_id
     GROUP BY 1 ORDER BY 1;
@@ -88,7 +88,7 @@
   tags: [时间, 按月, 过滤]
   question: 2018 年每个月的订单量是多少？
   gold_sql: |
-    SELECT TO_CHAR(DATE_TRUNC('month', order_purchase_timestamp), 'YYYY-MM') AS month,
+    SELECT DATE_TRUNC('month', order_purchase_timestamp) AS month,
            COUNT(*) AS cnt
     FROM orders
     WHERE order_purchase_timestamp >= '2018-01-01'
@@ -104,7 +104,7 @@
       SELECT DATE_TRUNC('month', order_purchase_timestamp) AS m, COUNT(*) AS cnt
       FROM orders GROUP BY 1
     )
-    SELECT TO_CHAR(m, 'YYYY-MM') AS month,
+    SELECT m AS month,
            cnt,
            cnt - LAG(cnt) OVER (ORDER BY m) AS mom_change
     FROM monthly ORDER BY m;
@@ -119,7 +119,7 @@
       SELECT DATE_TRUNC('month', order_purchase_timestamp) AS m, COUNT(*) AS cnt
       FROM orders GROUP BY 1
     )
-    SELECT TO_CHAR(m, 'YYYY-MM') AS month,
+    SELECT m AS month,
            cnt,
            ROUND((cnt - LAG(cnt) OVER (ORDER BY m))::NUMERIC
                  / NULLIF(LAG(cnt) OVER (ORDER BY m), 0), 4) AS mom_rate
@@ -161,7 +161,7 @@
   question: 数据里最后 90 天，每周的商品销售额分别是多少？
   gold_sql: |
     WITH anchor AS (SELECT MAX(order_purchase_timestamp) AS mx FROM orders)
-    SELECT TO_CHAR(DATE_TRUNC('week', o.order_purchase_timestamp), 'YYYY-MM-DD') AS week_start,
+    SELECT DATE_TRUNC('week', o.order_purchase_timestamp)::DATE AS week_start,
            ROUND(SUM(oi.price), 2) AS sales
     FROM orders o
     JOIN order_items oi ON oi.order_id = o.order_id
@@ -231,7 +231,7 @@
   tags: [时间, 按月, 计数]
   question: 每个月的退款单数量是多少？
   gold_sql: |
-    SELECT TO_CHAR(DATE_TRUNC('month', requested_at), 'YYYY-MM') AS month, COUNT(*) AS cnt
+    SELECT DATE_TRUNC('month', requested_at) AS month, COUNT(*) AS cnt
     FROM refunds GROUP BY 1 ORDER BY 1;
 
 - id: T3-022
@@ -239,7 +239,7 @@
   tags: [时间, 按月, 求和]
   question: 每个月的退款金额合计是多少？
   gold_sql: |
-    SELECT TO_CHAR(DATE_TRUNC('month', requested_at), 'YYYY-MM') AS month,
+    SELECT DATE_TRUNC('month', requested_at) AS month,
            ROUND(SUM(refund_amount), 2) AS total
     FROM refunds GROUP BY 1 ORDER BY 1;
 
@@ -248,7 +248,7 @@
   tags: [时间, 按月, 计数]
   question: 每个月新增多少张客服工单？
   gold_sql: |
-    SELECT TO_CHAR(DATE_TRUNC('month', created_at), 'YYYY-MM') AS month, COUNT(*) AS cnt
+    SELECT DATE_TRUNC('month', created_at) AS month, COUNT(*) AS cnt
     FROM support_tickets GROUP BY 1 ORDER BY 1;
 
 - id: T3-024
@@ -275,7 +275,7 @@
   tags: [时间, 按月, 分组]
   question: 每个月的评价平均分是多少？
   gold_sql: |
-    SELECT TO_CHAR(DATE_TRUNC('month', review_creation_date), 'YYYY-MM') AS month,
+    SELECT DATE_TRUNC('month', review_creation_date) AS month,
            ROUND(AVG(review_score), 2) AS avg_score
     FROM order_reviews GROUP BY 1 ORDER BY 1;
 
@@ -284,7 +284,7 @@
   tags: [时间, 按月, 计数]
   question: 每个月的会员注册数量是多少？
   gold_sql: |
-    SELECT TO_CHAR(DATE_TRUNC('month', register_date), 'YYYY-MM') AS month, COUNT(*) AS cnt
+    SELECT DATE_TRUNC('month', register_date) AS month, COUNT(*) AS cnt
     FROM members WHERE register_date IS NOT NULL GROUP BY 1 ORDER BY 1;
 
 - id: T3-028
@@ -301,7 +301,7 @@
   tags: [时间, 按月, 求和]
   question: 每个月的佣金收入是多少？
   gold_sql: |
-    SELECT TO_CHAR(DATE_TRUNC('month', period_start), 'YYYY-MM') AS month,
+    SELECT DATE_TRUNC('month', period_start) AS month,
            ROUND(SUM(commission), 2) AS total
     FROM settlements GROUP BY 1 ORDER BY 1;
 
@@ -310,7 +310,7 @@
   tags: [时间, 分组, 季度]
   question: 每个季度的有效订单量分别是多少？按季度排序。
   gold_sql: |
-    SELECT TO_CHAR(DATE_TRUNC('quarter', order_purchase_timestamp), 'YYYY-"Q"Q') AS quarter,
+    SELECT DATE_TRUNC('quarter', order_purchase_timestamp) AS quarter,
            COUNT(*) AS cnt
     FROM orders
     WHERE order_status NOT IN ('canceled', 'unavailable')

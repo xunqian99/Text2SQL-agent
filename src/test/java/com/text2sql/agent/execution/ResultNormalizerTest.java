@@ -55,8 +55,49 @@ class ResultNormalizerTest {
     @DisplayName("非数字文本原样保留，只去首尾空白")
     void keepsNonNumericText() {
         assertThat(ResultNormalizer.normalizeValue("  delivered  ")).isEqualTo("delivered");
-        assertThat(ResultNormalizer.normalizeValue("2018-01-01 00:00:00"))
-                .isEqualTo("2018-01-01 00:00:00");
+        assertThat(ResultNormalizer.normalizeValue(" 已送达 ")).isEqualTo("已送达");
+    }
+
+    @Test
+    @DisplayName("同一时间点的不同写法归一：日粒度与 timestamp 视为相同，月份字符串不投影")
+    void collapsesTemporalRenderings() {
+        String month = ResultNormalizer.normalizeValue("2016-09");
+        String date = ResultNormalizer.normalizeValue("2016-09-01");
+        String timestamp = ResultNormalizer.normalizeValue("2016-09-01 00:00:00");
+
+        assertThat(date).isEqualTo(timestamp);
+        assertThat(month).isNotEqualTo(timestamp);
+    }
+
+    @Test
+    @DisplayName("有损的季度字符串不投影到某个具体日期")
+    void keepsLossyQuarterLabel() {
+        String quarter = ResultNormalizer.normalizeValue("2016-Q3");
+
+        assertThat(quarter).isEqualTo("2016-Q3");
+        assertThat(quarter).isNotEqualTo(ResultNormalizer.normalizeValue("2016-07-01 00:00:00"));
+    }
+
+    @Test
+    @DisplayName("非零小数秒不能被压成整秒")
+    void keepsNonZeroFraction() {
+        assertThat(ResultNormalizer.normalizeValue("2016-09-01 00:00:00.123"))
+                .isNotEqualTo(ResultNormalizer.normalizeValue("2016-09-01 00:00:00"));
+        assertThat(ResultNormalizer.normalizeValue("2016-09-01 00:00:00.000"))
+                .isEqualTo(ResultNormalizer.normalizeValue("2016-09-01 00:00:00"));
+    }
+
+    @Test
+    @DisplayName("不同时间点不会被归一：2016-09 与 2016-10 仍然不同")
+    void doesNotCollapseDistinctTimestamps() {
+        assertThat(ResultNormalizer.normalizeValue("2016-09-01 00:00:00"))
+                .isNotEqualTo(ResultNormalizer.normalizeValue("2016-10-01 00:00:00"));
+    }
+
+    @Test
+    @DisplayName("非法日期原样保留：2026-02-30 不能被归一")
+    void keepsInvalidDateLikeText() {
+        assertThat(ResultNormalizer.normalizeValue("2026-02-30")).isEqualTo("2026-02-30");
     }
 
     @Test

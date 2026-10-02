@@ -220,7 +220,14 @@ public class SqlValidator {
     private static net.sf.jsqlparser.statement.select.SelectVisitorAdapter<Void> linkVisitors(
             net.sf.jsqlparser.expression.ExpressionVisitorAdapter<Void> expressionVisitor) {
         net.sf.jsqlparser.statement.select.FromItemVisitorAdapter<Void> fromItemVisitor =
-                new net.sf.jsqlparser.statement.select.FromItemVisitorAdapter<>();
+                new net.sf.jsqlparser.statement.select.FromItemVisitorAdapter<>() {
+                    @Override
+                    public <S> Void visit(net.sf.jsqlparser.statement.select.ParenthesedSelect parenthesedSelect,
+                                          S context) {
+                        net.sf.jsqlparser.statement.select.Select nested = parenthesedSelect.getSelect();
+                        return nested == null ? null : nested.accept(getSelectVisitor(), context);
+                    }
+                };
         net.sf.jsqlparser.statement.select.SelectVisitorAdapter<Void> selectVisitor =
                 new net.sf.jsqlparser.statement.select.SelectVisitorAdapter<>(expressionVisitor, fromItemVisitor);
         expressionVisitor.setSelectVisitor(selectVisitor);
@@ -230,8 +237,11 @@ public class SqlValidator {
 
     /** 只有「可能返回多行」的查询才需要 LIMIT。单行聚合值不需要。 */
     private boolean needsLimit(Select select) {
-        PlainSelect plain = select.getPlainSelect();
-        if (plain == null) {
+        // 必须用 instanceof，不能用 select.getPlainSelect()：JSqlParser 5.4 的
+        // getPlainSelect() 内部是裸强转（checkcast PlainSelect），遇到 UNION
+        // （SetOperationList）会直接抛 ClassCastException，而不是返回 null。
+        // 之前按「返回 null」写的分支从未生效，模型一旦生成 UNION 就会中断整轮评估。
+        if (!(select instanceof PlainSelect plain)) {
             return true; // UNION 等结构保守处理，要求有 LIMIT
         }
         // 没有 GROUP BY 且所有 select item 都是聚合函数 → 一定只有一行
@@ -258,8 +268,33 @@ public class SqlValidator {
         };
     }
 
+    /**
+     * 判断语句是否已经有 LIMIT。
+     *
+     * <p><b>为什么不能只看 {@code select.getLimit()}</b>
+     *
+     * <p>PostgreSQL 里 {@code A UNION B LIMIT 5} 的 LIMIT 作用于合并后的整体结果，
+     * 但 JSqlParser 会把这条 LIMIT 挂在**最后一个子查询**上，外层
+     * {@code SetOperationList.getLimit()} 仍然是 null。
+     *
+     * <p>只看外层会漏判，于是进入补 LIMIT 分支，在 AST 外层再设一个 limit，
+     * toString() 出来就是：
+     * <pre>... UNION ... LIMIT 5 LIMIT 200</pre>
+     * 这是语法错误，PostgreSQL 直接报 42601。表现为日志里一条
+     * {@code bad SQL grammar}，而模型写的 SQL 其实完全正确——
+     * 错误是校验层自己制造的。所以这里必须递归看最后一个子查询。
+     */
     private boolean hasLimit(Select select) {
-        return select.getLimit() != null;
+        if (select.getLimit() != null) {
+            return true;
+        }
+        if (select instanceof SetOperationList setOperationList) {
+            List<Select> selects = setOperationList.getSelects();
+            if (!selects.isEmpty()) {
+                return hasLimit(selects.get(selects.size() - 1));
+            }
+        }
+        return false;
     }
 
     /**

@@ -163,6 +163,73 @@ class SqlValidatorTest {
     }
 
     @Test
+    @DisplayName("UNION 这类非 PlainSelect 语句被补上 LIMIT，而不是抛 ClassCastException")
+    void appendsLimitToUnionInsteadOfCrashing() {
+        // 回归用例：JSqlParser 的 getPlainSelect() 内部是裸强转，
+        // UNION 会被解析成 SetOperationList，强转直接抛 ClassCastException。
+        // 这个异常曾经穿透到 ApplicationRunner，让整轮 100 条评估在第 99 条崩掉。
+        ValidationResult result = validator.validate(
+                "SELECT order_id FROM orders UNION SELECT order_id FROM orders", schema);
+
+        assertThat(result.valid()).isTrue();
+        assertThat(result.rewritten()).isTrue();
+        assertThat(result.sql().toUpperCase()).contains("UNION").contains("LIMIT 200");
+    }
+
+    @Test
+    @DisplayName("UNION 已经有 LIMIT 时不重复改写")
+    void doesNotRewriteUnionThatAlreadyHasLimit() {
+        ValidationResult result = validator.validate(
+                "SELECT order_id FROM orders UNION SELECT order_id FROM orders LIMIT 5", schema);
+
+        assertThat(result.valid()).isTrue();
+        assertThat(result.rewritten()).isFalse();
+    }
+
+    @Test
+    @DisplayName("UNION + ORDER BY + LIMIT 也不重复改写")
+    void doesNotRewriteUnionWithOrderByAndLimit() {
+        // 解析器在这里是不对称的：带 ORDER BY 时 LIMIT 挂在外层
+        // SetOperationList 上，不带 ORDER BY 时挂最后一个子查询上。
+        // 两种形态都必须识别为「已有 LIMIT」，否则会被拼成
+        // "... LIMIT 5 LIMIT 200"，PostgreSQL 直接报 42601。
+        ValidationResult result = validator.validate(
+                "SELECT order_id FROM orders UNION SELECT order_id FROM orders ORDER BY order_id LIMIT 5",
+                schema);
+
+        assertThat(result.valid()).isTrue();
+        assertThat(result.rewritten()).isFalse();
+        assertThat(result.sql().toUpperCase()).doesNotContain("LIMIT 200");
+    }
+
+    @Test
+    @DisplayName("UNION 两侧各自带 LIMIT 时，外层仍会补一个整体 LIMIT")
+    void appendsOuterLimitWhenOnlyInnerSelectsHaveLimit() {
+        // 两侧的 LIMIT 只限制各自分支，整体结果仍可能很大，所以外层必须补。
+        // 这个用例锁住的是「不要为了修重复 LIMIT 而把补 LIMIT 一起关掉」。
+        ValidationResult result = validator.validate(
+                "(SELECT order_id FROM orders LIMIT 3) UNION (SELECT order_id FROM orders LIMIT 5)",
+                schema);
+
+        assertThat(result.valid()).isTrue();
+        assertThat(result.rewritten()).isTrue();
+        assertThat(result.sql().toUpperCase()).contains("LIMIT 200");
+    }
+
+    @Test
+    @DisplayName("FROM 中括号包 UNION 时安全函数遍历不崩溃")
+    void traversesParenthesizedUnionWithoutCrashing() {
+        ValidationResult result = validator.validate(
+                "SELECT x.order_id FROM ("
+                        + "SELECT order_id FROM orders UNION SELECT order_id FROM orders"
+                        + ") x LIMIT 1",
+                schema);
+
+        assertThat(result.valid()).isTrue();
+        assertThat(result.sql()).contains("LIMIT 1");
+    }
+
+    @Test
     @DisplayName("REJECT 模式下缺 LIMIT 被判定非法")
     void rejectsMissingLimitInRejectMode() {
         AgentProperties properties = new AgentProperties();

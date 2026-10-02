@@ -1,0 +1,197 @@
+{
+  "meta" : {
+    "timestamp" : "2026-10-02T14:34:28.6073056",
+    "promptVersion" : "p1-full-schema-v1",
+    "model" : "ernie-4.5-turbo-128k",
+    "baseUrl" : "https://qianfan.baidubce.com",
+    "dryRun" : false,
+    "itemCount" : 50,
+    "limit" : 100,
+    "layers" : [ ],
+    "split" : "eval",
+    "includeDataProfile" : true,
+    "includeForeignKeys" : true,
+    "limitMode" : "APPEND",
+    "maxRows" : 200,
+    "schemaTableCount" : 37,
+    "retrievalEnabled" : false,
+    "retrievalTopK" : 8
+  },
+  "overall" : {
+    "total" : 50,
+    "correct" : 38,
+    "executionAccuracy" : 0.76,
+    "sqlValid" : 46,
+    "sqlValidRate" : 0.92,
+    "rewrittenCount" : 0,
+    "avgPromptTokens" : 2312.0,
+    "avgLatencyMs" : 3092.3,
+    "p50LatencyMs" : 2557,
+    "p95LatencyMs" : 6256,
+    "avgCostYuan" : 0.0,
+    "totalCostYuan" : 0.0
+  },
+  "byLayer" : {
+    "single_table_basic" : {
+      "total" : 20,
+      "correct" : 18,
+      "executionAccuracy" : 0.9,
+      "sqlValid" : 20,
+      "sqlValidRate" : 1.0,
+      "rewrittenCount" : 0,
+      "avgPromptTokens" : 2311.05,
+      "avgLatencyMs" : 2298.65,
+      "p50LatencyMs" : 2249,
+      "p95LatencyMs" : 2698,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    },
+    "single_table_agg" : {
+      "total" : 20,
+      "correct" : 16,
+      "executionAccuracy" : 0.8,
+      "sqlValid" : 19,
+      "sqlValidRate" : 0.95,
+      "rewrittenCount" : 0,
+      "avgPromptTokens" : 2312.1,
+      "avgLatencyMs" : 2882.25,
+      "p50LatencyMs" : 2557,
+      "p95LatencyMs" : 4066,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    },
+    "time_window" : {
+      "total" : 10,
+      "correct" : 4,
+      "executionAccuracy" : 0.4,
+      "sqlValid" : 7,
+      "sqlValidRate" : 0.7,
+      "rewrittenCount" : 0,
+      "avgPromptTokens" : 2313.7,
+      "avgLatencyMs" : 5099.7,
+      "p50LatencyMs" : 3613,
+      "p95LatencyMs" : 12305,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    }
+  },
+  "failures" : [ {
+    "id" : "T1-010",
+    "difficulty" : "single_table_basic",
+    "tags" : [ "去重", "枚举" ],
+    "question" : "订单状态一共有几种？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT DISTINCT order_status \nFROM orders \nLIMIT 1000;",
+    "message" : null,
+    "latencyMs" : 2694
+  }, {
+    "id" : "T1-016",
+    "difficulty" : "single_table_basic",
+    "tags" : [ "排序", "限制" ],
+    "question" : "分期数最多的那一笔支付分了多少期？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT payment_installments \nFROM order_payments \nORDER BY payment_installments DESC \nLIMIT 1;",
+    "message" : null,
+    "latencyMs" : 1921
+  }, {
+    "id" : "T2-011",
+    "difficulty" : "single_table_agg",
+    "tags" : [ "聚合", "分组", "求和" ],
+    "question" : "每个卖家的商品销售总额是多少？取金额最高的 10 个卖家。",
+    "status" : "EXECUTION_FAILED",
+    "generatedSql" : "SELECT \n    s.seller_id, \n    s.seller_city, \n    s.seller_state, \n    SUM(oi.price * oi.quantity) AS total_sales_amount\nFROM \n    order_items oi\nJOIN \n    orders o ON oi.order_id = o.order_id\nJOIN \n    sellers s ON oi.seller_id = s.seller_id\nGROUP BY \n    s.seller_id, s.seller_city, s.seller_state\nORDER BY \n    total_sales_amount DESC\nLIMIT 10;",
+    "message" : "PreparedStatementCallback; bad SQL grammar [SELECT \n    s.seller_id, \n    s.seller_city, \n    s.seller_state, \n    SUM(oi.price * oi.quantity) AS total_sales_amount\nFROM \n    order_items oi\nJOIN \n    orders o ON oi.order_id = o.order_id\nJOIN \n    sellers s ON oi.seller_id = s.seller_id\nGROUP BY \n    s.seller_id, s.seller_city, s.seller_state\nORDER BY \n    total_sales_amount DESC\nLIMIT 10;]",
+    "latencyMs" : 5196
+  }, {
+    "id" : "T2-015",
+    "difficulty" : "single_table_agg",
+    "tags" : [ "聚合", "平均" ],
+    "question" : "每个会员等级的平均积分是多少？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT m.level_id, ml.level_name, AVG(m.points) as avg_points\nFROM members m\nJOIN member_levels ml ON m.level_id = ml.level_id\nGROUP BY m.level_id, ml.level_name\nLIMIT 1000;",
+    "message" : null,
+    "latencyMs" : 3747
+  }, {
+    "id" : "T2-019",
+    "difficulty" : "single_table_agg",
+    "tags" : [ "聚合", "分组", "求和" ],
+    "question" : "每个活动的预算总额是多少？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT campaign_name, budget \nFROM campaigns \nORDER BY budget DESC \nLIMIT 1000",
+    "message" : null,
+    "latencyMs" : 2557
+  }, {
+    "id" : "T2-039",
+    "difficulty" : "single_table_agg",
+    "tags" : [ "条件聚合", "比率" ],
+    "question" : "好评（4 分及以上）占所有评价的比例是多少？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n    (SUM(CASE WHEN review_score >= 4 THEN 1 ELSE 0 END) * 100.0 / COUNT(*)) AS positive_review_ratio\nFROM \n    order_reviews\nLIMIT 1;",
+    "message" : null,
+    "latencyMs" : 3266
+  }, {
+    "id" : "T3-007",
+    "difficulty" : "time_window",
+    "tags" : [ "时间", "按月", "求和" ],
+    "question" : "每个月的运费总额是多少？",
+    "status" : "EXECUTION_FAILED",
+    "generatedSql" : "SELECT \n    DATE_TRUNC('month', order_purchase_timestamp) AS month,\n    SUM(freight_value) AS total_freight\nFROM \n    orders\nGROUP BY \n    month\nORDER BY \n    month\nLIMIT 1000;",
+    "message" : "PreparedStatementCallback; bad SQL grammar [SELECT \n    DATE_TRUNC('month', order_purchase_timestamp) AS month,\n    SUM(freight_value) AS total_freight\nFROM \n    orders\nGROUP BY \n    month\nORDER BY \n    month\nLIMIT 1000;]",
+    "latencyMs" : 3712
+  }, {
+    "id" : "T3-009",
+    "difficulty" : "time_window",
+    "tags" : [ "时间", "按月", "过滤" ],
+    "question" : "2018 年每个月的订单量是多少？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n    EXTRACT(MONTH FROM order_purchase_timestamp) AS month,\n    COUNT(*) AS order_count\nFROM \n    orders\nWHERE \n    EXTRACT(YEAR FROM order_purchase_timestamp) = 2018\nGROUP BY \n    month\nORDER BY \n    month\nLIMIT 12;",
+    "message" : null,
+    "latencyMs" : 3574
+  }, {
+    "id" : "T3-010",
+    "difficulty" : "time_window",
+    "tags" : [ "时间", "环比" ],
+    "question" : "每个月的订单量，以及相比上个月的变化量是多少？",
+    "status" : "SUCCESS",
+    "generatedSql" : "WITH monthly_orders AS (\n  SELECT \n    DATE_TRUNC('month', order_purchase_timestamp) AS month,\n    COUNT(*) AS order_count\n  FROM orders\n  GROUP BY DATE_TRUNC('month', order_purchase_timestamp)\n  ORDER BY month\n),\nmonthly_changes AS (\n  SELECT \n    month,\n    order_count,\n    order_count - LAG(order_count) OVER (ORDER BY month) AS change_from_prev_month\n  FROM monthly_orders\n)\nSELECT \n  month,\n  order_count,\n  COALESCE(change_from_prev_month, 0) AS change_from_prev_month\nFROM monthly_changes\nORDER BY month\nLIMIT 24;",
+    "message" : null,
+    "latencyMs" : 6256
+  }, {
+    "id" : "T3-012",
+    "difficulty" : "time_window",
+    "tags" : [ "时间", "同比" ],
+    "question" : "2018 年每个月的订单量相比 2017 年同期增长了多少？",
+    "status" : "SUCCESS",
+    "generatedSql" : "WITH \norders_2017 AS (\n    SELECT \n        EXTRACT(MONTH FROM order_purchase_timestamp) AS month,\n        COUNT(*) AS order_count\n    FROM orders\n    WHERE EXTRACT(YEAR FROM order_purchase_timestamp) = 2017\n    GROUP BY EXTRACT(MONTH FROM order_purchase_timestamp)\n),\norders_2018 AS (\n    SELECT \n        EXTRACT(MONTH FROM order_purchase_timestamp) AS month,\n        COUNT(*) AS order_count\n    FROM orders\n    WHERE EXTRACT(YEAR FROM order_purchase_timestamp) = 2018\n    GROUP BY EXTRACT(MONTH FROM order_purchase_timestamp)\n)\nSELECT \n    COALESCE(o2018.month, o2017.month) AS month,\n    COALESCE(o2018.order_count, 0) AS order_count_2018,\n    COALESCE(o2017.order_count, 0) AS order_count_2017,\n    COALESCE(o2018.order_count, 0) - COALESCE(o2017.order_count, 0) AS growth\nFROM orders_2017 o2017\nFULL OUTER JOIN orders_2018 o2018 ON o2017.month = o2018.month\nORDER BY month\nLIMIT 12;",
+    "message" : null,
+    "latencyMs" : 12305
+  }, {
+    "id" : "T3-014",
+    "difficulty" : "time_window",
+    "tags" : [ "时间", "近 N 天", "分组" ],
+    "question" : "数据里最后 90 天，每周的商品销售额分别是多少？",
+    "status" : "EXECUTION_FAILED",
+    "generatedSql" : "SELECT \n    date_trunc('week', o.order_purchase_timestamp) AS week_start,\n    SUM(oi.price * oi.quantity) AS weekly_sales\nFROM \n    order_items oi\nJOIN \n    orders o ON oi.order_id = o.order_id\nWHERE \n    o.order_purchase_timestamp >= (\n        SELECT MAX(order_purchase_timestamp) - INTERVAL '90 days' \n        FROM orders\n    )\n    AND o.order_purchase_timestamp <= (\n        SELECT MAX(order_purchase_timestamp) \n        FROM orders\n    )\nGROUP BY \n    week_start\nORDER BY \n    week_start\nLIMIT 100;",
+    "message" : "PreparedStatementCallback; bad SQL grammar [SELECT \n    date_trunc('week', o.order_purchase_timestamp) AS week_start,\n    SUM(oi.price * oi.quantity) AS weekly_sales\nFROM \n    order_items oi\nJOIN \n    orders o ON oi.order_id = o.order_id\nWHERE \n    o.order_purchase_timestamp >= (\n        SELECT MAX(order_purchase_timestamp) - INTERVAL '90 days' \n        FROM orders\n    )\n    AND o.order_purchase_timestamp <= (\n        SELECT MAX(order_purchase_timestamp) \n        FROM orders\n    )\nGROUP BY \n    week_start\nORDER BY \n    week_start\nLIMIT 100;]",
+    "latencyMs" : 6275
+  }, {
+    "id" : "T3-018",
+    "difficulty" : "time_window",
+    "tags" : [ "时间", "日期差", "分组" ],
+    "question" : "每个州的平均配送时长是多少天？",
+    "status" : "EXECUTION_FAILED",
+    "generatedSql" : "SELECT \n    s.seller_state, \n    AVG(EXTRACT(EPOCH FROM (o.order_delivered_customer_date - o.order_purchase_timestamp)) / 86400) AS avg_delivery_days\nFROM \n    orders o\nJOIN \n    customers c ON o.customer_id = c.customer_id\nJOIN \n    sellers s ON o.seller_id = s.seller_id\nWHERE \n    o.order_delivered_customer_date IS NOT NULL\nGROUP BY \n    s.seller_state\nLIMIT 1000;",
+    "message" : "PreparedStatementCallback; bad SQL grammar [SELECT \n    s.seller_state, \n    AVG(EXTRACT(EPOCH FROM (o.order_delivered_customer_date - o.order_purchase_timestamp)) / 86400) AS avg_delivery_days\nFROM \n    orders o\nJOIN \n    customers c ON o.customer_id = c.customer_id\nJOIN \n    sellers s ON o.seller_id = s.seller_id\nWHERE \n    o.order_delivered_customer_date IS NOT NULL\nGROUP BY \n    s.seller_state\nLIMIT 1000;]",
+    "latencyMs" : 5754
+  } ],
+  "retrieval" : {
+    "evaluatedCount" : 50,
+    "fullRecallRate" : 1.0,
+    "tableRecallRate" : 1.0,
+    "avgPrecision" : 0.028648648648648623,
+    "avgRetrievedTables" : 37.0,
+    "missedCount" : 0,
+    "avgDdlChars" : 7401.0,
+    "incompleteCases" : [ ]
+  }
+}

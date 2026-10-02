@@ -86,7 +86,8 @@ public class Text2SqlOrchestrator {
                     ? AgentResponse.Status.NOT_CONFIGURED
                     : AgentResponse.Status.GENERATION_FAILED;
             log.warn("生成失败（{}）：{}", e.getReason(), e.getMessage());
-            return AgentResponse.failed(question, status, e.getMessage(), null, tableCount,
+            // 生成阶段失败时确实没有 SQL 可记录，这里传 null 是如实反映。
+            return AgentResponse.failed(question, status, null, e.getMessage(), null, tableCount,
                     retrievedTables, ddlChars,
                     timings(retrievalMs, generationMs, 0, 0, elapsedMs(totalStarted)));
         }
@@ -146,8 +147,10 @@ public class Text2SqlOrchestrator {
         } catch (SqlExecutionException e) {
             long executionMs = elapsedMs(executionStarted);
             log.warn("SQL 执行失败：{}", e.getMessage());
-            return AgentResponse.failed(question, AgentResponse.Status.EXECUTION_FAILED, e.getMessage(),
-                    llmCall, tableCount,
+            // 必须带上 validation.sql()：执行失败的 SQL 正是排查失败原因的唯一线索，
+            // 早先这里传 null，导致报告里 19 条执行失败看不到 SQL。
+            return AgentResponse.failed(question, AgentResponse.Status.EXECUTION_FAILED, validation.sql(),
+                    e.getMessage(), llmCall, tableCount,
                     retrievedTables, ddlChars,
                     timings(retrievalMs, generationMs, validationMs, executionMs, elapsedMs(totalStarted)));
         }

@@ -2,9 +2,13 @@ package com.text2sql.agent.execution;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.DateTimeException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * 结果集规范化。执行准确率的正确性几乎全部压在这个类上。
@@ -14,7 +18,7 @@ import java.util.Locale;
  * 之所以不共用一份实现，是因为 Python 侧是离线标注工具、Java 侧是运行时组件，
  * 强行共用会把离线依赖拖进运行时。
  *
- * <p>三条规则，每条都对应一个真实的假失败来源：
+ * <p>四条规则，每条都对应一个真实的假失败来源：
  *
  * <ol>
  *   <li><b>浮点精度</b>：{@code 15843553.24} 与 {@code 15843553.240000001} 是同一个答案。
@@ -22,6 +26,10 @@ import java.util.Locale;
  *       否则 610 会变成 6.1E+2，同一个数字两种写法又成了假失败。</li>
  *   <li><b>NULL</b>：JDBC 给的是 Java null，psql 给的是空串，两者含义不同。
  *       统一成字面量 {@code NULL}，避免「真 NULL」和「空字符串」混淆。</li>
+ *   <li><b>时间写法</b>：{@code 2018-01-01} 和 {@code 2018-01-01 00:00:00}
+ *       指向同一个时间点，只是 PostgreSQL 的 {@code DATE} 和 {@code TIMESTAMP}
+ *       展示不同。它们可以归一；{@code 2018-01}、{@code 2018-Q1} 这类有损字符串
+ *       不展开，因为那需要额外约定粒度。</li>
  *   <li><b>行顺序</b>：只有 {@code ORDER BY} 与 {@code LIMIT} 同时出现时，
  *       顺序才承载语义（「销量最高的 10 个」顺序错了就是错的）。
  *       单纯的 ORDER BY 只是展示用，不应影响判定。</li>
@@ -63,11 +71,8 @@ public final class ResultNormalizer {
     /**
      * 规范化单个单元格。
      *
-     * <p>时间值不特殊处理：PostgreSQL 返回的 timestamp 字符串形如
-     * {@code 2018-01-01 00:00:00}，只要模型和标准 SQL 都从同一列取值，
-     * 字符串形式就是稳定的。真正的坑在于「同一天不同写法」
-     * （{@code 2018-01-01} vs {@code 2018-01-01 00:00:00}）——
-     * 那属于 SQL 口径差异，应该判为错误，不该被规范化掩盖掉。
+     * <p>数字走浮点精度规则，完整日期/时间走 {@link #normalizeTemporal} 的规范形式，
+     * 其余文本原样保留。只有日期和当天零点 timestamp 会归一到同一值。
      */
     public static String normalizeValue(String value) {
         if (value == null) {
@@ -88,9 +93,57 @@ public final class ResultNormalizer {
             }
             return plain.isEmpty() ? "0" : plain;
         } catch (NumberFormatException e) {
-            return text;
+            return normalizeTemporal(text);
         }
     }
+
+    /**
+     * 时间归一化：把 DATE 和当天零点 timestamp 映射到同一个规范串。
+     *
+     * <p><b>为什么需要它</b>
+     *
+     * <p>评估集中的时间分组使用 {@code DATE_TRUNC}，周起点使用 {@code DATE}；
+     * 模型可能返回 timestamp。两者只差展示类型，不需要猜月份或季度的首日。
+     * {@code 2018-01} 和 {@code 2018-Q1} 保持文本原样，避免有损表示被投影成某个
+     * 人为约定的日期。
+     *
+     * <p><b>已知边界</b>
+     *
+     * <p>非零小数秒和带时区后缀的值不做时间换算，原样返回；
+     * 非时间格式的文本也原样返回。
+     */
+    private static String normalizeTemporal(String text) {
+        Matcher m = DATE_PATTERN.matcher(text);
+        if (!m.matches()) {
+            return text;
+        }
+        int year = Integer.parseInt(m.group(1));
+        int month = Integer.parseInt(m.group(2));
+        int day = m.group(3) == null ? 1 : Integer.parseInt(m.group(3));
+        int hour = m.group(4) == null ? 0 : Integer.parseInt(m.group(4));
+        int minute = m.group(5) == null ? 0 : Integer.parseInt(m.group(5));
+        int second = m.group(6) == null ? 0 : Integer.parseInt(m.group(6));
+        String fraction = m.group(7);
+        if (hour > 23 || minute > 59 || second > 59
+                || (fraction != null && !fraction.substring(1).chars().allMatch(c -> c == '0'))) {
+            return text;
+        }
+        try {
+            LocalDate.of(year, month, day);
+        } catch (DateTimeException e) {
+            return text;
+        }
+        return canonical(year, month, day, hour, minute, second);
+    }
+
+    private static String canonical(int year, int month, int day, int hour, int minute, int second) {
+        return "%04d-%02d-%02d %02d:%02d:%02d".formatted(year, month, day, hour, minute, second);
+    }
+
+    /** 时间格式：完整日期、日期+时间，以及可选的小数秒。 */
+    private static final Pattern DATE_PATTERN = Pattern.compile(
+            "(\\d{4})-(\\d{2})-(\\d{2})(?:[ T](\\d{2}):(\\d{2})(?::(\\d{2}))?)?"
+                    + "(\\.\\d+)?");
 
     private static int compareRows(List<String> a, List<String> b) {
         int n = Math.min(a.size(), b.size());

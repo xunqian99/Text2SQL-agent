@@ -112,10 +112,27 @@ public record AgentResponse(
                 schemaDdlChars, timings);
     }
 
-    public static AgentResponse failed(String question, Status status, String message,
+    /**
+     * 构造一个失败响应。
+     *
+     * <p><b>为什么 {@code sql} 必须是参数，而不是硬编码 null</b>
+     *
+     * <p>这里踩过一个真实的坑：早期版本把 sql 固定成 null，理由是「都失败了，
+     * SQL 也没意义」。结果评估报告里 19 条 {@code EXECUTION_FAILED} 的
+     * {@code generatedSql} 全是空——**恰恰是最需要看 SQL 的那类失败，反而没有 SQL**。
+     * 同时 Spring 的异常翻译器因为拿不到 SQL，把错误信息渲染成
+     * {@code bad SQL grammar []}，方括号里空无一物，连「模型写歪了」还是
+     * 「校验层改坏了」都无法区分。
+     *
+     * <p>失败分类是这个项目的核心产出，而分类的前提是能看到失败的那条语句。
+     * 所以除了「压根没生成出 SQL」的生成失败，其余失败都必须带上 SQL。
+     *
+     * @param sql 实际尝试执行的 SQL；生成阶段就失败（没有 SQL）时传 null
+     */
+    public static AgentResponse failed(String question, Status status, String sql, String message,
                                        LlmCallRecord call, int schemaTableCount,
                                        List<String> retrievedTables, int schemaDdlChars, Timings timings) {
-        return new AgentResponse(question, status, null, message, List.of(),
+        return new AgentResponse(question, status, sql, message, List.of(),
                 List.of(), List.of(), false, false, call, schemaTableCount, retrievedTables,
                 schemaDdlChars, timings);
     }

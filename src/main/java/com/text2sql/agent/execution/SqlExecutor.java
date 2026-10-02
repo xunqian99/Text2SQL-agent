@@ -4,10 +4,15 @@ import com.text2sql.agent.config.AgentProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.ResultSetExtractor;
+import org.springframework.jdbc.core.SqlProvider;
 import org.springframework.stereotype.Component;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -83,16 +88,7 @@ public class SqlExecutor {
                 return new RowBuffer(columns, rows);
             };
 
-            RowBuffer result = jdbcTemplate.query(connection -> {
-                // 只读事务：数据库层面的兜底，不依赖代码正确性
-                connection.setReadOnly(true);
-                var statement = connection.prepareStatement(sql);
-                statement.setQueryTimeout(timeout);
-                // 多取一行，用来判断「是不是被截断了」——只取 maxRows 行的话，
-                // 结果刚好等于 maxRows 时无法区分「恰好这么多」和「还有更多」。
-                statement.setMaxRows(maxRows + 1);
-                return statement;
-            }, extractor);
+            RowBuffer result = jdbcTemplate.query(new ReadOnlyStatementCreator(sql, timeout, maxRows), extractor);
 
             boolean truncated = result.rows().size() > maxRows;
             List<List<String>> kept = truncated ? result.rows().subList(0, maxRows) : result.rows();
@@ -109,5 +105,50 @@ public class SqlExecutor {
     }
 
     private record RowBuffer(List<String> columns, List<List<String>> rows) {
+    }
+
+    /**
+     * 创建只读 PreparedStatement，并**把 SQL 暴露给 Spring**。
+     *
+     * <p><b>为什么不能继续用 lambda</b>
+     *
+     * <p>早先这里传的是一个 lambda，语义上完全正确，但日志里所有执行失败都是
+     * {@code bad SQL grammar []}——方括号空着。原因是 Spring 的
+     * {@code SQLErrorCodeSQLExceptionTranslator} 在渲染错误信息时，会先调用
+     * {@code JdbcTemplate.getSql(Object)} 取 SQL 文本；而那个方法**只认
+     * {@link SqlProvider} 接口**，lambda 没实现它，取不到就退化成空字符串。
+     *
+     * <p>结果就是：越需要看到 SQL 的失败，越看不到 SQL。这是「可观测性缺失」
+     * 的典型形态——功能全对，但排查成本高一个数量级。修法不是去改日志格式，
+     * 而是让对象满足框架要求的那一个接口。
+     */
+    private static final class ReadOnlyStatementCreator implements PreparedStatementCreator, SqlProvider {
+
+        private final String sql;
+        private final int timeoutSeconds;
+        private final int maxRows;
+
+        private ReadOnlyStatementCreator(String sql, int timeoutSeconds, int maxRows) {
+            this.sql = sql;
+            this.timeoutSeconds = timeoutSeconds;
+            this.maxRows = maxRows;
+        }
+
+        @Override
+        public PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
+            // 只读事务：数据库层面的兜底，不依赖代码正确性
+            connection.setReadOnly(true);
+            PreparedStatement statement = connection.prepareStatement(sql);
+            statement.setQueryTimeout(timeoutSeconds);
+            // 多取一行，用来判断「是不是被截断了」——只取 maxRows 行的话，
+            // 结果刚好等于 maxRows 时无法区分「恰好这么多」和「还有更多」。
+            statement.setMaxRows(maxRows + 1);
+            return statement;
+        }
+
+        @Override
+        public String getSql() {
+            return sql;
+        }
     }
 }

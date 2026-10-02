@@ -1,0 +1,608 @@
+{
+  "meta" : {
+    "timestamp" : "2026-10-02T15:19:39.8822167",
+    "promptVersion" : "p1-full-schema-v1",
+    "model" : "ernie-4.5-turbo-32k",
+    "baseUrl" : "https://qianfan.baidubce.com",
+    "dryRun" : false,
+    "itemCount" : 100,
+    "limit" : 0,
+    "layers" : [ ],
+    "split" : "eval",
+    "includeDataProfile" : true,
+    "includeForeignKeys" : true,
+    "limitMode" : "APPEND",
+    "maxRows" : 200,
+    "schemaTableCount" : 37,
+    "retrievalEnabled" : false,
+    "retrievalTopK" : 8
+  },
+  "overall" : {
+    "total" : 100,
+    "correct" : 47,
+    "executionAccuracy" : 0.47,
+    "sqlValid" : 78,
+    "sqlValidRate" : 0.78,
+    "rewrittenCount" : 0,
+    "avgPromptTokens" : 2314.71,
+    "avgLatencyMs" : 4837.34,
+    "p50LatencyMs" : 3489,
+    "p95LatencyMs" : 11721,
+    "avgCostYuan" : 0.0,
+    "totalCostYuan" : 0.0
+  },
+  "byLayer" : {
+    "single_table_basic" : {
+      "total" : 20,
+      "correct" : 17,
+      "executionAccuracy" : 0.85,
+      "sqlValid" : 20,
+      "sqlValidRate" : 1.0,
+      "rewrittenCount" : 0,
+      "avgPromptTokens" : 2311.05,
+      "avgLatencyMs" : 2264.6,
+      "p50LatencyMs" : 2235,
+      "p95LatencyMs" : 2694,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    },
+    "single_table_agg" : {
+      "total" : 20,
+      "correct" : 15,
+      "executionAccuracy" : 0.75,
+      "sqlValid" : 19,
+      "sqlValidRate" : 0.95,
+      "rewrittenCount" : 0,
+      "avgPromptTokens" : 2312.1,
+      "avgLatencyMs" : 2883.8,
+      "p50LatencyMs" : 2685,
+      "p95LatencyMs" : 3743,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    },
+    "time_window" : {
+      "total" : 16,
+      "correct" : 7,
+      "executionAccuracy" : 0.4375,
+      "sqlValid" : 13,
+      "sqlValidRate" : 0.8125,
+      "rewrittenCount" : 0,
+      "avgPromptTokens" : 2313.31,
+      "avgLatencyMs" : 5656.13,
+      "p50LatencyMs" : 4010,
+      "p95LatencyMs" : 20846,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    },
+    "multi_join" : {
+      "total" : 22,
+      "correct" : 7,
+      "executionAccuracy" : 0.3181818181818182,
+      "sqlValid" : 15,
+      "sqlValidRate" : 0.6818181818181818,
+      "rewrittenCount" : 0,
+      "avgPromptTokens" : 2313.59,
+      "avgLatencyMs" : 4843.18,
+      "p50LatencyMs" : 4191,
+      "p95LatencyMs" : 7989,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    },
+    "multi_join_deep" : {
+      "total" : 10,
+      "correct" : 1,
+      "executionAccuracy" : 0.1,
+      "sqlValid" : 4,
+      "sqlValidRate" : 0.4,
+      "rewrittenCount" : 0,
+      "avgPromptTokens" : 2322.5,
+      "avgLatencyMs" : 8393.3,
+      "p50LatencyMs" : 6936,
+      "p95LatencyMs" : 16581,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    },
+    "business_semantics" : {
+      "total" : 12,
+      "correct" : 0,
+      "executionAccuracy" : 0.0,
+      "sqlValid" : 7,
+      "sqlValidRate" : 0.5833333333333334,
+      "rewrittenCount" : 0,
+      "avgPromptTokens" : 2322.58,
+      "avgLatencyMs" : 8315.42,
+      "p50LatencyMs" : 6047,
+      "p95LatencyMs" : 20465,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    }
+  },
+  "failures" : [ {
+    "id" : "T1-010",
+    "difficulty" : "single_table_basic",
+    "tags" : [ "去重", "枚举" ],
+    "question" : "订单状态一共有几种？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT DISTINCT order_status \nFROM orders \nLIMIT 1000;",
+    "message" : null,
+    "latencyMs" : 2297
+  }, {
+    "id" : "T1-012",
+    "difficulty" : "single_table_basic",
+    "tags" : [ "排序", "限制" ],
+    "question" : "价格最高的 10 条订单明细是哪些？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT order_items.order_item_id, order_items.product_id, order_items.price\nFROM order_items\nORDER BY order_items.price DESC\nLIMIT 10;",
+    "message" : null,
+    "latencyMs" : 3291
+  }, {
+    "id" : "T1-016",
+    "difficulty" : "single_table_basic",
+    "tags" : [ "排序", "限制" ],
+    "question" : "分期数最多的那一笔支付分了多少期？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT payment_installments \nFROM order_payments \nORDER BY payment_installments DESC \nLIMIT 1;",
+    "message" : null,
+    "latencyMs" : 2435
+  }, {
+    "id" : "T2-004",
+    "difficulty" : "single_table_agg",
+    "tags" : [ "聚合", "平均" ],
+    "question" : "平均每个订单有多少条明细？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT COUNT(order_item_id) / COUNT(DISTINCT order_id) AS avg_items_per_order\nFROM order_items\nLIMIT 1;",
+    "message" : null,
+    "latencyMs" : 2931
+  }, {
+    "id" : "T2-011",
+    "difficulty" : "single_table_agg",
+    "tags" : [ "聚合", "分组", "求和" ],
+    "question" : "每个卖家的商品销售总额是多少？取金额最高的 10 个卖家。",
+    "status" : "EXECUTION_FAILED",
+    "generatedSql" : "SELECT \n    s.seller_id, \n    s.seller_city, \n    s.seller_state, \n    SUM(oi.price * oi.quantity) AS total_sales_amount\nFROM \n    order_items oi\nJOIN \n    orders o ON oi.order_id = o.order_id\nJOIN \n    sellers s ON oi.seller_id = s.seller_id\nGROUP BY \n    s.seller_id, s.seller_city, s.seller_state\nORDER BY \n    total_sales_amount DESC\nLIMIT 10;",
+    "message" : "PreparedStatementCallback; bad SQL grammar [SELECT \n    s.seller_id, \n    s.seller_city, \n    s.seller_state, \n    SUM(oi.price * oi.quantity) AS total_sales_amount\nFROM \n    order_items oi\nJOIN \n    orders o ON oi.order_id = o.order_id\nJOIN \n    sellers s ON oi.seller_id = s.seller_id\nGROUP BY \n    s.seller_id, s.seller_city, s.seller_state\nORDER BY \n    total_sales_amount DESC\nLIMIT 10;]",
+    "latencyMs" : 5564
+  }, {
+    "id" : "T2-015",
+    "difficulty" : "single_table_agg",
+    "tags" : [ "聚合", "平均" ],
+    "question" : "每个会员等级的平均积分是多少？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT m.level_id, ml.level_name, AVG(m.points) AS avg_points\nFROM members m\nJOIN member_levels ml ON m.level_id = ml.level_id\nGROUP BY m.level_id, ml.level_name\nLIMIT 1000;",
+    "message" : null,
+    "latencyMs" : 2868
+  }, {
+    "id" : "T2-019",
+    "difficulty" : "single_table_agg",
+    "tags" : [ "聚合", "分组", "求和" ],
+    "question" : "每个活动的预算总额是多少？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT campaign_name, budget\nFROM campaigns\nLIMIT 1000;",
+    "message" : null,
+    "latencyMs" : 2011
+  }, {
+    "id" : "T2-039",
+    "difficulty" : "single_table_agg",
+    "tags" : [ "条件聚合", "比率" ],
+    "question" : "好评（4 分及以上）占所有评价的比例是多少？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n    (COUNT(CASE WHEN review_score >= 4 THEN 1 END) * 100.0 / COUNT(*)) AS positive_review_ratio\nFROM \n    order_reviews\nLIMIT 1;",
+    "message" : null,
+    "latencyMs" : 3489
+  }, {
+    "id" : "T3-007",
+    "difficulty" : "time_window",
+    "tags" : [ "时间", "按月", "求和" ],
+    "question" : "每个月的运费总额是多少？",
+    "status" : "EXECUTION_FAILED",
+    "generatedSql" : "SELECT \n    DATE_TRUNC('month', order_purchase_timestamp) AS month,\n    SUM(freight_value) AS total_freight\nFROM \n    orders\nGROUP BY \n    month\nORDER BY \n    month\nLIMIT 1000;",
+    "message" : "PreparedStatementCallback; bad SQL grammar [SELECT \n    DATE_TRUNC('month', order_purchase_timestamp) AS month,\n    SUM(freight_value) AS total_freight\nFROM \n    orders\nGROUP BY \n    month\nORDER BY \n    month\nLIMIT 1000;]",
+    "latencyMs" : 3394
+  }, {
+    "id" : "T3-009",
+    "difficulty" : "time_window",
+    "tags" : [ "时间", "按月", "过滤" ],
+    "question" : "2018 年每个月的订单量是多少？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n    EXTRACT(MONTH FROM order_purchase_timestamp) AS month,\n    COUNT(*) AS order_count\nFROM \n    orders\nWHERE \n    EXTRACT(YEAR FROM order_purchase_timestamp) = 2018\nGROUP BY \n    month\nORDER BY \n    month\nLIMIT 12;",
+    "message" : null,
+    "latencyMs" : 4010
+  }, {
+    "id" : "T3-010",
+    "difficulty" : "time_window",
+    "tags" : [ "时间", "环比" ],
+    "question" : "每个月的订单量，以及相比上个月的变化量是多少？",
+    "status" : "SUCCESS",
+    "generatedSql" : "WITH monthly_orders AS (\n  SELECT \n    DATE_TRUNC('month', order_purchase_timestamp) AS month,\n    COUNT(*) AS order_count\n  FROM orders\n  GROUP BY DATE_TRUNC('month', order_purchase_timestamp)\n  ORDER BY month\n),\nmonthly_changes AS (\n  SELECT \n    month,\n    order_count,\n    order_count - LAG(order_count) OVER (ORDER BY month) AS change_from_prev_month\n  FROM monthly_orders\n)\nSELECT \n  month,\n  order_count,\n  COALESCE(change_from_prev_month, 0) AS change_from_prev_month\nFROM monthly_changes\nORDER BY month\nLIMIT 24;",
+    "message" : null,
+    "latencyMs" : 7627
+  }, {
+    "id" : "T3-012",
+    "difficulty" : "time_window",
+    "tags" : [ "时间", "同比" ],
+    "question" : "2018 年每个月的订单量相比 2017 年同期增长了多少？",
+    "status" : "EXECUTION_FAILED",
+    "generatedSql" : "SELECT \n    EXTRACT(MONTH FROM o1.order_month) AS month,\n    COUNT(DISTINCT o1.order_id) AS orders_2018,\n    COUNT(DISTINCT o2.order_id) AS orders_2017,\n    COUNT(DISTINCT o1.order_id) - COUNT(DISTINCT o2.order_id) AS growth\nFROM \n    (SELECT order_id, DATE_TRUNC('month', order_purchase_timestamp) AS order_month \n     FROM orders \n     WHERE EXTRACT(YEAR FROM order_purchase_timestamp) = 2018) o1\nFULL OUTER JOIN \n    (SELECT order_id, DATE_TRUNC('month', order_purchase_timestamp) AS order_month \n     FROM orders \n     WHERE EXTRACT(YEAR FROM order_purchase_timestamp) = 2017) o2\nON EXTRACT(MONTH FROM o1.order_month) = EXTRACT(MONTH FROM o2.order_month)\nGROUP BY EXTRACT(MONTH FROM o1.order_month)\nORDER BY month\nLIMIT 12;",
+    "message" : "PreparedStatementCallback; SQL [SELECT \n    EXTRACT(MONTH FROM o1.order_month) AS month,\n    COUNT(DISTINCT o1.order_id) AS orders_2018,\n    COUNT(DISTINCT o2.order_id) AS orders_2017,\n    COUNT(DISTINCT o1.order_id) - COUNT(DISTINCT o2.order_id) AS growth\nFROM \n    (SELECT order_id, DATE_TRUNC('month', order_purchase_timestamp) AS order_month \n     FROM orders \n     WHERE EXTRACT(YEAR FROM order_purchase_timestamp) = 2018) o1\nFULL OUTER JOIN \n    (SELECT order_id, DATE_TRUNC('month', order_purchase_timestamp) AS order_month \n     FROM orders \n     WHERE EXTRACT(YEAR FROM order_purchase_timestamp) = 2017) o2\nON EXTRACT(MONTH FROM o1.order_month) = EXTRACT(MONTH FROM o2.order_month)\nGROUP BY EXTRACT(MONTH FROM o1.order_month)\nORDER BY month\nLIMIT 12;]; ERROR: canceling statement due to user request",
+    "latencyMs" : 20846
+  }, {
+    "id" : "T3-014",
+    "difficulty" : "time_window",
+    "tags" : [ "时间", "近 N 天", "分组" ],
+    "question" : "数据里最后 90 天，每周的商品销售额分别是多少？",
+    "status" : "EXECUTION_FAILED",
+    "generatedSql" : "SELECT \n    date_trunc('week', o.order_purchase_timestamp) AS week_start,\n    SUM(oi.price * oi.quantity) AS weekly_sales_amount\nFROM \n    order_items oi\nJOIN \n    orders o ON oi.order_id = o.order_id\nWHERE \n    o.order_purchase_timestamp >= (SELECT MAX(order_purchase_timestamp) - INTERVAL '90 days' FROM orders)\n    AND o.order_purchase_timestamp <= (SELECT MAX(order_purchase_timestamp) FROM orders)\nGROUP BY \n    week_start\nORDER BY \n    week_start\nLIMIT 100;",
+    "message" : "PreparedStatementCallback; bad SQL grammar [SELECT \n    date_trunc('week', o.order_purchase_timestamp) AS week_start,\n    SUM(oi.price * oi.quantity) AS weekly_sales_amount\nFROM \n    order_items oi\nJOIN \n    orders o ON oi.order_id = o.order_id\nWHERE \n    o.order_purchase_timestamp >= (SELECT MAX(order_purchase_timestamp) - INTERVAL '90 days' FROM orders)\n    AND o.order_purchase_timestamp <= (SELECT MAX(order_purchase_timestamp) FROM orders)\nGROUP BY \n    week_start\nORDER BY \n    week_start\nLIMIT 100;]",
+    "latencyMs" : 7402
+  }, {
+    "id" : "T3-016",
+    "difficulty" : "time_window",
+    "tags" : [ "时间", "按星期" ],
+    "question" : "一周中星期几的订单量最多？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n    EXTRACT(DOW FROM order_purchase_timestamp) AS day_of_week,\n    COUNT(*) AS order_count\nFROM \n    orders\nWHERE \n    order_purchase_timestamp BETWEEN (SELECT MAX(order_purchase_timestamp) - INTERVAL '6 days' FROM orders) \n    AND (SELECT MAX(order_purchase_timestamp) FROM orders)\nGROUP BY \n    day_of_week\nORDER BY \n    order_count DESC\nLIMIT 1;",
+    "message" : null,
+    "latencyMs" : 5294
+  }, {
+    "id" : "T3-018",
+    "difficulty" : "time_window",
+    "tags" : [ "时间", "日期差", "分组" ],
+    "question" : "每个州的平均配送时长是多少天？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n    s.seller_state AS state,\n    AVG(EXTRACT(DAY FROM (o.order_delivered_customer_date - o.order_purchase_timestamp))) AS avg_delivery_days\nFROM \n    orders o\nJOIN \n    order_items oi ON o.order_id = oi.order_id\nJOIN \n    sellers s ON oi.seller_id = s.seller_id\nWHERE \n    o.order_delivered_customer_date IS NOT NULL\nGROUP BY \n    s.seller_state\nLIMIT 1000;",
+    "message" : null,
+    "latencyMs" : 6379
+  }, {
+    "id" : "T3-025",
+    "difficulty" : "time_window",
+    "tags" : [ "时间", "过滤", "分组" ],
+    "question" : "2018 年上半年（1 到 6 月）每个州的订单量是多少？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n    s.seller_state AS state,\n    COUNT(o.order_id) AS order_count\nFROM \n    orders o\nJOIN \n    order_items oi ON o.order_id = oi.order_id\nJOIN \n    sellers s ON oi.seller_id = s.seller_id\nWHERE \n    o.order_purchase_timestamp >= '2018-01-01' \n    AND o.order_purchase_timestamp < '2018-07-01'\nGROUP BY \n    s.seller_state\nORDER BY \n    order_count DESC\nLIMIT 1000;",
+    "message" : null,
+    "latencyMs" : 6594
+  }, {
+    "id" : "T3-030",
+    "difficulty" : "time_window",
+    "tags" : [ "时间", "分组", "季度" ],
+    "question" : "每个季度的有效订单量分别是多少？按季度排序。",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n    EXTRACT(YEAR FROM order_purchase_timestamp) AS year,\n    EXTRACT(QUARTER FROM order_purchase_timestamp) AS quarter,\n    COUNT(*) AS valid_order_count\nFROM \n    orders\nWHERE \n    order_status = 'delivered' OR order_status = 'shipped'\nGROUP BY \n    year, quarter\nORDER BY \n    year, quarter\nLIMIT 1000;",
+    "message" : null,
+    "latencyMs" : 4937
+  }, {
+    "id" : "T4-002",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "分组", "求和" ],
+    "question" : "每个州的商品销售额是多少？",
+    "status" : "EXECUTION_FAILED",
+    "generatedSql" : "SELECT \n    s.seller_state AS state,\n    SUM(oi.price * oi.quantity) AS total_sales\nFROM \n    order_items oi\nJOIN \n    orders o ON oi.order_id = o.order_id\nJOIN \n    sellers s ON oi.seller_id = s.seller_id\nGROUP BY \n    s.seller_state\nORDER BY \n    total_sales DESC\nLIMIT 1000;",
+    "message" : "PreparedStatementCallback; bad SQL grammar [SELECT \n    s.seller_state AS state,\n    SUM(oi.price * oi.quantity) AS total_sales\nFROM \n    order_items oi\nJOIN \n    orders o ON oi.order_id = o.order_id\nJOIN \n    sellers s ON oi.seller_id = s.seller_id\nGROUP BY \n    s.seller_state\nORDER BY \n    total_sales DESC\nLIMIT 1000;]",
+    "latencyMs" : 4624
+  }, {
+    "id" : "T4-004",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "翻译表" ],
+    "question" : "用英文类目名统计，哪个类目的销售额最高？",
+    "status" : "EXECUTION_FAILED",
+    "generatedSql" : "SELECT \n    p.product_category_name_english,\n    SUM(oi.price * oi.quantity) AS total_sales\nFROM \n    order_items oi\nJOIN \n    products p ON oi.product_id = p.product_id\nJOIN \n    orders o ON oi.order_id = o.order_id\nWHERE \n    o.order_status = 'delivered'\nGROUP BY \n    p.product_category_name_english\nORDER BY \n    total_sales DESC\nLIMIT 1;",
+    "message" : "PreparedStatementCallback; bad SQL grammar [SELECT \n    p.product_category_name_english,\n    SUM(oi.price * oi.quantity) AS total_sales\nFROM \n    order_items oi\nJOIN \n    products p ON oi.product_id = p.product_id\nJOIN \n    orders o ON oi.order_id = o.order_id\nWHERE \n    o.order_status = 'delivered'\nGROUP BY \n    p.product_category_name_english\nORDER BY \n    total_sales DESC\nLIMIT 1;]",
+    "latencyMs" : 5360
+  }, {
+    "id" : "T4-006",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "分组" ],
+    "question" : "每个卖家所在的州和该州卖家的总销售额是多少？",
+    "status" : "EXECUTION_FAILED",
+    "generatedSql" : "SELECT \n    s.seller_state,\n    SUM(oi.price * oi.quantity) AS total_sales\nFROM \n    sellers s\nJOIN \n    order_items oi ON s.seller_id = oi.seller_id\nJOIN \n    orders o ON oi.order_id = o.order_id\nGROUP BY \n    s.seller_state\nORDER BY \n    total_sales DESC\nLIMIT 1000;",
+    "message" : "PreparedStatementCallback; bad SQL grammar [SELECT \n    s.seller_state,\n    SUM(oi.price * oi.quantity) AS total_sales\nFROM \n    sellers s\nJOIN \n    order_items oi ON s.seller_id = oi.seller_id\nJOIN \n    orders o ON oi.order_id = o.order_id\nGROUP BY \n    s.seller_state\nORDER BY \n    total_sales DESC\nLIMIT 1000;]",
+    "latencyMs" : 4863
+  }, {
+    "id" : "T4-011",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "分组", "平均" ],
+    "question" : "每个订单状态的平均评价分是多少？",
+    "status" : "REJECTED",
+    "generatedSql" : "SELECT o.order_status, AVG(or.review_score) as avg_review_score\nFROM orders o\nLEFT JOIN order_reviews or ON o.order_id = or.order_id\nGROUP BY o.order_status\nLIMIT 1000;",
+    "message" : "[PARSE_ERROR] SQL 无法解析：SELECT o.order_status, AVG(or.review_score) as avg_review_score\nFROM orders o\nLEFT JOIN order_reviews or ON o.order_id = or.order_id\nGROUP BY o.order_status\nLIMIT 1000;",
+    "latencyMs" : 2861
+  }, {
+    "id" : "T4-013",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "过滤" ],
+    "question" : "差评（1 分或 2 分）的订单里，各州分别有多少笔？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n    s.seller_state,\n    COUNT(DISTINCT o.order_id) AS negative_review_order_count\nFROM \n    orders o\nJOIN \n    order_reviews orr ON o.order_id = orr.order_id\nJOIN \n    order_items oi ON o.order_id = oi.order_id\nJOIN \n    sellers s ON oi.seller_id = s.seller_id\nWHERE \n    orr.review_score IN (1, 2)\nGROUP BY \n    s.seller_state\nORDER BY \n    negative_review_order_count DESC\nLIMIT 1000;",
+    "message" : null,
+    "latencyMs" : 6599
+  }, {
+    "id" : "T4-015",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "分组", "求和" ],
+    "question" : "每个大区的订单数量是多少？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT r.macro_region, COUNT(o.order_id) AS order_count\nFROM orders o\nJOIN customers c ON o.customer_id = c.customer_id\nJOIN shipping_addresses sa ON c.customer_id = sa.customer_id\nJOIN geolocation g ON sa.zip_code_prefix = g.geolocation_zip_code_prefix\nJOIN regions r ON g.geolocation_state = r.region_name\nGROUP BY r.macro_region\nLIMIT 1000;",
+    "message" : null,
+    "latencyMs" : 5574
+  }, {
+    "id" : "T4-017",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "分组" ],
+    "question" : "每个会员等级对应的订单数量是多少？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT ml.level_name, COUNT(o.order_id) AS order_count\nFROM members m\nJOIN member_levels ml ON m.level_id = ml.level_id\nJOIN orders o ON m.customer_unique_id = o.customer_id\nGROUP BY ml.level_name\nLIMIT 1000;",
+    "message" : null,
+    "latencyMs" : 4395
+  }, {
+    "id" : "T4-020",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "分组" ],
+    "question" : "打了\"高价值用户\"标签的会员一共下了多少单？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT COUNT(*) \nFROM orders o\nJOIN members m ON o.customer_id = m.customer_unique_id\nJOIN user_tag_map utm ON m.member_id = utm.member_id\nJOIN user_tags ut ON utm.tag_id = ut.tag_id\nWHERE ut.tag_name = '高价值用户'\nLIMIT 1;",
+    "message" : null,
+    "latencyMs" : 4191
+  }, {
+    "id" : "T4-024",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "分组" ],
+    "question" : "每个仓库负责了多少个发货单？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT warehouse_id, COUNT(*) AS shipment_count\nFROM shipments\nGROUP BY warehouse_id\nLIMIT 1000;",
+    "message" : null,
+    "latencyMs" : 2849
+  }, {
+    "id" : "T4-026",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "分组", "平均" ],
+    "question" : "每家承运商的平均配送时长是多少天？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n    carrier, \n    AVG(EXTRACT(DAY FROM (delivered_at - shipped_at))) AS avg_delivery_days\nFROM \n    shipments\nWHERE \n    delivered_at IS NOT NULL \n    AND shipped_at IS NOT NULL\nGROUP BY \n    carrier\nLIMIT 1000;",
+    "message" : null,
+    "latencyMs" : 3813
+  }, {
+    "id" : "T4-028",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "分组" ],
+    "question" : "每个工单分类的平均处理时长是多少小时？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n    tc.category_name, \n    AVG(EXTRACT(EPOCH FROM (st.resolved_at - st.created_at)) / 3600) AS avg_processing_hours\nFROM \n    support_tickets st\nJOIN \n    ticket_categories tc ON st.category_id = tc.category_id\nWHERE \n    st.resolved_at IS NOT NULL\nGROUP BY \n    tc.category_name\nLIMIT 1000;",
+    "message" : null,
+    "latencyMs" : 5229
+  }, {
+    "id" : "T4-035",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "分组", "排序" ],
+    "question" : "客单价最高的 10 个客户是谁？客单价按订单平均金额算。",
+    "status" : "EXECUTION_FAILED",
+    "generatedSql" : "SELECT \n    c.customer_id,\n    c.customer_unique_id,\n    AVG(o.total_amount) AS avg_order_value\nFROM \n    customers c\nJOIN \n    orders o ON c.customer_id = o.customer_id\nJOIN (\n    SELECT \n        order_id, \n        SUM(price * order_item_id) + SUM(freight_value) AS total_amount\n    FROM \n        order_items\n    GROUP BY \n        order_id\n) oi ON o.order_id = oi.order_id\nGROUP BY \n    c.customer_id, c.customer_unique_id\nORDER BY \n    avg_order_value DESC\nLIMIT 10;",
+    "message" : "PreparedStatementCallback; bad SQL grammar [SELECT \n    c.customer_id,\n    c.customer_unique_id,\n    AVG(o.total_amount) AS avg_order_value\nFROM \n    customers c\nJOIN \n    orders o ON c.customer_id = o.customer_id\nJOIN (\n    SELECT \n        order_id, \n        SUM(price * order_item_id) + SUM(freight_value) AS total_amount\n    FROM \n        order_items\n    GROUP BY \n        order_id\n) oi ON o.order_id = oi.order_id\nGROUP BY \n    c.customer_id, c.customer_unique_id\nORDER BY \n    avg_order_value DESC\nLIMIT 10;]",
+    "latencyMs" : 7989
+  }, {
+    "id" : "T4-037",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "分组" ],
+    "question" : "每个商品的图片数量和它的销量分别是多少？取销量前 10。",
+    "status" : "EXECUTION_FAILED",
+    "generatedSql" : "SELECT \n    p.product_id, \n    p.product_photos_qty, \n    COALESCE(SUM(oi.quantity), 0) AS total_sales\nFROM \n    products p\nLEFT JOIN \n    order_items oi ON p.product_id = oi.product_id\nGROUP BY \n    p.product_id, p.product_photos_qty\nORDER BY \n    total_sales DESC\nLIMIT 10;",
+    "message" : "PreparedStatementCallback; bad SQL grammar [SELECT \n    p.product_id, \n    p.product_photos_qty, \n    COALESCE(SUM(oi.quantity), 0) AS total_sales\nFROM \n    products p\nLEFT JOIN \n    order_items oi ON p.product_id = oi.product_id\nGROUP BY \n    p.product_id, p.product_photos_qty\nORDER BY \n    total_sales DESC\nLIMIT 10;]",
+    "latencyMs" : 5148
+  }, {
+    "id" : "T4-039",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "分组" ],
+    "question" : "搜索后有点击的搜索记录占多少比例？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n    (COUNT(DISTINCT CASE WHEN clicked_product_id IS NOT NULL THEN log_id END) * 100.0 / COUNT(DISTINCT log_id)) AS click_through_rate\nFROM \n    search_logs\nLIMIT 1;",
+    "message" : null,
+    "latencyMs" : 4544
+  }, {
+    "id" : "T4-044",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "分组" ],
+    "question" : "每个大区有多少个客户？平均每人下多少单？",
+    "status" : "EXECUTION_FAILED",
+    "generatedSql" : "SELECT \n    r.macro_region,\n    COUNT(DISTINCT c.customer_id) AS customer_count,\n    COUNT(o.order_id) * 1.0 / NULLIF(COUNT(DISTINCT c.customer_id), 0) AS avg_orders_per_customer\nFROM \n    customers c\nJOIN \n    orders o ON c.customer_id = o.customer_id\nJOIN \n    shipping_addresses sa ON c.customer_id = sa.customer_id\nJOIN \n    geolocation g ON sa.zip_code_prefix = g.geolocation_zip_code_prefix\nJOIN \n    regions r ON g.geolocation_state = r.region_code\nGROUP BY \n    r.macro_region\nLIMIT 1000;",
+    "message" : "PreparedStatementCallback; SQL [SELECT \n    r.macro_region,\n    COUNT(DISTINCT c.customer_id) AS customer_count,\n    COUNT(o.order_id) * 1.0 / NULLIF(COUNT(DISTINCT c.customer_id), 0) AS avg_orders_per_customer\nFROM \n    customers c\nJOIN \n    orders o ON c.customer_id = o.customer_id\nJOIN \n    shipping_addresses sa ON c.customer_id = sa.customer_id\nJOIN \n    geolocation g ON sa.zip_code_prefix = g.geolocation_zip_code_prefix\nJOIN \n    regions r ON g.geolocation_state = r.region_code\nGROUP BY \n    r.macro_region\nLIMIT 1000;]; ERROR: canceling statement due to user request",
+    "latencyMs" : 17827
+  }, {
+    "id" : "T5-001",
+    "difficulty" : "multi_join_deep",
+    "tags" : [ "join", "分组", "求和", "会员" ],
+    "question" : "每个宏观区域下，各会员等级的商品销售额分别是多少？按销售额从高到低排序。",
+    "status" : "EXECUTION_FAILED",
+    "generatedSql" : "SELECT \n    r.macro_region,\n    ml.level_name,\n    SUM(oi.price * oi.quantity) AS total_sales\nFROM \n    orders o\nJOIN \n    order_items oi ON o.order_id = oi.order_id\nJOIN \n    members m ON o.customer_id = m.customer_unique_id  -- 假设 customers.customer_unique_id 与 orders.customer_id 关联\nJOIN \n    member_levels ml ON m.level_id = ml.level_id\nJOIN \n    warehouses w ON (\n        SELECT warehouse_id \n        FROM shipments \n        WHERE order_id = o.order_id \n        LIMIT 1\n    ) = w.warehouse_id  -- 假设通过发货仓库关联区域\nJOIN \n    regions r ON w.region_code = r.region_code\nWHERE \n    o.order_purchase_timestamp BETWEEN '2016-09-04 21:15:19.0' AND '2018-10-17 17:30:18.0'\nGROUP BY \n    r.macro_region, ml.level_name\nORDER BY \n    r.macro_region, total_sales DESC\nLIMIT 10000;",
+    "message" : "PreparedStatementCallback; bad SQL grammar [SELECT \n    r.macro_region,\n    ml.level_name,\n    SUM(oi.price * oi.quantity) AS total_sales\nFROM \n    orders o\nJOIN \n    order_items oi ON o.order_id = oi.order_id\nJOIN \n    members m ON o.customer_id = m.customer_unique_id  -- 假设 customers.customer_unique_id 与 orders.customer_id 关联\nJOIN \n    member_levels ml ON m.level_id = ml.level_id\nJOIN \n    warehouses w ON (\n        SELECT warehouse_id \n        FROM shipments \n        WHERE order_id = o.order_id \n        LIMIT 1\n    ) = w.warehouse_id  -- 假设通过发货仓库关联区域\nJOIN \n    regions r ON w.region_code = r.region_code\nWHERE \n    o.order_purchase_timestamp BETWEEN '2016-09-04 21:15:19.0' AND '2018-10-17 17:30:18.0'\nGROUP BY \n    r.macro_region, ml.level_name\nORDER BY \n    r.macro_region, total_sales DESC\nLIMIT 10000;]",
+    "latencyMs" : 11721
+  }, {
+    "id" : "T5-003",
+    "difficulty" : "multi_join_deep",
+    "tags" : [ "join", "退款", "翻译表" ],
+    "question" : "用英文类目名统计退款金额，哪些类目退款最多？取前 15。",
+    "status" : "EXECUTION_FAILED",
+    "generatedSql" : "SELECT \n    p.product_category_name_english AS category_name,\n    SUM(r.refund_amount) AS total_refund_amount\nFROM \n    refunds r\nJOIN \n    orders o ON r.order_id = o.order_id\nJOIN \n    order_items oi ON r.order_id = oi.order_id\nJOIN \n    products p ON oi.product_id = p.product_id\nGROUP BY \n    p.product_category_name_english\nORDER BY \n    total_refund_amount DESC\nLIMIT 15;",
+    "message" : "PreparedStatementCallback; bad SQL grammar [SELECT \n    p.product_category_name_english AS category_name,\n    SUM(r.refund_amount) AS total_refund_amount\nFROM \n    refunds r\nJOIN \n    orders o ON r.order_id = o.order_id\nJOIN \n    order_items oi ON r.order_id = oi.order_id\nJOIN \n    products p ON oi.product_id = p.product_id\nGROUP BY \n    p.product_category_name_english\nORDER BY \n    total_refund_amount DESC\nLIMIT 15;]",
+    "latencyMs" : 5541
+  }, {
+    "id" : "T5-005",
+    "difficulty" : "multi_join_deep",
+    "tags" : [ "join", "优惠券", "活动" ],
+    "question" : "每个优惠券活动带来的有效订单数和商品销售额是多少？取前 10。",
+    "status" : "EXECUTION_FAILED",
+    "generatedSql" : "SELECT \n    c.campaign_name,\n    COUNT(DISTINCT o.order_id) AS valid_order_count,\n    SUM(oi.price * oi.quantity) AS total_sales_amount\nFROM \n    campaigns c\nJOIN \n    coupons co ON c.campaign_id = co.campaign_id\nJOIN \n    coupon_usages cu ON co.coupon_id = cu.coupon_id\nJOIN \n    orders o ON cu.order_id = o.order_id\nJOIN \n    order_items oi ON o.order_id = oi.order_id\nWHERE \n    o.order_status = 'delivered'  -- 假设已送达的订单为有效订单\nGROUP BY \n    c.campaign_name\nORDER BY \n    total_sales_amount DESC\nLIMIT 10;",
+    "message" : "PreparedStatementCallback; bad SQL grammar [SELECT \n    c.campaign_name,\n    COUNT(DISTINCT o.order_id) AS valid_order_count,\n    SUM(oi.price * oi.quantity) AS total_sales_amount\nFROM \n    campaigns c\nJOIN \n    coupons co ON c.campaign_id = co.campaign_id\nJOIN \n    coupon_usages cu ON co.coupon_id = cu.coupon_id\nJOIN \n    orders o ON cu.order_id = o.order_id\nJOIN \n    order_items oi ON o.order_id = oi.order_id\nWHERE \n    o.order_status = 'delivered'  -- 假设已送达的订单为有效订单\nGROUP BY \n    c.campaign_name\nORDER BY \n    total_sales_amount DESC\nLIMIT 10;]",
+    "latencyMs" : 8269
+  }, {
+    "id" : "T5-009",
+    "difficulty" : "multi_join_deep",
+    "tags" : [ "join", "库存", "品牌" ],
+    "question" : "库存低于安全库存的商品，按仓库、区域、品牌统计数量，列出前 20。",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n    w.warehouse_name AS warehouse, \n    r.macro_region AS region, \n    b.brand_name AS brand, \n    COUNT(DISTINCT i.product_id) AS product_count\nFROM \n    inventory i\nJOIN \n    warehouses w ON i.warehouse_id = w.warehouse_id\nJOIN \n    regions r ON w.region_code = r.region_code\nJOIN \n    product_brand_map pbm ON i.product_id = pbm.product_id AND pbm.is_current = true\nJOIN \n    brands b ON pbm.brand_id = b.brand_id\nWHERE \n    i.quantity < i.safety_stock\nGROUP BY \n    w.warehouse_name, r.macro_region, b.brand_name\nORDER BY \n    product_count DESC\nLIMIT 20;",
+    "message" : null,
+    "latencyMs" : 8294
+  }, {
+    "id" : "T5-010",
+    "difficulty" : "multi_join_deep",
+    "tags" : [ "join", "结算", "卖家" ],
+    "question" : "每个卖家结算明细覆盖了多少个英文商品类目、佣金合计多少？取佣金前 20。",
+    "status" : "EXECUTION_FAILED",
+    "generatedSql" : "SELECT \n    s.seller_id,\n    COUNT(DISTINCT p.product_category_name_english) AS distinct_category_count,\n    SUM(si.commission_amount) AS total_commission\nFROM \n    settlement_items si\nJOIN \n    orders o ON si.order_id = o.order_id\nJOIN \n    order_items oi ON si.order_id = oi.order_id AND si.order_item_id = oi.order_item_id\nJOIN \n    products p ON oi.product_id = p.product_id\nJOIN \n    product_category_translation pct ON p.product_category_name = pct.product_category_name\nJOIN \n    settlement_items si2 ON si.settlement_id = si2.settlement_id\nJOIN \n    settlements s ON si2.settlement_id = s.settlement_id\nGROUP BY \n    s.seller_id\nORDER BY \n    total_commission DESC\nLIMIT 20;",
+    "message" : "PreparedStatementCallback; bad SQL grammar [SELECT \n    s.seller_id,\n    COUNT(DISTINCT p.product_category_name_english) AS distinct_category_count,\n    SUM(si.commission_amount) AS total_commission\nFROM \n    settlement_items si\nJOIN \n    orders o ON si.order_id = o.order_id\nJOIN \n    order_items oi ON si.order_id = oi.order_id AND si.order_item_id = oi.order_item_id\nJOIN \n    products p ON oi.product_id = p.product_id\nJOIN \n    product_category_translation pct ON p.product_category_name = pct.product_category_name\nJOIN \n    settlement_items si2 ON si.settlement_id = si2.settlement_id\nJOIN \n    settlements s ON si2.settlement_id = s.settlement_id\nGROUP BY \n    s.seller_id\nORDER BY \n    total_commission DESC\nLIMIT 20;]",
+    "latencyMs" : 8941
+  }, {
+    "id" : "T5-012",
+    "difficulty" : "multi_join_deep",
+    "tags" : [ "join", "标签", "用户画像" ],
+    "question" : "每类用户标签覆盖多少会员、这些会员订单的平均商品单价是多少？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n    ut.tag_name,\n    COUNT(DISTINCT utm.member_id) AS member_count,\n    AVG(oi.price) AS avg_product_price\nFROM \n    user_tag_map utm\nJOIN \n    user_tags ut ON utm.tag_id = ut.tag_id\nJOIN \n    members m ON utm.member_id = m.member_id\nJOIN \n    orders o ON m.customer_unique_id = o.customer_id\nJOIN \n    order_items oi ON o.order_id = oi.order_id\nGROUP BY \n    ut.tag_name\nLIMIT 1000;",
+    "message" : null,
+    "latencyMs" : 6672
+  }, {
+    "id" : "T5-014",
+    "difficulty" : "multi_join_deep",
+    "tags" : [ "join", "快照", "会员" ],
+    "question" : "当前等级与最近一次会员快照等级不一致的会员有多少？按等级组合统计。",
+    "status" : "EXECUTION_FAILED",
+    "generatedSql" : "SELECT \n    CONCAT(m.level_id, '-', ms.level_id) AS level_combination,\n    COUNT(DISTINCT m.member_id) AS member_count\nFROM \n    members m\nJOIN \n    member_snapshot ms ON m.member_id = ms.member_id\nWHERE \n    m.level_id != ms.level_id\n    AND ms.snapshot_date = (\n        SELECT MAX(snapshot_date) \n        FROM member_snapshot \n        WHERE member_id = m.member_id\n    )\nGROUP BY \n    CONCAT(m.level_id, '-', ms.level_id)\nLIMIT 1000;",
+    "message" : "PreparedStatementCallback; SQL [SELECT \n    CONCAT(m.level_id, '-', ms.level_id) AS level_combination,\n    COUNT(DISTINCT m.member_id) AS member_count\nFROM \n    members m\nJOIN \n    member_snapshot ms ON m.member_id = ms.member_id\nWHERE \n    m.level_id != ms.level_id\n    AND ms.snapshot_date = (\n        SELECT MAX(snapshot_date) \n        FROM member_snapshot \n        WHERE member_id = m.member_id\n    )\nGROUP BY \n    CONCAT(m.level_id, '-', ms.level_id)\nLIMIT 1000;]; ERROR: canceling statement due to user request",
+    "latencyMs" : 16581
+  }, {
+    "id" : "T5-016",
+    "difficulty" : "multi_join_deep",
+    "tags" : [ "join", "退款", "原因" ],
+    "question" : "按英文类目和退款原因统计退款笔数与退款金额，列出前 20。",
+    "status" : "EXECUTION_FAILED",
+    "generatedSql" : "SELECT \n    p.product_category_name_english, \n    r.reason_code, \n    COUNT(r.refund_id) AS refund_count, \n    SUM(r.refund_amount) AS total_refund_amount\nFROM \n    refunds r\nJOIN \n    orders o ON r.order_id = o.order_id\nJOIN \n    order_items oi ON r.order_id = oi.order_id\nJOIN \n    products p ON oi.product_id = p.product_id\nJOIN \n    product_category_translation pct ON p.product_category_name = pct.product_category_name\nGROUP BY \n    p.product_category_name_english, \n    r.reason_code\nORDER BY \n    total_refund_amount DESC\nLIMIT 20;",
+    "message" : "PreparedStatementCallback; bad SQL grammar [SELECT \n    p.product_category_name_english, \n    r.reason_code, \n    COUNT(r.refund_id) AS refund_count, \n    SUM(r.refund_amount) AS total_refund_amount\nFROM \n    refunds r\nJOIN \n    orders o ON r.order_id = o.order_id\nJOIN \n    order_items oi ON r.order_id = oi.order_id\nJOIN \n    products p ON oi.product_id = p.product_id\nJOIN \n    product_category_translation pct ON p.product_category_name = pct.product_category_name\nGROUP BY \n    p.product_category_name_english, \n    r.reason_code\nORDER BY \n    total_refund_amount DESC\nLIMIT 20;]",
+    "latencyMs" : 6936
+  }, {
+    "id" : "T5-018",
+    "difficulty" : "multi_join_deep",
+    "tags" : [ "join", "地址", "分组" ],
+    "question" : "默认收货地址所在州和客户登记州是否一致的订单量对比，列出前 20。",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n    CASE \n        WHEN sa.state = c.customer_state THEN '一致' \n        ELSE '不一致' \n    END AS state_match_status,\n    COUNT(o.order_id) AS order_count\nFROM \n    orders o\nJOIN \n    customers c ON o.customer_id = c.customer_id\nLEFT JOIN \n    shipping_addresses sa ON c.customer_id = sa.customer_id AND sa.is_default = true\nGROUP BY \n    state_match_status\nORDER BY \n    order_count DESC\nLIMIT 20;",
+    "message" : null,
+    "latencyMs" : 5450
+  }, {
+    "id" : "T6-002",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "有效订单" ],
+    "question" : "有效订单（排除已取消和不可用）的订单数、下单人数、客单价分别是多少？",
+    "status" : "EXECUTION_FAILED",
+    "generatedSql" : "SELECT \n    COUNT(DISTINCT order_id) AS order_count,\n    COUNT(DISTINCT customer_id) AS customer_count,\n    SUM(payment_value) / COUNT(DISTINCT order_id) AS average_order_value\nFROM \n    orders\nJOIN \n    order_payments ON orders.order_id = order_payments.order_id\nWHERE \n    order_status NOT IN ('canceled', 'unavailable')\n    AND order_purchase_timestamp BETWEEN '2016-09-04 21:15:19.0' AND '2018-10-17 17:30:18.0'\nLIMIT 1;",
+    "message" : "PreparedStatementCallback; bad SQL grammar [SELECT \n    COUNT(DISTINCT order_id) AS order_count,\n    COUNT(DISTINCT customer_id) AS customer_count,\n    SUM(payment_value) / COUNT(DISTINCT order_id) AS average_order_value\nFROM \n    orders\nJOIN \n    order_payments ON orders.order_id = order_payments.order_id\nWHERE \n    order_status NOT IN ('canceled', 'unavailable')\n    AND order_purchase_timestamp BETWEEN '2016-09-04 21:15:19.0' AND '2018-10-17 17:30:18.0'\nLIMIT 1;]",
+    "latencyMs" : 5638
+  }, {
+    "id" : "T6-004",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "留存" ],
+    "question" : "首单在 2017 年上半年的用户，在 2017 年下半年是否再次下单？按月留存率是多少？",
+    "status" : "SUCCESS",
+    "generatedSql" : "WITH \n-- 2017年上半年首单用户\nfirst_half_2017_customers AS (\n    SELECT DISTINCT customer_id\n    FROM orders\n    WHERE \n        order_purchase_timestamp >= '2017-01-01' \n        AND order_purchase_timestamp < '2017-07-01'\n        AND order_id IN (\n            SELECT order_id\n            FROM (\n                SELECT \n                    customer_id, \n                    order_id,\n                    ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY order_purchase_timestamp) as rn\n                FROM orders\n                WHERE order_purchase_timestamp >= '2017-01-01' \n                    AND order_purchase_timestamp < '2017-07-01'\n            ) t\n            WHERE rn = 1\n        )\n),\n-- 2017年下半年这些用户的下单情况\nsecond_half_2017_orders AS (\n    SELECT \n        o.customer_id,\n        DATE_TRUNC('month', o.order_purchase_timestamp) as order_month,\n        COUNT(DISTINCT o.order_id) as order_count\n    FROM orders o\n    JOIN first_half_2017_customers f ON o.customer_id = f.customer_id\n    WHERE o.order_purchase_timestamp >= '2017-07-01' \n        AND o.order_purchase_timestamp <= '2017-12-31'\n    GROUP BY o.customer_id, DATE_TRUNC('month', o.order_purchase_timestamp)\n),\n-- 计算每月留存用户数\nmonthly_retention AS (\n    SELECT \n        order_month,\n        COUNT(DISTINCT customer_id) as retained_customers\n    FROM second_half_2017_orders\n    GROUP BY order_month\n),\n-- 2017年上半年首单用户总数\ntotal_first_half_customers AS (\n    SELECT COUNT(DISTINCT customer_id) as total_customers\n    FROM first_half_2017_customers\n)\n-- 计算留存率\nSELECT \n    m.order_month,\n    m.retained_customers,\n    t.total_customers,\n    ROUND(m.retained_customers * 100.0 / t.total_customers, 2) as retention_rate_percent\nFROM monthly_retention m\nCROSS JOIN total_first_half_customers t\nORDER BY m.order_month\nLIMIT 6;",
+    "message" : null,
+    "latencyMs" : 20465
+  }, {
+    "id" : "T6-006",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "履约" ],
+    "question" : "已送达订单的准时率是多少？（实际送达日期不晚于预计送达日期）",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n    (COUNT(CASE WHEN o.order_delivered_customer_date <= o.order_estimated_delivery_date THEN 1 END) * 100.0 / \n    COUNT(o.order_id)) AS on_time_delivery_rate\nFROM \n    orders o\nWHERE \n    o.order_status = 'delivered'\n    AND o.order_delivered_customer_date IS NOT NULL\n    AND o.order_estimated_delivery_date IS NOT NULL\nLIMIT 1;",
+    "message" : null,
+    "latencyMs" : 5012
+  }, {
+    "id" : "T6-008",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "动销率" ],
+    "question" : "商品动销率是多少？（有销量的商品数 / 全部商品数）",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n  (SELECT COUNT(DISTINCT oi.product_id) \n   FROM order_items oi) * 1.0 / \n  (SELECT COUNT(DISTINCT p.product_id) \n   FROM products p) AS product_turnover_rate\nLIMIT 1;",
+    "message" : null,
+    "latencyMs" : 3735
+  }, {
+    "id" : "T6-011",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "运费" ],
+    "question" : "运费占 GMV 的比例是多少？按宏观区域拆解。",
+    "status" : "EXECUTION_FAILED",
+    "generatedSql" : "SELECT \n    r.macro_region,\n    SUM(oi.freight_value) / SUM(oi.price * oi.quantity) * 100 AS freight_to_gmv_ratio\nFROM \n    order_items oi\nJOIN \n    orders o ON oi.order_id = o.order_id\nJOIN \n    shipping_addresses sa ON o.customer_id = sa.customer_id AND sa.is_default = true\nJOIN \n    geolocation g ON sa.zip_code_prefix = g.geolocation_zip_code_prefix\nJOIN \n    regions r ON g.geolocation_state = r.region_code\nJOIN \n    (\n        SELECT \n            order_id, \n            COUNT(*) AS quantity\n        FROM \n            order_items\n        GROUP BY \n            order_id\n    ) oiq ON oi.order_id = oiq.order_id\nWHERE \n    o.order_purchase_timestamp BETWEEN '2016-09-04 21:15:19.0' AND '2018-10-17 17:30:18.0'\nGROUP BY \n    r.macro_region\nORDER BY \n    freight_to_gmv_ratio DESC\nLIMIT 100;",
+    "message" : "PreparedStatementCallback; bad SQL grammar [SELECT \n    r.macro_region,\n    SUM(oi.freight_value) / SUM(oi.price * oi.quantity) * 100 AS freight_to_gmv_ratio\nFROM \n    order_items oi\nJOIN \n    orders o ON oi.order_id = o.order_id\nJOIN \n    shipping_addresses sa ON o.customer_id = sa.customer_id AND sa.is_default = true\nJOIN \n    geolocation g ON sa.zip_code_prefix = g.geolocation_zip_code_prefix\nJOIN \n    regions r ON g.geolocation_state = r.region_code\nJOIN \n    (\n        SELECT \n            order_id, \n            COUNT(*) AS quantity\n        FROM \n            order_items\n        GROUP BY \n            order_id\n    ) oiq ON oi.order_id = oiq.order_id\nWHERE \n    o.order_purchase_timestamp BETWEEN '2016-09-04 21:15:19.0' AND '2018-10-17 17:30:18.0'\nGROUP BY \n    r.macro_region\nORDER BY \n    freight_to_gmv_ratio DESC\nLIMIT 100;]",
+    "latencyMs" : 10800
+  }, {
+    "id" : "T6-013",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "优惠" ],
+    "question" : "优惠券带来的 GMV 和优惠金额分别是多少？用券订单的折扣率是多少？",
+    "status" : "EXECUTION_FAILED",
+    "generatedSql" : "SELECT \n    SUM(oi.price * oi.quantity) AS gmv,\n    SUM(cu.discount_amount) AS total_discount_amount,\n    CASE \n        WHEN SUM(oi.price * oi.quantity) > 0 THEN \n            SUM(cu.discount_amount) / SUM(oi.price * oi.quantity) * 100\n        ELSE \n            0 \n    END AS average_discount_rate\nFROM \n    order_items oi\nJOIN \n    orders o ON oi.order_id = o.order_id\nJOIN \n    coupon_usages cu ON oi.order_id = cu.order_id\nWHERE \n    o.order_purchase_timestamp BETWEEN (SELECT MIN(order_purchase_timestamp) FROM orders) AND (SELECT MAX(order_purchase_timestamp) FROM orders)\nLIMIT 1;",
+    "message" : "PreparedStatementCallback; bad SQL grammar [SELECT \n    SUM(oi.price * oi.quantity) AS gmv,\n    SUM(cu.discount_amount) AS total_discount_amount,\n    CASE \n        WHEN SUM(oi.price * oi.quantity) > 0 THEN \n            SUM(cu.discount_amount) / SUM(oi.price * oi.quantity) * 100\n        ELSE \n            0 \n    END AS average_discount_rate\nFROM \n    order_items oi\nJOIN \n    orders o ON oi.order_id = o.order_id\nJOIN \n    coupon_usages cu ON oi.order_id = cu.order_id\nWHERE \n    o.order_purchase_timestamp BETWEEN (SELECT MIN(order_purchase_timestamp) FROM orders) AND (SELECT MAX(order_purchase_timestamp) FROM orders)\nLIMIT 1;]",
+    "latencyMs" : 7839
+  }, {
+    "id" : "T6-015",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "客服", "SLA" ],
+    "question" : "各类工单的 SLA 达成率是多少？（解决时间不超过类目 SLA 小时数）",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n    tc.category_name,\n    COUNT(CASE WHEN st.resolved_at IS NOT NULL AND \n                     EXTRACT(EPOCH FROM (st.resolved_at - st.created_at)) / 3600 <= tc.sla_hours \n              THEN 1 END) * 100.0 / \n    COUNT(CASE WHEN st.resolved_at IS NOT NULL THEN 1 END) AS sla_compliance_rate\nFROM \n    support_tickets st\nJOIN \n    ticket_categories tc ON st.category_id = tc.category_id\nWHERE \n    st.resolved_at IS NOT NULL\nGROUP BY \n    tc.category_name\nORDER BY \n    sla_compliance_rate DESC\nLIMIT 100;",
+    "message" : null,
+    "latencyMs" : 7061
+  }, {
+    "id" : "T6-017",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "推荐" ],
+    "question" : "推荐活动的转化率和人均奖励是多少？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n    COUNT(DISTINCT CASE WHEN r.converted_at IS NOT NULL THEN r.referral_id END) * 100.0 / COUNT(DISTINCT r.referral_id) AS conversion_rate,\n    SUM(r.reward_amount) / COUNT(DISTINCT CASE WHEN r.converted_at IS NOT NULL THEN r.referral_id END) AS avg_reward_per_converted_user\nFROM \n    referrals r\nLIMIT 1;",
+    "message" : null,
+    "latencyMs" : 5551
+  }, {
+    "id" : "T6-019",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "履约", "时效" ],
+    "question" : "各州的平均配送时长（下单到签收）是多少天？列出配送最慢的 10 个州。",
+    "status" : "EXECUTION_FAILED",
+    "generatedSql" : "SELECT \n    s.seller_state AS state,\n    AVG(EXTRACT(EPOCH FROM (sh.delivered_at - o.order_purchase_timestamp)) / 86400) AS avg_delivery_days\nFROM \n    orders o\nJOIN \n    shipments sh ON o.order_id = sh.order_id\nJOIN \n    sellers s ON o.seller_id = s.seller_id\nWHERE \n    sh.delivered_at IS NOT NULL\nGROUP BY \n    s.seller_state\nORDER BY \n    avg_delivery_days DESC\nLIMIT 10;",
+    "message" : "PreparedStatementCallback; bad SQL grammar [SELECT \n    s.seller_state AS state,\n    AVG(EXTRACT(EPOCH FROM (sh.delivered_at - o.order_purchase_timestamp)) / 86400) AS avg_delivery_days\nFROM \n    orders o\nJOIN \n    shipments sh ON o.order_id = sh.order_id\nJOIN \n    sellers s ON o.seller_id = s.seller_id\nWHERE \n    sh.delivered_at IS NOT NULL\nGROUP BY \n    s.seller_state\nORDER BY \n    avg_delivery_days DESC\nLIMIT 10;]",
+    "latencyMs" : 5509
+  }, {
+    "id" : "T6-020",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "结算", "佣金" ],
+    "question" : "平台整体佣金率和各卖家佣金率分布（最低、平均、最高）分别是多少？",
+    "status" : "EXECUTION_FAILED",
+    "generatedSql" : "SELECT \n    '平台整体' AS seller_type,\n    MIN(commission_rate) AS min_commission_rate,\n    AVG(commission_rate) AS avg_commission_rate,\n    MAX(commission_rate) AS max_commission_rate\nFROM settlement_items\nUNION ALL\nSELECT \n    s.seller_id AS seller_type,\n    MIN(si.commission_rate) AS min_commission_rate,\n    AVG(si.commission_rate) AS avg_commission_rate,\n    MAX(si.commission_rate) AS max_commission_rate\nFROM settlement_items si\nJOIN sellers s ON si.seller_id = s.seller_id\nGROUP BY s.seller_id\nLIMIT 100000;",
+    "message" : "PreparedStatementCallback; bad SQL grammar [SELECT \n    '平台整体' AS seller_type,\n    MIN(commission_rate) AS min_commission_rate,\n    AVG(commission_rate) AS avg_commission_rate,\n    MAX(commission_rate) AS max_commission_rate\nFROM settlement_items\nUNION ALL\nSELECT \n    s.seller_id AS seller_type,\n    MIN(si.commission_rate) AS min_commission_rate,\n    AVG(si.commission_rate) AS avg_commission_rate,\n    MAX(si.commission_rate) AS max_commission_rate\nFROM settlement_items si\nJOIN sellers s ON si.seller_id = s.seller_id\nGROUP BY s.seller_id\nLIMIT 100000;]",
+    "latencyMs" : 6047
+  }, {
+    "id" : "T6-022",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "时间", "同比" ],
+    "question" : "2017 年和 2018 年各月 GMV 分别是多少？并计算 2018 年相对 2017 年同月的同比增长率。",
+    "status" : "SUCCESS",
+    "generatedSql" : "WITH \ngmv_2017 AS (\n  SELECT \n    EXTRACT(MONTH FROM order_purchase_timestamp) AS month,\n    SUM(\n      (SELECT SUM(payment_value) \n       FROM order_payments \n       WHERE order_payments.order_id = orders.order_id)\n    ) AS gmv\n  FROM orders\n  WHERE EXTRACT(YEAR FROM order_purchase_timestamp) = 2017\n  GROUP BY EXTRACT(MONTH FROM order_purchase_timestamp)\n),\ngmv_2018 AS (\n  SELECT \n    EXTRACT(MONTH FROM order_purchase_timestamp) AS month,\n    SUM(\n      (SELECT SUM(payment_value) \n       FROM order_payments \n       WHERE order_payments.order_id = orders.order_id)\n    ) AS gmv\n  FROM orders\n  WHERE EXTRACT(YEAR FROM order_purchase_timestamp) = 2018\n  GROUP BY EXTRACT(MONTH FROM order_purchase_timestamp)\n)\nSELECT \n  COALESCE(gmv_2017.month, gmv_2018.month) AS month,\n  COALESCE(gmv_2017.gmv, 0) AS gmv_2017,\n  COALESCE(gmv_2018.gmv, 0) AS gmv_2018,\n  CASE \n    WHEN COALESCE(gmv_2017.gmv, 0) = 0 THEN NULL\n    ELSE ((COALESCE(gmv_2018.gmv, 0) - COALESCE(gmv_2017.gmv, 0)) / COALESCE(gmv_2017.gmv, 0)) * 100\n  END AS growth_rate_percentage\nFROM gmv_2017\nFULL OUTER JOIN gmv_2018 ON gmv_2017.month = gmv_2018.month\nORDER BY month\nLIMIT 12;",
+    "message" : null,
+    "latencyMs" : 15803
+  }, {
+    "id" : "T6-024",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "客服", "归因" ],
+    "question" : "退款原因与客户评分的关系：各退款原因对应的平均评分和低分率是多少？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n    r.reason_code,\n    AVG(or1.review_score) AS average_score,\n    SUM(CASE WHEN or1.review_score <= 2 THEN 1 ELSE 0 END) * 100.0 / COUNT(or1.review_id) AS low_score_rate\nFROM \n    refunds r\nJOIN \n    orders o ON r.order_id = o.order_id\nLEFT JOIN \n    order_reviews or1 ON r.order_id = or1.order_id\nGROUP BY \n    r.reason_code\nORDER BY \n    average_score DESC\nLIMIT 1000;",
+    "message" : null,
+    "latencyMs" : 6325
+  } ],
+  "retrieval" : {
+    "evaluatedCount" : 100,
+    "fullRecallRate" : 1.0,
+    "tableRecallRate" : 1.0,
+    "avgPrecision" : 0.050540540540540524,
+    "avgRetrievedTables" : 37.0,
+    "missedCount" : 0,
+    "avgDdlChars" : 7401.0,
+    "incompleteCases" : [ ]
+  }
+}

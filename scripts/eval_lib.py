@@ -9,9 +9,11 @@
 from __future__ import annotations
 
 import csv
+import datetime as dt
 import hashlib
 import io
 import json
+import re
 import subprocess
 from decimal import Decimal, ROUND_HALF_UP
 from pathlib import Path
@@ -86,7 +88,12 @@ def normalize_value(value: str | None) -> str:
     """把单元格统一成可比较的字符串。
 
     规则：NULL 统一成字面量 "NULL"；数字按 4 位小数四舍五入；
-    其余去掉首尾空白。这样 15843553.24 与 15843553.2400001 视为相同。
+    DATE 与当天零点 timestamp 按同一展示值归一；其余去掉首尾空白。
+    这样 15843553.24 与 15843553.2400001 视为相同，
+    2016-09-01 与 2016-09-01 00:00:00 也视为相同。
+
+    **本函数必须与 Java 侧 ResultNormalizer.normalizeValue 保持逐条一致**，
+    否则会出现"离线校验说没问题、运行时判定失败"这种最难查的分叉。
     """
     if value is None or value == NULL_TOKEN:
         return "NULL"
@@ -94,7 +101,7 @@ def normalize_value(value: str | None) -> str:
     try:
         dec = Decimal(text)
     except Exception:
-        return text
+        return _normalize_temporal(text)
     # 注意不要用 Decimal.normalize()，它会把 610 变成 6.1E+2，
     # 同一个数字两种写法会让执行准确率产生假失败。
     quantized = dec.quantize(FLOAT_SCALE, rounding=ROUND_HALF_UP)
@@ -102,6 +109,47 @@ def normalize_value(value: str | None) -> str:
     if "." in plain:
         plain = plain.rstrip("0").rstrip(".")
     return plain or "0"
+
+
+# 时间写法：完整日期、日期+时间、可选小数秒。
+# 月份/季度字符串不在这里展开，因为那会把有损展示强行解释成某个日期。
+_DATE_RE = re.compile(
+    r"(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?"
+    r"(\.\d+)?"
+)
+
+
+def _normalize_temporal(text: str) -> str:
+    """把同一时间点的不同写法归一成 'yyyy-MM-dd HH:mm:ss'。
+
+    DATE 与当天零点 timestamp 只是展示类型不同，可以归一。
+    2016-09、2016-Q3 这类有损字符串保持原样，不投影到人为约定的日期。
+
+    非零小数秒保持原样，避免把不同时间点误判为相同。
+    """
+    m = _DATE_RE.fullmatch(text)
+    if not m:
+        return text
+    year = int(m.group(1))
+    month = int(m.group(2))
+    day = int(m.group(3))
+    hour = int(m.group(4)) if m.group(4) else 0
+    minute = int(m.group(5)) if m.group(5) else 0
+    second = int(m.group(6)) if m.group(6) else 0
+    fraction = m.group(7)
+    if hour > 23 or minute > 59 or second > 59:
+        return text
+    if fraction is not None and any(char != "0" for char in fraction[1:]):
+        return text
+    try:
+        dt.date(year, month, day)
+    except ValueError:
+        return text
+    return _canonical(year, month, day, hour, minute, second)
+
+
+def _canonical(year: int, month: int, day: int, hour: int, minute: int, second: int) -> str:
+    return f"{year:04d}-{month:02d}-{day:02d} {hour:02d}:{minute:02d}:{second:02d}"
 
 
 def normalize_result(rows: list[list[str | None]], *, ordered: bool) -> list[list[str]]:
@@ -149,4 +197,3 @@ def is_degenerate(rows: list[list[str]]) -> bool:
         except Exception:
             return False
     return False
-
