@@ -70,6 +70,19 @@ return validateAndExecute(...);                            // 校验 → 执行
 然后看 **第 122 行 `validateAndExecute()`**，重点看它怎么把「校验失败」和「执行失败」
 翻译成不同的 `status`（第 66 行的 `Status` 枚举有五种值）。
 
+### ⚠️ 阶段 2 改动了这里（读之前先知道）
+
+`ask()` 的**四步骨架没变**，但多了两样东西，都是为了「让评估能算召回率」：
+
+| 改动 | 位置 | 为什么 |
+|---|---|---|
+| 新增 `retrievedTables` / `ddlChars` 两个局部变量 | `ask()` 内 | 评估器要算表召回率，必须知道**这次到底给了模型哪些表**。只有 `tableCount`（数量）不够——「给了 8 张」回答不了「该用的那张在不在里面」 |
+| 这两个值往下传，穿过 `validateAndExecute` 到每一种响应构造 | `ask()` → `validateAndExecute()` → `AgentResponse.*` | 失败的那一条也要能算召回率，否则召回率只统计成功的样本，有偏 |
+| `failed(...)` 的参数顺序变了：`sql` 提到 `message` 前面 | `ask()` 生成失败分支、`validateAndExecute()` 执行失败分支 | 见第 6 轮 |
+
+**读的时候不要被参数变长打断。** 记住一句话：**多出来的参数全是为了让「检索选得对不对」可被计算**，
+和主链路的四步逻辑无关。
+
 ### 自检
 
 合上文件，说出 `ask()` 里四步的先后顺序和各自的产出物。
@@ -132,9 +145,27 @@ return validateAndExecute(...);                            // 校验 → 执行
 
 **想一下第三个为什么是 +1。**（提示：结果刚好等于上限时，怎么区分「恰好这么多」和「还有更多」？）
 
+### ⚠️ 阶段 2 改动了这一轮里的 5 个文件
+
+这一轮是**改动最集中的地方**。按文件逐个说：
+
+| # | 文件 | 改了什么 | 为什么要改 |
+|---|---|---|---|
+| 1 | `FullSchemaProvider` | **职责被拆走**：原来自己 `load()` + 渲染 DDL，现在只剩 `catalog.full()` | 阶段 2 有全量版和检索版两个 provider。各缓存一份会让消融实验的两个配置看到不同的 schema，数字失去可比性。拆出 `SchemaCatalog` 共享 |
+| 2 | `SchemaContext`（record） | 新增 `tableNames()` 和 `subset()` 两个方法 | `tableNames()` 给评估层算召回率；`subset()` 把「切子集」收敛到一处，避免每个 provider 各写一遍、漏掉重新渲染 DDL |
+| 3 | `PromptTemplate` | **只改了注释，代码一行没动**。`VERSION` 仍是 `p1-full-schema-v1` | 这是刻意的：阶段 2 改的是「上下文里有哪些表」，不是「prompt 怎么措辞」。版本号一变，消融实验的两个变量就混在一起，无法归因 |
+| 4 | `LlmSqlGenerator` | 启动日志从 `baseUrl=` 改成 `endpoint={baseUrl}{completionsPath}`；`buildChatModel()` 加了一行 `completionsPath(...)` | 各家「OpenAI 兼容」兼容的是请求体，路径并不统一（通义 `/v1`、千帆 `/v2`）。只打 `baseUrl` 时「路径配错了」在日志里看不出来，要等到 404 才发现 |
+| 5 | `SqlValidator` | `needsLimit()` 改用 `instanceof`；`hasLimit()` 改成递归；`linkVisitors()` 补了括号子查询的递归 | 两个真实 bug，见第 6 轮 |
+| 6 | `SqlExecutor` | lambda 换成 `ReadOnlyStatementCreator`（实现了 `SqlProvider`） | 让失败日志能打出 SQL，见第 6 轮 |
+
+**读法建议**：第 3、4 项是「为了保持实验干净」，第 1、2 项是「为了让两个 provider 可比」，
+第 5、6 项是「真实链路暴露的 bug」。**只有 5、6 是必须看代码的，1–4 看注释就够。**
+
 ### 自检
 
 说出「校验层能挡住、执行层挡不住的」和「执行层能挡住、校验层挡不住的」各是什么。
+
+追加一题：**`PromptTemplate.VERSION` 为什么阶段 2 故意不变？** 答不上来就回去读上表第 3 行。
 
 ---
 
@@ -168,11 +199,32 @@ return validateAndExecute(...);                            // 校验 → 执行
 
 核心：期望表**不是人工标的**，是从 gold_sql 解析的。
 
+### ⚠️ 阶段 2 改动了这一轮里的 4 个文件
+
+这一轮**变化最大**——准确率的口径本身被修订了。逐条说：
+
+| # | 文件 | 改了什么 | 为什么要改 |
+|---|---|---|---|
+| 1 | `ResultNormalizer` | 新增第 115 行 `normalizeTemporal()`：把 `2018-01-01` 和 `2018-01-01 00:00:00` 归一到同一串；但 `2018-01`、`2018-Q1` 这类**有损**字符串**不展开** | 前者是同一个时间点，判不等是**假失败**；后者要展开就必须猜「季度首日算哪天」，那是比较器替业务做决定 |
+| 2 | `data/eval/T3_time_window.yaml` | 20 多条 gold 从 `TO_CHAR(..., 'YYYY-MM')` 改成 `DATE_TRUNC(...)` | **配套动作**：与其让比较器去猜有损标签，不如让 gold 直接输出完整日期。**改数据而不是改比较器** |
+| 3 | `EvalRunner` | 新增第 177 行 `aggregateRetrieval()`；`Meta` 多记 `split` / `retrievalEnabled` / `retrievalTopK`；新增 `appendRetrieval()` 打印；`goldBroken()` 带上 `item.goldSql()` | 阶段 2 要多测一个指标（表召回率），并且报告必须记录「这份数字是在什么配置下跑的」 |
+| 4 | `EvalItemLoader` | 新增 `applySplit()` / `isDev()`：按 id 哈希把 200 条切成 dev 100 / eval 100 | ROADMAP 5.5 的硬原则「评估集不能用来调参」。不切分的话，反复看同一批样本调词典，报出来的召回率就是过拟合结果 |
+
+**这一轮最值得琢磨的是第 2 条**：遇到「比较器误判」时，第一反应通常是改比较器，
+但这里的正确答案是**改数据**。想清楚这两条路的区别——改比较器会引入主观猜测，
+改 gold 是让标准答案本身无损。
+
+**另一个容易忽略的点**：`EvalItemLoader` 的切分是**按 id 哈希**，不是按难度层区间。
+如果按 T1–T3 / T4–T6 切，开发集就全是单表题，而 schema 检索只在多表题上起作用——
+等于拿单表题去调多表题的参数。
+
 ### 自检
 
 **为什么「每个州有多少订单」少写一个 ORDER BY 不该判错，但「销量最高的 10 个」顺序错了就该判错？**
 
 （答案在 `orderMatters()`：只有 ORDER BY 和 LIMIT **同时**出现，顺序才承载语义。）
+
+追加一题：**T3 的时间误判，为什么是改 gold 而不是改比较器？**
 
 ---
 
@@ -187,9 +239,25 @@ return validateAndExecute(...);                            // 校验 → 执行
 - `src/main/java/com/text2sql/agent/observability/LlmCallRecord.java`（全文 33 行）
   → 看 token / 耗时 / 成本三个字段怎么算出来
 
+### ⚠️ 阶段 2 改动了这一轮里的 1 个文件
+
+**`AskController` 和 `LlmCallRecord` 一行没动。** 只有 `AgentResponse` 改了：
+
+| 改动 | 内容 | 为什么 |
+|---|---|---|
+| record 多两个字段 | `retrievedTables`（本次选了哪些表）、`schemaDdlChars`（DDL 字符数） | 评估器要算表召回率，必须知道**具体是哪几张表**。`schemaTableCount` 只给数量，回答不了「该用的那张在不在里面」 |
+| `failed(...)` 签名变了 | 参数从 `(question, status, message, ...)` 变成 `(question, status, sql, message, ...)` | 执行失败必须带上 SQL。早期版本硬编码 `sql=null`，导致 19 条执行失败的 SQL 全丢，连错误信息都渲染成 `bad SQL grammar []` |
+| `success()` / `rejected()` 也多了两个参数 | 跟随 record 字段变化 | 三种响应都要带召回率信息，否则召回率只统计成功的样本，有偏 |
+
+**注意 `Status` 枚举的五种值没有变**（`SUCCESS` / `NOT_CONFIGURED` / `GENERATION_FAILED` /
+`REJECTED` / `EXECUTION_FAILED`）。这是阶段 2 唯一**完全没动**的设计——
+因为它是失败归因的第一层切分，动它会让所有历史报告失去可比性。
+
 ### 自检
 
 「每次调用花了多少」这个问题的数据，从哪个类流到哪个类？
+
+追加一题：**`AgentResponse.Status` 为什么阶段 2 一个值都没加？**（提示：想想历史报告的可比性。）
 
 ---
 
@@ -290,6 +358,55 @@ JSqlParser 把 LIMIT 挂在最后一个子查询上，旧代码只看外层，
 
 ---
 
+## 6.5 阶段 2 改动总表（第 1–4 轮的代码都动了哪里）
+
+这一节回答你的问题：**阶段一读过的东西，阶段二改了什么。**
+
+统计口径：`git diff 309c59d HEAD`（阶段 1 提交 → 阶段 2 收尾）。
+
+### 按文件分类
+
+| 文件 | 属于第几轮 | 改动性质 | 一句话 |
+|---|---|---|---|
+| `FullSchemaProvider` | 第 2 轮 | **重构** | 职责被拆走，只剩 `catalog.full()` |
+| `SchemaContext` | 第 2 轮 | 新增方法 | `tableNames()` + `subset()` |
+| `PromptTemplate` | 第 2 轮 | **只改注释** | 版本号故意不变 |
+| `LlmSqlGenerator` | 第 2 轮 | 小改 | 日志打完整端点；`completionsPath` 可配 |
+| `SqlValidator` | 第 2 轮 | **修 bug** | UNION 的双重 LIMIT、括号子查询漏检 |
+| `SqlExecutor` | 第 2 轮 | **修 bug** | 让失败日志能打出 SQL |
+| `ResultNormalizer` | 第 3 轮 | 新增能力 | 时间归一化 |
+| `EvalRunner` | 第 3 轮 | 新增能力 | 表召回率聚合 + 报告记录配置 |
+| `EvalItemLoader` | 第 3 轮 | 新增能力 | dev/eval 切分 |
+| `AgentResponse` | 第 4 轮 | 新增字段 + 签名变更 | `retrievedTables` / `ddlChars`；`failed` 带上 SQL |
+| `Text2SqlOrchestrator` | 第 1 轮 | 跟随变更 | 往下传召回率信息 |
+| `AskController` | 第 4 轮 | **完全没动** | — |
+| `LlmCallRecord` | 第 4 轮 | **完全没动** | — |
+| `data/eval/T3_time_window.yaml` | 第 3 轮 | **改数据** | gold 从 `TO_CHAR` 改 `DATE_TRUNC` |
+
+### 按「为什么要改」分类
+
+**这是更有用的读法**——同一个原因往往牵动好几个文件：
+
+| 原因 | 涉及文件 | 核心问题 |
+|---|---|---|
+| **A. 让召回率可计算** | `SchemaContext`、`AgentResponse`、`Text2SqlOrchestrator`、`EvalRunner` | 只有「表数量」不够，必须知道「具体是哪几张表」 |
+| **B. 让两个 provider 可比** | `FullSchemaProvider`、`SchemaCatalog`（新）、`SchemaDdlRenderer`（新） | 各缓存一份 schema，消融实验的两个配置可能看的不是同一份数据 |
+| **C. 保持消融实验干净** | `PromptTemplate` | 改上下文内容 ≠ 改 prompt 措辞。混在一起就无法归因 |
+| **D. 修真实链路暴露的 bug** | `SqlValidator`、`SqlExecutor`、`AgentResponse.failed` | 模型写对了却被校验层改坏；失败了却看不到 SQL |
+| **E. 修评估器的假失败** | `ResultNormalizer`、`T3_time_window.yaml` | 同一个时间点两种写法被误判为不等 |
+| **F. 落实评估纪律** | `EvalItemLoader` | 评估集不能用来调参 |
+
+### 一句话总结
+
+**阶段 2 对第 1–4 轮的代码，没有改变任何一步的业务语义。**
+四步还是「检索 → 生成 → 校验 → 执行」，`Status` 枚举一个值都没加。
+所有改动都服务于两件事：**让数字可算**（A、B、C、F）和**让失败可见**（D、E）。
+
+面试时这是个好答案：**「加检索层的时候，我没有顺手改主链路，而是先把评估口径补全——
+不然我不知道检索到底有没有用。」**
+
+---
+
 ## 7. 可以跳过的文件
 
 按你的目标（简历 + 抗住面试），下面这些**直接跳过**，只需知道它们存在：
@@ -354,6 +471,9 @@ JSqlParser 把 LIMIT 挂在最后一个子查询上，旧代码只看外层，
 | 4 | 「每次调用花了多少」的数据从哪个类流到哪个类？ | 第 4 轮 |
 | 5 | 「订单明细里有多少商品」每一张表是直接命中还是扩展进来的？ | 第 5 轮 |
 | 6 | 为什么让 Spring 取到 SQL 不能靠改日志格式？ | 第 6 轮 |
+| 7 | `PromptTemplate.VERSION` 为什么阶段 2 故意不变？ | 第 2 轮 |
+| 8 | T3 的时间误判，为什么是改 gold 而不是改比较器？ | 第 3 轮 |
+| 9 | `AgentResponse.Status` 为什么阶段 2 一个值都没加？ | 第 4 轮 |
 
 **第 1、3、5 题分别对应「数据怎么流」「错在哪一层」「检索为什么这么选」，
 这三题能答顺，面试的基本盘就稳了。**
@@ -365,6 +485,7 @@ JSqlParser 把 LIMIT 挂在最后一个子查询上，旧代码只看外层，
 | 日期 | 阶段 | 更新内容 |
 |---|---|---|
 | 2026-10-02 | 阶段 2 收尾 | 建立本文档；收录阶段一四轮并修正过时行号；新增第 5、6 轮 |
+| 2026-10-02 | 阶段 2 收尾（补） | 在第 1–4 轮各加「阶段 2 改动了什么」；新增 6.5 改动总表；自检题补 7–9 题 |
 
 ### 已修正的过时行号（阶段一旧指南 → 当前代码）
 
