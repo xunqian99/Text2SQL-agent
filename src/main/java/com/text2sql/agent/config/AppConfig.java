@@ -5,6 +5,7 @@ import com.text2sql.agent.retrieval.HybridSchemaProvider;
 import com.text2sql.agent.retrieval.LexicalSchemaRetriever;
 import com.text2sql.agent.retrieval.SchemaCatalog;
 import com.text2sql.agent.retrieval.SchemaProvider;
+import com.text2sql.agent.retrieval.glossary.GlossaryLoader;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -58,7 +59,8 @@ public class AppConfig {
      */
     @Bean
     @ConditionalOnProperty(prefix = "agent.retrieval", name = "enabled", havingValue = "true")
-    public SchemaProvider hybridSchemaProvider(SchemaCatalog catalog, LexicalSchemaRetriever retriever) {
-        return new HybridSchemaProvider(catalog, retriever);
+    public SchemaProvider hybridSchemaProvider(SchemaCatalog catalog, LexicalSchemaRetriever retriever,
+                                               GlossaryLoader glossaryLoader) {
+        return new HybridSchemaProvider(catalog, retriever, glossaryLoader);
     }
 }

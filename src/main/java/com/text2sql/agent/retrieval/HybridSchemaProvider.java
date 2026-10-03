@@ -41,10 +41,29 @@ public class HybridSchemaProvider implements SchemaProvider {
 
     private final SchemaCatalog catalog;
     private final LexicalSchemaRetriever retriever;
+    private final com.text2sql.agent.retrieval.glossary.GlossaryLoader glossaryLoader;
 
-    public HybridSchemaProvider(SchemaCatalog catalog, LexicalSchemaRetriever retriever) {
+    /**
+     * 关系图缓存。
+     *
+     * <p><b>为什么必须缓存，而不是每次请求现算</b>
+     *
+     * <p>第一版写成在 {@code provide()} 里直接调 {@code JoinGraph.from(...)}，
+     * 功能正确但每来一个问题就把 49 条边重新合并、重新建邻接表。单次代价
+     * 只有几十微秒，看起来无所谓，但它有两个真实问题：一是评估跑 100 条
+     * 就白做 100 次；二是**让检索延迟数字变脏**——那正是要用来证明
+     * 「检索几乎不花时间」的证据。
+     *
+     * <p>关系图只由 schema 和词典决定，两者在一次运行内都不变，
+     * 所以缓存一次即可。与 {@link LexicalSchemaRetriever} 里的缓存同源同寿命。
+     */
+    private volatile JoinGraph joinGraph;
+
+    public HybridSchemaProvider(SchemaCatalog catalog, LexicalSchemaRetriever retriever,
+                                com.text2sql.agent.retrieval.glossary.GlossaryLoader glossaryLoader) {
         this.catalog = catalog;
         this.retriever = retriever;
+        this.glossaryLoader = glossaryLoader;
     }
 
     @Override
@@ -70,18 +89,50 @@ public class HybridSchemaProvider implements SchemaProvider {
                 .toList();
 
         java.util.Set<String> names = new java.util.LinkedHashSet<>(result.tableNames());
-        List<SchemaContext.ForeignKey> keptEdges = full.foreignKeys().stream()
-                .filter(fk -> names.contains(fk.fromTable()) && names.contains(fk.toTable()))
-                .toList();
-        String ddl = SchemaDdlRenderer.render(selected, keptEdges);
+
+        // 阶段 3 的关键改动：join 关系不再只取真实外键，而是走统一的关系图。
+        //
+        // 阶段 2 这里过滤的是 full.foreignKeys()，只有 13 条外键，于是
+        // customers.customer_state -> regions.region_code 这类词典关联
+        // 从来没进过 prompt——模型只能猜列名，T4-015 就猜成了 region_name
+        // （两列在 regions 里都存在，SQL 能跑，只是结果错，属于静默错误）。
+        //
+        // 现在改成 JoinGraph.edgesAmong()：外键和词典关联一起给，用 [FK]
+        // 标记区分可信度，并明确写出「哪一列连哪一列」。
+        List<JoinGraph.Edge> keptEdges = joinGraph(full).edgesAmong(names);
+
+        // 阶段 3 第 2 步：把扁平的边列表规划成一棵连接树。
+        //
+        // 边列表回答「存在哪些关联」，连接树回答「推荐按什么顺序连」。
+        // 多条路径都连通时（T5-001：orders 既能经 customers 到 members，
+        // 也能经 coupon_usages 到），只有连接树能表达「优先走外键那条」。
+        JoinPathPlanner.Plan plan = JoinPathPlanner.plan(keptEdges, result.tableNames());
+        String ddl = SchemaDdlRenderer.renderWithJoins(selected, keptEdges, plan);
 
         log.info("检索完成：{} | DDL {} 字符（全量 {} 字符）",
                 result.summary(), ddl.length(), full.ddlText().length());
+        log.info("join 规划：{} 条边，起点 {}，连接 {} 张表",
+                plan.edges().size(), plan.root(),
+                plan.isEmpty() ? 0 : plan.edges().size() + 1);
         if (log.isDebugEnabled()) {
             result.tableNames().forEach(name ->
                     log.debug("  {} <- {}", name, result.evidence().getOrDefault(name, List.of())));
         }
 
         return full.subset(names, ddl);
+    }
+
+    /** 关系图，惰性构建一次后复用。 */
+    private JoinGraph joinGraph(SchemaContext full) {
+        JoinGraph local = joinGraph;
+        if (local != null) {
+            return local;
+        }
+        synchronized (this) {
+            if (joinGraph == null) {
+                joinGraph = JoinGraph.from(full, glossaryLoader.get());
+            }
+            return joinGraph;
+        }
     }
 }

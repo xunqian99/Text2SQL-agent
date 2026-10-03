@@ -56,42 +56,25 @@ public class LexicalSchemaRetriever {
 
     private static final Logger log = LoggerFactory.getLogger(LexicalSchemaRetriever.class);
 
-    /**
-     * 关系扩展的边强度：数据库外键。
-     *
-     * <p>外键是数据库强制约束的**硬事实**，沿它扩展出来的表可信度高。
-     */
-    private static final double FOREIGN_KEY_STRENGTH = 1.0;
-
-    /**
-     * 关系扩展的边强度：词典里的约定关联。
-     *
-     * <p>这类边是人工推断出来的**软知识**（本库 37 张表只有 12 条外键，
-     * {@code refunds -> orders} 这种业务上必然成立的关联压根没声明，
-     * 只能靠词典补）。可信度低于外键，所以扩展权重打折。
-     *
-     * <p><b>为什么必须区分这两档，而不是一视同仁</b>
-     *
-     * <p>这是被实测数字逼出来的。原先两种边等权，于是
-     * 「{@code order_items} 到 {@code orders}」（外键）和
-     * 「{@code products} 到 {@code inventory}」（词典推断）扩展出来
-     * 是同一个分数，排序退化成邻接表的插入顺序。实测后果是问
-     * 「每个月的商品销售额是多少」时，{@code search_logs} 把
-     * {@code orders} 挤出了 Top-K——而 {@code orders} 是唯一能提供
-     * 时间维度的表，缺了它 SQL 根本写不出来。
-     *
-     * <p>写成常量而不是配置项：它表达的是「外键比人工推断更可信」这个
-     * 语义判断，不是需要按数据集调的超参数。若之后要做消融实验，
-     * 再提升为配置。
-     */
-    private static final double INFERRED_RELATION_STRENGTH = 0.5;
-
     private final GlossaryLoader glossaryLoader;
     private final SchemaCatalog catalog;
     private final AgentProperties properties;
 
     /** 词典展开后的匹配表，加载一次后复用。键是中文/英文说法，值是它的归属。 */
     private volatile List<MatchTerm> terms;
+
+    /**
+     * 表关系图，加载一次后复用。
+     *
+     * <p>阶段 3 起，关系图的定义收敛到 {@link JoinGraph} 一处——检索打分和
+     * prompt 渲染必须看到同一张图，否则就会出现「检索器知道怎么 join、
+     * 模型不知道」的裂缝。那正是 T4-015 猜错列名的根因。
+     *
+     * <p>为什么缓存在这里而不是做成 Spring Bean：它由 schema 与词典决定，
+     * 两者在一次运行内都不变，缓存一次即可；而且它是纯值对象，
+     * 不做成 Bean 可以让单元测试直接构造，不必起容器。
+     */
+    private volatile JoinGraph joinGraph;
 
     public LexicalSchemaRetriever(GlossaryLoader glossaryLoader, SchemaCatalog catalog,
                                   AgentProperties properties) {
@@ -157,7 +140,7 @@ public class LexicalSchemaRetriever {
         // 但扩展必须克制：全图展开会让「只问一张表」的问题也带进十几张表，
         // 那就退化成 baseline 了。
         Set<String> expanded = new LinkedHashSet<>();
-        Map<String, Map<String, Double>> adjacency = adjacency();
+        Map<String, Map<String, Double>> adjacency = joinGraph().tableAdjacency();
         if (config.getRelationHops() > 0) {
             List<String> seeds = directHits.stream()
                     .sorted(Comparator.comparingDouble((String t) -> scores.getOrDefault(t, 0.0)).reversed())
@@ -484,54 +467,27 @@ public class LexicalSchemaRetriever {
     }
 
     /**
-     * 构建带**边强度**的表级邻接表：数据库外键 + 词典里的约定关联。
+     * 关系图，惰性构建一次后复用。
      *
-     * <p>两者合并而不是只用外键，因为实测本库 37 张表只有 12 条外键，
-     * {@code refunds -> orders}、{@code shipments -> orders} 这些业务上
-     * 必然成立的关联压根没声明。只用外键会让 join 路径断掉。
+     * <p>阶段 3 把「有哪些 join 边」收敛到 {@link JoinGraph} 一处定义。
+     * 在这之前，检索器内部自己拼邻接表、{@code HybridSchemaProvider} 又按
+     * 真实外键过滤一遍，两处口径不同——检索器知道
+     * {@code customers.customer_state -> regions.region_code}，模型却看不到，
+     * 于是 T4-015 猜成了 {@code region_name}（SQL 能跑、结果错）。
      *
-     * <p>但两者**不等权**：外键 1.0，约定关联 0.5。理由见
-     * {@link #INFERRED_RELATION_STRENGTH}。
-     *
-     * <p>方向是双向的：外键声明了 from -> to，但查询可以从任一侧发起
-     * （「某订单的退款」和「有退款的订单」都是合理问题）。
+     * <p>现在两边共用同一个 {@link JoinGraph} 实例，结构上不可能再分叉。
      */
-    private Map<String, Map<String, Double>> adjacency() {
-        Map<String, Map<String, Double>> adjacency = new LinkedHashMap<>();
-        Set<String> fkPairs = new LinkedHashSet<>();
-        for (SchemaContext.ForeignKey fk : catalog.full().foreignKeys()) {
-            fkPairs.add(pairKey(fk.fromTable(), fk.toTable()));
-            link(adjacency, fk.fromTable(), fk.toTable(), FOREIGN_KEY_STRENGTH);
+    private JoinGraph joinGraph() {
+        JoinGraph local = joinGraph;
+        if (local != null) {
+            return local;
         }
-        for (Glossary.Relation relation : glossaryLoader.get().relations()) {
-            String fromTable = relation.from().substring(0, relation.from().indexOf('.'));
-            String toTable = relation.to().substring(0, relation.to().indexOf('.'));
-            // 词典里会把一部分真实外键再声明一遍（为了让人读词典时看到完整
-            // 关联，不用去翻 DDL）。这类重复声明不应该被降权，所以只要
-            // 表对在真实外键里出现过，就按外键强度算。
-            double strength = fkPairs.contains(pairKey(fromTable, toTable))
-                    ? FOREIGN_KEY_STRENGTH
-                    : INFERRED_RELATION_STRENGTH;
-            link(adjacency, fromTable, toTable, strength);
+        synchronized (this) {
+            if (joinGraph == null) {
+                joinGraph = JoinGraph.from(catalog.full(), glossaryLoader.get());
+            }
+            return joinGraph;
         }
-        return adjacency;
-    }
-
-    private static void link(Map<String, Map<String, Double>> adjacency, String a, String b, double strength) {
-        if (a == null || b == null || a.equalsIgnoreCase(b)) {
-            return;
-        }
-        // 取 max 而不是覆盖：先写外键（1.0）再写同一条约定关联（0.5）时，
-        // 强度必须保持 1.0，不能被后来的低强度覆盖掉。
-        adjacency.computeIfAbsent(a, k -> new LinkedHashMap<>()).merge(b, strength, Math::max);
-        adjacency.computeIfAbsent(b, k -> new LinkedHashMap<>()).merge(a, strength, Math::max);
-    }
-
-    /** 无向边的规范化键，用于判断某条表对是不是真实外键。 */
-    private static String pairKey(String a, String b) {
-        String x = a.toLowerCase(Locale.ROOT);
-        String y = b.toLowerCase(Locale.ROOT);
-        return x.compareTo(y) <= 0 ? x + "|" + y : y + "|" + x;
     }
 
     private static boolean containsIdentifier(String text, String identifier) {

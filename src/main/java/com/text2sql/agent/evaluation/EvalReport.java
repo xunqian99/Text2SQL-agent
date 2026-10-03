@@ -17,6 +17,7 @@ import java.util.Map;
  * @param meta       运行元信息（配置快照）
  * @param overall    整体指标
  * @param byLayer    按难度分层的指标
+ * @param byTableCount 按「gold SQL 实际用到几张表」分组的指标（阶段 3 新增）
  * @param failures   失败案例明细，按发生顺序
  * @param retrieval  检索层指标（阶段 2）。关闭检索时为空
  */
@@ -24,6 +25,7 @@ public record EvalReport(
         Meta meta,
         Overall overall,
         Map<String, Overall> byLayer,
+        Map<String, Overall> byTableCount,
         List<Failure> failures,
         Retrieval retrieval) {
 

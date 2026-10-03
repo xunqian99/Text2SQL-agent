@@ -139,6 +139,8 @@ public class EvalRunner implements ApplicationRunner {
                 .collect(Collectors.groupingBy(ItemOutcome::difficulty, LinkedHashMap::new, Collectors.toList()));
         grouped.forEach((layer, list) -> byLayer.put(layer, aggregate(list)));
 
+        Map<String, EvalReport.Overall> byTableCount = groupByExpectedTableCount(outcomes);
+
         EvalReport.Retrieval retrieval = aggregateRetrieval(items, outcomes);
 
         EvalReport.Meta meta = new EvalReport.Meta(
@@ -159,7 +161,52 @@ public class EvalRunner implements ApplicationRunner {
                 properties.getRetrieval().isEnabled(),
                 properties.getRetrieval().getTopK());
 
-        return new EvalReport(meta, aggregate(outcomes), byLayer, failures, retrieval);
+        return new EvalReport(meta, aggregate(outcomes), byLayer, byTableCount, failures, retrieval);
+    }
+
+    /**
+     * 按「gold SQL 实际用到几张表」分组统计。
+     *
+     * <p><b>为什么难度层（T4/T5）不够，还要再按表数分一组</b>
+     *
+     * <p>难度层是**人工打的标签**，它混了两种不同的东西：T4 里既有两表 join
+     * 也有三表 join，T5 里既有四表也有六表。而阶段 3 的 join 路径规划
+     * **只在表数多的时候才起作用**——两张表的 join 只有一种连法，
+     * 规划与不规划没有区别。
+     *
+     * <p>所以如果只看 T4/T5 的整体数字，规划带来的提升会被两表题稀释，
+     * 看不出真实效果。按 gold 表数分组，就能直接回答
+     * 「表越多，规划的价值是不是越明显」——这正是阶段 3 要证明的事。
+     *
+     * <p>表数从 gold SQL 解析（复用 {@link TableRecall#expectedTables}），
+     * 而不是从模型生成的 SQL 数——否则模型漏 join 时分组会跟着漂移，
+     * 那就成了「用模型的错误来给自己分组」。
+     *
+     * <p>分档取 1 / 2 / 3 / 4+：四张以上已经进入「必须规划」的区间，
+     * 再细分会让每档样本太少，数字失去统计意义。
+     */
+    private Map<String, EvalReport.Overall> groupByExpectedTableCount(List<ItemOutcome> outcomes) {
+        Map<String, List<ItemOutcome>> grouped = new LinkedHashMap<>();
+        for (ItemOutcome outcome : outcomes) {
+            int tables = TableRecall.expectedTables(outcome.item().goldSql()).size();
+            if (tables == 0) {
+                continue; // gold 解析不出表，无法分组，不计入
+            }
+            grouped.computeIfAbsent(bucket(tables), k -> new ArrayList<>()).add(outcome);
+        }
+        Map<String, EvalReport.Overall> result = new LinkedHashMap<>();
+        // 固定顺序输出，避免 Map 顺序让报告每次长得不一样。
+        for (String key : List.of("1 表", "2 表", "3 表", "4+ 表")) {
+            List<ItemOutcome> list = grouped.get(key);
+            if (list != null && !list.isEmpty()) {
+                result.put(key, aggregate(list));
+            }
+        }
+        return result;
+    }
+
+    private static String bucket(int tables) {
+        return tables >= 4 ? "4+ 表" : tables + " 表";
     }
 
     /**
@@ -304,6 +351,7 @@ public class EvalRunner implements ApplicationRunner {
         sb.append("\n");
         appendRow(sb, "分组", report.overall());
         report.byLayer().forEach((layer, o) -> appendRow(sb, layer, o));
+        appendByTableCount(sb, report);
         appendRetrieval(sb, report);
         sb.append("\n失败案例数: ").append(report.failures().size()).append("\n");
         report.failures().stream().limit(10).forEach(f ->
@@ -311,6 +359,24 @@ public class EvalRunner implements ApplicationRunner {
                         f.id(), f.status(), truncate(f.question(), 30), truncate(f.message(), 60))));
         sb.append("=========================================\n");
         log.info(sb.toString());
+    }
+
+    /**
+     * 打印「按 gold 表数分组」的准确率。
+     *
+     * <p>单独一段打印，是因为它是**阶段 3 的主证据**：join 路径规划只在
+     * 表多的时候起作用，所以要看的是「4+ 表那一档涨了多少」，
+     * 而不是整体涨了多少——整体会被单表题稀释。
+     */
+    private void appendByTableCount(StringBuilder sb, EvalReport report) {
+        Map<String, EvalReport.Overall> byTableCount = report.byTableCount();
+        if (byTableCount == null || byTableCount.isEmpty()) {
+            return;
+        }
+        sb.append("\n---- 按 gold 表数分组（阶段 3 主指标）----\n");
+        byTableCount.forEach((bucket, o) ->
+                sb.append(String.format("%-8s 准确率 %6.2f%% (%d/%d)%n",
+                        bucket, o.executionAccuracy() * 100, o.correct(), o.total())));
     }
 
     /**
