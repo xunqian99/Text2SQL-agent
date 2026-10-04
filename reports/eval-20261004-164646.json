@@ -1,0 +1,196 @@
+{
+  "meta" : {
+    "timestamp" : "2026-10-04T16:46:46.0518434",
+    "promptVersion" : "p1-full-schema-v1",
+    "model" : "ernie-4.5-turbo-32k",
+    "baseUrl" : "https://qianfan.baidubce.com",
+    "dryRun" : false,
+    "itemCount" : 12,
+    "limit" : 0,
+    "layers" : [ "T6" ],
+    "split" : "eval",
+    "includeDataProfile" : true,
+    "includeForeignKeys" : true,
+    "limitMode" : "APPEND",
+    "maxRows" : 200,
+    "schemaTableCount" : 9,
+    "retrievalEnabled" : true,
+    "retrievalTopK" : 8
+  },
+  "overall" : {
+    "total" : 12,
+    "correct" : 4,
+    "executionAccuracy" : 0.3333333333333333,
+    "sqlValid" : 10,
+    "sqlValidRate" : 0.8333333333333334,
+    "rewrittenCount" : 0,
+    "avgPromptTokens" : 1014.17,
+    "avgLatencyMs" : 7204.42,
+    "p50LatencyMs" : 5689,
+    "p95LatencyMs" : 16038,
+    "avgCostYuan" : 0.0,
+    "totalCostYuan" : 0.0
+  },
+  "byLayer" : {
+    "business_semantics" : {
+      "total" : 12,
+      "correct" : 4,
+      "executionAccuracy" : 0.3333333333333333,
+      "sqlValid" : 10,
+      "sqlValidRate" : 0.8333333333333334,
+      "rewrittenCount" : 0,
+      "avgPromptTokens" : 1014.17,
+      "avgLatencyMs" : 7204.42,
+      "p50LatencyMs" : 5689,
+      "p95LatencyMs" : 16038,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    }
+  },
+  "byTableCount" : {
+    "1 表" : {
+      "total" : 2,
+      "correct" : 2,
+      "executionAccuracy" : 1.0,
+      "sqlValid" : 2,
+      "sqlValidRate" : 1.0,
+      "rewrittenCount" : 0,
+      "avgPromptTokens" : 958.0,
+      "avgLatencyMs" : 3963.5,
+      "p50LatencyMs" : 3944,
+      "p95LatencyMs" : 3983,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    },
+    "2 表" : {
+      "total" : 5,
+      "correct" : 1,
+      "executionAccuracy" : 0.2,
+      "sqlValid" : 3,
+      "sqlValidRate" : 0.6,
+      "rewrittenCount" : 0,
+      "avgPromptTokens" : 998.2,
+      "avgLatencyMs" : 10249.2,
+      "p50LatencyMs" : 8972,
+      "p95LatencyMs" : 16038,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    },
+    "3 表" : {
+      "total" : 3,
+      "correct" : 1,
+      "executionAccuracy" : 0.3333333333333333,
+      "sqlValid" : 3,
+      "sqlValidRate" : 1.0,
+      "rewrittenCount" : 0,
+      "avgPromptTokens" : 1060.33,
+      "avgLatencyMs" : 5218.33,
+      "p50LatencyMs" : 5637,
+      "p95LatencyMs" : 6528,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    },
+    "4+ 表" : {
+      "total" : 2,
+      "correct" : 0,
+      "executionAccuracy" : 0.0,
+      "sqlValid" : 2,
+      "sqlValidRate" : 1.0,
+      "rewrittenCount" : 0,
+      "avgPromptTokens" : 1041.0,
+      "avgLatencyMs" : 5812.5,
+      "p50LatencyMs" : 5689,
+      "p95LatencyMs" : 5936,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    }
+  },
+  "failures" : [ {
+    "id" : "T6-002",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "有效订单" ],
+    "question" : "有效订单（排除已取消和不可用）的订单数、下单人数、客单价分别是多少？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n    COUNT(DISTINCT o.order_id) AS valid_order_count,\n    COUNT(DISTINCT o.customer_id) AS customer_count,\n    ROUND(SUM(oi.price + oi.freight_value) / COUNT(DISTINCT o.order_id), 2) AS aov\nFROM \n    orders o\nJOIN \n    order_items oi ON o.order_id = oi.order_id\nWHERE \n    o.order_status NOT IN ('canceled', 'unavailable')\nLIMIT 1;",
+    "message" : null,
+    "latencyMs" : 5637
+  }, {
+    "id" : "T6-004",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "留存" ],
+    "question" : "首单在 2017 年上半年的用户，在 2017 年下半年是否再次下单？按月留存率是多少？",
+    "status" : "SUCCESS",
+    "generatedSql" : "WITH \n-- 首单在2017年上半年的用户及其首单月份\nfirst_half_2017_users AS (\n    SELECT \n        o.customer_id,\n        DATE_TRUNC('month', MIN(o.order_purchase_timestamp)) AS first_order_month\n    FROM \n        orders o\n    WHERE \n        o.order_purchase_timestamp >= '2017-01-01' \n        AND o.order_purchase_timestamp < '2017-07-01'\n        AND o.order_status NOT IN ('canceled', 'unavailable')\n    GROUP BY \n        o.customer_id\n),\n-- 这些用户在2017年下半年是否有有效订单\nsecond_half_activity AS (\n    SELECT \n        f.customer_id,\n        f.first_order_month,\n        MAX(CASE WHEN o.order_purchase_timestamp >= '2017-07-01' \n                 AND o.order_purchase_timestamp < '2018-01-01'\n                 AND o.order_status NOT IN ('canceled', 'unavailable')\n            THEN 1 ELSE 0 END) AS returned\n    FROM \n        first_half_2017_users f\n    LEFT JOIN \n        orders o ON f.customer_id = o.customer_id\n    GROUP BY \n        f.customer_id, f.first_order_month\n)\n-- 计算按月留存率\nSELECT \n    first_order_month,\n    ROUND(100.0 * SUM(returned) / COUNT(*), 2) AS retention_rate\nFROM \n    second_half_activity\nGROUP BY \n    first_order_month\nORDER BY \n    first_order_month\nLIMIT 6;",
+    "message" : null,
+    "latencyMs" : 15446
+  }, {
+    "id" : "T6-008",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "动销率" ],
+    "question" : "商品动销率是多少？（有销量的商品数 / 全部商品数）",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n  (SELECT COUNT(DISTINCT oi.product_id) FROM order_items oi) * 1.0 / \n  (SELECT COUNT(DISTINCT p.product_id) FROM products p) AS sales_rate\nLIMIT 1;",
+    "message" : null,
+    "latencyMs" : 3490
+  }, {
+    "id" : "T6-011",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "运费" ],
+    "question" : "运费占 GMV 的比例是多少？按宏观区域拆解。",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n    r.macro_region,\n    SUM(oi.freight_value) / SUM(oi.price + oi.freight_value) AS freight_ratio\nFROM \n    order_items oi\nJOIN \n    orders o ON oi.order_id = o.order_id\nJOIN \n    sellers s ON oi.seller_id = s.seller_id\nJOIN \n    regions r ON s.seller_state = r.region_code\nWHERE \n    o.order_status NOT IN ('canceled', 'unavailable')\nGROUP BY \n    r.macro_region\nORDER BY \n    freight_ratio DESC\nLIMIT 100;",
+    "message" : null,
+    "latencyMs" : 5936
+  }, {
+    "id" : "T6-019",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "履约", "时效" ],
+    "question" : "各州的平均配送时长（下单到签收）是多少天？列出配送最慢的 10 个州。",
+    "status" : "EXECUTION_FAILED",
+    "generatedSql" : "SELECT \n    o.customer_state AS state,\n    ROUND(AVG(EXTRACT(EPOCH FROM (o.order_delivered_customer_date - o.order_purchase_timestamp)) / 86400.0), 2) AS delivery_days\nFROM \n    orders o\nWHERE \n    o.order_delivered_customer_date IS NOT NULL\nGROUP BY \n    o.customer_state\nORDER BY \n    delivery_days DESC\nLIMIT 10",
+    "message" : "PreparedStatementCallback; bad SQL grammar [SELECT \n    o.customer_state AS state,\n    ROUND(AVG(EXTRACT(EPOCH FROM (o.order_delivered_customer_date - o.order_purchase_timestamp)) / 86400.0), 2) AS delivery_days\nFROM \n    orders o\nWHERE \n    o.order_delivered_customer_date IS NOT NULL\nGROUP BY \n    o.customer_state\nORDER BY \n    delivery_days DESC\nLIMIT 10]",
+    "latencyMs" : 4998
+  }, {
+    "id" : "T6-020",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "结算", "佣金" ],
+    "question" : "平台整体佣金率和各卖家佣金率分布（最低、平均、最高）分别是多少？",
+    "status" : "EXECUTION_FAILED",
+    "generatedSql" : "SELECT \n    '平台整体' AS seller_type,\n    SUM(si.commission_amount) / SUM(si.gross_amount) AS overall_commission_rate,\n    NULL AS min_seller_commission_rate,\n    NULL AS avg_seller_commission_rate,\n    NULL AS max_seller_commission_rate\nFROM \n    settlement_items si\n\nUNION ALL\n\nSELECT \n    s.seller_id AS seller_type,\n    NULL AS overall_commission_rate,\n    MIN(si.commission_amount / si.gross_amount) AS min_seller_commission_rate,\n    AVG(si.commission_amount / si.gross_amount) AS avg_seller_commission_rate,\n    MAX(si.commission_amount / si.gross_amount) AS max_seller_commission_rate\nFROM \n    settlement_items si\nJOIN \n    settlement_items s ON si.settlement_id = s.settlement_id\nGROUP BY \n    s.seller_id\nLIMIT 1000;",
+    "message" : "PreparedStatementCallback; bad SQL grammar [SELECT \n    '平台整体' AS seller_type,\n    SUM(si.commission_amount) / SUM(si.gross_amount) AS overall_commission_rate,\n    NULL AS min_seller_commission_rate,\n    NULL AS avg_seller_commission_rate,\n    NULL AS max_seller_commission_rate\nFROM \n    settlement_items si\n\nUNION ALL\n\nSELECT \n    s.seller_id AS seller_type,\n    NULL AS overall_commission_rate,\n    MIN(si.commission_amount / si.gross_amount) AS min_seller_commission_rate,\n    AVG(si.commission_amount / si.gross_amount) AS avg_seller_commission_rate,\n    MAX(si.commission_amount / si.gross_amount) AS max_seller_commission_rate\nFROM \n    settlement_items si\nJOIN \n    settlement_items s ON si.settlement_id = s.settlement_id\nGROUP BY \n    s.seller_id\nLIMIT 1000;]",
+    "latencyMs" : 8972
+  }, {
+    "id" : "T6-022",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "时间", "同比" ],
+    "question" : "2017 年和 2018 年各月 GMV 分别是多少？并计算 2018 年相对 2017 年同月的同比增长率。",
+    "status" : "SUCCESS",
+    "generatedSql" : "WITH \nm17 AS (\n  SELECT \n    EXTRACT(MONTH FROM o.order_purchase_timestamp) AS month,\n    SUM(oi.price + oi.freight_value) AS gmv\n  FROM \n    orders o\n    JOIN order_items oi ON o.order_id = oi.order_id\n  WHERE \n    EXTRACT(YEAR FROM o.order_purchase_timestamp) = 2017\n    AND o.order_status NOT IN ('canceled', 'unavailable')\n  GROUP BY \n    EXTRACT(MONTH FROM o.order_purchase_timestamp)\n),\nm18 AS (\n  SELECT \n    EXTRACT(MONTH FROM o.order_purchase_timestamp) AS month,\n    SUM(oi.price + oi.freight_value) AS gmv\n  FROM \n    orders o\n    JOIN order_items oi ON o.order_id = oi.order_id\n  WHERE \n    EXTRACT(YEAR FROM o.order_purchase_timestamp) = 2018\n    AND o.order_status NOT IN ('canceled', 'unavailable')\n  GROUP BY \n    EXTRACT(MONTH FROM o.order_purchase_timestamp)\n)\nSELECT \n  COALESCE(m17.month, m18.month) AS month,\n  COALESCE(m17.gmv, 0) AS gmv_2017,\n  COALESCE(m18.gmv, 0) AS gmv_2018,\n  CASE \n    WHEN COALESCE(m17.gmv, 0) = 0 THEN NULL\n    ELSE ROUND(100.0 * (COALESCE(m18.gmv, 0) - COALESCE(m17.gmv, 0)) / COALESCE(m17.gmv, 0), 2)\n  END AS yoy_growth\nFROM \n  m17\n  FULL OUTER JOIN m18 ON m17.month = m18.month\nORDER BY \n  month\nLIMIT 12;",
+    "message" : null,
+    "latencyMs" : 16038
+  }, {
+    "id" : "T6-024",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "客服", "归因" ],
+    "question" : "退款原因与客户评分的关系：各退款原因对应的平均评分和低分率是多少？",
+    "status" : "SUCCESS",
+    "generatedSql" : "SELECT \n    r.reason_code,\n    AVG(or1.review_score) AS average_score,\n    ROUND(100.0 * COUNT(*) FILTER (WHERE or1.review_score <= 2) / COUNT(*), 2) AS low_score_rate\nFROM \n    refunds r\nJOIN \n    orders o ON r.order_id = o.order_id\nJOIN \n    order_reviews or1 ON r.order_id = or1.order_id\nGROUP BY \n    r.reason_code\nLIMIT 1000;",
+    "message" : null,
+    "latencyMs" : 5689
+  } ],
+  "retrieval" : {
+    "evaluatedCount" : 12,
+    "fullRecallRate" : 0.9166666666666666,
+    "tableRecallRate" : 0.9722222222222222,
+    "avgPrecision" : 0.2951388888888889,
+    "avgRetrievedTables" : 7.833333333333333,
+    "missedCount" : 0,
+    "avgDdlChars" : 1865.08,
+    "incompleteCases" : [ {
+      "id" : "T6-008",
+      "question" : "商品动销率是多少？（有销量的商品数 / 全部商品数）",
+      "missing" : [ "orders" ],
+      "retrieved" : [ "campaign_products", "inventory", "inventory_movements", "order_items", "product_brand_map", "product_category_translation", "product_price_history", "products" ]
+    } ]
+  }
+}

@@ -1,0 +1,133 @@
+{
+  "meta" : {
+    "timestamp" : "2026-10-04T16:54:55.0326033",
+    "promptVersion" : "p1-full-schema-v1",
+    "model" : "ernie-4.5-turbo-32k",
+    "baseUrl" : "https://qianfan.baidubce.com",
+    "dryRun" : true,
+    "itemCount" : 25,
+    "limit" : 0,
+    "layers" : [ "T6" ],
+    "split" : "all",
+    "includeDataProfile" : true,
+    "includeForeignKeys" : true,
+    "limitMode" : "APPEND",
+    "maxRows" : 200,
+    "schemaTableCount" : 9,
+    "retrievalEnabled" : true,
+    "retrievalTopK" : 8
+  },
+  "overall" : {
+    "total" : 25,
+    "correct" : 24,
+    "executionAccuracy" : 0.96,
+    "sqlValid" : 24,
+    "sqlValidRate" : 0.96,
+    "rewrittenCount" : 21,
+    "avgPromptTokens" : 0.0,
+    "avgLatencyMs" : 143.72,
+    "p50LatencyMs" : 122,
+    "p95LatencyMs" : 572,
+    "avgCostYuan" : 0.0,
+    "totalCostYuan" : 0.0
+  },
+  "byLayer" : {
+    "business_semantics" : {
+      "total" : 25,
+      "correct" : 24,
+      "executionAccuracy" : 0.96,
+      "sqlValid" : 24,
+      "sqlValidRate" : 0.96,
+      "rewrittenCount" : 21,
+      "avgPromptTokens" : 0.0,
+      "avgLatencyMs" : 143.72,
+      "p50LatencyMs" : 122,
+      "p95LatencyMs" : 572,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    }
+  },
+  "byTableCount" : {
+    "1 表" : {
+      "total" : 3,
+      "correct" : 3,
+      "executionAccuracy" : 1.0,
+      "sqlValid" : 3,
+      "sqlValidRate" : 1.0,
+      "rewrittenCount" : 3,
+      "avgPromptTokens" : 0.0,
+      "avgLatencyMs" : 10.67,
+      "p50LatencyMs" : 8,
+      "p95LatencyMs" : 18,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    },
+    "2 表" : {
+      "total" : 9,
+      "correct" : 9,
+      "executionAccuracy" : 1.0,
+      "sqlValid" : 9,
+      "sqlValidRate" : 1.0,
+      "rewrittenCount" : 8,
+      "avgPromptTokens" : 0.0,
+      "avgLatencyMs" : 99.11,
+      "p50LatencyMs" : 116,
+      "p95LatencyMs" : 204,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    },
+    "3 表" : {
+      "total" : 9,
+      "correct" : 8,
+      "executionAccuracy" : 0.8888888888888888,
+      "sqlValid" : 8,
+      "sqlValidRate" : 0.8888888888888888,
+      "rewrittenCount" : 7,
+      "avgPromptTokens" : 0.0,
+      "avgLatencyMs" : 192.56,
+      "p50LatencyMs" : 188,
+      "p95LatencyMs" : 572,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    },
+    "4+ 表" : {
+      "total" : 4,
+      "correct" : 4,
+      "executionAccuracy" : 1.0,
+      "sqlValid" : 4,
+      "sqlValidRate" : 1.0,
+      "rewrittenCount" : 3,
+      "avgPromptTokens" : 0.0,
+      "avgLatencyMs" : 234.0,
+      "p50LatencyMs" : 138,
+      "p95LatencyMs" : 598,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    }
+  },
+  "failures" : [ {
+    "id" : "T6-008",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "动销率" ],
+    "question" : "商品动销率是多少？（有销量的商品数 / 全部商品数）",
+    "status" : "REJECTED",
+    "generatedSql" : "WITH sold AS (\n  SELECT COUNT(DISTINCT oi.product_id) AS n\n  FROM order_items oi\n  JOIN orders o ON o.order_id = oi.order_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n),\nallp AS (SELECT COUNT(*) AS n FROM products)\nSELECT ROUND(100.0 * s.n / a.n, 2) AS sell_through_pct\nFROM sold s CROSS JOIN allp a;\n",
+    "message" : "[UNKNOWN_TABLE] 引用了不存在的表：orders",
+    "latencyMs" : 7
+  } ],
+  "retrieval" : {
+    "evaluatedCount" : 25,
+    "fullRecallRate" : 0.96,
+    "tableRecallRate" : 0.9866666666666667,
+    "avgPrecision" : 0.3308730158730159,
+    "avgRetrievedTables" : 7.68,
+    "missedCount" : 0,
+    "avgDdlChars" : 1820.88,
+    "incompleteCases" : [ {
+      "id" : "T6-008",
+      "question" : "商品动销率是多少？（有销量的商品数 / 全部商品数）",
+      "missing" : [ "orders" ],
+      "retrieved" : [ "campaign_products", "inventory", "inventory_movements", "order_items", "product_brand_map", "product_category_translation", "product_price_history", "products" ]
+    } ]
+  }
+}

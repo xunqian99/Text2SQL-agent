@@ -1,0 +1,187 @@
+{
+  "meta" : {
+    "timestamp" : "2026-10-04T16:52:29.5317379",
+    "promptVersion" : "p1-full-schema-v1",
+    "model" : "ernie-4.5-turbo-32k",
+    "baseUrl" : "https://qianfan.baidubce.com",
+    "dryRun" : true,
+    "itemCount" : 25,
+    "limit" : 0,
+    "layers" : [ "T6" ],
+    "split" : "all",
+    "includeDataProfile" : true,
+    "includeForeignKeys" : true,
+    "limitMode" : "APPEND",
+    "maxRows" : 200,
+    "schemaTableCount" : 9,
+    "retrievalEnabled" : true,
+    "retrievalTopK" : 8
+  },
+  "overall" : {
+    "total" : 25,
+    "correct" : 18,
+    "executionAccuracy" : 0.72,
+    "sqlValid" : 18,
+    "sqlValidRate" : 0.72,
+    "rewrittenCount" : 17,
+    "avgPromptTokens" : 0.0,
+    "avgLatencyMs" : 114.28,
+    "p50LatencyMs" : 22,
+    "p95LatencyMs" : 550,
+    "avgCostYuan" : 0.0,
+    "totalCostYuan" : 0.0
+  },
+  "byLayer" : {
+    "business_semantics" : {
+      "total" : 25,
+      "correct" : 18,
+      "executionAccuracy" : 0.72,
+      "sqlValid" : 18,
+      "sqlValidRate" : 0.72,
+      "rewrittenCount" : 17,
+      "avgPromptTokens" : 0.0,
+      "avgLatencyMs" : 114.28,
+      "p50LatencyMs" : 22,
+      "p95LatencyMs" : 550,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    }
+  },
+  "byTableCount" : {
+    "1 表" : {
+      "total" : 3,
+      "correct" : 3,
+      "executionAccuracy" : 1.0,
+      "sqlValid" : 3,
+      "sqlValidRate" : 1.0,
+      "rewrittenCount" : 3,
+      "avgPromptTokens" : 0.0,
+      "avgLatencyMs" : 14.0,
+      "p50LatencyMs" : 15,
+      "p95LatencyMs" : 21,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    },
+    "2 表" : {
+      "total" : 7,
+      "correct" : 7,
+      "executionAccuracy" : 1.0,
+      "sqlValid" : 7,
+      "sqlValidRate" : 1.0,
+      "rewrittenCount" : 7,
+      "avgPromptTokens" : 0.0,
+      "avgLatencyMs" : 106.43,
+      "p50LatencyMs" : 128,
+      "p95LatencyMs" : 223,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    },
+    "3 表" : {
+      "total" : 7,
+      "correct" : 6,
+      "executionAccuracy" : 0.8571428571428571,
+      "sqlValid" : 6,
+      "sqlValidRate" : 0.8571428571428571,
+      "rewrittenCount" : 6,
+      "avgPromptTokens" : 0.0,
+      "avgLatencyMs" : 198.86,
+      "p50LatencyMs" : 148,
+      "p95LatencyMs" : 661,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    },
+    "4+ 表" : {
+      "total" : 2,
+      "correct" : 2,
+      "executionAccuracy" : 1.0,
+      "sqlValid" : 2,
+      "sqlValidRate" : 1.0,
+      "rewrittenCount" : 1,
+      "avgPromptTokens" : 0.0,
+      "avgLatencyMs" : 339.0,
+      "p50LatencyMs" : 128,
+      "p95LatencyMs" : 550,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    }
+  },
+  "failures" : [ {
+    "id" : "T6-004",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "留存" ],
+    "question" : "首单在 2017 年上半年的用户，在 2017 年下半年是否再次下单？按月留存率是多少？",
+    "status" : "EXECUTION_FAILED",
+    "generatedSql" : "WITH first_order AS (\n  SELECT c.customer_unique_id, MIN(o.order_purchase_timestamp) AS first_ts\n  FROM orders o\n  JOIN customers c ON c.customer_id = o.customer_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n  GROUP BY 1\n),\ncohort AS (\n  SELECT customer_unique_id, DATE_TRUNC('month', first_ts)::date AS cohort_month\n  FROM first_order\n  WHERE first_ts >= DATE '2017-01-01' AND first_ts < DATE '2017-07-01'\n),\nreturner AS (\n  SELECT DISTINCT co.customer_unique_id, co.cohort_month\n  FROM cohort co\n  JOIN customers c ON c.customer_unique_id = co.customer_unique_id\n  JOIN orders o ON o.customer_id = c.customer_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n    AND o.order_purchase_timestamp >= DATE '2017-07-01'\n    AND o.order_purchase_timestamp < DATE '2018-01-01'\n)\nSELECT co.cohort_month,`n           ROUND(100.0 * COUNT(re.customer_unique_id) / COUNT(*), 2) AS retention_pct\nFROM cohort co\nLEFT JOIN returner re ON re.customer_unique_id = co.customer_unique_id\nGROUP BY 1 ORDER BY 1;\n",
+    "message" : "gold_sql 执行失败：PreparedStatementCallback; bad SQL grammar [WITH first_order AS (\n  SELECT c.customer_unique_id, MIN(o.order_purchase_timestamp) AS first_ts\n  FROM orders o\n  JOIN customers c ON c.customer_id = o.customer_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n  GROUP BY 1\n),\ncohort AS (\n  SELECT customer_unique_id, DATE_TRUNC('month', first_ts)::date AS cohort_month\n  FROM first_order\n  WHERE first_ts >= DATE '2017-01-01' AND first_ts < DATE '2017-07-01'\n),\nreturner AS (\n  SELECT DISTINCT co.customer_unique_id, co.cohort_month\n  FROM cohort co\n  JOIN customers c ON c.customer_unique_id = co.customer_unique_id\n  JOIN orders o ON o.customer_id = c.customer_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n    AND o.order_purchase_timestamp >= DATE '2017-07-01'\n    AND o.order_purchase_timestamp < DATE '2018-01-01'\n)\nSELECT co.cohort_month,`n           ROUND(100.0 * COUNT(re.customer_unique_id) / COUNT(*), 2) AS retention_pct\nFROM cohort co\nLEFT JOIN returner re ON re.customer_unique_id = co.customer_unique_id\nGROUP BY 1 ORDER BY 1;\n]",
+    "latencyMs" : 0
+  }, {
+    "id" : "T6-008",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "动销率" ],
+    "question" : "商品动销率是多少？（有销量的商品数 / 全部商品数）",
+    "status" : "REJECTED",
+    "generatedSql" : "WITH sold AS (\n  SELECT COUNT(DISTINCT oi.product_id) AS n\n  FROM order_items oi\n  JOIN orders o ON o.order_id = oi.order_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n),\nallp AS (SELECT COUNT(*) AS n FROM products)\nSELECT ROUND(100.0 * s.n / a.n, 2) AS sell_through_pct\nFROM sold s CROSS JOIN allp a;\n",
+    "message" : "[UNKNOWN_TABLE] 引用了不存在的表：orders",
+    "latencyMs" : 8
+  }, {
+    "id" : "T6-009",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "评分" ],
+    "question" : "低分订单（1-2 星）占比是多少？按客户所在州列出前 10。",
+    "status" : "EXECUTION_FAILED",
+    "generatedSql" : "SELECT c.customer_state,`n           ROUND(100.0 * COUNT(*) FILTER (WHERE r.review_score <= 2) / COUNT(*), 2) AS low_pct\nFROM order_reviews r\nJOIN orders o ON o.order_id = r.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable')\nGROUP BY 1 ORDER BY low_pct DESC LIMIT 10;\n",
+    "message" : "gold_sql 执行失败：PreparedStatementCallback; bad SQL grammar [SELECT c.customer_state,`n           ROUND(100.0 * COUNT(*) FILTER (WHERE r.review_score <= 2) / COUNT(*), 2) AS low_pct\nFROM order_reviews r\nJOIN orders o ON o.order_id = r.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable')\nGROUP BY 1 ORDER BY low_pct DESC LIMIT 10;\n]",
+    "latencyMs" : 0
+  }, {
+    "id" : "T6-011",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "运费" ],
+    "question" : "运费占 GMV 的比例是多少？按宏观区域拆解。",
+    "status" : "EXECUTION_FAILED",
+    "generatedSql" : "SELECT r.macro_region,`n           ROUND(100.0 * SUM(oi.freight_value) / SUM(oi.price + oi.freight_value), 2) AS freight_pct\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN regions r ON r.region_code = c.customer_state\nJOIN order_items oi ON oi.order_id = o.order_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable')\nGROUP BY 1 ORDER BY freight_pct DESC;\n",
+    "message" : "gold_sql 执行失败：PreparedStatementCallback; bad SQL grammar [SELECT r.macro_region,`n           ROUND(100.0 * SUM(oi.freight_value) / SUM(oi.price + oi.freight_value), 2) AS freight_pct\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN regions r ON r.region_code = c.customer_state\nJOIN order_items oi ON oi.order_id = o.order_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable')\nGROUP BY 1 ORDER BY freight_pct DESC;\n]",
+    "latencyMs" : 0
+  }, {
+    "id" : "T6-018",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "复购", "会员" ],
+    "question" : "会员与非会员的复购率分别是多少？",
+    "status" : "EXECUTION_FAILED",
+    "generatedSql" : "WITH user_orders AS (\n  SELECT c.customer_unique_id,\n         BOOL_OR(m.member_id IS NOT NULL) AS is_member,\n         COUNT(DISTINCT o.order_id) AS order_cnt\n  FROM orders o\n  JOIN customers c ON c.customer_id = o.customer_id\n  LEFT JOIN members m ON m.customer_unique_id = c.customer_unique_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n  GROUP BY 1\n)\nSELECT CASE WHEN is_member THEN 'member' ELSE 'non_member' END AS user_type,`n           SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE order_cnt >= 2) / COUNT(*), 2) AS repeat_rate_pct\nFROM user_orders GROUP BY 1 ORDER BY 1;\n",
+    "message" : "gold_sql 执行失败：PreparedStatementCallback; bad SQL grammar [WITH user_orders AS (\n  SELECT c.customer_unique_id,\n         BOOL_OR(m.member_id IS NOT NULL) AS is_member,\n         COUNT(DISTINCT o.order_id) AS order_cnt\n  FROM orders o\n  JOIN customers c ON c.customer_id = o.customer_id\n  LEFT JOIN members m ON m.customer_unique_id = c.customer_unique_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n  GROUP BY 1\n)\nSELECT CASE WHEN is_member THEN 'member' ELSE 'non_member' END AS user_type,`n           SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE order_cnt >= 2) / COUNT(*), 2) AS repeat_rate_pct\nFROM user_orders GROUP BY 1 ORDER BY 1;\n]",
+    "latencyMs" : 0
+  }, {
+    "id" : "T6-019",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "履约", "时效" ],
+    "question" : "各州的平均配送时长（下单到签收）是多少天？列出配送最慢的 10 个州。",
+    "status" : "EXECUTION_FAILED",
+    "generatedSql" : "SELECT c.customer_state,`n           ROUND(AVG(EXTRACT(EPOCH FROM (o.order_delivered_customer_date - o.order_purchase_timestamp)) / 86400.0), 2) AS avg_days\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nWHERE o.order_delivered_customer_date IS NOT NULL\nGROUP BY 1 ORDER BY avg_days DESC LIMIT 10;\n",
+    "message" : "gold_sql 执行失败：PreparedStatementCallback; bad SQL grammar [SELECT c.customer_state,`n           ROUND(AVG(EXTRACT(EPOCH FROM (o.order_delivered_customer_date - o.order_purchase_timestamp)) / 86400.0), 2) AS avg_days\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nWHERE o.order_delivered_customer_date IS NOT NULL\nGROUP BY 1 ORDER BY avg_days DESC LIMIT 10;\n]",
+    "latencyMs" : 0
+  }, {
+    "id" : "T6-024",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "客服", "归因" ],
+    "question" : "退款原因与客户评分的关系：各退款原因对应的平均评分和低分率是多少？",
+    "status" : "EXECUTION_FAILED",
+    "generatedSql" : "SELECT r.reason_code,`n           ROUND(AVG(rev.review_score), 2) AS avg_score,\n       ROUND(100.0 * COUNT(*) FILTER (WHERE rev.review_score <= 2) / COUNT(*), 2) AS low_score_pct\nFROM refunds r\nJOIN orders o ON o.order_id = r.order_id\nJOIN order_reviews rev ON rev.order_id = r.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY 1 ORDER BY low_score_pct DESC;\n",
+    "message" : "gold_sql 执行失败：PreparedStatementCallback; bad SQL grammar [SELECT r.reason_code,`n           ROUND(AVG(rev.review_score), 2) AS avg_score,\n       ROUND(100.0 * COUNT(*) FILTER (WHERE rev.review_score <= 2) / COUNT(*), 2) AS low_score_pct\nFROM refunds r\nJOIN orders o ON o.order_id = r.order_id\nJOIN order_reviews rev ON rev.order_id = r.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY 1 ORDER BY low_score_pct DESC;\n]",
+    "latencyMs" : 0
+  } ],
+  "retrieval" : {
+    "evaluatedCount" : 19,
+    "fullRecallRate" : 0.9473684210526315,
+    "tableRecallRate" : 0.9824561403508772,
+    "avgPrecision" : 0.3150584795321637,
+    "avgRetrievedTables" : 7.631578947368421,
+    "missedCount" : 0,
+    "avgDdlChars" : 1365.88,
+    "incompleteCases" : [ {
+      "id" : "T6-008",
+      "question" : "商品动销率是多少？（有销量的商品数 / 全部商品数）",
+      "missing" : [ "orders" ],
+      "retrieved" : [ "campaign_products", "inventory", "inventory_movements", "order_items", "product_brand_map", "product_category_translation", "product_price_history", "products" ]
+    } ]
+  }
+}

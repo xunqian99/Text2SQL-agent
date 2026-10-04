@@ -127,4 +127,94 @@ class MetricRegistryTest {
 
         assertThat(registry.all()).extracting(Metric::name).doesNotHaveDuplicates();
     }
+
+    @Test
+    @DisplayName("需要有效订单过滤的指标都带上了 filter（实测 T6 层 17/25 条依赖它）")
+    void businessMetricsCarryValidOrderFilter() {
+        MetricRegistry registry = loaded();
+
+        // 这几条是实测踩过坑的：第一版漏了 filter，T6-008 动销率算出 100.00
+        // 而 gold 是 99.33——因为分子没排除取消/不可用订单的商品。
+        for (String name : List.of("gmv_with_freight", "aov", "repeat_rate",
+                "sell_through_rate", "member_penetration", "refund_rate", "mau")) {
+            Metric metric = registry.all().stream()
+                    .filter(m -> m.name().equals(name)).findFirst().orElseThrow();
+            assertThat(metric.filter())
+                    .as("%s 缺有效订单过滤，会算出偏高的结果", name)
+                    .contains("canceled").contains("unavailable");
+        }
+    }
+
+    @Test
+    @DisplayName("不需要过滤的指标不带 filter（避免误加改变口径）")
+    void metricsWithoutFilterStayClean() {
+        MetricRegistry registry = loaded();
+
+        // 这两条的 gold 里没有 order_status 过滤：
+        // T6-006 准时率的分母已经是「已送达订单」，再叠一层反而错。
+        // T6-017 推荐转化率算的是全部推荐记录，与订单状态无关。
+        for (String name : List.of("on_time_rate", "conversion_rate")) {
+            Metric metric = registry.all().stream()
+                    .filter(m -> m.name().equals(name)).findFirst().orElseThrow();
+            assertThat(metric.filter())
+                    .as("%s 不该有有效订单过滤", name)
+                    .isNullOrEmpty();
+        }
+    }
+
+    @Test
+    @DisplayName("渲染文本里 filter 与例外说明成对出现")
+    void rendersFilterWithExceptionNote() {
+        MetricRegistry registry = loaded();
+        Metric aov = registry.all().stream()
+                .filter(m -> m.name().equals("aov")).findFirst().orElseThrow();
+
+        String text = aov.render();
+
+        assertThat(text).contains("过滤条件（默认附加）:");
+        // 例外说明必须跟着出现，否则模型在「仅退款订单」这类题上会重复过滤。
+        assertThat(text).contains("例外");
+    }
+
+    @Test
+    @DisplayName("filter 里引用的表必须在 tables 里声明，否则注入的表达式引用不到该表")
+    void filterTablesAreDeclared() {
+        MetricRegistry registry = loaded();
+
+        // 【实测踩到的坑】sell_through_rate 的 filter 写了
+        // o.order_status NOT IN (...)，但 tables 只声明了
+        // [order_items, products]——没声明 orders。
+        //
+        // 后果：MetricRegistry.findApplicable 按 tables 过滤，认为这个指标
+        // 「只要 order_items 和 products 就够了」，于是把它注入到没有 orders
+        // 的上下文里；模型照抄 filter，写出引用 orders 的 SQL，
+        // 被校验层以 UNKNOWN_TABLE 拦下（T6-008 实测）。
+        //
+        // 依赖声明是「这个指标能用」的判据，漏了就等于判据错了。
+        for (Metric metric : registry.all()) {
+            if (metric.filter() == null || metric.filter().isBlank()) {
+                continue;
+            }
+            for (String referenced : List.of("orders", "customers", "order_items",
+                    "products", "members", "refunds", "settlements", "support_tickets",
+                    "referrals", "search_logs", "order_reviews", "inventory",
+                    "inventory_movements", "warehouses", "coupon_usages",
+                    "settlement_items", "ticket_categories", "regions")) {
+                // 只在 filter 里以「表别名.列」形式出现时才算引用
+                boolean used = metric.filter().matches(
+                        "(?s).*\\b" + referenced + "\\b.*");
+                if (used && metric.filter().contains(".")) {
+                    // 只对真正以该表名做前缀的引用做检查
+                    boolean qualified = metric.filter().matches(
+                            "(?s).*\\b" + referenced + "\\.[a-z_]+.*");
+                    if (qualified) {
+                        assertThat(metric.tables())
+                                .as("%s 的 filter 引用了 %s，但 tables 未声明",
+                                        metric.name(), referenced)
+                                .contains(referenced);
+                    }
+                }
+            }
+        }
+    }
 }

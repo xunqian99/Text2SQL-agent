@@ -42,7 +42,8 @@ metrics:
     aliases: [GMV, 成交总额, 商品交易总额, 含运费]
     description: GMV（含运费）= 商品金额 + 运费
     expression: "SUM(oi.price + oi.freight_value)"
-    tables: [order_items]
+    tables: [order_items, orders]
+    filter: "o.order_status NOT IN ('canceled', 'unavailable')"
     notes: |
       GMV 含不含运费是行业里长期有争议的口径。本项目采用**含运费**，
       理由：运费是客户实际支付的金额，属于成交额。
@@ -52,7 +53,8 @@ metrics:
     aliases: [销售额, 商品销售额, 不含运费, 商品金额]
     description: 销售额（不含运费）= 商品金额合计
     expression: "SUM(oi.price)"
-    tables: [order_items]
+    tables: [order_items, orders]
+    filter: "o.order_status NOT IN ('canceled', 'unavailable')"
     notes: 只统计商品本身的金额。题目里出现「商品销售额」时通常指这个。
 
   # --------------------------------------------------------------------------
@@ -63,6 +65,7 @@ metrics:
     description: 客单价 = GMV / 有效订单数
     expression: "ROUND(SUM(oi.price + oi.freight_value) / COUNT(DISTINCT o.order_id), 2)"
     tables: [orders, order_items]
+    filter: "o.order_status NOT IN ('canceled', 'unavailable')"
     notes: |
       分母是**订单数**不是人数。若题目问「人均消费」才是除以人数。
       分子用含运费 GMV，与 gmv_with_freight 保持一致。
@@ -73,6 +76,7 @@ metrics:
     expression: |
       COUNT(*) FILTER (WHERE order_cnt >= 2) * 100.0 / COUNT(*)
     tables: [orders, customers]
+    filter: "o.order_status NOT IN ('canceled', 'unavailable')"
     notes: |
       【关键】统计单位是**人**（customer_unique_id）不是订单。
       订单级 customer_id 每人只有一次，用它算复购率恒为 0。
@@ -95,13 +99,15 @@ metrics:
     description: 退款率 = 退款订单数 / 有效订单数
     expression: "ROUND(100.0 * COUNT(DISTINCT r.order_id) / COUNT(DISTINCT o.order_id), 2)"
     tables: [refunds, orders]
+    filter: "o.order_status NOT IN ('canceled', 'unavailable')"
     notes: 分母用有效订单，与 valid_order 口径一致。
 
   - name: sell_through_rate
     aliases: [动销率, 动销商品率, 售罄率]
     description: 动销率 = 有销量的商品数 / 全部商品数
     expression: "ROUND(100.0 * COUNT(DISTINCT oi.product_id) / (SELECT COUNT(*) FROM products), 2)"
-    tables: [order_items, products]
+    tables: [order_items, orders, products]
+    filter: "o.order_status NOT IN ('canceled', 'unavailable')"
     notes: |
       分母是**全部商品数**（products 表全量），不是「有库存的商品」。
       这是【需确认】口径：电商里两种算法都有人用，本项目选全部商品。
@@ -112,6 +118,7 @@ metrics:
     description: 会员渗透率 = 会员贡献的有效订单 / 全部有效订单
     expression: "ROUND(100.0 * COUNT(DISTINCT m.member_id) / COUNT(DISTINCT o.order_id), 2)"
     tables: [orders, customers, members]
+    filter: "o.order_status NOT IN ('canceled', 'unavailable')"
     notes: |
       按**订单**算渗透率，不是按人数。members 与 customers 靠
       customer_unique_id 关联（人级），不是 customer_id（订单级）。
@@ -121,7 +128,14 @@ metrics:
     description: 低分率 = 评分 <= 2 的评价 / 全部评价
     expression: "ROUND(100.0 * COUNT(*) FILTER (WHERE r.review_score <= 2) / COUNT(*), 2)"
     tables: [order_reviews]
-    notes: 低分定义为 1–2 星（含）。5 分制下 3 分通常算中评。
+    notes: |
+      低分定义为 1–2 星（含）。5 分制下 3 分通常算中评。
+
+      【两种场景，看题目限定范围】
+      · 全站/按州统计低分率（如 T6-009）→ 要排除取消/不可用订单。
+      · 「退款订单的低分率」这类题（如 T6-024）已经把范围限定在退款集合内，
+        **不要再叠加订单状态过滤**——那会把口径改错。
+      所以这一条**不设默认 filter**，由题目限定范围决定。
 
   - name: ctr
     aliases: [搜索转化率, 点击率, 搜索点击率]
@@ -134,7 +148,8 @@ metrics:
     aliases: [运费占比, 运费比例, 运费占GMV]
     description: 运费占比 = 运费 / GMV
     expression: "ROUND(100.0 * SUM(oi.freight_value) / SUM(oi.price + oi.freight_value), 2)"
-    tables: [order_items]
+    tables: [order_items, orders]
+    filter: "o.order_status NOT IN ('canceled', 'unavailable')"
     notes: 分母是含运费 GMV，保证口径自洽（分子是分母的一部分）。
 
   - name: mau
@@ -142,7 +157,11 @@ metrics:
     description: 月活跃用户 = 当月有有效订单的去重人数
     expression: "COUNT(DISTINCT c.customer_unique_id)"
     tables: [orders, customers]
+    filter: "o.order_status NOT IN ('canceled', 'unavailable')"
     notes: |
+      【两种场景，看题目限定范围】全站低分率（如按州统计）要排除取消/不可用订单；
+      而「退款订单的低分率」这类题目已把范围限定在退款集合内，**不要再叠加订单状态过滤**。
+      
       本项目用**下单行为**定义活跃，不用登录行为（库里没有登录表）。
       去重单位是 customer_unique_id（人级），不是 customer_id。
 
@@ -162,6 +181,7 @@ metrics:
     description: 折扣率 = 优惠金额 / GMV
     expression: "ROUND(100.0 * SUM(cu.discount_amount) / SUM(oi.price + oi.freight_value), 2)"
     tables: [coupon_usages, orders, order_items]
+    filter: "o.order_status NOT IN ('canceled', 'unavailable')"
     notes: 只统计用券订单，分子分母都在同一个订单集合内。
 
   - name: commission_rate
@@ -180,11 +200,24 @@ metrics:
     tables: [referrals]
     notes: 分母是全部推荐记录。
 
+  - name: reward_per_converted
+    aliases: [人均奖励, 平均奖励, 人均返利]
+    description: 人均奖励 = 奖励总额 / 已转化的推荐数
+    expression: "ROUND(SUM(reward_amount) / NULLIF(COUNT(*) FILTER (WHERE converted_at IS NOT NULL), 0), 2)"
+    tables: [referrals]
+    notes: |
+      【易错点】分母是**已转化**的推荐数，不是全部推荐数。
+      写成 SUM(reward_amount) / COUNT(*) 会算成「每条推荐的平均奖励」，
+      比「每次成功推荐拿到多少」小得多。实测 T6-017 就是这样算错的：
+      gold 是 20.01，模型给 6.78。
+
   - name: retention_rate
+
     aliases: [留存率, 次月留存, 用户留存]
     description: 留存率 = 首单后再次下单的用户 / 同期首单用户
     expression: "ROUND(100.0 * COUNT(returned) / COUNT(*), 2)"
     tables: [orders, customers]
+    filter: "o.order_status NOT IN ('canceled', 'unavailable')"
     notes: |
       先按人取首单时间确定同期群（cohort），再看该群在目标窗口内
       是否还有有效订单。统计单位是人，不是订单。
@@ -194,6 +227,7 @@ metrics:
     description: 人均 GMV = 用户总 GMV / 用户数
     expression: "ROUND(AVG(gmv), 2)"
     tables: [orders, customers, order_items]
+    filter: "o.order_status NOT IN ('canceled', 'unavailable')"
     notes: |
       先按人聚合出每人 GMV，再取平均——不是「总 GMV / 人数」。
       两者在有用户下多单时结果不同：先聚合再平均才是「人均」的准确含义。
@@ -225,4 +259,5 @@ metrics:
     description: 同比增长率 = (本期 - 同期) / 同期
     expression: "ROUND(100.0 * (m18.gmv - m17.gmv) / m17.gmv, 2)"
     tables: [orders, order_items]
+    filter: "o.order_status NOT IN ('canceled', 'unavailable')"
     notes: 按月对齐两个年度，缺月份的年份自然不参与（INNER JOIN）。

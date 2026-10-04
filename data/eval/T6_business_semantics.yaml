@@ -47,9 +47,7 @@
       WHERE o.order_status NOT IN ('canceled', 'unavailable')
       GROUP BY 1
     )
-    SELECT COUNT(*) FILTER (WHERE order_cnt >= 2) AS repeat_users,
-           COUNT(*) AS total_users,
-           ROUND(100.0 * COUNT(*) FILTER (WHERE order_cnt >= 2) / COUNT(*), 2) AS repeat_rate_pct
+    SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE order_cnt >= 2) / COUNT(*), 2) AS repeat_rate_pct
     FROM per_user;
   notes: 【需确认】 复购率分母假设为「有过有效订单的全部用户」。另一种口径是「分母只算注册满 N 天的用户」，会显著抬高复购率。
 
@@ -79,8 +77,7 @@
         AND o.order_purchase_timestamp >= DATE '2017-07-01'
         AND o.order_purchase_timestamp < DATE '2018-01-01'
     )
-    SELECT co.cohort_month, COUNT(*) AS cohort_size,
-           COUNT(re.customer_unique_id) AS returned,
+    SELECT co.cohort_month,
            ROUND(100.0 * COUNT(re.customer_unique_id) / COUNT(*), 2) AS retention_pct
     FROM cohort co
     LEFT JOIN returner re ON re.customer_unique_id = co.customer_unique_id
@@ -104,8 +101,7 @@
       FROM orders o
       WHERE o.order_status NOT IN ('canceled', 'unavailable')
     )
-    SELECT mo.n AS member_orders, ao.n AS all_orders,
-           ROUND(100.0 * mo.n / ao.n, 2) AS penetration_pct
+    SELECT ROUND(100.0 * mo.n / ao.n, 2) AS penetration_pct
     FROM member_orders mo CROSS JOIN all_orders ao;
   notes: 【需确认】 会员渗透率分母假设为「全部有效订单」。另一种口径是「会员数/总用户数」，是人数渗透率而不是订单渗透率。
 
@@ -114,12 +110,18 @@
   tags: [口径, 履约]
   question: 已送达订单的准时率是多少？（实际送达日期不晚于预计送达日期）
   gold_sql: |
-    SELECT COUNT(*) FILTER (WHERE o.order_delivered_customer_date <= o.order_estimated_delivery_date) AS on_time,
-           COUNT(*) AS delivered_orders,
-           ROUND(100.0 * COUNT(*) FILTER (WHERE o.order_delivered_customer_date <= o.order_estimated_delivery_date) / COUNT(*), 2) AS on_time_pct
+    SELECT ROUND(100.0 * COUNT(*) FILTER (
+             WHERE o.order_delivered_customer_date <= o.order_estimated_delivery_date
+           ) / COUNT(*), 2) AS on_time_pct
     FROM orders o
     WHERE o.order_delivered_customer_date IS NOT NULL;
-  notes: 【需确认】 准时率分母假设为「已送达订单」，不含未送达订单。若把未送达也算作不准时，准时率会明显下降。
+  notes: |
+    【需确认】 准时率分母假设为「已送达订单」，不含未送达订单。若把未送达也算作不准时，准时率会明显下降。
+
+    【阶段 4 修正】原 gold 额外输出了 on_time 和 delivered_orders 两个中间量
+    （分子/分母，供人工核对口径用）。问题只问「准时率是多少」，标准答案
+    就应该只给准时率。多输出中间量会让「答案对不对」和「输出列数像不像」
+    混在一起判——模型算出 91.89 也会被判错。按统一规则改为只输出指标列。
 
 - id: T6-007
   difficulty: business_semantics
@@ -135,8 +137,7 @@
       SELECT COUNT(DISTINCT o.order_id) AS n FROM orders o
       WHERE o.order_status NOT IN ('canceled', 'unavailable')
     )
-    SELECT r.n AS refund_orders, a.n AS valid_orders,
-           ROUND(100.0 * r.n / a.n, 2) AS refund_rate_pct
+    SELECT ROUND(100.0 * r.n / a.n, 2) AS refund_rate_pct
     FROM r CROSS JOIN a;
   notes: 【需确认】 退款率分母假设为「有效订单数」。分母若用「全部订单」会把取消单也算进去，口径更宽松。
 
@@ -152,8 +153,7 @@
       WHERE o.order_status NOT IN ('canceled', 'unavailable')
     ),
     allp AS (SELECT COUNT(*) AS n FROM products)
-    SELECT s.n AS sold_products, a.n AS all_products,
-           ROUND(100.0 * s.n / a.n, 2) AS sell_through_pct
+    SELECT ROUND(100.0 * s.n / a.n, 2) AS sell_through_pct
     FROM sold s CROSS JOIN allp a;
   notes: 【需确认】 动销率分母假设为「全部商品数」。电商里动销率常按「有库存的商品」算，口径不同结果差异很大。
 
@@ -163,8 +163,6 @@
   question: 低分订单（1-2 星）占比是多少？按客户所在州列出前 10。
   gold_sql: |
     SELECT c.customer_state,
-           COUNT(*) AS reviews,
-           COUNT(*) FILTER (WHERE r.review_score <= 2) AS low_reviews,
            ROUND(100.0 * COUNT(*) FILTER (WHERE r.review_score <= 2) / COUNT(*), 2) AS low_pct
     FROM order_reviews r
     JOIN orders o ON o.order_id = r.order_id
@@ -178,9 +176,7 @@
   tags: [口径, 转化]
   question: 搜索转化率是多少？（有点击的搜索记录 / 全部搜索记录）
   gold_sql: |
-    SELECT COUNT(*) AS searches,
-           COUNT(*) FILTER (WHERE clicked_product_id IS NOT NULL) AS clicked,
-           ROUND(100.0 * COUNT(*) FILTER (WHERE clicked_product_id IS NOT NULL) / COUNT(*), 2) AS ctr_pct
+    SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE clicked_product_id IS NOT NULL) / COUNT(*), 2) AS ctr_pct
     FROM search_logs;
   notes: 【需确认】 转化口径假设为「点击率 CTR」而非「下单转化率」。真正下单转化需要把 search_logs 与 orders 通过 member_id 关联到同一会话，本数据集没有会话字段。
 
@@ -190,8 +186,6 @@
   question: 运费占 GMV 的比例是多少？按宏观区域拆解。
   gold_sql: |
     SELECT r.macro_region,
-           ROUND(SUM(oi.freight_value), 2) AS freight,
-           ROUND(SUM(oi.price + oi.freight_value), 2) AS gmv,
            ROUND(100.0 * SUM(oi.freight_value) / SUM(oi.price + oi.freight_value), 2) AS freight_pct
     FROM orders o
     JOIN customers c ON c.customer_id = o.customer_id
@@ -262,20 +256,20 @@
   tags: [口径, 客服, SLA]
   question: 各类工单的 SLA 达成率是多少？（解决时间不超过类目 SLA 小时数）
   gold_sql: |
-    SELECT tc.category_name, tc.sla_hours,
-           COUNT(*) AS tickets,
-           COUNT(*) FILTER (
-             WHERE st.resolved_at IS NOT NULL
-               AND EXTRACT(EPOCH FROM (st.resolved_at - st.created_at)) / 3600.0 <= tc.sla_hours
-           ) AS within_sla,
+    SELECT tc.category_name,
            ROUND(100.0 * COUNT(*) FILTER (
              WHERE st.resolved_at IS NOT NULL
                AND EXTRACT(EPOCH FROM (st.resolved_at - st.created_at)) / 3600.0 <= tc.sla_hours
            ) / COUNT(*), 2) AS sla_pct
     FROM support_tickets st
     JOIN ticket_categories tc ON tc.category_id = st.category_id
-    GROUP BY 1, 2 ORDER BY sla_pct;
-  notes: 【需确认】 SLA 分母假设为「全部工单」，未解决的工单计入未达成。若分母只算已解决工单，达成率会虚高。
+    GROUP BY 1 ORDER BY sla_pct;
+  notes: |
+    【需确认】 SLA 分母假设为「全部工单」，未解决的工单计入未达成。若分母只算已解决工单，达成率会虚高。
+
+    【阶段 4 修正】原 gold 额外输出了 sla_hours、tickets、within_sla 三个中间量。
+    问题只问「各类工单的 SLA 达成率」，维度列 category_name 必须保留
+    （要按类目分组），其余中间量去掉。理由同 T6-006。
 
 - id: T6-016
   difficulty: business_semantics
@@ -313,12 +307,14 @@
   tags: [口径, 推荐]
   question: 推荐活动的转化率和人均奖励是多少？
   gold_sql: |
-    SELECT COUNT(*) AS referrals,
-           COUNT(*) FILTER (WHERE converted_at IS NOT NULL) AS converted,
-           ROUND(100.0 * COUNT(*) FILTER (WHERE converted_at IS NOT NULL) / COUNT(*), 2) AS conversion_pct,
+    SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE converted_at IS NOT NULL) / COUNT(*), 2) AS conversion_pct,
            ROUND(SUM(reward_amount) / COUNT(*) FILTER (WHERE converted_at IS NOT NULL), 2) AS reward_per_converted
     FROM referrals;
-  notes: 【需确认】 转化口径假设为「converted_at 非空」。人均奖励分母只算已转化，若算全部邀请则人均奖励会偏低。
+  notes: |
+    【需确认】 转化口径假设为「converted_at 非空」。人均奖励分母只算已转化，若算全部邀请则人均奖励会偏低。
+
+    【阶段 4 修正】原 gold 额外输出了 referrals 和 converted 两个中间量。
+    问题问「转化率和人均奖励」，这两列就是答案，中间量去掉。理由同 T6-006。
 
 - id: T6-018
   difficulty: business_semantics
@@ -336,8 +332,6 @@
       GROUP BY 1
     )
     SELECT CASE WHEN is_member THEN 'member' ELSE 'non_member' END AS user_type,
-           COUNT(*) AS users,
-           COUNT(*) FILTER (WHERE order_cnt >= 2) AS repeat_users,
            ROUND(100.0 * COUNT(*) FILTER (WHERE order_cnt >= 2) / COUNT(*), 2) AS repeat_rate_pct
     FROM user_orders GROUP BY 1 ORDER BY 1;
   notes: 【需确认】 这里把「当前是会员」定义为会员，没有考虑下单时点是否已是会员（缺少历史会员状态流水，member_snapshot 只有等级快照）。这是本数据集的能力边界，面试时要主动说明。
@@ -348,7 +342,6 @@
   question: 各州的平均配送时长（下单到签收）是多少天？列出配送最慢的 10 个州。
   gold_sql: |
     SELECT c.customer_state,
-           COUNT(*) AS delivered_orders,
            ROUND(AVG(EXTRACT(EPOCH FROM (o.order_delivered_customer_date - o.order_purchase_timestamp)) / 86400.0), 2) AS avg_days
     FROM orders o
     JOIN customers c ON c.customer_id = o.customer_id
@@ -395,8 +388,7 @@
       SELECT gmv, NTILE(5) OVER (ORDER BY gmv DESC) AS quintile
       FROM user_gmv
     )
-    SELECT quintile, COUNT(*) AS users, ROUND(SUM(gmv), 2) AS gmv,
-           ROUND(100.0 * SUM(gmv) / (SELECT SUM(gmv) FROM user_gmv), 2) AS gmv_pct
+    SELECT quintile, ROUND(100.0 * SUM(gmv) / (SELECT SUM(gmv) FROM user_gmv), 2) AS gmv_pct
     FROM ranked GROUP BY 1 ORDER BY 1;
   notes: 【需确认】 用 NTILE(5) 分五档，quintile=1 即前 20%。NTILE 在人数不能整除时分组大小略有差异，这是可接受的近似。
 
@@ -458,7 +450,6 @@
   question: 退款原因与客户评分的关系：各退款原因对应的平均评分和低分率是多少？
   gold_sql: |
     SELECT r.reason_code,
-           COUNT(DISTINCT r.order_id) AS refund_orders,
            ROUND(AVG(rev.review_score), 2) AS avg_score,
            ROUND(100.0 * COUNT(*) FILTER (WHERE rev.review_score <= 2) / COUNT(*), 2) AS low_score_pct
     FROM refunds r

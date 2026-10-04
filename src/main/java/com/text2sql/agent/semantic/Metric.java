@@ -24,6 +24,7 @@ import java.util.List;
  * @param aliases     用户可能怎么问，如「复购率」「回购率」
  * @param description 一句话说明这个指标是什么
  * @param expression  可以直接抄进 SQL 的片段。**不是伪代码**——模型要照抄的
+ * @param filter      必须附加的过滤条件（如有效订单），会渲染成独立一行
  * @param tables      这个指标依赖哪些表，检索时用来判断是否适用
  * @param notes       口径说明：为什么这么定义、边界在哪
  */
@@ -33,6 +34,7 @@ public record Metric(
         List<String> aliases,
         String description,
         String expression,
+        String filter,
         List<String> tables,
         String notes) {
 
@@ -57,6 +59,28 @@ public record Metric(
         StringBuilder sb = new StringBuilder();
         sb.append("METRIC ").append(name).append("  -- ").append(description).append('\n');
         sb.append("  表达式: ").append(expression.strip()).append('\n');
+        // 过滤条件必须单独成行，而不是揉进表达式片段。
+        //
+        // 【这条是实测踩出来的】第一版把过滤条件省了，结果 T6 层 12 条全错：
+        // T6-008 动销率，gold 是 99.33（分子排除了取消/不可用订单的商品），
+        // 模型算出 100.00——因为它只看到 SUM(...) 这样的表达式片段，
+        // 不知道还要加 WHERE 条件。而 25 道 T6 题里 17 道都需要这个过滤。
+        //
+        // 为什么不把 WHERE 塞进 expression 片段：表达式是「算哪个值」，
+        // 过滤是「算哪些行」，两者混在一个字符串里，模型很容易把 WHERE
+        // 放到错误的层级（比如放进聚合函数内部）。分开写，各归其位。
+        if (filter != null && !filter.isBlank()) {
+            sb.append("  过滤条件（默认附加）: ").append(filter.strip()).append('\n');
+            // 例外说明是必要的：同一条指标在不同场景下口径可能不同。
+            // 实测例子：low_score_rate 在全站统计（T6-009 按州看低分率）时要排除
+            // 取消/不可用订单；但 T6-024 问的是「退款订单的低分率」，
+            // 那个查询已经把范围限定在退款订单集合内，再叠一层过滤就错了。
+            //
+            // 不把这句写进 YAML 的每条 filter 里，是因为它对所有指标都成立，
+            // 写一遍比写 12 遍更不容易漏。
+            sb.append("    —— 例外：若题目已把范围限定在某个子集内（如「仅退款订单」"
+                    + "「仅某类商品」），则不要重复附加这个过滤。\n");
+        }
         if (notes != null && !notes.isBlank()) {
             // notes 是多行文本，缩进两格保持可读性。
             for (String line : notes.strip().split("\n")) {
