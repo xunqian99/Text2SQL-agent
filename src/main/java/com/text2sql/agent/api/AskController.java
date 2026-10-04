@@ -63,6 +63,8 @@ public class AskController {
             case SUCCESS -> HttpStatus.OK;
             case NOT_CONFIGURED -> HttpStatus.SERVICE_UNAVAILABLE;
             case REJECTED -> HttpStatus.UNPROCESSABLE_ENTITY;
+            // 需要澄清是「请求本身信息不足」，不是服务端故障，所以用 400 而不是 5xx。
+            case NEEDS_CLARIFICATION -> HttpStatus.BAD_REQUEST;
             case GENERATION_FAILED, EXECUTION_FAILED -> HttpStatus.BAD_GATEWAY;
         };
         return ResponseEntity.status(status).body(AskResponse.from(response));

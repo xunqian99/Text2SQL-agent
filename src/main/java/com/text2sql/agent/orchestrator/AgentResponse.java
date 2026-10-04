@@ -73,7 +73,26 @@ public record AgentResponse(
         /** 生成了 SQL 但没通过安全校验。属于「被护栏拦下」，不是执行错误。 */
         REJECTED,
         /** 校验通过但数据库执行失败（语法方言、表不存在、超时）。 */
-        EXECUTION_FAILED
+        EXECUTION_FAILED,
+        /**
+         * 问题本身有多种合理口径，系统主动反问，未生成 SQL（阶段 5）。
+         *
+         * <p>它和 REJECTED 的区别是**责任方不同**：REJECTED 是模型写错了，
+         * NEEDS_CLARIFICATION 是问题没问清。归因时如果把两者混成一类，
+         * 会得出「模型爱写违规 SQL」的错误结论。
+         */
+        NEEDS_CLARIFICATION
+    }
+
+    /**
+     * 构造「需要澄清」的响应。
+     *
+     * <p>注意 {@code sql} 传 null、{@code message} 放反问内容：这一轮**没有**
+     * 生成 SQL，编造一条出来会让评估的 SQL 有效率虚高。
+     */
+    public static AgentResponse clarification(String question, String prompt) {
+        return new AgentResponse(question, Status.NEEDS_CLARIFICATION, null, prompt, List.of(),
+                List.of(), List.of(), false, false, null, 0, List.of(), 0, null);
     }
 
     /**

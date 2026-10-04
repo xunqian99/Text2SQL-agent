@@ -21,6 +21,7 @@ public class AgentProperties {
     private Prompt prompt = new Prompt();
     private Retrieval retrieval = new Retrieval();
     private Semantic semantic = new Semantic();
+    private Clarification clarification = new Clarification();
     private Eval eval = new Eval();
 
     public Db getDb() {
@@ -69,6 +70,14 @@ public class AgentProperties {
 
     public void setSemantic(Semantic semantic) {
         this.semantic = semantic;
+    }
+
+    public Clarification getClarification() {
+        return clarification;
+    }
+
+    public void setClarification(Clarification clarification) {
+        this.clarification = clarification;
     }
 
     public Eval getEval() {
@@ -238,6 +247,26 @@ public class AgentProperties {
          * 「拦截」这个动作本身——两种模式的行为差异会被写进测试。
          */
         private LimitMode limitMode = LimitMode.APPEND;
+
+        /**
+         * 是否启用「列级白名单」（阶段 5）。
+         *
+         * <p>只校验带表别名前缀的列，例如 {@code o.customer_id}——这类引用能精确
+         * 归属到某张表，判定是确定的。裸列名不检查，因为 SELECT 别名、CTE 输出列、
+         * 派生表列都可能是合法来源，误判会把正常查询拦下。
+         *
+         * <p>默认开启：它拦下的是 {@code sellers.region_name} 这种执行时必然报错的
+         * 引用，收益确定、误伤面小。要复现阶段 1–4 的历史数字时把它关掉。
+         */
+        private boolean columnWhitelistEnabled = true;
+
+        public boolean isColumnWhitelistEnabled() {
+            return columnWhitelistEnabled;
+        }
+
+        public void setColumnWhitelistEnabled(boolean columnWhitelistEnabled) {
+            this.columnWhitelistEnabled = columnWhitelistEnabled;
+        }
 
         /**
          * 额外禁止的函数名（小写）。
@@ -567,6 +596,35 @@ public class AgentProperties {
     public static class Semantic {
 
         /** 是否注入业务指标定义。 */
+        private boolean enabled = false;
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+    }
+
+    /**
+     * 歧义反问参数（阶段 5）。
+     *
+     * <p><b>它解决什么问题</b>
+     *
+     * <p>有些问题没有唯一答案，取决于业务口径：「销售额」含不含运费、
+     * 「活跃用户」按下单还是按登录。这两种算法都能跑出结果、语法都正确，
+     * 因此**没有任何自动信号能发现猜错了**——阶段 5 的自纠错实验证明了这点：
+     * 首答 SQL 有效率 100%，整体却只有 70% 上下，差额全是静默错误。
+     *
+     * <p>既然系统自己发现不了，就只能在不确定时不下结论：把选择权交还给提问的人。
+     *
+     * <p><b>默认关闭</b>，而且必须关闭：评估集里的题目都写明了口径，
+     * 反问会把「本该作答」变成「不作答」，直接压低准确率。
+     * 它是给真实用户链路用的能力，不是给离线评估用的。
+     */
+    public static class Clarification {
+
         private boolean enabled = false;
 
         public boolean isEnabled() {

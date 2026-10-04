@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -119,6 +120,22 @@ public class SqlValidator {
             }
         }
 
+        // ---- 5b) 列白名单。
+        //        只检查**带表别名前缀的列**（如 o.customer_id），不检查裸列名。
+        //
+        //        【为什么不做裸列名的检查】裸列名的合法来源太多：SELECT 别名、
+        //        GROUP BY 位置、CTE 输出列、派生表列、集合操作两侧的同名列……
+        //        一旦判错，正常查询会被拦下，护栏就从「防护」变成「故障源」。
+        //        带前缀的列可以精确归属到某张表，判定是确定的，所以先做这一半。
+        //
+        //        【它挡住的真实错误】多表题里模型常把维度表猜错，例如写
+        //        sellers.region_name（sellers 没有这一列，region_name 在 regions 上）。
+        //        这类 SQL 在 PostgreSQL 里会直接报 column does not exist，
+        //        能在执行前拦下，就省掉一次数据库往返。
+        if (properties.getGuard().isColumnWhitelistEnabled()) {
+            collectUnknownColumns(select, schema, violations);
+        }
+
         // ---- 6) 强制 LIMIT。
         String finalSql = sql;
         boolean rewritten = false;
@@ -195,6 +212,115 @@ public class SqlValidator {
 
         hit.forEach(name -> violations.add(new ValidationResult.Violation(
                 ValidationResult.Code.FORBIDDEN_FUNCTION, "使用了禁止的函数：" + name)));
+    }
+
+    /**
+     * 列级白名单：带别名前缀的列，必须真的属于它声明的那张表。
+     *
+     * <p><b>只做一半，是刻意的</b>：裸列名（没有 {@code o.} 这种前缀）不检查。
+     * 裸列名的合法来源太多——SELECT 别名、CTE 输出列、派生表列、集合操作两侧的同名列——
+     * 一旦判错，正常查询会被拦下，护栏就从「防护」变成「故障源」。
+     * 带前缀的列能精确归属到某张表，判定是确定的，所以先把这一半做扎实。
+     *
+     * <p><b>它挡住的真实错误</b>：多表题里模型常把维度表猜错，写出
+     * {@code sellers.region_name}（sellers 没有这一列，它在 regions 上）。
+     * 这类 SQL 到 PostgreSQL 会报 column does not exist，能在执行前拦下就省一次往返。
+     *
+     * <p><b>别名的作用域问题（这条是被 dry-run 抓出来的）</b>
+     *
+     * <p>SQL 里的别名是**按作用域**生效的，但这里遍历得到的是一张扁平表。
+     * 两者对冲就会出事：T6-016 的标准 SQL 里，外层写 {@code FROM brands bp}，
+     * 而 CTE 内部写 {@code FROM brand_products bp}——同一个 {@code bp} 指两张不同的关系。
+     * 压平之后 {@code bp.product_id} 被当成 {@code brands.product_id}，正常查询被误杀。
+     *
+     * <p>修法不是去实现完整的词法作用域解析（那要按子查询层级维护符号表，复杂度陡增），
+     * 而是承认「这个简化模型有能力边界」：**只要某个别名在语句里被绑定到过
+     * CTE 或派生表，就无法确定它指向哪个关系，该别名的列一律不判定。**
+     * 少拦几条，换不误杀——护栏的第一原则是别把正常流量打挂。
+     *
+     * <p>多个作用域把同一别名绑到不同 schema 表时也类似处理：只有当所有候选表
+     * 都没有这一列时才报错。
+     */
+    private void collectUnknownColumns(Select select, SchemaContext schema,
+                                       List<ValidationResult.Violation> violations) {
+        Map<String, Set<String>> columnsOfTable = new java.util.HashMap<>();
+        for (SchemaContext.Table table : schema.tables()) {
+            Set<String> cols = new LinkedHashSet<>();
+            table.columns().forEach(c -> cols.add(c.name().toLowerCase(Locale.ROOT)));
+            columnsOfTable.put(table.name().toLowerCase(Locale.ROOT), cols);
+        }
+
+        Map<String, Set<String>> aliasToTables = new java.util.HashMap<>();
+        Set<String> aliasesWithUnknownRelation = new LinkedHashSet<>();
+        List<net.sf.jsqlparser.schema.Column> columns = new ArrayList<>();
+
+        net.sf.jsqlparser.expression.ExpressionVisitorAdapter<Void> expressionVisitor =
+                new net.sf.jsqlparser.expression.ExpressionVisitorAdapter<>() {
+                    @Override
+                    public <S> Void visit(net.sf.jsqlparser.schema.Column column, S context) {
+                        columns.add(column);
+                        return super.visit(column, context);
+                    }
+                };
+        net.sf.jsqlparser.statement.select.FromItemVisitorAdapter<Void> fromItemVisitor =
+                new net.sf.jsqlparser.statement.select.FromItemVisitorAdapter<>() {
+                    @Override
+                    public <S> Void visit(net.sf.jsqlparser.schema.Table table, S context) {
+                        if (table.getName() != null) {
+                            String name = table.getName().toLowerCase(Locale.ROOT);
+                            String alias = table.getAlias() != null
+                                    ? table.getAlias().getName().toLowerCase(Locale.ROOT) : name;
+                            if (columnsOfTable.containsKey(name)) {
+                                aliasToTables.computeIfAbsent(alias, k -> new LinkedHashSet<>()).add(name);
+                            } else {
+                                // CTE 名、派生表、或不在本次上下文里的表：无法确定指向，
+                                // 把这个别名整体标成不可判定。
+                                aliasesWithUnknownRelation.add(alias);
+                            }
+                        }
+                        return super.visit(table, context);
+                    }
+
+                    @Override
+                    public <S> Void visit(net.sf.jsqlparser.statement.select.ParenthesedSelect nested,
+                                          S context) {
+                        Select inner = nested.getSelect();
+                        return inner == null ? null : inner.accept(getSelectVisitor(), context);
+                    }
+                };
+        net.sf.jsqlparser.statement.select.SelectVisitorAdapter<Void> selectVisitor =
+                new net.sf.jsqlparser.statement.select.SelectVisitorAdapter<>(expressionVisitor, fromItemVisitor);
+        expressionVisitor.setSelectVisitor(selectVisitor);
+        fromItemVisitor.setSelectVisitor(selectVisitor).setExpressionVisitor(expressionVisitor);
+
+        // 先走完整棵树收集别名和列引用，再统一判定——避免「列先出现、别名后注册」的顺序问题。
+        select.accept(selectVisitor, null);
+
+        Set<String> reported = new LinkedHashSet<>();
+        for (net.sf.jsqlparser.schema.Column column : columns) {
+            if (column.getTable() == null || column.getTable().getName() == null) {
+                continue; // 裸列名：跳过，理由见方法注释
+            }
+            String qualifier = column.getTable().getName().toLowerCase(Locale.ROOT);
+            if (aliasesWithUnknownRelation.contains(qualifier)) {
+                continue; // 该别名至少有一处指向 CTE / 派生表，无法确定，不判定
+            }
+            Set<String> tables = aliasToTables.get(qualifier);
+            if (tables == null || tables.isEmpty()) {
+                continue; // 别名指向未识别来源，不判定
+            }
+            String name = column.getColumnName() == null ? "" : column.getColumnName().toLowerCase(Locale.ROOT);
+            if (name.isEmpty()) {
+                continue;
+            }
+            // 只有当所有候选表都没有这一列时才报错：有的有、有的没有，说明
+            // 别名跨作用域指向了不同表，此时无法判定，宁可放过。
+            boolean anyHasIt = tables.stream().anyMatch(t -> columnsOfTable.getOrDefault(t, Set.of()).contains(name));
+            if (!anyHasIt && reported.add(qualifier + "." + name)) {
+                violations.add(new ValidationResult.Violation(ValidationResult.Code.UNKNOWN_COLUMN,
+                        "表 " + String.join("/", tables) + " 没有列 " + column.getColumnName()));
+            }
+        }
     }
 
     /**

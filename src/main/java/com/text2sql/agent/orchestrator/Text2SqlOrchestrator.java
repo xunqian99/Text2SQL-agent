@@ -49,13 +49,19 @@ public class Text2SqlOrchestrator {
     private final LlmSqlGenerator generator;
     private final SqlValidator validator;
     private final SqlExecutor executor;
+    private final com.text2sql.agent.clarification.AmbiguityDetector ambiguityDetector;
+    private final com.text2sql.agent.config.AgentProperties properties;
 
     public Text2SqlOrchestrator(SchemaProvider schemaProvider, LlmSqlGenerator generator,
-                                SqlValidator validator, SqlExecutor executor) {
+                                SqlValidator validator, SqlExecutor executor,
+                                com.text2sql.agent.clarification.AmbiguityDetector ambiguityDetector,
+                                com.text2sql.agent.config.AgentProperties properties) {
         this.schemaProvider = schemaProvider;
         this.generator = generator;
         this.validator = validator;
         this.executor = executor;
+        this.ambiguityDetector = ambiguityDetector;
+        this.properties = properties;
     }
 
     /**
@@ -68,6 +74,18 @@ public class Text2SqlOrchestrator {
      */
     public AgentResponse ask(String question) {
         long totalStarted = System.nanoTime();
+
+        // 阶段 5：口径没定就先问，不要猜。
+        //
+        // 放在最前面，是因为它要在花掉一次模型调用**之前**生效——歧义是问题的属性，
+        // 与 schema 检索、生成结果都无关。默认关闭，见 AgentProperties.Clarification。
+        if (properties.getClarification().isEnabled()) {
+            var prompt = ambiguityDetector.clarificationFor(question);
+            if (prompt.isPresent()) {
+                log.info("问题存在口径歧义，主动反问：{}", prompt.get());
+                return AgentResponse.clarification(question, prompt.get());
+            }
+        }
 
         long retrievalStarted = System.nanoTime();
         SchemaContext schema = schemaProvider.provide(question);

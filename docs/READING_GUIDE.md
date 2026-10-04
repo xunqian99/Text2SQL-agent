@@ -672,6 +672,34 @@ T6-011 问「运费占 GMV 的比例」，别名写的是「运费占GMV」，�
 前三次是同一档能力的三次抽样，**波动 ±3pp**。所以小改动必须做配对比较，
 或者至少重复两次再下结论。
 
+### 9.6 护栏：列白名单与歧义反问
+
+**列白名单**在 `SqlValidator.collectUnknownColumns()`，只校验**带别名前缀**的列
+（`o.customer_id`），裸列名不查。理由是裸列名的合法来源太多——SELECT 别名、
+CTE 输出列、派生表列、集合运算的同名列——判错就会把正常查询拦下。
+
+**这段代码的第一版是错的，而且是 dry-run 抓出来的。** 第一版把别名映射做成了
+全局扁平表，但 SQL 的别名是**按作用域**生效的：T6-016 的标准 SQL 外层写
+`FROM brands bp`，CTE 内部写 `FROM brand_products bp`，同一个 `bp` 指两张关系。
+压平之后 `bp.product_id` 被判成「brands 没有 product_id」，**dry-run 从 200/200
+掉到 199/200**。
+
+修法不是去实现完整词法作用域，而是承认边界：别名一旦被绑定到 CTE 或派生表，
+该别名的列一律不判定。回归测试是 `AdversarialSqlTest.doesNotFlagAliasReusedAcrossScopes`。
+
+**歧义反问**在 `clarification/AmbiguityDetector`，规则写在 `schema/ambiguities.yml`。
+命中条件是「问题含歧义词，且没有任何限定词」，用户补一句限定就不再反问。
+新增的 `NEEDS_CLARIFICATION` 状态和 `REJECTED` 分开，因为责任方不同：
+前者是问题没问清，后者是模型写错了。
+
+**对抗性测试**在 `AdversarialSqlTest`，44 个用例，覆盖写操作、多语句注入、
+危险函数（含藏在 CTE 和子查询里的）、系统目录探测、列级越界、畸形输入。
+它们**都不连数据库**，所以换台机器也能跑。
+
+**① 列白名单为什么只做带前缀的那一半？**
+**② dry-run 那次 199/200，说明什么？它拦下的是谁的错？**
+**③ 歧义反问为什么不能默认开启？**
+
 ### 自检
 
 **① 为什么自纠错的反馈函数不能接收 `expected` 参数？**
