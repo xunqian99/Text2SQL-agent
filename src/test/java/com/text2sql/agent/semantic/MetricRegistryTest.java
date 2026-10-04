@@ -217,4 +217,30 @@ class MetricRegistryTest {
             }
         }
     }
+
+    @Test
+    @DisplayName("普通描述词不得作为指标别名——否则会注入到非业务语义题上")
+    void plainDescriptiveWordsAreNotAliases() {
+        MetricRegistry registry = loaded();
+
+        // 【实测踩到的坑】sales_without_freight 原来有别名 [销售额, 商品销售额]，
+        // 结果命中了 T3-014 / T4-002 / T4-004 这三道普通聚合题，并把它们弄坏：
+        // 那三道题的 gold 没有「排除取消/不可用订单」的过滤，而指标定义带了
+        // filter，模型照抄后多加了 WHERE，答案就错了（DeepSeek 实测 62% -> 61%）。
+        //
+        // 判据：**别名只放业务黑话，不放普通描述词。**
+        // 黑话（GMV / 复购率 / 动销率 / 会员渗透率）才需要口径定义；
+        // 普通问法（销售额 / 金额 / 数量）让模型按字面写就行。
+        List<String> plainWords = List.of(
+                "销售额", "商品销售额", "商品金额", "金额", "数量", "订单数");
+
+        for (Metric metric : registry.all()) {
+            for (String alias : metric.aliases()) {
+                assertThat(plainWords)
+                        .as("指标 %s 的别名「%s」是普通描述词，会误注入到普通题上",
+                                metric.name(), alias)
+                        .doesNotContain(alias);
+            }
+        }
+    }
 }
