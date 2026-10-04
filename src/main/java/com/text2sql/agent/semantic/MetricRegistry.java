@@ -84,12 +84,21 @@ public class MetricRegistry {
         String text = question.toLowerCase(Locale.ROOT);
         List<Metric> hits = new ArrayList<>();
         for (Metric metric : metrics) {
-            for (String alias : metric.aliases()) {
-                if (alias != null && !alias.isBlank()
-                        && text.contains(alias.toLowerCase(Locale.ROOT))) {
-                    hits.add(metric);
-                    break;
-                }
+            boolean aliasHit = metric.aliases().stream()
+                    .filter(alias -> alias != null && !alias.isBlank())
+                    .anyMatch(alias -> text.contains(alias.toLowerCase(Locale.ROOT)));
+            if (!aliasHit) {
+                continue;
+            }
+            boolean requiredHit = metric.requiredPhrases().isEmpty()
+                    || metric.requiredPhrases().stream()
+                    .anyMatch(phrase -> phrase != null && !phrase.isBlank()
+                            && text.contains(phrase.toLowerCase(Locale.ROOT)));
+            boolean excludedHit = metric.excludedPhrases().stream()
+                    .anyMatch(phrase -> phrase != null && !phrase.isBlank()
+                            && text.contains(phrase.toLowerCase(Locale.ROOT)));
+            if (requiredHit && !excludedHit) {
+                hits.add(metric);
             }
         }
         return List.copyOf(hits);

@@ -85,16 +85,27 @@ public class HybridSchemaProvider implements SchemaProvider {
         // 按检索给出的顺序重排表，让「最相关的表」出现在 prompt 前面。
         // 长上下文里模型对开头和结尾注意力更强，把高置信度的表放前面
         // 能减少它选错表的概率。这个顺序不是装饰。
+        //
+        // 语义指标是一个特殊的检索结果：它不仅提供口径，还声明了自己依赖的表。
+        // 例如「动销率」需要 order_items、orders、products；如果词法检索只召回
+        // order_items 和 products，指标会因为依赖不完整而被过滤，模型就会退回
+        // 自己猜 SQL。把命中的指标依赖表补进上下文，才能让「指标可用性过滤」
+        // 真正发挥作用。补入的表仍然受到全库表白名单限制。
+        java.util.Set<String> names = new java.util.LinkedHashSet<>(result.tableNames());
+        if (properties.getSemantic().isEnabled()) {
+            metricRegistry.findMentioned(question).stream()
+                    .flatMap(metric -> metric.tables().stream())
+                    .filter(name -> full.tableNames().contains(name))
+                    .forEach(names::add);
+        }
         Map<String, SchemaContext.Table> byName = new LinkedHashMap<>();
         for (SchemaContext.Table table : full.tables()) {
             byName.put(table.name().toLowerCase(Locale.ROOT), table);
         }
-        List<SchemaContext.Table> selected = result.tableNames().stream()
+        List<SchemaContext.Table> selected = names.stream()
                 .map(name -> byName.get(name.toLowerCase(Locale.ROOT)))
                 .filter(java.util.Objects::nonNull)
                 .toList();
-
-        java.util.Set<String> names = new java.util.LinkedHashSet<>(result.tableNames());
 
         String ddl = renderDdl(full, selected, names, result);
 

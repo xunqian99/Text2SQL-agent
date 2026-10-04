@@ -78,6 +78,10 @@ metrics:
   # --------------------------------------------------------------------------
   - name: aov
     aliases: [客单价, 平均订单金额, 订单均价]
+    # 「客单价」在普通多表题里可能只是题目对 AVG(order_items.price)
+    # 的自然描述；只有题目明确说有效订单、GMV 或含运费时，才使用本项目
+    # 约定的「含运费 GMV / 有效订单数」口径。
+    requiredPhrases: [有效订单, GMV, 含运费]
     description: 客单价 = GMV / 有效订单数
     expression: "ROUND(SUM(oi.price + oi.freight_value) / COUNT(DISTINCT o.order_id), 2)"
     tables: [orders, order_items]
@@ -85,6 +89,7 @@ metrics:
     notes: |
       分母是**订单数**不是人数。若题目问「人均消费」才是除以人数。
       分子用含运费 GMV，与 gmv_with_freight 保持一致。
+    outputRule: 只输出题目要求的客单价列；不要额外输出 GMV、订单数或其他中间量。
 
   - name: repeat_rate
     aliases: [复购率, 回购率, 重复购买率]
@@ -128,6 +133,18 @@ metrics:
       分母是**全部商品数**（products 表全量），不是「有库存的商品」。
       这是【需确认】口径：电商里两种算法都有人用，本项目选全部商品。
       分子只算有效订单里的商品，否则取消单的商品会被算成动销。
+    outputRule: 输出百分比，乘 100 并保留 2 位小数；只输出动销率列。
+    queryPattern: |
+      WITH sold AS (
+        SELECT COUNT(DISTINCT oi.product_id) AS n
+        FROM order_items oi
+        JOIN orders o ON o.order_id = oi.order_id
+        WHERE o.order_status NOT IN ('canceled', 'unavailable')
+      ), allp AS (
+        SELECT COUNT(*) AS n FROM products
+      )
+      SELECT ROUND(100.0 * sold.n / NULLIF(allp.n, 0), 2) AS sell_through_pct
+      FROM sold CROSS JOIN allp;
 
   - name: member_penetration
     aliases: [会员渗透率, 会员订单占比, 会员占比]
@@ -167,6 +184,17 @@ metrics:
     tables: [order_items, orders]
     filter: "o.order_status NOT IN ('canceled', 'unavailable')"
     notes: 分母是含运费 GMV，保证口径自洽（分子是分母的一部分）。
+    outputRule: 输出百分比，乘 100 并保留 2 位小数；只输出 macro_region 和 freight_pct。
+    queryPattern: |
+      SELECT r.macro_region,
+             ROUND(100.0 * SUM(oi.freight_value) /
+                   NULLIF(SUM(oi.price + oi.freight_value), 0), 2) AS freight_pct
+      FROM orders o
+      JOIN customers c ON c.customer_id = o.customer_id
+      JOIN regions r ON r.region_code = c.customer_state
+      JOIN order_items oi ON oi.order_id = o.order_id
+      WHERE o.order_status NOT IN ('canceled', 'unavailable')
+      GROUP BY 1 ORDER BY freight_pct DESC;
 
   - name: mau
     aliases: [MAU, 月活, 活跃用户数, 活跃下单用户]
@@ -199,6 +227,16 @@ metrics:
     tables: [coupon_usages, orders, order_items]
     filter: "o.order_status NOT IN ('canceled', 'unavailable')"
     notes: 只统计用券订单，分子分母都在同一个订单集合内。
+    outputRule: 依次输出 GMV、优惠金额、折扣率三列；金额保留 2 位小数，折扣率乘 100 保留 2 位小数；不要输出额外中间量。
+    queryPattern: |
+      SELECT ROUND(SUM(oi.price + oi.freight_value), 2) AS gmv,
+             ROUND(SUM(cu.discount_amount), 2) AS discount,
+             ROUND(100.0 * SUM(cu.discount_amount) /
+                   NULLIF(SUM(oi.price + oi.freight_value), 0), 2) AS discount_pct
+      FROM coupon_usages cu
+      JOIN orders o ON o.order_id = cu.order_id
+      JOIN order_items oi ON oi.order_id = cu.order_id
+      WHERE o.order_status NOT IN ('canceled', 'unavailable');
 
   - name: commission_rate
     aliases: [佣金率, 平台抽成, 佣金比例]
@@ -237,6 +275,32 @@ metrics:
     notes: |
       先按人取首单时间确定同期群（cohort），再看该群在目标窗口内
       是否还有有效订单。统计单位是人，不是订单。
+    outputRule: 只输出 cohort_month 和 retention_pct 两列；不要展开成 cohort_month × activity_month 明细，也不要输出 cohort_users 或 retained_users 中间量。
+    queryPattern: |
+      WITH first_order AS (
+        SELECT c.customer_unique_id, MIN(o.order_purchase_timestamp) AS first_ts
+        FROM orders o
+        JOIN customers c ON c.customer_id = o.customer_id
+        WHERE o.order_status NOT IN ('canceled', 'unavailable')
+        GROUP BY 1
+      ), cohort AS (
+        SELECT customer_unique_id, DATE_TRUNC('month', first_ts)::date AS cohort_month
+        FROM first_order
+        WHERE first_ts >= DATE '2017-01-01' AND first_ts < DATE '2017-07-01'
+      ), returner AS (
+        SELECT DISTINCT co.customer_unique_id, co.cohort_month
+        FROM cohort co
+        JOIN customers c ON c.customer_unique_id = co.customer_unique_id
+        JOIN orders o ON o.customer_id = c.customer_id
+        WHERE o.order_status NOT IN ('canceled', 'unavailable')
+          AND o.order_purchase_timestamp >= DATE '2017-07-01'
+          AND o.order_purchase_timestamp < DATE '2018-01-01'
+      )
+      SELECT co.cohort_month,
+             ROUND(100.0 * COUNT(re.customer_unique_id) / COUNT(*), 2) AS retention_pct
+      FROM cohort co
+      LEFT JOIN returner re ON re.customer_unique_id = co.customer_unique_id
+      GROUP BY 1 ORDER BY 1;
 
   - name: gmv_per_user
     aliases: [人均GMV, 人均消费, 人均成交额]
@@ -260,6 +324,8 @@ metrics:
 
   - name: delivery_days
     aliases: [配送时长, 配送天数, 送达时长, 平均配送, 物流时长]
+    requiredPhrases: [下单到签收, 客户签收, 客户配送]
+    excludedPhrases: [承运商, 发货, shipped_at, carrier]
     description: 平均配送时长 = 下单到签收的天数（保留小数）
     expression: "ROUND(AVG(EXTRACT(EPOCH FROM (o.order_delivered_customer_date - o.order_purchase_timestamp)) / 86400.0), 2)"
     tables: [orders]
@@ -277,3 +343,22 @@ metrics:
     tables: [orders, order_items]
     filter: "o.order_status NOT IN ('canceled', 'unavailable')"
     notes: 按月对齐两个年度，缺月份的年份自然不参与（INNER JOIN）。
+    outputRule: 依次输出月份、2017 GMV、2018 GMV、同比增长率；GMV 保留 2 位小数，同比增长率乘 100 保留 2 位小数；不要输出年度中间行。
+    queryPattern: |
+      WITH monthly AS (
+        SELECT EXTRACT(YEAR FROM o.order_purchase_timestamp)::int AS yr,
+               EXTRACT(MONTH FROM o.order_purchase_timestamp)::int AS mo,
+               SUM(oi.price + oi.freight_value) AS gmv
+        FROM orders o
+        JOIN order_items oi ON oi.order_id = o.order_id
+        WHERE o.order_status NOT IN ('canceled', 'unavailable')
+        GROUP BY 1, 2
+      )
+      SELECT m18.mo,
+             ROUND(m17.gmv, 2) AS gmv_2017,
+             ROUND(m18.gmv, 2) AS gmv_2018,
+             ROUND(100.0 * (m18.gmv - m17.gmv) / NULLIF(m17.gmv, 0), 2) AS yoy_pct
+      FROM monthly m18
+      JOIN monthly m17 ON m17.mo = m18.mo AND m17.yr = 2017
+      WHERE m18.yr = 2018
+      ORDER BY m18.mo;

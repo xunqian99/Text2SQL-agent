@@ -542,6 +542,44 @@ SQL，被校验层以 `UNKNOWN_TABLE` 拦下——从「口径错」变成「跑
 这条有单元测试固定（`plainDescriptiveWordsAreNotAliases`），
 改坏了会立刻失败。
 
+### 8.5 阶段 4 补强：指标不能只靠一个别名
+
+第一次阶段 4 实测 71% 后，逐条失败分析发现指标层还有三个缺口：
+
+1. **同一个词可能有多个口径**：`客单价`在 T4-035 只是「订单平均金额」，
+   而 T6-002 的「有效订单客单价」才使用本项目约定的「含运费 GMV / 有效订单」。
+   因此 `Metric` 增加 `requiredPhrases` / `excludedPhrases`，别名命中后还要检查
+   题目上下文。`delivery_days`也据此排除「承运商发货到送达」的问法。
+2. **复杂指标不能只给一个表达式**：`retention_rate` 的表达式只有
+   `COUNT(returned) / COUNT(*)`，模型会自行发明昂贵的月份 × 用户交叉查询。
+   `Metric` 增加 `queryPattern`，把 cohort、回访用户和聚合结构一起放进 Prompt。
+3. **指标依赖的表必须实际进入上下文**：T6-008 命中动销率但漏了 `orders`，
+   过滤条件因此无法注入。`HybridSchemaProvider` 会把已命中指标的依赖表补入选择集，
+   再执行 `findApplicable`，让指标和 schema 一起闭合。
+
+同时增加 `outputRule`，明确百分比是否乘 100、保留几位小数、输出哪些列，
+减少「SQL 能执行但输出列或单位不一致」的假失败。当前覆盖的复杂指标包括动销率、
+区域运费占比、优惠券折扣率、留存率和同比增长。
+
+这次改动涉及的重点代码：
+
+- `src/main/java/com/text2sql/agent/semantic/Metric.java`：新增四类字段，并渲染到 Prompt。
+- `src/main/java/com/text2sql/agent/semantic/MetricRegistry.java`：别名命中后执行上下文条件判断。
+- `src/main/java/com/text2sql/agent/retrieval/HybridSchemaProvider.java`：补齐指标依赖表。
+- `src/main/resources/schema/metrics.yml`：写入口径条件、查询结构和输出约束。
+- `src/test/java/com/text2sql/agent/semantic/MetricRegistryTest.java`：固定客单价、配送时长和复杂指标渲染规则。
+
+### 8.6 补强后的自检
+
+**① 为什么“客单价”不能无条件命中 aov？**
+**② 为什么完整 queryPattern 比只增加一段 notes 更有用？**
+**③ 动销率命中后，为什么要先补 `orders`，再做 `findApplicable`？**
+**④ 这次补强可能提升哪一类失败，不能解决哪一类失败？**
+
+答案要点：① 同词存在不同业务口径；② 复杂指标的错误来自查询骨架，而不是只来自定义文字；
+③ 没有依赖表就不能安全注入过滤条件；④ 能改善口径、单位、输出列和复杂查询结构，
+不能单独解决模型空输出、通用 join 规划和 SQL 超时。
+
 ### 自检
 
 **① 语义层是怎么让业务语义层从 2/12 提到 7/12 的？**
@@ -637,6 +675,7 @@ SQL，被校验层以 `UNKNOWN_TABLE` 拦下——从「口径错」变成「跑
 | 2026-10-02 | 阶段 2 收尾（补） | 在第 1–4 轮各加「阶段 2 改动了什么」；新增 6.5 改动总表；自检题补 7–9 题 |
 | 2026-10-04 | 阶段 3 收尾 | 新增第 7 轮（join 路径规划，含负面结论）；章节编号顺延；自检题补 10–12 题 |
 | 2026-10-04 | 阶段 4 收尾 | 新增第 8 轮（语义层，含别名纪律）；章节编号顺延；自检题补 13–15 题 |
+| 2026-10-04 | 阶段 4 补强 | 增加上下文条件、复杂查询结构、输出约束和指标依赖表补齐；自检题补 16–19 题 |
 
 ### 已修正的过时行号（阶段一旧指南 → 当前代码）
 

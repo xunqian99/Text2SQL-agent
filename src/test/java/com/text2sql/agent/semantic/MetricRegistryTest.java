@@ -58,6 +58,28 @@ class MetricRegistryTest {
     }
 
     @Test
+    @DisplayName("同一术语按上下文选择口径：普通客单价不注入含运费指标")
+    void appliesContextConditions() {
+        MetricRegistry registry = loaded();
+
+        assertThat(registry.findMentioned("客单价最高的 10 个客户是谁？客单价按订单平均金额算。"))
+                .noneMatch(m -> m.name().equals("aov"));
+        assertThat(registry.findMentioned("有效订单的订单数、下单人数、客单价分别是多少？"))
+                .anyMatch(m -> m.name().equals("aov"));
+    }
+
+    @Test
+    @DisplayName("承运商配送时长不套用下单到签收指标")
+    void excludesDifferentDeliveryScope() {
+        MetricRegistry registry = loaded();
+
+        assertThat(registry.findMentioned("每家承运商的平均配送时长是多少天？"))
+                .noneMatch(m -> m.name().equals("delivery_days"));
+        assertThat(registry.findMentioned("各州的平均配送时长（下单到签收）是多少天？"))
+                .anyMatch(m -> m.name().equals("delivery_days"));
+    }
+
+    @Test
     @DisplayName("依赖表不可用时过滤掉该指标，避免注入引用不存在表的表达式")
     void filtersByAvailableTables() {
         MetricRegistry registry = loaded();
@@ -105,6 +127,23 @@ class MetricRegistryTest {
         assertThat(text).contains("表达式:");
         // notes 里的关键提醒必须出现——只给表达式防不住「用错分母」这类错误。
         assertThat(text).contains("customer_unique_id");
+    }
+
+    @Test
+    @DisplayName("复杂指标会渲染输出约束和查询结构")
+    void rendersOutputRuleAndQueryPattern() {
+        MetricRegistry registry = loaded();
+        Metric retention = registry.all().stream()
+                .filter(m -> m.name().equals("retention_rate"))
+                .findFirst()
+                .orElseThrow();
+
+        String text = retention.render();
+
+        assertThat(text).contains("输出约束（必须遵守）:")
+                .contains("推荐查询结构")
+                .contains("WITH first_order")
+                .contains("不要展开成 cohort_month × activity_month");
     }
 
     @Test

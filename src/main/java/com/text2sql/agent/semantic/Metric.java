@@ -27,6 +27,10 @@ import java.util.List;
  * @param filter      必须附加的过滤条件（如有效订单），会渲染成独立一行
  * @param tables      这个指标依赖哪些表，检索时用来判断是否适用
  * @param notes       口径说明：为什么这么定义、边界在哪
+ * @param requiredPhrases 命中别名后还必须出现的限定词；为空表示不额外限制
+ * @param excludedPhrases 出现这些词时不命中该指标，用于处理同一术语的不同业务口径
+ * @param outputRule 输出列、单位、舍入和排序要求
+ * @param queryPattern 复杂指标的推荐查询结构；简单指标为空
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record Metric(
@@ -36,11 +40,17 @@ public record Metric(
         String expression,
         String filter,
         List<String> tables,
-        String notes) {
+        String notes,
+        List<String> requiredPhrases,
+        List<String> excludedPhrases,
+        String outputRule,
+        String queryPattern) {
 
     public Metric {
         aliases = aliases == null ? List.of() : List.copyOf(aliases);
         tables = tables == null ? List.of() : List.copyOf(tables);
+        requiredPhrases = requiredPhrases == null ? List.of() : List.copyOf(requiredPhrases);
+        excludedPhrases = excludedPhrases == null ? List.of() : List.copyOf(excludedPhrases);
     }
 
     /**
@@ -85,6 +95,15 @@ public record Metric(
             // notes 是多行文本，缩进两格保持可读性。
             for (String line : notes.strip().split("\n")) {
                 sb.append("  ").append(line.strip()).append('\n');
+            }
+        }
+        if (outputRule != null && !outputRule.isBlank()) {
+            sb.append("  输出约束（必须遵守）: ").append(outputRule.strip()).append('\n');
+        }
+        if (queryPattern != null && !queryPattern.isBlank()) {
+            sb.append("  推荐查询结构（按此结构改写，不要自行发明更慢的等价查询）:\n");
+            for (String line : queryPattern.strip().split("\\n")) {
+                sb.append("    ").append(line.strip()).append('\n');
             }
         }
         return sb.toString().stripTrailing();
