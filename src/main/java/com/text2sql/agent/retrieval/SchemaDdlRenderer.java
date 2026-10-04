@@ -49,7 +49,13 @@ public final class SchemaDdlRenderer {
      * 猜成 {@code region_name}。
      */
     public static String renderWithJoins(List<SchemaContext.Table> tables, List<JoinGraph.Edge> edges) {
-        return renderWithJoins(tables, edges, null);
+        return renderWithJoins(tables, edges, null, true, true);
+    }
+
+    /** 两段全开的便捷重载。 */
+    public static String renderWithJoins(List<SchemaContext.Table> tables, List<JoinGraph.Edge> edges,
+                                         JoinPathPlanner.Plan plan) {
+        return renderWithJoins(tables, edges, plan, true, true);
     }
 
     /**
@@ -68,19 +74,29 @@ public final class SchemaDdlRenderer {
      * 万一规划选错了（比如词典关联写错），它连纠正的机会都没有。
      * 两个段一起给，是「给建议但不剥夺判断权」。
      *
-     * @param plan 连接树；为 null 或空时不输出 JOIN PLAN 段
+     * @param plan           连接树；为 null 或空时不输出 JOIN PLAN 段
+     * @param includeJoinList 是否输出 {@code JOINS} 段
+     * @param includeJoinPlan 是否输出 {@code JOIN PLAN} 段
+     *
+     * <p><b>为什么两段要能独立开关</b>
+     *
+     * <p>阶段 3 实测发现「过度 join」——模型看到 JOINS 段里有
+     * {@code sellers -> regions}，就把它连上了，而 gold 不需要它（T4-006、T4-031）。
+     * 要确认这是不是 JOINS 段造成的，必须能把两段拆开单独跑。
+     * 如果只有一个总开关，就分不清是「给多了」还是「规划错了」。
      */
     public static String renderWithJoins(List<SchemaContext.Table> tables, List<JoinGraph.Edge> edges,
-                                         JoinPathPlanner.Plan plan) {
+                                         JoinPathPlanner.Plan plan,
+                                         boolean includeJoinList, boolean includeJoinPlan) {
         StringBuilder sb = new StringBuilder();
         renderTables(sb, tables);
-        if (!edges.isEmpty()) {
+        if (includeJoinList && !edges.isEmpty()) {
             sb.append("JOINS\n");
             for (JoinGraph.Edge edge : edges) {
                 sb.append("  ").append(edge.render()).append('\n');
             }
         }
-        String planText = JoinPathPlanner.render(plan);
+        String planText = includeJoinPlan ? JoinPathPlanner.render(plan) : "";
         if (!planText.isEmpty()) {
             sb.append('\n').append("JOIN PLAN（推荐的连接顺序）\n").append(planText).append('\n');
         }

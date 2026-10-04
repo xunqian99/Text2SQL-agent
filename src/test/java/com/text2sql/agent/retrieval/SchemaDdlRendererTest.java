@@ -102,4 +102,29 @@ class SchemaDdlRendererTest {
 
         assertThat(ddl).contains("-- 会员状态：1=正常 2=冻结 3=注销");
     }
+
+    @Test
+    @DisplayName("阶段 3 结论：两段可独立关闭，用来定位「过度 join」的来源")
+    void joinSectionsCanBeDisabledIndependently() {
+        List<SchemaContext.Table> tables = List.of(orders(), customers(), regions());
+        List<JoinGraph.Edge> edges = List.of(
+                new JoinGraph.Edge("orders", "customer_id", "customers", "customer_id",
+                        JoinGraph.FOREIGN_KEY_STRENGTH),
+                new JoinGraph.Edge("customers", "customer_state", "regions", "region_code",
+                        JoinGraph.INFERRED_RELATION_STRENGTH));
+        JoinPathPlanner.Plan plan = JoinPathPlanner.plan(edges,
+                List.of("orders", "customers", "regions"));
+
+        String both = SchemaDdlRenderer.renderWithJoins(tables, edges, plan, true, true);
+        String listOnly = SchemaDdlRenderer.renderWithJoins(tables, edges, plan, true, false);
+        String planOnly = SchemaDdlRenderer.renderWithJoins(tables, edges, plan, false, true);
+        String neither = SchemaDdlRenderer.renderWithJoins(tables, edges, plan, false, false);
+
+        assertThat(both).contains("JOINS").contains("JOIN PLAN");
+        assertThat(listOnly).contains("JOINS").doesNotContain("JOIN PLAN");
+        assertThat(planOnly).doesNotContain("JOINS").contains("JOIN PLAN");
+        // 两段都关时，输出必须与阶段 2 形态完全一致（只有表和列）。
+        assertThat(neither).doesNotContain("JOINS").doesNotContain("JOIN PLAN");
+        assertThat(neither).isEqualTo(SchemaDdlRenderer.render(tables, List.of()));
+    }
 }

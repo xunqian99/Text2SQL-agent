@@ -60,7 +60,7 @@ public class AppConfig {
     @Bean
     @ConditionalOnProperty(prefix = "agent.retrieval", name = "enabled", havingValue = "true")
     public SchemaProvider hybridSchemaProvider(SchemaCatalog catalog, LexicalSchemaRetriever retriever,
-                                               GlossaryLoader glossaryLoader) {
-        return new HybridSchemaProvider(catalog, retriever, glossaryLoader);
+                                               GlossaryLoader glossaryLoader, AgentProperties properties) {
+        return new HybridSchemaProvider(catalog, retriever, glossaryLoader, properties);
     }
 }

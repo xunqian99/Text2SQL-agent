@@ -380,6 +380,56 @@ public class AgentProperties {
          */
         private int bridgeRepairMaxTables = 2;
 
+        /**
+         * 阶段 3：是否在 prompt 里附上「列级 join 关系」。
+         *
+         * <p><b>默认关闭——这是被实测数字推翻后的决定。</b>
+         *
+         * <p>阶段 3 的设计假设是「模型不知道该用哪一列 join」。这个假设
+         * 本身被验证了：T4-015 问「每个大区的订单量」，gold 写
+         * {@code r.region_code = c.customer_state}，模型写成了
+         * {@code r.region_name}——两列在 regions 里都存在，SQL 能跑、结果错。
+         * 补上这条边之后，T4-015 确实修好了，join 类错误从 4 条降到 1 条。
+         *
+         * <p>但**整体准确率没有变化**：52% → 52%（100 条 eval，同模型）。
+         * 修好 5 条、新坏 5 条，净变化为零。核查新坏的 5 条：
+         *
+         * <ul>
+         *   <li>3 条是单表题（T1-010 / T2-013 / T3-014），压根没有 join，
+         *       属于模型自身的随机波动，与本次改动无关；</li>
+         *   <li>2 条是**过度 join**（T4-006 / T4-031）：模型看到 JOINS 段里
+         *       有 {@code sellers -> regions} 这条边，就把它连上了，
+         *       而 gold 不需要它。</li>
+         * </ul>
+         *
+         * <p>代价则是确定的：平均 DDL 从 1579 涨到 2193 字符（+39%），
+         * 平均输入 token 从 709 涨到 917（+29%）。
+         * **确定成本换不确定收益，工程上不成立，所以默认关闭。**
+         *
+         * <p>代码保留而不是删除，理由有两个：一是它修好的那类错误是真实的
+         * （join 列猜错会静默出错），换一个 join 更密集的数据集时它可能就划算了；
+         * 二是「做了优化、测出无效、如实关掉」这件事本身就是可信度的证据，
+         * 比删掉痕迹更值得保留。想复现实验：{@code --agent.retrieval.join-hints-enabled=true}。
+         */
+        private boolean joinHintsEnabled = false;
+
+        /**
+         * 是否渲染 {@code JOINS} 段（全部候选边，含列名）。
+         *
+         * <p>单独留开关是为了定位「过度 join」的来源。实测怀疑是这一段
+         * 让模型看到了太多可用边，于是把不该连的表也连上了。要验证的话：
+         * 关掉这一段、只留 {@code JOIN PLAN}，看 T4-006 / T4-031 是否恢复。
+         */
+        private boolean joinListEnabled = true;
+
+        /**
+         * 是否渲染 {@code JOIN PLAN} 段（规划出的连接树）。
+         *
+         * <p>与 {@link #joinListEnabled} 配合做两段分离的消融：
+         * 只给列表、只给树、两个都给，三种组合能定位到底哪一段在起作用。
+         */
+        private boolean joinPlanEnabled = true;
+
         public boolean isEnabled() {
             return enabled;
         }
@@ -450,6 +500,30 @@ public class AgentProperties {
 
         public void setBridgeRepairMaxTables(int bridgeRepairMaxTables) {
             this.bridgeRepairMaxTables = bridgeRepairMaxTables;
+        }
+
+        public boolean isJoinHintsEnabled() {
+            return joinHintsEnabled;
+        }
+
+        public void setJoinHintsEnabled(boolean joinHintsEnabled) {
+            this.joinHintsEnabled = joinHintsEnabled;
+        }
+
+        public boolean isJoinListEnabled() {
+            return joinListEnabled;
+        }
+
+        public void setJoinListEnabled(boolean joinListEnabled) {
+            this.joinListEnabled = joinListEnabled;
+        }
+
+        public boolean isJoinPlanEnabled() {
+            return joinPlanEnabled;
+        }
+
+        public void setJoinPlanEnabled(boolean joinPlanEnabled) {
+            this.joinPlanEnabled = joinPlanEnabled;
         }
     }
 

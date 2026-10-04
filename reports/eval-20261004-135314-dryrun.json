@@ -1,0 +1,217 @@
+{
+  "meta" : {
+    "timestamp" : "2026-10-04T13:53:14.1678288",
+    "promptVersion" : "p1-full-schema-v1",
+    "model" : "ernie-4.5-turbo-32k",
+    "baseUrl" : "https://qianfan.baidubce.com",
+    "dryRun" : true,
+    "itemCount" : 32,
+    "limit" : 0,
+    "layers" : [ "T4", "T5" ],
+    "split" : "eval",
+    "includeDataProfile" : true,
+    "includeForeignKeys" : true,
+    "limitMode" : "APPEND",
+    "maxRows" : 200,
+    "schemaTableCount" : 10,
+    "retrievalEnabled" : true,
+    "retrievalTopK" : 8
+  },
+  "overall" : {
+    "total" : 32,
+    "correct" : 26,
+    "executionAccuracy" : 0.8125,
+    "sqlValid" : 26,
+    "sqlValidRate" : 0.8125,
+    "rewrittenCount" : 16,
+    "avgPromptTokens" : 0.0,
+    "avgLatencyMs" : 56.72,
+    "p50LatencyMs" : 22,
+    "p95LatencyMs" : 217,
+    "avgCostYuan" : 0.0,
+    "totalCostYuan" : 0.0
+  },
+  "byLayer" : {
+    "multi_join" : {
+      "total" : 22,
+      "correct" : 21,
+      "executionAccuracy" : 0.9545454545454546,
+      "sqlValid" : 21,
+      "sqlValidRate" : 0.9545454545454546,
+      "rewrittenCount" : 15,
+      "avgPromptTokens" : 0.0,
+      "avgLatencyMs" : 73.59,
+      "p50LatencyMs" : 42,
+      "p95LatencyMs" : 217,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    },
+    "multi_join_deep" : {
+      "total" : 10,
+      "correct" : 5,
+      "executionAccuracy" : 0.5,
+      "sqlValid" : 5,
+      "sqlValidRate" : 0.5,
+      "rewrittenCount" : 1,
+      "avgPromptTokens" : 0.0,
+      "avgLatencyMs" : 19.6,
+      "p50LatencyMs" : 13,
+      "p95LatencyMs" : 57,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    }
+  },
+  "byTableCount" : {
+    "1 表" : {
+      "total" : 5,
+      "correct" : 5,
+      "executionAccuracy" : 1.0,
+      "sqlValid" : 5,
+      "sqlValidRate" : 1.0,
+      "rewrittenCount" : 4,
+      "avgPromptTokens" : 0.0,
+      "avgLatencyMs" : 14.2,
+      "p50LatencyMs" : 8,
+      "p95LatencyMs" : 34,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    },
+    "2 表" : {
+      "total" : 9,
+      "correct" : 9,
+      "executionAccuracy" : 1.0,
+      "sqlValid" : 9,
+      "sqlValidRate" : 1.0,
+      "rewrittenCount" : 6,
+      "avgPromptTokens" : 0.0,
+      "avgLatencyMs" : 57.33,
+      "p50LatencyMs" : 42,
+      "p95LatencyMs" : 181,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    },
+    "3 表" : {
+      "total" : 8,
+      "correct" : 8,
+      "executionAccuracy" : 1.0,
+      "sqlValid" : 8,
+      "sqlValidRate" : 1.0,
+      "rewrittenCount" : 6,
+      "avgPromptTokens" : 0.0,
+      "avgLatencyMs" : 130.88,
+      "p50LatencyMs" : 82,
+      "p95LatencyMs" : 308,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    },
+    "4+ 表" : {
+      "total" : 10,
+      "correct" : 4,
+      "executionAccuracy" : 0.4,
+      "sqlValid" : 4,
+      "sqlValidRate" : 0.4,
+      "rewrittenCount" : 0,
+      "avgPromptTokens" : 0.0,
+      "avgLatencyMs" : 18.1,
+      "p50LatencyMs" : 8,
+      "p95LatencyMs" : 57,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    }
+  },
+  "failures" : [ {
+    "id" : "T4-020",
+    "difficulty" : "multi_join",
+    "tags" : [ "join", "分组" ],
+    "question" : "打了\"高价值用户\"标签的会员一共下了多少单？",
+    "status" : "REJECTED",
+    "generatedSql" : "SELECT COUNT(DISTINCT o.order_id) AS cnt\nFROM user_tag_map tm\nJOIN user_tags t ON t.tag_id = tm.tag_id\nJOIN members m ON m.member_id = tm.member_id\nJOIN customers c ON c.customer_unique_id = m.customer_unique_id\nJOIN orders o ON o.customer_id = c.customer_id\nWHERE t.tag_code = 'HIGH_VALUE';\n",
+    "message" : "[UNKNOWN_TABLE] 引用了不存在的表：customers",
+    "latencyMs" : 7
+  }, {
+    "id" : "T5-001",
+    "difficulty" : "multi_join_deep",
+    "tags" : [ "join", "分组", "求和", "会员" ],
+    "question" : "每个宏观区域下，各会员等级的商品销售额分别是多少？按销售额从高到低排序。",
+    "status" : "REJECTED",
+    "generatedSql" : "SELECT r.macro_region, ml.level_name, ROUND(SUM(oi.price), 2) AS gmv\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN regions r ON r.region_code = c.customer_state\nJOIN members m ON m.customer_unique_id = c.customer_unique_id\nJOIN member_levels ml ON ml.level_id = m.level_id\nJOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1, 2 ORDER BY gmv DESC;\n",
+    "message" : "[UNKNOWN_TABLE] 引用了不存在的表：customers",
+    "latencyMs" : 8
+  }, {
+    "id" : "T5-007",
+    "difficulty" : "multi_join_deep",
+    "tags" : [ "join", "搜索", "类目" ],
+    "question" : "有商品点击的搜索记录中，哪些关键词最常点到哪个英文类目的商品？取前 20。",
+    "status" : "REJECTED",
+    "generatedSql" : "SELECT sl.keyword, t.product_category_name_english, COUNT(*) AS clicks\nFROM search_logs sl\nJOIN products p ON p.product_id = sl.clicked_product_id\nJOIN product_category_translation t ON t.product_category_name = p.product_category_name\nJOIN members m ON m.member_id = sl.member_id\nJOIN member_levels ml ON ml.level_id = m.level_id\nWHERE sl.clicked_product_id IS NOT NULL\nGROUP BY 1, 2 ORDER BY clicks DESC LIMIT 20;\n",
+    "message" : "[UNKNOWN_TABLE] 引用了不存在的表：member_levels",
+    "latencyMs" : 5
+  }, {
+    "id" : "T5-010",
+    "difficulty" : "multi_join_deep",
+    "tags" : [ "join", "结算", "卖家" ],
+    "question" : "每个卖家结算明细覆盖了多少个英文商品类目、佣金合计多少？取佣金前 20。",
+    "status" : "REJECTED",
+    "generatedSql" : "SELECT st.seller_id, COUNT(DISTINCT t.product_category_name_english) AS category_cnt,\n       ROUND(SUM(si.commission_amount), 2) AS commission\nFROM settlements st\nJOIN settlement_items si ON si.settlement_id = st.settlement_id\nJOIN order_items oi ON oi.order_id = si.order_id AND oi.order_item_id = si.order_item_id\nJOIN products p ON p.product_id = oi.product_id\nJOIN product_category_translation t ON t.product_category_name = p.product_category_name\nGROUP BY 1 ORDER BY commission DESC LIMIT 20;\n",
+    "message" : "[UNKNOWN_TABLE] 引用了不存在的表：product_category_translation",
+    "latencyMs" : 3
+  }, {
+    "id" : "T5-012",
+    "difficulty" : "multi_join_deep",
+    "tags" : [ "join", "标签", "用户画像" ],
+    "question" : "每类用户标签覆盖多少会员、这些会员订单的平均商品单价是多少？",
+    "status" : "REJECTED",
+    "generatedSql" : "SELECT ut.tag_name, COUNT(DISTINCT m.member_id) AS members, ROUND(AVG(oi.price), 2) AS avg_item_price\nFROM user_tag_map utm\nJOIN user_tags ut ON ut.tag_id = utm.tag_id\nJOIN members m ON m.member_id = utm.member_id\nJOIN customers c ON c.customer_unique_id = m.customer_unique_id\nJOIN orders o ON o.customer_id = c.customer_id\nJOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY members DESC;\n",
+    "message" : "[UNKNOWN_TABLE] 引用了不存在的表：customers",
+    "latencyMs" : 6
+  }, {
+    "id" : "T5-018",
+    "difficulty" : "multi_join_deep",
+    "tags" : [ "join", "地址", "分组" ],
+    "question" : "默认收货地址所在州和客户登记州是否一致的订单量对比，列出前 20。",
+    "status" : "REJECTED",
+    "generatedSql" : "SELECT sa.state AS addr_state, c.customer_state, COUNT(DISTINCT o.order_id) AS orders\nFROM shipping_addresses sa\nJOIN customers c ON c.customer_id = sa.customer_id\nJOIN orders o ON o.customer_id = c.customer_id\nJOIN order_items oi ON oi.order_id = o.order_id\nWHERE sa.is_default\nGROUP BY 1, 2 ORDER BY orders DESC LIMIT 20;\n",
+    "message" : "[UNKNOWN_TABLE] 引用了不存在的表：order_items",
+    "latencyMs" : 13
+  } ],
+  "retrieval" : {
+    "evaluatedCount" : 32,
+    "fullRecallRate" : 0.8125,
+    "tableRecallRate" : 0.9630208333333333,
+    "avgPrecision" : 0.3964905753968254,
+    "avgRetrievedTables" : 7.25,
+    "missedCount" : 0,
+    "avgDdlChars" : 2366.97,
+    "incompleteCases" : [ {
+      "id" : "T4-020",
+      "question" : "打了\"高价值用户\"标签的会员一共下了多少单？",
+      "missing" : [ "customers" ],
+      "retrieved" : [ "members", "orders", "search_logs", "support_tickets", "ticket_categories", "ticket_messages", "user_tag_map", "user_tags" ]
+    }, {
+      "id" : "T5-001",
+      "question" : "每个宏观区域下，各会员等级的商品销售额分别是多少？按销售额从高到低排序。",
+      "missing" : [ "customers" ],
+      "retrieved" : [ "member_levels", "members", "order_items", "orders", "products", "regions", "sellers", "support_tickets" ]
+    }, {
+      "id" : "T5-007",
+      "question" : "有商品点击的搜索记录中，哪些关键词最常点到哪个英文类目的商品？取前 20。",
+      "missing" : [ "member_levels" ],
+      "retrieved" : [ "campaign_products", "inventory", "inventory_movements", "members", "order_items", "product_category_translation", "products", "search_logs", "support_tickets" ]
+    }, {
+      "id" : "T5-010",
+      "question" : "每个卖家结算明细覆盖了多少个英文商品类目、佣金合计多少？取佣金前 20。",
+      "missing" : [ "product_category_translation" ],
+      "retrieved" : [ "order_items", "orders", "products", "regions", "sellers", "settlement_items", "settlements" ]
+    }, {
+      "id" : "T5-012",
+      "question" : "每类用户标签覆盖多少会员、这些会员订单的平均商品单价是多少？",
+      "missing" : [ "customers" ],
+      "retrieved" : [ "member_levels", "members", "order_items", "orders", "products", "search_logs", "support_tickets", "user_tag_map", "user_tags" ]
+    }, {
+      "id" : "T5-018",
+      "question" : "默认收货地址所在州和客户登记州是否一致的订单量对比，列出前 20。",
+      "missing" : [ "order_items" ],
+      "retrieved" : [ "customers", "geolocation", "members", "orders", "regions", "shipping_addresses" ]
+    } ]
+  }
+}

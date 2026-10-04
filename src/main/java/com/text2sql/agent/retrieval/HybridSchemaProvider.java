@@ -42,6 +42,7 @@ public class HybridSchemaProvider implements SchemaProvider {
     private final SchemaCatalog catalog;
     private final LexicalSchemaRetriever retriever;
     private final com.text2sql.agent.retrieval.glossary.GlossaryLoader glossaryLoader;
+    private final com.text2sql.agent.config.AgentProperties properties;
 
     /**
      * 关系图缓存。
@@ -60,10 +61,12 @@ public class HybridSchemaProvider implements SchemaProvider {
     private volatile JoinGraph joinGraph;
 
     public HybridSchemaProvider(SchemaCatalog catalog, LexicalSchemaRetriever retriever,
-                                com.text2sql.agent.retrieval.glossary.GlossaryLoader glossaryLoader) {
+                                com.text2sql.agent.retrieval.glossary.GlossaryLoader glossaryLoader,
+                                com.text2sql.agent.config.AgentProperties properties) {
         this.catalog = catalog;
         this.retriever = retriever;
         this.glossaryLoader = glossaryLoader;
+        this.properties = properties;
     }
 
     @Override
@@ -90,36 +93,56 @@ public class HybridSchemaProvider implements SchemaProvider {
 
         java.util.Set<String> names = new java.util.LinkedHashSet<>(result.tableNames());
 
-        // 阶段 3 的关键改动：join 关系不再只取真实外键，而是走统一的关系图。
-        //
-        // 阶段 2 这里过滤的是 full.foreignKeys()，只有 13 条外键，于是
-        // customers.customer_state -> regions.region_code 这类词典关联
-        // 从来没进过 prompt——模型只能猜列名，T4-015 就猜成了 region_name
-        // （两列在 regions 里都存在，SQL 能跑，只是结果错，属于静默错误）。
-        //
-        // 现在改成 JoinGraph.edgesAmong()：外键和词典关联一起给，用 [FK]
-        // 标记区分可信度，并明确写出「哪一列连哪一列」。
-        List<JoinGraph.Edge> keptEdges = joinGraph(full).edgesAmong(names);
-
-        // 阶段 3 第 2 步：把扁平的边列表规划成一棵连接树。
-        //
-        // 边列表回答「存在哪些关联」，连接树回答「推荐按什么顺序连」。
-        // 多条路径都连通时（T5-001：orders 既能经 customers 到 members，
-        // 也能经 coupon_usages 到），只有连接树能表达「优先走外键那条」。
-        JoinPathPlanner.Plan plan = JoinPathPlanner.plan(keptEdges, result.tableNames());
-        String ddl = SchemaDdlRenderer.renderWithJoins(selected, keptEdges, plan);
+        String ddl = renderDdl(full, selected, names, result);
 
         log.info("检索完成：{} | DDL {} 字符（全量 {} 字符）",
                 result.summary(), ddl.length(), full.ddlText().length());
-        log.info("join 规划：{} 条边，起点 {}，连接 {} 张表",
-                plan.edges().size(), plan.root(),
-                plan.isEmpty() ? 0 : plan.edges().size() + 1);
         if (log.isDebugEnabled()) {
             result.tableNames().forEach(name ->
                     log.debug("  {} <- {}", name, result.evidence().getOrDefault(name, List.of())));
         }
 
         return full.subset(names, ddl);
+    }
+
+    /**
+     * 渲染交给模型的 DDL 文本，按配置决定要不要附 join 提示。
+     *
+     * <p><b>为什么默认不附（阶段 3 的结论）</b>
+     *
+     * <p>阶段 3 实现了列级 join 关系图 + 连接树规划，实测它确实修好了
+     * 「join 列猜错」这类错误（join 类错误 4 条 → 1 条，T4-015 从失败转通过），
+     * 但**整体准确率 52% → 52%，没有变化**，同时平均输入 token 涨了 29%。
+     *
+     * <p>净变化为零的原因：修好 5 条、新坏 5 条。新坏的里面 2 条是
+     * **过度 join**——模型看到候选边里有 {@code sellers -> regions} 就顺手连上，
+     * 而 gold 不需要。也就是说这个改动**既解决了问题也制造了问题**，
+     * 两边的量级恰好抵消。
+     *
+     * <p>所以默认关闭，代码保留可显式开启。详见
+     * {@code AgentProperties.Retrieval#joinHintsEnabled}。
+     *
+     * <p>关闭时走的是阶段 2 的形态：只给真实外键，不附列级关联、不附连接树。
+     * 这样「阶段 2 的 52%」这个基线随时可复现。
+     */
+    private String renderDdl(SchemaContext full, List<SchemaContext.Table> selected,
+                             java.util.Set<String> names, RetrievalResult result) {
+        var config = properties.getRetrieval();
+        if (!config.isJoinHintsEnabled()) {
+            // 阶段 2 形态：只有真实外键。
+            List<SchemaContext.ForeignKey> fks = full.foreignKeys().stream()
+                    .filter(fk -> names.contains(fk.fromTable()) && names.contains(fk.toTable()))
+                    .toList();
+            return SchemaDdlRenderer.render(selected, fks);
+        }
+
+        List<JoinGraph.Edge> keptEdges = joinGraph(full).edgesAmong(names);
+        JoinPathPlanner.Plan plan = JoinPathPlanner.plan(keptEdges, result.tableNames());
+        log.info("join 提示已开启：{} 条边，起点 {}，连接 {} 张表",
+                plan.edges().size(), plan.root(),
+                plan.isEmpty() ? 0 : plan.edges().size() + 1);
+        return SchemaDdlRenderer.renderWithJoins(selected, keptEdges, plan,
+                config.isJoinListEnabled(), config.isJoinPlanEnabled());
     }
 
     /** 关系图，惰性构建一次后复用。 */
