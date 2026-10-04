@@ -43,8 +43,10 @@ public class AppConfig {
     @Bean
     @ConditionalOnProperty(prefix = "agent.retrieval", name = "enabled",
             havingValue = "false", matchIfMissing = true)
-    public SchemaProvider fullSchemaProvider(SchemaCatalog catalog) {
-        return new FullSchemaProvider(catalog);
+    public SchemaProvider fullSchemaProvider(SchemaCatalog catalog,
+                                             com.text2sql.agent.semantic.MetricRegistry metricRegistry,
+                                             AgentProperties properties) {
+        return new FullSchemaProvider(catalog, metricRegistry, properties);
     }
 
     /**
@@ -60,7 +62,8 @@ public class AppConfig {
     @Bean
     @ConditionalOnProperty(prefix = "agent.retrieval", name = "enabled", havingValue = "true")
     public SchemaProvider hybridSchemaProvider(SchemaCatalog catalog, LexicalSchemaRetriever retriever,
-                                               GlossaryLoader glossaryLoader, AgentProperties properties) {
-        return new HybridSchemaProvider(catalog, retriever, glossaryLoader, properties);
+                                               GlossaryLoader glossaryLoader, AgentProperties properties,
+                                               com.text2sql.agent.semantic.MetricRegistry metricRegistry) {
+        return new HybridSchemaProvider(catalog, retriever, glossaryLoader, properties, metricRegistry);
     }
 }

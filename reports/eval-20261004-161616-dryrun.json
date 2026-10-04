@@ -1,0 +1,133 @@
+{
+  "meta" : {
+    "timestamp" : "2026-10-04T16:16:16.7917406",
+    "promptVersion" : "p1-full-schema-v1",
+    "model" : "ernie-4.5-turbo-32k",
+    "baseUrl" : "https://qianfan.baidubce.com",
+    "dryRun" : true,
+    "itemCount" : 12,
+    "limit" : 0,
+    "layers" : [ "T6" ],
+    "split" : "eval",
+    "includeDataProfile" : true,
+    "includeForeignKeys" : true,
+    "limitMode" : "APPEND",
+    "maxRows" : 200,
+    "schemaTableCount" : 9,
+    "retrievalEnabled" : true,
+    "retrievalTopK" : 8
+  },
+  "overall" : {
+    "total" : 12,
+    "correct" : 11,
+    "executionAccuracy" : 0.9166666666666666,
+    "sqlValid" : 11,
+    "sqlValidRate" : 0.9166666666666666,
+    "rewrittenCount" : 10,
+    "avgPromptTokens" : 0.0,
+    "avgLatencyMs" : 90.75,
+    "p50LatencyMs" : 42,
+    "p95LatencyMs" : 340,
+    "avgCostYuan" : 0.0,
+    "totalCostYuan" : 0.0
+  },
+  "byLayer" : {
+    "business_semantics" : {
+      "total" : 12,
+      "correct" : 11,
+      "executionAccuracy" : 0.9166666666666666,
+      "sqlValid" : 11,
+      "sqlValidRate" : 0.9166666666666666,
+      "rewrittenCount" : 10,
+      "avgPromptTokens" : 0.0,
+      "avgLatencyMs" : 90.75,
+      "p50LatencyMs" : 42,
+      "p95LatencyMs" : 340,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    }
+  },
+  "byTableCount" : {
+    "1 表" : {
+      "total" : 2,
+      "correct" : 2,
+      "executionAccuracy" : 1.0,
+      "sqlValid" : 2,
+      "sqlValidRate" : 1.0,
+      "rewrittenCount" : 2,
+      "avgPromptTokens" : 0.0,
+      "avgLatencyMs" : 18.0,
+      "p50LatencyMs" : 7,
+      "p95LatencyMs" : 29,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    },
+    "2 表" : {
+      "total" : 5,
+      "correct" : 5,
+      "executionAccuracy" : 1.0,
+      "sqlValid" : 5,
+      "sqlValidRate" : 1.0,
+      "rewrittenCount" : 4,
+      "avgPromptTokens" : 0.0,
+      "avgLatencyMs" : 90.4,
+      "p50LatencyMs" : 83,
+      "p95LatencyMs" : 234,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    },
+    "3 表" : {
+      "total" : 3,
+      "correct" : 2,
+      "executionAccuracy" : 0.6666666666666666,
+      "sqlValid" : 2,
+      "sqlValidRate" : 0.6666666666666666,
+      "rewrittenCount" : 2,
+      "avgPromptTokens" : 0.0,
+      "avgLatencyMs" : 130.67,
+      "p50LatencyMs" : 42,
+      "p95LatencyMs" : 340,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    },
+    "4+ 表" : {
+      "total" : 2,
+      "correct" : 2,
+      "executionAccuracy" : 1.0,
+      "sqlValid" : 2,
+      "sqlValidRate" : 1.0,
+      "rewrittenCount" : 2,
+      "avgPromptTokens" : 0.0,
+      "avgLatencyMs" : 104.5,
+      "p50LatencyMs" : 53,
+      "p95LatencyMs" : 156,
+      "avgCostYuan" : 0.0,
+      "totalCostYuan" : 0.0
+    }
+  },
+  "failures" : [ {
+    "id" : "T6-008",
+    "difficulty" : "business_semantics",
+    "tags" : [ "口径", "动销率" ],
+    "question" : "商品动销率是多少？（有销量的商品数 / 全部商品数）",
+    "status" : "REJECTED",
+    "generatedSql" : "WITH sold AS (\n  SELECT COUNT(DISTINCT oi.product_id) AS n\n  FROM order_items oi\n  JOIN orders o ON o.order_id = oi.order_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n),\nallp AS (SELECT COUNT(*) AS n FROM products)\nSELECT s.n AS sold_products, a.n AS all_products,\n       ROUND(100.0 * s.n / a.n, 2) AS sell_through_pct\nFROM sold s CROSS JOIN allp a;\n",
+    "message" : "[UNKNOWN_TABLE] 引用了不存在的表：orders",
+    "latencyMs" : 10
+  } ],
+  "retrieval" : {
+    "evaluatedCount" : 12,
+    "fullRecallRate" : 0.9166666666666666,
+    "tableRecallRate" : 0.9722222222222222,
+    "avgPrecision" : 0.29811507936507936,
+    "avgRetrievedTables" : 7.75,
+    "missedCount" : 0,
+    "avgDdlChars" : 1848.83,
+    "incompleteCases" : [ {
+      "id" : "T6-008",
+      "question" : "商品动销率是多少？（有销量的商品数 / 全部商品数）",
+      "missing" : [ "orders" ],
+      "retrieved" : [ "campaign_products", "inventory", "inventory_movements", "order_items", "product_brand_map", "product_category_translation", "product_price_history", "products" ]
+    } ]
+  }
+}

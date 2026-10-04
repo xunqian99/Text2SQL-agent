@@ -1,5 +1,11 @@
 package com.text2sql.agent.retrieval;
 
+import com.text2sql.agent.semantic.Metric;
+import com.text2sql.agent.semantic.MetricRegistry;
+
+import java.util.List;
+import java.util.Set;
+
 /**
  * 阶段 1 的 SchemaProvider：把整库 schema 直接塞进上下文，**不做任何筛选**。
  *
@@ -24,14 +30,36 @@ package com.text2sql.agent.retrieval;
 public class FullSchemaProvider implements SchemaProvider {
 
     private final SchemaCatalog catalog;
+    private final MetricRegistry metricRegistry;
+    private final com.text2sql.agent.config.AgentProperties properties;
 
-    public FullSchemaProvider(SchemaCatalog catalog) {
+    public FullSchemaProvider(SchemaCatalog catalog, MetricRegistry metricRegistry,
+                              com.text2sql.agent.config.AgentProperties properties) {
         this.catalog = catalog;
+        this.metricRegistry = metricRegistry;
+        this.properties = properties;
     }
 
     @Override
     public SchemaContext provide(String question) {
-        // 参数 question 在阶段 1 被忽略——整库塞入，没有筛选，自然也不需要问题。
-        return catalog.full();
+        // 阶段 1 的形态：整库塞入，不做表筛选。
+        //
+        // 但阶段 4 起 question 不再被完全忽略——语义层要按问题注入指标定义。
+        // 全量 schema 下所有表都可用，所以指标不存在「依赖表没召回」的问题，
+        // 这是它和检索版的关键差别。
+        SchemaContext full = catalog.full();
+        if (!properties.getSemantic().isEnabled()) {
+            return full;
+        }
+        List<Metric> applicable = metricRegistry.findApplicable(question,
+                Set.copyOf(full.tableNames()));
+        if (applicable.isEmpty()) {
+            return full;
+        }
+        StringBuilder sb = new StringBuilder();
+        for (Metric metric : applicable) {
+            sb.append(metric.render()).append("\n\n");
+        }
+        return full.withMetrics(sb.toString().stripTrailing());
     }
 }

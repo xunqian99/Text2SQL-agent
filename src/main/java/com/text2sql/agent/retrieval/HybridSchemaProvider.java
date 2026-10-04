@@ -43,6 +43,7 @@ public class HybridSchemaProvider implements SchemaProvider {
     private final LexicalSchemaRetriever retriever;
     private final com.text2sql.agent.retrieval.glossary.GlossaryLoader glossaryLoader;
     private final com.text2sql.agent.config.AgentProperties properties;
+    private final com.text2sql.agent.semantic.MetricRegistry metricRegistry;
 
     /**
      * 关系图缓存。
@@ -62,11 +63,13 @@ public class HybridSchemaProvider implements SchemaProvider {
 
     public HybridSchemaProvider(SchemaCatalog catalog, LexicalSchemaRetriever retriever,
                                 com.text2sql.agent.retrieval.glossary.GlossaryLoader glossaryLoader,
-                                com.text2sql.agent.config.AgentProperties properties) {
+                                com.text2sql.agent.config.AgentProperties properties,
+                                com.text2sql.agent.semantic.MetricRegistry metricRegistry) {
         this.catalog = catalog;
         this.retriever = retriever;
         this.glossaryLoader = glossaryLoader;
         this.properties = properties;
+        this.metricRegistry = metricRegistry;
     }
 
     @Override
@@ -102,7 +105,41 @@ public class HybridSchemaProvider implements SchemaProvider {
                     log.debug("  {} <- {}", name, result.evidence().getOrDefault(name, List.of())));
         }
 
-        return full.subset(names, ddl);
+        return full.subset(names, ddl).withMetrics(metricsFor(question, names));
+    }
+
+    /**
+     * 组装本次要注入的业务指标定义。
+     *
+     * <p><b>为什么按「选中的表」过滤而不是按问题关键词</b>
+     *
+     * <p>只按关键词命中的话，用户问「复购率」会注入复购率定义，而它的表达式
+     * 依赖 {@code customers} 表——如果这次检索只召回了 {@code orders}，
+     * 模型照抄表达式就会写出引用不存在表的 SQL，被校验层拦下。
+     * 结果从「口径错」变成「跑不通」，更难诊断。
+     *
+     * <p>所以过滤条件必须是「指标依赖的表都在本次上下文里」。
+     * 这也是语义层与检索层必须协同的证据：**指标的可用性取决于检索结果**。
+     *
+     * <p>关闭开关时返回空串，用于做消融实验——对比「有语义层/无语义层」
+     * 两组的准确率差异。
+     */
+    private String metricsFor(String question, java.util.Set<String> selectedTables) {
+        if (!properties.getSemantic().isEnabled()) {
+            return "";
+        }
+        java.util.List<com.text2sql.agent.semantic.Metric> applicable =
+                metricRegistry.findApplicable(question, selectedTables);
+        if (applicable.isEmpty()) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder();
+        for (com.text2sql.agent.semantic.Metric metric : applicable) {
+            sb.append(metric.render()).append("\n\n");
+        }
+        log.info("注入业务指标：{}", applicable.stream()
+                .map(com.text2sql.agent.semantic.Metric::name).toList());
+        return sb.toString().stripTrailing();
     }
 
     /**

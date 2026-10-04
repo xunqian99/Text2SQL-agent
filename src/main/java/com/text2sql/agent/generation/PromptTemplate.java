@@ -48,6 +48,8 @@ public class PromptTemplate {
                 4. 只使用下面 schema 里真实存在的表和列，不要臆造字段名。
                 5. 表名和列名一律用小写，不要加引号。
                 6. 遇到多表查询时，优先使用 FOREIGN KEYS 里给出的关联关系。
+                7. 如果下面给出了 METRICS（业务指标定义），**必须照抄它的表达式**，
+                   不要自己重新拼条件。这些口径是业务方确认过的，自行发挥会导致答案不一致。
                 """.strip();
     }
 
@@ -63,6 +65,15 @@ public class PromptTemplate {
         sb.append("=== 数据库 Schema ===\n").append(schema.ddlText()).append("\n\n");
         if (schema.dataProfile() != null && !schema.dataProfile().isBlank()) {
             sb.append("=== 数据画像 ===\n").append(schema.dataProfile()).append("\n\n");
+        }
+        // 业务指标放在 schema 之后、问题之前。
+        //
+        // 位置是刻意的：指标是「怎么算」的规则，属于背景知识，应该和 schema 相邻；
+        // 而问题必须在最后（模型对末尾注意力更强）。放在 schema 和问题中间，
+        // 既在背景区，又离问题最近——需要引用时最容易够到。
+        if (schema.hasMetrics()) {
+            sb.append("=== 业务指标定义（必须照抄表达式）===\n")
+                    .append(schema.metricsText()).append("\n\n");
         }
         sb.append("=== 用户问题 ===\n").append(question.strip()).append("\n");
         return sb.toString();

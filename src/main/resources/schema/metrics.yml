@@ -1,0 +1,228 @@
+# ============================================================================
+# 业务指标注册表（阶段 4 语义层）
+#
+# 为什么需要这个文件：
+#   阶段 1–3 的失败归因显示，T6 业务语义层 12 条全错，而且错法高度一致——
+#   不是 SQL 写不出来，是**口径猜错**：
+#     · 68% 的题目要求「有效订单」（排除 canceled/unavailable），模型经常忘
+#     · GMV 到底含不含运费，模型按字面猜
+#     · 比例要不要乘 100、保留几位小数，模型每次都不一样
+#     · 时长用整数天还是小数天
+#   这些不是「模型不够聪明」，是**领域知识没有地方存放**。
+#   每次问都让模型重新猜一遍，猜错就是必然。
+#
+# 和 glossary.yml 的分工：
+#   glossary.yml 回答「用户说的词对应哪张表、哪一列」——**结构知识**。
+#   metrics.yml  回答「这个业务指标该怎么算」——**口径知识**。
+#   两者生命周期不同：schema 变了要改 glossary，业务定义变了要改 metrics。
+#   混在一个文件里会让两件事互相干扰。
+#
+# 维护方式：
+#   · aliases 写「用户可能会怎么问」。
+#   · expression 是可以直接抄进 SQL 的片段，不是伪代码——模型要照抄的。
+#   · notes 写「为什么这么定义」，这是面试时唯一能证明你懂业务的东西。
+#   · tables 声明依赖哪些表，检索时用来判断这个指标是否适用。
+# ============================================================================
+
+metrics:
+  # --------------------------------------------------------------------------
+  # 全局口径：几乎所有指标的分母都建立在它之上
+  # --------------------------------------------------------------------------
+  - name: valid_order
+    aliases: [有效订单, 有效订单数, 有效订单量, 剔除取消, 排除取消]
+    description: 有效订单——排除已取消和不可用的订单
+    expression: "o.order_status NOT IN ('canceled', 'unavailable')"
+    tables: [orders]
+    notes: |
+      【最重要的一条口径】电商里「取消/不可用」的订单不代表成交，
+      计入任何业务指标都会虚高。实测 25 条业务语义题里有 17 条要求这个过滤，
+      是最高频的口径。**只要题目没明说包含全部订单，默认就要排除。**
+
+  - name: gmv_with_freight
+    aliases: [GMV, 成交总额, 商品交易总额, 含运费]
+    description: GMV（含运费）= 商品金额 + 运费
+    expression: "SUM(oi.price + oi.freight_value)"
+    tables: [order_items]
+    notes: |
+      GMV 含不含运费是行业里长期有争议的口径。本项目采用**含运费**，
+      理由：运费是客户实际支付的金额，属于成交额。
+      若题目明确问「不含运费的销售额」，用 sales_without_freight。
+
+  - name: sales_without_freight
+    aliases: [销售额, 商品销售额, 不含运费, 商品金额]
+    description: 销售额（不含运费）= 商品金额合计
+    expression: "SUM(oi.price)"
+    tables: [order_items]
+    notes: 只统计商品本身的金额。题目里出现「商品销售额」时通常指这个。
+
+  # --------------------------------------------------------------------------
+  # 比例类指标：全部乘 100 保留 2 位小数，保持格式一致
+  # --------------------------------------------------------------------------
+  - name: aov
+    aliases: [客单价, 平均订单金额, 订单均价]
+    description: 客单价 = GMV / 有效订单数
+    expression: "ROUND(SUM(oi.price + oi.freight_value) / COUNT(DISTINCT o.order_id), 2)"
+    tables: [orders, order_items]
+    notes: |
+      分母是**订单数**不是人数。若题目问「人均消费」才是除以人数。
+      分子用含运费 GMV，与 gmv_with_freight 保持一致。
+
+  - name: repeat_rate
+    aliases: [复购率, 回购率, 重复购买率]
+    description: 复购率 = 下单 2 次及以上的用户 / 全部下单用户
+    expression: |
+      COUNT(*) FILTER (WHERE order_cnt >= 2) * 100.0 / COUNT(*)
+    tables: [orders, customers]
+    notes: |
+      【关键】统计单位是**人**（customer_unique_id）不是订单。
+      订单级 customer_id 每人只有一次，用它算复购率恒为 0。
+      先按人聚合出订单数，再判断 >= 2。
+
+  - name: on_time_rate
+    aliases: [准时率, 准时送达率, 按时送达率]
+    description: 准时率 = 实际送达不晚于预计送达的订单 / 已送达订单
+    expression: |
+      ROUND(100.0 * COUNT(*) FILTER (
+        WHERE o.order_delivered_customer_date <= o.order_estimated_delivery_date
+      ) / COUNT(*), 2)
+    tables: [orders]
+    notes: |
+      分母是**已送达订单**（order_delivered_customer_date IS NOT NULL），
+      不是全部订单。未送达的订单无法判断是否准时，计入分母会拉低准时率。
+
+  - name: refund_rate
+    aliases: [退款率, 退货率]
+    description: 退款率 = 退款订单数 / 有效订单数
+    expression: "ROUND(100.0 * COUNT(DISTINCT r.order_id) / COUNT(DISTINCT o.order_id), 2)"
+    tables: [refunds, orders]
+    notes: 分母用有效订单，与 valid_order 口径一致。
+
+  - name: sell_through_rate
+    aliases: [动销率, 动销商品率, 售罄率]
+    description: 动销率 = 有销量的商品数 / 全部商品数
+    expression: "ROUND(100.0 * COUNT(DISTINCT oi.product_id) / (SELECT COUNT(*) FROM products), 2)"
+    tables: [order_items, products]
+    notes: |
+      分母是**全部商品数**（products 表全量），不是「有库存的商品」。
+      这是【需确认】口径：电商里两种算法都有人用，本项目选全部商品。
+      分子只算有效订单里的商品，否则取消单的商品会被算成动销。
+
+  - name: member_penetration
+    aliases: [会员渗透率, 会员订单占比, 会员占比]
+    description: 会员渗透率 = 会员贡献的有效订单 / 全部有效订单
+    expression: "ROUND(100.0 * COUNT(DISTINCT m.member_id) / COUNT(DISTINCT o.order_id), 2)"
+    tables: [orders, customers, members]
+    notes: |
+      按**订单**算渗透率，不是按人数。members 与 customers 靠
+      customer_unique_id 关联（人级），不是 customer_id（订单级）。
+
+  - name: low_score_rate
+    aliases: [低分率, 差评率, 低分占比, 低分订单, 低分评价, 差评占比]
+    description: 低分率 = 评分 <= 2 的评价 / 全部评价
+    expression: "ROUND(100.0 * COUNT(*) FILTER (WHERE r.review_score <= 2) / COUNT(*), 2)"
+    tables: [order_reviews]
+    notes: 低分定义为 1–2 星（含）。5 分制下 3 分通常算中评。
+
+  - name: ctr
+    aliases: [搜索转化率, 点击率, 搜索点击率]
+    description: 搜索转化率 = 有点击的搜索记录 / 全部搜索记录
+    expression: "ROUND(100.0 * COUNT(*) FILTER (WHERE clicked_product_id IS NOT NULL) / COUNT(*), 2)"
+    tables: [search_logs]
+    notes: 分母是搜索记录数，不是用户数。
+
+  - name: freight_ratio
+    aliases: [运费占比, 运费比例, 运费占GMV]
+    description: 运费占比 = 运费 / GMV
+    expression: "ROUND(100.0 * SUM(oi.freight_value) / SUM(oi.price + oi.freight_value), 2)"
+    tables: [order_items]
+    notes: 分母是含运费 GMV，保证口径自洽（分子是分母的一部分）。
+
+  - name: mau
+    aliases: [MAU, 月活, 活跃用户数, 活跃下单用户]
+    description: 月活跃用户 = 当月有有效订单的去重人数
+    expression: "COUNT(DISTINCT c.customer_unique_id)"
+    tables: [orders, customers]
+    notes: |
+      本项目用**下单行为**定义活跃，不用登录行为（库里没有登录表）。
+      去重单位是 customer_unique_id（人级），不是 customer_id。
+
+  - name: sla_rate
+    aliases: [SLA达成率, SLA 达成率, SLA达标率, SLA 达标率, 工单达成率, SLA]
+    description: SLA 达成率 = 解决时长不超过类目 SLA 的工单 / 全部工单
+    expression: |
+      ROUND(100.0 * COUNT(*) FILTER (
+        WHERE st.resolved_at IS NOT NULL
+          AND EXTRACT(EPOCH FROM (st.resolved_at - st.created_at)) / 3600.0 <= tc.sla_hours
+      ) / COUNT(*), 2)
+    tables: [support_tickets, ticket_categories]
+    notes: 分母是**全部工单**（含未解决的）。未解决的工单算未达成。
+
+  - name: discount_rate
+    aliases: [折扣率, 优惠率, 用券折扣]
+    description: 折扣率 = 优惠金额 / GMV
+    expression: "ROUND(100.0 * SUM(cu.discount_amount) / SUM(oi.price + oi.freight_value), 2)"
+    tables: [coupon_usages, orders, order_items]
+    notes: 只统计用券订单，分子分母都在同一个订单集合内。
+
+  - name: commission_rate
+    aliases: [佣金率, 平台抽成, 佣金比例]
+    description: 佣金率 = 佣金 / 结算毛额
+    expression: "SUM(si.commission_amount) / SUM(si.gross_amount)"
+    tables: [settlements, settlement_items]
+    notes: |
+      平台整体佣金率 = 总佣金 / 总结算额（不是各卖家佣金率的平均值，
+      那样大卖家和小卖家权重相同，会失真）。要卖家级分布时单独按卖家聚合。
+
+  - name: conversion_rate
+    aliases: [转化率, 推荐转化率, 活动转化率]
+    description: 转化率 = 已转化的推荐 / 全部推荐
+    expression: "ROUND(100.0 * COUNT(*) FILTER (WHERE converted_at IS NOT NULL) / COUNT(*), 2)"
+    tables: [referrals]
+    notes: 分母是全部推荐记录。
+
+  - name: retention_rate
+    aliases: [留存率, 次月留存, 用户留存]
+    description: 留存率 = 首单后再次下单的用户 / 同期首单用户
+    expression: "ROUND(100.0 * COUNT(returned) / COUNT(*), 2)"
+    tables: [orders, customers]
+    notes: |
+      先按人取首单时间确定同期群（cohort），再看该群在目标窗口内
+      是否还有有效订单。统计单位是人，不是订单。
+
+  - name: gmv_per_user
+    aliases: [人均GMV, 人均消费, 人均成交额]
+    description: 人均 GMV = 用户总 GMV / 用户数
+    expression: "ROUND(AVG(gmv), 2)"
+    tables: [orders, customers, order_items]
+    notes: |
+      先按人聚合出每人 GMV，再取平均——不是「总 GMV / 人数」。
+      两者在有用户下多单时结果不同：先聚合再平均才是「人均」的准确含义。
+
+  - name: inventory_turnover_days
+    aliases: [库存周转天数, 周转天数, 库存周转]
+    description: 库存周转天数 = 90 天 * 当前库存 / 近 90 天出库量
+    expression: "ROUND(90.0 * SUM(i.quantity) / NULLIF(SUM(im.quantity), 0), 1)"
+    tables: [inventory, inventory_movements, warehouses]
+    notes: |
+      出库用 movement_type = 2。分母为 0 时返回 NULL 而不是除零错误。
+      时间窗口以**数据里的最大时间**为锚点，不是 CURRENT_DATE——
+      公开数据集是历史快照，用当前日期会算出负数天数。
+
+  - name: delivery_days
+    aliases: [配送时长, 配送天数, 送达时长, 平均配送, 物流时长]
+    description: 平均配送时长 = 下单到签收的天数（保留小数）
+    expression: "ROUND(AVG(EXTRACT(EPOCH FROM (o.order_delivered_customer_date - o.order_purchase_timestamp)) / 86400.0), 2)"
+    tables: [orders]
+    notes: |
+      【两个易错点】
+      1. 用 EPOCH 换算成小数天，**不要用 EXTRACT(DAY ...)**——后者只取整数部分，
+         跨月的时长会被截断（比如 40 天会算成 9 天）。
+      2. 只统计已送达订单（order_delivered_customer_date IS NOT NULL），
+         未送达的订单没有签收时间，参与计算会得到 NULL 或错误值。
+
+  - name: yoy_growth
+    aliases: [同比增长, 同比增长率, YoY]
+    description: 同比增长率 = (本期 - 同期) / 同期
+    expression: "ROUND(100.0 * (m18.gmv - m17.gmv) / m17.gmv, 2)"
+    tables: [orders, order_items]
+    notes: 按月对齐两个年度，缺月份的年份自然不参与（INNER JOIN）。

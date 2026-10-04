@@ -20,6 +20,7 @@ public class AgentProperties {
     private Llm llm = new Llm();
     private Prompt prompt = new Prompt();
     private Retrieval retrieval = new Retrieval();
+    private Semantic semantic = new Semantic();
     private Eval eval = new Eval();
 
     public Db getDb() {
@@ -60,6 +61,14 @@ public class AgentProperties {
 
     public void setRetrieval(Retrieval retrieval) {
         this.retrieval = retrieval;
+    }
+
+    public Semantic getSemantic() {
+        return semantic;
+    }
+
+    public void setSemantic(Semantic semantic) {
+        this.semantic = semantic;
     }
 
     public Eval getEval() {
@@ -524,6 +533,48 @@ public class AgentProperties {
 
         public void setJoinPlanEnabled(boolean joinPlanEnabled) {
             this.joinPlanEnabled = joinPlanEnabled;
+        }
+    }
+
+    /**
+     * 语义层参数（阶段 4）。
+     *
+     * <p><b>它解决什么问题</b>
+     *
+     * <p>阶段 3 的失败归因显示：业务语义层（T6）12 条全错，而且错法高度一致——
+     * 不是 SQL 写不出来，是**口径猜错**。实测 25 条 T6 题里 17 条要求
+     * 「有效订单」（排除 canceled/unavailable），模型经常忘；GMV 含不含运费、
+     * 比例要不要乘 100、时长用整数天还是小数天，模型每次都在猜。
+     *
+     * <p>这不是「模型不够聪明」，是**领域知识没有地方存放**。
+     * 每次问都让模型重新猜一遍，猜错就是必然。
+     *
+     * <p><b>与检索层开关的关系</b>
+     *
+     * <p>两者独立：语义层可以在全量 schema 下生效（baseline + 语义层），
+     * 也可以和检索一起生效。独立开关是为了能做出干净的四方对照：
+     *
+     * <pre>
+     *   baseline          (retrieval=false, semantic=false)
+     *   + 检索            (retrieval=true,  semantic=false)
+     *   + 语义层          (retrieval=false, semantic=true)
+     *   + 检索 + 语义层   (retrieval=true,  semantic=true)   ← 完整形态
+     * </pre>
+     *
+     * <p>默认关闭，与检索开关遵循同一条纪律：baseline 必须随时可复现，
+     * 优化要显式开启。
+     */
+    public static class Semantic {
+
+        /** 是否注入业务指标定义。 */
+        private boolean enabled = false;
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
         }
     }
 
