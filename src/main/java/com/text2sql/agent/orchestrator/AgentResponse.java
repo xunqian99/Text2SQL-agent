@@ -96,6 +96,40 @@ public record AgentResponse(
     }
 
     /**
+     * 把两次尝试合并成一条响应：内容取 {@code second}，账目记两次之和。
+     *
+     * <p><b>为什么要合并而不是直接返回第二次</b>
+     *
+     * <p>重试花了两次模型调用，token 和延迟必须都算上，否则成本被低估一半。
+     * 但结果本身只需要一条——所以这里把「用哪条 SQL」和「这次花了多少」分开处理。
+     *
+     * <p>调用方只有在 {@code second} 成功时才应该走这里，见
+     * {@code Text2SqlOrchestrator.ask()}：重试失败时要保留首次结果，
+     * 不能让一次糟糕的重试把原本可用的答案覆盖掉。
+     */
+    public static AgentResponse combineAttempts(AgentResponse first, AgentResponse second) {
+        if (first == null) return second;
+        if (second == null) return first;
+        Timings a = first.timings();
+        Timings b = second.timings();
+        Timings summed = new Timings(
+                ms(a, Timings::retrievalMs) + ms(b, Timings::retrievalMs),
+                ms(a, Timings::generationMs) + ms(b, Timings::generationMs),
+                ms(a, Timings::validationMs) + ms(b, Timings::validationMs),
+                ms(a, Timings::executionMs) + ms(b, Timings::executionMs),
+                ms(a, Timings::totalMs) + ms(b, Timings::totalMs));
+        return new AgentResponse(second.question(), second.status(), second.sql(), second.message(),
+                second.violations(), second.columns(), second.rows(), second.truncated(),
+                second.rewritten(),
+                com.text2sql.agent.observability.LlmCallRecord.combine(first.llmCall(), second.llmCall()),
+                second.schemaTableCount(), second.retrievedTables(), second.schemaDdlChars(), summed);
+    }
+
+    private static long ms(Timings t, java.util.function.ToLongFunction<Timings> getter) {
+        return t == null ? 0 : Math.max(0, getter.applyAsLong(t));
+    }
+
+    /**
      * 分阶段耗时。
      *
      * @param retrievalMs  检索层耗时（阶段 1 是缓存命中，接近 0）

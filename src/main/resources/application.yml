@@ -14,8 +14,17 @@ spring:
 
   datasource:
     url: jdbc:postgresql://localhost:5432/olist
-    username: text2sql
-    password: text2sql
+    # 【阶段 5 的第三层防线】应用连库用**只读账号**，不是建库用的超级用户。
+    #
+    # 为什么必须有这一层：AST 校验是个软件组件，可能有洞；一旦被绕过，
+    # 攻击者拿到的权限就取决于这个账号。用 text2sql（POSTGRES_USER，超级用户）
+    # 意味着最坏情况是删库；用 text2sql_ro 意味着最坏情况只是读到了不该读的数据。
+    #
+    # 账号由 data/schema/05_readonly_role.sql 创建，只授 SELECT，
+    # 并显式 REVOKE 掉 INSERT/UPDATE/DELETE/TRUNCATE 和 CREATE。
+    # 建库/导数脚本仍然用 text2sql，那是另一条路径，不经过应用。
+    username: text2sql_ro
+    password: text2sql_ro
     hikari:
       # 评估是串行的，5 个连接绰绰有余。池子开大没有收益，
       # 反而会在数据库端占用更多资源，掩盖连接泄漏问题。

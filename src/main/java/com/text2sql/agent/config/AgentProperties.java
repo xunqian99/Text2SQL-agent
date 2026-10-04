@@ -22,6 +22,7 @@ public class AgentProperties {
     private Retrieval retrieval = new Retrieval();
     private Semantic semantic = new Semantic();
     private Clarification clarification = new Clarification();
+    private SelfCorrection selfCorrection = new SelfCorrection();
     private Eval eval = new Eval();
 
     public Db getDb() {
@@ -78,6 +79,14 @@ public class AgentProperties {
 
     public void setClarification(Clarification clarification) {
         this.clarification = clarification;
+    }
+
+    public SelfCorrection getSelfCorrection() {
+        return selfCorrection;
+    }
+
+    public void setSelfCorrection(SelfCorrection selfCorrection) {
+        this.selfCorrection = selfCorrection;
     }
 
     public Eval getEval() {
@@ -633,6 +642,46 @@ public class AgentProperties {
 
         public void setEnabled(boolean enabled) {
             this.enabled = enabled;
+        }
+    }
+
+    /**
+     * 线上自纠错参数（阶段 5）。
+     *
+     * <p><b>它和 {@code Eval.selfCorrection*} 的区别</b>
+     *
+     * <p>这一份管的是**真实请求链路**（{@code /api/ask}）。它只在 SQL 没有成功执行时
+     * 重试——校验拒绝、执行报错、模型返回空内容，这些都是推理时真实存在的信号。
+     *
+     * <p>{@code Eval.selfCorrection*} 管的是离线评估，多了一档
+     * {@code ERRORS_AND_MISMATCH}：执行成功但结果不对时也重试。那一档依赖评估器
+     * 手里的 gold 结果来触发，线上不存在这个信号，只能当上限实验读。
+     *
+     * <p><b>为什么默认关闭</b>：实测首答 SQL 有效率已经是 96–100%，
+     * 没有多少错误信号可回灌，收益接近 0；而一旦触发，延迟会明显上升。
+     * 优化必须显式开启，baseline 才随时可复现——和检索、语义层同一条纪律。
+     */
+    public static class SelfCorrection {
+
+        private boolean enabled = false;
+
+        /** 总尝试次数上限，含首次。1 表示不重试。 */
+        private int maxAttempts = 1;
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public int getMaxAttempts() {
+            return maxAttempts;
+        }
+
+        public void setMaxAttempts(int maxAttempts) {
+            this.maxAttempts = maxAttempts;
         }
     }
 

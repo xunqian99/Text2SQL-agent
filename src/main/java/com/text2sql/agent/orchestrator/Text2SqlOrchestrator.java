@@ -111,8 +111,57 @@ public class Text2SqlOrchestrator {
         }
         long generationMs = elapsedMs(generationStarted);
 
-        return validateAndExecute(question, generated.sql(), generated.call(), schema, tableCount,
-                retrievedTables, ddlChars, retrievalMs, generationMs, totalStarted);
+        AgentResponse first = validateAndExecute(question, generated.sql(), generated.call(), schema,
+                tableCount, retrievedTables, ddlChars, retrievalMs, generationMs, totalStarted);
+        return retryIfFailed(question, first);
+    }
+
+    /**
+     * 线上自纠错：第一次没成功执行时，把真实错误回灌给模型再试一次。
+     *
+     * <p><b>只在「有错误信号」时重试</b>。这里判断的是 {@code !success()}，
+     * 也就是校验拒绝 / 执行失败 / 模型返回空内容——这三类都是推理时确实存在的信息。
+     * 而「执行成功但答案不对」在线上没有信号，所以这里**不重试**，
+     * 那一档只能放在评估器里当上限实验（见 {@code Eval.selfCorrectionTrigger}）。
+     *
+     * <p><b>重试失败时保留首次结果</b>。这是刻意的：把一次糟糕的重试当成最终答案，
+     * 会让系统的表现比不重试更差——实测里出现过「首次能跑通、重试反而执行失败」
+     * 的情况。所以只有第二次**成功**才用它，否则原样返回第一次的结果。
+     *
+     * <p>代价必须可查：{@code combineAttempts} 会把两次调用的 token 和延迟相加，
+     * 这样「每次调用花了多少」这个数字不会被重试悄悄稀释。
+     */
+    private AgentResponse retryIfFailed(String question, AgentResponse first) {
+        var config = properties.getSelfCorrection();
+        if (!config.isEnabled() || config.getMaxAttempts() <= 1 || first.success()) {
+            return first;
+        }
+
+        String feedback = retryFeedback(first);
+        log.info("首次未成功执行（{}），触发自纠错重试", first.status());
+        AgentResponse second = askWithCorrection(question, first.sql(), feedback);
+        if (second.success()) {
+            log.info("自纠错重试成功，采用第二次结果");
+            return AgentResponse.combineAttempts(first, second);
+        }
+        log.warn("自纠错重试仍未成功（{}），保留首次结果", second.status());
+        return first;
+    }
+
+    /** 把首次失败的真实原因整理成反馈。**只包含模型自己能观察到的信息，不含标准答案。** */
+    private static String retryFeedback(AgentResponse first) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("上一条 SQL 执行结果是：").append(first.status()).append('\n');
+        if (first.sql() != null && !first.sql().isBlank()) {
+            sb.append("上一条 SQL：\n").append(first.sql()).append('\n');
+        }
+        if (first.message() != null && !first.message().isBlank()) {
+            sb.append("具体错误：").append(first.message()).append('\n');
+        }
+        sb.append("请修正后重新给出 SQL：只使用上面 schema 里真实存在的表和列，"
+                + "只保留问题要求的输出列，数值统一 ROUND 到两位小数，"
+                + "按时间分组用 DATE_TRUNC，并保留 LIMIT。\n");
+        return sb.toString();
     }
 
     /**

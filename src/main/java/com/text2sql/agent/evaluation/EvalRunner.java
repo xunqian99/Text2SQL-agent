@@ -162,6 +162,9 @@ public class EvalRunner implements ApplicationRunner {
                 schemaTableCount,
                 properties.getRetrieval().isEnabled(),
                 properties.getRetrieval().getTopK(),
+                properties.getRetrieval().isJoinHintsEnabled(),
+                properties.getSelfCorrection().isEnabled(),
+                properties.getSelfCorrection().getMaxAttempts(),
                 properties.getEval().isSelfCorrectionEnabled(),
                 properties.getEval().getSelfCorrectionMaxAttempts());
 

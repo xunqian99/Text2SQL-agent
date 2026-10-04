@@ -52,6 +52,24 @@ public record EvalReport(
             int schemaTableCount,
             boolean retrievalEnabled,
             int retrievalTopK,
+            /**
+             * 这次评估有没有开 join 提示（阶段 3 的连接树）。
+             *
+             * <p>补这个字段的原因：之前它没被记录，导致**光看报告无法判断某一轮的
+             * 数字是不是带连接树跑出来的**。而阶段 3 的结论恰恰是「默认关闭」，
+             * 读者很容易误以为历史数字都开了。数字和配置必须绑在一起，
+             * 漏一个开关就等于这份报告不可复现。
+             */
+            boolean joinHintsEnabled,
+            /**
+             * 线上自纠错开关（{@code agent.self-correction.*}）。
+             *
+             * <p>它和下面的 {@code selfCorrectionEnabled} 是两件事：
+             * 这一个管真实请求链路，那一组 {@code eval.*} 管离线评估的上限实验。
+             * 分开记录，是为了让「77% 那一轮到底重试了没有」可被复核。
+             */
+            boolean productionSelfCorrectionEnabled,
+            int productionSelfCorrectionMaxAttempts,
             boolean selfCorrectionEnabled,
             int selfCorrectionMaxAttempts) {
     }
