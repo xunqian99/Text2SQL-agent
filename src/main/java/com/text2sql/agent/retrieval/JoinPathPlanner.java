@@ -84,10 +84,16 @@ public final class JoinPathPlanner {
     /**
      * 一棵连接树：从哪张表出发，按什么顺序连过去。
      *
+     * <p><b>它只覆盖一个连通分量。</b>算法从 {@code root} 出发扩展，
+     * 覆盖不到就停止，不会为其它分量另起一棵树。所以
+     * {@code plannedTableCount} 可能小于 {@code selectedTableCount}——
+     * 这个差距不是 bug，但**必须告诉模型**。
+     *
      * @param root  起点表（检索分数最高的那张）
      * @param edges 选中的边，顺序即推荐的连接顺序（从根向外一层层展开）
+     * @param selectedTableCount 本次上下文里的表总数（用来判断覆盖是否完整）
      */
-    public record Plan(String root, List<JoinGraph.Edge> edges) {
+    public record Plan(String root, List<JoinGraph.Edge> edges, int selectedTableCount) {
 
         public Plan {
             edges = List.copyOf(edges);
@@ -95,6 +101,16 @@ public final class JoinPathPlanner {
 
         public boolean isEmpty() {
             return edges.isEmpty();
+        }
+
+        /** 这棵树覆盖了多少张表 = 边数 + 1（树有 n-1 条边）。 */
+        public int plannedTableCount() {
+            return edges.isEmpty() ? 0 : edges.size() + 1;
+        }
+
+        /** 是否有表连不上：这些表在 JOINS 段里有边，但没有推荐顺序。 */
+        public boolean incomplete() {
+            return !edges.isEmpty() && plannedTableCount() < selectedTableCount;
         }
     }
 
@@ -107,7 +123,7 @@ public final class JoinPathPlanner {
      */
     public static Plan plan(List<JoinGraph.Edge> edges, List<String> rankedTables) {
         if (edges.isEmpty() || rankedTables.isEmpty()) {
-            return new Plan(null, List.of());
+            return new Plan(null, List.of(), rankedTables.size());
         }
 
         // 表名大小写可能不一致（schema 元数据与词典各写各的），
@@ -130,15 +146,17 @@ public final class JoinPathPlanner {
         }
 
         if (!byTable.containsKey(root)) {
-            // 根是孤立点（没有边）：从剩下的表里挑第一个有边的当根。
-            // 这种情况说明子图本身不连通，规划退化成「能连多少连多少」。
+            // 根是孤立点（没有任何边）：换一张有边的表当根。
+            // 注意这只是「换个分量开始」，**不意味着会规划多个分量**——
+            // 下面的循环从单一 root 出发、覆盖不到就 break，所以它产出的是
+            // 「根所在的那一个连通分量」的树，不是生成森林。
             String fallback = rankedTables.stream()
                     .map(JoinPathPlanner::normalize)
                     .filter(byTable::containsKey)
                     .findFirst()
                     .orElse(null);
             if (fallback == null) {
-                return new Plan(null, List.of());
+                return new Plan(null, List.of(), rankedTables.size());
             }
             root = fallback;
             rootDisplay = displayName(edges, fallback);
@@ -148,8 +166,9 @@ public final class JoinPathPlanner {
         visited.add(root);
         List<JoinGraph.Edge> plan = new ArrayList<>();
 
-        // 优先队列：先比边强度（降序），再比目标表名（升序，保证确定性）。
-        // 用一个「每轮重新筛边界」的写法而不是 java.util.PriorityQueue，
+        // 每轮从「边界」上挑一条边：先比边强度（降序），再比新连上那张表的
+        // 相关度（升序），最后按表名兜底保证确定性。
+        // 用「每轮重新筛边界」的写法而不是 java.util.PriorityQueue，
         // 是因为边界集合很小（几十条边），重新筛的代价可以忽略，
         // 而代码可读性明显更好——不需要处理惰性删除。
         while (true) {
@@ -172,7 +191,7 @@ public final class JoinPathPlanner {
             visited.add(normalize(best.fromTable()));
             visited.add(normalize(best.toTable()));
         }
-        return new Plan(rootDisplay, plan);
+        return new Plan(rootDisplay, plan, rankedTables.size());
     }
 
     /** 在边里找到某张表本来的写法。 */
@@ -264,6 +283,19 @@ public final class JoinPathPlanner {
                     .append("   -- ").append(to)
                     .append(edge.isForeignKey() ? " [FK]" : " [约定]")
                     .append('\n');
+        }
+        // 覆盖声明。这一行不是装饰——它是给模型的**警示信号**。
+        //
+        // 规划只覆盖根所在的那个连通分量，其它分量的边仍然出现在 JOINS 段里，
+        // 但没有推荐顺序。如果不说破，模型很可能把 JOIN PLAN 当成
+        // 「这就是全部的 join」而漏掉剩下的表。告诉它「还有 N 张连不上」，
+        // 比悄悄少给更有用——这类遗漏会以「SQL 能跑、结果错」的形式出现，
+        // 是最难查的那一类。
+        if (plan.incomplete()) {
+            int missing = plan.selectedTableCount() - plan.plannedTableCount();
+            sb.append("  -- 注意：还有 ").append(missing)
+                    .append(" 张表与起点不在同一连通分量，本段未给出连接顺序；")
+                    .append("它们的关联见上面的 JOINS。\n");
         }
         return sb.toString().stripTrailing();
     }

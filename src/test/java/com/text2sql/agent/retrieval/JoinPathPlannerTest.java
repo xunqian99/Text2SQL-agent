@@ -102,6 +102,55 @@ class JoinPathPlannerTest {
     }
 
     @Test
+    @DisplayName("只规划根所在分量：第二个分量有边也不会进 plan（不是生成森林）")
+    void coversOnlyRootComponent() {
+        // 两个分量、各自都有边：
+        //   分量 A = {orders, order_items}    分量 B = {members, member_snapshot}
+        // 两者之间没有路径（customers 没被选中，桥接表不在）。
+        List<JoinGraph.Edge> edges = List.of(
+                fk("orders", "order_id", "order_items", "order_id"),
+                fk("members", "member_id", "member_snapshot", "member_id"));
+
+        JoinPathPlanner.Plan plan = JoinPathPlanner.plan(edges,
+                List.of("orders", "order_items", "members", "member_snapshot"));
+
+        // 关键断言：只产出分量 A 的那一条边，分量 B 的边不在 plan 里。
+        assertThat(plan.edges()).hasSize(1);
+        assertThat(plan.edges().getFirst().fromTable()).isEqualTo("orders");
+
+        // 但这个事实必须被暴露出来，而不是悄悄吞掉。
+        assertThat(plan.selectedTableCount()).isEqualTo(4);
+        assertThat(plan.plannedTableCount()).isEqualTo(2);
+        assertThat(plan.incomplete()).isTrue();
+    }
+
+    @Test
+    @DisplayName("渲染时声明覆盖不完整，避免模型把 JOIN PLAN 当成全部 join")
+    void declaresIncompleteCoverage() {
+        List<JoinGraph.Edge> edges = List.of(
+                fk("orders", "order_id", "order_items", "order_id"),
+                fk("members", "member_id", "member_snapshot", "member_id"));
+
+        String text = JoinPathPlanner.render(JoinPathPlanner.plan(edges,
+                List.of("orders", "order_items", "members", "member_snapshot")));
+
+        assertThat(text).contains("还有 2 张表与起点不在同一连通分量");
+        assertThat(text).contains("见上面的 JOINS");
+    }
+
+    @Test
+    @DisplayName("覆盖完整时不输出警示行")
+    void noWarningWhenFullyCovered() {
+        List<JoinGraph.Edge> edges = List.of(
+                fk("orders", "order_id", "order_items", "order_id"));
+
+        String text = JoinPathPlanner.render(JoinPathPlanner.plan(edges,
+                List.of("orders", "order_items")));
+
+        assertThat(text).doesNotContain("不在同一连通分量");
+    }
+
+    @Test
     @DisplayName("根是孤点时改用其它有边的表当起点")
     void fallsBackWhenRootIsIsolated() {
         List<JoinGraph.Edge> edges = List.of(
