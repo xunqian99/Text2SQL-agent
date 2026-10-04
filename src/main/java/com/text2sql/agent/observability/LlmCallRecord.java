@@ -29,6 +29,20 @@ public record LlmCallRecord(
         return new LlmCallRecord(model, in, out, in + out, promptChars, latencyMs, cost);
     }
 
+    /** 把首次调用和自纠错调用合并，报告总 token、耗时和成本。 */
+    public static LlmCallRecord combine(LlmCallRecord first, LlmCallRecord second) {
+        if (first == null) return second;
+        if (second == null) return first;
+        return new LlmCallRecord(
+                second.model(),
+                first.promptTokens() + second.promptTokens(),
+                first.completionTokens() + second.completionTokens(),
+                first.totalTokens() + second.totalTokens(),
+                first.promptChars() + second.promptChars(),
+                first.latencyMs() + second.latencyMs(),
+                first.costYuan() + second.costYuan());
+    }
+
     public String summary() {
         return "model=%s tokens=%d(prompt=%d,completion=%d) latency=%dms cost=%.4f元 promptChars=%d"
                 .formatted(model, totalTokens, promptTokens, completionTokens, latencyMs, costYuan, promptChars);

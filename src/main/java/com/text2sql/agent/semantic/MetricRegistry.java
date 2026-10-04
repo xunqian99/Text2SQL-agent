@@ -81,27 +81,41 @@ public class MetricRegistry {
         if (question == null || question.isBlank()) {
             return List.of();
         }
-        String text = question.toLowerCase(Locale.ROOT);
+        // 归一化去掉所有空白再匹配。
+        //
+        // 【实测踩到的坑】T6-011 问「运费占 GMV 的比例是多少」，而指标别名写的是
+        // 「运费占GMV」。中文里「GMV」前后加不加空格完全看用户习惯，但 contains()
+        // 是精确子串匹配，多一个空格就命中不了——结果是 freight_ratio 定义根本没注入，
+        // 模型自己算了个没乘 100 的比值，被判错。
+        //
+        // 去空白只用于**匹配**，不改变交给模型的问题原文。中文没有词间必需空格，
+        // 去掉空白不会把两个不同的词粘成一个，误命中风险可以接受。
+        String text = normalizeForMatch(question);
         List<Metric> hits = new ArrayList<>();
         for (Metric metric : metrics) {
             boolean aliasHit = metric.aliases().stream()
                     .filter(alias -> alias != null && !alias.isBlank())
-                    .anyMatch(alias -> text.contains(alias.toLowerCase(Locale.ROOT)));
+                    .anyMatch(alias -> text.contains(normalizeForMatch(alias)));
             if (!aliasHit) {
                 continue;
             }
             boolean requiredHit = metric.requiredPhrases().isEmpty()
                     || metric.requiredPhrases().stream()
                     .anyMatch(phrase -> phrase != null && !phrase.isBlank()
-                            && text.contains(phrase.toLowerCase(Locale.ROOT)));
+                            && text.contains(normalizeForMatch(phrase)));
             boolean excludedHit = metric.excludedPhrases().stream()
                     .anyMatch(phrase -> phrase != null && !phrase.isBlank()
-                            && text.contains(phrase.toLowerCase(Locale.ROOT)));
+                            && text.contains(normalizeForMatch(phrase)));
             if (requiredHit && !excludedHit) {
                 hits.add(metric);
             }
         }
         return List.copyOf(hits);
+    }
+
+    /** 匹配用的归一化：小写 + 去掉全部空白。只影响命中判定，不改变原始文本。 */
+    private static String normalizeForMatch(String value) {
+        return value.toLowerCase(Locale.ROOT).replaceAll("\\s+", "");
     }
 
     /**

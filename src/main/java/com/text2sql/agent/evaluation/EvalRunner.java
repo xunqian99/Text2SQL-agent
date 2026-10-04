@@ -7,6 +7,7 @@ import com.text2sql.agent.execution.ResultNormalizer;
 import com.text2sql.agent.execution.SqlExecutionException;
 import com.text2sql.agent.execution.SqlExecutor;
 import com.text2sql.agent.generation.PromptTemplate;
+import com.text2sql.agent.observability.LlmCallRecord;
 import com.text2sql.agent.orchestrator.AgentResponse;
 import com.text2sql.agent.orchestrator.Text2SqlOrchestrator;
 import org.slf4j.Logger;
@@ -124,7 +125,8 @@ public class EvalRunner implements ApplicationRunner {
             if (!outcome.correct()) {
                 failures.add(new EvalReport.Failure(item.id(), item.difficulty(), item.tags(),
                         item.question(), outcome.status(), outcome.generatedSql(),
-                        outcome.message(), outcome.latencyMs()));
+                        outcome.message(), outcome.latencyMs(), outcome.firstSql(),
+                        outcome.attempts(), outcome.corrected()));
             }
             // 每 10 条打一行进度。200 条评估要跑几分钟，没有进度输出
             // 会让人怀疑进程是不是卡死了——这种不确定性会直接导致中途 Ctrl+C。
@@ -159,9 +161,30 @@ public class EvalRunner implements ApplicationRunner {
                 properties.getDb().getMaxRows(),
                 schemaTableCount,
                 properties.getRetrieval().isEnabled(),
-                properties.getRetrieval().getTopK());
+                properties.getRetrieval().getTopK(),
+                properties.getEval().isSelfCorrectionEnabled(),
+                properties.getEval().getSelfCorrectionMaxAttempts());
 
-        return new EvalReport(meta, aggregate(outcomes), byLayer, byTableCount, failures, retrieval);
+        return new EvalReport(meta, aggregate(outcomes), byLayer, byTableCount, failures, retrieval,
+                aggregateCorrection(outcomes));
+    }
+
+    private EvalReport.Correction aggregateCorrection(List<ItemOutcome> outcomes) {
+        int eligible = (int) outcomes.stream()
+                .filter(o -> !o.item().goldSql().isBlank())
+                .count();
+        int firstAttemptCorrect = (int) outcomes.stream().filter(ItemOutcome::firstAttemptCorrect).count();
+        int retried = (int) outcomes.stream().filter(o -> o.attempts() > 1).count();
+        int recovered = (int) outcomes.stream().filter(ItemOutcome::corrected).count();
+        int extraPrompt = outcomes.stream().mapToInt(ItemOutcome::extraPromptTokens).sum();
+        int extraCompletion = outcomes.stream().mapToInt(ItemOutcome::extraCompletionTokens).sum();
+        long extraLatency = outcomes.stream().mapToLong(ItemOutcome::extraLatencyMs).sum();
+        return new EvalReport.Correction(
+                properties.getEval().isSelfCorrectionEnabled(),
+                properties.getEval().getSelfCorrectionMaxAttempts(),
+                properties.getEval().getSelfCorrectionTrigger().name(),
+                eligible, firstAttemptCorrect, retried, recovered,
+                extraPrompt, extraCompletion, extraLatency);
     }
 
     /**
@@ -289,17 +312,122 @@ public class EvalRunner implements ApplicationRunner {
             return ItemOutcome.goldBroken(item, e.getMessage());
         }
 
-        AgentResponse response = dryRun
+        AgentResponse firstResponse = dryRun
                 ? orchestrator.askWithFixedSql(item.question(), item.goldSql(), null)
                 : orchestrator.ask(item.question());
 
-        List<List<String>> actual = response.success()
+        List<List<String>> actual = actual(firstResponse, ordered);
+        boolean correct = firstResponse.success() && ResultNormalizer.equivalent(expected, actual);
+        if (shouldCorrect(dryRun, correct, firstResponse)) {
+            String feedback = correctionFeedback(item, firstResponse);
+            AgentResponse correctedResponse = orchestrator.askWithCorrection(
+                    item.question(), firstResponse.sql(), feedback);
+            List<List<String>> correctedActual = actual(correctedResponse, ordered);
+            boolean corrected = correctedResponse.success()
+                    && ResultNormalizer.equivalent(expected, correctedActual);
+            LlmCallRecord correctionCall = correctedResponse.llmCall();
+            LlmCallRecord combined = LlmCallRecord.combine(firstResponse.llmCall(), correctionCall);
+            AgentResponse merged = mergeAttempts(firstResponse, correctedResponse, combined);
+            return new ItemOutcome(item, merged, corrected, expected, correctedActual,
+                    firstResponse.sql(), 2, corrected, correctionCall, correct);
+        }
+
+        return new ItemOutcome(item, firstResponse, correct, expected, actual,
+                firstResponse.sql(), 1, false, null, correct);
+    }
+
+    /**
+     * 判断这一条要不要重试。
+     *
+     * <p>这里的关键是**触发信号**，不是反馈内容：
+     *
+     * <ul>
+     *   <li>{@code ERRORS_ONLY}：只在 SQL 没有成功执行时重试。校验拒绝和执行报错
+     *       都是推理时真实存在的信号，线上可用。</li>
+     *   <li>{@code ERRORS_AND_MISMATCH}：执行成功但结果不匹配时也重试。这一档
+     *       依赖评估器手里的 gold 结果来触发，线上并不存在这个信号，
+     *       因此只能当作**上限实验**来读，不能当成线上收益。</li>
+     * </ul>
+     */
+    private boolean shouldCorrect(boolean dryRun, boolean correct, AgentResponse firstResponse) {
+        if (dryRun
+                || !properties.getEval().isSelfCorrectionEnabled()
+                || properties.getEval().getSelfCorrectionMaxAttempts() <= 1) {
+            return false;
+        }
+        boolean executionSignal = !firstResponse.success();
+        if (executionSignal) {
+            return true;
+        }
+        return !correct
+                && properties.getEval().getSelfCorrectionTrigger()
+                == AgentProperties.Eval.SelfCorrectionTrigger.ERRORS_AND_MISMATCH;
+    }
+
+    private List<List<String>> actual(AgentResponse response, boolean ordered) {
+        return response.success()
                 ? ResultNormalizer.normalize(
                         new QueryResult(response.columns(), response.rows(), response.truncated(), 0L), ordered)
                 : List.of();
+    }
 
-        boolean correct = response.success() && ResultNormalizer.equivalent(expected, actual);
-        return new ItemOutcome(item, response, correct, expected, actual);
+    private static AgentResponse mergeAttempts(AgentResponse first, AgentResponse second,
+                                               LlmCallRecord combinedCall) {
+        AgentResponse.Timings a = first.timings();
+        AgentResponse.Timings b = second.timings();
+        AgentResponse.Timings timings = new AgentResponse.Timings(
+                safe(a == null ? 0 : a.retrievalMs()) + safe(b == null ? 0 : b.retrievalMs()),
+                safe(a == null ? 0 : a.generationMs()) + safe(b == null ? 0 : b.generationMs()),
+                safe(a == null ? 0 : a.validationMs()) + safe(b == null ? 0 : b.validationMs()),
+                safe(a == null ? 0 : a.executionMs()) + safe(b == null ? 0 : b.executionMs()),
+                safe(a == null ? 0 : a.totalMs()) + safe(b == null ? 0 : b.totalMs()));
+        return new AgentResponse(second.question(), second.status(), second.sql(), second.message(),
+                second.violations(), second.columns(), second.rows(), second.truncated(), second.rewritten(),
+                combinedCall, second.schemaTableCount(), second.retrievedTables(), second.schemaDdlChars(), timings);
+    }
+
+    private static long safe(long value) {
+        return Math.max(0, value);
+    }
+
+    /**
+     * 组装自纠错反馈。
+     *
+     * <p><b>这里绝对不能出现标准答案</b>：第一版曾经把 gold 的样例行和行列数写进来，
+     * 70 条就跑到 95.7%——那不是模型学会了自己纠错，而是它看到了答案。
+     * 这种数字在面试里一问就穿，必须整条链路都不出现 gold 内容。
+     *
+     * <p>允许出现的信息只有三类：用户问题、模型自己上一条 SQL、以及它能自己观察到的东西
+     * （数据库报错、自己那次执行的列名行数）。这些在线上都拿得到。
+     */
+    private String correctionFeedback(EvalItem item, AgentResponse response) {
+        StringBuilder feedback = new StringBuilder();
+        feedback.append("问题：").append(item.question()).append('\n');
+        feedback.append("上一条 SQL 状态：").append(response.status()).append('\n');
+        if (response.message() != null && !response.message().isBlank()) {
+            feedback.append("数据库或校验错误：").append(truncate(response.message(), 800)).append('\n');
+        }
+        if (response.success()) {
+            feedback.append("上一条 SQL 自己跑出来的结果：列=")
+                    .append(response.columns()).append("，行数=").append(response.rowCount())
+                    .append("，前 3 行=").append(sample(response.rows())).append('\n');
+        }
+        feedback.append("请重新审视要点：\n");
+        feedback.append("1. 输出列：是否只输出问题真正要的列，没有多余的分子/分母/排序辅助列。\n");
+        feedback.append("2. 聚合粒度：GROUP BY 的粒度是否与问题的「每个…」一致。\n");
+        feedback.append("3. 去重与放大：JOIN 是否造成行数放大，该用 COUNT(DISTINCT) 的地方是否用了 COUNT。\n");
+        feedback.append("4. 连接键：多表关联是否用了正确的键（尤其人级 customer_unique_id 与订单级 customer_id）。\n");
+        feedback.append("5. 过滤与排序：过滤条件、排序字段、LIMIT 是否与问题一致。\n");
+        return feedback.toString();
+    }
+
+    private static String sample(List<List<String>> rows) {
+        if (rows == null) {
+            return "[]";
+        }
+        int max = 240;
+        String text = rows.stream().limit(3).toList().toString();
+        return text.length() <= max ? text : text.substring(0, max) + "…";
     }
 
     /** 把一组评估项聚合成指标。整体与分层共用这一个方法，保证口径一致。 */
@@ -458,13 +586,19 @@ public class EvalRunner implements ApplicationRunner {
             AgentResponse response,
             boolean correct,
             List<List<String>> expected,
-            List<List<String>> actual) {
+            List<List<String>> actual,
+            String firstSql,
+            int attempts,
+            boolean corrected,
+            LlmCallRecord correctionCall,
+            boolean firstAttemptCorrect) {
 
         static ItemOutcome goldBroken(EvalItem item, String message) {
             AgentResponse broken = AgentResponse.failed(item.question(),
                     AgentResponse.Status.EXECUTION_FAILED, item.goldSql(), "gold_sql 执行失败：" + message,
                     null, 0, List.of(), 0, null);
-            return new ItemOutcome(item, broken, false, List.of(), List.of());
+            return new ItemOutcome(item, broken, false, List.of(), List.of(),
+                    item.goldSql(), 1, false, null, false);
         }
 
         String difficulty() {
@@ -521,6 +655,18 @@ public class EvalRunner implements ApplicationRunner {
 
         boolean rewritten() {
             return response.rewritten();
+        }
+
+        int extraPromptTokens() {
+            return correctionCall == null ? 0 : correctionCall.promptTokens();
+        }
+
+        int extraCompletionTokens() {
+            return correctionCall == null ? 0 : correctionCall.completionTokens();
+        }
+
+        long extraLatencyMs() {
+            return correctionCall == null ? 0 : correctionCall.latencyMs();
         }
     }
 }

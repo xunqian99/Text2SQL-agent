@@ -119,6 +119,37 @@ public class Text2SqlOrchestrator {
                 retrievalMs, 0, totalStarted);
     }
 
+    /**
+     * 阶段 5 自纠错入口：保留第一次 SQL，由评估器或上层调用方提供反馈，
+     * 再走一次「生成 → 校验 → 执行」完整链路。
+     */
+    public AgentResponse askWithCorrection(String question, String previousSql, String feedback) {
+        long totalStarted = System.nanoTime();
+        long retrievalStarted = System.nanoTime();
+        SchemaContext schema = schemaProvider.provide(question);
+        long retrievalMs = elapsedMs(retrievalStarted);
+        int tableCount = schema.tables().size();
+        List<String> retrievedTables = schema.tableNames();
+        int ddlChars = schema.ddlText() == null ? 0 : schema.ddlText().length();
+
+        long generationStarted = System.nanoTime();
+        GeneratedSql generated;
+        try {
+            generated = generator.generateCorrection(question, schema, previousSql, feedback);
+        } catch (GenerationException e) {
+            long generationMs = elapsedMs(generationStarted);
+            AgentResponse.Status status = e.getReason() == GenerationException.Reason.NOT_CONFIGURED
+                    ? AgentResponse.Status.NOT_CONFIGURED
+                    : AgentResponse.Status.GENERATION_FAILED;
+            return AgentResponse.failed(question, status, null, e.getMessage(), null, tableCount,
+                    retrievedTables, ddlChars,
+                    timings(retrievalMs, generationMs, 0, 0, elapsedMs(totalStarted)));
+        }
+        long generationMs = elapsedMs(generationStarted);
+        return validateAndExecute(question, generated.sql(), generated.call(), schema, tableCount,
+                retrievedTables, ddlChars, retrievalMs, generationMs, totalStarted);
+    }
+
     private AgentResponse validateAndExecute(String question, String sql, LlmCallRecord llmCall,
                                              SchemaContext schema, int tableCount,
                                              List<String> retrievedTables,

@@ -20,6 +20,7 @@ import java.util.Map;
  * @param byTableCount 按「gold SQL 实际用到几张表」分组的指标（阶段 3 新增）
  * @param failures   失败案例明细，按发生顺序
  * @param retrieval  检索层指标（阶段 2）。关闭检索时为空
+ * @param correction  自纠错统计（阶段 5）。未开启时仍保留一条 disabled 记录
  */
 public record EvalReport(
         Meta meta,
@@ -27,7 +28,8 @@ public record EvalReport(
         Map<String, Overall> byLayer,
         Map<String, Overall> byTableCount,
         List<Failure> failures,
-        Retrieval retrieval) {
+        Retrieval retrieval,
+        Correction correction) {
 
     /**
      * 运行元信息。这些字段的共同点是：**改了它们，数字就不可比**。
@@ -49,7 +51,33 @@ public record EvalReport(
             int maxRows,
             int schemaTableCount,
             boolean retrievalEnabled,
-            int retrievalTopK) {
+            int retrievalTopK,
+            boolean selfCorrectionEnabled,
+            int selfCorrectionMaxAttempts) {
+    }
+
+    /**
+     * 阶段 5 自纠错统计，单独记录收益和代价，避免把第二次调用藏进准确率。
+     *
+     * @param trigger            触发条件：{@code ERRORS_ONLY} 为线上可复现，
+     *                           {@code ERRORS_AND_MISMATCH} 为评估专用的上限实验
+     * @param firstAttemptCorrect 首次生成就答对的条数。最终准确率减去它，
+     *                            才是自纠错真正救回来的数量
+     * @param retriedCount       实际触发重试的条数
+     * @param recoveredCount     重试后由错转对的条数
+     * @param extraLatencyMs     重试额外消耗的模型时间合计
+     */
+    public record Correction(
+            boolean enabled,
+            int maxAttempts,
+            String trigger,
+            int eligibleCount,
+            int firstAttemptCorrect,
+            int retriedCount,
+            int recoveredCount,
+            int extraPromptTokens,
+            int extraCompletionTokens,
+            long extraLatencyMs) {
     }
 
     /**
@@ -153,6 +181,9 @@ public record EvalReport(
             String status,
             String generatedSql,
             String message,
-            long latencyMs) {
+            long latencyMs,
+            String firstSql,
+            int attempts,
+            boolean corrected) {
     }
 }

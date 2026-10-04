@@ -80,6 +80,19 @@ class MetricRegistryTest {
     }
 
     @Test
+    @DisplayName("别名匹配忽略空白：问「运费占 GMV 的比例」要命中 freight_ratio")
+    void aliasMatchIgnoresWhitespace() {
+        MetricRegistry registry = loaded();
+
+        // 【实测踩到的坑】T6-011 的问题里 GMV 前后带空格，而别名写的是「运费占GMV」，
+        // 精确子串匹配直接漏掉，导致指标没注入、模型算出没乘 100 的比值。
+        assertThat(registry.findMentioned("运费占 GMV 的比例是多少？按宏观区域拆解。"))
+                .anyMatch(m -> m.name().equals("freight_ratio"));
+        assertThat(registry.findMentioned("运费占GMV的比例是多少？"))
+                .anyMatch(m -> m.name().equals("freight_ratio"));
+    }
+
+    @Test
     @DisplayName("依赖表不可用时过滤掉该指标，避免注入引用不存在表的表达式")
     void filtersByAvailableTables() {
         MetricRegistry registry = loaded();

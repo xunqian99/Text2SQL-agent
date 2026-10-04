@@ -619,6 +619,37 @@ public class AgentProperties {
         /** 是否用 Java 侧重新执行 gold_sql（而不是直接读 gold_results.json 快照）。 */
         private boolean recomputeGold = true;
 
+        /** 阶段 5：评估中是否启用自纠错重试。默认关闭，保持已有基线可复现。 */
+        private boolean selfCorrectionEnabled = false;
+
+        private int selfCorrectionMaxAttempts = 1;
+
+        /**
+         * 自纠错的触发条件。
+         *
+         * <p><b>为什么必须把触发条件和重试内容分开</b>
+         *
+         * <p>{@link #ERRORS_ONLY} 是**线上真实可用**的：SQL 被校验层拒绝，或数据库
+         * 执行报错，这两个信号在推理时确实存在，把它们回传给模型是合法的自纠错。
+         *
+         * <p>{@link #ERRORS_AND_MISMATCH} 是**评估专用**的：SQL 执行成功但答案不对时，
+         * 线上并没有「答案错了」这个信号，只有评估器知道（它手里有 gold_sql）。
+         * 所以它测的不是线上能力，而是**上限**——「如果有一个完美的结果校验器，
+         * 自纠错还能再救回多少条」。报告里必须标明用的是哪一种，否则这个数字
+         * 会被误读成线上收益。
+         *
+         * <p>注意两者的**反馈内容完全相同**：都只包含数据库真实报错、模型自己上一条
+         * SQL 和它自己的结果，绝不包含 gold_sql 或标准答案的任何内容。
+         */
+        public enum SelfCorrectionTrigger {
+            /** 只在执行/校验失败时重试。线上可复现。 */
+            ERRORS_ONLY,
+            /** 执行成功但结果不匹配时也重试。评估专用，测上限。 */
+            ERRORS_AND_MISMATCH
+        }
+
+        private SelfCorrectionTrigger selfCorrectionTrigger = SelfCorrectionTrigger.ERRORS_ONLY;
+
         /**
          * 评估跑完后是否退出进程。默认 true。
          *
@@ -695,6 +726,30 @@ public class AgentProperties {
 
         public void setRecomputeGold(boolean recomputeGold) {
             this.recomputeGold = recomputeGold;
+        }
+
+        public boolean isSelfCorrectionEnabled() {
+            return selfCorrectionEnabled;
+        }
+
+        public void setSelfCorrectionEnabled(boolean selfCorrectionEnabled) {
+            this.selfCorrectionEnabled = selfCorrectionEnabled;
+        }
+
+        public int getSelfCorrectionMaxAttempts() {
+            return selfCorrectionMaxAttempts;
+        }
+
+        public void setSelfCorrectionMaxAttempts(int selfCorrectionMaxAttempts) {
+            this.selfCorrectionMaxAttempts = selfCorrectionMaxAttempts;
+        }
+
+        public SelfCorrectionTrigger getSelfCorrectionTrigger() {
+            return selfCorrectionTrigger;
+        }
+
+        public void setSelfCorrectionTrigger(SelfCorrectionTrigger selfCorrectionTrigger) {
+            this.selfCorrectionTrigger = selfCorrectionTrigger;
         }
 
         public boolean isExitAfterRun() {

@@ -117,6 +117,41 @@ public class LlmSqlGenerator {
         return new GeneratedSql(sql, raw, record);
     }
 
+    /**
+     * 阶段 5 自纠错：把上一条 SQL 和结构化反馈一起交给模型，只生成一条修正版 SQL。
+     */
+    public GeneratedSql generateCorrection(String question, SchemaContext schema,
+                                            String previousSql, String feedback) {
+        if (chatModel == null) {
+            throw new GenerationException(GenerationException.Reason.NOT_CONFIGURED,
+                    "未配置 agent.llm.api-key，无法执行自纠错。");
+        }
+
+        String system = promptTemplate.systemPrompt();
+        String user = promptTemplate.correctionPrompt(schema, question, previousSql, feedback);
+        int promptChars = system.length() + user.length();
+        List<Message> messages = List.of(new SystemMessage(system), new UserMessage(user));
+        OpenAiChatOptions options = OpenAiChatOptions.builder()
+                .model(properties.getLlm().getModel())
+                .temperature(properties.getLlm().getTemperature())
+                .maxTokens(properties.getLlm().getMaxTokens())
+                .build();
+
+        long started = System.nanoTime();
+        ChatResponse response;
+        try {
+            response = chatModel.call(new Prompt(messages, options));
+        } catch (Exception e) {
+            throw new GenerationException(GenerationException.Reason.CALL_FAILED,
+                    "LLM 自纠错调用失败：" + e.getMessage(), e);
+        }
+        long latencyMs = (System.nanoTime() - started) / 1_000_000;
+        String raw = extractText(response);
+        LlmCallRecord record = buildRecord(response, promptChars, latencyMs);
+        log.info("LLM 自纠错完成：{}", record.summary());
+        return new GeneratedSql(SqlExtractor.extract(raw), raw, record);
+    }
+
     private String extractText(ChatResponse response) {
         if (response == null || response.getResult() == null) {
             throw new GenerationException(GenerationException.Reason.CALL_FAILED, "LLM 返回空响应");
