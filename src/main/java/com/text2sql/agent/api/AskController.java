@@ -96,6 +96,16 @@ public class AskController {
             boolean rewritten,
             int rowCount,
             int schemaTableCount,
+  /**
+   * 本次实际检索到的表。
+   *
+   * <p>补这个字段是因为阶段 7 要求「可解释性信息：用了哪些表」，
+   * 而它此前只存在于 {@code AgentResponse}，没暴露到 HTTP——
+   * 前端拿不到，就没法回答「是不是表选错了、为什么这么 join」。
+   * 评估报告里有、接口却看不到，属于信息断层。
+   */
+  java.util.List<String> retrievedTables,
+  int schemaDdlChars,
             Llm llm,
             Timings timings) {
 
@@ -115,7 +125,8 @@ public class AskController {
                     r.timings().retrievalMs(), r.timings().generationMs(), r.timings().validationMs(),
                     r.timings().executionMs(), r.timings().totalMs());
             return new AskResponse(r.status().name(), r.sql(), r.message(), r.violations(),
-                    r.columns(), r.rows(), r.truncated(), r.rewritten(), r.rowCount(),
+  r.columns(), r.rows(), r.truncated(), r.rewritten(), r.rowCount(),
+  r.schemaTableCount(), r.retrievedTables(), r.schemaDdlChars(),
                     r.schemaTableCount(), llm, timings);
         }
     }

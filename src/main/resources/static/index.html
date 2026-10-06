@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>Text2SQL Agent — 中文问数</title>
+  <style>
+    /* 极简样式：不引任何前端框架。
+       理由和项目其他地方一致——这一层要展示的是**链路**，不是 UI。
+       多一个构建步骤（npm/vite）就多一处会随时间腐烂的依赖。 */
+    :root { --line: #d8dee9; --muted: #6b7280; --accent: #2563eb; }
+    body { font-family: system-ui, "Microsoft YaHei", sans-serif; padding: 28px;
+           max-width: 1080px; margin-inline: auto; color: #111827; }
+    h1 { font-size: 20px; margin: 0 0 4px; }
+    .sub { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
+    form { display: flex; gap: 8px; margin-bottom: 18px; }
+    input[type=text] { flex: 1; padding: 10px 12px; font-size: 15px;
+                       border: 1px solid var(--line); border-radius: 6px; }
+    button { padding: 10px 20px; font-size: 15px; border: 0; border-radius: 6px;
+             background: var(--accent); color: #fff; cursor: pointer; }
+    button:disabled { opacity: .5; cursor: default; }
+    .examples { font-size: 13px; color: var(--muted); margin-bottom: 22px; }
+    .examples a { color: var(--accent); cursor: pointer; text-decoration: underline; }
+    section { border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px;
+              margin-bottom: 14px; }
+    section h2 { font-size: 13px; letter-spacing: .06em; color: var(--muted);
+                 margin: 0 0 10px; font-weight: 600; }
+    pre { margin: 0; white-space: pre-wrap; word-break: break-word; font-size: 13px; }
+    table { border-collapse: collapse; width: 100%; font-size: 13px; }
+    th, td { border: 1px solid var(--line); padding: 6px 9px; text-align: left; }
+    th { background: #f3f4f6; }
+    .kv { font-size: 13px; line-height: 1.9; }
+    .kv b { color: var(--muted); font-weight: 600; display: inline-block; min-width: 150px; }
+    .bad { color: #b91c1c; }
+    details summary { cursor: pointer; font-size: 13px; color: var(--muted); }
+  </style>
+</head>
+<body>
+
+<h1>Text2SQL Agent</h1>
+<div class="sub">中文问题 → SQL → 结果。检索、口径注入、校验、执行每一步都可查。</div>
+
+<form id="f">
+  <input id="q" type="text" placeholder="例如：2018 年每个月的订单量是多少？" autocomplete="off">
+  <button id="go" type="submit">提问</button>
+</form>
+
+<div class="examples">
+  试试：
+  <a data-q="2018 年每个月的订单量是多少？">按月订单量</a> ·
+  <a data-q="有效订单（排除已取消和不可用）的订单数、下单人数、客单价分别是多少？">口径类</a> ·
+  <a data-q="商品动销率是多少？（有销量的商品数 / 全部商品数）">动销率</a> ·
+  <a data-q="每个优惠券活动带来的有效订单数和商品销售额是多少？取前 10。">多表 join</a>
+</div>
+
+<div id="out"></div>
+
+<script>
+// 这一页刻意写成防御式渲染：拿不到字段就退化成展示原始 JSON，不抛异常、不白屏。
+// 理由是页面和后端演进速度不同，后端字段改名时展示层该能降级，
+// 而且把原始响应摊开反而更好排查。
+const $ = (id) => document.getElementById(id);
+const out = $('out');
+
+const esc = (s) => String(s == null ? '' : s)
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const section = (t, b) => `<section><h2>${t}</h2>${b}</section>`;
+
+function renderTable(cols, rows) {
+  if (!cols || !cols.length) return '<div class="kv">（无结果列）</div>';
+  const head = cols.map(c => `<th>${esc(c)}</th>`).join('');
+  const body = (rows || []).map(r =>
+    `<tr>${r.map(v => `<td>${esc(v)}</td>`).join('')}</tr>`).join('');
+  return `<table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
+}
+
+// 可解释性信息：用了哪些表、分阶段耗时、这次花了多少 token。
+// 这正是这个项目区别于「随便调个模型」的地方。
+function renderExplain(d) {
+  // 字段名以 AskController.AskResponse 为准：是 llm，不是 llmCall。
+  const t = d.timings || {}, llm = d.llm || {}, tables = d.retrievedTables || [];
+  const rows = [
+    ['状态', d.status],
+    ['检索到的表', tables.length ? tables.join('、') : '（未记录）'],
+    ['schema 表数 / DDL 字符', `${d.schemaTableCount ?? '-'} / ${d.schemaDdlChars ?? '-'}`],
+    ['分阶段耗时', `检索 ${t.retrievalMs ?? '-'}ms · 生成 ${t.generationMs ?? '-'}ms · `
+                 + `校验 ${t.validationMs ?? '-'}ms · 执行 ${t.executionMs ?? '-'}ms`],
+    ['总耗时', `${t.totalMs ?? '-'} ms`],
+    ['模型', llm.model ?? '-'],
+    ['token', `输入 ${llm.promptTokens ?? '-'} · 输出 ${llm.completionTokens ?? '-'}`],
+    ['护栏是否补过 LIMIT', d.rewritten === true ? '是' : '否']
+  ];
+  return `<div class="kv">${rows.map(([k, v]) =>
+    `<div><b>${esc(k)}</b>${esc(v)}</div>`).join('')}</div>`;
+}
+
+function render(d) {
+  let html = '';
+  if (d.status && d.status !== 'SUCCESS') {
+    html += section('未成功', `<div class="kv bad">${esc(d.status)}：${esc(d.message || '')}</div>`);
+  }
+  html += section('生成的 SQL', `<pre>${esc(d.sql || '（没有生成 SQL）')}</pre>`);
+  if (d.status === 'SUCCESS') {
+    const note = d.truncated ? '<div class="kv bad">结果已被行数上限截断</div>' : '';
+    html += section(`结果（${(d.rows || []).length} 行）`, note + renderTable(d.columns, d.rows));
+  }
+  html += section('这一步发生了什么', renderExplain(d));
+  html += `<section><details><summary>原始响应 JSON</summary>
+             <pre>${esc(JSON.stringify(d, null, 2))}</pre></details></section>`;
+  out.innerHTML = html;
+}
+
+async function ask(question) {
+  if (!question.trim()) return;
+  $('go').disabled = true;
+  out.innerHTML = section('执行中', '<div class="kv">正在走「检索 → 生成 → 校验 → 执行」……</div>');
+  try {
+    const resp = await fetch('/api/ask', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question })
+    });
+    // 非 2xx 也可能带完整业务响应（400 需澄清、422 被护栏拦下），
+    // 所以先试解析 JSON，拿不到才退化成纯文本。
+    const text = await resp.text();
+    let data;
+    try { data = JSON.parse(text); }
+    catch (e) { data = { status: 'HTTP ' + resp.status, message: text }; }
+    render(data);
+  } catch (e) {
+    out.innerHTML = section('请求失败', `<div class="kv bad">${esc(e.message)}</div>`);
+  } finally {
+    $('go').disabled = false;
+  }
+}
+
+$('f').addEventListener('submit', (e) => { e.preventDefault(); ask($('q').value); });
+document.querySelectorAll('.examples a').forEach(a => {
+  a.addEventListener('click', () => { $('q').value = a.dataset.q; ask(a.dataset.q); });
+});
+</script>
+</body>
+</html>
