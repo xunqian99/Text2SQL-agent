@@ -86,7 +86,8 @@
 # 2. 启动数据库（首次会自动拉取 pgvector/pgvector:pg16 镜像）
 docker compose -f docker/docker-compose.yml up -d
 
-# 3. 建表 + 导入 Olist 真实数据 + 生成扩展数据（约 1-2 分钟）
+# 3. 建表 + 导入 Olist 真实数据 + 生成扩展数据 + 创建只读账号（约 1-2 分钟）
+#    最后一步建出 text2sql_ro，应用默认用它连库（阶段 5 的权限层防护）
 powershell -File scripts/rebuild_db.ps1
 
 # 4. 核对行数（把脚本喂给容器内的 psql）
