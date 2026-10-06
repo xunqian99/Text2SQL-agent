@@ -86,7 +86,7 @@ public class HybridSchemaProvider implements SchemaProvider {
         // 长上下文里模型对开头和结尾注意力更强，把高置信度的表放前面
         // 能减少它选错表的概率。这个顺序不是装饰。
         //
-        // 语义指标是一个特殊的检索结果：它不仅提供口径，还声明了自己依赖的表。
+        // 命中的指标是一个特殊的检索结果：它不仅提供口径，还声明了自己依赖的表。
         // 例如「动销率」需要 order_items、orders、products；如果词法检索只召回
         // order_items 和 products，指标会因为依赖不完整而被过滤，模型就会退回
         // 自己猜 SQL。把命中的指标依赖表补进上下文，才能让「指标可用性过滤」
@@ -130,9 +130,9 @@ public class HybridSchemaProvider implements SchemaProvider {
      * 结果从「口径错」变成「跑不通」，更难诊断。
      *
      * <p>所以过滤条件必须是「指标依赖的表都在本次上下文里」。
-     * 这也是语义层与检索层必须协同的证据：**指标的可用性取决于检索结果**。
+     * 这也是口径注册表与检索层必须协同的证据：**指标的可用性取决于检索结果**。
      *
-     * <p>关闭开关时返回空串，用于做消融实验——对比「有语义层/无语义层」
+     * <p>关闭开关时返回空串，用于做消融实验——对比「有口径注入/无口径注入」
      * 两组的准确率差异。
      */
     private String metricsFor(String question, java.util.Set<String> selectedTables) {

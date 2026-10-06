@@ -575,32 +575,41 @@ public class AgentProperties {
     }
 
     /**
-     * 语义层参数（阶段 4）。
+     * 业务口径注册表参数（阶段 4）。
+     *
+     * <p><b>它是什么（先把话说准）</b>
+     *
+     * <p>它把 {@code metrics.yml} 里人工写好的口径文本按关键词命中后注入 prompt。
+     * 全程只有「子串匹配 + 依赖表过滤 + 拼接文本」三步，**不做语义理解、
+     * 不生成 SQL、不改写 SQL**；最终 SQL 仍由模型写。
      *
      * <p><b>它解决什么问题</b>
      *
-     * <p>阶段 3 的失败归因显示：业务语义层（T6）12 条全错，而且错法高度一致——
+     * <p>阶段 3 的失败归因显示：T6 业务口径题 12 条全错，而且错法高度一致——
      * 不是 SQL 写不出来，是**口径猜错**。实测 25 条 T6 题里 17 条要求
      * 「有效订单」（排除 canceled/unavailable），模型经常忘；GMV 含不含运费、
      * 比例要不要乘 100、时长用整数天还是小数天，模型每次都在猜。
-     *
-     * <p>这不是「模型不够聪明」，是**领域知识没有地方存放**。
-     * 每次问都让模型重新猜一遍，猜错就是必然。
+     * 这些信息不在数据库里：表、列、join 能从 schema 读到，但「哪些行算数、
+     * 分子分母是谁、输出成什么样」是业务约定。
      *
      * <p><b>与检索层开关的关系</b>
      *
-     * <p>两者独立：语义层可以在全量 schema 下生效（baseline + 语义层），
+     * <p>两者独立：口径注入可以在全量 schema 下生效（baseline + 口径注入），
      * 也可以和检索一起生效。独立开关是为了能做出干净的四方对照：
      *
      * <pre>
-     *   baseline          (retrieval=false, semantic=false)
-     *   + 检索            (retrieval=true,  semantic=false)
-     *   + 语义层          (retrieval=false, semantic=true)
-     *   + 检索 + 语义层   (retrieval=true,  semantic=true)   ← 完整形态
+     *   baseline            (retrieval=false, semantic=false)
+     *   + 检索              (retrieval=true,  semantic=false)
+     *   + 口径注入          (retrieval=false, semantic=true)
+     *   + 检索 + 口径注入   (retrieval=true,  semantic=true)   ← 完整形态
      * </pre>
      *
      * <p>默认关闭，与检索开关遵循同一条纪律：baseline 必须随时可复现，
      * 优化要显式开启。
+     *
+     * <p><b>配置键为什么仍叫 semantic</b>：{@code agent.semantic.enabled} 被
+     * application.yml、命令行参数和历史评估报告引用，改名会让历史数字无法复现，
+     * 因此保留键名，只在文档里使用「口径注册表」这个准确说法。
      */
     public static class Semantic {
 
@@ -659,7 +668,7 @@ public class AgentProperties {
      *
      * <p><b>为什么默认关闭</b>：实测首答 SQL 有效率已经是 96–100%，
      * 没有多少错误信号可回灌，收益接近 0；而一旦触发，延迟会明显上升。
-     * 优化必须显式开启，baseline 才随时可复现——和检索、语义层同一条纪律。
+     * 优化必须显式开启，baseline 才随时可复现——和检索、口径注入同一条纪律。
      */
     public static class SelfCorrection {
 

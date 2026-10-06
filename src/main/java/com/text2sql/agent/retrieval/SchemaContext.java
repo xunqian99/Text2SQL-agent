@@ -50,7 +50,7 @@ public record SchemaContext(
     public record Table(String name, String comment, List<Column> columns) {
     }
 
-    /** 一列。comment 里藏着枚举值口径（如 "会员状态：1=正常 2=冻结"），是语义层的雏形。 */
+    /** 一列。comment 里藏着枚举值口径（如 "会员状态：1=正常 2=冻结"），是口径注册表的雏形。 */
     public record Column(String name, String type, boolean nullable, String comment) {
     }
 

@@ -12,7 +12,7 @@ import java.util.Set;
  * <p>这是有意为之的「笨实现」，它有两个作用：
  *
  * <ol>
- *   <li>给出一个诚实的 baseline。不做检索、不做 join 规划、不做语义层，
+ *   <li>给出一个诚实的 baseline。不做检索、不做 join 规划、不做口径注入，
  *       模型只靠全量 schema 生成 SQL，准确率是多少就记多少。</li>
  *   <li>提供阶段 2 的对比对象。阶段 2 上线检索后，如果准确率上升且
  *       prompt token 下降，才能证明检索真的在起作用。如果一开始就上检索，
@@ -44,7 +44,7 @@ public class FullSchemaProvider implements SchemaProvider {
     public SchemaContext provide(String question) {
         // 阶段 1 的形态：整库塞入，不做表筛选。
         //
-        // 但阶段 4 起 question 不再被完全忽略——语义层要按问题注入指标定义。
+        // 但阶段 4 起 question 不再被完全忽略——口径注册表要按问题注入指标定义。
         // 全量 schema 下所有表都可用，所以指标不存在「依赖表没召回」的问题，
         // 这是它和检索版的关键差别。
         SchemaContext full = catalog.full();

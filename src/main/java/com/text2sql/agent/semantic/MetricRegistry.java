@@ -26,6 +26,10 @@ import java.util.Set;
  *
  * <p>对应 ROADMAP 阶段 4 第 1、2 条（指标配置文件格式、注册高频指标）。
  *
+ * <p>先把话说准：这里的「检索指标」是**关键词子串匹配**（{@code contains}），
+ * 不是语义理解。命中后只做两件事——按依赖表过滤、把人工预写的口径文本
+ * 交给 prompt；不生成 SQL、不改写 SQL。
+ *
  * <p><b>为什么检索方式与 glossary 不同</b>
  *
  * <p>glossary 用的是「最大匹配」——因为它的键是表名/列名的别名，长词优先能
@@ -146,7 +150,7 @@ public class MetricRegistry {
     private List<Metric> readResource() {
         ClassPathResource resource = new ClassPathResource(RESOURCE);
         if (!resource.exists()) {
-            log.warn("未找到指标注册表 {}，语义层不生效", RESOURCE);
+            log.warn("未找到指标口径注册表 {}，口径注入不生效", RESOURCE);
             return List.of();
         }
         try (InputStream in = resource.getInputStream()) {
