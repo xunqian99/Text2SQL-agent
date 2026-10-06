@@ -111,6 +111,19 @@ public class EvalRunner implements ApplicationRunner {
         if (items.isEmpty()) {
             throw new IllegalStateException("评估集为空，检查 agent.eval.dir 与 agent.eval.layers");
         }
+
+        // 阶段 6：构造重复负载来量化语义缓存。评估集本身 100 条互不重复，
+        // 不重复的话缓存命中率永远是 0，测不出任何东西。
+        int repeat = Math.max(1, properties.getEval().getRepeat());
+        if (repeat > 1) {
+            List<EvalItem> expanded = new ArrayList<>(items.size() * repeat);
+            for (int r = 0; r < repeat; r++) {
+                expanded.addAll(items);
+            }
+            log.info("评估集重复 {} 遍：{} 条 -> {} 条（用于测量语义缓存命中率）",
+                    repeat, items.size(), expanded.size());
+            items = expanded;
+        }
         log.info("开始评估：{} 条，dryRun={}，model={}", items.size(), dryRun, properties.getLlm().getModel());
 
         List<EvalReport.Failure> failures = new ArrayList<>();

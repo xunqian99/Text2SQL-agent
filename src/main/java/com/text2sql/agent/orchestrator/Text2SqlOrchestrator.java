@@ -50,17 +50,20 @@ public class Text2SqlOrchestrator {
     private final SqlValidator validator;
     private final SqlExecutor executor;
     private final com.text2sql.agent.clarification.AmbiguityDetector ambiguityDetector;
+    private final com.text2sql.agent.cache.SemanticCache cache;
     private final com.text2sql.agent.config.AgentProperties properties;
 
     public Text2SqlOrchestrator(SchemaProvider schemaProvider, LlmSqlGenerator generator,
                                 SqlValidator validator, SqlExecutor executor,
                                 com.text2sql.agent.clarification.AmbiguityDetector ambiguityDetector,
+                                com.text2sql.agent.cache.SemanticCache cache,
                                 com.text2sql.agent.config.AgentProperties properties) {
         this.schemaProvider = schemaProvider;
         this.generator = generator;
         this.validator = validator;
         this.executor = executor;
         this.ambiguityDetector = ambiguityDetector;
+        this.cache = cache;
         this.properties = properties;
     }
 
@@ -94,6 +97,27 @@ public class Text2SqlOrchestrator {
         List<String> retrievedTables = schema.tableNames();
         int ddlChars = schema.ddlText() == null ? 0 : schema.ddlText().length();
 
+        // 阶段 6：语义缓存。命中就跳过模型调用，直接拿旧 SQL 走校验和执行。
+        //
+        // 三个刻意的设计：
+        //   1) 缓存的只是 SQL，不是结果集——结果集会过期，而且过期了看不出来；
+        //   2) 命中的 SQL 照样过校验器，缓存不是免检通道；
+        //   3) 缓存里的 SQL 如果这次执行不了（比如 schema 变了），就当没命中，
+        //      回退去重新生成，而不是把失败直接抛给用户。
+        String cacheKey = cache.enabled() ? cache.key(question, cacheSignature()) : null;
+        if (cacheKey != null) {
+            var cachedSql = cache.get(cacheKey);
+            if (cachedSql.isPresent()) {
+                log.info("语义缓存命中，跳过模型调用");
+                AgentResponse hit = validateAndExecute(question, cachedSql.get(), null, schema,
+                        tableCount, retrievedTables, ddlChars, retrievalMs, 0, totalStarted);
+                if (hit.success()) {
+                    return hit;
+                }
+                log.warn("缓存中的 SQL 这次没跑通（{}），回退到重新生成", hit.status());
+            }
+        }
+
         long generationStarted = System.nanoTime();
         GeneratedSql generated;
         try {
@@ -113,7 +137,31 @@ public class Text2SqlOrchestrator {
 
         AgentResponse first = validateAndExecute(question, generated.sql(), generated.call(), schema,
                 tableCount, retrievedTables, ddlChars, retrievalMs, generationMs, totalStarted);
-        return retryIfFailed(question, first);
+        AgentResponse result = retryIfFailed(question, first);
+        if (cacheKey != null && result.success()) {
+            cache.put(cacheKey, result.sql());
+        }
+        return result;
+    }
+
+    /**
+     * 配置指纹。
+     *
+     * <p>把「改了它，同一个问题就该得到不同 SQL」的开关都编进来：模型、prompt 版本、
+     * 检索开关与 Top-K、口径注入开关、LIMIT 模式。
+     *
+     * <p>漏掉任何一个的后果都一样且难查：改了配置，旧答案继续被命中，
+     * 表现成「配置改了但数字一点没动」。历史评估报告里因此一直记着 prompt 版本，
+     * 这里用的是同一个理由。
+     */
+    private String cacheSignature() {
+        return "%s|%s|r=%b:%d|s=%b|limit=%s".formatted(
+                properties.getLlm().getModel(),
+                com.text2sql.agent.generation.PromptTemplate.VERSION,
+                properties.getRetrieval().isEnabled(),
+                properties.getRetrieval().getTopK(),
+                properties.getSemantic().isEnabled(),
+                properties.getGuard().getLimitMode().name());
     }
 
     /**

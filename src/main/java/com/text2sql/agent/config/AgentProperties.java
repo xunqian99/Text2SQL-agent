@@ -23,6 +23,7 @@ public class AgentProperties {
     private Semantic semantic = new Semantic();
     private Clarification clarification = new Clarification();
     private SelfCorrection selfCorrection = new SelfCorrection();
+    private Cache cache = new Cache();
     private Eval eval = new Eval();
 
     public Db getDb() {
@@ -87,6 +88,14 @@ public class AgentProperties {
 
     public void setSelfCorrection(SelfCorrection selfCorrection) {
         this.selfCorrection = selfCorrection;
+    }
+
+    public Cache getCache() {
+        return cache;
+    }
+
+    public void setCache(Cache cache) {
+        this.cache = cache;
     }
 
     public Eval getEval() {
@@ -655,6 +664,51 @@ public class AgentProperties {
     }
 
     /**
+     * 语义缓存参数（阶段 6）。
+     *
+     * <p><b>它省的是什么</b>
+     *
+     * <p>同一个问题被问第二次时，跳过模型调用，直接复用上次生成的 SQL。
+     * 省下的是一次 LLM 调用（1–3 秒 + 对应 token），执行时间照花。
+     *
+     * <p><b>缓存 SQL 而不是结果集</b>：结果集缓存会把过期数据当正确答案返回，
+     * 而且没有任何信号能发现——SQL 正确、格式正常，只是数字是旧的。
+     * 详见 {@code SemanticCache} 的类注释。
+     *
+     * <p><b>默认关闭</b>：它不改变单次提问的质量，只影响重复提问的成本，
+     * 而评估集里 100 条问题互不重复，开着也测不出任何东西（命中率恒为 0）。
+     * 这也是为什么它的收益必须在「含重复提问」的负载上才能量化。
+     */
+    public static class Cache {
+
+        private boolean enabled = false;
+
+        /**
+         * 最多缓存多少条 SQL。超限按 LRU 淘汰。
+         *
+         * <p>1000 的取法：一条 SQL 约 200–500 字符，加上键，1000 条约 1MB 量级，
+         * 内存完全可接受；同时足够覆盖一个团队日常反复问的那批问题。
+         */
+        private int maxEntries = 1000;
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public int getMaxEntries() {
+            return maxEntries;
+        }
+
+        public void setMaxEntries(int maxEntries) {
+            this.maxEntries = maxEntries;
+        }
+    }
+
+    /**
      * 线上自纠错参数（阶段 5）。
      *
      * <p><b>它和 {@code Eval.selfCorrection*} 的区别</b>
@@ -731,6 +785,19 @@ public class AgentProperties {
          * 这是评估体系建设里最容易被跳过、也最值得讲的一步。
          */
         private boolean dryRun = false;
+
+        /**
+         * 把评估集重复跑几遍。默认 1（不重复）。
+         *
+         * <p><b>为什么需要它</b>：阶段 6 要量化语义缓存的收益，而评估集里
+         * 100 条问题**互不重复**，缓存命中率必然是 0——标准评估根本测不出这件事。
+         * 设成 2 就得到一份「含 50% 重复提问」的负载，命中率、省下的 token、
+         * 省下的延迟才能被量出来。
+         *
+         * <p>注意这不是「多跑几遍取平均」，而是**故意构造重复负载**，
+         * 两者目的不同：前者降低噪声，后者模拟真实使用（同一批看板问题被反复问）。
+         */
+        private int repeat = 1;
 
         /** 是否用 Java 侧重新执行 gold_sql（而不是直接读 gold_results.json 快照）。 */
         private boolean recomputeGold = true;
@@ -834,6 +901,14 @@ public class AgentProperties {
 
         public void setDryRun(boolean dryRun) {
             this.dryRun = dryRun;
+        }
+
+        public int getRepeat() {
+            return repeat;
+        }
+
+        public void setRepeat(int repeat) {
+            this.repeat = repeat;
         }
 
         public boolean isRecomputeGold() {

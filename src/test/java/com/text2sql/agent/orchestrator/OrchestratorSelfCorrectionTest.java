@@ -46,6 +46,7 @@ class OrchestratorSelfCorrectionTest {
     private SqlValidator validator;
     private SqlExecutor executor;
     private AgentProperties properties;
+    private com.text2sql.agent.cache.SemanticCache cache;
 
     @BeforeEach
     void setUp() {
@@ -54,6 +55,7 @@ class OrchestratorSelfCorrectionTest {
         validator = mock(SqlValidator.class);
         executor = mock(SqlExecutor.class);
         properties = new AgentProperties();
+        cache = new com.text2sql.agent.cache.SemanticCache(properties);
 
         when(schemaProvider.provide(anyString())).thenReturn(new SchemaContext(
                 List.of(new SchemaContext.Table("orders", null, List.of(
@@ -63,7 +65,7 @@ class OrchestratorSelfCorrectionTest {
 
     private Text2SqlOrchestrator orchestrator() {
         return new Text2SqlOrchestrator(schemaProvider, generator, validator, executor,
-                mock(AmbiguityDetector.class), properties);
+                mock(AmbiguityDetector.class), cache, properties);
     }
 
     private static LlmCallRecord call(int promptTokens, int completionTokens, long latencyMs) {
