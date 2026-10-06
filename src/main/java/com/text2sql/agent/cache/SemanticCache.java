@@ -62,8 +62,21 @@ public class SemanticCache {
      */
     private final Map<String, String> store;
 
+    /**
+     * 二级存储（数据库）。为 null 表示只跑进程内。
+     *
+     * <p>两级的分工：L1 是进程内 LRU，热路径零网络；L2 是数据库表，
+     * 解决「多实例不共享」和「重启冷启动」——这两件事进程内缓存做不到。
+     *
+     * <p><b>为什么 L1 不省掉</b>：实测里 L1 命中是纳秒级，L2 要走一次数据库往返。
+     * 热点问题（看板类）反复问，靠 L1 把绝大多数命中挡在内存里，
+     * 数据库只在冷启动后的头几十次请求里被真正用到。
+     */
+    private final org.springframework.jdbc.core.JdbcTemplate l2;
+
     private long hits;
     private long misses;
+    private long l2Hits;
 
     public SemanticCache(AgentProperties properties) {
         this.properties = properties;
@@ -74,6 +87,37 @@ public class SemanticCache {
                 return size() > max;
             }
         };
+        this.l2 = buildPersistence(properties);
+    }
+
+    /**
+     * 按需建立持久化连接。
+     *
+     * <p>连不上时**只告警并退化成纯内存**，不让应用启动失败。理由和缓存本身一致：
+     * 缓存是纯优化，它不可用最多让系统变慢变贵，绝不该让问数功能整体不可用。
+     * 这条原则在分布式缓存上也一样——Redis 挂掉要降级成「没有缓存」，
+     * 而不是变成「请求失败」。
+     */
+    private static org.springframework.jdbc.core.JdbcTemplate buildPersistence(AgentProperties properties) {
+        var cfg = properties.getPersistence();
+        if (!cfg.isEnabled()) {
+            return null;
+        }
+        try {
+            var ds = new org.springframework.jdbc.datasource.DriverManagerDataSource(
+                    cfg.getUrl(), cfg.getUsername(), cfg.getPassword());
+            var template = new org.springframework.jdbc.core.JdbcTemplate(ds);
+            template.queryForObject("SELECT 1", Integer.class);
+            log.info("缓存二级存储已连接：{}（用户 {}）", cfg.getUrl(), cfg.getUsername());
+            return template;
+        } catch (Exception e) {
+            log.warn("缓存二级存储不可用，退化为纯进程内缓存：{}", e.getMessage());
+            return null;
+        }
+    }
+
+    public boolean persisted() {
+        return l2 != null;
     }
 
     public boolean enabled() {
@@ -87,8 +131,21 @@ public class SemanticCache {
      * @param configSignature 配置指纹，由编排层按当前配置算好传进来
      */
     public String key(String question, String configSignature) {
-        return normalize(question) + "\u0000" + configSignature;
+        return normalize(question) + SEPARATOR + configSignature;
     }
+
+    /**
+     * 键的分隔符。
+     *
+     * <p><b>这里踩过一个坑，值得记住</b>：第一版用的是 {@code \u0000}（NUL）。
+     * 它在 JVM 里完全正常——Map 的键爱用什么用什么——但**PostgreSQL 的 text 列
+     * 不允许存 NUL 字节**，落库时报 {@code invalid byte sequence for encoding "UTF8": 0x00}。
+     * 这个错误只在「加了持久化」之后才暴露，纯进程内缓存永远发现不了。
+     *
+     * <p>换成 ASCII 的 Unit Separator（0x1F）：PostgreSQL 只禁止 NUL，其它控制字符都能存；
+     * 而这个字符在用户问题里几乎不可能出现，不会造成键碰撞。
+     */
+    private static final String SEPARATOR = "\u001F";
 
     /**
      * 问题归一化：小写、去所有空白、去末尾标点。
@@ -111,12 +168,41 @@ public class SemanticCache {
         }
         synchronized (store) {
             String sql = store.get(key);
-            if (sql == null) {
-                misses++;
-                return Optional.empty();
+            if (sql != null) {
+                hits++;
+                return Optional.of(sql);
             }
-            hits++;
-            return Optional.of(sql);
+            String fromDb = loadFromPersistence(key);
+            if (fromDb != null) {
+                // 回填 L1：同一个问题下次问就不必再走数据库
+                store.put(key, fromDb);
+                hits++;
+                l2Hits++;
+                return Optional.of(fromDb);
+            }
+            misses++;
+            return Optional.empty();
+        }
+    }
+
+    /** 查二级存储。任何异常都当作未命中——缓存读失败不该影响问数。 */
+    private String loadFromPersistence(String key) {
+        if (l2 == null) {
+            return null;
+        }
+        try {
+            var rows = l2.queryForList(
+                    "SELECT sql_text FROM semantic_cache WHERE cache_key = ?", String.class, key);
+            if (rows.isEmpty()) {
+                return null;
+            }
+            // 命中计数只增不减，用于事后判断哪些问题值得预热。
+            l2.update("UPDATE semantic_cache SET hit_count = hit_count + 1, updated_at = now() "
+                    + "WHERE cache_key = ?", key);
+            return rows.get(0);
+        } catch (Exception e) {
+            log.warn("读取缓存二级存储失败（按未命中处理）：{}", e.getMessage());
+            return null;
         }
     }
 
@@ -127,11 +213,20 @@ public class SemanticCache {
         synchronized (store) {
             store.put(key, sql);
         }
+        if (l2 != null) {
+            try {
+                l2.update("INSERT INTO semantic_cache(cache_key, sql_text) VALUES (?, ?) "
+                        + "ON CONFLICT (cache_key) DO UPDATE SET sql_text = excluded.sql_text, "
+                        + "updated_at = now()", key, sql);
+            } catch (Exception e) {
+                log.warn("写入缓存二级存储失败（不影响本次结果）：{}", e.getMessage());
+            }
+        }
     }
 
     public Stats stats() {
         synchronized (store) {
-            return new Stats(hits, misses, store.size(), enabled());
+            return new Stats(hits, misses, l2Hits, store.size(), enabled(), l2 != null);
         }
     }
 
@@ -140,8 +235,16 @@ public class SemanticCache {
             store.clear();
             hits = 0;
             misses = 0;
+            l2Hits = 0;
         }
         log.info("语义缓存已清空");
+        if (l2 != null) {
+            try {
+                l2.update("DELETE FROM semantic_cache");
+            } catch (Exception e) {
+                log.warn("清空缓存二级存储失败：{}", e.getMessage());
+            }
+        }
     }
 
     /**
@@ -152,7 +255,8 @@ public class SemanticCache {
      * @param size    当前条目数，用来验证 LRU 上限是否生效
      * @param enabled 开关状态；关闭时命中率恒为 0，读数前先看这个
      */
-    public record Stats(long hits, long misses, int size, boolean enabled) {
+    public record Stats(long hits, long misses, long l2Hits, int size,
+                        boolean enabled, boolean persisted) {
 
         public long total() {
             return hits + misses;
@@ -164,8 +268,8 @@ public class SemanticCache {
         }
 
         public String summary() {
-            return "hits=%d misses=%d size=%d hitRate=%.1f%% enabled=%s"
-                    .formatted(hits, misses, size, hitRate() * 100, enabled);
+            return "hits=%d(L2 %d) misses=%d size=%d hitRate=%.1f%% enabled=%s persisted=%s"
+                    .formatted(hits, l2Hits, misses, size, hitRate() * 100, enabled, persisted);
         }
     }
 }

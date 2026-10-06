@@ -26,6 +26,7 @@ public class AgentProperties {
     private Cache cache = new Cache();
     private Observability observability = new Observability();
     private Routing routing = new Routing();
+    private Persistence persistence = new Persistence();
     private Eval eval = new Eval();
 
     public Db getDb() {
@@ -114,6 +115,14 @@ public class AgentProperties {
 
     public void setRouting(Routing routing) {
         this.routing = routing;
+    }
+
+    public Persistence getPersistence() {
+        return persistence;
+    }
+
+    public void setPersistence(Persistence persistence) {
+        this.persistence = persistence;
     }
 
     public Eval getEval() {
@@ -678,6 +687,66 @@ public class AgentProperties {
 
         public void setEnabled(boolean enabled) {
             this.enabled = enabled;
+        }
+    }
+
+    /**
+     * 持久化连接参数（阶段 6）。
+     *
+     * <p><b>为什么是第二个数据源，而不是复用业务那个</b>
+     *
+     * <p>业务数据源连的是 {@code text2sql_ro}——阶段 5 特意改成只读，目的是让
+     * 「AST 校验被绕过」的最坏情况止步于「读到不该读的数据」，而不是「删掉业务数据」。
+     * 到了阶段 6 要落库，两件事就撞上了：同一个账号既不该也不能写。
+     *
+     * <p>解法是**按用途拆账号**，而不是给业务账号开写权限：
+     * 业务用只读账号，持久化用 {@code text2sql_rw}，而后者只对
+     * {@code semantic_cache} 和 {@code llm_call_log} 两张表有权限，业务表一行都碰不到。
+     *
+     * <p><b>刻意不注册成 Spring 的 DataSource Bean</b>：容器里出现第二个 DataSource
+     * 会让自动配置的 {@code @ConditionalOnSingleCandidate} 失效，主业务数据源反而可能
+     * 装配不上——这是多数据源最常见的翻车点。这里在需要的地方按需构造，
+     * 两个数据源互不干扰。
+     *
+     * <p><b>默认关闭</b>：关闭时缓存退化成纯进程内，功能完全正常，只是重启会丢。
+     */
+    public static class Persistence {
+
+        private boolean enabled = false;
+        private String url = "jdbc:postgresql://localhost:5432/olist";
+        private String username = "text2sql_rw";
+        private String password = "text2sql_rw";
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public String getUrl() {
+            return url;
+        }
+
+        public void setUrl(String url) {
+            this.url = url;
+        }
+
+        public String getUsername() {
+            return username;
+        }
+
+        public void setUsername(String username) {
+            this.username = username;
+        }
+
+        public String getPassword() {
+            return password;
+        }
+
+        public void setPassword(String password) {
+            this.password = password;
         }
     }
 

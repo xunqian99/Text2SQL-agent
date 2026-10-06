@@ -106,6 +106,19 @@ class SemanticCacheTest {
     }
 
     @Test
+    @DisplayName("缓存键不含 NUL 字节——否则落库会被 PostgreSQL 拒绝")
+    void keyMustBeStorableInPostgresText() {
+        // 【实测踩到的坑】第一版用 \u0000 当分隔符，进程内一切正常，
+        // 但 PostgreSQL 的 text 列不允许 NUL，落库时报
+        // "invalid byte sequence for encoding UTF8: 0x00"。
+        // 这个 bug 只在加了持久化之后才暴露，所以用测试钉住。
+        String key = cache(10).key("2018 年有多少笔订单？", SIG);
+
+        assertThat(key).doesNotContain("\u0000");
+        assertThat(key).contains("\u001F");
+    }
+
+    @Test
     @DisplayName("命中率按命中/总请求算，无请求时是 0 而不是 NaN")
     void countsHitRate() {
         SemanticCache c = cache(10);
