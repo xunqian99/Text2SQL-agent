@@ -155,13 +155,14 @@ public class Text2SqlOrchestrator {
      * 这里用的是同一个理由。
      */
     private String cacheSignature() {
-        return "%s|%s|r=%b:%d|s=%b|limit=%s".formatted(
+        return "%s|%s|r=%b:%d|s=%b|limit=%s|esc=%s".formatted(
                 properties.getLlm().getModel(),
                 com.text2sql.agent.generation.PromptTemplate.VERSION,
                 properties.getRetrieval().isEnabled(),
                 properties.getRetrieval().getTopK(),
                 properties.getSemantic().isEnabled(),
-                properties.getGuard().getLimitMode().name());
+                properties.getGuard().getLimitMode().name(),
+                properties.getRouting().isEnabled() ? properties.getRouting().getEscalationModel() : "-");
     }
 
     /**
@@ -181,18 +182,26 @@ public class Text2SqlOrchestrator {
      */
     private AgentResponse retryIfFailed(String question, AgentResponse first) {
         var config = properties.getSelfCorrection();
-        if (!config.isEnabled() || config.getMaxAttempts() <= 1 || first.success()) {
+        var routing = properties.getRouting();
+        boolean escalate = routing.isEnabled() && !routing.getEscalationModel().isBlank();
+        boolean retryAllowed = (config.isEnabled() && config.getMaxAttempts() > 1) || escalate;
+        if (!retryAllowed || first.success()) {
             return first;
         }
 
         String feedback = retryFeedback(first);
-        log.info("首次未成功执行（{}），触发自纠错重试", first.status());
-        AgentResponse second = askWithCorrection(question, first.sql(), feedback);
+        // 阶段 6：路由开启时换强模型重试。两个开关的作用不同——
+        // 自纠错是「同一个模型看错误信息再试」，路由是「换一个更强的模型」。
+        // 同时打开时这次重试两者兼具。
+        String model = escalate ? routing.getEscalationModel() : null;
+        log.info("首次未成功执行（{}），触发重试{}", first.status(),
+                escalate ? "，并升级到 " + model : "");
+        AgentResponse second = askWithCorrection(question, first.sql(), feedback, model);
         if (second.success()) {
-            log.info("自纠错重试成功，采用第二次结果");
+            log.info("重试成功，采用第二次结果");
             return AgentResponse.combineAttempts(first, second);
         }
-        log.warn("自纠错重试仍未成功（{}），保留首次结果", second.status());
+        log.warn("重试仍未成功（{}），保留首次结果", second.status());
         return first;
     }
 
@@ -239,6 +248,14 @@ public class Text2SqlOrchestrator {
      * 再走一次「生成 → 校验 → 执行」完整链路。
      */
     public AgentResponse askWithCorrection(String question, String previousSql, String feedback) {
+        return askWithCorrection(question, previousSql, feedback, null);
+    }
+
+    /**
+     * @param modelOverride 非空时换用这个模型重试（阶段 6 的升级路由）
+     */
+    public AgentResponse askWithCorrection(String question, String previousSql, String feedback,
+                                           String modelOverride) {
         long totalStarted = System.nanoTime();
         long retrievalStarted = System.nanoTime();
         SchemaContext schema = schemaProvider.provide(question);
@@ -250,7 +267,7 @@ public class Text2SqlOrchestrator {
         long generationStarted = System.nanoTime();
         GeneratedSql generated;
         try {
-            generated = generator.generateCorrection(question, schema, previousSql, feedback);
+            generated = generator.generateCorrection(question, schema, previousSql, feedback, modelOverride);
         } catch (GenerationException e) {
             long generationMs = elapsedMs(generationStarted);
             AgentResponse.Status status = e.getReason() == GenerationException.Reason.NOT_CONFIGURED

@@ -222,3 +222,42 @@ prompt v2 合计四次独立运行：**77% / 77% / 75% / 77%**，均值约 76.5%
 **这组数字的适用边界**：它成立的前提是**有重复提问**。命中率直接等于
 「重复问题的占比」，所以真实收益取决于业务里有多少问题是反复问的
 （看板类场景高，探索类场景低）。不能把 −50% 当成普适结论。
+
+## 11. 阶段 6 可观测与成本
+
+### 逐条调用记录（自建 JSONL）
+
+开启后每次模型调用落一行到 `reports/llm-calls/llm-calls-<日期>.jsonl`：
+
+```json
+{"timestamp":"2026-10-06T15:40:40.863925","model":"deepseek-flash","status":"OK",
+ "promptTokens":1214,"completionTokens":11,"totalTokens":1225,"promptChars":3392,
+ "latencyMs":1057,"costYuan":0.0,"prompt":null,"response":null}
+```
+
+**`prompt` 和 `response` 默认是 `null`**——这是刻意的隐私取舍，不是没实现。
+要复现某次具体调用时把 `agent.observability.include-content` 打开。
+
+逐条记录相对评估报告的价值：报告只有**每层的平均值**，
+而排障要的是「哪一次慢、哪一次贵」。两者互补，都要留。
+
+### 成本换算
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/recompute_cost.ps1 `
+    -InputPricePer1k 0.5 -OutputPricePer1k 0.5
+```
+
+**为什么需要这个脚本**：报告里的金额是用「跑评估那一刻配置的单价」算的。
+项目里单价长期是 0，所以历史报告的金额全是 0——那是**没算**，不是免费。
+单价定了之后不必重跑评估，拿现成 token 换算即可，这正是把 token 与金额分开记录的好处。
+
+**它是成本下界而不是完整成本**：评估报告没有单独留存输出 token（只留了输入的平均值），
+所以脚本只能换算输入侧。要完整成本，用 `llm-calls/*.jsonl`——
+那一份逐条记录里 prompt 与 completion 两项都有。
+
+### 当前成本状态
+
+`input-price-per-1k` / `output-price-per-1k` 仍是 `0.0`，所以**阶段 6 的成本对比表
+还没有数字**。这不是代码没做完，是缺业务输入：单价来自你的账号实际计费口径，
+AI 不能替你定。填好之后重跑上面的脚本即可得到全量成本表。

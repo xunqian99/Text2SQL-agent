@@ -128,6 +128,37 @@ agent:
     # 英文标识符直接出现在问题里时的权重。
     identifier-hit-weight: 1.5
 
+  # 阶段 5：口径歧义时先反问，不猜。默认关闭——
+  # 评估集里的题目都写明了口径，反问会把「本该作答」变成「不作答」。
+  clarification:
+    enabled: false
+
+  # 阶段 5：执行失败时把真实错误回灌给模型重试一次。默认关闭，
+  # 因为首答 SQL 有效率已在 96–100%，没有多少错误信号可回灌。
+  self-correction:
+    enabled: false
+    max-attempts: 1
+
+  # 阶段 6：语义缓存。缓存 SQL 而不是结果集——结果集会过期，且过期了看不出来。
+  # 命中之后仍然走完整校验，缓存不是免检通道。
+  cache:
+    enabled: false
+    max-entries: 1000
+
+  # 阶段 6：每次模型调用落一行 JSONL，回答「每次调用花了多少」。
+  # include-content 默认关闭：prompt 里有用户原始问题，落盘前要显式决定。
+  observability:
+    enabled: true
+    dir: reports/llm-calls
+    include-content: false
+
+  # 阶段 6：分层模型路由。默认关闭，原因是成本要等单价填好才算得出来。
+  # escalation-model 留空表示不升级；填成强模型名后，
+  # 首答跑不通时会换这个模型重试一次。
+  routing:
+    enabled: false
+    escalation-model: ""
+
   eval:
     # 默认关闭。跑评估时用命令行开启：
     #   mvn spring-boot:run -Dspring-boot.run.arguments="--agent.eval.enabled=true --agent.eval.limit=50"

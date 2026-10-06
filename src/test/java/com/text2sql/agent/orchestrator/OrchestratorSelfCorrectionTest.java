@@ -80,7 +80,7 @@ class OrchestratorSelfCorrectionTest {
 
         when(generator.generate(anyString(), any()))
                 .thenReturn(new GeneratedSql("SELECT bad FROM orders", "raw", call(100, 10, 50)));
-        when(generator.generateCorrection(anyString(), any(), anyString(), anyString()))
+        when(generator.generateCorrection(anyString(), any(), anyString(), anyString(), any()))
                 .thenReturn(new GeneratedSql("SELECT order_id FROM orders LIMIT 10", "raw", call(200, 20, 70)));
 
         when(validator.validate(anyString(), any())).thenAnswer(inv ->
@@ -108,7 +108,7 @@ class OrchestratorSelfCorrectionTest {
 
         when(generator.generate(anyString(), any()))
                 .thenReturn(new GeneratedSql("SELECT first_sql FROM orders", "raw", call(100, 10, 50)));
-        when(generator.generateCorrection(anyString(), any(), anyString(), anyString()))
+        when(generator.generateCorrection(anyString(), any(), anyString(), anyString(), any()))
                 .thenReturn(new GeneratedSql("SELECT still_bad FROM orders", "raw", call(200, 20, 70)));
 
         when(validator.validate(anyString(), any())).thenAnswer(inv ->
@@ -134,7 +134,7 @@ class OrchestratorSelfCorrectionTest {
         orchestrator().ask("有多少订单？");
 
         verify(generator, times(1)).generate(anyString(), any());
-        verify(generator, never()).generateCorrection(anyString(), any(), anyString(), anyString());
+        verify(generator, never()).generateCorrection(anyString(), any(), anyString(), anyString(), any());
     }
 
     @Test
@@ -153,6 +153,59 @@ class OrchestratorSelfCorrectionTest {
         AgentResponse response = orchestrator().ask("有多少订单？");
 
         assertThat(response.success()).isTrue();
-        verify(generator, never()).generateCorrection(anyString(), any(), anyString(), anyString());
+        verify(generator, never()).generateCorrection(anyString(), any(), anyString(), anyString(), any());
+    }
+
+    @Test
+    @DisplayName("分层路由：首答跑不通时换用升级模型重试")
+    void escalatesToStrongerModelOnFailure() {
+        properties.getRouting().setEnabled(true);
+        properties.getRouting().setEscalationModel("strong-model");
+
+        when(generator.generate(anyString(), any()))
+                .thenReturn(new GeneratedSql("SELECT bad FROM orders", "raw", call(100, 10, 50)));
+        when(generator.generateCorrection(anyString(), any(), anyString(), anyString(), any()))
+                .thenReturn(new GeneratedSql("SELECT order_id FROM orders LIMIT 10", "raw",
+                        // 记录里带上升级后的模型名，方便事后从 JSONL 看出这次花了谁的钱
+                        LlmCallRecord.of("strong-model", 200, 20, 100, 70, 0, 0)));
+
+        when(validator.validate(anyString(), any())).thenAnswer(inv ->
+                ValidationResult.ok(inv.getArgument(0)));
+        when(executor.execute("SELECT bad FROM orders"))
+                .thenThrow(new SqlExecutionException("boom", null));
+        when(executor.execute("SELECT order_id FROM orders LIMIT 10"))
+                .thenReturn(new QueryResult(List.of("order_id"), List.of(List.of("1")), false, 1));
+
+        AgentResponse response = orchestrator().ask("有多少订单？");
+
+        assertThat(response.success()).isTrue();
+        assertThat(response.llmCall().model()).as("最终记账应体现升级后的模型")
+                .isEqualTo("strong-model");
+    }
+
+    @Test
+    @DisplayName("路由关闭时不换模型；只开路由不开自纠错也要能重试")
+    void routingAloneEnablesRetry() {
+        // 只开路由、不开自纠错：这是「省钱」的用法——大部分题用便宜模型，
+        // 只有跑不通时才花钱升级。重试必须仍然发生，否则这个配置等于没开。
+        properties.getRouting().setEnabled(true);
+        properties.getRouting().setEscalationModel("strong-model");
+
+        when(generator.generate(anyString(), any()))
+                .thenReturn(new GeneratedSql("SELECT bad FROM orders", "raw", call(100, 10, 50)));
+        when(generator.generateCorrection(anyString(), any(), anyString(), anyString(), any()))
+                .thenReturn(new GeneratedSql("SELECT order_id FROM orders LIMIT 10", "raw", call(200, 20, 70)));
+        when(validator.validate(anyString(), any())).thenAnswer(inv ->
+                ValidationResult.ok(inv.getArgument(0)));
+        when(executor.execute("SELECT bad FROM orders"))
+                .thenThrow(new SqlExecutionException("boom", null));
+        when(executor.execute("SELECT order_id FROM orders LIMIT 10"))
+                .thenReturn(new QueryResult(List.of("order_id"), List.of(List.of("1")), false, 1));
+
+        AgentResponse response = orchestrator().ask("有多少订单？");
+
+        assertThat(response.success()).isTrue();
+        verify(generator, times(1))
+                .generateCorrection(anyString(), any(), anyString(), anyString(), any());
     }
 }

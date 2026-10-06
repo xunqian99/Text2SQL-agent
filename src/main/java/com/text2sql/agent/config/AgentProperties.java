@@ -24,6 +24,8 @@ public class AgentProperties {
     private Clarification clarification = new Clarification();
     private SelfCorrection selfCorrection = new SelfCorrection();
     private Cache cache = new Cache();
+    private Observability observability = new Observability();
+    private Routing routing = new Routing();
     private Eval eval = new Eval();
 
     public Db getDb() {
@@ -96,6 +98,22 @@ public class AgentProperties {
 
     public void setCache(Cache cache) {
         this.cache = cache;
+    }
+
+    public Observability getObservability() {
+        return observability;
+    }
+
+    public void setObservability(Observability observability) {
+        this.observability = observability;
+    }
+
+    public Routing getRouting() {
+        return routing;
+    }
+
+    public void setRouting(Routing routing) {
+        this.routing = routing;
     }
 
     public Eval getEval() {
@@ -660,6 +678,95 @@ public class AgentProperties {
 
         public void setEnabled(boolean enabled) {
             this.enabled = enabled;
+        }
+    }
+
+    /**
+     * 可观测参数（阶段 6 第 1 条）。
+     *
+     * <p>把每次模型调用落成一行 JSONL，用于回答「每次调用花了多少」。
+     * 不接外部平台的理由见 {@code LlmCallLog} 的类注释。
+     */
+    public static class Observability {
+
+        private boolean enabled = true;
+        private String dir = "reports/llm-calls";
+
+        /**
+         * 是否把完整 prompt 与模型回复写进记录。
+         *
+         * <p><b>默认关闭，这是隐私取舍而不是省事</b>：prompt 里是用户的原始问题，
+         * 回复里是生成的 SQL。写进磁盘就是一份不受控的数据副本，
+         * 而且会被备份、被打包、被误提交。默认只记规模（字符数、token、耗时、成本），
+         * 需要复现某次具体调用时才显式打开。
+         */
+        private boolean includeContent = false;
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public String getDir() {
+            return dir;
+        }
+
+        public void setDir(String dir) {
+            this.dir = dir;
+        }
+
+        public boolean isIncludeContent() {
+            return includeContent;
+        }
+
+        public void setIncludeContent(boolean includeContent) {
+            this.includeContent = includeContent;
+        }
+    }
+
+    /**
+     * 分层模型路由参数（阶段 6 第 2 条）。
+     *
+     * <p><b>为什么是「失败后升级」而不是「让便宜模型做意图识别」</b>
+     *
+     * <p>ROADMAP 原本写的是「便宜模型负责意图识别、表选择，强模型只负责生成 SQL」。
+     * 按这个系统当前的形态，那一层没有活可干：**表选择已经由词法检索承担**
+     * （见阶段 2），它是确定性的、零 token、可解释；再让模型做一遍，
+     * 等于花钱把一个已经解决的问题重算一次，还得处理两套结果冲突。
+     *
+     * <p>所以路由改成**升级制**：默认用便宜模型，只有当它产出的 SQL 跑不通
+     * （校验拒绝 / 执行失败）时才升级到强模型重试一次。这样省的是「大部分本来就能答对的题」
+     * 的模型费用，而把强模型用在**确实需要它**的那部分上。
+     *
+     * <p>它和自纠错共用同一个重试位置，但目的不同：自纠错是用**同一个模型**看错误信息再试，
+     * 路由是**换一个更强的模型**。两个开关同时打开时，重试那一次既换模型也带上错误信息。
+     *
+     * <p>默认关闭：它不改变单次质量的上界，只改变成本结构，而成本要等单价填好才能算。
+     */
+    public static class Routing {
+
+        private boolean enabled = false;
+
+        /** 升级时使用的模型名。留空表示不升级，只把重试交给自纠错。 */
+        private String escalationModel = "";
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public String getEscalationModel() {
+            return escalationModel;
+        }
+
+        public void setEscalationModel(String escalationModel) {
+            this.escalationModel = escalationModel;
         }
     }
 

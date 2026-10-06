@@ -48,13 +48,16 @@ public class LlmSqlGenerator {
 
     private final AgentProperties properties;
     private final PromptTemplate promptTemplate;
+    private final com.text2sql.agent.observability.LlmCallLog callLog;
 
     /** 未配置 Key 时为 null。这是刻意的：把「配置缺失」变成一个可检查的状态，而不是异常。 */
     private final ChatModel chatModel;
 
-    public LlmSqlGenerator(AgentProperties properties, PromptTemplate promptTemplate) {
+    public LlmSqlGenerator(AgentProperties properties, PromptTemplate promptTemplate,
+                           com.text2sql.agent.observability.LlmCallLog callLog) {
         this.properties = properties;
         this.promptTemplate = promptTemplate;
+        this.callLog = callLog;
         this.chatModel = buildChatModel(properties);
         if (this.chatModel == null) {
             log.warn("未配置 agent.llm.api-key，SQL 生成不可用；校验/执行/评估链路仍可正常运行。");
@@ -81,6 +84,15 @@ public class LlmSqlGenerator {
      * @param schema   检索层给出的 schema 上下文
      */
     public GeneratedSql generate(String question, SchemaContext schema) {
+        return generate(question, schema, null);
+    }
+
+    /**
+     * 生成 SQL。
+     *
+     * @param modelOverride 非空时用这个模型替代配置里的默认模型（阶段 6 的升级路由）
+     */
+    public GeneratedSql generate(String question, SchemaContext schema, String modelOverride) {
         if (chatModel == null) {
             throw new GenerationException(GenerationException.Reason.NOT_CONFIGURED,
                     "未配置 agent.llm.api-key，无法生成 SQL。请在 application.yml 或环境变量 AGENT_LLM_API_KEY 中配置。");
@@ -91,8 +103,10 @@ public class LlmSqlGenerator {
         int promptChars = system.length() + user.length();
 
         List<Message> messages = List.of(new SystemMessage(system), new UserMessage(user));
+        String model = (modelOverride == null || modelOverride.isBlank())
+                ? properties.getLlm().getModel() : modelOverride;
         OpenAiChatOptions options = OpenAiChatOptions.builder()
-                .model(properties.getLlm().getModel())
+                .model(model)
                 .temperature(properties.getLlm().getTemperature())
                 .maxTokens(properties.getLlm().getMaxTokens())
                 .build();
@@ -109,8 +123,9 @@ public class LlmSqlGenerator {
 
         //获取模型的output
         String raw = extractText(response);
-        LlmCallRecord record = buildRecord(response, promptChars, latencyMs);
+        LlmCallRecord record = buildRecord(response, promptChars, latencyMs, model);
         log.info("LLM 调用完成：{}", record.summary());
+        callLog.record(record, "OK", user, raw);
 
         //将模型输出的sql进行提取，因为模型可能会生产sql之外的内容
         String sql = SqlExtractor.extract(raw);
@@ -122,6 +137,18 @@ public class LlmSqlGenerator {
      */
     public GeneratedSql generateCorrection(String question, SchemaContext schema,
                                             String previousSql, String feedback) {
+        return generateCorrection(question, schema, previousSql, feedback, null);
+    }
+
+    /**
+     * 自纠错 / 升级重试。
+     *
+     * @param modelOverride 非空时换用这个模型——阶段 6 的「失败后升级到强模型」就走这里。
+     *                      它和自纠错共用同一次重试机会：既带上错误信息，也可以换模型。
+     */
+    public GeneratedSql generateCorrection(String question, SchemaContext schema,
+                                            String previousSql, String feedback,
+                                            String modelOverride) {
         if (chatModel == null) {
             throw new GenerationException(GenerationException.Reason.NOT_CONFIGURED,
                     "未配置 agent.llm.api-key，无法执行自纠错。");
@@ -131,8 +158,10 @@ public class LlmSqlGenerator {
         String user = promptTemplate.correctionPrompt(schema, question, previousSql, feedback);
         int promptChars = system.length() + user.length();
         List<Message> messages = List.of(new SystemMessage(system), new UserMessage(user));
+        String model = (modelOverride == null || modelOverride.isBlank())
+                ? properties.getLlm().getModel() : modelOverride;
         OpenAiChatOptions options = OpenAiChatOptions.builder()
-                .model(properties.getLlm().getModel())
+                .model(model)
                 .temperature(properties.getLlm().getTemperature())
                 .maxTokens(properties.getLlm().getMaxTokens())
                 .build();
@@ -147,8 +176,9 @@ public class LlmSqlGenerator {
         }
         long latencyMs = (System.nanoTime() - started) / 1_000_000;
         String raw = extractText(response);
-        LlmCallRecord record = buildRecord(response, promptChars, latencyMs);
+        LlmCallRecord record = buildRecord(response, promptChars, latencyMs, model);
         log.info("LLM 自纠错完成：{}", record.summary());
+        callLog.record(record, "CORRECTION", user, raw);
         return new GeneratedSql(SqlExtractor.extract(raw), raw, record);
     }
 
@@ -160,7 +190,7 @@ public class LlmSqlGenerator {
         return output == null ? null : output.getText();
     }
 
-    private LlmCallRecord buildRecord(ChatResponse response, int promptChars, long latencyMs) {
+    private LlmCallRecord buildRecord(ChatResponse response, int promptChars, long latencyMs, String model) {
         Integer in = null;
         Integer out = null;
         ChatResponseMetadata metadata = response.getMetadata();
@@ -171,7 +201,7 @@ public class LlmSqlGenerator {
                 out = usage.getCompletionTokens();
             }
         }
-        return LlmCallRecord.of(properties.getLlm().getModel(), in, out, promptChars, latencyMs,
+        return LlmCallRecord.of(model, in, out, promptChars, latencyMs,
                 properties.getLlm().getInputPricePer1k(), properties.getLlm().getOutputPricePer1k());
     }
 
