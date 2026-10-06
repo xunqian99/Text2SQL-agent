@@ -182,6 +182,62 @@ PowerShell 命令末尾不要加 Linux 的 `\`。完整机器路径命令见评�
 
 简历描述、数字速查表、14 个高频问答见 [docs/INTERVIEW.md](docs/INTERVIEW.md)。
 
+## 架构
+
+一次请求的完整链路。虚线框是**可关闭的优化项**，默认关，保证 baseline 随时可复现。
+
+```mermaid
+flowchart TD
+    Q[中文问题] --> AMB{口径歧义?}
+    AMB -- 命中 --> ASK[反问用户<br/>不生成 SQL]
+    AMB -- 未命中 --> C1[L1 进程内缓存]
+    C1 -- 命中 --> VAL
+    C1 -- 未命中 --> C2[L2 数据库缓存<br/>semantic_cache]
+    C2 -- 命中 --> VAL
+    C2 -- 未命中 --> RET[Schema 检索<br/>词典 + 词法 + 连通性修复]
+    RET --> TOP["Top-8 张表<br/>7401 → 1580 DDL 字符"]
+    TOP --> SEM[口径注入<br/>关键词命中 metrics.yml<br/>按依赖表过滤]
+    SEM --> LLM[生成 SQL]
+    LLM --> VAL[校验<br/>表 / 列 / 危险函数 / LIMIT]
+    VAL -- 拒绝 --> RETRY
+    VAL -- 通过 --> EXE[执行<br/>只读账号 · 10s 超时 · 200 行上限]
+    EXE -- 失败 --> RETRY{重试一次<br/>自纠错 / 升级强模型}
+    RETRY -- 成功 --> CACHE[写 L1 + L2]
+    RETRY -- 失败 --> FAIL[返回首次结果<br/>不覆盖]
+    EXE -- 成功 --> CACHE
+    CACHE --> OUT[SQL + 结果 + 可解释性信息]
+    ASK --> OUT
+    FAIL --> OUT
+
+    LLM -. 每次调用落一行 .-> OBS[(llm_call_log<br/>+ JSONL)]
+    RETRY -. 每次调用落一行 .-> OBS
+
+    classDef opt fill:#fff7ed,stroke:#f59e0b,stroke-dasharray: 4 3
+    class AMB,C1,C2,SEM,RETRY opt
+```
+
+两层防护的位置值得单独记：**校验层挡住「写操作和危险函数」，只读账号兜住「校验被绕过」**，
+两者不是重复劳动，而是「不依赖任何单一层正确」。
+
+## 失败归因分布
+
+77% 那轮（`reports/eval-20261004-231531.json`）的 23 条失败按难度层拆开：
+
+```mermaid
+pie showData title 23 条失败的分布（100 条 eval，准确率 77%）
+    "T5 深层 join（4 张表以上）" : 9
+    "T4 多表 join" : 6
+    "T2 单表聚合" : 5
+    "T1 单表基础" : 1
+    "T3 时间窗口" : 1
+    "T6 业务口径" : 1
+```
+
+**这张图是项目定位的转折点**：T6 只剩 1 条，说明口径问题已经解决；
+剩下的瓶颈集中在多表与深层 join——那是**结构问题**，不是口径问题。
+阶段 3 已经证明「把连接树给模型」这条路零收益，所以没有继续硬磕，
+而是转去做阶段 6 的成本优化。
+
 ## 数据
 
 数据集是 [Olist 巴西电商公开数据集](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce)，
