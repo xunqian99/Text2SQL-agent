@@ -127,7 +127,7 @@ public class AskController {
             return new AskResponse(r.status().name(), r.sql(), r.message(), r.violations(),
   r.columns(), r.rows(), r.truncated(), r.rewritten(), r.rowCount(),
   r.schemaTableCount(), r.retrievedTables(), r.schemaDdlChars(),
-                    r.schemaTableCount(), llm, timings);
+  llm, timings);
         }
     }
 }
