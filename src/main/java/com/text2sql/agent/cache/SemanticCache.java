@@ -87,33 +87,7 @@ public class SemanticCache {
                 return size() > max;
             }
         };
-        this.l2 = buildPersistence(properties);
-    }
-
-    /**
-     * 按需建立持久化连接。
-     *
-     * <p>连不上时**只告警并退化成纯内存**，不让应用启动失败。理由和缓存本身一致：
-     * 缓存是纯优化，它不可用最多让系统变慢变贵，绝不该让问数功能整体不可用。
-     * 这条原则在分布式缓存上也一样——Redis 挂掉要降级成「没有缓存」，
-     * 而不是变成「请求失败」。
-     */
-    private static org.springframework.jdbc.core.JdbcTemplate buildPersistence(AgentProperties properties) {
-        var cfg = properties.getPersistence();
-        if (!cfg.isEnabled()) {
-            return null;
-        }
-        try {
-            var ds = new org.springframework.jdbc.datasource.DriverManagerDataSource(
-                    cfg.getUrl(), cfg.getUsername(), cfg.getPassword());
-            var template = new org.springframework.jdbc.core.JdbcTemplate(ds);
-            template.queryForObject("SELECT 1", Integer.class);
-            log.info("缓存二级存储已连接：{}（用户 {}）", cfg.getUrl(), cfg.getUsername());
-            return template;
-        } catch (Exception e) {
-            log.warn("缓存二级存储不可用，退化为纯进程内缓存：{}", e.getMessage());
-            return null;
-        }
+        this.l2 = com.text2sql.agent.persistence.PersistenceSupport.jdbcTemplateOrNull(properties, "语义缓存");
     }
 
     public boolean persisted() {

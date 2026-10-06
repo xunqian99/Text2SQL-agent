@@ -56,8 +56,27 @@ public class LlmCallLog implements AutoCloseable {
     private Path currentFile;
     private int written;
 
+    /**
+     * 落库用的连接。为 null 表示只写文件。
+     *
+     * <p>为什么同时保留文件与数据库两份：它们回答的问题不同。
+     * 文件是**原始记录**，一行一次调用，出问题时可以整份带走、直接 grep；
+     * 数据库表是**可查询的记录**，能按模型、按天聚合成本。
+     * 只留文件则聚合要靠脚本，只留数据库则排查时没法整份取证。
+     *
+     * <p>落库走的是只写账号（{@code text2sql_rw}），与业务只读账号分开，
+     * 理由见 {@code data/schema/06_persistence.sql}。
+     */
+    private final org.springframework.jdbc.core.JdbcTemplate db;
+
     public LlmCallLog(AgentProperties properties) {
         this.properties = properties;
+        this.db = com.text2sql.agent.persistence.PersistenceSupport
+                .jdbcTemplateOrNull(properties, "调用日志");
+    }
+
+    public boolean persisted() {
+        return db != null;
     }
 
     public boolean enabled() {
@@ -93,9 +112,31 @@ public class LlmCallLog implements AutoCloseable {
             writer().newLine();
             writer().flush();
             written++;
+            recordToDatabase(entry);
         } catch (IOException e) {
             // 观测是旁路：写不进去只告警，不影响这次问数。
             log.warn("LLM 调用记录写入失败（不影响主链路）：{}", e.getMessage());
+        }
+    }
+
+    /**
+     * 写数据库。失败只告警——和写文件一样，观测是旁路。
+     *
+     * <p>顺带说明为什么日志表只给 INSERT 和 SELECT、不给 UPDATE/DELETE：
+     * 审计记录的完整性靠的是「写进去就改不掉」，而不是靠代码自觉不去改它。
+     */
+    private void recordToDatabase(Entry entry) {
+        if (db == null) {
+            return;
+        }
+        try {
+            db.update("INSERT INTO llm_call_log(model, status, prompt_tokens, completion_tokens, "
+                            + "total_tokens, prompt_chars, latency_ms, cost_yuan) "
+                            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                    entry.model(), entry.status(), entry.promptTokens(), entry.completionTokens(),
+                    entry.totalTokens(), entry.promptChars(), entry.latencyMs(), entry.costYuan());
+        } catch (Exception e) {
+            log.warn("调用记录落库失败（不影响主链路）：{}", e.getMessage());
         }
     }
 
