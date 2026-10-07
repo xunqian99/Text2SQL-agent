@@ -152,4 +152,37 @@ class ColumnPrunerTest {
 
         assertThat(pruned.get(0).columns()).hasSize(2);
     }
+
+    @Test
+    @DisplayName("词典中的约定关联列（非物理外键）同样作为关联键保全")
+    void preservesGlossarySemanticRelations() {
+        Glossary glossaryWithRel = new Glossary(
+                List.of(new Glossary.Relation("customers.customer_state", "regions.region_code")),
+                Map.of()
+        );
+        when(glossaryLoader.get()).thenReturn(glossaryWithRel);
+
+        SchemaContext.Table customers = new SchemaContext.Table("customers", "", List.of(
+                new SchemaContext.Column("customer_id", "text", false, ""),
+                new SchemaContext.Column("customer_unique_id", "text", false, ""),
+                new SchemaContext.Column("customer_zip_code_prefix", "int", false, ""),
+                new SchemaContext.Column("customer_city", "text", false, ""),
+                new SchemaContext.Column("customer_state", "text", false, "")
+        ));
+
+        // 提问中完全没有“州”或“state”，但关联了 regions 表
+        List<SchemaContext.Table> pruned = columnPruner.prune(
+                List.of(customers),
+                "按大区统计客户数量",
+                Set.of("customers", "regions"),
+                List.of(), // 无真实物理外键
+                List.of(),
+                List.of(),
+                2
+        );
+
+        List<String> colNames = pruned.get(0).columns().stream().map(SchemaContext.Column::name).toList();
+        // customer_state 必须保全！
+        assertThat(colNames).contains("customer_state");
+    }
 }

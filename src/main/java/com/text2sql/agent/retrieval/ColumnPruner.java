@@ -88,7 +88,7 @@ public class ColumnPruner {
             Set<String> keepCols = new LinkedHashSet<>();
             String tableNameLower = table.name().toLowerCase(Locale.ROOT);
 
-            // 1. 保全主键与外键关联列
+            // 1. 保全主键与外键关联列（同时包含数据库物理外键与词典约定关联）
             for (SchemaContext.Column col : table.columns()) {
                 String colLower = col.name().toLowerCase(Locale.ROOT);
                 // 主键启发式
@@ -103,6 +103,27 @@ public class ColumnPruner {
                     }
                     if (fk.toTable().equalsIgnoreCase(table.name()) && normalizedTargets.contains(fk.fromTable().toLowerCase(Locale.ROOT))) {
                         keepCols.add(fk.toColumn().toLowerCase(Locale.ROOT));
+                    }
+                }
+            }
+            if (glossary != null && glossary.relations() != null) {
+                for (Glossary.Relation rel : glossary.relations()) {
+                    if (rel.from() != null && rel.to() != null) {
+                        String[] fromParts = rel.from().split("\\.");
+                        String[] toParts = rel.to().split("\\.");
+                        if (fromParts.length == 2 && toParts.length == 2) {
+                            String fromTable = fromParts[0].trim();
+                            String fromCol = fromParts[1].trim();
+                            String toTable = toParts[0].trim();
+                            String toCol = toParts[1].trim();
+
+                            if (fromTable.equalsIgnoreCase(table.name()) && normalizedTargets.contains(toTable.toLowerCase(Locale.ROOT))) {
+                                keepCols.add(fromCol.toLowerCase(Locale.ROOT));
+                            }
+                            if (toTable.equalsIgnoreCase(table.name()) && normalizedTargets.contains(fromTable.toLowerCase(Locale.ROOT))) {
+                                keepCols.add(toCol.toLowerCase(Locale.ROOT));
+                            }
+                        }
                     }
                 }
             }
