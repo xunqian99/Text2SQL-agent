@@ -13,10 +13,10 @@ import java.util.Set;
  * 「关系扩展没走到」。这三种原因的修法完全不同：补词典、调权重、改图。
  * 留下证据，问题就从「猜」变成「看」。
  *
- * <p>这也是这个项目「可解释」这条主线在检索层的落地：检索不是一个黑盒，
- * 它的每个决定都能被打印出来给人看。面试时可以直接展示
- * 「问『销量最高的 10 个商品』，我命中了 order_items.price，然后沿
- * order_items.product_id -> products.product_id 扩展出 products」。
+ * <p>这也是本项目「高度可解释性」在检索层的坚实落地：检索不是黑盒，
+ * 每一个打分与拓扑推导决策均完整沉淀并可透明审计（例如清晰展示：
+ * 「问『销量最高的 10 个商品』，命中了 order_items.price，并沿
+ * order_items.product_id -> products.product_id 扩展出 products」）。
  *
  * @param tableNames     最终选中的表名（保序：按分数从高到低）
  * @param scores         表名 -> 最终分数

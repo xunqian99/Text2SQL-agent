@@ -234,7 +234,7 @@ Key 不提交到 Git。两轮期间保持数据、代码、模型、画像、护
 上述路径均相对 `src/main/java/com/text2sql/agent/`；
 DTO、配置 getter/setter 与测试脚手架可先跳过。
 
-面试回答应能解释三个取舍：
+系统架构与技术选型应清晰解释三个核心取舍：
 
 - 为什么不用整库 DDL？这轮输入 token 降约 69%，但仍有 7 条漏表，压缩有代价。
 - 为什么不无限扩大 K？dev Top-8 提高完整召回，但 token 增加；eval Top-5 的 54%

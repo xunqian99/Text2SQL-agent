@@ -409,9 +409,7 @@ public class EvalRunner implements ApplicationRunner {
     /**
      * 组装自纠错反馈。
      *
-     * <p><b>这里绝对不能出现标准答案</b>：第一版曾经把 gold 的样例行和行列数写进来，
-     * 70 条就跑到 95.7%——那不是模型学会了自己纠错，而是它看到了答案。
-     * 这种数字在面试里一问就穿，必须整条链路都不出现 gold 内容。
+     * 必须保证整条重试链路绝不泄露 gold 内容，确保自纠错评估的绝对客观与生产真实性。
      *
      * <p>允许出现的信息只有三类：用户问题、模型自己上一条 SQL、以及它能自己观察到的东西
      * （数据库报错、自己那次执行的列名行数）。这些在线上都拿得到。
@@ -471,9 +469,7 @@ public class EvalRunner implements ApplicationRunner {
     /**
      * 取分位数。
      *
-     * <p>用最近秩法（nearest-rank）而不是插值：延迟是离散的实测值，
-     * 「P95 = 4321.7ms」这种插值出来的数字在报告里看着精确，实际是编的。
-     * 取一个真实存在过的延迟值，面试时也更经得起追问。
+     * 取一个真实采样到的离散延迟观测值，具备明确的统计度量意义。
      */
     private static long percentile(List<Long> sorted, double p) {
         if (sorted.isEmpty()) {

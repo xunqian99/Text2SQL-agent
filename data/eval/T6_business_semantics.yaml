@@ -5,7 +5,7 @@
 #   1. 同一个词在不同公司口径不同（GMV 含不含运费、含不含取消单），必须先把口径写成公式
 #   2. 人数口径要用 customer_unique_id，不是 customer_id
 #   3. 时间窗口必须锚定 MAX(order_purchase_timestamp)，不能用 current_date（数据截止 2018-10）
-#   4. 比率的分母选错是最常见的错，面试官会盯着分母问
+#   4. 比率的分母选错是最常见的业务语义偏差，需严格核对分母口径
 
 - id: T6-001
   difficulty: business_semantics
@@ -334,7 +334,7 @@
     SELECT CASE WHEN is_member THEN 'member' ELSE 'non_member' END AS user_type,
            ROUND(100.0 * COUNT(*) FILTER (WHERE order_cnt >= 2) / COUNT(*), 2) AS repeat_rate_pct
     FROM user_orders GROUP BY 1 ORDER BY 1;
-  notes: 【需确认】 这里把「当前是会员」定义为会员，没有考虑下单时点是否已是会员（缺少历史会员状态流水，member_snapshot 只有等级快照）。这是本数据集的能力边界，面试时要主动说明。
+  notes: 【需确认】 这里把「当前是会员」定义为会员，没有考虑下单时点是否已是会员（缺少历史会员状态流水，member_snapshot 只有等级快照）。这是本数据集的能力边界，属于设计已知局限。
 
 - id: T6-019
   difficulty: business_semantics
@@ -369,7 +369,7 @@
            ROUND(AVG(rate), 4) AS avg_seller_rate,
            ROUND(MAX(rate), 4) AS max_seller_rate
     FROM seller_rate;
-  notes: 【需确认】 平台佣金率是「总佣金/总 GMV」加权值，卖家佣金率是「各卖家佣金率的算术平均」，两者通常不同，面试常被追问差异原因。
+  notes: 【需确认】 平台佣金率是「总佣金/总 GMV」加权值，卖家佣金率是「各卖家佣金率的算术平均」，两者统计口径不同，在业务指标定义中需严格区分。
 
 - id: T6-021
   difficulty: business_semantics
