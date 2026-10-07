@@ -19,22 +19,32 @@ public record SchemaContext(
         String dataProfile,   // 数据画像（可选，可能为空串）
         String ddlText,
         String metricsText,   // 命中的业务指标定义（阶段 4，可选，可能为空串）
-        List<com.text2sql.agent.fewshot.Example> examples) { // Few-shot 参考示例（阶段 A，可选）
+        List<com.text2sql.agent.fewshot.Example> examples, // Few-shot 参考示例（阶段 A，可选）
+        String valueHints) { // 实体与枚举值取值对齐提示（阶段 E，可选）
 
     /**
-     * 兼容旧签名的构造器：不注入业务指标与 Few-shot 示例。
+     * 兼容旧签名的构造器：不注入业务指标、Few-shot 示例与实体对齐。
      */
     public SchemaContext(List<Table> tables, List<ForeignKey> foreignKeys,
                          String dataProfile, String ddlText) {
-        this(tables, foreignKeys, dataProfile, ddlText, "", List.of());
+        this(tables, foreignKeys, dataProfile, ddlText, "", List.of(), "");
     }
 
     /**
-     * 兼容阶段 4 签名的构造器：不注入 Few-shot 示例。
+     * 兼容阶段 4 签名的构造器：不注入 Few-shot 示例与实体对齐。
      */
     public SchemaContext(List<Table> tables, List<ForeignKey> foreignKeys,
                          String dataProfile, String ddlText, String metricsText) {
-        this(tables, foreignKeys, dataProfile, ddlText, metricsText, List.of());
+        this(tables, foreignKeys, dataProfile, ddlText, metricsText, List.of(), "");
+    }
+
+    /**
+     * 兼容阶段 A 签名的构造器：不注入实体对齐。
+     */
+    public SchemaContext(List<Table> tables, List<ForeignKey> foreignKeys,
+                         String dataProfile, String ddlText, String metricsText,
+                         List<com.text2sql.agent.fewshot.Example> examples) {
+        this(tables, foreignKeys, dataProfile, ddlText, metricsText, examples, "");
     }
 
     /** 是否注入了业务指标定义。 */
@@ -45,6 +55,11 @@ public record SchemaContext(
     /** 是否注入了 Few-shot 示例。 */
     public boolean hasExamples() {
         return examples != null && !examples.isEmpty();
+    }
+
+    /** 是否注入了实体枚举值取值对齐提示。 */
+    public boolean hasValueHints() {
+        return valueHints != null && !valueHints.isBlank();
     }
 
     /** 本次上下文包含的表名，供评估层计算表召回率。 */
@@ -96,14 +111,14 @@ public record SchemaContext(
         List<ForeignKey> keptEdges = foreignKeys.stream()
                 .filter(fk -> tableNames.contains(fk.fromTable()) && tableNames.contains(fk.toTable()))
                 .toList();
-        return new SchemaContext(kept, keptEdges, dataProfile, ddlText, metricsText, examples);
+        return new SchemaContext(kept, keptEdges, dataProfile, ddlText, metricsText, examples, valueHints);
     }
 
     /**
      * 附加业务指标定义，返回新实例。
      */
     public SchemaContext withMetrics(String metricsText) {
-        return new SchemaContext(tables, foreignKeys, dataProfile, ddlText, metricsText, examples);
+        return new SchemaContext(tables, foreignKeys, dataProfile, ddlText, metricsText, examples, valueHints);
     }
 
     /**
@@ -111,6 +126,14 @@ public record SchemaContext(
      */
     public SchemaContext withExamples(List<com.text2sql.agent.fewshot.Example> examples) {
         return new SchemaContext(tables, foreignKeys, dataProfile, ddlText, metricsText,
-                examples == null ? List.of() : List.copyOf(examples));
+                examples == null ? List.of() : List.copyOf(examples), valueHints);
+    }
+
+    /**
+     * 附加实体枚举值取值对齐提示，返回新实例。
+     */
+    public SchemaContext withValueHints(String valueHints) {
+        return new SchemaContext(tables, foreignKeys, dataProfile, ddlText, metricsText, examples,
+                valueHints == null ? "" : valueHints);
     }
 }

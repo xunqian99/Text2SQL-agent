@@ -33,19 +33,28 @@ public class FullSchemaProvider implements SchemaProvider {
     private final MetricRegistry metricRegistry;
     private final com.text2sql.agent.fewshot.ExampleSelector fewshotSelector;
     private final com.text2sql.agent.config.AgentProperties properties;
+    private final ValueRetriever valueRetriever;
 
     public FullSchemaProvider(SchemaCatalog catalog, MetricRegistry metricRegistry,
                               com.text2sql.agent.fewshot.ExampleSelector fewshotSelector,
-                              com.text2sql.agent.config.AgentProperties properties) {
+                              com.text2sql.agent.config.AgentProperties properties,
+                              ValueRetriever valueRetriever) {
         this.catalog = catalog;
         this.metricRegistry = metricRegistry;
         this.fewshotSelector = fewshotSelector;
         this.properties = properties;
+        this.valueRetriever = valueRetriever;
+    }
+
+    public FullSchemaProvider(SchemaCatalog catalog, MetricRegistry metricRegistry,
+                              com.text2sql.agent.fewshot.ExampleSelector fewshotSelector,
+                              com.text2sql.agent.config.AgentProperties properties) {
+        this(catalog, metricRegistry, fewshotSelector, properties, null);
     }
 
     public FullSchemaProvider(SchemaCatalog catalog, MetricRegistry metricRegistry,
                               com.text2sql.agent.config.AgentProperties properties) {
-        this(catalog, metricRegistry, null, properties);
+        this(catalog, metricRegistry, null, properties, null);
     }
 
     @Override
@@ -72,6 +81,10 @@ public class FullSchemaProvider implements SchemaProvider {
             var examples = fewshotSelector.select(question, Set.copyOf(full.tableNames()),
                     properties.getFewshot().getMaxExamples());
             resultContext = resultContext.withExamples(examples);
+        }
+        if (valueRetriever != null) {
+            var matches = valueRetriever.findMatches(question, Set.copyOf(full.tableNames()));
+            resultContext = resultContext.withValueHints(valueRetriever.renderValueHints(matches));
         }
         return resultContext;
     }

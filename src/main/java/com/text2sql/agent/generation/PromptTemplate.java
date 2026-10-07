@@ -35,7 +35,7 @@ public class PromptTemplate {
      * （比如加一句「优先使用高置信度的表」），那才需要 +1，
      * 并且要重跑阶段 1 的 baseline 才能对比。
      */
-    public static final String VERSION = "p3-fewshot-v3";
+    public static final String VERSION = "p4-value-align-v4";
 
     public String systemPrompt() {
         return """
@@ -67,6 +67,8 @@ public class PromptTemplate {
                    字符串和日期是两种类型，即使描述的是同一个月份，结果集也不会被判为相等。
                 14. 时间窗口过滤用 >= 起点 AND < 终点（左闭右开），不要用 BETWEEN：
                    BETWEEN 会把终点那一整天的数据也算进来。
+                15. 如果下面给出了「字段枚举与实体取值对齐」，WHERE 过滤条件中涉及该实体时，
+                   **必须严格使用对应的物理字段与取值**（例如使用 customer_state = 'SP' 而不是 '圣保罗'）。
                 """.strip();
     }
 
@@ -91,6 +93,10 @@ public class PromptTemplate {
         if (schema.hasMetrics()) {
             sb.append("=== 业务指标定义（必须照抄表达式）===\n")
                     .append(schema.metricsText()).append("\n\n");
+        }
+        if (schema.hasValueHints()) {
+            sb.append("=== 字段枚举与实体取值对齐（请直接使用以下库内真实物理值）===\n")
+                    .append(schema.valueHints()).append("\n\n");
         }
         if (schema.hasExamples()) {
             sb.append("=== 参考示例 ===\n");

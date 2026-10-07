@@ -7,6 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 阶段 2 的 SchemaProvider：按问题召回相关表，而不是整库塞入。
@@ -45,6 +46,7 @@ public class HybridSchemaProvider implements SchemaProvider {
     private final com.text2sql.agent.config.AgentProperties properties;
     private final com.text2sql.agent.semantic.MetricRegistry metricRegistry;
     private final com.text2sql.agent.fewshot.ExampleSelector fewshotSelector;
+    private final ValueRetriever valueRetriever;
 
     /**
      * 关系图缓存。
@@ -66,20 +68,30 @@ public class HybridSchemaProvider implements SchemaProvider {
                                 com.text2sql.agent.retrieval.glossary.GlossaryLoader glossaryLoader,
                                 com.text2sql.agent.config.AgentProperties properties,
                                 com.text2sql.agent.semantic.MetricRegistry metricRegistry,
-                                com.text2sql.agent.fewshot.ExampleSelector fewshotSelector) {
+                                com.text2sql.agent.fewshot.ExampleSelector fewshotSelector,
+                                ValueRetriever valueRetriever) {
         this.catalog = catalog;
         this.retriever = retriever;
         this.glossaryLoader = glossaryLoader;
         this.properties = properties;
         this.metricRegistry = metricRegistry;
         this.fewshotSelector = fewshotSelector;
+        this.valueRetriever = valueRetriever;
+    }
+
+    public HybridSchemaProvider(SchemaCatalog catalog, LexicalSchemaRetriever retriever,
+                                com.text2sql.agent.retrieval.glossary.GlossaryLoader glossaryLoader,
+                                com.text2sql.agent.config.AgentProperties properties,
+                                com.text2sql.agent.semantic.MetricRegistry metricRegistry,
+                                com.text2sql.agent.fewshot.ExampleSelector fewshotSelector) {
+        this(catalog, retriever, glossaryLoader, properties, metricRegistry, fewshotSelector, null);
     }
 
     public HybridSchemaProvider(SchemaCatalog catalog, LexicalSchemaRetriever retriever,
                                 com.text2sql.agent.retrieval.glossary.GlossaryLoader glossaryLoader,
                                 com.text2sql.agent.config.AgentProperties properties,
                                 com.text2sql.agent.semantic.MetricRegistry metricRegistry) {
-        this(catalog, retriever, glossaryLoader, properties, metricRegistry, null);
+        this(catalog, retriever, glossaryLoader, properties, metricRegistry, null, null);
     }
 
     @Override
@@ -89,7 +101,12 @@ public class HybridSchemaProvider implements SchemaProvider {
 
         if (result.fellBack()) {
             log.info("检索未命中任何词典词，回退全量 schema（{} 张表）", full.tables().size());
-            return full;
+            SchemaContext res = full;
+            if (valueRetriever != null) {
+                var matches = valueRetriever.findMatches(question, Set.copyOf(full.tableNames()));
+                res = res.withValueHints(valueRetriever.renderValueHints(matches));
+            }
+            return res;
         }
 
         // 按检索给出的顺序重排表，让「最相关的表」出现在 prompt 前面。
@@ -130,6 +147,14 @@ public class HybridSchemaProvider implements SchemaProvider {
         if (properties.getFewshot().isEnabled() && fewshotSelector != null) {
             var examples = fewshotSelector.select(question, names, properties.getFewshot().getMaxExamples());
             sub = sub.withExamples(examples);
+        }
+        if (valueRetriever != null) {
+            var matches = valueRetriever.findMatches(question, names);
+            if (!matches.isEmpty()) {
+                String hints = valueRetriever.renderValueHints(matches);
+                sub = sub.withValueHints(hints);
+                log.info("注入实体与枚举值取值对齐提示：{} 条", matches.size());
+            }
         }
         return sub;
     }

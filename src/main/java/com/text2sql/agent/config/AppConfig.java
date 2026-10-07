@@ -48,8 +48,9 @@ public class AppConfig {
     public SchemaProvider fullSchemaProvider(SchemaCatalog catalog,
                                              com.text2sql.agent.semantic.MetricRegistry metricRegistry,
                                              com.text2sql.agent.fewshot.ExampleSelector fewshotSelector,
-                                             AgentProperties properties) {
-        return new FullSchemaProvider(catalog, metricRegistry, fewshotSelector, properties);
+                                             AgentProperties properties,
+                                             com.text2sql.agent.retrieval.ValueRetriever valueRetriever) {
+        return new FullSchemaProvider(catalog, metricRegistry, fewshotSelector, properties, valueRetriever);
     }
 
     /**
@@ -67,7 +68,8 @@ public class AppConfig {
     public SchemaProvider hybridSchemaProvider(SchemaCatalog catalog, LexicalSchemaRetriever retriever,
                                                GlossaryLoader glossaryLoader, AgentProperties properties,
                                                com.text2sql.agent.semantic.MetricRegistry metricRegistry,
-                                               com.text2sql.agent.fewshot.ExampleSelector fewshotSelector) {
-        return new HybridSchemaProvider(catalog, retriever, glossaryLoader, properties, metricRegistry, fewshotSelector);
+                                               com.text2sql.agent.fewshot.ExampleSelector fewshotSelector,
+                                               com.text2sql.agent.retrieval.ValueRetriever valueRetriever) {
+        return new HybridSchemaProvider(catalog, retriever, glossaryLoader, properties, metricRegistry, fewshotSelector, valueRetriever);
     }
 }
