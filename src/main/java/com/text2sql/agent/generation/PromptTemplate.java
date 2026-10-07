@@ -35,7 +35,7 @@ public class PromptTemplate {
      * （比如加一句「优先使用高置信度的表」），那才需要 +1，
      * 并且要重跑阶段 1 的 baseline 才能对比。
      */
-    public static final String VERSION = "p5-prune-cot-v5";
+    public static final String VERSION = "p6-steiner-join-v6";
 
     public String systemPrompt() {
         return """
@@ -44,7 +44,7 @@ public class PromptTemplate {
                 思考与推理步骤（Chain-of-Thought 思维链）：
                 在编写 SQL 前，请严格按以下四步逻辑进行推导：
                 1. 识别实体与目标表：从问题中提取核心业务实体，锁定需要的表；
-                2. 规划连接路径：多表查询时，严格按 FOREIGN KEYS/JOINS 关系链确定连接键，防止过度连接或笛卡尔积；
+                2. 规划连接路径：多表查询时，参考 JOIN PLAN 与 FOREIGN KEYS 确定连接键，防止过度连接或笛卡尔积；
                 3. 对齐过滤条件：涉及状态、编码或业务指标时，严格按「字段枚举对齐」与 METRICS 表达式对齐物理值；
                 4. 确定维度与聚合：确定 GROUP BY 维度、聚合函数与排序规则，仅投影问题真正需要的字段。
 
@@ -54,7 +54,7 @@ public class PromptTemplate {
                 3. 必须带 LIMIT，除非结果是单行聚合值（如 COUNT/SUM/AVG 且无 GROUP BY）。
                 4. 只使用下面 schema 里真实存在的表和列，不要臆造字段名。
                 5. 表名和列名一律用小写，不要加引号。
-                6. 遇到多表查询时，优先使用 FOREIGN KEYS 里给出的关联关系。
+                6. 遇到多表查询时，优先参考 JOIN PLAN（推荐的连接顺序）或 FOREIGN KEYS 里给出的关联关系。
                 7. 如果下面给出了 METRICS（业务指标定义），**必须照抄它的表达式**，
                    不要自己重新拼条件。这些口径是业务方确认过的，自行发挥会导致答案不一致。
                 8. SELECT 列表只放问题真正要求的内容。问题问「多少 / 哪些指标 / 平均是多少」时，
