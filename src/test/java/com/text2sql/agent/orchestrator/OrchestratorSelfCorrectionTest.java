@@ -65,7 +65,8 @@ class OrchestratorSelfCorrectionTest {
 
     private Text2SqlOrchestrator orchestrator() {
         return new Text2SqlOrchestrator(schemaProvider, generator, validator, executor,
-                mock(AmbiguityDetector.class), cache, properties);
+                mock(AmbiguityDetector.class), cache, new com.text2sql.agent.validation.ResultChecker(),
+                mock(com.text2sql.agent.tool.AgentLoop.class), properties);
     }
 
     private static LlmCallRecord call(int promptTokens, int completionTokens, long latencyMs) {
@@ -205,6 +206,38 @@ class OrchestratorSelfCorrectionTest {
         AgentResponse response = orchestrator().ask("有多少订单？");
 
         assertThat(response.success()).isTrue();
+        verify(generator, times(1))
+                .generateCorrection(anyString(), any(), anyString(), anyString(), any());
+    }
+
+    @Test
+    @DisplayName("阶段 B：执行成功但命中启发式异常时，触发自纠错重试")
+    void retriesWhenHeuristicCheckerDetectsSuspiciousResult() {
+        properties.getSelfCorrection().setEnabled(true);
+        properties.getSelfCorrection().setMaxAttempts(2);
+        properties.getResultChecker().setEnabled(true);
+
+        // 第一次生成了一条 WHERE 状态过滤导致返回 0 行的 SQL
+        when(generator.generate(anyString(), any()))
+                .thenReturn(new GeneratedSql("SELECT count(*) FROM orders WHERE order_status = 'BAD_STATUS'", "raw", call(100, 10, 50)));
+        // 第二次修正了状态
+        when(generator.generateCorrection(anyString(), any(), anyString(), anyString(), any()))
+                .thenReturn(new GeneratedSql("SELECT count(*) FROM orders WHERE order_status = 'delivered'", "raw", call(150, 15, 60)));
+
+        when(validator.validate(anyString(), any())).thenAnswer(inv ->
+                ValidationResult.ok(inv.getArgument(0)));
+
+        // 第一次执行返回 0 行
+        when(executor.execute("SELECT count(*) FROM orders WHERE order_status = 'BAD_STATUS'"))
+                .thenReturn(new QueryResult(List.of("cnt"), List.of(), false, 1));
+        // 第二次执行返回正常数据
+        when(executor.execute("SELECT count(*) FROM orders WHERE order_status = 'delivered'"))
+                .thenReturn(new QueryResult(List.of("cnt"), List.of(List.of("9000")), false, 1));
+
+        AgentResponse response = orchestrator().ask("统计已完成订单的总数");
+
+        assertThat(response.success()).isTrue();
+        assertThat(response.sql()).contains("delivered");
         verify(generator, times(1))
                 .generateCorrection(anyString(), any(), anyString(), anyString(), any());
     }

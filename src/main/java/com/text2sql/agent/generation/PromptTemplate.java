@@ -35,7 +35,7 @@ public class PromptTemplate {
      * （比如加一句「优先使用高置信度的表」），那才需要 +1，
      * 并且要重跑阶段 1 的 baseline 才能对比。
      */
-    public static final String VERSION = "p2-output-discipline-v2";
+    public static final String VERSION = "p3-fewshot-v3";
 
     public String systemPrompt() {
         return """
@@ -91,6 +91,14 @@ public class PromptTemplate {
         if (schema.hasMetrics()) {
             sb.append("=== 业务指标定义（必须照抄表达式）===\n")
                     .append(schema.metricsText()).append("\n\n");
+        }
+        if (schema.hasExamples()) {
+            sb.append("=== 参考示例 ===\n");
+            for (var ex : schema.examples()) {
+                sb.append("问题: ").append(ex.question().strip()).append("\n")
+                        .append("SQL: ").append(ex.sql().strip()).append("\n---\n");
+            }
+            sb.append("\n");
         }
         sb.append("=== 用户问题 ===\n").append(question.strip()).append("\n");
         return sb.toString();

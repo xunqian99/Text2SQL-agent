@@ -44,16 +44,33 @@ public class SchemaCatalog {
 
     @PostConstruct
     void warmUp() {
-        SchemaContext context = load();
-        cached = context;
-        log.info("schema 已加载：{} 张表 / {} 列 / {} 条外键 / DDL {} 字符",
-                context.tables().size(), context.columnCount(),
-                context.foreignKeys().size(), context.ddlText().length());
+        try {
+            SchemaContext context = load();
+            cached = context;
+            log.info("schema 已加载：{} 张表 / {} 列 / {} 条外键 / DDL {} 字符",
+                    context.tables().size(), context.columnCount(),
+                    context.foreignKeys().size(), context.ddlText().length());
+        } catch (Exception e) {
+            log.warn("启动时连接数据库预热 Schema 失败（降级启动，请检查 PostgreSQL 5432 是否运行）：{}", e.getMessage());
+            cached = new SchemaContext(List.of(), List.of(), "", "");
+        }
     }
 
     public SchemaContext full() {
         SchemaContext context = cached;
-        return context != null ? context : load();
+        if (context != null && !context.tables().isEmpty()) {
+            return context;
+        }
+        try {
+            SchemaContext fresh = load();
+            cached = fresh;
+            return fresh;
+        } catch (Exception e) {
+            if (context != null) {
+                return context;
+            }
+            throw e;
+        }
     }
 
     /** 表名（小写）到表的映射。检索层要按名字取表，所以预先建好索引。 */

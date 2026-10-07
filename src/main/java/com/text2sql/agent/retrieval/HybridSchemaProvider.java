@@ -44,6 +44,7 @@ public class HybridSchemaProvider implements SchemaProvider {
     private final com.text2sql.agent.retrieval.glossary.GlossaryLoader glossaryLoader;
     private final com.text2sql.agent.config.AgentProperties properties;
     private final com.text2sql.agent.semantic.MetricRegistry metricRegistry;
+    private final com.text2sql.agent.fewshot.ExampleSelector fewshotSelector;
 
     /**
      * 关系图缓存。
@@ -64,12 +65,21 @@ public class HybridSchemaProvider implements SchemaProvider {
     public HybridSchemaProvider(SchemaCatalog catalog, LexicalSchemaRetriever retriever,
                                 com.text2sql.agent.retrieval.glossary.GlossaryLoader glossaryLoader,
                                 com.text2sql.agent.config.AgentProperties properties,
-                                com.text2sql.agent.semantic.MetricRegistry metricRegistry) {
+                                com.text2sql.agent.semantic.MetricRegistry metricRegistry,
+                                com.text2sql.agent.fewshot.ExampleSelector fewshotSelector) {
         this.catalog = catalog;
         this.retriever = retriever;
         this.glossaryLoader = glossaryLoader;
         this.properties = properties;
         this.metricRegistry = metricRegistry;
+        this.fewshotSelector = fewshotSelector;
+    }
+
+    public HybridSchemaProvider(SchemaCatalog catalog, LexicalSchemaRetriever retriever,
+                                com.text2sql.agent.retrieval.glossary.GlossaryLoader glossaryLoader,
+                                com.text2sql.agent.config.AgentProperties properties,
+                                com.text2sql.agent.semantic.MetricRegistry metricRegistry) {
+        this(catalog, retriever, glossaryLoader, properties, metricRegistry, null);
     }
 
     @Override
@@ -116,7 +126,12 @@ public class HybridSchemaProvider implements SchemaProvider {
                     log.debug("  {} <- {}", name, result.evidence().getOrDefault(name, List.of())));
         }
 
-        return full.subset(names, ddl).withMetrics(metricsFor(question, names));
+        SchemaContext sub = full.subset(names, ddl).withMetrics(metricsFor(question, names));
+        if (properties.getFewshot().isEnabled() && fewshotSelector != null) {
+            var examples = fewshotSelector.select(question, names, properties.getFewshot().getMaxExamples());
+            sub = sub.withExamples(examples);
+        }
+        return sub;
     }
 
     /**

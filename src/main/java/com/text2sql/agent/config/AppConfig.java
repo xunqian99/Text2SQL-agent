@@ -10,6 +10,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.util.StringUtils;
 
 /**
@@ -19,6 +20,7 @@ import org.springframework.util.StringUtils;
  * 评估集的 YAML 解析在 {@code EvalItemLoader} 内部自持，见下面第二条说明。
  */
 @Configuration
+@EnableScheduling
 @EnableConfigurationProperties(AgentProperties.class)
 public class AppConfig {
 
@@ -45,8 +47,9 @@ public class AppConfig {
             havingValue = "false", matchIfMissing = true)
     public SchemaProvider fullSchemaProvider(SchemaCatalog catalog,
                                              com.text2sql.agent.semantic.MetricRegistry metricRegistry,
+                                             com.text2sql.agent.fewshot.ExampleSelector fewshotSelector,
                                              AgentProperties properties) {
-        return new FullSchemaProvider(catalog, metricRegistry, properties);
+        return new FullSchemaProvider(catalog, metricRegistry, fewshotSelector, properties);
     }
 
     /**
@@ -63,7 +66,8 @@ public class AppConfig {
     @ConditionalOnProperty(prefix = "agent.retrieval", name = "enabled", havingValue = "true")
     public SchemaProvider hybridSchemaProvider(SchemaCatalog catalog, LexicalSchemaRetriever retriever,
                                                GlossaryLoader glossaryLoader, AgentProperties properties,
-                                               com.text2sql.agent.semantic.MetricRegistry metricRegistry) {
-        return new HybridSchemaProvider(catalog, retriever, glossaryLoader, properties, metricRegistry);
+                                               com.text2sql.agent.semantic.MetricRegistry metricRegistry,
+                                               com.text2sql.agent.fewshot.ExampleSelector fewshotSelector) {
+        return new HybridSchemaProvider(catalog, retriever, glossaryLoader, properties, metricRegistry, fewshotSelector);
     }
 }

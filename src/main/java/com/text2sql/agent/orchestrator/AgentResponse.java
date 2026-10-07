@@ -54,7 +54,25 @@ public record AgentResponse(
         int schemaTableCount,
         List<String> retrievedTables,
         int schemaDdlChars,
-        Timings timings) {
+        Timings timings,
+        String sessionId,
+        String rewrittenQuestion,
+        boolean schemaReused) {
+
+    public AgentResponse(String question, Status status, String sql, String message,
+                         List<String> violations, List<String> columns, List<List<String>> rows,
+                         boolean truncated, boolean rewritten, LlmCallRecord llmCall,
+                         int schemaTableCount, List<String> retrievedTables, int schemaDdlChars,
+                         Timings timings) {
+        this(question, status, sql, message, violations, columns, rows, truncated, rewritten,
+             llmCall, schemaTableCount, retrievedTables, schemaDdlChars, timings, null, null, false);
+    }
+
+    public AgentResponse withConversation(String sessionId, String rewrittenQuestion, boolean schemaReused) {
+        return new AgentResponse(question, status, sql, message, violations, columns, rows,
+                truncated, rewritten, llmCall, schemaTableCount, retrievedTables, schemaDdlChars, timings,
+                sessionId, rewrittenQuestion, schemaReused);
+    }
 
     /**
      * 请求的终态。
@@ -122,7 +140,8 @@ public record AgentResponse(
                 second.violations(), second.columns(), second.rows(), second.truncated(),
                 second.rewritten(),
                 com.text2sql.agent.observability.LlmCallRecord.combine(first.llmCall(), second.llmCall()),
-                second.schemaTableCount(), second.retrievedTables(), second.schemaDdlChars(), summed);
+                second.schemaTableCount(), second.retrievedTables(), second.schemaDdlChars(), summed,
+                second.sessionId(), second.rewrittenQuestion(), second.schemaReused());
     }
 
     private static long ms(Timings t, java.util.function.ToLongFunction<Timings> getter) {

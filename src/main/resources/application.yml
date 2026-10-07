@@ -128,6 +128,29 @@ agent:
     # 英文标识符直接出现在问题里时的权重。
     identifier-hit-weight: 1.5
 
+  # 阶段 A：Few-shot 动态示例注入。默认关闭，保持 baseline 干净。
+  fewshot:
+    enabled: false
+    max-examples: 3
+
+  # 阶段 B：启发式结果校验。默认关闭，开启后可拦截空结果、越界等静默错误并触发自纠错。
+  result-checker:
+    enabled: false
+
+  # 阶段 C：智能体侦察工具循环（Agent Tool Use）。默认关闭。
+  tool-use:
+    enabled: false
+    table-threshold: 3
+    max-rounds: 3
+
+  # 阶段 D：多轮对话记忆与指代消解。会话期间纯内存缓存，会话结束时落库。
+  conversation:
+    enabled: false
+    max-turns: 5
+    timeout-minutes: 30
+    reuse-schema: true
+    rewrite-with-llm: true
+
   # 阶段 5：口径歧义时先反问，不猜。默认关闭——
   # 评估集里的题目都写明了口径，反问会把「本该作答」变成「不作答」。
   clarification:

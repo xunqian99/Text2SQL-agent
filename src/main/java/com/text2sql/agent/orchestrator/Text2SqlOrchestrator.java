@@ -16,6 +16,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
+import com.text2sql.agent.session.ConversationSession;
+import com.text2sql.agent.session.ConversationTurn;
+import com.text2sql.agent.session.SessionStore;
+import com.text2sql.agent.session.QuestionRewriter;
 
 /**
  * 编排层：把「检索 → 生成 → 校验 → 执行」四步串成一条链路。
@@ -51,12 +56,21 @@ public class Text2SqlOrchestrator {
     private final SqlExecutor executor;
     private final com.text2sql.agent.clarification.AmbiguityDetector ambiguityDetector;
     private final com.text2sql.agent.cache.SemanticCache cache;
+    private final com.text2sql.agent.validation.ResultChecker resultChecker;
+    private final com.text2sql.agent.tool.AgentLoop agentLoop;
+    private final com.text2sql.agent.session.SessionStore sessionStore;
+    private final com.text2sql.agent.session.QuestionRewriter questionRewriter;
     private final com.text2sql.agent.config.AgentProperties properties;
 
+    @org.springframework.beans.factory.annotation.Autowired
     public Text2SqlOrchestrator(SchemaProvider schemaProvider, LlmSqlGenerator generator,
                                 SqlValidator validator, SqlExecutor executor,
                                 com.text2sql.agent.clarification.AmbiguityDetector ambiguityDetector,
                                 com.text2sql.agent.cache.SemanticCache cache,
+                                com.text2sql.agent.validation.ResultChecker resultChecker,
+                                com.text2sql.agent.tool.AgentLoop agentLoop,
+                                com.text2sql.agent.session.SessionStore sessionStore,
+                                com.text2sql.agent.session.QuestionRewriter questionRewriter,
                                 com.text2sql.agent.config.AgentProperties properties) {
         this.schemaProvider = schemaProvider;
         this.generator = generator;
@@ -64,7 +78,23 @@ public class Text2SqlOrchestrator {
         this.executor = executor;
         this.ambiguityDetector = ambiguityDetector;
         this.cache = cache;
+        this.resultChecker = resultChecker;
+        this.agentLoop = agentLoop;
+        this.sessionStore = sessionStore;
+        this.questionRewriter = questionRewriter;
         this.properties = properties;
+    }
+
+    public Text2SqlOrchestrator(SchemaProvider schemaProvider, LlmSqlGenerator generator,
+                                SqlValidator validator, SqlExecutor executor,
+                                com.text2sql.agent.clarification.AmbiguityDetector ambiguityDetector,
+                                com.text2sql.agent.cache.SemanticCache cache,
+                                com.text2sql.agent.validation.ResultChecker resultChecker,
+                                com.text2sql.agent.tool.AgentLoop agentLoop,
+                                com.text2sql.agent.config.AgentProperties properties) {
+        this(schemaProvider, generator, validator, executor, ambiguityDetector, cache,
+                resultChecker, agentLoop, new com.text2sql.agent.session.SessionStore(properties),
+                new com.text2sql.agent.session.QuestionRewriter(generator, properties), properties);
     }
 
     /**
@@ -75,36 +105,72 @@ public class Text2SqlOrchestrator {
      * 都会中断整轮评估；而且「失败类型」本身就是要统计的数据，用异常
      * 传递会迫使调用方写一串 catch，把分类逻辑散到各处。
      */
+    /**
+     * 跑完整链路（单轮无会话模式）。
+     */
     public AgentResponse ask(String question) {
+        return ask(question, null);
+    }
+
+    /**
+     * 跑完整链路（支持多轮会话记忆、指代消解与 Schema 复用）。
+     *
+     * <p>注意这个方法**不抛异常**。所有失败都被翻译成带 {@code status} 的
+     * {@link AgentResponse}。
+     *
+     * @param question  用户问题原文
+     * @param sessionId 会话 ID，为 null 时以单轮模式运行
+     */
+    public AgentResponse ask(String question, String sessionId) {
         long totalStarted = System.nanoTime();
 
-        // 阶段 5：口径没定就先问，不要猜。
-        //
-        // 放在最前面，是因为它要在花掉一次模型调用**之前**生效——歧义是问题的属性，
-        // 与 schema 检索、生成结果都无关。默认关闭，见 AgentProperties.Clarification。
-        if (properties.getClarification().isEnabled()) {
-            var prompt = ambiguityDetector.clarificationFor(question);
-            if (prompt.isPresent()) {
-                log.info("问题存在口径歧义，主动反问：{}", prompt.get());
-                return AgentResponse.clarification(question, prompt.get());
+        boolean convEnabled = properties.getConversation().isEnabled()
+                && sessionId != null && !sessionId.isBlank();
+        ConversationSession session = convEnabled ? sessionStore.getOrCreate(sessionId) : null;
+
+        String effectiveQuestion = question;
+        String rewrittenQuestion = null;
+        boolean schemaReused = false;
+        SchemaContext schema = null;
+        long retrievalMs = 0;
+
+        if (convEnabled && questionRewriter.isFollowUp(question, session)) {
+            rewrittenQuestion = questionRewriter.rewrite(question, session);
+            effectiveQuestion = rewrittenQuestion;
+            if (questionRewriter.canReuseSchema(question, session) && session.lastSchema() != null) {
+                schema = session.lastSchema();
+                schemaReused = true;
+                log.info("多轮会话复用上一轮 SchemaContext，涉及表: {}", schema.tableNames());
             }
         }
 
-        long retrievalStarted = System.nanoTime();
-        SchemaContext schema = schemaProvider.provide(question);
-        long retrievalMs = elapsedMs(retrievalStarted);
+        // 阶段 5：口径没定就先问，不要猜。
+        // 放在最前面，是因为它要在花掉一次模型调用之前生效。
+        if (properties.getClarification().isEnabled()) {
+            var prompt = ambiguityDetector.clarificationFor(effectiveQuestion);
+            if (prompt.isPresent()) {
+                log.info("问题存在口径歧义，主动反问：{}", prompt.get());
+                AgentResponse clar = AgentResponse.clarification(question, prompt.get());
+                if (convEnabled) {
+                    recordConversationTurn(session, question, rewrittenQuestion, clar);
+                    return clar.withConversation(sessionId, rewrittenQuestion, schemaReused);
+                }
+                return clar;
+            }
+        }
+
+        if (schema == null) {
+            long retrievalStarted = System.nanoTime();
+            schema = schemaProvider.provide(effectiveQuestion);
+            retrievalMs = elapsedMs(retrievalStarted);
+        }
+
         int tableCount = schema.tables().size();
         List<String> retrievedTables = schema.tableNames();
         int ddlChars = schema.ddlText() == null ? 0 : schema.ddlText().length();
 
         // 阶段 6：语义缓存。命中就跳过模型调用，直接拿旧 SQL 走校验和执行。
-        //
-        // 三个刻意的设计：
-        //   1) 缓存的只是 SQL，不是结果集——结果集会过期，而且过期了看不出来；
-        //   2) 命中的 SQL 照样过校验器，缓存不是免检通道；
-        //   3) 缓存里的 SQL 如果这次执行不了（比如 schema 变了），就当没命中，
-        //      回退去重新生成，而不是把失败直接抛给用户。
-        String cacheKey = cache.enabled() ? cache.key(question, cacheSignature()) : null;
+        String cacheKey = cache.enabled() ? cache.key(effectiveQuestion, cacheSignature()) : null;
         if (cacheKey != null) {
             var cachedSql = cache.get(cacheKey);
             if (cachedSql.isPresent()) {
@@ -112,6 +178,10 @@ public class Text2SqlOrchestrator {
                 AgentResponse hit = validateAndExecute(question, cachedSql.get(), null, schema,
                         tableCount, retrievedTables, ddlChars, retrievalMs, 0, totalStarted);
                 if (hit.success()) {
+                    if (convEnabled) {
+                        recordConversationTurn(session, question, rewrittenQuestion, hit);
+                        return hit.withConversation(sessionId, rewrittenQuestion, schemaReused);
+                    }
                     return hit;
                 }
                 log.warn("缓存中的 SQL 这次没跑通（{}），回退到重新生成", hit.status());
@@ -121,27 +191,99 @@ public class Text2SqlOrchestrator {
         long generationStarted = System.nanoTime();
         GeneratedSql generated;
         try {
-            generated = generator.generate(question, schema);
+            boolean useAgentMode = properties.getToolUse().isEnabled()
+                    && tableCount >= properties.getToolUse().getTableThreshold();
+
+            if (useAgentMode) {
+                log.info("触发 Agent 侦察工具循环模式（涉及 {} 张表 >= 阈值 {}）",
+                        tableCount, properties.getToolUse().getTableThreshold());
+                generated = agentLoop.run(effectiveQuestion, schema, properties.getToolUse().getMaxRounds(), null);
+            } else {
+                generated = generator.generate(effectiveQuestion, schema);
+            }
         } catch (GenerationException e) {
             long generationMs = elapsedMs(generationStarted);
             AgentResponse.Status status = e.getReason() == GenerationException.Reason.NOT_CONFIGURED
                     ? AgentResponse.Status.NOT_CONFIGURED
                     : AgentResponse.Status.GENERATION_FAILED;
             log.warn("生成失败（{}）：{}", e.getReason(), e.getMessage());
-            // 生成阶段失败时确实没有 SQL 可记录，这里传 null 是如实反映。
-            return AgentResponse.failed(question, status, null, e.getMessage(), null, tableCount,
-                    retrievedTables, ddlChars,
+            AgentResponse fail = AgentResponse.failed(question, status, null, e.getMessage(), null,
+                    tableCount, retrievedTables, ddlChars,
                     timings(retrievalMs, generationMs, 0, 0, elapsedMs(totalStarted)));
+            if (convEnabled) {
+                recordConversationTurn(session, question, rewrittenQuestion, fail);
+                return fail.withConversation(sessionId, rewrittenQuestion, schemaReused);
+            }
+            return fail;
         }
         long generationMs = elapsedMs(generationStarted);
 
         AgentResponse first = validateAndExecute(question, generated.sql(), generated.call(), schema,
                 tableCount, retrievedTables, ddlChars, retrievalMs, generationMs, totalStarted);
-        AgentResponse result = retryIfFailed(question, first);
+        AgentResponse result = retryIfFailed(effectiveQuestion, first);
         if (cacheKey != null && result.success()) {
             cache.put(cacheKey, result.sql());
         }
+
+        if (convEnabled) {
+            if (result.success()) {
+                session.setLastSchema(schema);
+            }
+            recordConversationTurn(session, question, rewrittenQuestion, result);
+            return result.withConversation(sessionId, rewrittenQuestion, schemaReused);
+        }
+
         return result;
+    }
+
+    public Optional<ConversationSession> closeSession(String sessionId) {
+        return sessionStore.closeAndPersist(sessionId);
+    }
+
+    public List<SessionStore.SessionSummary> listSessions() {
+        return sessionStore.listSessions();
+    }
+
+    public boolean deleteSession(String sessionId) {
+        return sessionStore.deleteSession(sessionId);
+    }
+
+    public SessionStore getSessionStore() {
+        return sessionStore;
+    }
+
+    private void recordConversationTurn(ConversationSession session, String rawQuestion,
+                                        String rewrittenQuestion, AgentResponse response) {
+        if (session == null) {
+            return;
+        }
+        String summary = summarizeResponse(response);
+        ConversationTurn turn = ConversationTurn.of(
+                session.turns().size() + 1,
+                rawQuestion,
+                rewrittenQuestion != null ? rewrittenQuestion : rawQuestion,
+                response.sql(),
+                response.status().name(),
+                summary
+        );
+        session.addTurn(turn, properties.getConversation().getMaxTurns());
+    }
+
+    private String summarizeResponse(AgentResponse response) {
+        if (!response.success()) {
+            return response.status().name() + (response.message() != null ? ": " + response.message() : "");
+        }
+        int count = response.rowCount();
+        if (count == 0) {
+            return "0 行数据";
+        }
+        List<String> cols = response.columns();
+        String colsDesc = (cols == null || cols.isEmpty()) ? "" : String.join(", ", cols);
+        String preview = "";
+        if (response.rows() != null && !response.rows().isEmpty()) {
+            preview = " 样例: " + response.rows().get(0).toString();
+        }
+        return "共 " + count + " 行数据 (列: " + colsDesc + ")" + preview;
     }
 
     /**
@@ -185,16 +327,37 @@ public class Text2SqlOrchestrator {
         var routing = properties.getRouting();
         boolean escalate = routing.isEnabled() && !routing.getEscalationModel().isBlank();
         boolean retryAllowed = (config.isEnabled() && config.getMaxAttempts() > 1) || escalate;
-        if (!retryAllowed || first.success()) {
+
+        boolean shouldRetry = false;
+        String feedback = null;
+
+        if (retryAllowed) {
+            if (!first.success()) {
+                shouldRetry = true;
+                feedback = retryFeedback(first);
+            } else if (properties.getResultChecker().isEnabled()) {
+                // 阶段 B：启发式结果校验
+                QueryResult qr = new QueryResult(first.columns(), first.rows(), first.truncated(), 0L);
+                var check = resultChecker.check(question, first.sql(), qr);
+                if (check.suspicious()) {
+                    shouldRetry = true;
+                    log.info("启发式结果校验命中异常（规则：{}）：{}", check.rule(), check.reason());
+                    feedback = "上一条 SQL 执行成功，但经系统启发式规则检测发现结果可疑：\n"
+                            + check.reason() + "\n上一条 SQL：\n" + first.sql()
+                            + "\n请仔细核对计算逻辑、关联条件与过滤条件，重新生成正确的 SQL。";
+                }
+            }
+        }
+
+        if (!shouldRetry) {
             return first;
         }
 
-        String feedback = retryFeedback(first);
         // 阶段 6：路由开启时换强模型重试。两个开关的作用不同——
         // 自纠错是「同一个模型看错误信息再试」，路由是「换一个更强的模型」。
         // 同时打开时这次重试两者兼具。
         String model = escalate ? routing.getEscalationModel() : null;
-        log.info("首次未成功执行（{}），触发重试{}", first.status(),
+        log.info("触发自纠错重试（首次状态：{}）{}", first.status(),
                 escalate ? "，并升级到 " + model : "");
         AgentResponse second = askWithCorrection(question, first.sql(), feedback, model);
         if (second.success()) {

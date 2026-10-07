@@ -31,13 +31,21 @@ public class FullSchemaProvider implements SchemaProvider {
 
     private final SchemaCatalog catalog;
     private final MetricRegistry metricRegistry;
+    private final com.text2sql.agent.fewshot.ExampleSelector fewshotSelector;
     private final com.text2sql.agent.config.AgentProperties properties;
 
     public FullSchemaProvider(SchemaCatalog catalog, MetricRegistry metricRegistry,
+                              com.text2sql.agent.fewshot.ExampleSelector fewshotSelector,
                               com.text2sql.agent.config.AgentProperties properties) {
         this.catalog = catalog;
         this.metricRegistry = metricRegistry;
+        this.fewshotSelector = fewshotSelector;
         this.properties = properties;
+    }
+
+    public FullSchemaProvider(SchemaCatalog catalog, MetricRegistry metricRegistry,
+                              com.text2sql.agent.config.AgentProperties properties) {
+        this(catalog, metricRegistry, null, properties);
     }
 
     @Override
@@ -48,18 +56,23 @@ public class FullSchemaProvider implements SchemaProvider {
         // 全量 schema 下所有表都可用，所以指标不存在「依赖表没召回」的问题，
         // 这是它和检索版的关键差别。
         SchemaContext full = catalog.full();
-        if (!properties.getSemantic().isEnabled()) {
-            return full;
+        SchemaContext resultContext = full;
+        if (properties.getSemantic().isEnabled()) {
+            List<Metric> applicable = metricRegistry.findApplicable(question,
+                    Set.copyOf(full.tableNames()));
+            if (!applicable.isEmpty()) {
+                StringBuilder sb = new StringBuilder();
+                for (Metric metric : applicable) {
+                    sb.append(metric.render()).append("\n\n");
+                }
+                resultContext = resultContext.withMetrics(sb.toString().stripTrailing());
+            }
         }
-        List<Metric> applicable = metricRegistry.findApplicable(question,
-                Set.copyOf(full.tableNames()));
-        if (applicable.isEmpty()) {
-            return full;
+        if (properties.getFewshot().isEnabled() && fewshotSelector != null) {
+            var examples = fewshotSelector.select(question, Set.copyOf(full.tableNames()),
+                    properties.getFewshot().getMaxExamples());
+            resultContext = resultContext.withExamples(examples);
         }
-        StringBuilder sb = new StringBuilder();
-        for (Metric metric : applicable) {
-            sb.append(metric.render()).append("\n\n");
-        }
-        return full.withMetrics(sb.toString().stripTrailing());
+        return resultContext;
     }
 }

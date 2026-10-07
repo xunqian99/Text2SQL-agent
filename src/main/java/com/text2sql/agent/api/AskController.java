@@ -2,15 +2,21 @@ package com.text2sql.agent.api;
 
 import com.text2sql.agent.orchestrator.AgentResponse;
 import com.text2sql.agent.orchestrator.Text2SqlOrchestrator;
+import com.text2sql.agent.session.SessionStore;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 /**
  * 接入层：唯一对外暴露业务能力的 HTTP 入口。
@@ -58,7 +64,10 @@ public class AskController {
      */
     @PostMapping("/ask")
     public ResponseEntity<AskResponse> ask(@Valid @RequestBody AskRequest request) {
-        AgentResponse response = orchestrator.ask(request.question());
+        AgentResponse response = orchestrator.ask(request.question(), request.sessionId());
+        if (Boolean.TRUE.equals(request.endSession()) && request.sessionId() != null) {
+            orchestrator.closeSession(request.sessionId());
+        }
         HttpStatus status = switch (response.status()) {
             case SUCCESS -> HttpStatus.OK;
             case NOT_CONFIGURED -> HttpStatus.SERVICE_UNAVAILABLE;
@@ -70,11 +79,50 @@ public class AskController {
         return ResponseEntity.status(status).body(AskResponse.from(response));
     }
 
+    /**
+     * 查询历史与当前会话列表。
+     */
+    @GetMapping("/sessions")
+    public ResponseEntity<List<SessionStore.SessionSummary>> listSessions() {
+        return ResponseEntity.ok(orchestrator.listSessions());
+    }
+
+    /**
+     * 结束会话并持久化入库。
+     */
+    @PostMapping("/session/{sessionId}/close")
+    public ResponseEntity<CloseSessionResponse> closeSession(@PathVariable("sessionId") String sessionId) {
+        var closed = orchestrator.closeSession(sessionId);
+        if (closed.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        var s = closed.get();
+        return ResponseEntity.ok(new CloseSessionResponse(s.sessionId(), s.turns().size(), orchestrator.getSessionStore().persisted()));
+    }
+
+    /**
+     * 删除指定会话（内存与数据库同步删除）。
+     */
+    @DeleteMapping("/session/{sessionId}")
+    public ResponseEntity<Void> deleteSession(@PathVariable("sessionId") String sessionId) {
+        orchestrator.deleteSession(sessionId);
+        return ResponseEntity.noContent().build();
+    }
+
+    public record CloseSessionResponse(String sessionId, int turnCount, boolean persisted) {
+    }
+
     /** 请求体。加长度上限是因为超长问题没有业务意义，却会直接推高 token 成本。 */
     public record AskRequest(
             @NotBlank(message = "question 不能为空")
             @Size(max = 500, message = "question 长度不能超过 500")
-            String question) {
+            String question,
+            String sessionId,
+            Boolean endSession) {
+
+        public AskRequest(String question) {
+            this(question, null, false);
+        }
     }
 
     /**
@@ -107,7 +155,10 @@ public class AskController {
   java.util.List<String> retrievedTables,
   int schemaDdlChars,
             Llm llm,
-            Timings timings) {
+            Timings timings,
+            String sessionId,
+            String rewrittenQuestion,
+            boolean schemaReused) {
 
         public record Llm(String model, int promptTokens, int completionTokens, int totalTokens,
                           long latencyMs, double costYuan) {
@@ -125,9 +176,9 @@ public class AskController {
                     r.timings().retrievalMs(), r.timings().generationMs(), r.timings().validationMs(),
                     r.timings().executionMs(), r.timings().totalMs());
             return new AskResponse(r.status().name(), r.sql(), r.message(), r.violations(),
-  r.columns(), r.rows(), r.truncated(), r.rewritten(), r.rowCount(),
-  r.schemaTableCount(), r.retrievedTables(), r.schemaDdlChars(),
-  llm, timings);
+                    r.columns(), r.rows(), r.truncated(), r.rewritten(), r.rowCount(),
+                    r.schemaTableCount(), r.retrievedTables(), r.schemaDdlChars(),
+                    llm, timings, r.sessionId(), r.rewrittenQuestion(), r.schemaReused());
         }
     }
 }

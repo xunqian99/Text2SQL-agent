@@ -2,141 +2,834 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <title>Text2SQL Agent — 中文问数</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Text2SQL Agent</title>
   <style>
-    /* 极简样式：不引任何前端框架。
-       理由和项目其他地方一致——这一层要展示的是**链路**，不是 UI。
-       多一个构建步骤（npm/vite）就多一处会随时间腐烂的依赖。 */
-    :root { --line: #d8dee9; --muted: #6b7280; --accent: #2563eb; }
-    body { font-family: system-ui, "Microsoft YaHei", sans-serif; padding: 28px;
-           max-width: 1080px; margin-inline: auto; color: #111827; }
-    h1 { font-size: 20px; margin: 0 0 4px; }
-    .sub { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
-    form { display: flex; gap: 8px; margin-bottom: 18px; }
-    input[type=text] { flex: 1; padding: 10px 12px; font-size: 15px;
-                       border: 1px solid var(--line); border-radius: 6px; }
-    button { padding: 10px 20px; font-size: 15px; border: 0; border-radius: 6px;
-             background: var(--accent); color: #fff; cursor: pointer; }
-    button:disabled { opacity: .5; cursor: default; }
-    .examples { font-size: 13px; color: var(--muted); margin-bottom: 22px; }
-    .examples a { color: var(--accent); cursor: pointer; text-decoration: underline; }
-    section { border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px;
-              margin-bottom: 14px; }
-    section h2 { font-size: 13px; letter-spacing: .06em; color: var(--muted);
-                 margin: 0 0 10px; font-weight: 600; }
-    pre { margin: 0; white-space: pre-wrap; word-break: break-word; font-size: 13px; }
-    table { border-collapse: collapse; width: 100%; font-size: 13px; }
-    th, td { border: 1px solid var(--line); padding: 6px 9px; text-align: left; }
-    th { background: #f3f4f6; }
-    .kv { font-size: 13px; line-height: 1.9; }
-    .kv b { color: var(--muted); font-weight: 600; display: inline-block; min-width: 150px; }
-    .bad { color: #b91c1c; }
-    details summary { cursor: pointer; font-size: 13px; color: var(--muted); }
+    :root {
+      --sidebar-bg: #171717;
+      --sidebar-hover: #212121;
+      --sidebar-text: #ececec;
+      --sidebar-muted: #8e8e8e;
+      --main-bg: #ffffff;
+      --chat-text: #0d0d0d;
+      --border-color: #e5e5e5;
+      --card-bg: #f9f9f9;
+      --input-bg: #f4f4f4;
+      --accent: #10a37f;
+      --accent-hover: #0d8a6a;
+      --user-msg-bg: #f4f4f4;
+      --tag-reused: #7c3aed;
+      --sql-bg: #1e1e1e;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      height: 100vh; display: flex; overflow: hidden; background: var(--main-bg); color: var(--chat-text);
+    }
+
+    /* 侧边栏 (ChatGPT 风格) */
+    aside {
+      width: 260px; background: var(--sidebar-bg); color: var(--sidebar-text);
+      display: flex; flex-direction: column; flex-shrink: 0; height: 100%; border-right: 1px solid #2a2a2a;
+    }
+    .sidebar-header { padding: 14px 16px; }
+    .new-chat-btn {
+      width: 100%; padding: 10px 14px; background: transparent; border: 1px solid #3e3e3e;
+      border-radius: 8px; color: #fff; font-size: 14px; font-weight: 500; cursor: pointer;
+      display: flex; align-items: center; justify-content: space-between; transition: all 0.2s;
+    }
+    .new-chat-btn:hover { background: var(--sidebar-hover); border-color: #555; }
+    
+    .session-list {
+      flex: 1; overflow-y: auto; padding: 10px 10px; display: flex; flex-direction: column; gap: 4px;
+    }
+    .session-list-title {
+      font-size: 11px; text-transform: uppercase; color: var(--sidebar-muted); padding: 8px 10px 6px; font-weight: 600;
+      display: flex; justify-content: space-between; align-items: center; letter-spacing: 0.5px;
+    }
+    .session-item {
+      padding: 9px 10px; border-radius: 8px; font-size: 13px; color: #d1d5db; cursor: pointer;
+      display: flex; align-items: center; justify-content: space-between; gap: 8px; transition: background 0.15s;
+      user-select: none;
+    }
+    .session-item:hover, .session-item.active { background: var(--sidebar-hover); color: #fff; }
+    .session-item.active { border-left: 2px solid #fff; }
+    .session-item-content {
+      display: flex; align-items: center; gap: 9px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;
+    }
+    .session-item svg { flex-shrink: 0; opacity: 0.7; }
+    .session-item-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+    .session-badge {
+      font-size: 10px; padding: 1px 5px; border-radius: 4px; background: rgba(255,255,255,0.08); color: #9ca3af; flex-shrink: 0;
+    }
+    .session-badge-persisted { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+    .session-del-btn {
+      opacity: 0; background: transparent; border: 0; color: #9ca3af; cursor: pointer; padding: 3px 5px;
+      border-radius: 4px; display: flex; align-items: center; transition: all 0.15s; flex-shrink: 0;
+    }
+    .session-item:hover .session-del-btn { opacity: 0.8; }
+    .session-del-btn:hover { opacity: 1; color: #ef4444; background: rgba(239, 68, 68, 0.2); }
+
+    /* 主聊天区域 */
+    .main-container {
+      flex: 1; display: flex; flex-direction: column; height: 100%; position: relative; background: #fff;
+    }
+    header.chat-header {
+      height: 56px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center;
+      justify-content: space-between; padding: 0 24px; flex-shrink: 0;
+    }
+    .model-selector {
+      display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px; color: #202123;
+    }
+
+
+    /* 消息流 */
+    .chat-scroll {
+      flex: 1; overflow-y: auto; padding: 24px 0 140px; display: flex; flex-direction: column;
+    }
+    .chat-inner {
+      max-width: 820px; width: 100%; margin: 0 auto; padding: 0 20px; display: flex; flex-direction: column; gap: 28px;
+    }
+
+    /* 初始空状态引导卡片 */
+    .empty-state {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      margin-top: 60px; text-align: center;
+    }
+    .empty-logo {
+      width: 44px; height: 44px; border-radius: 50%; background: var(--accent); display: flex;
+      align-items: center; justify-content: center; color: #fff; margin-bottom: 16px;
+    }
+    .empty-title { font-size: 22px; font-weight: 600; margin-bottom: 24px; color: #0d0d0d; }
+    .prompt-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; max-width: 760px; width: 100%;
+    }
+    .prompt-card {
+      background: #fff; border: 1px solid var(--border-color); border-radius: 12px; padding: 14px 16px;
+      text-align: left; cursor: pointer; transition: all 0.2s;
+    }
+    .prompt-card:hover { background: #f9f9f9; border-color: #c5c5d2; transform: translateY(-1px); }
+    .prompt-card-title { font-size: 13px; font-weight: 600; color: #2d3748; margin-bottom: 4px; }
+    .prompt-card-sub { font-size: 12px; color: #718096; line-height: 1.4; }
+
+    /* 对话气泡 (ChatGPT 样式) */
+    .msg-row { display: flex; gap: 16px; width: 100%; }
+    .msg-row.user { justify-content: flex-end; }
+    .user-bubble {
+      background: var(--user-msg-bg); color: #0d0d0d; padding: 10px 18px; border-radius: 20px;
+      font-size: 15px; line-height: 1.5; max-width: 80%; word-break: break-word;
+    }
+
+    .agent-avatar {
+      width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: #fff;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;
+    }
+    .agent-content { flex: 1; min-width: 0; font-size: 14px; line-height: 1.6; }
+
+    /* 气泡内部组件 */
+    .intent-tag {
+      display: inline-flex; align-items: center; gap: 6px; background: #eff6ff; color: #1d4ed8;
+      border: 1px solid #bfdbfe; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 500;
+      margin-bottom: 12px;
+    }
+    .status-capsules { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+    .capsule {
+      font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 9999px; text-transform: uppercase;
+    }
+    .capsule-success { background: #dcfce7; color: #15803d; }
+    .capsule-reused { background: #f3e8ff; color: var(--tag-reused); border: 1px solid #e9d5ff; }
+    .capsule-limit { background: #fef3c7; color: #b45309; }
+    .capsule-err { background: #fee2e2; color: #b91c1c; }
+
+    /* SQL 代码框 (黑色磨砂 MacOS 风格) */
+    .sql-card {
+      background: var(--sql-bg); border-radius: 8px; overflow: hidden; margin: 12px 0 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .sql-card-header {
+      background: #2d2d2d; padding: 6px 14px; display: flex; justify-content: space-between;
+      align-items: center; font-size: 12px; color: #9ca3af;
+    }
+    .sql-card-body {
+      padding: 14px 16px; overflow-x: auto; font-family: "JetBrains Mono", Consolas, Monaco, monospace;
+      font-size: 13px; color: #f8fafc; line-height: 1.6;
+    }
+    .copy-btn {
+      background: transparent; border: 0; color: #9ca3af; cursor: pointer; font-size: 12px;
+      display: flex; align-items: center; gap: 4px; padding: 2px 6px; border-radius: 4px;
+    }
+    .copy-btn:hover { color: #fff; background: rgba(255,255,255,0.1); }
+
+    /* 表格容器 */
+    .result-table-wrap {
+      border: 1px solid var(--border-color); border-radius: 8px; overflow-x: auto; margin: 12px 0 16px;
+    }
+    table.data-table {
+      width: 100%; border-collapse: collapse; font-size: 13px; text-align: left;
+    }
+    table.data-table th {
+      background: #f8fafc; border-bottom: 1px solid var(--border-color); padding: 8px 12px;
+      font-weight: 600; color: #475569;
+    }
+    table.data-table td {
+      border-bottom: 1px solid #f1f5f9; padding: 7px 12px; color: #1e293b;
+    }
+    table.data-table tr:last-child td { border-bottom: none; }
+    table.data-table tr:hover { background: #f8fafc; }
+
+    /* 链路诊断面板 */
+    details.trace-card {
+      background: #fbfbfb; border: 1px solid var(--border-color); border-radius: 8px;
+      padding: 8px 12px; font-size: 12px; color: #64748b; margin-top: 8px;
+    }
+    details.trace-card summary { cursor: pointer; font-weight: 500; outline: none; }
+    .trace-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 6px 12px; margin-top: 8px;
+      padding-top: 8px; border-top: 1px solid #eee;
+    }
+    .trace-item b { color: #334155; margin-right: 4px; }
+
+    /* 底部悬浮输入框 (ChatGPT 风格) */
+    .input-floating-bar {
+      position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(180deg, rgba(255,255,255,0) 0%, #fff 35%);
+      padding: 10px 20px 24px; display: flex; flex-direction: column; align-items: center;
+    }
+    .input-box-wrapper {
+      max-width: 820px; width: 100%; background: var(--input-bg); border: 1px solid var(--border-color);
+      border-radius: 24px; padding: 10px 16px; display: flex; align-items: flex-end; gap: 8px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.04); transition: border-color 0.2s;
+    }
+    .input-box-wrapper:focus-within { border-color: #888; background: #fff; }
+    textarea.chat-input {
+      flex: 1; border: 0; outline: 0; background: transparent; font-size: 15px; font-family: inherit;
+      resize: none; max-height: 180px; min-height: 24px; line-height: 1.5; padding: 2px 0;
+    }
+    .send-btn {
+      width: 32px; height: 32px; border-radius: 50%; background: #000; color: #fff; border: 0;
+      display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;
+      transition: opacity 0.2s;
+    }
+    .send-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+
+    /* 骨架屏加载动画 */
+    .loading-pulse { display: flex; align-items: center; gap: 6px; padding: 6px 0; color: #666; font-size: 14px; }
+    .dot { width: 6px; height: 6px; border-radius: 50%; background: #666; animation: pulse 1.4s infinite ease-in-out; }
+    .dot:nth-child(2) { animation-delay: 0.2s; }
+    .dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes pulse { 0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); } 40% { opacity: 1; transform: scale(1.1); } }
+    /* 开发者模式样式控制：默认隐藏底层 SQL 与技术链路指标 */
+    body.hide-dev .dev-only { display: none !important; }
+
+
   </style>
 </head>
-<body>
+<body class="hide-dev">
 
-<h1>Text2SQL Agent</h1>
-<div class="sub">中文问题 → SQL → 结果。检索、口径注入、校验、执行每一步都可查。</div>
+  <!-- 左侧边栏 -->
+  <aside>
+    <div class="sidebar-header">
+      <button class="new-chat-btn" id="btn-new">
+        <span>+ 开启新对话</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+    </div>
 
-<form id="f">
-  <input id="q" type="text" placeholder="例如：2018 年每个月的订单量是多少？" autocomplete="off">
-  <button id="go" type="submit">提问</button>
-</form>
+    <div class="session-list" id="session-history">
+      <div class="session-list-title">
+        <span>会话历史</span>
+        <span id="session-count-badge" style="font-size:10px; color:#6b7280; font-weight:normal;">0 个会话</span>
+      </div>
+      <div id="session-items-container" style="display:flex; flex-direction:column; gap:3px;"></div>
+    </div>
+  </aside>
 
-<div class="examples">
-  试试：
-  <a data-q="2018 年每个月的订单量是多少？">按月订单量</a> ·
-  <a data-q="有效订单（排除已取消和不可用）的订单数、下单人数、客单价分别是多少？">口径类</a> ·
-  <a data-q="商品动销率是多少？（有销量的商品数 / 全部商品数）">动销率</a> ·
-  <a data-q="每个优惠券活动带来的有效订单数和商品销售额是多少？取前 10。">多表 join</a>
-</div>
+  <!-- 主对话容器 -->
+  <div class="main-container">
+    <header class="chat-header">
+      <div class="model-selector">
+        <span>Text2SQL Agent</span>
+        <span style="color:#cbd5e1; margin:0 6px;">|</span>
+        <span id="session-title-label" style="font-size:13px; color:#475569; font-weight:500; max-width:320px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">新会话</span>
+      </div>
+    </header>
 
-<div id="out"></div>
+    <div class="chat-scroll" id="chat-scroller">
+      <div class="chat-inner" id="chat-messages">
+        <!-- 初始空状态 -->
+        <div class="empty-state" id="empty-state">
+          <div class="empty-logo">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          </div>
+          <div class="empty-title">我能帮您分析什么电商数据？</div>
+          <div class="prompt-grid">
+            <div class="prompt-card" data-q="2018年销售额最高的5个州是哪些？">
+              <div class="prompt-card-title">2018年高销大州分析</div>
+              <div class="prompt-card-sub">多表关联统计各州总销售额并排序</div>
+            </div>
+            <div class="prompt-card" data-q="那2017年的呢？">
+              <div class="prompt-card-title">多轮追问测试</div>
+              <div class="prompt-card-sub">自动消解时间指代，触发 Schema 0ms 复用</div>
+            </div>
+            <div class="prompt-card" data-q="有效订单中各支付方式的订单量与金额">
+              <div class="prompt-card-title">业务口径注入</div>
+              <div class="prompt-card-sub">自动剔除取消订单，按有效口径聚合</div>
+            </div>
+            <div class="prompt-card" data-q="每个优惠券活动带来的有效订单数和商品销售额">
+              <div class="prompt-card-title">复杂深层 Join</div>
+              <div class="prompt-card-sub">关联优惠券、订单、商品 4+ 张业务表</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-<script>
-// 这一页刻意写成防御式渲染：拿不到字段就退化成展示原始 JSON，不抛异常、不白屏。
-// 理由是页面和后端演进速度不同，后端字段改名时展示层该能降级，
-// 而且把原始响应摊开反而更好排查。
-const $ = (id) => document.getElementById(id);
-const out = $('out');
+    <!-- 底部悬浮输入区域 -->
+    <div class="input-floating-bar">
+      <div class="input-box-wrapper">
+        <textarea class="chat-input" id="prompt-input" rows="1"></textarea>
+        <button class="send-btn" id="send-button" disabled>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
 
-const esc = (s) => String(s == null ? '' : s)
-  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-const section = (t, b) => `<section><h2>${t}</h2>${b}</section>`;
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const scroller = $('chat-scroller');
+    const messages = $('chat-messages');
+    const emptyState = $('empty-state');
+    const input = $('prompt-input');
+    const sendBtn = $('send-button');
+    const sessionTitle = $('session-title-label');
 
-function renderTable(cols, rows) {
-  if (!cols || !cols.length) return '<div class="kv">（无结果列）</div>';
-  const head = cols.map(c => `<th>${esc(c)}</th>`).join('');
-  const body = (rows || []).map(r =>
-    `<tr>${r.map(v => `<td>${esc(v)}</td>`).join('')}</tr>`).join('');
-  return `<table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
-}
+    function createSessionId() {
+      return 'sess_' + Math.random().toString(36).substring(2, 8) + '_' + Date.now().toString().slice(-4);
+    }
 
-// 可解释性信息：用了哪些表、分阶段耗时、这次花了多少 token。
-// 这正是这个项目区别于「随便调个模型」的地方。
-function renderExplain(d) {
-  // 字段名以 AskController.AskResponse 为准：是 llm，不是 llmCall。
-  const t = d.timings || {}, llm = d.llm || {}, tables = d.retrievedTables || [];
-  const rows = [
-    ['状态', d.status],
-    ['检索到的表', tables.length ? tables.join('、') : '（未记录）'],
-    ['schema 表数 / DDL 字符', `${d.schemaTableCount ?? '-'} / ${d.schemaDdlChars ?? '-'}`],
-    ['分阶段耗时', `检索 ${t.retrievalMs ?? '-'}ms · 生成 ${t.generationMs ?? '-'}ms · `
-                 + `校验 ${t.validationMs ?? '-'}ms · 执行 ${t.executionMs ?? '-'}ms`],
-    ['总耗时', `${t.totalMs ?? '-'} ms`],
-    ['模型', llm.model ?? '-'],
-    ['token', `输入 ${llm.promptTokens ?? '-'} · 输出 ${llm.completionTokens ?? '-'}`],
-    ['护栏是否补过 LIMIT', d.rewritten === true ? '是' : '否']
-  ];
-  return `<div class="kv">${rows.map(([k, v]) =>
-    `<div><b>${esc(k)}</b>${esc(v)}</div>`).join('')}</div>`;
-}
+    // 本地会话持久化与状态管理
+    const SESSIONS_STORAGE_KEY = 'text2sql_agent_sessions_store_v2';
 
-function render(d) {
-  let html = '';
-  if (d.status && d.status !== 'SUCCESS') {
-    html += section('未成功', `<div class="kv bad">${esc(d.status)}：${esc(d.message || '')}</div>`);
-  }
-  html += section('生成的 SQL', `<pre>${esc(d.sql || '（没有生成 SQL）')}</pre>`);
-  if (d.status === 'SUCCESS') {
-    const note = d.truncated ? '<div class="kv bad">结果已被行数上限截断</div>' : '';
-    html += section(`结果（${(d.rows || []).length} 行）`, note + renderTable(d.columns, d.rows));
-  }
-  html += section('这一步发生了什么', renderExplain(d));
-  html += `<section><details><summary>原始响应 JSON</summary>
-             <pre>${esc(JSON.stringify(d, null, 2))}</pre></details></section>`;
-  out.innerHTML = html;
-}
+    function loadStoredSessions() {
+      try {
+        const raw = localStorage.getItem(SESSIONS_STORAGE_KEY);
+        if (raw) {
+          const list = JSON.parse(raw);
+          if (Array.isArray(list) && list.length > 0) return list;
+        }
+      } catch (e) {}
+      return [];
+    }
 
-async function ask(question) {
-  if (!question.trim()) return;
-  $('go').disabled = true;
-  out.innerHTML = section('执行中', '<div class="kv">正在走「检索 → 生成 → 校验 → 执行」……</div>');
-  try {
-    const resp = await fetch('/api/ask', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question })
+    function saveStoredSessions() {
+      try {
+        localStorage.setItem(SESSIONS_STORAGE_KEY, JSON.stringify(sessions));
+      } catch (e) {}
+    }
+
+    let sessions = loadStoredSessions();
+    let currentSession = null;
+
+    if (sessions.length === 0) {
+      currentSession = {
+        id: createSessionId(),
+        title: '新会话',
+        turnCount: 0,
+        status: 'ACTIVE',
+        updatedAt: Date.now(),
+        turns: []
+      };
+      sessions.push(currentSession);
+      saveStoredSessions();
+    } else {
+      currentSession = sessions[0];
+    }
+
+    sessionTitle.textContent = currentSession.title || '新会话';
+
+    function renderSidebar() {
+      const container = $('session-items-container');
+      if (!container) return;
+      container.innerHTML = '';
+      const badge = $('session-count-badge');
+      if (badge) badge.textContent = sessions.length + ' 个会话';
+
+      sessions.forEach(s => {
+        const item = document.createElement('div');
+        const isActive = s.id === currentSession.id;
+        item.className = 'session-item' + (isActive ? ' active' : '');
+        item.innerHTML = `
+          <div class="session-item-content" title="${esc(s.title || '新会话')}">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <span class="session-item-title">${esc(s.title || '新会话')}</span>
+            ${s.status === 'CLOSED' ? '<span class="session-badge session-badge-persisted">已入库</span>' : (s.turnCount ? `<span class="session-badge">${s.turnCount}轮</span>` : '')}
+          </div>
+          <button class="session-del-btn" title="删除此会话" data-id="${s.id}">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          </button>
+        `;
+
+        item.querySelector('.session-item-content').addEventListener('click', () => {
+          switchSession(s.id);
+        });
+
+        item.querySelector('.session-del-btn').addEventListener('click', (e) => {
+          e.stopPropagation();
+          deleteSession(s.id);
+        });
+
+        container.appendChild(item);
+      });
+    }
+
+    function switchSession(sessionId) {
+      const found = sessions.find(s => s.id === sessionId);
+      if (!found) return;
+      currentSession = found;
+      sessionTitle.textContent = currentSession.title || '新会话';
+      renderSidebar();
+      renderCurrentSessionChat();
+    }
+
+    function deleteSession(sessionId) {
+      if (!confirm('确定删除该历史会话吗？')) return;
+      fetch('/api/session/' + sessionId, { method: 'DELETE' }).catch(()=>{});
+      sessions = sessions.filter(s => s.id !== sessionId);
+      if (sessions.length === 0) {
+        currentSession = {
+          id: createSessionId(),
+          title: '新会话',
+          turnCount: 0,
+          status: 'ACTIVE',
+          updatedAt: Date.now(),
+          turns: []
+        };
+        sessions.push(currentSession);
+      } else if (currentSession.id === sessionId) {
+        currentSession = sessions[0];
+      }
+      saveStoredSessions();
+      switchSession(currentSession.id);
+    }
+
+    function renderCurrentSessionChat() {
+      messages.innerHTML = '';
+      if (!currentSession.turns || currentSession.turns.length === 0) {
+        messages.appendChild(emptyState);
+        return;
+      }
+      currentSession.turns.forEach(t => {
+        if (t.role === 'user') {
+          appendUserBubble(t.text);
+        } else if (t.role === 'agent') {
+          appendAgentBubble(t.data);
+        }
+      });
+      scrollToBottom();
+    }
+
+    // 监听输入
+    input.addEventListener('input', () => {
+      input.style.height = 'auto';
+      input.style.height = Math.min(input.scrollHeight, 180) + 'px';
+      sendBtn.disabled = !input.value.trim();
     });
-    // 非 2xx 也可能带完整业务响应（400 需澄清、422 被护栏拦下），
-    // 所以先试解析 JSON，拿不到才退化成纯文本。
-    const text = await resp.text();
-    let data;
-    try { data = JSON.parse(text); }
-    catch (e) { data = { status: 'HTTP ' + resp.status, message: text }; }
-    render(data);
-  } catch (e) {
-    out.innerHTML = section('请求失败', `<div class="kv bad">${esc(e.message)}</div>`);
-  } finally {
-    $('go').disabled = false;
-  }
-}
 
-$('f').addEventListener('submit', (e) => { e.preventDefault(); ask($('q').value); });
-document.querySelectorAll('.examples a').forEach(a => {
-  a.addEventListener('click', () => { $('q').value = a.dataset.q; ask(a.dataset.q); });
-});
-</script>
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        if (input.value.trim()) sendMessage(input.value.trim());
+      }
+    });
+
+    sendBtn.addEventListener('click', () => {
+      if (input.value.trim()) sendMessage(input.value.trim());
+    });
+
+    // 快捷卡片点击
+    document.querySelectorAll('.prompt-card').forEach(c => {
+      c.addEventListener('click', () => sendMessage(c.dataset.q));
+    });
+
+    $('btn-new').addEventListener('click', () => {
+      // 若当前会话已有问答且尚未结束，开启新会话时自动将旧会话落库
+      if (currentSession && currentSession.turns && currentSession.turns.length > 0 && currentSession.status !== 'CLOSED') {
+        const oldId = currentSession.id;
+        currentSession.status = 'CLOSED';
+        fetch(`/api/session/${oldId}/close`, { method: 'POST' }).catch(() => {});
+      }
+
+      const newSess = {
+        id: createSessionId(),
+        title: '新会话',
+        turnCount: 0,
+        status: 'ACTIVE',
+        updatedAt: Date.now(),
+        turns: []
+      };
+      sessions.unshift(newSess);
+      saveStoredSessions();
+      switchSession(newSess.id);
+    });
+
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function appendUserBubble(text) {
+      if (emptyState.parentNode) emptyState.remove();
+      const row = document.createElement('div');
+      row.className = 'msg-row user';
+      row.innerHTML = `<div class="user-bubble">${esc(text)}</div>`;
+      messages.appendChild(row);
+      scrollToBottom();
+    }
+
+    function appendLoading() {
+      const row = document.createElement('div');
+      row.className = 'msg-row';
+      row.id = 'loading-row';
+      row.innerHTML = `
+        <div class="agent-avatar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+        <div class="agent-content">
+          <div class="loading-pulse">
+            <span>正在分析意图并生成 SQL</span>
+            <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+          </div>
+        </div>
+      `;
+      messages.appendChild(row);
+      scrollToBottom();
+    }
+
+    // 中文业务列名词典映射（全量覆盖电商数仓各域业务列与聚合指标）
+    const COLUMN_DICT = {
+      // 1. 地理与区域
+      'customer_state': '所在州',
+      'seller_state': '所在州',
+      'state': '所在州',
+      'region_code': '大区代码',
+      'region_name': '大区名称',
+      'customer_city': '所在城市',
+      'seller_city': '所在城市',
+      'city': '所在城市',
+      'customer_zip_code_prefix': '邮政编码',
+      'seller_zip_code_prefix': '邮政编码',
+      'zip_code_prefix': '邮政编码',
+      'geolocation_lat': '纬度',
+      'geolocation_lng': '经度',
+
+      // 2. 客户与会员
+      'customer_id': '客户ID',
+      'customer_unique_id': '客户唯一标识',
+      'member_id': '会员编号',
+      'member_name': '会员姓名',
+      'member_level': '会员等级',
+      'level_id': '等级ID',
+      'level_name': '等级名称',
+      'seller_id': '卖家ID',
+
+      // 3. 订单与交易
+      'order_id': '订单编号',
+      'order_item_id': '明细序号',
+      'order_status': '订单状态',
+      'status': '状态',
+      'order_purchase_timestamp': '下单时间',
+      'purchase_timestamp': '下单时间',
+      'order_date': '下单日期',
+      'order_approved_at': '支付审核时间',
+      'order_delivered_carrier_date': '承运发货时间',
+      'order_delivered_customer_date': '客户签收时间',
+      'order_estimated_delivery_date': '预计送达时间',
+      'shipping_limit_date': '最迟发货时间',
+      'price': '商品售价 (R$)',
+      'item_price': '商品售价 (R$)',
+      'unit_price': '单价 (R$)',
+      'freight_value': '运费 (R$)',
+      'freight': '运费 (R$)',
+      'payment_type': '支付方式',
+      'payment_installments': '分期期数',
+      'payment_sequential': '支付序号',
+      'payment_value': '支付金额 (R$)',
+
+      // 4. 商品与类目
+      'product_id': '商品编号',
+      'product_category_name': '商品类目',
+      'product_category_name_english': '商品英文类目',
+      'category_name': '商品类目',
+      'category': '商品类目',
+      'product_weight_g': '重量 (克)',
+      'product_length_cm': '长度 (cm)',
+      'product_height_cm': '高度 (cm)',
+      'product_width_cm': '宽度 (cm)',
+      'product_photos_qty': '图片数量',
+
+      // 5. 评价与工单
+      'review_id': '评价ID',
+      'review_score': '评价得分',
+      'score': '评分',
+      'avg_review_score': '平均评价分',
+      'review_comment_title': '评价标题',
+      'review_comment_message': '评价内容',
+      'review_creation_date': '评价时间',
+      'review_answer_timestamp': '商家回复时间',
+      'ticket_id': '工单编号',
+      'ticket_status': '工单状态',
+
+      // 6. 营销与优惠券
+      'coupon_id': '优惠券ID',
+      'coupon_code': '优惠码',
+      'campaign_id': '营销活动ID',
+      'campaign_name': '活动名称',
+      'discount_amount': '优惠金额 (R$)',
+
+      // 7. 统计指标与聚合计算字段
+      'cnt': '数量',
+      'count': '数量',
+      'total': '总计',
+      'total_count': '总数量',
+      'order_count': '订单总量',
+      'total_orders': '订单总量',
+      'orders_count': '订单总量',
+      'sales': '总销售额 (R$)',
+      'total_sales': '总销售额 (R$)',
+      'sum_sales': '总销售额 (R$)',
+      'total_amount': '总金额 (R$)',
+      'amount': '金额 (R$)',
+      'sum_price': '总销售额 (R$)',
+      'total_revenue': '总营收 (R$)',
+      'revenue': '营收 (R$)',
+      'total_gmv': 'GMV (R$)',
+      'gmv': 'GMV (R$)',
+      'avg_price': '平均单价 (R$)',
+      'average_price': '平均单价 (R$)',
+      'avg_freight': '平均运费 (R$)',
+      'average_freight': '平均运费 (R$)',
+      'customer_count': '客户人数',
+      'buyer_count': '买家人数',
+      'seller_count': '卖家数量',
+      'repurchase_rate': '复购率',
+      'refund_rate': '退款率',
+      'refund_amount': '退款金额 (R$)',
+      'year': '年份',
+      'order_year': '年份',
+      'month': '月份',
+      'order_month': '月份',
+      'day': '日期',
+      'quarter': '季度',
+      'rank': '排名',
+      'rn': '排名'
+    };
+
+    function translateColumn(col) {
+      if (!col) return '';
+      const clean = col.toLowerCase().trim().replace(/^_+|_+$/g, '');
+      if (COLUMN_DICT[clean]) return COLUMN_DICT[clean];
+
+      // 前缀组合分析 (sum_, total_, avg_, min_, max_, count_)
+      const prefixRules = [
+        { pre: ['sum_', 'total_'], zh: '总' },
+        { pre: ['avg_', 'average_'], zh: '平均' },
+        { pre: ['max_'], zh: '最高' },
+        { pre: ['min_'], zh: '最低' },
+        { pre: ['count_'], suffix: '数量' }
+      ];
+
+      for (const rule of prefixRules) {
+        for (const p of rule.pre) {
+          if (clean.startsWith(p)) {
+            const base = clean.substring(p.length);
+            if (COLUMN_DICT[base]) {
+              return rule.zh ? (rule.zh + COLUMN_DICT[base]) : (COLUMN_DICT[base] + rule.suffix);
+            }
+          }
+        }
+      }
+
+      // 关键词推断
+      if (clean.includes('state')) return '所在州';
+      if (clean.includes('city')) return '所在城市';
+      if (clean.includes('sales') || clean.includes('amount') || clean.includes('revenue')) return '总销售额 (R$)';
+      if (clean.includes('price')) return '金额 (R$)';
+      if (clean.includes('freight')) return '运费 (R$)';
+      if (clean.includes('count') || clean.includes('cnt')) return '数量';
+      if (clean.includes('rate') || clean.includes('ratio')) return '比率';
+      if (clean.includes('score')) return '评分';
+      if (clean.includes('category')) return '商品类目';
+      if (clean.includes('date') || clean.includes('time')) return '日期时间';
+      if (clean.includes('user') || clean.includes('customer')) return '客户人数';
+      if (clean.includes('order')) return '订单数';
+
+      return col;
+    }
+
+
+
+    function appendAgentBubble(d) {
+      const loading = $('loading-row');
+      if (loading) loading.remove();
+
+      const row = document.createElement('div');
+      row.className = 'msg-row';
+
+      let inner = `
+        <div class="agent-avatar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+        <div class="agent-content">
+      `;
+
+      // 追问补全提示
+      if (d.rewrittenQuestion && d.rewrittenQuestion !== d.question) {
+        inner += `<div class="intent-tag"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg><span>多轮意图补全：<b>${esc(d.rewrittenQuestion)}</b></span></div>`;
+      }
+
+      const isOk = d.status === 'SUCCESS';
+
+      // 开发者标签 (在开发模式下显示技术状态)
+      inner += '<div class="dev-only" style="margin-bottom: 8px;">';
+      inner += '<div class="status-capsules">';
+      inner += `<span class="capsule ${isOk ? 'capsule-success' : 'capsule-err'}">${esc(d.status)}</span>`;
+      if (d.schemaReused) inner += '<span class="capsule capsule-reused">Schema 0ms 复用</span>';
+      if (d.rewritten) inner += '<span class="capsule capsule-limit">校验器补 LIMIT</span>';
+      inner += '</div></div>';
+
+      // 异常拦截提示
+      if (!isOk) {
+        let friendlyReason = d.message || '';
+        if (d.status === 'REJECTED') {
+          if (friendlyReason.includes('UNKNOWN_TABLE')) {
+            friendlyReason = '安全护栏拦截：当前数据库表正在同步或暂未就绪，请刷新重试。';
+          } else {
+            friendlyReason = '安全护栏拦截：' + friendlyReason;
+          }
+        }
+        inner += `
+          <div style="background: #fef2f2; border: 1px solid #fee2e2; border-radius: 8px; padding: 12px 16px; color: #991b1b; margin: 8px 0 12px; font-size: 13px; line-height: 1.5;">
+            <div style="font-weight: 600; margin-bottom: 4px;">无法完成数据查询</div>
+            <div>${esc(friendlyReason)}</div>
+          </div>
+        `;
+      }
+
+      // 业务数据表格（中文列名）
+      if (isOk && d.columns && d.columns.length) {
+        const head = d.columns.map(c => `<th>${esc(translateColumn(c))}</th>`).join('');
+        const rows = (d.rows || []).slice(0, 50).map(r =>
+          `<tr>${r.map(v => `<td>${esc(v)}</td>`).join('')}</tr>`
+        ).join('');
+        inner += `
+          <div style="font-size: 14px; color: #334155; margin: 6px 0 8px; font-weight: 500;">
+            为您查询到以下业务数据（共 ${(d.rows||[]).length} 条）：
+          </div>
+          <div class="result-table-wrap">
+            <table class="data-table"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table>
+          </div>
+        `;
+      } else if (isOk) {
+        inner += `<div style="font-size: 14px; color: #64748b; margin: 6px 0;">已执行完成，暂无符合条件的数据记录。</div>`;
+      }
+
+      // 底层 SQL 语句（默认隐藏，仅在右上角开启「开发者模式」时展示）
+      if (d.sql) {
+        inner += `
+          <div class="dev-only" style="margin-top: 10px;">
+            <details class="sql-toggle">
+              <summary style="cursor: pointer; font-size: 12px; color: #64748b; padding: 4px 0; user-select: none;">
+                <span>底层生成的 SQL 语句 (AST 校验通过)</span>
+              </summary>
+              <div class="sql-card" style="margin-top: 8px;">
+                <div class="sql-card-header">
+                  <span>PostgreSQL</span>
+                  <button class="copy-btn" onclick="navigator.clipboard.writeText(this.closest('.sql-card').querySelector('code').innerText); this.innerHTML='已复制!'; setTimeout(()=>this.innerHTML='复制',1500);">复制</button>
+                </div>
+                <div class="sql-card-body"><code>${esc(d.sql)}</code></div>
+              </div>
+            </details>
+          </div>
+        `;
+      }
+
+      // 链路诊断卡片（仅在开发者模式展示）
+      const t = d.timings || {};
+      const llm = d.llm || {};
+      const tables = d.retrievedTables || [];
+      inner += `
+        <div class="dev-only" style="margin-top: 8px;">
+          <details class="trace-card">
+            <summary>链路耗时与 Token 统计</summary>
+            <div class="trace-grid">
+              <div class="trace-item"><b>命中表:</b> ${tables.length ? esc(tables.join(', ')) : '-'}</div>
+              <div class="trace-item"><b>模型:</b> ${esc(llm.model || '-')}</div>
+              <div class="trace-item"><b>Token:</b> 输入 ${llm.promptTokens || 0} / 输出 ${llm.completionTokens || 0}</div>
+              <div class="trace-item"><b>耗时拆解:</b> 检索 ${t.retrievalMs||0}ms · 生成 ${t.generationMs||0}ms · 执行 ${t.executionMs||0}ms</div>
+              <div class="trace-item"><b>总响应耗时:</b> ${t.totalMs || 0} ms</div>
+            </div>
+          </details>
+        </div>
+      `;
+
+      inner += `</div>`;
+      row.innerHTML = inner;
+      messages.appendChild(row);
+      scrollToBottom();
+    }
+
+    function scrollToBottom() {
+      scroller.scrollTop = scroller.scrollHeight;
+    }
+
+    function appendAgentMessage(d) {
+      appendAgentBubble(d);
+    }
+
+    async function sendMessage(text) {
+      if (!text || !text.trim()) return;
+
+      currentSession.turns = currentSession.turns || [];
+      currentSession.turns.push({ role: 'user', text: text });
+      if (!currentSession.title || currentSession.title === '新会话') {
+        currentSession.title = text.slice(0, 22) + (text.length > 22 ? '...' : '');
+        sessionTitle.textContent = currentSession.title;
+      }
+      currentSession.turnCount = (currentSession.turnCount || 0) + 1;
+      currentSession.updatedAt = Date.now();
+      saveStoredSessions();
+      renderSidebar();
+
+      appendUserBubble(text);
+      input.value = '';
+      input.style.height = 'auto';
+      sendBtn.disabled = true;
+
+      appendLoading();
+
+      try {
+        const res = await fetch('/api/ask', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question: text, sessionId: currentSession.id })
+        });
+        const data = await res.json();
+        currentSession.turns.push({ role: 'agent', data: data });
+        currentSession.updatedAt = Date.now();
+        saveStoredSessions();
+        renderSidebar();
+        appendAgentBubble(data);
+      } catch (err) {
+        const errData = { status: 'NETWORK_ERROR', message: err.message };
+        currentSession.turns.push({ role: 'agent', data: errData });
+        saveStoredSessions();
+        renderSidebar();
+        appendAgentBubble(errData);
+      } finally {
+        sendBtn.disabled = !input.value.trim();
+        input.focus();
+      }
+    }
+
+    // 初始化渲染侧边栏和当前对话记录
+    renderSidebar();
+    renderCurrentSessionChat();
+  </script>
 </body>
 </html>

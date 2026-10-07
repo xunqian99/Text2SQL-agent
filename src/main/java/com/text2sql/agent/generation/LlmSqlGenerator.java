@@ -182,6 +182,40 @@ public class LlmSqlGenerator {
         return new GeneratedSql(SqlExtractor.extract(raw), raw, record);
     }
 
+    /**
+     * 支持 Agent 多轮对话交互的通用 LLM 调用接口。
+     */
+    public GeneratedSql callMessages(List<Message> messages, String logTag, String modelOverride) {
+        if (chatModel == null) {
+            throw new GenerationException(GenerationException.Reason.NOT_CONFIGURED,
+                    "未配置 agent.llm.api-key，无法调用 LLM。");
+        }
+
+        int promptChars = messages.stream().mapToInt(m -> m.getText() == null ? 0 : m.getText().length()).sum();
+        String model = (modelOverride == null || modelOverride.isBlank())
+                ? properties.getLlm().getModel() : modelOverride;
+        OpenAiChatOptions options = OpenAiChatOptions.builder()
+                .model(model)
+                .temperature(properties.getLlm().getTemperature())
+                .maxTokens(properties.getLlm().getMaxTokens())
+                .build();
+
+        long started = System.nanoTime();
+        ChatResponse response;
+        try {
+            response = chatModel.call(new Prompt(messages, options));
+        } catch (Exception e) {
+            throw new GenerationException(GenerationException.Reason.CALL_FAILED,
+                    "LLM 调用失败：" + e.getMessage(), e);
+        }
+        long latencyMs = (System.nanoTime() - started) / 1_000_000;
+        String raw = extractText(response);
+        LlmCallRecord record = buildRecord(response, promptChars, latencyMs, model);
+        log.info("LLM [{}] 调用完成：{}", logTag, record.summary());
+        callLog.record(record, logTag, "messages[" + messages.size() + "]", raw);
+        return new GeneratedSql(SqlExtractor.extract(raw), raw, record);
+    }
+
     private String extractText(ChatResponse response) {
         if (response == null || response.getResult() == null) {
             throw new GenerationException(GenerationException.Reason.CALL_FAILED, "LLM 返回空响应");

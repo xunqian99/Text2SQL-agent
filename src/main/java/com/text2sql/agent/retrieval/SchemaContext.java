@@ -18,27 +18,33 @@ public record SchemaContext(
         List<ForeignKey> foreignKeys,
         String dataProfile,   // 数据画像（可选，可能为空串）
         String ddlText,
-        String metricsText) {  // 命中的业务指标定义（阶段 4，可选，可能为空串）
+        String metricsText,   // 命中的业务指标定义（阶段 4，可选，可能为空串）
+        List<com.text2sql.agent.fewshot.Example> examples) { // Few-shot 参考示例（阶段 A，可选）
 
     /**
-     * 兼容旧签名的构造器：不注入业务指标。
-     *
-     * <p><b>为什么要留这个重载</b>：加上 {@code metricsText} 之后，
-     * 所有 {@code new SchemaContext(tables, fks, profile, ddl)} 的调用点都会编译失败。
-     * 那些调用点里绝大多数（测试、baseline 路径）本来就不需要指标——
-     * 逐个改成传空串是纯粹的机械劳动，还会让 diff 里混进大量噪声。
-     *
-     * <p>给一个 4 参数重载，语义是「这份上下文不含指标定义」，
-     * 既保住了编译，也让「谁真的用了指标」在 diff 里一眼可见。
+     * 兼容旧签名的构造器：不注入业务指标与 Few-shot 示例。
      */
     public SchemaContext(List<Table> tables, List<ForeignKey> foreignKeys,
                          String dataProfile, String ddlText) {
-        this(tables, foreignKeys, dataProfile, ddlText, "");
+        this(tables, foreignKeys, dataProfile, ddlText, "", List.of());
+    }
+
+    /**
+     * 兼容阶段 4 签名的构造器：不注入 Few-shot 示例。
+     */
+    public SchemaContext(List<Table> tables, List<ForeignKey> foreignKeys,
+                         String dataProfile, String ddlText, String metricsText) {
+        this(tables, foreignKeys, dataProfile, ddlText, metricsText, List.of());
     }
 
     /** 是否注入了业务指标定义。 */
     public boolean hasMetrics() {
         return metricsText != null && !metricsText.isBlank();
+    }
+
+    /** 是否注入了 Few-shot 示例。 */
+    public boolean hasExamples() {
+        return examples != null && !examples.isEmpty();
     }
 
     /** 本次上下文包含的表名，供评估层计算表召回率。 */
@@ -90,20 +96,21 @@ public record SchemaContext(
         List<ForeignKey> keptEdges = foreignKeys.stream()
                 .filter(fk -> tableNames.contains(fk.fromTable()) && tableNames.contains(fk.toTable()))
                 .toList();
-        return new SchemaContext(kept, keptEdges, dataProfile, ddlText, metricsText);
+        return new SchemaContext(kept, keptEdges, dataProfile, ddlText, metricsText, examples);
     }
 
     /**
      * 附加业务指标定义，返回新实例。
-     *
-     * <p><b>为什么用「附加」而不是在构造时就传入</b>：指标能不能注入取决于
-     * **最终选中了哪些表**（指标依赖的表必须都在上下文里，否则模型会照抄一个
-     * 引用不存在表的表达式）。而选中哪些表是检索层的结果，构造 SchemaContext
-     * 时还不知道。所以流程必须是「先切子集 → 再按可用表筛指标 → 附加」。
-     *
-     * <p>record 不可变，所以这里返回新对象而不是就地修改。
      */
     public SchemaContext withMetrics(String metricsText) {
-        return new SchemaContext(tables, foreignKeys, dataProfile, ddlText, metricsText);
+        return new SchemaContext(tables, foreignKeys, dataProfile, ddlText, metricsText, examples);
+    }
+
+    /**
+     * 附加 Few-shot 参考示例，返回新实例。
+     */
+    public SchemaContext withExamples(List<com.text2sql.agent.fewshot.Example> examples) {
+        return new SchemaContext(tables, foreignKeys, dataProfile, ddlText, metricsText,
+                examples == null ? List.of() : List.copyOf(examples));
     }
 }

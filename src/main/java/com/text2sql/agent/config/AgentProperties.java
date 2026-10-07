@@ -27,7 +27,43 @@ public class AgentProperties {
     private Observability observability = new Observability();
     private Routing routing = new Routing();
     private Persistence persistence = new Persistence();
+    private Fewshot fewshot = new Fewshot();
+    private ResultCheckerConfig resultChecker = new ResultCheckerConfig();
+    private ToolUse toolUse = new ToolUse();
+    private Conversation conversation = new Conversation();
     private Eval eval = new Eval();
+
+    public ToolUse getToolUse() {
+        return toolUse;
+    }
+
+    public void setToolUse(ToolUse toolUse) {
+        this.toolUse = toolUse;
+    }
+
+    public ResultCheckerConfig getResultChecker() {
+        return resultChecker;
+    }
+
+    public void setResultChecker(ResultCheckerConfig resultChecker) {
+        this.resultChecker = resultChecker;
+    }
+
+    public Fewshot getFewshot() {
+        return fewshot;
+    }
+
+    public void setFewshot(Fewshot fewshot) {
+        this.fewshot = fewshot;
+    }
+
+    public Conversation getConversation() {
+        return conversation;
+    }
+
+    public void setConversation(Conversation conversation) {
+        this.conversation = conversation;
+    }
 
     public Db getDb() {
         return db;
@@ -921,6 +957,144 @@ public class AgentProperties {
 
         public void setMaxAttempts(int maxAttempts) {
             this.maxAttempts = maxAttempts;
+        }
+    }
+
+    /**
+     * Few-shot 动态示例选择参数（阶段 A）。
+     */
+    public static class Fewshot {
+
+        /** 是否启用 Few-shot 动态示例注入。默认 false，保持 baseline 干净。 */
+        private boolean enabled = false;
+
+        /** 最多注入的示例数量。 */
+        private int maxExamples = 3;
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public int getMaxExamples() {
+            return maxExamples;
+        }
+
+        public void setMaxExamples(int maxExamples) {
+            this.maxExamples = maxExamples;
+        }
+    }
+
+    /**
+     * 启发式结果校验参数（阶段 B）。
+     */
+    public static class ResultCheckerConfig {
+
+        /** 是否启用启发式结果校验与自纠错联动。默认 false。 */
+        private boolean enabled = false;
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+    }
+
+    /**
+     * 智能体工具调用参数（阶段 C）。
+     */
+    public static class ToolUse {
+
+        /** 是否启用 Agent 工具侦察模式。默认 false。 */
+        private boolean enabled = false;
+
+        /** 当涉及表数量达到或超过该阈值时才触发 Agent 侦察模式，简单题走快速生成。 */
+        private int tableThreshold = 3;
+
+        /** 最大工具交互轮次。 */
+        private int maxRounds = 3;
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public int getTableThreshold() {
+            return tableThreshold;
+        }
+
+        public void setTableThreshold(int tableThreshold) {
+            this.tableThreshold = tableThreshold;
+        }
+
+        public int getMaxRounds() {
+            return maxRounds;
+        }
+
+        public void setMaxRounds(int maxRounds) {
+            this.maxRounds = maxRounds;
+        }
+    }
+
+    /**
+     * 阶段 D：多轮对话记忆与指代消解配置。
+     *
+     * <p>会话期间纯内存缓存加速，会话结束时落库持久化。
+     */
+    public static class Conversation {
+
+        private boolean enabled = false;
+        private int maxTurns = 5;
+        private int timeoutMinutes = 30;
+        private boolean reuseSchema = true;
+        private boolean rewriteWithLlm = true;
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public int getMaxTurns() {
+            return maxTurns;
+        }
+
+        public void setMaxTurns(int maxTurns) {
+            this.maxTurns = maxTurns;
+        }
+
+        public int getTimeoutMinutes() {
+            return timeoutMinutes;
+        }
+
+        public void setTimeoutMinutes(int timeoutMinutes) {
+            this.timeoutMinutes = timeoutMinutes;
+        }
+
+        public boolean isReuseSchema() {
+            return reuseSchema;
+        }
+
+        public void setReuseSchema(boolean reuseSchema) {
+            this.reuseSchema = reuseSchema;
+        }
+
+        public boolean isRewriteWithLlm() {
+            return rewriteWithLlm;
+        }
+
+        public void setRewriteWithLlm(boolean rewriteWithLlm) {
+            this.rewriteWithLlm = rewriteWithLlm;
         }
     }
 
