@@ -35,7 +35,7 @@ public class PromptTemplate {
      * （比如加一句「优先使用高置信度的表」），那才需要 +1，
      * 并且要重跑阶段 1 的 baseline 才能对比。
      */
-    public static final String VERSION = "p6-steiner-join-v6";
+    public static final String VERSION = "p7-semantic-refinement-v7";
 
     public String systemPrompt() {
         return """
@@ -66,17 +66,24 @@ public class PromptTemplate {
                    单表且无 join 时才用 COUNT(*)。计数口径错了会让分组结果整体偏移。
                 11. 不要为了「信息更全」而加列、加分组或加排序。评估比的是结果集，
                    多一列和少一列都算错。
-                12. 平均值、比率这类可能除不尽的结果，统一用 ROUND(表达式, 2) 保留两位小数。
-                   不要直接输出原始浮点数——48.77339999999 和 48.77 在比较时算两个答案。
-                   百分比一律写成 ROUND(100.0 * 分子 / 分母, 2)。
-                13. 按时间分组时，用 DATE_TRUNC('month'|'week'|'day', 时间列) 作为分组列，
-                   不要用 to_char 把时间转成 'YYYY-MM' 这类字符串。
-                   字符串和日期是两种类型，即使描述的是同一个月份，结果集也不会被判为相等。
+                12. 比例与精度口径：
+                   - 当问题询问「比例 / 占比 / 比率」且未显式提及百分比（%）时，输出 0~1 的小数比率，用 ROUND(分子::NUMERIC / 分母, 4) 保留四位小数。
+                   - 当问题明确询问「百分比」或带有「%」时，才输出 ROUND(100.0 * 分子 / 分母, 2)。
+                   - 其余一般金额、单价、平均值，统一用 ROUND(表达式, 2) 保留两位小数。
+                13. 按时间分组与时间字段选择：
+                   - 用 DATE_TRUNC('month'|'week'|'day', 时间列) 作为分组列，不要用 to_char 把时间转成 'YYYY-MM' 这类字符串。
+                   - 问题涉及各月/每个月/每周等周期统计时，若表内有自身的业务时间字段（如 refunds.requested_at, support_tickets.created_at, members.register_date, settlements.period_start），优先使用本表对应业务时间，不要无故关联 orders 表。
                 14. 时间窗口过滤用 >= 起点 AND < 终点（左闭右开），不要用 BETWEEN：
                    BETWEEN 会把终点那一整天的数据也算进来。
                 15. 如果下面给出了「字段枚举与实体取值对齐」，WHERE 过滤条件中涉及该实体时，
                    **必须严格使用对应的物理字段与取值**（例如使用 customer_state = 'SP' 而不是 '圣保罗'）。
-                16. 复杂多表关联时，可在 SELECT 语句首行添加一行以 -- 开头的单行注释说明思路，之后紧接完整 SQL。
+                16. 实体与明细字段指引：
+                   - 查询订单明细的价格/销售金额时，直接使用 order_items 表及其 price 列；仅在明确提到卖家结算、抽成或对账时才使用 settlements / settlement_items。
+                   - 查询承运商配送时长时，直接使用 shipments 表的 (delivered_at - shipped_at)，无需关联轨迹表。
+                   - 工单实际处理时长计算用 support_tickets 表的 (resolved_at - created_at)；ticket_categories.sla_hours 仅为时限标准而非实际耗时。
+                17. 多个固定枚举值对比（条件聚合）：
+                   - 当问题同时询问某维度多个固定枚举值的统计量（如“A和B各有多少笔/多少个”）时，优先使用 COUNT(*) FILTER (WHERE 列 = 'A') AS a, COUNT(*) FILTER (WHERE 列 = 'B') AS b 进行横向条件聚合输出。
+                18. 复杂多表关联时，可在 SELECT 语句首行添加一行以 -- 开头的单行注释说明思路，之后紧接完整 SQL。
                 """.strip();
     }
 

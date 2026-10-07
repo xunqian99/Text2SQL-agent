@@ -168,4 +168,73 @@ class QueryPlanAnalyzerTest {
         assertThat(analysis.safe()).isFalse();
         assertThat(analysis.riskDescription()).contains("执行计划生成失败");
     }
+
+    @Test
+    @DisplayName("索引嵌套循环：子节点包含 Index Cond 时，即使 Nested Loop 无 Join Filter 也不误判为笛卡尔积")
+    void ignoresIndexedNestedLoop() {
+        String planJson = """
+                [
+                  {
+                    "Plan": {
+                      "Node Type": "Nested Loop",
+                      "Startup Cost": 9859.52,
+                      "Total Cost": 78261.32,
+                      "Plan Rows": 112650,
+                      "Plans": [
+                        {
+                          "Node Type": "Seq Scan",
+                          "Relation Name": "orders"
+                        },
+                        {
+                          "Node Type": "Index Scan",
+                          "Relation Name": "order_items",
+                          "Index Cond": "((order_id)::text = (o.order_id)::text)"
+                        }
+                      ]
+                    }
+                  }
+                ]
+                """;
+        when(jdbcTemplate.query(any(PreparedStatementCreator.class), any(RowMapper.class)))
+                .thenReturn(List.of(planJson));
+
+        var analysis = analyzer.analyze("SELECT * FROM orders o JOIN order_items oi ON oi.order_id = o.order_id");
+
+        assertThat(analysis.safe()).isTrue();
+        assertThat(analysis.hasCartesianProduct()).isFalse();
+    }
+
+    @Test
+    @DisplayName("标量子查询广播：子节点预估行数为 1 行时，CROSS JOIN 不误判为笛卡尔积")
+    void ignoresScalarSubqueryCrossJoin() {
+        String planJson = """
+                [
+                  {
+                    "Plan": {
+                      "Node Type": "Nested Loop",
+                      "Startup Cost": 0.00,
+                      "Total Cost": 120.00,
+                      "Plan Rows": 5000,
+                      "Plans": [
+                        {
+                          "Node Type": "Seq Scan",
+                          "Relation Name": "orders"
+                        },
+                        {
+                          "Node Type": "Aggregate",
+                          "Plan Rows": 1
+                        }
+                      ]
+                    }
+                  }
+                ]
+                """;
+        when(jdbcTemplate.query(any(PreparedStatementCreator.class), any(RowMapper.class)))
+                .thenReturn(List.of(planJson));
+
+        var analysis = analyzer.analyze("SELECT * FROM orders CROSS JOIN (SELECT MAX(dt) FROM orders)");
+
+        assertThat(analysis.safe()).isTrue();
+        assertThat(analysis.hasCartesianProduct()).isFalse();
+    }
 }

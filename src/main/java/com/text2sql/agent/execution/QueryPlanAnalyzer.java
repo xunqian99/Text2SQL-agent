@@ -139,7 +139,10 @@ public class QueryPlanAnalyzer {
     /**
      * 递归检测执行计划树中是否存在全表笛卡尔积。
      *
-     * <p>特征：节点为 {@code Nested Loop}，Join Type 为 {@code Inner} 或空，且不存在 {@code Join Filter} 或 {@code Hash Cond}。
+     * <p>特征：节点为 {@code Nested Loop}，Join Type 为 {@code Inner} 或空，
+     * 且不存在 {@code Join Filter} 或 {@code Hash Cond}，
+     * 且其子节点不存在 {@code Index Cond}（不是基于索引的 Nested Loop Join），
+     * 且其子节点没有行数 <= 1 的标量子查询（不是标量广播 Cross Join）。
      */
     private boolean detectCartesianProduct(JsonNode node) {
         if (node == null || node.isMissingNode()) {
@@ -150,11 +153,16 @@ public class QueryPlanAnalyzer {
         if ("Nested Loop".equalsIgnoreCase(nodeType)) {
             boolean hasJoinFilter = node.has("Join Filter");
             boolean hasHashCond = node.has("Hash Cond");
-            long rows = node.path("Plan Rows").asLong(0L);
+            boolean hasInnerIndexCond = hasAnyIndexCond(node.path("Plans"));
+            boolean isScalarCrossJoin = isAnyChildSingleRow(node.path("Plans"));
 
-            // 无连接过滤条件且预估行数较大时，视为笛卡尔积
-            if (!hasJoinFilter && !hasHashCond && rows > 1000) {
-                return true;
+            // 只有当：既没有自身 Join Filter，也没有子节点 Index Cond，也不是单行标量子查询广播时，
+            // 且预估输出行数较大，才判定为真正的无约束全表笛卡尔积！
+            if (!hasJoinFilter && !hasHashCond && !hasInnerIndexCond && !isScalarCrossJoin) {
+                long rows = node.path("Plan Rows").asLong(0L);
+                if (rows > 1000) {
+                    return true;
+                }
             }
         }
 
@@ -167,6 +175,36 @@ public class QueryPlanAnalyzer {
             }
         }
 
+        return false;
+    }
+
+    private boolean hasAnyIndexCond(JsonNode plans) {
+        if (plans == null || !plans.isArray()) {
+            return false;
+        }
+        for (JsonNode child : plans) {
+            if (child.has("Index Cond") || child.has("Recheck Cond")) {
+                return true;
+            }
+            if (hasAnyIndexCond(child.path("Plans"))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isAnyChildSingleRow(JsonNode plans) {
+        if (plans == null || !plans.isArray()) {
+            return false;
+        }
+        for (JsonNode child : plans) {
+            if (child.has("Plan Rows")) {
+                long rows = child.path("Plan Rows").asLong(0L);
+                if (rows == 1L) {
+                    return true;
+                }
+            }
+        }
         return false;
     }
 }

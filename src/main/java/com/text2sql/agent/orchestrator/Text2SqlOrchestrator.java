@@ -218,19 +218,40 @@ public class Text2SqlOrchestrator {
                 generated = generator.generate(effectiveQuestion, schema);
             }
         } catch (GenerationException e) {
-            long generationMs = elapsedMs(generationStarted);
-            AgentResponse.Status status = e.getReason() == GenerationException.Reason.NOT_CONFIGURED
-                    ? AgentResponse.Status.NOT_CONFIGURED
-                    : AgentResponse.Status.GENERATION_FAILED;
-            log.warn("生成失败（{}）：{}", e.getReason(), e.getMessage());
-            AgentResponse fail = AgentResponse.failed(question, status, null, e.getMessage(), null,
-                    tableCount, retrievedTables, ddlChars,
-                    timings(retrievalMs, generationMs, 0, 0, elapsedMs(totalStarted)));
-            if (convEnabled) {
-                recordConversationTurn(session, question, rewrittenQuestion, fail);
-                return fail.withConversation(sessionId, rewrittenQuestion, schemaReused);
+            if (properties.getSelfCorrection().isEnabled() && e.getReason() != GenerationException.Reason.NOT_CONFIGURED) {
+                log.warn("首次生成异常（{}：{}），尝试重试一次生成", e.getReason(), e.getMessage());
+                try {
+                    generated = generator.generate(effectiveQuestion, schema);
+                } catch (GenerationException e2) {
+                    long generationMs = elapsedMs(generationStarted);
+                    AgentResponse.Status status = e2.getReason() == GenerationException.Reason.NOT_CONFIGURED
+                            ? AgentResponse.Status.NOT_CONFIGURED
+                            : AgentResponse.Status.GENERATION_FAILED;
+                    log.warn("重试生成仍失败（{}）：{}", e2.getReason(), e2.getMessage());
+                    AgentResponse fail = AgentResponse.failed(question, status, null, e2.getMessage(), null,
+                            tableCount, retrievedTables, ddlChars,
+                            timings(retrievalMs, generationMs, 0, 0, elapsedMs(totalStarted)));
+                    if (convEnabled) {
+                        recordConversationTurn(session, question, rewrittenQuestion, fail);
+                        return fail.withConversation(sessionId, rewrittenQuestion, schemaReused);
+                    }
+                    return fail;
+                }
+            } else {
+                long generationMs = elapsedMs(generationStarted);
+                AgentResponse.Status status = e.getReason() == GenerationException.Reason.NOT_CONFIGURED
+                        ? AgentResponse.Status.NOT_CONFIGURED
+                        : AgentResponse.Status.GENERATION_FAILED;
+                log.warn("生成失败（{}）：{}", e.getReason(), e.getMessage());
+                AgentResponse fail = AgentResponse.failed(question, status, null, e.getMessage(), null,
+                        tableCount, retrievedTables, ddlChars,
+                        timings(retrievalMs, generationMs, 0, 0, elapsedMs(totalStarted)));
+                if (convEnabled) {
+                    recordConversationTurn(session, question, rewrittenQuestion, fail);
+                    return fail.withConversation(sessionId, rewrittenQuestion, schemaReused);
+                }
+                return fail;
             }
-            return fail;
         }
         long generationMs = elapsedMs(generationStarted);
 

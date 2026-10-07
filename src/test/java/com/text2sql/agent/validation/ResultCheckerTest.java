@@ -69,6 +69,36 @@ class ResultCheckerTest {
     }
 
     @Test
+    @DisplayName("规则 6：问题要求按月统计但缺少时间维度与分组，判定为异常")
+    void missingTimeDimension() {
+        QueryResult rows = new QueryResult(List.of("rev"), List.of(List.of("1000.0")), false, 5L);
+        CheckResult res = checker.check("每个月的佣金收入是多少？", "SELECT SUM(commission) FROM settlements", rows);
+
+        assertThat(res.suspicious()).isTrue();
+        assertThat(res.rule()).isEqualTo("MISSING_TIME_DIMENSION");
+    }
+
+    @Test
+    @DisplayName("规则 7：问题询问金额但仅用 COUNT 未用 SUM，判定为异常")
+    void countInsteadOfSumForMoney() {
+        QueryResult rows = new QueryResult(List.of("type", "cnt"), List.of(List.of("credit_card", "100")), false, 5L);
+        CheckResult res = checker.check("每个支付方式收上来的钱合计是多少？", "SELECT payment_type, COUNT(*) FROM order_payments GROUP BY 1", rows);
+
+        assertThat(res.suspicious()).isTrue();
+        assertThat(res.rule()).isEqualTo("COUNT_INSTEAD_OF_SUM");
+    }
+
+    @Test
+    @DisplayName("规则 8：退款金额误聚合数量列 refund_qty，判定为异常")
+    void sumQtyInsteadOfValue() {
+        QueryResult rows = new QueryResult(List.of("amt"), List.of(List.of("50")), false, 5L);
+        CheckResult res = checker.check("退款总金额是多少？", "SELECT SUM(refund_qty) FROM refund_items", rows);
+
+        assertThat(res.suspicious()).isTrue();
+        assertThat(res.rule()).isEqualTo("SUM_QTY_INSTEAD_OF_VALUE");
+    }
+
+    @Test
     @DisplayName("正常结果集判定为通过")
     void normalQueryResultPasses() {
         QueryResult ok = new QueryResult(List.of("state", "cnt"), List.of(List.of("SP", "4000")), false, 5L);

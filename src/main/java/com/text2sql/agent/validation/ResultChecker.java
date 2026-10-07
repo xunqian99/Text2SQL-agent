@@ -114,6 +114,37 @@ public class ResultChecker {
             );
         }
 
+        // 规则 6：时间周期维度丢失（Missing Time Dimension）
+        // 问题明确要求按周期（如每个月、每周、每年）统计，但 SQL 未使用 DATE_TRUNC 或 EXTRACT 进行时间分组
+        boolean asksTimeGrouping = normQ.contains("每个月") || normQ.contains("每月") || normQ.contains("按月")
+                || normQ.contains("每周") || normQ.contains("按周") || normQ.contains("每年") || normQ.contains("按年");
+        if (asksTimeGrouping && !normSql.contains("DATE_TRUNC") && !normSql.contains("EXTRACT") && !normSql.contains("GROUP BY")) {
+            return CheckResult.suspicious(
+                    "MISSING_TIME_DIMENSION",
+                    "问题明确要求按时间周期（如每个月/每周/每年）统计，但 SQL 缺少时间截断（DATE_TRUNC）或按时间维度的 GROUP BY 分组。"
+            );
+        }
+
+        // 规则 7：金额指标仅计数未累加求和（Count Instead of Sum For Money）
+        // 问题明确询问“收上来的钱/退款总额/退款金额/优惠金额/销售金额/佣金收入/净额合计”，但 SQL 只用了 COUNT 未用 SUM
+        boolean asksMoney = normQ.contains("收上来的钱") || normQ.contains("退款总额") || normQ.contains("退款金额")
+                || normQ.contains("优惠金额") || normQ.contains("销售金额") || normQ.contains("佣金收入")
+                || normQ.contains("净额合计") || normQ.contains("优惠了多少钱");
+        if (asksMoney && normSql.contains("COUNT(") && !normSql.contains("SUM(")) {
+            return CheckResult.suspicious(
+                    "COUNT_INSTEAD_OF_SUM",
+                    "问题询问的是金额/总额（钱数），但 SQL 仅使用了 COUNT 进行行数计数，未对金额字段使用 SUM 进行求和累加。"
+            );
+        }
+
+        // 规则 8：退款金额误聚合数量列（Sum Qty Instead of Amount）
+        if ((normQ.contains("金额") || normQ.contains("钱")) && normSql.contains("REFUND_QTY")) {
+            return CheckResult.suspicious(
+                    "SUM_QTY_INSTEAD_OF_VALUE",
+                    "问题询问的是退款金额，但 SQL 聚合了数量列 refund_qty 而非金额列（refund_value 或 refunds.refund_amount）。"
+            );
+        }
+
         return CheckResult.NORMAL;
     }
 

@@ -221,7 +221,18 @@ public class LlmSqlGenerator {
             throw new GenerationException(GenerationException.Reason.CALL_FAILED, "LLM 返回空响应");
         }
         AssistantMessage output = response.getResult().getOutput();
-        return output == null ? null : output.getText();
+        if (output == null) {
+            return null;
+        }
+        String text = output.getText();
+        if ((text == null || text.isBlank()) && output.getMetadata() != null) {
+            Object reasoning = output.getMetadata().get("reasoning_content");
+            if (reasoning instanceof String rs && !rs.isBlank()) {
+                log.info("LLM 主内容为空，尝试从 reasoning_content 提取 SQL");
+                return rs;
+            }
+        }
+        return text;
     }
 
     private LlmCallRecord buildRecord(ChatResponse response, int promptChars, long latencyMs, String model) {
