@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -163,7 +164,29 @@ public class HybridSchemaProvider implements SchemaProvider {
                     properties.getRetrieval().getColumnPruningMinColumns());
         }
 
-        String ddl = renderDdl(full, tablesForContext, names, result);
+        // 提取本次问题的核心实体表（直接命中词典/别名/枚举/指标的表，用于定向规划连表拓扑）
+        Set<String> coreTargets = new LinkedHashSet<>();
+        if (result.evidence() != null) {
+            for (Map.Entry<String, List<String>> entry : result.evidence().entrySet()) {
+                if (result.expandedTables() == null || !result.expandedTables().contains(entry.getKey())) {
+                    coreTargets.add(entry.getKey().toLowerCase(Locale.ROOT));
+                }
+            }
+        }
+        if (valueMatches != null) {
+            for (ValueRetriever.ValueMatch vm : valueMatches) {
+                coreTargets.add(vm.table().toLowerCase(Locale.ROOT));
+            }
+        }
+        if (applicableMetrics != null) {
+            for (com.text2sql.agent.semantic.Metric m : applicableMetrics) {
+                if (m.tables() != null) {
+                    m.tables().forEach(t -> coreTargets.add(t.toLowerCase(Locale.ROOT)));
+                }
+            }
+        }
+
+        String ddl = renderDdl(full, tablesForContext, names, result, coreTargets);
 
         log.info("检索完成：{} | DDL {} 字符（全量 {} 字符）",
                 result.summary(), ddl.length(), full.ddlText().length());
@@ -220,27 +243,15 @@ public class HybridSchemaProvider implements SchemaProvider {
     }
 
     /**
-     * 渲染交给模型的 DDL 文本，按配置决定要不要附 join 提示。
+     * 渲染交给模型的 DDL 文本，按配置决定要不要附 join 拓扑提示。
      *
-     * <p><b>为什么默认不附（阶段 3 的结论）</b>
-     *
-     * <p>阶段 3 实现了列级 join 关系图 + 连接树规划，实测它确实修好了
-     * 「join 列猜错」这类错误（join 类错误 4 条 → 1 条，T4-015 从失败转通过），
-     * 但**整体准确率 52% → 52%，没有变化**，同时平均输入 token 涨了 29%。
-     *
-     * <p>净变化为零的原因：修好 5 条、新坏 5 条。新坏的里面 2 条是
-     * **过度 join**——模型看到候选边里有 {@code sellers -> regions} 就顺手连上，
-     * 而 gold 不需要。也就是说这个改动**既解决了问题也制造了问题**，
-     * 两边的量级恰好抵消。
-     *
-     * <p>所以默认关闭，代码保留可显式开启。详见
-     * {@code AgentProperties.Retrieval#joinHintsEnabled}。
-     *
-     * <p>关闭时走的是阶段 2 的形态：只给真实外键，不附列级关联、不附连接树。
-     * 这样「阶段 2 的 52%」这个基线随时可复现。
+     * <p>基于 {@link JoinPathPlanner#planForTargets} 执行定向生成树规划：
+     * 若核心实体表不足 2 张，则完全不输出 Join 提示（杜绝单表题过度 Join）；
+     * 若涉及 2 张及以上核心实体，仅输出连通这几张表的最短主干拓扑，防止引入无关冗余边。
      */
     private String renderDdl(SchemaContext full, List<SchemaContext.Table> selected,
-                             java.util.Set<String> names, RetrievalResult result) {
+                             java.util.Set<String> names, RetrievalResult result,
+                             Set<String> coreTargets) {
         var config = properties.getRetrieval();
         if (!config.isJoinHintsEnabled()) {
             // 阶段 2 形态：只有真实外键。
@@ -250,11 +261,20 @@ public class HybridSchemaProvider implements SchemaProvider {
             return SchemaDdlRenderer.render(selected, fks);
         }
 
-        List<JoinGraph.Edge> keptEdges = joinGraph(full).edgesAmong(names);
-        JoinPathPlanner.Plan plan = JoinPathPlanner.plan(keptEdges, result.tableNames());
-        log.info("join 提示已开启：{} 条边，起点 {}，连接 {} 张表",
-                plan.edges().size(), plan.root(),
-                plan.isEmpty() ? 0 : plan.edges().size() + 1);
+        JoinGraph graph = joinGraph(full);
+        JoinPathPlanner.Plan plan = JoinPathPlanner.planForTargets(graph, coreTargets, result.tableNames());
+
+        if (plan.isEmpty()) {
+            List<SchemaContext.ForeignKey> fks = full.foreignKeys().stream()
+                    .filter(fk -> names.contains(fk.fromTable()) && names.contains(fk.toTable()))
+                    .toList();
+            return SchemaDdlRenderer.render(selected, fks);
+        }
+
+        log.info("多表 Join 拓扑约束提示已生效：{} 条主干边，起点 {}，覆盖目标表 {}",
+                plan.edges().size(), plan.root(), coreTargets);
+
+        List<JoinGraph.Edge> keptEdges = plan.edges();
         return SchemaDdlRenderer.renderWithJoins(selected, keptEdges, plan,
                 config.isJoinListEnabled(), config.isJoinPlanEnabled());
     }

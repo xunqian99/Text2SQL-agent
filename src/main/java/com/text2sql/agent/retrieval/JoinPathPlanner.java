@@ -253,6 +253,130 @@ public final class JoinPathPlanner {
     }
 
     /**
+     * 针对核心业务目标表集合，规划最小连通连接树（Steiner Tree / 最短连接路径启发式）。
+     *
+     * <p>解决的核心问题：Top-K 召回可能返回 8~10 张表，如果对全部召回表生成树，
+     * 会强制把无关表连进来，导致模型发生「过度 Join」；
+     * 本方法只寻找能够连通 {@code targetTables} 核心实体的最短主干边（外键优先），
+     * 自动补齐必要的桥接表，并剔除其余无关边。
+     *
+     * @param graph        表关系图
+     * @param targetTables 核心实体表集合（自然语言/取值/指标直接命中的表）
+     * @param rankedTables 召回表的优先级列表
+     * @return 仅覆盖核心实体的最小连接树；若核心表不足 2 张或无法连通，返回空 Plan
+     */
+    public static Plan planForTargets(JoinGraph graph, Set<String> targetTables, List<String> rankedTables) {
+        if (graph == null || targetTables == null || rankedTables == null || targetTables.size() < 2) {
+            return new Plan(null, List.of(), targetTables == null ? 0 : targetTables.size());
+        }
+
+        Set<String> normalizedTargets = new LinkedHashSet<>();
+        for (String t : targetTables) {
+            if (t != null && !t.isBlank()) {
+                normalizedTargets.add(normalize(t));
+            }
+        }
+        if (normalizedTargets.size() < 2) {
+            return new Plan(null, List.of(), normalizedTargets.size());
+        }
+
+        // 确定根节点：优先选择 rankedTables 中排名最靠前的 targetTable
+        String root = rankedTables.stream()
+                .map(JoinPathPlanner::normalize)
+                .filter(normalizedTargets::contains)
+                .findFirst()
+                .orElse(normalizedTargets.iterator().next());
+
+        Set<String> allowedTables = new LinkedHashSet<>();
+        rankedTables.forEach(t -> allowedTables.add(normalize(t)));
+        allowedTables.addAll(normalizedTargets);
+
+        List<JoinGraph.Edge> candidateEdges = graph.edgesAmong(allowedTables);
+        Map<String, List<JoinGraph.Edge>> adj = new LinkedHashMap<>();
+        for (JoinGraph.Edge edge : candidateEdges) {
+            adj.computeIfAbsent(normalize(edge.fromTable()), k -> new ArrayList<>()).add(edge);
+            adj.computeIfAbsent(normalize(edge.toTable()), k -> new ArrayList<>()).add(edge);
+        }
+
+        if (!adj.containsKey(root)) {
+            return new Plan(null, List.of(), normalizedTargets.size());
+        }
+
+        Set<JoinGraph.Edge> selectedEdges = new LinkedHashSet<>();
+        for (String target : normalizedTargets) {
+            if (target.equals(root)) {
+                continue;
+            }
+            List<JoinGraph.Edge> path = findShortestPath(root, target, adj);
+            if (path != null) {
+                selectedEdges.addAll(path);
+            }
+        }
+
+        if (selectedEdges.isEmpty()) {
+            return new Plan(null, List.of(), normalizedTargets.size());
+        }
+
+        return plan(new ArrayList<>(selectedEdges), rankedTables);
+    }
+
+    private static List<JoinGraph.Edge> findShortestPath(String start, String target, Map<String, List<JoinGraph.Edge>> adj) {
+        record NodeDist(String node, double dist) {}
+        Map<String, Double> dist = new LinkedHashMap<>();
+        Map<String, JoinGraph.Edge> prevEdge = new LinkedHashMap<>();
+        Map<String, String> prevNode = new LinkedHashMap<>();
+
+        java.util.PriorityQueue<NodeDist> pq = new java.util.PriorityQueue<>(Comparator.comparingDouble(NodeDist::dist));
+        dist.put(start, 0.0);
+        pq.add(new NodeDist(start, 0.0));
+
+        while (!pq.isEmpty()) {
+            NodeDist curr = pq.poll();
+            if (curr.dist() > dist.getOrDefault(curr.node(), Double.MAX_VALUE)) {
+                continue;
+            }
+            if (curr.node().equals(target)) {
+                break;
+            }
+
+            List<JoinGraph.Edge> neighbors = adj.getOrDefault(curr.node(), List.of());
+            for (JoinGraph.Edge edge : neighbors) {
+                String neighborNode = normalize(edge.fromTable()).equals(curr.node())
+                        ? normalize(edge.toTable())
+                        : normalize(edge.fromTable());
+
+                // 外键边代价 1.0，推断边代价 2.0（优先走外键硬事实）
+                double weight = edge.isForeignKey() ? 1.0 : 2.0;
+                double newDist = curr.dist() + weight;
+
+                if (newDist < dist.getOrDefault(neighborNode, Double.MAX_VALUE)) {
+                    dist.put(neighborNode, newDist);
+                    prevEdge.put(neighborNode, edge);
+                    prevNode.put(neighborNode, curr.node());
+                    pq.add(new NodeDist(neighborNode, newDist));
+                }
+            }
+        }
+
+        if (!dist.containsKey(target)) {
+            return null; // 无法连通
+        }
+
+        List<JoinGraph.Edge> path = new ArrayList<>();
+        String curr = target;
+        while (!curr.equals(start)) {
+            JoinGraph.Edge edge = prevEdge.get(curr);
+            if (edge == null) {
+                break;
+            }
+            path.add(edge);
+            curr = prevNode.get(curr);
+        }
+        java.util.Collections.reverse(path);
+        return path;
+    }
+
+    /**
      * 把规划结果渲染成 prompt 里的一段。
      *
      * <p>每行写成 {@code 已连上的表.列 = 新表.列} 的等式形式，而不是

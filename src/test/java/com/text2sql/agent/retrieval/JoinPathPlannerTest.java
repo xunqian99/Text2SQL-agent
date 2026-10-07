@@ -215,4 +215,57 @@ class JoinPathPlannerTest {
         assertThat(JoinPathPlanner.render(JoinPathPlanner.plan(List.of(), List.of("orders"))))
                 .isEmpty();
     }
+
+    @Test
+    @DisplayName("planForTargets：目标表不足 2 张时返回空 Plan，杜绝单表题过度 Join")
+    void planForTargetsReturnsEmptyForSingleTarget() {
+        JoinGraph graph = JoinGraph.from(new SchemaContext(
+                List.of(new SchemaContext.Table("orders", null, List.of())),
+                List.of(), "", ""), new com.text2sql.agent.retrieval.glossary.Glossary(List.of(), java.util.Map.of()));
+
+        var plan = JoinPathPlanner.planForTargets(graph, java.util.Set.of("orders"), List.of("orders", "customers"));
+        assertThat(plan.isEmpty()).isTrue();
+    }
+
+    @Test
+    @DisplayName("planForTargets：仅保留连接目标表的最短主干边，排除未涉及的候选表")
+    void planForTargetsExtractsMinimalSteinerPath() {
+        // 图结构:
+        // orders -> customers -> regions
+        // orders -> sellers
+        // orders -> order_items -> products
+        SchemaContext schema = new SchemaContext(List.of(
+                new SchemaContext.Table("orders", null, List.of()),
+                new SchemaContext.Table("customers", null, List.of()),
+                new SchemaContext.Table("regions", null, List.of()),
+                new SchemaContext.Table("sellers", null, List.of()),
+                new SchemaContext.Table("order_items", null, List.of()),
+                new SchemaContext.Table("products", null, List.of())),
+                List.of(
+                        new SchemaContext.ForeignKey("orders", "customer_id", "customers", "customer_id"),
+                        new SchemaContext.ForeignKey("orders", "seller_id", "sellers", "seller_id"),
+                        new SchemaContext.ForeignKey("order_items", "order_id", "orders", "order_id"),
+                        new SchemaContext.ForeignKey("order_items", "product_id", "products", "product_id")
+                ), "", "");
+
+        com.text2sql.agent.retrieval.glossary.Glossary glossary = new com.text2sql.agent.retrieval.glossary.Glossary(
+                List.of(new com.text2sql.agent.retrieval.glossary.Glossary.Relation("customers.customer_state", "regions.region_code")),
+                java.util.Map.of());
+
+        JoinGraph graph = JoinGraph.from(schema, glossary);
+
+        // 目标表只有 orders 和 regions，候选表包含了全部 6 张表
+        var targets = java.util.Set.of("orders", "regions");
+        var ranked = List.of("orders", "sellers", "order_items", "products", "customers", "regions");
+
+        var plan = JoinPathPlanner.planForTargets(graph, targets, ranked);
+
+        assertThat(plan.isEmpty()).isFalse();
+        assertThat(plan.root()).isEqualTo("orders");
+        // 关键断言：仅包含 orders -> customers 和 customers -> regions，绝不能包含 sellers / products / order_items
+        assertThat(plan.edges()).hasSize(2);
+        assertThat(plan.edges()).allMatch(e ->
+                (e.fromTable().equals("orders") && e.toTable().equals("customers")) ||
+                (e.fromTable().equals("customers") && e.toTable().equals("regions")));
+    }
 }
