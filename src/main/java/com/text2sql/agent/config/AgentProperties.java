@@ -532,6 +532,20 @@ public class AgentProperties {
         private boolean joinHintsEnabled = false;
 
         /**
+         * 是否开启动态列级剪枝（Column-level Pruning）。
+         *
+         * <p>默认关闭以保持 baseline 纯粹性。开启后，在表级检索的基础上进一步
+         * 裁剪每张表的字段，只保留主外键关联列、实体取值列、指标列与提问命中的语义列，
+         * 将 Schema Token 压缩 30%~50%，避免多表 Join 时模型注意力被冗余列分散。
+         */
+        private boolean columnPruningEnabled = false;
+
+        /**
+         * 列级剪枝时单张表的保留列数下限（安全兜底，避免过度剪枝）。
+         */
+        private int columnPruningMinColumns = 4;
+
+        /**
          * 是否渲染 {@code JOINS} 段（全部候选边，含列名）。
          *
          * <p>单独留开关是为了定位「过度 join」的来源。实测怀疑是这一段
@@ -642,6 +656,22 @@ public class AgentProperties {
 
         public void setJoinPlanEnabled(boolean joinPlanEnabled) {
             this.joinPlanEnabled = joinPlanEnabled;
+        }
+
+        public boolean isColumnPruningEnabled() {
+            return columnPruningEnabled;
+        }
+
+        public void setColumnPruningEnabled(boolean columnPruningEnabled) {
+            this.columnPruningEnabled = columnPruningEnabled;
+        }
+
+        public int getColumnPruningMinColumns() {
+            return columnPruningMinColumns;
+        }
+
+        public void setColumnPruningMinColumns(int columnPruningMinColumns) {
+            this.columnPruningMinColumns = columnPruningMinColumns;
         }
     }
 

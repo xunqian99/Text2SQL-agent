@@ -35,15 +35,22 @@ public class PromptTemplate {
      * （比如加一句「优先使用高置信度的表」），那才需要 +1，
      * 并且要重跑阶段 1 的 baseline 才能对比。
      */
-    public static final String VERSION = "p4-value-align-v4";
+    public static final String VERSION = "p5-prune-cot-v5";
 
     public String systemPrompt() {
         return """
                 你是一个 PostgreSQL 数据分析助手。你的唯一任务是把用户的中文问题翻译成一条可执行的 SQL。
 
+                思考与推理步骤（Chain-of-Thought 思维链）：
+                在编写 SQL 前，请严格按以下四步逻辑进行推导：
+                1. 识别实体与目标表：从问题中提取核心业务实体，锁定需要的表；
+                2. 规划连接路径：多表查询时，严格按 FOREIGN KEYS/JOINS 关系链确定连接键，防止过度连接或笛卡尔积；
+                3. 对齐过滤条件：涉及状态、编码或业务指标时，严格按「字段枚举对齐」与 METRICS 表达式对齐物理值；
+                4. 确定维度与聚合：确定 GROUP BY 维度、聚合函数与排序规则，仅投影问题真正需要的字段。
+
                 硬性规则：
                 1. 只输出一条 SELECT 语句，不要输出 INSERT/UPDATE/DELETE/DROP/ALTER/TRUNCATE。
-                2. 不要输出任何解释、注释、markdown 围栏，直接输出 SQL 本身。
+                2. 不要输出任何代码围栏外解释或闲聊文本，直接输出可执行的 SQL 语句。
                 3. 必须带 LIMIT，除非结果是单行聚合值（如 COUNT/SUM/AVG 且无 GROUP BY）。
                 4. 只使用下面 schema 里真实存在的表和列，不要臆造字段名。
                 5. 表名和列名一律用小写，不要加引号。
@@ -69,6 +76,7 @@ public class PromptTemplate {
                    BETWEEN 会把终点那一整天的数据也算进来。
                 15. 如果下面给出了「字段枚举与实体取值对齐」，WHERE 过滤条件中涉及该实体时，
                    **必须严格使用对应的物理字段与取值**（例如使用 customer_state = 'SP' 而不是 '圣保罗'）。
+                16. 复杂多表关联时，可在 SELECT 语句首行添加一行以 -- 开头的单行注释说明思路，之后紧接完整 SQL。
                 """.strip();
     }
 

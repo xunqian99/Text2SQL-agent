@@ -47,6 +47,7 @@ public class HybridSchemaProvider implements SchemaProvider {
     private final com.text2sql.agent.semantic.MetricRegistry metricRegistry;
     private final com.text2sql.agent.fewshot.ExampleSelector fewshotSelector;
     private final ValueRetriever valueRetriever;
+    private final ColumnPruner columnPruner;
 
     /**
      * 关系图缓存。
@@ -69,7 +70,8 @@ public class HybridSchemaProvider implements SchemaProvider {
                                 com.text2sql.agent.config.AgentProperties properties,
                                 com.text2sql.agent.semantic.MetricRegistry metricRegistry,
                                 com.text2sql.agent.fewshot.ExampleSelector fewshotSelector,
-                                ValueRetriever valueRetriever) {
+                                ValueRetriever valueRetriever,
+                                ColumnPruner columnPruner) {
         this.catalog = catalog;
         this.retriever = retriever;
         this.glossaryLoader = glossaryLoader;
@@ -77,6 +79,16 @@ public class HybridSchemaProvider implements SchemaProvider {
         this.metricRegistry = metricRegistry;
         this.fewshotSelector = fewshotSelector;
         this.valueRetriever = valueRetriever;
+        this.columnPruner = columnPruner;
+    }
+
+    public HybridSchemaProvider(SchemaCatalog catalog, LexicalSchemaRetriever retriever,
+                                com.text2sql.agent.retrieval.glossary.GlossaryLoader glossaryLoader,
+                                com.text2sql.agent.config.AgentProperties properties,
+                                com.text2sql.agent.semantic.MetricRegistry metricRegistry,
+                                com.text2sql.agent.fewshot.ExampleSelector fewshotSelector,
+                                ValueRetriever valueRetriever) {
+        this(catalog, retriever, glossaryLoader, properties, metricRegistry, fewshotSelector, valueRetriever, null);
     }
 
     public HybridSchemaProvider(SchemaCatalog catalog, LexicalSchemaRetriever retriever,
@@ -84,14 +96,14 @@ public class HybridSchemaProvider implements SchemaProvider {
                                 com.text2sql.agent.config.AgentProperties properties,
                                 com.text2sql.agent.semantic.MetricRegistry metricRegistry,
                                 com.text2sql.agent.fewshot.ExampleSelector fewshotSelector) {
-        this(catalog, retriever, glossaryLoader, properties, metricRegistry, fewshotSelector, null);
+        this(catalog, retriever, glossaryLoader, properties, metricRegistry, fewshotSelector, null, null);
     }
 
     public HybridSchemaProvider(SchemaCatalog catalog, LexicalSchemaRetriever retriever,
                                 com.text2sql.agent.retrieval.glossary.GlossaryLoader glossaryLoader,
                                 com.text2sql.agent.config.AgentProperties properties,
                                 com.text2sql.agent.semantic.MetricRegistry metricRegistry) {
-        this(catalog, retriever, glossaryLoader, properties, metricRegistry, null, null);
+        this(catalog, retriever, glossaryLoader, properties, metricRegistry, null, null, null);
     }
 
     @Override
@@ -134,7 +146,24 @@ public class HybridSchemaProvider implements SchemaProvider {
                 .filter(java.util.Objects::nonNull)
                 .toList();
 
-        String ddl = renderDdl(full, selected, names, result);
+        List<ValueRetriever.ValueMatch> valueMatches = List.of();
+        if (valueRetriever != null) {
+            valueMatches = valueRetriever.findMatches(question, names);
+        }
+
+        List<com.text2sql.agent.semantic.Metric> applicableMetrics = List.of();
+        if (properties.getSemantic().isEnabled() && metricRegistry != null) {
+            applicableMetrics = metricRegistry.findApplicable(question, names);
+        }
+
+        List<SchemaContext.Table> tablesForContext = selected;
+        if (properties.getRetrieval().isColumnPruningEnabled() && columnPruner != null) {
+            tablesForContext = columnPruner.prune(selected, question, names,
+                    full.foreignKeys(), valueMatches, applicableMetrics,
+                    properties.getRetrieval().getColumnPruningMinColumns());
+        }
+
+        String ddl = renderDdl(full, tablesForContext, names, result);
 
         log.info("检索完成：{} | DDL {} 字符（全量 {} 字符）",
                 result.summary(), ddl.length(), full.ddlText().length());
@@ -143,18 +172,15 @@ public class HybridSchemaProvider implements SchemaProvider {
                     log.debug("  {} <- {}", name, result.evidence().getOrDefault(name, List.of())));
         }
 
-        SchemaContext sub = full.subset(names, ddl).withMetrics(metricsFor(question, names));
+        SchemaContext sub = full.subset(tablesForContext, names, ddl).withMetrics(metricsFor(question, names));
         if (properties.getFewshot().isEnabled() && fewshotSelector != null) {
             var examples = fewshotSelector.select(question, names, properties.getFewshot().getMaxExamples());
             sub = sub.withExamples(examples);
         }
-        if (valueRetriever != null) {
-            var matches = valueRetriever.findMatches(question, names);
-            if (!matches.isEmpty()) {
-                String hints = valueRetriever.renderValueHints(matches);
-                sub = sub.withValueHints(hints);
-                log.info("注入实体与枚举值取值对齐提示：{} 条", matches.size());
-            }
+        if (!valueMatches.isEmpty()) {
+            String hints = valueRetriever.renderValueHints(valueMatches);
+            sub = sub.withValueHints(hints);
+            log.info("注入实体与枚举值取值对齐提示：{} 条", valueMatches.size());
         }
         return sub;
     }

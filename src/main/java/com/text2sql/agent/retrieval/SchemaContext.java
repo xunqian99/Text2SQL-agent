@@ -108,10 +108,17 @@ public record SchemaContext(
         List<Table> kept = tables.stream()
                 .filter(t -> tableNames.contains(t.name()))
                 .toList();
+        return subset(kept, tableNames, ddlText);
+    }
+
+    /**
+     * 从全量 schema 里切出子集，支持传入经过列级剪枝的自定义表清单。
+     */
+    public SchemaContext subset(List<Table> customTables, Set<String> tableNames, String ddlText) {
         List<ForeignKey> keptEdges = foreignKeys.stream()
                 .filter(fk -> tableNames.contains(fk.fromTable()) && tableNames.contains(fk.toTable()))
                 .toList();
-        return new SchemaContext(kept, keptEdges, dataProfile, ddlText, metricsText, examples, valueHints);
+        return new SchemaContext(customTables, keptEdges, dataProfile, ddlText, metricsText, examples, valueHints);
     }
 
     /**

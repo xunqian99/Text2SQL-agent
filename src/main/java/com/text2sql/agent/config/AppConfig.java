@@ -69,7 +69,8 @@ public class AppConfig {
                                                GlossaryLoader glossaryLoader, AgentProperties properties,
                                                com.text2sql.agent.semantic.MetricRegistry metricRegistry,
                                                com.text2sql.agent.fewshot.ExampleSelector fewshotSelector,
-                                               com.text2sql.agent.retrieval.ValueRetriever valueRetriever) {
-        return new HybridSchemaProvider(catalog, retriever, glossaryLoader, properties, metricRegistry, fewshotSelector, valueRetriever);
+                                               com.text2sql.agent.retrieval.ValueRetriever valueRetriever,
+                                               com.text2sql.agent.retrieval.ColumnPruner columnPruner) {
+        return new HybridSchemaProvider(catalog, retriever, glossaryLoader, properties, metricRegistry, fewshotSelector, valueRetriever, columnPruner);
     }
 }
