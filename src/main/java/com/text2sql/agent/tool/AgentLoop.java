@@ -57,6 +57,7 @@ public class AgentLoop {
                 - INSPECT_COLUMN(表名.列名) — 查看某列的高频枚举值与数据分布
                 - SAMPLE_QUERY(sql) — 试跑一条小验证查询（自动限 5 行）
                 - CHECK_JOIN(表1, 表2, 连接条件) — 验证连表是否能匹配出数据
+                - EXPLAIN_QUERY(sql) — 探测查询执行计划与预估代价，排查笛卡尔积与慢查询
 
                 调用格式必须单独占行，如下：
                 [TOOL_CALL] 工具名(参数)

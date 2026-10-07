@@ -25,11 +25,14 @@ public class ToolExecutor {
     private final SchemaCatalog catalog;
     private final SqlExecutor sqlExecutor;
     private final SqlValidator sqlValidator;
+    private final com.text2sql.agent.execution.QueryPlanAnalyzer planAnalyzer;
 
-    public ToolExecutor(SchemaCatalog catalog, SqlExecutor sqlExecutor, SqlValidator sqlValidator) {
+    public ToolExecutor(SchemaCatalog catalog, SqlExecutor sqlExecutor, SqlValidator sqlValidator,
+                        com.text2sql.agent.execution.QueryPlanAnalyzer planAnalyzer) {
         this.catalog = catalog;
         this.sqlExecutor = sqlExecutor;
         this.sqlValidator = sqlValidator;
+        this.planAnalyzer = planAnalyzer;
     }
 
     /**
@@ -46,6 +49,7 @@ public class ToolExecutor {
                 case INSPECT_COLUMN -> inspectColumn(call.argument());
                 case SAMPLE_QUERY -> sampleQuery(call.argument(), schema);
                 case CHECK_JOIN -> checkJoin(call.argument(), schema);
+                case EXPLAIN_QUERY -> explainQuery(call.argument(), schema);
                 case FINAL_SQL -> ToolResult.ok(call.argument(), List.of(), List.of());
             };
         } catch (Exception e) {
@@ -150,6 +154,41 @@ public class ToolExecutor {
         String count = (qr.rowCount() > 0 && !qr.rows().get(0).isEmpty()) ? qr.rows().get(0).get(0) : "0";
         String out = "连表测试 (" + t1 + " JOIN " + t2 + " ON " + onCondition + ") 匹配行数: " + count;
         return ToolResult.ok(out, qr.columns(), qr.rows());
+    }
+
+    /**
+     * 工具 5：执行 EXPLAIN 执行计划分析与代价检测。
+     */
+    private ToolResult explainQuery(String sql, SchemaContext schema) {
+        if (sql == null || sql.isBlank()) {
+            return ToolResult.error("缺少待分析的 SQL 参数");
+        }
+        String cleanSql = sql.strip();
+        if (cleanSql.endsWith(";")) {
+            cleanSql = cleanSql.substring(0, cleanSql.length() - 1);
+        }
+
+        var valResult = sqlValidator.validate(cleanSql, schema);
+        if (!valResult.valid()) {
+            return ToolResult.error("待分析 SQL 校验未通过：" + valResult.describe());
+        }
+
+        if (planAnalyzer == null) {
+            return ToolResult.error("查询计划分析器未初始化");
+        }
+
+        var analysis = planAnalyzer.analyze(valResult.sql());
+        StringBuilder sb = new StringBuilder();
+        sb.append("--- EXPLAIN 执行计划探测结果 ---\n");
+        sb.append("SQL: ").append(valResult.sql()).append("\n");
+        sb.append("预估总代价 (Total Cost): ").append(String.format(Locale.ROOT, "%.2f", analysis.totalCost())).append("\n");
+        sb.append("预估行数 (Plan Rows): ").append(analysis.planRows()).append("\n");
+        sb.append("全表笛卡尔积风险: ").append(analysis.hasCartesianProduct() ? "【高危警告: 存在无约束全表笛卡尔积！】" : "无").append("\n");
+        sb.append("是否满足安全护栏: ").append(analysis.safe() ? "通过 (SAFE)" : "拦截 (HIGH_RISK)").append("\n");
+        if (!analysis.safe() && analysis.riskDescription() != null) {
+            sb.append("风险诊断: ").append(analysis.riskDescription()).append("\n");
+        }
+        return ToolResult.ok(sb.toString(), List.of("metric", "value"), List.of());
     }
 
     private static String formatResult(String title, QueryResult qr) {

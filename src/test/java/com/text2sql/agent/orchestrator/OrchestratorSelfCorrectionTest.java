@@ -241,4 +241,49 @@ class OrchestratorSelfCorrectionTest {
         verify(generator, times(1))
                 .generateCorrection(anyString(), any(), anyString(), anyString(), any());
     }
+
+    @Test
+    @DisplayName("阶段 5 闭环防御：SQL 触发 EXPLAIN 代价/笛卡尔积护栏拦截时，触发自纠错重试并修正")
+    void retriesWhenExplainCostGuardFails() {
+        properties.getSelfCorrection().setEnabled(true);
+        properties.getSelfCorrection().setMaxAttempts(2);
+        properties.getGuard().setExplainCostGuardEnabled(true);
+
+        com.text2sql.agent.execution.QueryPlanAnalyzer planAnalyzer = mock(com.text2sql.agent.execution.QueryPlanAnalyzer.class);
+        Text2SqlOrchestrator orch = new Text2SqlOrchestrator(schemaProvider, generator, validator, executor,
+                mock(AmbiguityDetector.class), cache, new com.text2sql.agent.validation.ResultChecker(),
+                mock(com.text2sql.agent.tool.AgentLoop.class),
+                new com.text2sql.agent.session.SessionStore(properties),
+                new com.text2sql.agent.session.QuestionRewriter(generator, properties),
+                planAnalyzer, properties);
+
+        // 第一次生成了无 JOIN 条件的笛卡尔积 SQL
+        when(generator.generate(anyString(), any()))
+                .thenReturn(new GeneratedSql("SELECT * FROM orders, customers", "raw", call(100, 10, 50)));
+        // 第二次修正了连接条件
+        when(generator.generateCorrection(anyString(), any(), anyString(), anyString(), any()))
+                .thenReturn(new GeneratedSql("SELECT * FROM orders JOIN customers ON orders.customer_id = customers.customer_id", "raw", call(150, 15, 60)));
+
+        when(validator.validate(anyString(), any())).thenAnswer(inv ->
+                ValidationResult.ok(inv.getArgument(0)));
+
+        // 第一次 EXPLAIN 判定为笛卡尔积风险
+        when(planAnalyzer.analyze("SELECT * FROM orders, customers"))
+                .thenReturn(com.text2sql.agent.execution.QueryPlanAnalyzer.PlanAnalysis.risk(
+                        250000.0, 999999L, true, "检测到全表笛卡尔积", "{}"));
+        // 第二次 EXPLAIN 判定为安全
+        when(planAnalyzer.analyze("SELECT * FROM orders JOIN customers ON orders.customer_id = customers.customer_id"))
+                .thenReturn(com.text2sql.agent.execution.QueryPlanAnalyzer.PlanAnalysis.safe(
+                        100.0, 50L, "{}"));
+
+        when(executor.execute("SELECT * FROM orders JOIN customers ON orders.customer_id = customers.customer_id"))
+                .thenReturn(new QueryResult(List.of("order_id"), List.of(List.of("1")), false, 1));
+
+        AgentResponse response = orch.ask("查询所有订单及对应客户");
+
+        assertThat(response.success()).isTrue();
+        assertThat(response.sql()).contains("JOIN customers ON orders.customer_id = customers.customer_id");
+        verify(generator, times(1))
+                .generateCorrection(anyString(), any(), anyString(), anyString(), any());
+    }
 }

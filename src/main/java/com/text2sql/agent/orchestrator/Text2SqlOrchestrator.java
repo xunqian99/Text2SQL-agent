@@ -60,6 +60,7 @@ public class Text2SqlOrchestrator {
     private final com.text2sql.agent.tool.AgentLoop agentLoop;
     private final com.text2sql.agent.session.SessionStore sessionStore;
     private final com.text2sql.agent.session.QuestionRewriter questionRewriter;
+    private final com.text2sql.agent.execution.QueryPlanAnalyzer queryPlanAnalyzer;
     private final com.text2sql.agent.config.AgentProperties properties;
 
     @org.springframework.beans.factory.annotation.Autowired
@@ -71,6 +72,7 @@ public class Text2SqlOrchestrator {
                                 com.text2sql.agent.tool.AgentLoop agentLoop,
                                 com.text2sql.agent.session.SessionStore sessionStore,
                                 com.text2sql.agent.session.QuestionRewriter questionRewriter,
+                                com.text2sql.agent.execution.QueryPlanAnalyzer queryPlanAnalyzer,
                                 com.text2sql.agent.config.AgentProperties properties) {
         this.schemaProvider = schemaProvider;
         this.generator = generator;
@@ -82,7 +84,21 @@ public class Text2SqlOrchestrator {
         this.agentLoop = agentLoop;
         this.sessionStore = sessionStore;
         this.questionRewriter = questionRewriter;
+        this.queryPlanAnalyzer = queryPlanAnalyzer;
         this.properties = properties;
+    }
+
+    public Text2SqlOrchestrator(SchemaProvider schemaProvider, LlmSqlGenerator generator,
+                                SqlValidator validator, SqlExecutor executor,
+                                com.text2sql.agent.clarification.AmbiguityDetector ambiguityDetector,
+                                com.text2sql.agent.cache.SemanticCache cache,
+                                com.text2sql.agent.validation.ResultChecker resultChecker,
+                                com.text2sql.agent.tool.AgentLoop agentLoop,
+                                com.text2sql.agent.session.SessionStore sessionStore,
+                                com.text2sql.agent.session.QuestionRewriter questionRewriter,
+                                com.text2sql.agent.config.AgentProperties properties) {
+        this(schemaProvider, generator, validator, executor, ambiguityDetector, cache,
+                resultChecker, agentLoop, sessionStore, questionRewriter, null, properties);
     }
 
     public Text2SqlOrchestrator(SchemaProvider schemaProvider, LlmSqlGenerator generator,
@@ -94,7 +110,7 @@ public class Text2SqlOrchestrator {
                                 com.text2sql.agent.config.AgentProperties properties) {
         this(schemaProvider, generator, validator, executor, ambiguityDetector, cache,
                 resultChecker, agentLoop, new com.text2sql.agent.session.SessionStore(properties),
-                new com.text2sql.agent.session.QuestionRewriter(generator, properties), properties);
+                new com.text2sql.agent.session.QuestionRewriter(generator, properties), null, properties);
     }
 
     /**
@@ -462,6 +478,18 @@ public class Text2SqlOrchestrator {
             return AgentResponse.rejected(question, validation.sql(), violations, llmCall, tableCount,
                     retrievedTables, ddlChars,
                     timings(retrievalMs, generationMs, validationMs, 0, elapsedMs(totalStarted)));
+        }
+
+        // 阶段 5 闭环防御：EXPLAIN 执行代价与全表笛卡尔积预执行护栏
+        if (properties.getGuard().isExplainCostGuardEnabled() && queryPlanAnalyzer != null) {
+            var analysis = queryPlanAnalyzer.analyze(validation.sql());
+            if (!analysis.safe()) {
+                log.warn("SQL 触发高危执行计划护栏拦截：{}", analysis.riskDescription());
+                List<String> violations = List.of("[HIGH_RISK_COST] " + analysis.riskDescription());
+                return AgentResponse.rejected(question, validation.sql(), violations, llmCall, tableCount,
+                        retrievedTables, ddlChars,
+                        timings(retrievalMs, generationMs, validationMs, 0, elapsedMs(totalStarted)));
+            }
         }
 
         long executionStarted = System.nanoTime();

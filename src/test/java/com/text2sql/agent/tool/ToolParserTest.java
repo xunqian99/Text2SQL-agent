@@ -51,6 +51,16 @@ class ToolParserTest {
     }
 
     @Test
+    @DisplayName("正确解析 [TOOL_CALL] EXPLAIN_QUERY")
+    void parsesExplainQuery() {
+        String text = "[TOOL_CALL] EXPLAIN_QUERY(SELECT * FROM orders JOIN customers ON orders.customer_id = customers.customer_id)";
+        ToolCall call = ToolParser.parse(text);
+        assertThat(call).isNotNull();
+        assertThat(call.type()).isEqualTo(ToolType.EXPLAIN_QUERY);
+        assertThat(call.argument()).isEqualTo("SELECT * FROM orders JOIN customers ON orders.customer_id = customers.customer_id");
+    }
+
+    @Test
     @DisplayName("无工具标签且无 FINAL_SQL 时返回 null")
     void returnsNullForPlainText() {
         String text = "你好，我是助手，没有调用任何工具。";

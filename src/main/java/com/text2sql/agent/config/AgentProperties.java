@@ -350,6 +350,45 @@ public class AgentProperties {
         }
 
         /**
+         * 是否启用 EXPLAIN 预执行与查询计划代价护栏（Cost Guard）。
+         */
+        private boolean explainCostGuardEnabled = false;
+
+        /**
+         * 允许执行的最大估算 Cost（Total Cost）。默认 100,000。超过此阈值触发熔断反思重试。
+         */
+        private double maxAllowedCost = 100000.0;
+
+        /**
+         * 是否拦截未受限的全表笛卡尔积（Cartesian Product）。默认 true。
+         */
+        private boolean rejectCartesianProduct = true;
+
+        public boolean isExplainCostGuardEnabled() {
+            return explainCostGuardEnabled;
+        }
+
+        public void setExplainCostGuardEnabled(boolean explainCostGuardEnabled) {
+            this.explainCostGuardEnabled = explainCostGuardEnabled;
+        }
+
+        public double getMaxAllowedCost() {
+            return maxAllowedCost;
+        }
+
+        public void setMaxAllowedCost(double maxAllowedCost) {
+            this.maxAllowedCost = maxAllowedCost;
+        }
+
+        public boolean isRejectCartesianProduct() {
+            return rejectCartesianProduct;
+        }
+
+        public void setRejectCartesianProduct(boolean rejectCartesianProduct) {
+            this.rejectCartesianProduct = rejectCartesianProduct;
+        }
+
+        /**
          * 额外禁止的函数名（小写）。
          *
          * <p>列表里的函数都有一个共同点：**只读语句也能造成副作用**。
