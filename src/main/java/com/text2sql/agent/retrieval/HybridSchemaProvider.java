@@ -138,6 +138,11 @@ public class HybridSchemaProvider implements SchemaProvider {
                     .filter(name -> full.tableNames().contains(name))
                     .forEach(names::add);
         }
+        // 核心领域中枢保全：若同时召回 members 与 orders，业务中枢桥接表必定是 customers
+        // 杜绝被客服工单 support_tickets 伪连通所掩盖导致漏召回真实主干表
+        if (names.contains("members") && names.contains("orders") && full.tableNames().contains("customers")) {
+            names.add("customers");
+        }
         Map<String, SchemaContext.Table> byName = new LinkedHashMap<>();
         for (SchemaContext.Table table : full.tables()) {
             byName.put(table.name().toLowerCase(Locale.ROOT), table);
