@@ -61,6 +61,7 @@ public class Text2SqlOrchestrator {
     private final com.text2sql.agent.session.SessionStore sessionStore;
     private final com.text2sql.agent.session.QuestionRewriter questionRewriter;
     private final com.text2sql.agent.execution.QueryPlanAnalyzer queryPlanAnalyzer;
+    private final com.text2sql.agent.session.SessionContextCompressor sessionContextCompressor = new com.text2sql.agent.session.SessionContextCompressor();
     private final com.text2sql.agent.config.AgentProperties properties;
 
     @org.springframework.beans.factory.annotation.Autowired
@@ -206,6 +207,12 @@ public class Text2SqlOrchestrator {
 
         long generationStarted = System.nanoTime();
         GeneratedSql generated;
+        String generationQuestion = effectiveQuestion;
+        if (convEnabled && session != null && session.contextSummary() != null && !session.contextSummary().isEmpty()) {
+            generationQuestion = effectiveQuestion + "\n\n" + session.contextSummary().condensedSummaryText();
+        }
+
+
         try {
             boolean useAgentMode = properties.getToolUse().isEnabled()
                     && tableCount >= properties.getToolUse().getTableThreshold();
@@ -213,15 +220,15 @@ public class Text2SqlOrchestrator {
             if (useAgentMode) {
                 log.info("触发 Agent 侦察工具循环模式（涉及 {} 张表 >= 阈值 {}）",
                         tableCount, properties.getToolUse().getTableThreshold());
-                generated = agentLoop.run(effectiveQuestion, schema, properties.getToolUse().getMaxRounds(), null);
+                generated = agentLoop.run(generationQuestion, schema, properties.getToolUse().getMaxRounds(), null);
             } else {
-                generated = generator.generate(effectiveQuestion, schema);
+                generated = generator.generate(generationQuestion, schema);
             }
         } catch (GenerationException e) {
             if (properties.getSelfCorrection().isEnabled() && e.getReason() != GenerationException.Reason.NOT_CONFIGURED) {
                 log.warn("首次生成异常（{}：{}），尝试重试一次生成", e.getReason(), e.getMessage());
                 try {
-                    generated = generator.generate(effectiveQuestion, schema);
+                    generated = generator.generate(generationQuestion, schema);
                 } catch (GenerationException e2) {
                     long generationMs = elapsedMs(generationStarted);
                     AgentResponse.Status status = e2.getReason() == GenerationException.Reason.NOT_CONFIGURED
@@ -257,7 +264,8 @@ public class Text2SqlOrchestrator {
 
         AgentResponse first = validateAndExecute(question, generated.sql(), generated.call(), schema,
                 tableCount, retrievedTables, ddlChars, retrievalMs, generationMs, totalStarted);
-        AgentResponse result = retryIfFailed(effectiveQuestion, first);
+        AgentResponse result = retryIfFailed(generationQuestion, first);
+
         if (cacheKey != null && result.success()) {
             cache.put(cacheKey, result.sql());
         }
@@ -303,7 +311,12 @@ public class Text2SqlOrchestrator {
                 response.status().name(),
                 summary
         );
-        session.addTurn(turn, properties.getConversation().getMaxTurns());
+        if (properties.getConversation().isSummaryCompressionEnabled()) {
+            session.addTurn(turn, properties.getConversation().getMaxTurns(), sessionContextCompressor);
+        } else {
+            session.addTurn(turn, properties.getConversation().getMaxTurns());
+        }
+
     }
 
     private String summarizeResponse(AgentResponse response) {

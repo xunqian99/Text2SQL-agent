@@ -24,6 +24,7 @@ public class ConversationSession {
     private volatile Instant lastActiveAt;
     private volatile boolean closed;
     private volatile SchemaContext lastSchema;
+    private volatile SessionContextSummary contextSummary = SessionContextSummary.empty();
     private final List<ConversationTurn> turns = Collections.synchronizedList(new ArrayList<>());
 
     public ConversationSession(String sessionId) {
@@ -57,6 +58,14 @@ public class ConversationSession {
         this.lastSchema = schema;
     }
 
+    public SessionContextSummary contextSummary() {
+        return contextSummary;
+    }
+
+    public void setContextSummary(SessionContextSummary contextSummary) {
+        this.contextSummary = contextSummary != null ? contextSummary : SessionContextSummary.empty();
+    }
+
     public void touch() {
         this.lastActiveAt = Instant.now();
     }
@@ -70,12 +79,23 @@ public class ConversationSession {
      * 追加一轮对话记录，并淘汰超限的早期轮次。
      */
     public void addTurn(ConversationTurn turn, int maxTurns) {
+        addTurn(turn, maxTurns, null);
+    }
+
+    /**
+     * 追加一轮对话记录，并将被淘汰滑出窗口的早期轮次自动压缩入上下文摘要中。
+     */
+    public void addTurn(ConversationTurn turn, int maxTurns, SessionContextCompressor compressor) {
         touch();
         turns.add(turn);
         while (turns.size() > maxTurns && maxTurns > 0) {
-            turns.remove(0);
+            ConversationTurn evicted = turns.remove(0);
+            if (compressor != null) {
+                this.contextSummary = compressor.compress(this.contextSummary, evicted);
+            }
         }
     }
+
 
     /**
      * 获取历史所有轮次快照（线程安全拷贝）。

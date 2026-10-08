@@ -1124,6 +1124,7 @@ public class AgentProperties {
         private int timeoutMinutes = 30;
         private boolean reuseSchema = true;
         private boolean rewriteWithLlm = true;
+        private boolean summaryCompressionEnabled = true;
 
         public boolean isEnabled() {
             return enabled;
@@ -1164,7 +1165,16 @@ public class AgentProperties {
         public void setRewriteWithLlm(boolean rewriteWithLlm) {
             this.rewriteWithLlm = rewriteWithLlm;
         }
+
+        public boolean isSummaryCompressionEnabled() {
+            return summaryCompressionEnabled;
+        }
+
+        public void setSummaryCompressionEnabled(boolean summaryCompressionEnabled) {
+            this.summaryCompressionEnabled = summaryCompressionEnabled;
+        }
     }
+
 
     /** 评估运行器参数。默认关闭，避免正常启动时误跑 200 条评估。 */
     public static class Eval {

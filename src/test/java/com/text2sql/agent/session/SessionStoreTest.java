@@ -48,6 +48,27 @@ class SessionStoreTest {
     }
 
     @Test
+    @DisplayName("滑动窗口修剪时自动压缩早期淘汰轮次为结构化摘要")
+    void testSlidingWindowWithSummaryCompression() {
+        ConversationSession session = store.getOrCreate("session-102-compress");
+        SessionContextCompressor compressor = new SessionContextCompressor();
+        int maxTurns = 2;
+
+        session.addTurn(ConversationTurn.of(1, "2018年有效订单", "2018年有效订单",
+                "SELECT * FROM orders WHERE order_status NOT IN ('canceled') AND customer_state = 'SP'",
+                "SUCCESS", "ok"), maxTurns, compressor);
+        session.addTurn(ConversationTurn.of(2, "Q2", "Q2", "SELECT 2", "SUCCESS", "ok"), maxTurns, compressor);
+        session.addTurn(ConversationTurn.of(3, "Q3", "Q3", "SELECT 3", "SUCCESS", "ok"), maxTurns, compressor);
+
+        assertThat(session.turns()).hasSize(2);
+        assertThat(session.contextSummary().isEmpty()).isFalse();
+        assertThat(session.contextSummary().evictedTurnCount()).isEqualTo(1);
+        assertThat(session.contextSummary().accumulatedConstraints())
+                .anyMatch(c -> c.contains("有效订单") || c.contains("SP 州"));
+    }
+
+
+    @Test
     @DisplayName("关闭会话时触发状态切换与优雅降级持久化")
     void testCloseAndPersist() {
         ConversationSession session = store.getOrCreate("session-103");
