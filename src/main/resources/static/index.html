@@ -291,7 +291,7 @@
         <span id="session-title-label" style="font-size:13px; color:#475569; font-weight:500; max-width:320px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">新会话</span>
       </div>
       <div style="display:flex; align-items:center; gap:10px;">
-        <button id="btn-key-settings" class="btn-key-settings" title="配置个人的 DeepSeek API Key (BYOK)">
+        <button id="btn-key-settings" class="btn-key-settings" onclick="openApiKeyModal()" title="配置个人的 DeepSeek API Key (BYOK)">
           <span id="key-dot" class="key-indicator-dot warning"></span>
           <span id="key-badge-text">配置 API Key</span>
         </button>
@@ -335,6 +335,34 @@
         <button class="send-btn" id="send-button" disabled>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- API Key 设置模态弹窗 (BYOK) -->
+  <div id="api-key-modal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)closeApiKeyModal()">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-title">🔑 DeepSeek API Key 设置 (BYOK)</div>
+        <button class="modal-close-btn" id="btn-close-modal" onclick="closeApiKeyModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:13px; color:#4b5563; line-height:1.6; margin-bottom:14px;">
+          为了防止公共服务器资源被滥用或产生超额账单，本系统支持 <b>自带密钥 (BYOK)</b>。<br>
+          您的密钥 <b>仅保存在您当前浏览器的本地存储 (localStorage)</b>，发起分析时由请求头实时传递，服务端不存留。
+        </p>
+        <div style="margin-bottom:12px;">
+          <label style="font-size:12px; font-weight:600; color:#374151; display:block; margin-bottom:6px;">DeepSeek API Key (sk-...)</label>
+          <input type="password" id="input-api-key" placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxx" style="width:100%; padding:9px 12px; border:1px solid #d1d5db; border-radius:6px; font-family:monospace; font-size:13px; box-sizing:border-box;">
+        </div>
+        <div id="modal-tip" style="font-size:12px; color:#dc2626; margin-bottom:12px; display:none;"></div>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <button id="btn-clear-key" onclick="clearApiKey()" style="background:transparent; border:0; color:#dc2626; font-size:12px; cursor:pointer; text-decoration:underline;">清除本地 Key</button>
+          <div style="display:flex; gap:8px;">
+            <button id="btn-cancel-key" onclick="closeApiKeyModal()" style="padding:6px 14px; border:1px solid #d1d5db; background:#fff; border-radius:6px; font-size:13px; cursor:pointer;">取消</button>
+            <button id="btn-save-key" onclick="saveApiKey()" style="padding:6px 16px; border:0; background:#10a37f; color:#fff; border-radius:6px; font-size:13px; font-weight:500; cursor:pointer;">保存设置</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -829,14 +857,10 @@
     }
 
     // BYOK (自带密钥) 弹窗与本地存储管理
-    const apiKeyModal = $('api-key-modal');
-    const inputApiKey = $('input-api-key');
-    const modalTip = $('modal-tip');
-    const keyDot = $('key-dot');
-    const keyBadgeText = $('key-badge-text');
-
     function updateKeyIndicator() {
       const storedKey = (localStorage.getItem('text2sql_api_key') || '').trim();
+      const keyDot = $('key-dot');
+      const keyBadgeText = $('key-badge-text');
       if (storedKey) {
         if (keyDot) keyDot.className = 'key-indicator-dot active';
         if (keyBadgeText) {
@@ -850,48 +874,52 @@
     }
 
     function openApiKeyModal(tip) {
-      if (!apiKeyModal) return;
-      inputApiKey.value = localStorage.getItem('text2sql_api_key') || '';
-      if (tip) {
-        modalTip.textContent = tip;
-        modalTip.style.display = 'block';
-      } else {
-        modalTip.style.display = 'none';
+      const modal = $('api-key-modal');
+      const input = $('input-api-key');
+      const tipEl = $('modal-tip');
+      if (!modal) return;
+      if (input) input.value = localStorage.getItem('text2sql_api_key') || '';
+      if (tipEl) {
+        tipEl.textContent = tip || '';
+        tipEl.style.display = tip ? 'block' : 'none';
       }
-      apiKeyModal.style.display = 'flex';
-      setTimeout(() => inputApiKey.focus(), 50);
+      modal.style.display = 'flex';
+      setTimeout(() => input?.focus(), 50);
     }
 
     function closeApiKeyModal() {
-      if (apiKeyModal) apiKeyModal.style.display = 'none';
+      const modal = $('api-key-modal');
+      if (modal) modal.style.display = 'none';
     }
 
-    $('btn-key-settings')?.addEventListener('click', () => openApiKeyModal());
-    $('btn-close-modal')?.addEventListener('click', closeApiKeyModal);
-    $('btn-cancel-key')?.addEventListener('click', closeApiKeyModal);
-
-    $('btn-save-key')?.addEventListener('click', () => {
-      const val = (inputApiKey.value || '').trim();
+    function saveApiKey() {
+      const input = $('input-api-key');
+      const tipEl = $('modal-tip');
+      const val = (input?.value || '').trim();
       if (!val) {
-        modalTip.textContent = 'Key 不能为空，若要清除请点击左侧「清除本地 Key」';
-        modalTip.style.display = 'block';
+        if (tipEl) {
+          tipEl.textContent = 'Key 不能为空，若要清除请点击左侧「清除本地 Key」';
+          tipEl.style.display = 'block';
+        }
         return;
       }
       localStorage.setItem('text2sql_api_key', val);
       updateKeyIndicator();
       closeApiKeyModal();
-    });
+    }
 
-    $('btn-clear-key')?.addEventListener('click', () => {
+    function clearApiKey() {
       localStorage.removeItem('text2sql_api_key');
-      inputApiKey.value = '';
+      const input = $('input-api-key');
+      if (input) input.value = '';
       updateKeyIndicator();
       closeApiKeyModal();
-    });
+    }
 
-    apiKeyModal?.addEventListener('click', (e) => {
-      if (e.target === apiKeyModal) closeApiKeyModal();
-    });
+    window.openApiKeyModal = openApiKeyModal;
+    window.closeApiKeyModal = closeApiKeyModal;
+    window.saveApiKey = saveApiKey;
+    window.clearApiKey = clearApiKey;
 
     async function sendMessage(text) {
       if (!text || !text.trim()) return;
@@ -963,33 +991,5 @@
     renderSidebar();
     renderCurrentSessionChat();
   </script>
-
-  <!-- API Key 设置模态弹窗 (BYOK) -->
-  <div id="api-key-modal" class="modal-overlay" style="display:none;">
-    <div class="modal-box">
-      <div class="modal-header">
-        <div class="modal-title">🔑 DeepSeek API Key 设置 (BYOK)</div>
-        <button class="modal-close-btn" id="btn-close-modal">&times;</button>
-      </div>
-      <div class="modal-body">
-        <p style="font-size:13px; color:#4b5563; line-height:1.6; margin-bottom:14px;">
-          为了防止公共服务器资源被滥用或产生超额账单，本系统支持 <b>自带密钥 (BYOK)</b>。<br>
-          您的密钥 <b>仅保存在您当前浏览器的本地存储 (localStorage)</b>，发起分析时由请求头实时传递，服务端不存留。
-        </p>
-        <div style="margin-bottom:12px;">
-          <label style="font-size:12px; font-weight:600; color:#374151; display:block; margin-bottom:6px;">DeepSeek API Key (sk-...)</label>
-          <input type="password" id="input-api-key" placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxx" style="width:100%; padding:9px 12px; border:1px solid #d1d5db; border-radius:6px; font-family:monospace; font-size:13px; box-sizing:border-box;">
-        </div>
-        <div id="modal-tip" style="font-size:12px; color:#dc2626; margin-bottom:12px; display:none;"></div>
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <button id="btn-clear-key" style="background:transparent; border:0; color:#dc2626; font-size:12px; cursor:pointer; text-decoration:underline;">清除本地 Key</button>
-          <div style="display:flex; gap:8px;">
-            <button id="btn-cancel-key" style="padding:6px 14px; border:1px solid #d1d5db; background:#fff; border-radius:6px; font-size:13px; cursor:pointer;">取消</button>
-            <button id="btn-save-key" style="padding:6px 16px; border:0; background:#10a37f; color:#fff; border-radius:6px; font-size:13px; font-weight:500; cursor:pointer;">保存设置</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
 </body>
 </html>
