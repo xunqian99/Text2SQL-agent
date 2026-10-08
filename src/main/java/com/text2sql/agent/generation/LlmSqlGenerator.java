@@ -52,15 +52,16 @@ public class LlmSqlGenerator {
 
     /** 未配置 Key 时为 null。这是刻意的：把「配置缺失」变成一个可检查的状态，而不是异常。 */
     private final ChatModel chatModel;
+    private final java.util.concurrent.ConcurrentHashMap<String, ChatModel> dynamicChatModels = new java.util.concurrent.ConcurrentHashMap<>();
 
     public LlmSqlGenerator(AgentProperties properties, PromptTemplate promptTemplate,
                            com.text2sql.agent.observability.LlmCallLog callLog) {
         this.properties = properties;
         this.promptTemplate = promptTemplate;
         this.callLog = callLog;
-        this.chatModel = buildChatModel(properties);
+        this.chatModel = buildChatModel(properties, properties.getLlm().getApiKey());
         if (this.chatModel == null) {
-            log.warn("未配置 agent.llm.api-key，SQL 生成不可用；校验/执行/评估链路仍可正常运行。");
+            log.warn("未配置全局 agent.llm.api-key，进入 BYOK（用户自带密钥）模式；用户可在前端输入个人 API Key 体验。");
         } else {
             // 把完整端点打出来，而不是只打 baseUrl。厂商之间差别最大的就是路径
             // （通义 /v1/chat/completions、千帆 /v2/chat/completions），
@@ -74,7 +75,18 @@ public class LlmSqlGenerator {
     }
 
     public boolean isConfigured() {
-        return chatModel != null;
+        return chatModel != null || !dynamicChatModels.isEmpty();
+    }
+
+    public boolean isConfigured(String apiKeyOverride) {
+        return resolveChatModel(apiKeyOverride) != null;
+    }
+
+    public ChatModel resolveChatModel(String apiKeyOverride) {
+        if (StringUtils.hasText(apiKeyOverride)) {
+            return dynamicChatModels.computeIfAbsent(apiKeyOverride.strip(), key -> buildChatModel(properties, key));
+        }
+        return this.chatModel;
     }
 
     /**
@@ -84,7 +96,7 @@ public class LlmSqlGenerator {
      * @param schema   检索层给出的 schema 上下文
      */
     public GeneratedSql generate(String question, SchemaContext schema) {
-        return generate(question, schema, null);
+        return generate(question, schema, null, null);
     }
 
     /**
@@ -93,9 +105,17 @@ public class LlmSqlGenerator {
      * @param modelOverride 非空时用这个模型替代配置里的默认模型（阶段 6 的升级路由）
      */
     public GeneratedSql generate(String question, SchemaContext schema, String modelOverride) {
-        if (chatModel == null) {
+        return generate(question, schema, modelOverride, null);
+    }
+
+    /**
+     * 生成 SQL（支持动态 API Key 覆盖）。
+     */
+    public GeneratedSql generate(String question, SchemaContext schema, String modelOverride, String apiKeyOverride) {
+        ChatModel targetModel = resolveChatModel(apiKeyOverride);
+        if (targetModel == null) {
             throw new GenerationException(GenerationException.Reason.NOT_CONFIGURED,
-                    "未配置 agent.llm.api-key，无法生成 SQL。请在 application.yml 或环境变量 AGENT_LLM_API_KEY 中配置。");
+                    "未配置 API Key，无法生成 SQL。请在页面右上角【⚙️配置 API Key】中输入你的 DeepSeek 密钥。");
         }
 
         String system = promptTemplate.systemPrompt();
@@ -114,7 +134,7 @@ public class LlmSqlGenerator {
         long started = System.nanoTime();
         ChatResponse response;
         try {
-            response = chatModel.call(new Prompt(messages, options));
+            response = targetModel.call(new Prompt(messages, options));
         } catch (Exception e) {
             throw new GenerationException(GenerationException.Reason.CALL_FAILED,
                     "LLM 调用失败：" + e.getMessage(), e);
@@ -137,7 +157,7 @@ public class LlmSqlGenerator {
      */
     public GeneratedSql generateCorrection(String question, SchemaContext schema,
                                             String previousSql, String feedback) {
-        return generateCorrection(question, schema, previousSql, feedback, null);
+        return generateCorrection(question, schema, previousSql, feedback, null, null);
     }
 
     /**
@@ -149,9 +169,19 @@ public class LlmSqlGenerator {
     public GeneratedSql generateCorrection(String question, SchemaContext schema,
                                             String previousSql, String feedback,
                                             String modelOverride) {
-        if (chatModel == null) {
+        return generateCorrection(question, schema, previousSql, feedback, modelOverride, null);
+    }
+
+    /**
+     * 自纠错 / 升级重试（支持动态 API Key 覆盖）。
+     */
+    public GeneratedSql generateCorrection(String question, SchemaContext schema,
+                                            String previousSql, String feedback,
+                                            String modelOverride, String apiKeyOverride) {
+        ChatModel targetModel = resolveChatModel(apiKeyOverride);
+        if (targetModel == null) {
             throw new GenerationException(GenerationException.Reason.NOT_CONFIGURED,
-                    "未配置 agent.llm.api-key，无法执行自纠错。");
+                    "未配置 API Key，无法执行自纠错。");
         }
 
         String system = promptTemplate.systemPrompt();
@@ -169,7 +199,7 @@ public class LlmSqlGenerator {
         long started = System.nanoTime();
         ChatResponse response;
         try {
-            response = chatModel.call(new Prompt(messages, options));
+            response = targetModel.call(new Prompt(messages, options));
         } catch (Exception e) {
             throw new GenerationException(GenerationException.Reason.CALL_FAILED,
                     "LLM 自纠错调用失败：" + e.getMessage(), e);
@@ -186,9 +216,17 @@ public class LlmSqlGenerator {
      * 支持 Agent 多轮对话交互的通用 LLM 调用接口。
      */
     public GeneratedSql callMessages(List<Message> messages, String logTag, String modelOverride) {
-        if (chatModel == null) {
+        return callMessages(messages, logTag, modelOverride, null);
+    }
+
+    /**
+     * 支持 Agent 多轮对话交互的通用 LLM 调用接口（支持动态 API Key 覆盖）。
+     */
+    public GeneratedSql callMessages(List<Message> messages, String logTag, String modelOverride, String apiKeyOverride) {
+        ChatModel targetModel = resolveChatModel(apiKeyOverride);
+        if (targetModel == null) {
             throw new GenerationException(GenerationException.Reason.NOT_CONFIGURED,
-                    "未配置 agent.llm.api-key，无法调用 LLM。");
+                    "未配置 API Key，无法调用 LLM。");
         }
 
         int promptChars = messages.stream().mapToInt(m -> m.getText() == null ? 0 : m.getText().length()).sum();
@@ -203,7 +241,7 @@ public class LlmSqlGenerator {
         long started = System.nanoTime();
         ChatResponse response;
         try {
-            response = chatModel.call(new Prompt(messages, options));
+            response = targetModel.call(new Prompt(messages, options));
         } catch (Exception e) {
             throw new GenerationException(GenerationException.Reason.CALL_FAILED,
                     "LLM 调用失败：" + e.getMessage(), e);
@@ -261,8 +299,7 @@ public class LlmSqlGenerator {
      * 整个评估运行器挂在那里，而评估要跑 200 次。给一个明确的 60 秒上限，
      * 失败就记一次失败，继续下一条。
      */
-    private static ChatModel buildChatModel(AgentProperties properties) {
-        String apiKey = properties.getLlm().getApiKey();
+    private static ChatModel buildChatModel(AgentProperties properties, String apiKey) {
         if (!StringUtils.hasText(apiKey)) {
             return null;
         }

@@ -139,6 +139,18 @@ public class Text2SqlOrchestrator {
      * @param sessionId 会话 ID，为 null 时以单轮模式运行
      */
     public AgentResponse ask(String question, String sessionId) {
+        return ask(question, sessionId, null);
+    }
+
+    /**
+     * 主业务入口：输入自然语言，经过「歧义澄清/检索/缓存/生成/安全校验/自纠错/执行」全链路。
+     * 支持传入自定义 API Key（BYOK 模式）。
+     *
+     * @param question  用户问题原文
+     * @param sessionId 会话 ID，为 null 时以单轮模式运行
+     * @param apiKey    用户个人 API Key，为 null 时使用系统全局 Key
+     */
+    public AgentResponse ask(String question, String sessionId, String apiKey) {
         long totalStarted = System.nanoTime();
 
         boolean convEnabled = properties.getConversation().isEnabled()
@@ -220,15 +232,21 @@ public class Text2SqlOrchestrator {
             if (useAgentMode) {
                 log.info("触发 Agent 侦察工具循环模式（涉及 {} 张表 >= 阈值 {}）",
                         tableCount, properties.getToolUse().getTableThreshold());
-                generated = agentLoop.run(generationQuestion, schema, properties.getToolUse().getMaxRounds(), null);
+                generated = (apiKey != null && !apiKey.isBlank())
+                        ? agentLoop.run(generationQuestion, schema, properties.getToolUse().getMaxRounds(), null, apiKey)
+                        : agentLoop.run(generationQuestion, schema, properties.getToolUse().getMaxRounds(), null);
             } else {
-                generated = generator.generate(generationQuestion, schema);
+                generated = (apiKey != null && !apiKey.isBlank())
+                        ? generator.generate(generationQuestion, schema, null, apiKey)
+                        : generator.generate(generationQuestion, schema);
             }
         } catch (GenerationException e) {
             if (properties.getSelfCorrection().isEnabled() && e.getReason() != GenerationException.Reason.NOT_CONFIGURED) {
                 log.warn("首次生成异常（{}：{}），尝试重试一次生成", e.getReason(), e.getMessage());
                 try {
-                    generated = generator.generate(generationQuestion, schema);
+                    generated = (apiKey != null && !apiKey.isBlank())
+                            ? generator.generate(generationQuestion, schema, null, apiKey)
+                            : generator.generate(generationQuestion, schema);
                 } catch (GenerationException e2) {
                     long generationMs = elapsedMs(generationStarted);
                     AgentResponse.Status status = e2.getReason() == GenerationException.Reason.NOT_CONFIGURED
@@ -264,7 +282,7 @@ public class Text2SqlOrchestrator {
 
         AgentResponse first = validateAndExecute(question, generated.sql(), generated.call(), schema,
                 tableCount, retrievedTables, ddlChars, retrievalMs, generationMs, totalStarted);
-        AgentResponse result = retryIfFailed(generationQuestion, first);
+        AgentResponse result = retryIfFailed(generationQuestion, first, apiKey);
 
         if (cacheKey != null && result.success()) {
             cache.put(cacheKey, result.sql());
@@ -372,7 +390,7 @@ public class Text2SqlOrchestrator {
      * <p>代价必须可查：{@code combineAttempts} 会把两次调用的 token 和延迟相加，
      * 这样「每次调用花了多少」这个数字不会被重试悄悄稀释。
      */
-    private AgentResponse retryIfFailed(String question, AgentResponse first) {
+    private AgentResponse retryIfFailed(String question, AgentResponse first, String apiKey) {
         var config = properties.getSelfCorrection();
         var routing = properties.getRouting();
         boolean escalate = routing.isEnabled() && !routing.getEscalationModel().isBlank();
@@ -409,7 +427,9 @@ public class Text2SqlOrchestrator {
         String model = escalate ? routing.getEscalationModel() : null;
         log.info("触发自纠错重试（首次状态：{}）{}", first.status(),
                 escalate ? "，并升级到 " + model : "");
-        AgentResponse second = askWithCorrection(question, first.sql(), feedback, model);
+        AgentResponse second = (apiKey != null && !apiKey.isBlank())
+                ? askWithCorrection(question, first.sql(), feedback, model, apiKey)
+                : askWithCorrection(question, first.sql(), feedback, model);
         if (second.success()) {
             log.info("重试成功，采用第二次结果");
             return AgentResponse.combineAttempts(first, second);
@@ -461,7 +481,7 @@ public class Text2SqlOrchestrator {
      * 再走一次「生成 → 校验 → 执行」完整链路。
      */
     public AgentResponse askWithCorrection(String question, String previousSql, String feedback) {
-        return askWithCorrection(question, previousSql, feedback, null);
+        return askWithCorrection(question, previousSql, feedback, null, null);
     }
 
     /**
@@ -469,6 +489,14 @@ public class Text2SqlOrchestrator {
      */
     public AgentResponse askWithCorrection(String question, String previousSql, String feedback,
                                            String modelOverride) {
+        return askWithCorrection(question, previousSql, feedback, modelOverride, null);
+    }
+
+    /**
+     * 支持动态 API Key 覆盖的自纠错入口。
+     */
+    public AgentResponse askWithCorrection(String question, String previousSql, String feedback,
+                                           String modelOverride, String apiKey) {
         long totalStarted = System.nanoTime();
         long retrievalStarted = System.nanoTime();
         SchemaContext schema = schemaProvider.provide(question);
@@ -480,7 +508,9 @@ public class Text2SqlOrchestrator {
         long generationStarted = System.nanoTime();
         GeneratedSql generated;
         try {
-            generated = generator.generateCorrection(question, schema, previousSql, feedback, modelOverride);
+            generated = (apiKey != null && !apiKey.isBlank())
+                    ? generator.generateCorrection(question, schema, previousSql, feedback, modelOverride, apiKey)
+                    : generator.generateCorrection(question, schema, previousSql, feedback, modelOverride);
         } catch (GenerationException e) {
             long generationMs = elapsedMs(generationStarted);
             AgentResponse.Status status = e.getReason() == GenerationException.Reason.NOT_CONFIGURED

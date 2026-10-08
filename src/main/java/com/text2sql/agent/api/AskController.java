@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -63,8 +64,13 @@ public class AskController {
      * 只对 Bean 属性有效，Map 拿不到这个能力，空问题会一路传到 LLM 才失败。
      */
     @PostMapping("/ask")
-    public ResponseEntity<AskResponse> ask(@Valid @RequestBody AskRequest request) {
-        AgentResponse response = orchestrator.ask(request.question(), request.sessionId());
+    public ResponseEntity<AskResponse> ask(
+            @Valid @RequestBody AskRequest request,
+            @RequestHeader(value = "X-Api-Key", required = false) String headerApiKey) {
+        String apiKey = (request.apiKey() != null && !request.apiKey().isBlank())
+                ? request.apiKey()
+                : headerApiKey;
+        AgentResponse response = orchestrator.ask(request.question(), request.sessionId(), apiKey);
         if (Boolean.TRUE.equals(request.endSession()) && request.sessionId() != null) {
             orchestrator.closeSession(request.sessionId());
         }
@@ -118,10 +124,15 @@ public class AskController {
             @Size(max = 500, message = "question 长度不能超过 500")
             String question,
             String sessionId,
-            Boolean endSession) {
+            Boolean endSession,
+            String apiKey) {
 
         public AskRequest(String question) {
-            this(question, null, false);
+            this(question, null, false, null);
+        }
+
+        public AskRequest(String question, String sessionId, Boolean endSession) {
+            this(question, sessionId, endSession, null);
         }
     }
 

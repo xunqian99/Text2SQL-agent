@@ -48,6 +48,13 @@ public class AgentLoop {
      * @return 最终产出的 SQL 与累计的审计记录
      */
     public GeneratedSql run(String question, SchemaContext schema, int maxRounds, String modelOverride) {
+        return run(question, schema, maxRounds, modelOverride, null);
+    }
+
+    /**
+     * 运行 Agent 侦察循环（支持指定 API Key 覆盖）。
+     */
+    public GeneratedSql run(String question, SchemaContext schema, int maxRounds, String modelOverride, String apiKeyOverride) {
         String baseSystem = promptTemplate.systemPrompt();
         String toolInstruction = """
 
@@ -79,7 +86,9 @@ public class AgentLoop {
 
         for (int round = 1; round <= maxRounds; round++) {
             log.info("Agent 循环轮次 [{}/{}]...", round, maxRounds);
-            GeneratedSql step = generator.callMessages(history, "AGENT_ROUND_" + round, modelOverride);
+            GeneratedSql step = (apiKeyOverride != null && !apiKeyOverride.isBlank())
+                    ? generator.callMessages(history, "AGENT_ROUND_" + round, modelOverride, apiKeyOverride)
+                    : generator.callMessages(history, "AGENT_ROUND_" + round, modelOverride);
             combinedRecord = LlmCallRecord.combine(combinedRecord, step.call());
             lastRaw = step.rawOutput();
 
