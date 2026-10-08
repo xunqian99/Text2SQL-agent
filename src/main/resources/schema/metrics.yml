@@ -55,7 +55,15 @@ metrics:
     notes: |
       GMV 含不含运费是行业里长期有争议的口径。本项目采用**含运费**，
       理由：运费是客户实际支付的金额，属于成交额。
-      若题目明确问「不含运费的销售额」，用 sales_without_freight。
+  - name: unique_buyers
+    aliases: [下单人数, 购买人数, 下单买家数, 独立买家数]
+    description: 下单人数 = 去重独立下单用户数（customer_unique_id）
+    expression: "COUNT(DISTINCT c.customer_unique_id)"
+    tables: [orders, customers]
+    filter: "o.order_status NOT IN ('canceled', 'unavailable')"
+    notes: |
+      【关键】统计「下单人数/买家数」时，必须关联 customers 表并按 c.customer_unique_id 去重，
+      严禁使用 orders.customer_id（customer_id 是订单级令牌，每笔订单都不一样，去重结果等于订单数）。
 
   - name: sales_without_freight
     # 【刻意留空 aliases —— 这是被实测逼出来的】

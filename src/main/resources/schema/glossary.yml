@@ -267,9 +267,7 @@ tables:
     columns:
       tag_code:
         aliases: [标签编码]
-      tag_name:
-        aliases: [标签名称]
-        # 真实标签值。这类「值即业务黑话」的词必须进词典：
+        # 真实标签编码。这类「值即业务黑话」的词必须进词典：
         # 问句里说「打过"流失风险用户"标签」，字面上没有「用户标签」四个字，
         # 靠表别名永远匹配不上，只能靠枚举 label 命中（权重也最高）。
         enum:
@@ -279,6 +277,9 @@ tables:
           - { value: "NEW_USER", label: "新客" }
           - { value: "REPEAT_BUYER", label: "复购用户" }
           - { value: "REVIEW_ACTIVE", label: "活跃评价用户" }
+      tag_name:
+        aliases: [标签名称]
+
 
   user_tag_map:
     # 「标签」这个裸词必须收录：问句「有多少个会员从来没有被打过任何标签」

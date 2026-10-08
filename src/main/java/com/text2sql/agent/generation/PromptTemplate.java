@@ -35,7 +35,7 @@ public class PromptTemplate {
      * （比如加一句「优先使用高置信度的表」），那才需要 +1，
      * 并且要重跑阶段 1 的 baseline 才能对比。
      */
-    public static final String VERSION = "p7-semantic-refinement-v7";
+    public static final String VERSION = "p8-semantic-pruning-v8";
 
     public String systemPrompt() {
         return """
@@ -60,6 +60,9 @@ public class PromptTemplate {
                 8. SELECT 列表只放问题真正要求的内容。问题问「多少 / 哪些指标 / 平均是多少」时，
                    只输出维度列和指标列；不要顺手附带 id、名称、编码等展示用列。
                    只有问题明确要求看某个名称或编号时，才把它放进 SELECT。
+                   【实体寻优规范】问「最...的那一笔/哪一个」特定实体（如“分期数最多的那一笔支付分了多少期”）时，
+                   属于单条记录寻优，使用 ORDER BY ... DESC LIMIT 1 并保留实体标识（如 order_id）与指标列，不要写成纯 MAX()。
+
                 9. 聚合粒度必须与问题的「每个…」一致。GROUP BY 的列要和 SELECT 里的维度列对应，
                    不要多分一层，也不要把分组列换成另一张表里的等价列。
                 10. 多表关联可能放大行数。只要 join 之后再去重计数，就用 COUNT(DISTINCT ...)；
