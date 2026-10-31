@@ -80,6 +80,11 @@ flowchart TD
 
 > 详细的消融实验（Ablation Study）及评测分析请参见 [docs/EVALUATION.md](docs/EVALUATION.md)。
 
+> **数字可核对**：上面引用的两份基准报告已随仓库提交，可以直接打开核对每一条明细——
+> [reports/eval-20261008-185229.json](reports/eval-20261008-185229.json)（84% 主口径）、
+> [reports/eval-20261031-153709.json](reports/eval-20261031-153709.json)（同配置复跑 85%）。
+> 其余 `reports/*.json` 属于每次运行产生的中间产物，仍不入库（见 `.gitignore`）。
+
 ---
 
 ## 快速开始
