@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 从数据库元数据里读取 schema。
@@ -26,6 +27,32 @@ public class DatabaseSchemaReader {
 
     private final JdbcTemplate jdbcTemplate;
 
+    /**
+     * 内部表：它们属于**本系统自己**，不是业务对象。
+     *
+     * <p>为什么必须显式排除：这些表是在运行时才被创建的（持久化开启后
+     * {@code ensureTables()} 建会话表、缓存与日志表在建库脚本里）。
+     * 不排除的话会出现两个问题：
+     * <ul>
+     *   <li><b>数字对不上</b>：简历与评估报告说的是「37 张业务表」，
+     *       开了持久化之后 schema 里会变成 39 张，接口返回的
+     *       {@code schemaTableCount} 也跟着漂移；</li>
+     *   <li><b>污染 prompt</b>：模型会看到 {@code semantic_cache}、
+     *       {@code llm_call_log} 这种与业务问题无关的表，既浪费 token，
+     *       也给出「去查缓存表」这类荒谬 SQL 的机会。</li>
+     * </ul>
+     *
+     * <p>这属于「配置开关之间互相影响」的典型：持久化开关本来只该影响
+     * 写路径，却经由 schema 读取反向影响了读路径。
+     */
+    private static final Set<String> INTERNAL_TABLES = Set.of(
+            "schema_chunks",        // 早期向量检索实验遗留
+            "semantic_cache",       // L2 语义缓存
+            "llm_call_log",         // 逐条模型调用记录
+            "conversation_session", // 多轮会话（运行时创建）
+            "conversation_turn"     // 多轮会话轮次（运行时创建）
+    );
+
     public DatabaseSchemaReader(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
@@ -33,7 +60,7 @@ public class DatabaseSchemaReader {
     /**
      * 读取所有业务表与列。
      *
-     * <p>只查 public schema，且排除 pgvector 的扩展表——那些不是业务对象，
+     * <p>只查 public schema，且排除内部表与 pgvector 的扩展表——那些不是业务对象，
      * 混进 prompt 只会稀释注意力。
      */
     public List<SchemaContext.Table> readTables() {
@@ -59,6 +86,9 @@ public class DatabaseSchemaReader {
 
         jdbcTemplate.query(sql, rs -> {
             String table = rs.getString("table_name");
+            if (INTERNAL_TABLES.contains(table)) {
+                return;
+            }
             columnsByTable.computeIfAbsent(table, k -> new ArrayList<>());
             commentByTable.putIfAbsent(table, rs.getString("table_comment"));
             columnsByTable.get(table).add(new SchemaContext.Column(
@@ -100,10 +130,16 @@ public class DatabaseSchemaReader {
                 """;
 
         return jdbcTemplate.query(sql, (rs, i) -> new SchemaContext.ForeignKey(
-                rs.getString("from_table"),
-                rs.getString("from_column"),
-                rs.getString("to_table"),
-                rs.getString("to_column")));
+                        rs.getString("from_table"),
+                        rs.getString("from_column"),
+                        rs.getString("to_table"),
+                        rs.getString("to_column")))
+                .stream()
+                // 外键也要过滤：内部表如果恰好有外键，会跟着混进关系图，
+                // 进而影响连接规划的候选边。
+                .filter(fk -> !INTERNAL_TABLES.contains(fk.fromTable())
+                        && !INTERNAL_TABLES.contains(fk.toTable()))
+                .toList();
     }
 
     /**
