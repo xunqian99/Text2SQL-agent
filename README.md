@@ -115,6 +115,15 @@ $env:AGENT_LLM_API_KEY = "sk-xxxxxxxxxxxxxxxxxxxxxxxx"
 mvn spring-boot:run
 ```
 
+> **运行测试**：`mvn test`（共 **248** 项）。若在受限环境/沙箱遇到
+> `Could not initialize plugin: interface org.mockito.plugins.MockMaker`，
+> 需加 `-DargLine="-Djdk.attach.allowAttachSelf=true"`——Mockito 内联 mockmaker
+> 需要 JVM 自附加，部分环境默认禁止。本地正常开发机一般不需要。
+
+> **已知偶发用例**：`SessionStoreTest.testCleanExpired` 用 `Duration.ZERO` 测超时淘汰，
+> 判据是 `lastActiveAt.isBefore(now)`，当创建与清理落在**同一时钟刻度**时两者相等，
+> 会偶发淘汰 0 条而失败。这是边界条件 flake，详见 `docs/TEST_SUITE_NOTES.md`。
+
 启动完成后：
 - **Web 对话界面**：在浏览器打开 [http://localhost:8080](http://localhost:8080) 即可直接进行自然语言问数；
 - **健康检查**：`GET http://localhost:8080/api/health`。
