@@ -13,7 +13,7 @@
 
 ```
 mvn test
-Tests run: 255, Failures: 0, Errors: 0, Skipped: 0
+Tests run: 269, Failures: 0, Errors: 0, Skipped: 0
 BUILD SUCCESS
 ```
 
