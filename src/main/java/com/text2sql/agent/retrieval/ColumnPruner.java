@@ -218,6 +218,23 @@ public class ColumnPruner {
                 }
             }
 
+            // 4.6 度量列保全：问题在问「合计 / 金额 / 数量 / 平均 …」时，保留数值列。
+            //
+            // 这一条是实测逼出来的：T5-010 问「佣金合计多少」、T5-020 问「数量合计」，
+            // 对应的列是 commission_amount / quantity —— 问题里说的是中文，
+            // 列名是英文，词典也没收录这两个别名，于是剪枝把它们当成无关列裁掉。
+            // 模型看不到列，只能猜一个名字，SQL 直接 column does not exist。
+            //
+            // 判据刻意保守：只有问题里出现明确的「度量/聚合」措辞时才放宽，
+            // 而且只放宽到**数值类型**的列，不会把文本列一起带进来。
+            if (asksForMeasure(safeQuestion)) {
+                for (SchemaContext.Column col : table.columns()) {
+                    if (isNumericType(col.type())) {
+                        keepCols.add(col.name().toLowerCase(Locale.ROOT));
+                    }
+                }
+            }
+
             // 5. 下限兜底保护：若不足 minColumns，优先按“有注释”与“原顺序”补充字段
             if (keepCols.size() < minColumns) {
                 for (SchemaContext.Column col : table.columns()) {
@@ -282,6 +299,29 @@ public class ColumnPruner {
             return false;
         }
         return TEMPORAL_PATTERN.matcher(question).find();
+    }
+
+    /** 问题是否在要一个「可聚合的度量」。命中才放宽对数值列的剪枝。 */
+    private static final java.util.regex.Pattern MEASURE_PATTERN = java.util.regex.Pattern.compile(
+            "(合计|总计|总额|总金额|金额|数量|笔数|件数|平均|均值|求和|汇总|总和|累计|佣金|费用|收入|成本|利润|价格)");
+
+    private static boolean asksForMeasure(String question) {
+        return question != null && !question.isBlank() && MEASURE_PATTERN.matcher(question).find();
+    }
+
+    /**
+     * 是否数值类型（PostgreSQL 的 data_type 取值）。
+     *
+     * <p>只认数值：文本/时间列不因为「问题里有度量措辞」就被保留，
+     * 否则一次放宽会把整表列都带回来，剪枝就失去了意义。
+     */
+    private static boolean isNumericType(String dataType) {
+        if (dataType == null) {
+            return false;
+        }
+        String t = dataType.toLowerCase(Locale.ROOT);
+        return t.contains("int") || t.contains("numeric") || t.contains("decimal")
+                || t.contains("double") || t.contains("real") || t.contains("float") || t.contains("money");
     }
 }
 

@@ -185,4 +185,60 @@ class ColumnPrunerTest {
         // customer_state 必须保全！
         assertThat(colNames).contains("customer_state");
     }
+
+    @Test
+    @DisplayName("问题问度量时保留数值列——中文提问 + 英文列名也能对上")
+    void keepsNumericColumnsWhenQuestionAsksForMeasure() {
+        SchemaContext.Table settlementItems = new SchemaContext.Table("settlement_items", "", List.of(
+                new SchemaContext.Column("settlement_id", "text", false, ""),
+                new SchemaContext.Column("order_id", "text", false, ""),
+                new SchemaContext.Column("order_item_id", "integer", false, ""),
+                new SchemaContext.Column("gross_amount", "numeric", false, ""),
+                new SchemaContext.Column("commission_rate", "numeric", false, ""),
+                new SchemaContext.Column("commission_amount", "numeric", false, ""),
+                new SchemaContext.Column("remark", "text", false, "")
+        ));
+
+        // 问题说的是「佣金」，列名是 commission_amount，词典里没有这个别名。
+        // 如果不按「度量语义」放宽，这个列会被裁掉，模型只能瞎猜列名。
+        List<SchemaContext.Table> pruned = columnPruner.prune(
+                List.of(settlementItems),
+                "每个卖家结算明细的佣金合计多少？",
+                Set.of("settlement_items"),
+                List.of(),
+                List.of(),
+                List.of(),
+                2
+        );
+
+        List<String> colNames = pruned.get(0).columns().stream().map(SchemaContext.Column::name).toList();
+        assertThat(colNames).contains("commission_amount", "gross_amount", "commission_rate");
+        // 文本列不因为「有度量措辞」被一起带回来
+        assertThat(colNames).doesNotContain("remark");
+    }
+
+    @Test
+    @DisplayName("问题不问度量时不放宽数值列，剪枝仍然生效")
+    void doesNotRelaxNumericColumnsWithoutMeasureIntent() {
+        SchemaContext.Table settlementItems = new SchemaContext.Table("settlement_items", "", List.of(
+                new SchemaContext.Column("settlement_id", "text", false, ""),
+                new SchemaContext.Column("order_id", "text", false, ""),
+                new SchemaContext.Column("order_item_id", "integer", false, ""),
+                new SchemaContext.Column("gross_amount", "numeric", false, ""),
+                new SchemaContext.Column("commission_amount", "numeric", false, "")
+        ));
+
+        List<SchemaContext.Table> pruned = columnPruner.prune(
+                List.of(settlementItems),
+                "每个结算单包含几条明细？",
+                Set.of("settlement_items"),
+                List.of(),
+                List.of(),
+                List.of(),
+                2
+        );
+
+        List<String> colNames = pruned.get(0).columns().stream().map(SchemaContext.Column::name).toList();
+        assertThat(colNames).doesNotContain("gross_amount", "commission_amount");
+    }
 }
