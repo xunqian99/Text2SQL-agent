@@ -71,9 +71,17 @@ public class ColumnPruner {
         // 是最容易被漏掉的一类不一致。
         String safeQuestion = question == null ? "" : question;
         String qLower = safeQuestion.toLowerCase(Locale.ROOT);
-        Set<String> normalizedTargets = new HashSet<>();
+        // 「可以拿来 join 的表」= 本次检索结果里的全部表 ∪ 核心目标表。
+        //
+        // 早先这里只认核心目标表，于是桥接表（如 order_items）的外键列会被裁掉——
+        // 而它恰恰是连接 orders 与 products 的唯一通道，裁掉之后 join 直接没了。
+        // 反过来只看「检索结果」，也确实不该把没选进来的表当成 join 伙伴。
+        Set<String> joinableTables = new HashSet<>();
+        for (SchemaContext.Table t : tables) {
+            joinableTables.add(t.name().toLowerCase(Locale.ROOT));
+        }
         if (targetTableNames != null) {
-            targetTableNames.forEach(t -> normalizedTargets.add(t.toLowerCase(Locale.ROOT)));
+            targetTableNames.forEach(t -> joinableTables.add(t.toLowerCase(Locale.ROOT)));
         }
 
         List<SchemaContext.Table> prunedList = new ArrayList<>();
@@ -94,19 +102,30 @@ public class ColumnPruner {
             String tableNameLower = table.name().toLowerCase(Locale.ROOT);
 
             // 1. 保全主键与外键关联列（同时包含数据库物理外键与词典约定关联）
+            //
+            // 主键优先用**数据库元数据**里的真实标记；只有当这批列完全没带
+            // 主键信息时（例如测试用的手写 schema、或从 DDL 文件构造的场景），
+            // 才退回按列名猜的启发式。猜的那套对 support_tickets.ticket_id
+            // 这类命名无效，会让主键被裁掉、整张表失去 join 能力。
+            boolean hasRealPrimaryKeyInfo = table.columns().stream()
+                    .anyMatch(SchemaContext.Column::primaryKey);
             for (SchemaContext.Column col : table.columns()) {
                 String colLower = col.name().toLowerCase(Locale.ROOT);
-                // 主键启发式
-                if (isPrimaryKeyCandidate(tableNameLower, colLower)) {
+                boolean isPk = hasRealPrimaryKeyInfo
+                        ? col.primaryKey()
+                        : isPrimaryKeyCandidate(tableNameLower, colLower);
+                if (isPk) {
                     keepCols.add(colLower);
                 }
             }
             if (foreignKeys != null) {
                 for (SchemaContext.ForeignKey fk : foreignKeys) {
-                    if (fk.fromTable().equalsIgnoreCase(table.name()) && normalizedTargets.contains(fk.toTable().toLowerCase(Locale.ROOT))) {
+                    if (fk.fromTable().equalsIgnoreCase(table.name())
+                            && joinableTables.contains(fk.toTable().toLowerCase(Locale.ROOT))) {
                         keepCols.add(fk.fromColumn().toLowerCase(Locale.ROOT));
                     }
-                    if (fk.toTable().equalsIgnoreCase(table.name()) && normalizedTargets.contains(fk.fromTable().toLowerCase(Locale.ROOT))) {
+                    if (fk.toTable().equalsIgnoreCase(table.name())
+                            && joinableTables.contains(fk.fromTable().toLowerCase(Locale.ROOT))) {
                         keepCols.add(fk.toColumn().toLowerCase(Locale.ROOT));
                     }
                 }
@@ -122,10 +141,12 @@ public class ColumnPruner {
                             String toTable = toParts[0].trim();
                             String toCol = toParts[1].trim();
 
-                            if (fromTable.equalsIgnoreCase(table.name()) && normalizedTargets.contains(toTable.toLowerCase(Locale.ROOT))) {
+                            if (fromTable.equalsIgnoreCase(table.name())
+                                    && joinableTables.contains(toTable.toLowerCase(Locale.ROOT))) {
                                 keepCols.add(fromCol.toLowerCase(Locale.ROOT));
                             }
-                            if (toTable.equalsIgnoreCase(table.name()) && normalizedTargets.contains(fromTable.toLowerCase(Locale.ROOT))) {
+                            if (toTable.equalsIgnoreCase(table.name())
+                                    && joinableTables.contains(fromTable.toLowerCase(Locale.ROOT))) {
                                 keepCols.add(toCol.toLowerCase(Locale.ROOT));
                             }
                         }

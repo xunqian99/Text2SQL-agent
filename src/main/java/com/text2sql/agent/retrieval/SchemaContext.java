@@ -71,8 +71,24 @@ public record SchemaContext(
     public record Table(String name, String comment, List<Column> columns) {
     }
 
-    /** 一列。comment 里藏着枚举值口径（如 "会员状态：1=正常 2=冻结"），是口径注册表的雏形。 */
-    public record Column(String name, String type, boolean nullable, String comment) {
+    /**
+     * 一列。comment 里藏着枚举值口径（如 "会员状态：1=正常 2=冻结"），是口径注册表的雏形。
+     *
+     * <p><b>{@code primaryKey} 为什么存在</b>：列剪枝要「无论如何都保留主键」，
+     * 因为 join 缺了主键就没法连。早先这个判断靠**列名猜**（{@code id}、
+     * {@code <表名>_id}、去掉复数加 {@code _id}），对 {@code support_tickets.ticket_id}
+     * 这种命名就猜不出来——于是主键被裁掉，那张表直接失去 join 能力。
+     * 数据库本来就知道答案（{@code information_schema} 里明明白白），
+     * 没理由让程序去猜。
+     *
+     * <p>保留了 4 个参数的构造重载，所以老的调用点（尤其是测试）不用改。
+     */
+    public record Column(String name, String type, boolean nullable, String comment, boolean primaryKey) {
+
+        /** 兼容构造：不知道主键信息时按 false 处理（后期可用真实元数据覆盖）。 */
+        public Column(String name, String type, boolean nullable, String comment) {
+            this(name, type, nullable, comment, false);
+        }
     }
 
     /**

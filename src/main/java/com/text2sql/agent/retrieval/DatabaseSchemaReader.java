@@ -71,10 +71,36 @@ public class DatabaseSchemaReader {
                        c.is_nullable,
                        c.ordinal_position,
                        col_description(('public.' || c.table_name)::regclass, c.ordinal_position) AS col_comment,
-                       obj_description(('public.' || c.table_name)::regclass) AS table_comment
+                       obj_description(('public.' || c.table_name)::regclass) AS table_comment,
+                       (pk.column_name IS NOT NULL) AS is_primary_key
                 FROM information_schema.columns c
                 JOIN information_schema.tables t
                   ON t.table_schema = c.table_schema AND t.table_name = c.table_name
+                LEFT JOIN (
+                    -- 主键从数据库元数据里读，而不是靠列名猜。
+                    -- support_tickets.ticket_id 这种命名用启发式永远猜不到，
+                    -- 一旦被列剪枝裁掉，那张表就失去 join 能力。
+                    --
+                    -- 这里必须走 pg_catalog 而不是 information_schema：
+                    -- information_schema.table_constraints / key_column_usage
+                    -- 只对「表属主或有相应权限」的用户可见，而应用连库用的是
+                    -- text2sql_ro（只有 SELECT、不是属主）——实测用它查出来是空的，
+                    -- 于是 is_primary_key 全是 false，等于白读。
+                    -- pg_catalog 对所有用户可读，不受这个过滤影响。
+                    SELECT n.nspname AS table_schema,
+                           c.relname AS table_name,
+                           a.attname AS column_name
+                    FROM pg_index i
+                    JOIN pg_class c ON c.oid = i.indrelid
+                    JOIN pg_namespace n ON n.oid = c.relnamespace
+                    JOIN unnest(i.indkey) WITH ORDINALITY AS k(attnum, ord) ON TRUE
+                    JOIN pg_attribute a ON a.attrelid = c.oid AND a.attnum = k.attnum
+                    WHERE i.indisprimary
+                      AND n.nspname = 'public'
+                ) pk
+                  ON pk.table_schema = c.table_schema
+                 AND pk.table_name = c.table_name
+                 AND pk.column_name = c.column_name
                 WHERE c.table_schema = 'public'
                   AND t.table_type = 'BASE TABLE'
                   AND c.table_name <> 'schema_chunks'
@@ -95,7 +121,8 @@ public class DatabaseSchemaReader {
                     rs.getString("column_name"),
                     rs.getString("data_type"),
                     "YES".equalsIgnoreCase(rs.getString("is_nullable")),
-                    rs.getString("col_comment")));
+                    rs.getString("col_comment"),
+                    rs.getBoolean("is_primary_key")));
         });
 
         List<SchemaContext.Table> tables = new ArrayList<>();
