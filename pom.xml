@@ -103,6 +103,25 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
       </plugin>
+      <!--
+        让 `mvn test` 裸跑就能通过。
+
+        Mockito 5 默认使用 inline mock maker，它需要在运行时把 agent 自附加到
+        当前 JVM。JDK 9+ 默认禁止自附加（jdk.attach.allowAttachSelf=false），
+        于是所有用到 @Mock/@MockBean 的测试会一起报
+        "Could not initialize plugin: interface org.mockito.plugins.MockMaker"。
+
+        以前要在命令行手动加 -DargLine="-Djdk.attach.allowAttachSelf=true"，
+        这属于「环境知识」而不是「项目知识」：换台机器、换个人跑就会踩到，
+        而且报错信息完全指不到根因。把它固化在这里，让默认路径就是正确的路径。
+      -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <argLine>-Djdk.attach.allowAttachSelf=true</argLine>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
 

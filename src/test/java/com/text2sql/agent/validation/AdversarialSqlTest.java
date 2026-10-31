@@ -126,6 +126,12 @@ class AdversarialSqlTest {
             "SELECT nextval('orders_order_id_seq') LIMIT 10",
             "SELECT order_id, pg_sleep(60) FROM orders LIMIT 10",
             "SELECT order_id FROM orders WHERE pg_sleep(60) IS NOT NULL LIMIT 10",
+            // schema 限定名：黑名单比对的是函数名，如果只按裸名匹配，
+            // 攻击者加一个 pg_catalog. 前缀就能绕过。这两条就是用来钉住这个洞的。
+            "SELECT pg_catalog.pg_sleep(60) LIMIT 1",
+            "SELECT pg_catalog.pg_read_file('/etc/passwd') LIMIT 10",
+            // 带引号的标识符：PostgreSQL 允许 "pg_sleep"(60)，解析后函数名会带引号
+            "SELECT \"pg_sleep\"(60) LIMIT 1",
     })
     void rejectsDangerousFunctions(String sql) {
         ValidationResult result = validator.validate(sql, schema);

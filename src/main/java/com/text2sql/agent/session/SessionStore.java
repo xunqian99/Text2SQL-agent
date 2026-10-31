@@ -113,7 +113,10 @@ public class SessionStore {
         int evicted = 0;
         for (Map.Entry<String, ConversationSession> entry : cache.entrySet()) {
             ConversationSession session = entry.getValue();
-            if (session.lastActiveAt().isBefore(threshold)) {
+            // 用 !isAfter（即 <=）而不是 isBefore：超时为 0 时 threshold 就等于“此刻”，
+            // 严格小于会把「恰好落在阈值上」的会话漏掉，使清理结果依赖于两次
+            // Instant.now() 是否落在同一个时钟刻度（测试里表现为偶发失败）。
+            if (!session.lastActiveAt().isAfter(threshold)) {
                 if (!session.isClosed()) {
                     session.close();
                     if (db != null) {

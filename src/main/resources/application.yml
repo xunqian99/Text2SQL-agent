@@ -23,8 +23,8 @@ spring:
     # 账号由 data/schema/05_readonly_role.sql 创建，只授 SELECT，
     # 并显式 REVOKE 掉 INSERT/UPDATE/DELETE/TRUNCATE 和 CREATE。
     # 建库/导数脚本仍然用 text2sql，那是另一条路径，不经过应用。
-    username: text2sql_ro
-    password: text2sql_ro
+    username: ${AGENT_DB_USERNAME:text2sql_ro}
+    password: ${AGENT_DB_PASSWORD:text2sql_ro}
     hikari:
       # 评估是串行的，5 个连接绰绰有余。池子开大没有收益，
       # 反而会在数据库端占用更多资源，掩盖连接泄漏问题。
@@ -174,8 +174,8 @@ agent:
   persistence:
     enabled: false
     url: jdbc:postgresql://localhost:5432/olist
-    username: text2sql_rw
-    password: text2sql_rw
+    username: ${AGENT_DB_PERSISTENCE_USERNAME:text2sql_rw}
+    password: ${AGENT_DB_PERSISTENCE_PASSWORD:text2sql_rw}
 
   # 阶段 6：每次模型调用落一行 JSONL，回答「每次调用花了多少」。
   # include-content 默认关闭：prompt 里有用户原始问题，落盘前要显式决定。

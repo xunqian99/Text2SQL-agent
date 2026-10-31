@@ -97,6 +97,31 @@ class ToolExecutorTest {
     }
 
     @Test
+    @DisplayName("INSPECT_COLUMN: 不存在的列必须拒绝，不能拼进 SQL")
+    void testInspectColumnRejectsUnknownColumn() {
+        // 模型输出等价于不可信输入：列名里塞 SQL 片段是现实的注入面。
+        ToolCall call = new ToolCall(ToolType.INSPECT_COLUMN,
+                "orders.order_status) FROM orders; DROP TABLE orders; --", "");
+
+        ToolResult result = executor.execute(call, mockSchema);
+
+        assertThat(result.success()).isFalse();
+        // 关键断言：一次 SQL 都不该被执行
+        verify(sqlExecutor, never()).execute(anyString());
+    }
+
+    @Test
+    @DisplayName("INSPECT_COLUMN: 不存在的表必须拒绝")
+    void testInspectColumnRejectsUnknownTable() {
+        ToolCall call = new ToolCall(ToolType.INSPECT_COLUMN, "not_a_table.some_column", "");
+
+        ToolResult result = executor.execute(call, mockSchema);
+
+        assertThat(result.success()).isFalse();
+        verify(sqlExecutor, never()).execute(anyString());
+    }
+
+    @Test
     @DisplayName("SAMPLE_QUERY: 自动包装为 LIMIT 5 并强制 AST 白名单校验")
     void testSampleQueryGuardsAndLimits() {
         when(sqlValidator.validate(anyString(), any())).thenAnswer(inv ->

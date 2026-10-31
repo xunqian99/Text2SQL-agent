@@ -74,9 +74,12 @@ public class ToolExecutor {
             return ToolResult.error("表 " + cleanTable + " 不存在");
         }
 
-        String sampleSql = "SELECT * FROM " + cleanTable + " LIMIT 5";
+        // 用 catalog 里的真实表名拼 SQL，而不是模型给的原始字符串。
+        // 两者在忽略大小写后等价，但只有前者能保证不把奇怪字符带进语句里。
+        String canonicalTable = tableOpt.get().name();
+        String sampleSql = "SELECT * FROM " + canonicalTable + " LIMIT 5";
         QueryResult qr = sqlExecutor.execute(sampleSql);
-        String formatted = formatResult("表 " + cleanTable + " 样例数据 (前 5 行)", qr);
+        String formatted = formatResult("表 " + canonicalTable + " 样例数据 (前 5 行)", qr);
         return ToolResult.ok(formatted, qr.columns(), qr.rows());
     }
 
@@ -93,14 +96,37 @@ public class ToolExecutor {
         if (parts.length != 2) {
             return ToolResult.error("参数格式错误，请使用: 表名.列名，例如 orders.order_status");
         }
-        String table = parts[0].toLowerCase(Locale.ROOT);
-        String col = parts[1].toLowerCase(Locale.ROOT);
+        String table = parts[0].strip().toLowerCase(Locale.ROOT);
+        String col = parts[1].strip().toLowerCase(Locale.ROOT);
 
-        String statSql = "SELECT " + col + ", COUNT(*) AS cnt FROM " + table
-                + " GROUP BY " + col + " ORDER BY cnt DESC LIMIT 10";
+        // 表名和列名都必须先在 catalog 里命中，才允许拼进 SQL。
+        //
+        // 这一步不能省：本工具的入参来自**模型输出**，而项目的前提是
+        // 「模型输出等价于不可信的用户输入」。直接把它拼进语句，等于开了
+        // 一个注入面——而且这里是五个工具里唯一一个既拼接、又不过 SQL 校验器的
+        // （sampleQuery / checkJoin / explainQuery 都会走 SqlValidator）。
+        // 用 catalog 里的规范名回填，既堵住注入，也顺手纠正大小写。
+        var tableOpt = catalog.full().tables().stream()
+                .filter(t -> t.name().equalsIgnoreCase(table))
+                .findFirst();
+        if (tableOpt.isEmpty()) {
+            return ToolResult.error("表 " + table + " 不存在");
+        }
+        var tableMeta = tableOpt.get();
+        var colOpt = tableMeta.columns().stream()
+                .filter(c -> c.name().equalsIgnoreCase(col))
+                .findFirst();
+        if (colOpt.isEmpty()) {
+            return ToolResult.error("表 " + tableMeta.name() + " 上没有列 " + col);
+        }
+        String canonicalTable = tableMeta.name();
+        String canonicalCol = colOpt.get().name();
+
+        String statSql = "SELECT " + canonicalCol + ", COUNT(*) AS cnt FROM " + canonicalTable
+                + " GROUP BY " + canonicalCol + " ORDER BY cnt DESC LIMIT 10";
 
         QueryResult qr = sqlExecutor.execute(statSql);
-        String formatted = formatResult("列 " + clean + " 的高频值分布", qr);
+        String formatted = formatResult("列 " + canonicalTable + "." + canonicalCol + " 的高频值分布", qr);
         return ToolResult.ok(formatted, qr.columns(), qr.rows());
     }
 

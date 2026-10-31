@@ -14,14 +14,25 @@ import java.util.regex.Pattern;
  *   <li>[TOOL_CALL] CHECK_JOIN(orders, customers, orders.customer_id = customers.customer_id)</li>
  *   <li>[FINAL_SQL] SELECT ...</li>
  * </ul>
+ *
+ * <p><b>为什么参数不用一条正则抓完</b>：工具的入参本身就可能含括号，
+ * 例如 {@code SAMPLE_QUERY(SELECT COUNT(*) FROM orders)}。用非贪婪的
+ * {@code \(([\s\S]*?)\)} 会停在**第一个**右括号上，把参数截成
+ * {@code SELECT COUNT(*}——工具随后执行一条残缺 SQL，失败信息还指不到解析层。
+ * 所以这里只用一个正则定位「工具名 + 左括号」，参数的结束位置由
+ * {@link #findMatchingParen} 按括号配对扫描得出，并跳过单引号字符串里的括号。
  */
 public final class ToolParser {
 
     private static final Pattern FINAL_SQL_PATTERN = Pattern.compile(
             "\\[FINAL_SQL\\]\\s*([\\s\\S]+)", Pattern.CASE_INSENSITIVE);
 
-    private static final Pattern TOOL_CALL_PATTERN = Pattern.compile(
-            "\\[TOOL_CALL\\]\\s*([A-Z_]+)\\s*\\(([\\s\\S]*?)\\)", Pattern.CASE_INSENSITIVE);
+    /**
+     * 只匹配到「[TOOL_CALL] 工具名(」，不负责匹配右括号。
+     * 右括号的位置交给括号配对扫描，见类注释。
+     */
+    private static final Pattern TOOL_CALL_HEAD_PATTERN = Pattern.compile(
+            "\\[TOOL_CALL\\]\\s*([A-Z_]+)\\s*\\(", Pattern.CASE_INSENSITIVE);
 
     private ToolParser() {}
 
@@ -44,10 +55,16 @@ public final class ToolParser {
         }
 
         // 检查 [TOOL_CALL]
-        Matcher toolMatcher = TOOL_CALL_PATTERN.matcher(text);
-        if (toolMatcher.find()) {
-            String toolName = toolMatcher.group(1).strip().toUpperCase();
-            String arg = toolMatcher.group(2).strip();
+        Matcher headMatcher = TOOL_CALL_HEAD_PATTERN.matcher(text);
+        if (headMatcher.find()) {
+            String toolName = headMatcher.group(1).strip().toUpperCase();
+            int openParenIndex = headMatcher.end() - 1;
+            int closeParenIndex = findMatchingParen(text, openParenIndex);
+            if (closeParenIndex < 0) {
+                // 括号不配对：模型输出本身不完整，按「没有可执行工具调用」处理。
+                return null;
+            }
+            String arg = text.substring(openParenIndex + 1, closeParenIndex).strip();
             try {
                 ToolType type = ToolType.valueOf(toolName);
                 return new ToolCall(type, arg, text);
@@ -58,5 +75,48 @@ public final class ToolParser {
         }
 
         return null;
+    }
+
+    /**
+     * 从 {@code openParenIndex} 处的左括号开始，找到与之配对的右括号下标。
+     *
+     * <p>要跳过单引号字符串里的括号，否则
+     * {@code SAMPLE_QUERY(SELECT * FROM orders WHERE status = '(')}
+     * 会把字符串里的左括号也算进层级，导致配对错位。
+     * 连续两个单引号（{@code ''}）是 SQL 里的转义写法，按转义处理。
+     *
+     * @return 配对右括号的下标；找不到返回 -1
+     */
+    private static int findMatchingParen(String text, int openParenIndex) {
+        int depth = 0;
+        boolean inSingleQuote = false;
+        for (int i = openParenIndex; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (inSingleQuote) {
+                if (c == '\'') {
+                    // '' 是转义的单引号，不结束字符串
+                    if (i + 1 < text.length() && text.charAt(i + 1) == '\'') {
+                        i++;
+                    } else {
+                        inSingleQuote = false;
+                    }
+                }
+                continue;
+            }
+            switch (c) {
+                case '\'' -> inSingleQuote = true;
+                case '(' -> depth++;
+                case ')' -> {
+                    depth--;
+                    if (depth == 0) {
+                        return i;
+                    }
+                }
+                default -> {
+                    // 普通字符，忽略
+                }
+            }
+        }
+        return -1;
     }
 }

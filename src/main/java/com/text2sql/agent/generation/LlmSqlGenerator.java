@@ -22,7 +22,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 生成层：调用 LLM，把「问题 + schema」变成 SQL。
@@ -52,7 +55,27 @@ public class LlmSqlGenerator {
 
     /** 未配置 Key 时为 null。这是刻意的：把「配置缺失」变成一个可检查的状态，而不是异常。 */
     private final ChatModel chatModel;
-    private final java.util.concurrent.ConcurrentHashMap<String, ChatModel> dynamicChatModels = new java.util.concurrent.ConcurrentHashMap<>();
+    /**
+     * BYOK 动态客户端池：按用户自带的 API Key 缓存 ChatModel。
+     *
+     * <p><b>为什么必须有容量上限</b>：这个 Map 的键来自请求头
+     * {@code X-Api-Key}，是**调用方可完全控制**的值。早先这里用的是无界
+     * {@code ConcurrentHashMap}，每次换一个不同的 Key 就会新建一个客户端并
+     * 永久留在内存里——持续发不同 Key 就能把堆撑爆，而这条路径不需要任何
+     * 鉴权。属于典型的「输入决定内存占用」型缺陷。
+     *
+     * <p>改为 LRU + 上限后，超限时淘汰最久未使用的客户端。容量取 32 是够用的：
+     * 正常场景里同时活跃的 BYOK Key 只有个位数，32 已经留了充足余量。
+     */
+    private static final int MAX_DYNAMIC_MODELS = 32;
+
+    private final Map<String, ChatModel> dynamicChatModels = Collections.synchronizedMap(
+            new LinkedHashMap<>(16, 0.75f, true) {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<String, ChatModel> eldest) {
+                    return size() > MAX_DYNAMIC_MODELS;
+                }
+            });
 
     public LlmSqlGenerator(AgentProperties properties, PromptTemplate promptTemplate,
                            com.text2sql.agent.observability.LlmCallLog callLog) {
@@ -83,10 +106,29 @@ public class LlmSqlGenerator {
     }
 
     public ChatModel resolveChatModel(String apiKeyOverride) {
-        if (StringUtils.hasText(apiKeyOverride)) {
-            return dynamicChatModels.computeIfAbsent(apiKeyOverride.strip(), key -> buildChatModel(properties, key));
+        if (!StringUtils.hasText(apiKeyOverride)) {
+            return this.chatModel;
         }
-        return this.chatModel;
+        String key = apiKeyOverride.strip();
+        ChatModel cached = dynamicChatModels.get(key);
+        if (cached != null) {
+            return cached;
+        }
+        // 构建客户端有开销，放在锁外做；只有写入时才加锁，并在锁内二次检查，
+        // 避免同一个 Key 在并发首用时被重复构建。重复构建本身不致命，
+        // 但会浪费连接与对象，而且后写的会覆盖先写的。
+        ChatModel built = buildChatModel(properties, key);
+        if (built == null) {
+            return null;
+        }
+        synchronized (dynamicChatModels) {
+            ChatModel existing = dynamicChatModels.get(key);
+            if (existing != null) {
+                return existing;
+            }
+            dynamicChatModels.put(key, built);
+            return built;
+        }
     }
 
     /**

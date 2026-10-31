@@ -201,9 +201,9 @@ public class SqlValidator {
                 new net.sf.jsqlparser.expression.ExpressionVisitorAdapter<>() {
                     @Override
                     public <S> Void visit(Function function, S context) {
-                        String name = function.getName() == null ? "" : function.getName().toLowerCase(Locale.ROOT);
-                        if (forbidden.contains(name)) {
-                            hit.add(name);
+                        String bareName = normalizeFunctionName(function.getName());
+                        if (forbidden.contains(bareName)) {
+                            hit.add(bareName);
                         }
                         return super.visit(function, context);
                     }
@@ -212,6 +212,36 @@ public class SqlValidator {
 
         hit.forEach(name -> violations.add(new ValidationResult.Violation(
                 ValidationResult.Code.FORBIDDEN_FUNCTION, "使用了禁止的函数：" + name)));
+    }
+
+    /**
+     * 把函数名归一化成「裸名」，用于和黑名单比对。
+     *
+     * <p><b>为什么需要这一步</b>：黑名单里写的是 {@code pg_sleep} 这样的裸名，
+     * 但 JSqlParser 解析出来的 {@code Function#getName()} 有三种等价写法会带上额外装饰：
+     * <ul>
+     *   <li>schema 限定名：{@code pg_catalog.pg_sleep(60)}</li>
+     *   <li>带引号的标识符：{@code "pg_sleep"(60)}</li>
+     *   <li>两者叠加：{@code pg_catalog."pg_sleep"(60)}</li>
+     * </ul>
+     * 这三种在 PostgreSQL 里都等价于 {@code pg_sleep}，如果直接拿原始名比对，
+     * **加一个前缀或一对引号就能绕过整个黑名单**。这是实测出来的洞，不是假设。
+     *
+     * <p>归一化按顺序做：小写 → 去掉 schema 前缀（取最后一个点之后）→ 去掉首尾双引号。
+     */
+    private static String normalizeFunctionName(String rawName) {
+        if (rawName == null) {
+            return "";
+        }
+        String name = rawName.trim().toLowerCase(Locale.ROOT);
+        int lastDot = name.lastIndexOf('.');
+        if (lastDot >= 0) {
+            name = name.substring(lastDot + 1);
+        }
+        if (name.length() >= 2 && name.startsWith("\"") && name.endsWith("\"")) {
+            name = name.substring(1, name.length() - 1);
+        }
+        return name;
     }
 
     /**
@@ -383,7 +413,9 @@ public class SqlValidator {
 
     private boolean isAggregateItem(net.sf.jsqlparser.statement.select.SelectItem<?> item) {
         Expression expression = item.getExpression();
-        return expression instanceof Function fn && isAggregateFunction(fn.getName());
+        // 同样要归一化：`"count"(*)` 或 `pg_catalog.count(*)` 与 count(*) 等价，
+        // 不归一化会把聚合查询误判成「非聚合」，进而多补一个无意义的 LIMIT。
+        return expression instanceof Function fn && isAggregateFunction(normalizeFunctionName(fn.getName()));
     }
 
     private boolean isAggregateFunction(String name) {

@@ -61,6 +61,25 @@ class ToolParserTest {
     }
 
     @Test
+    @DisplayName("工具参数里含括号时不能被截断（COUNT(*) 会被非贪婪正则截断）")
+    void parsesArgumentWithNestedParentheses() {
+        String text = "[TOOL_CALL] SAMPLE_QUERY(SELECT COUNT(*) FROM orders)";
+        ToolCall call = ToolParser.parse(text);
+        assertThat(call).isNotNull();
+        assertThat(call.type()).isEqualTo(ToolType.SAMPLE_QUERY);
+        assertThat(call.argument()).isEqualTo("SELECT COUNT(*) FROM orders");
+    }
+
+    @Test
+    @DisplayName("参数里的字符串常量含右括号时不能提前结束")
+    void parsesArgumentWithParenInsideStringLiteral() {
+        String text = "[TOOL_CALL] SAMPLE_QUERY(SELECT * FROM orders WHERE order_status = 'a)b')";
+        ToolCall call = ToolParser.parse(text);
+        assertThat(call).isNotNull();
+        assertThat(call.argument()).isEqualTo("SELECT * FROM orders WHERE order_status = 'a)b'");
+    }
+
+    @Test
     @DisplayName("无工具标签且无 FINAL_SQL 时返回 null")
     void returnsNullForPlainText() {
         String text = "你好，我是助手，没有调用任何工具。";

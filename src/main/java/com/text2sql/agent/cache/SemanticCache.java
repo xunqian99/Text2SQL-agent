@@ -140,23 +140,34 @@ public class SemanticCache {
         if (!enabled()) {
             return Optional.empty();
         }
+        // 第一段：只在内存里查，锁的持有时间以纳秒计。
         synchronized (store) {
             String sql = store.get(key);
             if (sql != null) {
                 hits++;
                 return Optional.of(sql);
             }
-            String fromDb = loadFromPersistence(key);
-            if (fromDb != null) {
+        }
+
+        // 第二段：查二级存储。**这一步要在锁外做**——它是网络往返，
+        // 慢的时候可以是几百毫秒。早先把它写在 synchronized(store) 里，
+        // 意味着一个慢的 L2 查询会把所有缓存读写全部串行化，
+        // 把「缓存加速」变成「缓存成为瓶颈」。
+        String fromDb = loadFromPersistence(key);
+        if (fromDb != null) {
+            synchronized (store) {
                 // 回填 L1：同一个问题下次问就不必再走数据库
                 store.put(key, fromDb);
                 hits++;
                 l2Hits++;
-                return Optional.of(fromDb);
             }
-            misses++;
-            return Optional.empty();
+            return Optional.of(fromDb);
         }
+
+        synchronized (store) {
+            misses++;
+        }
+        return Optional.empty();
     }
 
     /** 查二级存储。任何异常都当作未命中——缓存读失败不该影响问数。 */
