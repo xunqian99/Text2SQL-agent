@@ -653,7 +653,7 @@ ROADMAP 阶段 5 原本列了六件事。到这一轮为止的状态：
 |---|---|---|---|
 | 1 | AST 级表白名单 | 阶段 1 已做 | `UNKNOWN_TABLE`，`SqlValidator` 第 5 步 |
 | 2 | AST 级列白名单 | **本轮新增** | `UNKNOWN_COLUMN`，只校验带别名前缀的列 |
-| 3 | 危险函数黑名单 | 阶段 1 已做 | 27 个函数，含子查询/CTE 内的递归遍历 |
+| 3 | 危险函数黑名单 | 阶段 1 已做 | 28 个函数，含子查询/CTE 内的递归遍历 |
 | 4 | 强制 LIMIT / 超时 / 行数上限 | 阶段 1 已做 | APPEND 模式 + `query-timeout-seconds` + `max-rows` |
 | 5 | 执行失败自纠错 | **本轮完成，但收益为 0** | 见上文 `ERRORS_ONLY` 那一行 |
 | 6 | 歧义检测与主动反问 | **本轮新增** | `ambiguities.yml` + `AmbiguityDetector`，默认关闭 |
