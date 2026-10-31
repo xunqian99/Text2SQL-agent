@@ -1,0 +1,104 @@
+# 84% 那 16 条失败归因（错在哪一层）
+
+> 数据源：`reports/eval-20261008-185229.json` 的 `failures` + `data/eval/T*.yaml` 的 `gold_sql`。
+> 用途：面试被问"剩下的 16 条错在哪"时，能逐条说清**错在哪一层**——
+> 这是本项目三件必知事项之一。
+
+## 一句话结论
+
+16 条失败**没有一条**是表检索错误（检索全召回率 98%、平均 99.55%）。
+它们的分布是：
+
+| 层 | 数量 | 典型 |
+|---|---|---|
+| **输出列/结果形状** | 7 | 输出 id 还是 name、多一列少一列、行/列转置 |
+| **过滤条件** | 2 | 凭空加 status、错选 WHERE |
+| **聚合函数** | 3 | COUNT(*) vs COUNT(DISTINCT)、有无 HAVING |
+| **业务口径/时间窗** | 3 | 增长量 vs 增长率、配送时长口径、退款额列 |
+| **数值精度** | 1 | ROUND(4) vs ROUND(2) |
+
+**关键洞察**：这说明系统真正的瓶颈不在"检索"（检索已经很好），
+而在**"模型与 gold 的结果形状约定不一致"**——这恰恰是 prompt 规则该管、
+却没管好的部分。
+
+## 逐条归因
+
+### 1. 输出列/结果形状（7 条）——最大类
+
+| ID | 问题 | gold | 生成 | 差在哪 |
+|---|---|---|---|---|
+| T2-015 | 每个会员等级的平均积分 | `level_id` | `level_name` | 输出 id 还是 name；模型多 join 了 member_levels 取显示名 |
+| T2-019 | 每个活动的预算总额 | `campaign_id, budget` | `campaign_name, SUM(budget)` | campaigns 本身一行一活动，gold 不聚合；模型输出 name |
+| T4-017 | 每个会员等级的订单数 | `m.level_id, COUNT(*)` | `ml.level_name, COUNT(DISTINCT)` | id vs name + 聚合函数双重差异 |
+| T5-003 | 英文类目退款金额前15 | `category, refund_cnt, refund_amt`（3列） | `category, refund_amt`（2列） | 模型漏了 refunds 表，少了 refund_cnt 列 |
+| T5-018 | 收货州 vs 登记州一致性 | 按 (addr_state, customer_state) **成对**出行 | 按 customer_state 分 same/diff **两列** | 输出形状完全不同（行↔列转置） |
+| T6-013 | 优惠券 GMV/折扣率 | 直接 join 后 SUM | 先按 order 预聚合再 join | 见"折扣放大" |
+| T3-012 | 2018 vs 2017 增长 | `y2017, y2018, yoy_change` | `orders_2017, orders_2018, growth_rate` | 列名 + 增长量 vs 增长率 |
+
+### 2. 过滤条件（2 条）
+
+| ID | 问题 | gold | 生成 | 差在哪 |
+|---|---|---|---|---|
+| T2-033 | 结算净额合计 | `SUM(net_amount)` 无过滤 | `SUM(net_amount) WHERE status = 3` | 模型凭空加 `status = 3` 过滤 |
+| T6-006 | 已送达订单准时率 | `WHERE order_delivered_customer_date IS NOT NULL` | `WHERE order_status = 'delivered'` | 分母口径不同（两种"已送达"定义） |
+
+### 3. 聚合函数（3 条）
+
+| ID | 问题 | gold | 生成 | 差在哪 |
+|---|---|---|---|---|
+| T4-013 | 差评订单各州多少笔 | `COUNT(*)` | `COUNT(DISTINCT o.order_id)` | 评价表一单多评时，两者不同 |
+| T4-017 | 每等级订单数 | `COUNT(*)` | `COUNT(DISTINCT o.order_id)` | 同上 |
+| T5-009 | 低库存商品按仓库/区域/品牌 | `COUNT(*)` | `COUNT(DISTINCT i.product_id)` | 一商品多仓库时不同 |
+
+### 4. 业务口径/时间窗（3 条）
+
+| ID | 问题 | gold | 生成 | 差在哪 |
+|---|---|---|---|---|
+| T3-012 | 同比增长了多少 | `cur.cnt - prev.cnt`（增长**量**） | 百分比增长率 | 绝对量 vs 比率，语义不同 |
+| T3-018 | 每个州平均配送时长 | `order_delivered_customer_date - order_purchase_timestamp`（orders 表） | `delivered_at - shipped_at`（shipments 表） | **时间窗口径不同**，见下方"规则冲突" |
+| T5-016 | 按类目和原因统计退款 | `SUM(ri.refund_value)` | `SUM(r.refund_amount)` | 退款**明细**额 vs 退款**单**额，且多 join 了 orders |
+
+### 5. 数值精度（1 条）
+
+| ID | 问题 | gold | 生成 | 差在哪 |
+|---|---|---|---|---|
+| T2-004 | 平均每个订单多少条明细 | `ROUND(AVG(cnt), 4)` | `ROUND(AVG(item_cnt), 2)` | 逻辑完全相同，只差 **4 位 vs 2 位小数** |
+
+## 两大"规则帮倒忙"的硬证据
+
+这是本项目最值得在面试里讲的**自我批评**：系统不是没有规则，
+而是**某些规则与 gold 的约定冲突，反而扣分**。
+
+### 冲突一：Prompt 规则 12（统一两位小数）
+
+- 规则原文：`其余一般金额、单价、平均值，统一用 ROUND(表达式, 2) 保留两位小数`
+- T2-004 的 gold 用的是 `ROUND(..., 4)`
+- 结果：模型严格照规则写成 2 位，与 gold 的 4 位小数不等 → **被判错**
+- 说明：prompt 里的数值精度规则不能一刀切，需要按指标分别约定。
+
+### 冲突二：Prompt 规则 16（配送时长用 shipments）
+
+- 规则原文：`查询承运商配送时长时，直接使用 shipments 表的 (delivered_at - shipped_at)，无需关联轨迹表`
+- T3-018 的 gold 用的是 `orders` 表的 `order_delivered_customer_date - order_purchase_timestamp`
+- 结果：模型照规则选了 shipments 口径，与 gold 的 orders 口径不等 → **被判错**
+- 说明：规则 16 的前提是"承运商配送时长"，但 gold 定义的"配送时长"是
+  "下单到送达"。**"配送"一词在两个口径间歧义**，规则把模型带偏了。
+
+### 冲突三（附带发现）：gold 自身有已知缺陷
+
+- T6-013 的 gold 注释里明确写着：
+  `注意 coupon_usages 与 order_items 是一对多，SUM(discount_amount) 会被放大`
+- 生成的 SQL 恰恰**先按 order 预聚合**避免了放大，数学上更正确
+- 但因为执行准确率是**结果集比对**，模型"更对的答案"被 gold 的"有缺陷的答案"判错
+- 结论：**结果集比对会把 gold 的口径缺陷固化为标准答案**。
+  这是评估方法本身的局限，不是模型的错。
+
+## 面试答辩要点
+
+1. **先分类再谈数字**：被问"84% 是哪些题贡献"时，先说 16 条失败里
+   检索类 0 条、输出形状 7 条——把瓶颈从"检索"引到"结果约定"。
+2. **主动讲规则冲突**：这是最加分的自我批评，说明你做了归因而不是只会报总数。
+3. **讲清评估局限**：结果集比对 = gold 即真理，gold 有缺陷时会误判好答案。
+   能指出这一点，说明你理解评估不是绝对客观的。
+4. **改进方向**：把"输出列约定"做成**指标注册表的显式字段**（每个指标声明
+   返回哪些列、精度、聚合口径），而不是靠 prompt 里 18 条自然语言规则去猜。
