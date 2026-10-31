@@ -115,14 +115,13 @@ $env:AGENT_LLM_API_KEY = "sk-xxxxxxxxxxxxxxxxxxxxxxxx"
 mvn spring-boot:run
 ```
 
-> **运行测试**：`mvn test`（共 **248** 项）。若在受限环境/沙箱遇到
-> `Could not initialize plugin: interface org.mockito.plugins.MockMaker`，
-> 需加 `-DargLine="-Djdk.attach.allowAttachSelf=true"`——Mockito 内联 mockmaker
-> 需要 JVM 自附加，部分环境默认禁止。本地正常开发机一般不需要。
+> **运行测试**：`mvn test`（共 **255** 项，全部通过）。Mockito 5 需要的
+> JVM 自附加参数已经固化在 `pom.xml` 的 surefire 配置里，**不需要再手动加参数**。
 
-> **已知偶发用例**：`SessionStoreTest.testCleanExpired` 用 `Duration.ZERO` 测超时淘汰，
-> 判据是 `lastActiveAt.isBefore(now)`，当创建与清理落在**同一时钟刻度**时两者相等，
-> 会偶发淘汰 0 条而失败。这是边界条件 flake，详见 `docs/TEST_SUITE_NOTES.md`。
+> 历史上这里记录过两个问题：`mvn test` 裸跑会因 Mockito 自附加失败，
+> 以及 `SessionStoreTest.testCleanExpired` 的边界 flake。两者都已修复
+> （前者固化进 pom，后者把超时判据从严格小于改成 `<=`），
+> 详见 `docs/TEST_SUITE_NOTES.md`。
 
 启动完成后：
 - **Web 对话界面**：在浏览器打开 [http://localhost:8080](http://localhost:8080) 即可直接进行自然语言问数；
@@ -213,7 +212,7 @@ mvn spring-boot:run "-Dspring-boot.run.arguments=--agent.eval.enabled=true --age
 └── src/
     ├── main/java/...       # 核心业务源码（接入/编排/检索/生成/校验/执行/缓存/会话）
     ├── main/resources/     # 配置文件、语义指标库与极简前端页面
-    └── test/java/...       # 248 项全绿自动化单元与对抗性测试
+    └── test/java/...       # 255 项全绿自动化单元与对抗性测试
 ```
 
 
