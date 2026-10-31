@@ -248,6 +248,11 @@ public class EvalRunner implements ApplicationRunner {
     private Map<String, EvalReport.Overall> groupByExpectedTableCount(List<ItemOutcome> outcomes) {
         Map<String, List<ItemOutcome>> grouped = new LinkedHashMap<>();
         for (ItemOutcome outcome : outcomes) {
+            // gold 跑不通的条目与总体口径保持一致：不进分组。
+            // 否则总体准确率已排除它、分层数字里却还含它，两处数字对不上。
+            if (outcome.goldBroken()) {
+                continue;
+            }
             int tables = TableRecall.expectedTables(outcome.item().goldSql()).size();
             if (tables == 0) {
                 continue; // gold 解析不出表，无法分组，不计入
@@ -294,6 +299,11 @@ public class EvalRunner implements ApplicationRunner {
         for (int i = 0; i < outcomes.size(); i++) {
             ItemOutcome outcome = outcomes.get(i);
             EvalItem item = items.get(i);
+            // gold 跑不通的条目没有真正走完检索/生成链路（retrievedTables 是空的），
+            // 计入召回率会被当成「一张表都没召回」，凭空拉低检索指标。
+            if (outcome.goldBroken()) {
+                continue;
+            }
             TableRecall.Outcome recall = TableRecall.evaluate(item.goldSql(), outcome.retrievedTables());
 
             ddlSum += outcome.ddlChars();
