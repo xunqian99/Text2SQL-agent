@@ -170,7 +170,7 @@ agent:
 
   # 阶段 6：持久化连接。刻意用**第二个账号**而不是复用业务那个——
   # 业务账号是只读的（阶段 5 的第三层防线），同一个账号既不该也不能写。
-  # text2sql_rw 只对 semantic_cache 和 llm_call_log 两张表有权限，业务表碰不到。
+  # text2sql_rw 只对语义缓存、调用日志、会话四张持久化表有权限，业务表碰不到。
   persistence:
     enabled: false
     url: jdbc:postgresql://localhost:5432/olist

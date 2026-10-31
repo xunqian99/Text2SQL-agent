@@ -805,7 +805,8 @@ public class AgentProperties {
      *
      * <p>解法是**按用途拆账号**，而不是给业务账号开写权限：
      * 业务用只读账号，持久化用 {@code text2sql_rw}，而后者只对
-     * {@code semantic_cache} 和 {@code llm_call_log} 两张表有权限，业务表一行都碰不到。
+     * {@code semantic_cache}、{@code llm_call_log} 以及两张会话表共四张表有权限，
+     * 业务表一行都碰不到。
      *
      * <p><b>刻意不注册成 Spring 的 DataSource Bean</b>：容器里出现第二个 DataSource
      * 会让自动配置的 {@code @ConditionalOnSingleCandidate} 失效，主业务数据源反而可能

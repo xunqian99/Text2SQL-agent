@@ -233,10 +233,16 @@ prompt v2 合计四次独立运行：**77% / 77% / 75% / 77%**，均值约 76.5%
 | 账号 | 用途 | 权限 |
 |---|---|---|
 | `text2sql_ro` | 业务查询 | 全部表 SELECT，无任何写权限 |
-| `text2sql_rw` | 持久化 | 只对 `semantic_cache`（读+写）和 `llm_call_log`（插+读，不可改删） |
+| `text2sql_rw` | 持久化 | 只对 4 张持久化表有权限：`semantic_cache`（读+写）、`llm_call_log`（插+读，不可改删）、`conversation_session` / `conversation_turn`（读+写+删） |
 
-权限边界逐条实测过：`text2sql_rw` 能写缓存表、能插日志；改日志、删日志、
-碰业务表 `orders` 全部 `permission denied`。
+权限边界逐条实测过：`text2sql_rw` 能写缓存表、能插日志、能写会话表；
+改日志、删日志、碰业务表 `orders` 全部 `permission denied`。
+
+**注意 `text2sql_rw` 没有 schema 的 CREATE 权限**，所以持久化 DDL 必须由
+`data/schema/06_persistence.sql` 执行。早先会话表只靠应用运行时建表兜底，
+导致「开了持久化、会话历史一条都没进库」——这个坑已经修掉：
+脚本里补上了两张会话表与授权，应用侧改成先探测表存在再兜底建表，
+缺表时日志会直接给出「去跑哪个脚本」的提示。
 
 缓存做成两级：L1 进程内 LRU（纳秒级，热路径零网络），L2 数据库表
 （跨实例共享、重启不丢）。L1 未命中才查 L2，命中后回填 L1。

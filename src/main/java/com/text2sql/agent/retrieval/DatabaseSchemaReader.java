@@ -49,8 +49,8 @@ public class DatabaseSchemaReader {
             "schema_chunks",        // 早期向量检索实验遗留
             "semantic_cache",       // L2 语义缓存
             "llm_call_log",         // 逐条模型调用记录
-            "conversation_session", // 多轮会话（运行时创建）
-            "conversation_turn"     // 多轮会话轮次（运行时创建）
+            "conversation_session", // 多轮会话
+            "conversation_turn"     // 多轮会话轮次
     );
 
     public DatabaseSchemaReader(JdbcTemplate jdbcTemplate) {
