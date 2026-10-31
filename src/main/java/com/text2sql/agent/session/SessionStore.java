@@ -124,7 +124,17 @@ public class SessionStore {
 
         if (db != null && !alreadyClosed) {
             ensureTables();
-            persistToDb(session);
+            if (persistToDb(session)) {
+                // 落库成功后把它移出内存。
+                //
+                // 两个理由：一是列表改从库里读，能拿到**累计**轮次——否则同一
+                // sessionId 复用两段对话时，内存里只有最新一段、库里有两段，
+                // 接口显示 1 轮、数据库 2 轮，用户会觉得「我明明问了两段」；
+                // 二是已关闭的会话继续挂在内存里没有任何用处，只是占位。
+                synchronized (cache) {
+                    cache.remove(sessionId, session);
+                }
+            }
         } else if (db == null) {
             log.info("会话 {} 结束（未启用持久化连接，仅保留内存关闭状态）", sessionId);
         }
@@ -217,40 +227,76 @@ public class SessionStore {
         cache.clear();
     }
 
+    /**
+     * 确认会话持久化表可用；缺表时尝试自愈（仅在账号有建表权限时才会成功）。
+     *
+     * <p><b>这里修的是一个「功能其实一直是死的」的缺陷</b>：早先的实现直接执行
+     * 两条 {@code CREATE TABLE} 当兜底，但 {@code text2sql_rw} 按最小权限原则
+     * **没有 schema 的 CREATE 权限**，所以兜底永远失败；而建表脚本里又没有这两张表。
+     * 结果是「开了持久化，会话历史一条都没进库」，唯一线索是一条容易被忽略的 WARN。
+     *
+     * <p>现在的顺序是：
+     * <ol>
+     *   <li>先用 {@code to_regclass} 探测表在不在（这是正常路径，DDL 由
+     *       {@code data/schema/06_persistence.sql} 统一执行）；</li>
+     *   <li>真的缺表才尝试创建，失败时的日志要能直接指到「去跑哪个脚本」。</li>
+     * </ol>
+     */
     private synchronized void ensureTables() {
         if (db == null || tablesInitialized) {
             return;
         }
         try {
+            Boolean present = db.queryForObject(
+                    "SELECT to_regclass('public.conversation_session') IS NOT NULL "
+                            + "AND to_regclass('public.conversation_turn') IS NOT NULL",
+                    Boolean.class);
+            if (Boolean.TRUE.equals(present)) {
+                tablesInitialized = true;
+                return;
+            }
+
+            // 兜底自愈：分两条语句执行，不用分号串成一条。
+            // 串成一条时 PostgreSQL 的报错信息会退化成笼统的 "bad SQL grammar"，
+            // 把真正的 "permission denied for schema public" 盖掉，排查要多花很久。
             db.execute("""
-                CREATE TABLE IF NOT EXISTS conversation_session (
-                    session_id VARCHAR(64) PRIMARY KEY,
-                    created_at TIMESTAMP,
-                    closed_at TIMESTAMP,
-                    turn_count INT,
-                    last_question TEXT,
-                    status VARCHAR(32)
-                );
-                CREATE TABLE IF NOT EXISTS conversation_turn (
-                    id SERIAL PRIMARY KEY,
-                    session_id VARCHAR(64),
-                    turn_index INT,
-                    question TEXT,
-                    rewritten_question TEXT,
-                    sql_text TEXT,
-                    status VARCHAR(32),
-                    result_summary TEXT,
-                    created_at TIMESTAMP
-                );
-            """);
+                    CREATE TABLE IF NOT EXISTS conversation_session (
+                        session_id VARCHAR(64) PRIMARY KEY,
+                        created_at TIMESTAMP,
+                        closed_at TIMESTAMP,
+                        turn_count INT,
+                        last_question TEXT,
+                        status VARCHAR(32)
+                    )
+                    """);
+            db.execute("""
+                    CREATE TABLE IF NOT EXISTS conversation_turn (
+                        id SERIAL PRIMARY KEY,
+                        session_id VARCHAR(64),
+                        turn_index INT,
+                        question TEXT,
+                        rewritten_question TEXT,
+                        sql_text TEXT,
+                        status VARCHAR(32),
+                        result_summary TEXT,
+                        created_at TIMESTAMP
+                    )
+                    """);
             tablesInitialized = true;
-            log.info("多轮会话持久化表 conversation_session / conversation_turn 初始化完成");
+            log.info("多轮会话持久化表已由应用创建；建议改为执行 data/schema/06_persistence.sql 统一管理");
         } catch (Exception e) {
-            log.warn("初始化多轮会话持久化表失败（会话将仅在内存中保留）：{}", e.getMessage());
+            log.warn("多轮会话持久化表不可用，会话只会保留在内存中（关闭后不落库）。"
+                    + "请先执行 data/schema/06_persistence.sql 建表并授权。原因：{}", e.getMessage());
         }
     }
 
-    private void persistToDb(ConversationSession session) {
+    /**
+     * 落库。
+     *
+     * @return 是否真的写成功。调用方据此决定能不能把它移出内存——
+     *         写失败时必须留在内存里，否则会话就彻底丢了。
+     */
+    private boolean persistToDb(ConversationSession session) {
         try {
             var lastTurn = session.lastTurn();
             String lastQ = lastTurn != null ? lastTurn.question() : "";
@@ -301,8 +347,10 @@ public class SessionStore {
             }
             log.info("会话 {} 成功持久化入库，本次 {} 轮（累计 {} 轮）",
                     session.sessionId(), session.turns().size(), totalTurns);
+            return true;
         } catch (Exception e) {
             log.warn("会话 {} 落库失败（不影响主响应）：{}", session.sessionId(), e.getMessage());
+            return false;
         }
     }
 

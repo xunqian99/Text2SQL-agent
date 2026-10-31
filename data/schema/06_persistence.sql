@@ -8,7 +8,7 @@
 --
 --   结论是**按用途拆账号**，而不是重新给业务账号开写权限：
 --     · text2sql_ro   业务查询。只有 SELECT，没有任何写权限。
---     · text2sql_rw   持久化。只对下面两张表有权限，业务表一行都碰不到。
+--     · text2sql_rw   持久化。只对下面几张持久化表有权限，业务表一行都碰不到。
 --   这样「删业务数据」的路径依然不存在，而观测和缓存能落库。
 --
 -- 权限细节也是有意的：
@@ -43,6 +43,43 @@ CREATE TABLE IF NOT EXISTS llm_call_log (
     cost_yuan          NUMERIC(12, 6) NOT NULL DEFAULT 0
 );
 
+-- ---------------------------------------------------------------------------
+-- 多轮会话表（阶段 7）。
+--
+-- 【为什么必须写在这里】这两张表原先只靠应用里的 CREATE TABLE 兜底创建，
+-- 但 text2sql_rw 刻意**没有 schema 的 CREATE 权限**（见下面的 ALTER ROLE 与
+-- 只授 USAGE 不授 CREATE）——于是那个兜底永远失败，会话落库整体是死的：
+-- 用户结束会话时只会看到一条 WARN，历史一条都没进库。
+--
+-- 教训是「兜底路径也必须被验证」：一个只在异常分支执行、平时看不见的代码，
+-- 很容易长期处于不可用状态而没人发现。持久化 DDL 统一放在这里，
+-- 应用侧只做存在性检查与友好报错。
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS conversation_session (
+    session_id    VARCHAR(64) PRIMARY KEY,
+    created_at    TIMESTAMP,
+    closed_at     TIMESTAMP,
+    turn_count    INT,
+    last_question TEXT,
+    status        VARCHAR(32)
+);
+
+CREATE TABLE IF NOT EXISTS conversation_turn (
+    id                 SERIAL PRIMARY KEY,
+    session_id         VARCHAR(64),
+    turn_index         INT,
+    question           TEXT,
+    rewritten_question TEXT,
+    sql_text           TEXT,
+    status             VARCHAR(32),
+    result_summary     TEXT,
+    created_at         TIMESTAMP
+);
+
+-- 按 (session_id, turn_index) 查历史是唯一的热路径（列表、追加编号都要它）。
+CREATE INDEX IF NOT EXISTS idx_conversation_turn_session
+    ON conversation_turn(session_id, turn_index);
+
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'text2sql_rw') THEN
@@ -67,3 +104,10 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON semantic_cache TO text2sql_rw;
 -- ——那个报错信息是「permission denied for table」，很容易被误判成没授权。
 GRANT INSERT, SELECT ON llm_call_log TO text2sql_rw;
 GRANT USAGE ON SEQUENCE llm_call_log_id_seq TO text2sql_rw;
+
+-- 会话表：读 + 写 + 删。
+-- 这里给 DELETE 是因为「删除会话」是产品功能（用户主动删），
+-- 与日志表的「追加型事实不可改删」是两种不同性质的表，权限自然不同。
+GRANT SELECT, INSERT, UPDATE, DELETE ON conversation_session TO text2sql_rw;
+GRANT SELECT, INSERT, UPDATE, DELETE ON conversation_turn TO text2sql_rw;
+GRANT USAGE ON SEQUENCE conversation_turn_id_seq TO text2sql_rw;
