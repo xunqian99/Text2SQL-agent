@@ -149,9 +149,33 @@ public class EvalItemLoader {
             List<EvalItem> parsed = yamlObjectMapper.readValue(
                     Files.readString(file),
                     yamlObjectMapper.getTypeFactory().constructCollectionType(List.class, EvalItem.class));
-            return parsed == null ? List.of() : parsed;
+            if (parsed == null) {
+                return List.of();
+            }
+            // 必填字段校验：必须在**开始烧钱之前**失败。
+            //
+            // 这里有个容易被忽略的机制：EvalItem 带 @JsonIgnoreProperties(ignoreUnknown=true)，
+            // 所以 YAML 里把 gold_sql 写成 goldSql / gold-sql 时不会报错，
+            // 只会让字段安静地变成 null，然后在评估中途某个 toUpperCase() 处 NPE，
+            // 整轮跑了几十上百条后才挂、报告还没落盘。把校验提前到这里，
+            // 错误信息能直接指出「哪个文件第几条缺哪个字段」。
+            for (int i = 0; i < parsed.size(); i++) {
+                EvalItem item = parsed.get(i);
+                requireField(file, i, "id", item.id());
+                requireField(file, i, "question", item.question());
+                requireField(file, i, "gold_sql", item.goldSql());
+            }
+            return List.copyOf(parsed);
         } catch (IOException e) {
             throw new UncheckedIOException("评估集解析失败：" + file.toAbsolutePath(), e);
+        }
+    }
+
+    private static void requireField(Path file, int index, String field, String value) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalStateException(
+                    "评估集字段缺失：" + file.getFileName() + " 第 " + (index + 1) + " 条缺少 " + field
+                            + "（YAML 里必须写 gold_sql，写成 goldSql/gold-sql 会被静默忽略）");
         }
     }
 

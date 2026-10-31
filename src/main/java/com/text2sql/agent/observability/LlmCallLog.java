@@ -54,7 +54,8 @@ public class LlmCallLog implements AutoCloseable {
 
     private BufferedWriter writer;
     private Path currentFile;
-    private int written;
+    /** 计数在锁内自增、锁外读取，用 volatile 保证可见性。 */
+    private volatile int written;
 
     /**
      * 落库用的连接。为 null 表示只写文件。
@@ -91,32 +92,39 @@ public class LlmCallLog implements AutoCloseable {
      * @param prompt    完整 prompt；仅在 include-content 打开时写入
      * @param response  模型原始回复；同上
      */
-    public synchronized void record(LlmCallRecord record, String status, String prompt, String response) {
+    public void record(LlmCallRecord record, String status, String prompt, String response) {
         if (!enabled() || record == null) {
             return;
         }
+        Entry entry = new Entry(
+                LocalDateTime.now().format(TS),
+                record.model(),
+                status,
+                record.promptTokens(),
+                record.completionTokens(),
+                record.totalTokens(),
+                record.promptChars(),
+                record.latencyMs(),
+                record.costYuan(),
+                properties.getObservability().isIncludeContent() ? prompt : null,
+                properties.getObservability().isIncludeContent() ? response : null);
+
+        // 只有「写文件 + 计数」留在锁内：这两步是本地操作，耗时可忽略。
+        // 数据库写入移到锁外——它是网络往返，放进锁里会让所有并发请求
+        // 在这一个点上排队（早先整个方法都是 synchronized，正是这个问题）。
         try {
-            Entry entry = new Entry(
-                    LocalDateTime.now().format(TS),
-                    record.model(),
-                    status,
-                    record.promptTokens(),
-                    record.completionTokens(),
-                    record.totalTokens(),
-                    record.promptChars(),
-                    record.latencyMs(),
-                    record.costYuan(),
-                    properties.getObservability().isIncludeContent() ? prompt : null,
-                    properties.getObservability().isIncludeContent() ? response : null);
-            writer().write(jsonMapper.writeValueAsString(entry));
-            writer().newLine();
-            writer().flush();
-            written++;
-            recordToDatabase(entry);
+            synchronized (this) {
+                writer().write(jsonMapper.writeValueAsString(entry));
+                writer().newLine();
+                writer().flush();
+                written++;
+            }
         } catch (IOException e) {
             // 观测是旁路：写不进去只告警，不影响这次问数。
             log.warn("LLM 调用记录写入失败（不影响主链路）：{}", e.getMessage());
+            return;
         }
+        recordToDatabase(entry);
     }
 
     /**

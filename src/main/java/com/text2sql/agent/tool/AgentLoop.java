@@ -1,8 +1,10 @@
 package com.text2sql.agent.tool;
 
 import com.text2sql.agent.generation.GeneratedSql;
+import com.text2sql.agent.generation.GenerationException;
 import com.text2sql.agent.generation.LlmSqlGenerator;
 import com.text2sql.agent.generation.PromptTemplate;
+import com.text2sql.agent.generation.SqlExtractor;
 import com.text2sql.agent.observability.LlmCallRecord;
 import com.text2sql.agent.retrieval.SchemaContext;
 import org.slf4j.Logger;
@@ -96,9 +98,23 @@ public class AgentLoop {
 
             // 1. 如果模型给出了最终 SQL，直接终止循环
             if (toolCall != null && toolCall.type() == ToolType.FINAL_SQL) {
-                log.info("Agent 明确提交最终 SQL：{}", toolCall.argument());
-                finalSql = toolCall.argument();
-                break;
+                // 必须再过一次 SqlExtractor：`[FINAL_SQL]` 后面模型经常会附一段解释
+                // （prompt 本身就鼓励它说明口径），直接用整段当 SQL 会把解释也带进去，
+                // 校验层报 PARSE_ERROR，最后被归因成「模型写错 SQL」——归因就错了。
+                try {
+                    finalSql = SqlExtractor.extract(toolCall.argument());
+                    log.info("Agent 明确提交最终 SQL：{}", finalSql);
+                    break;
+                } catch (GenerationException e) {
+                    // 标签后没有可解析的 SQL。按「本轮无效」处理继续循环，
+                    // 而不是让整次请求失败：模型下一轮通常能改对。
+                    log.warn("Agent 输出了 [FINAL_SQL] 但其中没有可解析的 SQL：{}", e.getMessage());
+                    history.add(new AssistantMessage(step.rawOutput()));
+                    history.add(new UserMessage(
+                            "你在 [FINAL_SQL] 之后没有给出可解析的 SQL。请只输出一条完整的 SELECT 语句，例如：\n"
+                                    + "[FINAL_SQL] SELECT ... FROM ... WHERE ..."));
+                    continue;
+                }
             }
 
             // 2. 如果模型请求调用工具，执行工具并将结果追加为 Observation

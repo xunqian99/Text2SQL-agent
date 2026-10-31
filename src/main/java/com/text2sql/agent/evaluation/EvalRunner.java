@@ -132,10 +132,21 @@ public class EvalRunner implements ApplicationRunner {
 
         for (int i = 0; i < items.size(); i++) {
             EvalItem item = items.get(i);
-            ItemOutcome outcome = evaluateOne(item, dryRun);
+            // 单条评估必须做异常隔离。理由不是「代码可能写错」，而是**成本**：
+            // 一轮 200 条评估要花几分钟和真金白银，一条脏数据（YAML 漏写 question、
+            // gold_sql 为空、某个分支漏了 null 判断）如果能把整轮打挂，
+            // 结果是「钱花了、报告没有」。把它记成一条内部错误继续跑，
+            // 至少能拿到 199 条的有效结论，并且失败列表里能直接看到是哪条数据坏了。
+            ItemOutcome outcome;
+            try {
+                outcome = evaluateOne(item, dryRun);
+            } catch (Exception e) {
+                log.warn("评估条目 {} 处理异常，记为内部错误并继续：{}", item.id(), e.toString());
+                outcome = ItemOutcome.internalError(item, e.toString());
+            }
             outcomes.add(outcome);
             schemaTableCount = Math.max(schemaTableCount, outcome.schemaTableCount());
-            if (!outcome.correct()) {
+            if (!outcome.correct() && !outcome.goldBroken()) {
                 failures.add(new EvalReport.Failure(item.id(), item.difficulty(), item.tags(),
                         item.question(), outcome.status(), outcome.generatedSql(),
                         outcome.message(), outcome.latencyMs(), outcome.firstSql(),
@@ -144,9 +155,17 @@ public class EvalRunner implements ApplicationRunner {
             // 每 10 条打一行进度。200 条评估要跑几分钟，没有进度输出
             // 会让人怀疑进程是不是卡死了——这种不确定性会直接导致中途 Ctrl+C。
             if ((i + 1) % 10 == 0 || i == items.size() - 1) {
+                long graded = outcomes.stream().filter(o -> !o.goldBroken()).count();
                 long done = outcomes.stream().filter(ItemOutcome::correct).count();
-                log.info("进度 {}/{}，当前准确率 {}%", i + 1, items.size(), pct(done, outcomes.size()));
+                log.info("进度 {}/{}，当前准确率 {}%（已排除 gold 不可执行条目 {} 条）",
+                        i + 1, items.size(), pct(done, graded), outcomes.size() - graded);
             }
+        }
+
+        long goldBrokenCount = outcomes.stream().filter(ItemOutcome::goldBroken).count();
+        if (goldBrokenCount > 0) {
+            log.warn("本轮有 {} 条评估项的 gold_sql 执行失败，已从准确率分母中剔除——"
+                    + "这是评估集的问题，不是模型的问题，请修正 data/eval 里对应的 SQL", goldBrokenCount);
         }
 
         Map<String, EvalReport.Overall> byLayer = new LinkedHashMap<>();
@@ -187,7 +206,9 @@ public class EvalRunner implements ApplicationRunner {
 
     private EvalReport.Correction aggregateCorrection(List<ItemOutcome> outcomes) {
         int eligible = (int) outcomes.stream()
-                .filter(o -> !o.item().goldSql().isBlank())
+                // gold 自己跑不通的条目本来就没有可用的重试基线，不该算进「可重试样本」。
+                .filter(o -> !o.goldBroken())
+                .filter(o -> o.item().goldSql() != null && !o.item().goldSql().isBlank())
                 .count();
         int firstAttemptCorrect = (int) outcomes.stream().filter(ItemOutcome::firstAttemptCorrect).count();
         int retried = (int) outcomes.stream().filter(o -> o.attempts() > 1).count();
@@ -345,11 +366,11 @@ public class EvalRunner implements ApplicationRunner {
             LlmCallRecord combined = LlmCallRecord.combine(firstResponse.llmCall(), correctionCall);
             AgentResponse merged = mergeAttempts(firstResponse, correctedResponse, combined);
             return new ItemOutcome(item, merged, corrected, expected, correctedActual,
-                    firstResponse.sql(), 2, corrected, correctionCall, correct);
+                    firstResponse.sql(), 2, corrected, correctionCall, correct, false);
         }
 
         return new ItemOutcome(item, firstResponse, correct, expected, actual,
-                firstResponse.sql(), 1, false, null, correct);
+                firstResponse.sql(), 1, false, null, correct, false);
     }
 
     /**
@@ -446,17 +467,21 @@ public class EvalRunner implements ApplicationRunner {
 
     /** 把一组评估项聚合成指标。整体与分层共用这一个方法，保证口径一致。 */
     private EvalReport.Overall aggregate(List<ItemOutcome> outcomes) {
-        int total = outcomes.size();
-        int correct = (int) outcomes.stream().filter(ItemOutcome::correct).count();
-        int sqlValid = (int) outcomes.stream().filter(ItemOutcome::sqlValid).count();
-        int rewritten = (int) outcomes.stream().filter(ItemOutcome::rewritten).count();
+        // gold 本身跑不通的条目从分母里剔除。
+        // 否则「评估集写错了」会被算成「模型答错了」，准确率被一个与模型无关的
+        // 因素拉低，而且失败列表里还会显示成模型的问题，归因直接被带偏。
+        List<ItemOutcome> graded = outcomes.stream().filter(o -> !o.goldBroken()).toList();
+        int total = graded.size();
+        int correct = (int) graded.stream().filter(ItemOutcome::correct).count();
+        int sqlValid = (int) graded.stream().filter(ItemOutcome::sqlValid).count();
+        int rewritten = (int) graded.stream().filter(ItemOutcome::rewritten).count();
 
-        double avgPromptTokens = outcomes.stream()
+        double avgPromptTokens = graded.stream()
                 .mapToInt(ItemOutcome::promptTokens).average().orElse(0);
-        double avgCost = outcomes.stream().mapToDouble(ItemOutcome::costYuan).average().orElse(0);
-        double totalCost = outcomes.stream().mapToDouble(ItemOutcome::costYuan).sum();
+        double avgCost = graded.stream().mapToDouble(ItemOutcome::costYuan).average().orElse(0);
+        double totalCost = graded.stream().mapToDouble(ItemOutcome::costYuan).sum();
 
-        List<Long> latencies = outcomes.stream().map(ItemOutcome::latencyMs).sorted().toList();
+        List<Long> latencies = graded.stream().map(ItemOutcome::latencyMs).sorted().toList();
         double avgLatency = latencies.stream().mapToLong(Long::longValue).average().orElse(0);
 
         return new EvalReport.Overall(total, correct, ratio(correct, total),
@@ -603,14 +628,37 @@ public class EvalRunner implements ApplicationRunner {
             int attempts,
             boolean corrected,
             LlmCallRecord correctionCall,
-            boolean firstAttemptCorrect) {
+            boolean firstAttemptCorrect,
+            /**
+             * 这一条的 gold_sql 本身就跑不通。
+             *
+             * <p>它和「模型答错」必须分开：gold 坏掉时模型再怎么答也不可能对上，
+             * 计入准确率就等于用评估集的错误去惩罚模型。统计时这类条目
+             * 从分母里剔除，并单独报数。
+             */
+            boolean goldBroken) {
 
         static ItemOutcome goldBroken(EvalItem item, String message) {
             AgentResponse broken = AgentResponse.failed(item.question(),
                     AgentResponse.Status.EXECUTION_FAILED, item.goldSql(), "gold_sql 执行失败：" + message,
                     null, 0, List.of(), 0, null);
             return new ItemOutcome(item, broken, false, List.of(), List.of(),
-                    item.goldSql(), 1, false, null, false);
+                    item.goldSql(), 1, false, null, false, true);
+        }
+
+        /**
+         * 评估器自身处理这条数据时抛了异常（脏数据、漏 null 判断等）。
+         *
+         * <p>和 {@link #goldBroken} 分开记：gold 跑不通是**评估集的问题**，
+         * 内部异常是**评估器的问题**，两者的修法完全不同，混在一起会让归因失真。
+         */
+        static ItemOutcome internalError(EvalItem item, String message) {
+            String question = item.question() == null ? "" : item.question();
+            AgentResponse broken = AgentResponse.failed(question,
+                    AgentResponse.Status.GENERATION_FAILED, item.goldSql(), "评估器内部异常：" + message,
+                    null, 0, List.of(), 0, null);
+            return new ItemOutcome(item, broken, false, List.of(), List.of(),
+                    null, 1, false, null, false, false);
         }
 
         String difficulty() {

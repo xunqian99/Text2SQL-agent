@@ -5,6 +5,7 @@ import com.text2sql.agent.orchestrator.Text2SqlOrchestrator;
 import com.text2sql.agent.session.SessionStore;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -123,6 +124,12 @@ public class AskController {
             @NotBlank(message = "question 不能为空")
             @Size(max = 500, message = "question 长度不能超过 500")
             String question,
+            // sessionId 必须限长：持久化表的 session_id 是 VARCHAR(64)，
+            // 超长会在落库时被 PostgreSQL 拒绝，而那条失败只 log.warn，
+            // 表现为「会话历史莫名丢失」。在入口就拦住，比事后查日志便宜得多。
+            @Size(max = 64, message = "sessionId 长度不能超过 64")
+            @Pattern(regexp = "[A-Za-z0-9_.:-]*",
+                    message = "sessionId 只能包含字母、数字、下划线、点、冒号和短横线")
             String sessionId,
             Boolean endSession,
             String apiKey) {

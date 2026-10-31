@@ -148,10 +148,18 @@ public class SqlValidator {
                 violations.add(new ValidationResult.Violation(ValidationResult.Code.MISSING_LIMIT,
                         "结果集可能很大，必须显式指定 LIMIT"));
             } else {
-                applyLimit(select, properties.getDb().getMaxRows());
+                // 补的是 maxRows + 1 而不是 maxRows。
+                //
+                // 原因：执行层要知道「结果是被上限截断的，还是恰好这么多行」。
+                // 如果这里补 maxRows，数据库最多只会返回 maxRows 行，执行层
+                // 无论怎么多读一行都读不到，truncated 就永远是 false——
+                // 调用方会以为拿全了数据，而实际上还有更多行没返回。
+                // 补 maxRows+1 之后，执行层取到 maxRows+1 行即可判定截断，
+                // 再把多出来的那行丢掉，对外仍然是最多 maxRows 行。
+                applyLimit(select, properties.getDb().getMaxRows() + 1);
                 finalSql = select.toString();
                 rewritten = true;
-                log.debug("已自动补 LIMIT {}", properties.getDb().getMaxRows());
+                log.debug("已自动补 LIMIT {}（多取 1 行用于判定截断）", properties.getDb().getMaxRows() + 1);
             }
         }
 

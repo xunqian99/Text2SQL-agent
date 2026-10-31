@@ -49,6 +49,11 @@ public final class ResultNormalizer {
 
     /** 判断结果顺序是否承载语义。 */
     public static boolean orderMatters(String sql) {
+        // null 安全：评估集里 gold_sql 漏写/拼错键时这里是 null，
+        // 直接 toUpperCase 会把整轮评估以一条无上下文 NPE 打断。
+        if (sql == null) {
+            return false;
+        }
         String upper = sql.toUpperCase(Locale.ROOT);
         return upper.contains("ORDER BY") && upper.contains("LIMIT");
     }

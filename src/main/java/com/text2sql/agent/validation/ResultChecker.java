@@ -67,19 +67,32 @@ public class ResultChecker {
 
         // 规则 3：比率/百分比越界异常（Ratio Out of Bounds）
         // 问题问“率/比/占比”，若返回数值 > 100 或 < 0（除极个别特殊增长率外），通常为分子分母颠倒
+        //
+        // 【只检查「名字像比率」的列，不再扫描所有单元格】
+        // 早先这里对结果集的每一行每一列都做数值判断，后果很严重：
+        // 问「各州订单占比」时结果里同时带一列 order_count（SP 州 4 万单），
+        // 40000 > 100 直接判定越界 —— 正确答案被判可疑，触发一次重试；
+        // 而编排层的策略是「第二次成功就采用第二次」，于是一次错误重试
+        // 反而把原本正确的答案覆盖掉了，准确率不升反降。
+        // 现在改成：先按列名认出比率列，认不出来就不判（宁可少报，不可误报）。
         if (normQ.contains("率") || normQ.contains("比") || normQ.contains("占比") || normQ.contains("比例")) {
-            for (List<String> row : result.rows()) {
-                for (String val : row) {
-                    Double num = parseDouble(val);
-                    if (num != null) {
-                        // 如果是百分比（如 > 100 或 < 0）
-                        // 注意：增长率允许负数或 >100%，因此排除“增长率/环比/同比”
-                        boolean isGrowth = normQ.contains("增长") || normQ.contains("环比") || normQ.contains("同比");
-                        if (!isGrowth) {
-                            if (num < 0.0 || num > 100.0) {
+            // 增长率允许负数或 >100%，因此排除“增长率/环比/同比”
+            boolean isGrowth = normQ.contains("增长") || normQ.contains("环比") || normQ.contains("同比");
+            if (!isGrowth) {
+                List<Integer> ratioColumnIndexes = ratioColumnIndexes(result.columns());
+                if (!ratioColumnIndexes.isEmpty()) {
+                    for (List<String> row : result.rows()) {
+                        for (int columnIndex : ratioColumnIndexes) {
+                            if (columnIndex >= row.size()) {
+                                continue;
+                            }
+                            Double num = parseDouble(row.get(columnIndex));
+                            if (num != null && (num < 0.0 || num > 100.0)) {
                                 return CheckResult.suspicious(
                                         "RATIO_OUT_OF_BOUNDS",
-                                        "占比/比率计算结果（" + num + "）超出了合理的百分比范围 [0, 100]。请检查计算公式中的分子与分母是否颠倒。"
+                                        "占比/比率列「" + result.columns().get(columnIndex)
+                                                + "」的计算结果（" + num + "）超出了合理的百分比范围 [0, 100]。"
+                                                + "请检查计算公式中的分子与分母是否颠倒。"
                                 );
                             }
                         }
@@ -146,6 +159,29 @@ public class ResultChecker {
         }
 
         return CheckResult.NORMAL;
+    }
+
+    /**
+     * 认出结果集里哪些列是「比率列」。
+     *
+     * <p>判据只看列名，不看值：名字里带 rate / ratio / pct / percent / 占比 / 比例 / 率。
+     * 认不出来就返回空列表，调用方据此跳过整条规则——**不做"猜"**。
+     * 这条规则的定位是"锦上添花"，误报的代价（把正确答案重试掉）远大于漏报。
+     */
+    private static List<Integer> ratioColumnIndexes(List<String> columns) {
+        List<Integer> indexes = new java.util.ArrayList<>();
+        if (columns == null) {
+            return indexes;
+        }
+        for (int i = 0; i < columns.size(); i++) {
+            String name = columns.get(i) == null ? "" : columns.get(i).toLowerCase(Locale.ROOT);
+            if (name.contains("rate") || name.contains("ratio") || name.contains("pct")
+                    || name.contains("percent") || name.contains("占比")
+                    || name.contains("比例") || name.contains("率")) {
+                indexes.add(i);
+            }
+        }
+        return indexes;
     }
 
     private static Double parseDouble(String str) {

@@ -102,11 +102,40 @@ public class QuestionRewriter {
     }
 
     /**
+     * 改写结果。
+     *
+     * <p>为什么要带 {@code call} 与 {@code latencyMs}：改写本身是一次真实的模型调用
+     * （{@code rewrite-with-llm} 默认开启），它消耗 token、也占用响应时间。
+     * 早先这个方法的返回值只有字符串，这次调用的账目就被整条链路丢掉了，
+     * 导致 {@code /api/ask} 的 llm 统计、评估单题成本与生成延迟**每轮都少算一次调用**。
+     *
+     * @param question  改写后的问题（规则降级时是规则产物，无改写时是原问题）
+     * @param call      这次改写自身的模型调用记录；走规则降级时为 null
+     * @param latencyMs 改写耗时（毫秒）；走规则降级时为 0
+     */
+    public record RewriteOutcome(String question, com.text2sql.agent.observability.LlmCallRecord call, long latencyMs) {
+
+        static RewriteOutcome withoutLlm(String question) {
+            return new RewriteOutcome(question, null, 0L);
+        }
+    }
+
+    /**
      * 执行意图补全与改写。
+     *
+     * <p>兼容入口：只关心改写后的字符串时用它。需要把改写成本入账时用
+     * {@link #rewriteWithOutcome}。
      */
     public String rewrite(String question, ConversationSession session) {
+        return rewriteWithOutcome(question, session).question();
+    }
+
+    /**
+     * 执行意图补全与改写，并带回这次改写的调用账目。
+     */
+    public RewriteOutcome rewriteWithOutcome(String question, ConversationSession session) {
         if (!isFollowUp(question, session)) {
-            return question;
+            return RewriteOutcome.withoutLlm(question);
         }
 
         ConversationTurn lastTurn = session.lastTurn();
@@ -116,11 +145,14 @@ public class QuestionRewriter {
 
         // 优先使用 LLM 改写
         if (properties.getConversation().isRewriteWithLlm() && generator.isConfigured()) {
+            long rewriteStarted = System.nanoTime();
             try {
-                String llmRewritten = rewriteWithLlm(prevQuestion, lastTurn.sql(), question);
+                GeneratedSql result = rewriteWithLlm(prevQuestion, lastTurn.sql(), question);
+                long rewriteMs = (System.nanoTime() - rewriteStarted) / 1_000_000;
+                String llmRewritten = result == null ? null : cleanRewriteText(result.rawOutput());
                 if (llmRewritten != null && !llmRewritten.isBlank() && llmRewritten.length() < 300) {
                     log.info("LLM 意图补全改写: '{}' -> '{}'", question, llmRewritten);
-                    return llmRewritten;
+                    return new RewriteOutcome(llmRewritten, result.call(), rewriteMs);
                 }
             } catch (Exception e) {
                 log.warn("LLM 改写失败，降级为规则改写：{}", e.getMessage());
@@ -130,10 +162,22 @@ public class QuestionRewriter {
         // 规则补全降级
         String ruleRewritten = rewriteWithRules(prevQuestion, question);
         log.info("规则意图补全改写: '{}' -> '{}'", question, ruleRewritten);
-        return ruleRewritten;
+        return RewriteOutcome.withoutLlm(ruleRewritten);
     }
 
-    private String rewriteWithLlm(String prevQuestion, String prevSql, String currentQuestion) {
+    /** 清理模型改写结果里可能混进来的引号、前缀与空白。 */
+    private static String cleanRewriteText(String text) {
+        if (text == null) {
+            return null;
+        }
+        return text.trim()
+                .replaceAll("^[\"“'‘`]+", "")
+                .replaceAll("[\"”'’`]+$", "")
+                .replaceAll("^(改写后(的问题)?|补全后(的问题)?)[:：]\\s*", "")
+                .trim();
+    }
+
+    private GeneratedSql rewriteWithLlm(String prevQuestion, String prevSql, String currentQuestion) {
         String system = """
                 你是一个数据分析与 Text2SQL 系统的多轮对话意图补全助手。
                 请结合上一轮的问答上下文，将用户的追加提问（存在省略、代词指代、条件切换）补全为一个语义完整独立的单句分析问题。
@@ -151,17 +195,8 @@ public class QuestionRewriter {
                 """, prevQuestion, prevSql == null ? "无" : prevSql, currentQuestion);
 
         List<Message> messages = List.of(new SystemMessage(system), new UserMessage(user));
-        GeneratedSql result = generator.callMessages(messages, "CONVERSATION_REWRITE", null);
-        String text = result.rawOutput();
-        if (text == null) {
-            return null;
-        }
-        // 清理首尾可能产生的问号、引号或前缀
-        return text.trim()
-                .replaceAll("^[\"“'‘`]+", "")
-                .replaceAll("[\"”'’`]+$", "")
-                .replaceAll("^(改写后(的问题)?|补全后(的问题)?)[:：]\\s*", "")
-                .trim();
+        // 返回完整结果而不是 String：改写这次调用的 token/延迟要由调用方入账。
+        return generator.callMessages(messages, "CONVERSATION_REWRITE", null);
     }
 
     /**

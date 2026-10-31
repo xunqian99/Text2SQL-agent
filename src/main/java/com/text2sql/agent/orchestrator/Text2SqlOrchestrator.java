@@ -162,10 +162,15 @@ public class Text2SqlOrchestrator {
         boolean schemaReused = false;
         SchemaContext schema = null;
         long retrievalMs = 0;
+        long rewriteMs = 0;
+        com.text2sql.agent.observability.LlmCallRecord rewriteCall = null;
 
         if (convEnabled && questionRewriter.isFollowUp(question, session)) {
-            rewrittenQuestion = questionRewriter.rewrite(question, session);
+            var rewriteOutcome = questionRewriter.rewriteWithOutcome(question, session);
+            rewrittenQuestion = rewriteOutcome.question();
             effectiveQuestion = rewrittenQuestion;
+            rewriteCall = rewriteOutcome.call();
+            rewriteMs = rewriteOutcome.latencyMs();
             if (questionRewriter.canReuseSchema(question, session) && session.lastSchema() != null) {
                 schema = session.lastSchema();
                 schemaReused = true;
@@ -204,8 +209,8 @@ public class Text2SqlOrchestrator {
             var cachedSql = cache.get(cacheKey);
             if (cachedSql.isPresent()) {
                 log.info("语义缓存命中，跳过模型调用");
-                AgentResponse hit = validateAndExecute(question, cachedSql.get(), null, schema,
-                        tableCount, retrievedTables, ddlChars, retrievalMs, 0, totalStarted);
+                AgentResponse hit = validateAndExecute(question, cachedSql.get(), rewriteCall, schema,
+                        tableCount, retrievedTables, ddlChars, retrievalMs, rewriteMs, totalStarted);
                 if (hit.success()) {
                     if (convEnabled) {
                         recordConversationTurn(session, question, rewrittenQuestion, hit);
@@ -278,10 +283,14 @@ public class Text2SqlOrchestrator {
                 return fail;
             }
         }
-        long generationMs = elapsedMs(generationStarted);
+        long generationMs = elapsedMs(generationStarted) + rewriteMs;
 
-        AgentResponse first = validateAndExecute(question, generated.sql(), generated.call(), schema,
-                tableCount, retrievedTables, ddlChars, retrievalMs, generationMs, totalStarted);
+        // 把「多轮改写」那次调用的账并进本轮的生成账目。
+        // 改写是一次真实的模型调用：不合并的话，token 与成本每轮都会少算一次，
+        // 表现为「报告里的成本和实际账单对不上，差得不多但总有差值」。
+        AgentResponse first = validateAndExecute(question, generated.sql(),
+                com.text2sql.agent.observability.LlmCallRecord.combine(rewriteCall, generated.call()),
+                schema, tableCount, retrievedTables, ddlChars, retrievalMs, generationMs, totalStarted);
         AgentResponse result = retryIfFailed(generationQuestion, first, apiKey);
 
         if (cacheKey != null && result.success()) {
@@ -358,21 +367,50 @@ public class Text2SqlOrchestrator {
      * 配置指纹。
      *
      * <p>把「改了它，同一个问题就该得到不同 SQL」的开关都编进来：模型、prompt 版本、
-     * 检索开关与 Top-K、口径注入开关、LIMIT 模式。
+     * 检索开关与 Top-K、join 提示/清单/规划、桥接修复、列剪枝、口径注入、
+     * few-shot、数据画像/外键注入、工具侦察、LIMIT 模式、升级路由。
      *
      * <p>漏掉任何一个的后果都一样且难查：改了配置，旧答案继续被命中，
      * 表现成「配置改了但数字一点没动」。历史评估报告里因此一直记着 prompt 版本，
      * 这里用的是同一个理由。
+     *
+     * <p><b>这里踩过一次真实的坑</b>：最初只编了 retrieval.enabled/top-k、
+     * semantic.enabled、limit 模式和路由，漏了 join 提示、列剪枝、few-shot、
+     * 数据画像与外键、工具侦察这几类。结果是「打开 few-shot 重跑消融，数字纹丝不动」——
+     * 因为命中的全是关掉 few-shot 时缓存下来的 SQL。评估里最难发现的错误就是这种：
+     * 报告格式完全正常，只是数字是上一次配置的。
+     *
+     * <p>加字段的原则：**只要它会影响模型看到的内容或最终 SQL 的形状，就必须进指纹**。
      */
-    private String cacheSignature() {
-        return "%s|%s|r=%b:%d|s=%b|limit=%s|esc=%s".formatted(
-                properties.getLlm().getModel(),
-                com.text2sql.agent.generation.PromptTemplate.VERSION,
-                properties.getRetrieval().isEnabled(),
-                properties.getRetrieval().getTopK(),
-                properties.getSemantic().isEnabled(),
-                properties.getGuard().getLimitMode().name(),
-                properties.getRouting().isEnabled() ? properties.getRouting().getEscalationModel() : "-");
+    String cacheSignature() {
+        var retrieval = properties.getRetrieval();
+        var prompt = properties.getPrompt();
+        var fewshot = properties.getFewshot();
+        var toolUse = properties.getToolUse();
+        var guard = properties.getGuard();
+        var routing = properties.getRouting();
+        return "%s|%s|r=%b:%d:%b:%b:%b:%b|prune=%b|s=%b|fs=%b:%d|dp=%b|fk=%b|tu=%b|limit=%s:%d|esc=%s"
+                .formatted(
+                        properties.getLlm().getModel(),
+                        com.text2sql.agent.generation.PromptTemplate.VERSION,
+                        retrieval.isEnabled(),
+                        retrieval.getTopK(),
+                        retrieval.isJoinHintsEnabled(),
+                        retrieval.isJoinListEnabled(),
+                        retrieval.isJoinPlanEnabled(),
+                        retrieval.isBridgeRepairEnabled(),
+                        retrieval.isColumnPruningEnabled(),
+                        properties.getSemantic().isEnabled(),
+                        fewshot.isEnabled(),
+                        fewshot.getMaxExamples(),
+                        prompt.isIncludeDataProfile(),
+                        prompt.isIncludeForeignKeys(),
+                        toolUse.isEnabled(),
+                        guard.getLimitMode().name(),
+                        // max-rows 也要进指纹：APPEND 模式下补的 LIMIT 就是由它算出来的，
+                        // 改了它缓存里的旧 SQL 仍然带着旧上限。
+                        properties.getDb().getMaxRows(),
+                        routing.isEnabled() ? routing.getEscalationModel() : "-");
     }
 
     /**

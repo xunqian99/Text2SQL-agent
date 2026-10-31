@@ -38,7 +38,31 @@ public class SessionStore {
 
     private final AgentProperties properties;
     private final JdbcTemplate db;
-    private final Map<String, ConversationSession> cache = new ConcurrentHashMap<>();
+
+    /**
+     * 会话内存缓存。
+     *
+     * <p><b>为什么必须有容量上限</b>：`sessionId` 由调用方提供，
+     * 而 {@link #getOrCreate} 是「先建会话、后生成 SQL」，所以**失败的请求也会占位**。
+     * 早先这里是无界 ConcurrentHashMap，只靠 30 分钟的定时任务清理——
+     * 在这 30 分钟里，脚本只要不停换 sessionId 就能堆任意多个会话，
+     * 每个会话还持有整份 {@link com.text2sql.agent.retrieval.SchemaContext}。
+     * 这与 BYOK 客户端池曾经的问题属于同一类：内存占用由外部输入决定。
+     *
+     * <p>改为 LRU（accessOrder=true）+ 上限，超限时淘汰最久未使用的会话。
+     * 淘汰前不落库——能活到被 LRU 挤出去的多半是低价值会话，
+     * 而为它们各写一次数据库反而会拖慢主流程。
+     */
+    private static final int MAX_CACHED_SESSIONS = 1000;
+
+    private final Map<String, ConversationSession> cache = java.util.Collections.synchronizedMap(
+            new LinkedHashMap<>(16, 0.75f, true) {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<String, ConversationSession> eldest) {
+                    return size() > MAX_CACHED_SESSIONS;
+                }
+            });
+
     private volatile boolean tablesInitialized = false;
 
     public SessionStore(AgentProperties properties) {
@@ -93,12 +117,15 @@ public class SessionStore {
             return Optional.empty();
         }
 
+        // 已经关过就不再落库一次。否则同一个会话被关闭两次（前端重试、脚本重复调用）
+        // 会把同样的轮次再写一遍，历史里出现重复。
+        boolean alreadyClosed = session.isClosed();
         session.close();
 
-        if (db != null) {
+        if (db != null && !alreadyClosed) {
             ensureTables();
             persistToDb(session);
-        } else {
+        } else if (db == null) {
             log.info("会话 {} 结束（未启用持久化连接，仅保留内存关闭状态）", sessionId);
         }
 
@@ -110,25 +137,37 @@ public class SessionStore {
      */
     public int cleanExpired(Duration timeout) {
         Instant threshold = Instant.now().minus(timeout);
-        int evicted = 0;
-        for (Map.Entry<String, ConversationSession> entry : cache.entrySet()) {
+
+        // 先在锁内挑出过期项的快照，再在锁外做落库。
+        // 不直接边遍历边 remove：LinkedHashMap 的迭代器是 fail-fast，
+        // 遍历中修改会抛 ConcurrentModificationException；
+        // 也不在锁内落库：那是网络 I/O，会把整个会话存储卡住。
+        List<Map.Entry<String, ConversationSession>> expired;
+        synchronized (cache) {
+            expired = cache.entrySet().stream()
+                    // 用 !isAfter（即 <=）而不是 isBefore：超时为 0 时 threshold 就等于“此刻”，
+                    // 严格小于会把「恰好落在阈值上」的会话漏掉，使清理结果依赖于两次
+                    // Instant.now() 是否落在同一个时钟刻度（测试里表现为偶发失败）。
+                    .filter(e -> !e.getValue().lastActiveAt().isAfter(threshold))
+                    .toList();
+        }
+
+        for (Map.Entry<String, ConversationSession> entry : expired) {
             ConversationSession session = entry.getValue();
-            // 用 !isAfter（即 <=）而不是 isBefore：超时为 0 时 threshold 就等于“此刻”，
-            // 严格小于会把「恰好落在阈值上」的会话漏掉，使清理结果依赖于两次
-            // Instant.now() 是否落在同一个时钟刻度（测试里表现为偶发失败）。
-            if (!session.lastActiveAt().isAfter(threshold)) {
-                if (!session.isClosed()) {
-                    session.close();
-                    if (db != null) {
-                        ensureTables();
-                        persistToDb(session);
-                    }
+            if (!session.isClosed()) {
+                session.close();
+                if (db != null) {
+                    ensureTables();
+                    persistToDb(session);
                 }
-                cache.remove(entry.getKey());
-                evicted++;
+            }
+            // 用 remove(key, value) 而不是 remove(key)：如果这期间同名会话被重新创建，
+            // 不能把新的那个误删。
+            synchronized (cache) {
+                cache.remove(entry.getKey(), session);
             }
         }
-        return evicted;
+        return expired.size();
     }
 
     /**
@@ -155,7 +194,11 @@ public class SessionStore {
             return;
         }
         log.info("容器停止中，正在将内存中的多轮会话持久化入库...");
-        for (ConversationSession session : cache.values()) {
+        List<ConversationSession> snapshot;
+        synchronized (cache) {
+            snapshot = new ArrayList<>(cache.values());
+        }
+        for (ConversationSession session : snapshot) {
             if (!session.isClosed()) {
                 session.close();
                 ensureTables();
@@ -165,7 +208,9 @@ public class SessionStore {
     }
 
     public int activeCount() {
-        return (int) cache.values().stream().filter(s -> !s.isClosed()).count();
+        synchronized (cache) {
+            return (int) cache.values().stream().filter(s -> !s.isClosed()).count();
+        }
     }
 
     public void clearMemory() {
@@ -211,6 +256,17 @@ public class SessionStore {
             String lastQ = lastTurn != null ? lastTurn.question() : "";
             String status = session.isClosed() ? "CLOSED" : "ACTIVE";
 
+            // 先算出这个 session_id 在库里已有的最大轮次号，新轮次从它之后接着编号。
+            //
+            // 早先这里用的是「先 DELETE 再 INSERT」的幂等重写。幂等没问题，
+            // 但它有一个真实的数据丢失场景：用户结束会话（已落库）后，
+            // 前端又用**同一个 sessionId**发起新一轮对话——getOrCreate 会新建实例，
+            // 再次结束时 DELETE 会把上一段已经落库的历史整段删掉，而且只留一条
+            // 「落库成功」的日志，谁也不会发现历史少了。
+            // 改成追加式编号后，同一 session_id 的多段对话都留在库里的不同轮次上。
+            int offset = existingTurnCount(session.sessionId());
+            int totalTurns = offset + session.turns().size();
+
             db.update("""
                 INSERT INTO conversation_session(session_id, created_at, closed_at, turn_count, last_question, status)
                 VALUES (?, ?, ?, ?, ?, ?)
@@ -223,13 +279,10 @@ public class SessionStore {
                 session.sessionId(),
                 Timestamp.from(session.createdAt()),
                 Timestamp.from(session.lastActiveAt()),
-                session.turns().size(),
+                totalTurns,
                 lastQ,
                 status
             );
-
-            // 删除旧轮次，保证幂等重写
-            db.update("DELETE FROM conversation_turn WHERE session_id = ?", session.sessionId());
 
             for (ConversationTurn turn : session.turns()) {
                 db.update("""
@@ -237,7 +290,7 @@ public class SessionStore {
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                     session.sessionId(),
-                    turn.turnIndex(),
+                    turn.turnIndex() + offset,
                     turn.question(),
                     turn.rewrittenQuestion(),
                     turn.sql(),
@@ -246,9 +299,23 @@ public class SessionStore {
                     Timestamp.from(turn.createdAt())
                 );
             }
-            log.info("会话 {} 成功持久化入库，共 {} 轮对话", session.sessionId(), session.turns().size());
+            log.info("会话 {} 成功持久化入库，本次 {} 轮（累计 {} 轮）",
+                    session.sessionId(), session.turns().size(), totalTurns);
         } catch (Exception e) {
             log.warn("会话 {} 落库失败（不影响主响应）：{}", session.sessionId(), e.getMessage());
+        }
+    }
+
+    /** 查这个 session_id 已经落库的轮次数（用作新轮次的编号偏移）。失败时按 0 处理。 */
+    private int existingTurnCount(String sessionId) {
+        try {
+            Integer max = db.queryForObject(
+                    "SELECT COALESCE(MAX(turn_index), 0) FROM conversation_turn WHERE session_id = ?",
+                    Integer.class, sessionId);
+            return max == null ? 0 : max;
+        } catch (Exception e) {
+            log.warn("查询会话 {} 历史轮次失败，按 0 处理：{}", sessionId, e.getMessage());
+            return 0;
         }
     }
 
@@ -267,8 +334,14 @@ public class SessionStore {
     public List<SessionSummary> listSessions() {
         Map<String, SessionSummary> map = new LinkedHashMap<>();
 
-        // 1. 内存中活跃或近期的会话优先
-        cache.values().stream()
+        // 1. 内存中活跃或近期的会话优先。
+        //    先同步拷一份快照再排序：cache 现在是同步包装的 LinkedHashMap，
+        //    直接流式遍历会在并发写入时抛 ConcurrentModificationException。
+        List<ConversationSession> snapshot;
+        synchronized (cache) {
+            snapshot = new ArrayList<>(cache.values());
+        }
+        snapshot.stream()
                 .sorted((a, b) -> b.lastActiveAt().compareTo(a.lastActiveAt()))
                 .forEach(s -> {
                     String title = s.turns().isEmpty() ? "新会话" : s.turns().get(0).question();

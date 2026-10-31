@@ -140,7 +140,8 @@ class SqlValidatorTest {
         assertThat(result.valid()).isTrue();
         assertThat(result.rewritten()).isTrue();
         // 关键断言：返回的 sql 就是真正要执行的 sql，不是原始输入。
-        assertThat(result.sql().toUpperCase()).contains("LIMIT 200");
+        // 补的是 maxRows+1：多取一行用于执行层判定「是否被截断」。
+        assertThat(result.sql().toUpperCase()).contains("LIMIT 201");
     }
 
     @Test
@@ -173,7 +174,7 @@ class SqlValidatorTest {
 
         assertThat(result.valid()).isTrue();
         assertThat(result.rewritten()).isTrue();
-        assertThat(result.sql().toUpperCase()).contains("UNION").contains("LIMIT 200");
+        assertThat(result.sql().toUpperCase()).contains("UNION").contains("LIMIT 201");
     }
 
     @Test
@@ -192,14 +193,14 @@ class SqlValidatorTest {
         // 解析器在这里是不对称的：带 ORDER BY 时 LIMIT 挂在外层
         // SetOperationList 上，不带 ORDER BY 时挂最后一个子查询上。
         // 两种形态都必须识别为「已有 LIMIT」，否则会被拼成
-        // "... LIMIT 5 LIMIT 200"，PostgreSQL 直接报 42601。
+        // "... LIMIT 5 LIMIT 201"，PostgreSQL 直接报 42601。
         ValidationResult result = validator.validate(
                 "SELECT order_id FROM orders UNION SELECT order_id FROM orders ORDER BY order_id LIMIT 5",
                 schema);
 
         assertThat(result.valid()).isTrue();
         assertThat(result.rewritten()).isFalse();
-        assertThat(result.sql().toUpperCase()).doesNotContain("LIMIT 200");
+        assertThat(result.sql().toUpperCase()).doesNotContain("LIMIT 201");
     }
 
     @Test
@@ -213,7 +214,7 @@ class SqlValidatorTest {
 
         assertThat(result.valid()).isTrue();
         assertThat(result.rewritten()).isTrue();
-        assertThat(result.sql().toUpperCase()).contains("LIMIT 200");
+        assertThat(result.sql().toUpperCase()).contains("LIMIT 201");
     }
 
     @Test

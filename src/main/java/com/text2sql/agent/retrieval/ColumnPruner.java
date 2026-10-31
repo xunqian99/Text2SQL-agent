@@ -65,7 +65,12 @@ public class ColumnPruner {
         }
 
         Glossary glossary = glossaryLoader != null ? glossaryLoader.get() : null;
-        String qLower = question != null ? question.toLowerCase(Locale.ROOT) : "";
+        // 统一在这里把 null 收敛成空串，后面所有分支都直接用它。
+        // 早先只在这一行做了判空，下面别名匹配处又直接用了原始 question，
+        // 于是「传 null」这条路径在开列剪枝时必 NPE——同一个方法里两套 null 语义，
+        // 是最容易被漏掉的一类不一致。
+        String safeQuestion = question == null ? "" : question;
+        String qLower = safeQuestion.toLowerCase(Locale.ROOT);
         Set<String> normalizedTargets = new HashSet<>();
         if (targetTableNames != null) {
             targetTableNames.forEach(t -> normalizedTargets.add(t.toLowerCase(Locale.ROOT)));
@@ -166,11 +171,13 @@ public class ColumnPruner {
                 if (tableGlossary != null && tableGlossary.columns() != null) {
                     Glossary.ColumnEntry colEntry = tableGlossary.columns().get(col.name());
                     if (colEntry != null) {
-                        if (colEntry.aliases() != null && colEntry.aliases().stream().anyMatch(a -> !a.isBlank() && question.contains(a))) {
+                        if (colEntry.aliases() != null && colEntry.aliases().stream()
+                                .anyMatch(a -> a != null && !a.isBlank() && safeQuestion.contains(a))) {
                             keepCols.add(colLower);
                             continue;
                         }
-                        if (colEntry.enumValues() != null && colEntry.enumValues().stream().anyMatch(e -> e.label() != null && question.contains(e.label()))) {
+                        if (colEntry.enumValues() != null && colEntry.enumValues().stream()
+                                .anyMatch(e -> e.label() != null && safeQuestion.contains(e.label()))) {
                             keepCols.add(colLower);
                         }
                     }
@@ -178,7 +185,7 @@ public class ColumnPruner {
             }
 
             // 4.5 时间/时序语义感知保全：当用户问题包含时间、周期或时长语义时，保全表内的时间戳与日期列
-            if (isTemporalQuestion(question)) {
+            if (isTemporalQuestion(safeQuestion)) {
                 for (SchemaContext.Column col : table.columns()) {
                     String colLower = col.name().toLowerCase(Locale.ROOT);
                     String typeLower = col.type() != null ? col.type().toLowerCase(Locale.ROOT) : "";
@@ -216,9 +223,15 @@ public class ColumnPruner {
             prunedTotalCols += finalCols.size();
         }
 
-        log.debug("动态列级剪枝完成：总列数 {} -> {}（压缩率 {:.1f}%）",
+        // 占位符只能是 {}，不能写 {:.1f}——SLF4J 不认 printf 风格，
+        // 写错时它不是报错，而是把压缩率这个数字**静默丢掉**，
+        // 于是"Token 压缩 30%~50%"这个本该被证明的指标永远不会出现在日志里。
+        log.debug("动态列级剪枝完成：总列数 {} -> {}（压缩率 {}%）",
                 originalTotalCols, prunedTotalCols,
-                originalTotalCols > 0 ? (100.0 * (originalTotalCols - prunedTotalCols) / originalTotalCols) : 0.0);
+                String.format(Locale.ROOT, "%.1f",
+                        originalTotalCols > 0
+                                ? (100.0 * (originalTotalCols - prunedTotalCols) / originalTotalCols)
+                                : 0.0));
 
         return prunedList;
     }
