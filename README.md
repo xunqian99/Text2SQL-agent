@@ -108,14 +108,25 @@ Get-Content scripts/check_counts.sql | docker exec -i text2sql-postgres psql -U 
 默认支持任意兼容 OpenAI 协议的模型（如 DeepSeek、通义千问、百度千帆等）。
 
 ```powershell
-# 设置模型 API Key（以 DeepSeek 为例）
+# 方式一（推荐）：用环境变量提供 Key，Key 不落盘
 $env:AGENT_LLM_API_KEY = "sk-xxxxxxxxxxxxxxxxxxxxxxxx"
 
 # 启动 Spring Boot 应用
 mvn spring-boot:run
 ```
 
-> **运行测试**：`mvn test`（共 **255** 项，全部通过）。Mockito 5 需要的
+```powershell
+# 方式二：用 local profile（application-local.yml 里已内置 Key，
+# 该文件在 .gitignore 中，不会进仓库）
+mvn spring-boot:run "-Dspring-boot.run.arguments=--spring.profiles.active=local"
+```
+
+> **注意**：Key 只认这两个来源——环境变量 `AGENT_LLM_API_KEY`，或 `local` profile 下的
+> `application-local.yml`。两者都没有时应用**照常启动**，但 `/api/ask` 会返回
+> `503 NOT_CONFIGURED`。这是刻意的设计（数据库/校验/评估链路可以离线自检），
+> 但也是第一次跑最容易踩的坑：`/api/health` 里 `llmConfigured:false` 就是它。
+
+> **运行测试**：`mvn test`（共 **269** 项，全部通过）。Mockito 5 需要的
 > JVM 自附加参数已经固化在 `pom.xml` 的 surefire 配置里，**不需要再手动加参数**。
 
 > 历史上这里记录过两个问题：`mvn test` 裸跑会因 Mockito 自附加失败，
@@ -175,9 +186,14 @@ Invoke-RestMethod -Method Post -Uri http://localhost:8080/api/ask `
 # 1. 离线快速链路自检（dry-run，不调用大模型，验证解析与执行链路）
 mvn spring-boot:run "-Dspring-boot.run.arguments=--agent.eval.enabled=true --agent.eval.dry-run=true"
 
-# 2. 真实大模型端到端评估（100 条 Eval 集）
-mvn spring-boot:run "-Dspring-boot.run.arguments=--agent.eval.enabled=true --agent.eval.split=eval --agent.retrieval.enabled=true"
+# 2. 真实大模型端到端评估（eval 集 100 条）
+#    需要 Key：用 local profile（内置 Key）或先设 $env:AGENT_LLM_API_KEY
+mvn spring-boot:run "-Dspring-boot.run.arguments=--spring.profiles.active=local --agent.eval.enabled=true --agent.eval.split=eval"
 ```
+
+> 上面第 2 条就是产出 **84%（最新复跑 85%）** 这条数字的命令，配置与
+> `reports/eval-20261008-185229.json` 一致。不需要再手动加
+> `--agent.retrieval.enabled` 之类的参数——`application-local.yml` 里已经全开。
 
 ---
 
@@ -212,7 +228,7 @@ mvn spring-boot:run "-Dspring-boot.run.arguments=--agent.eval.enabled=true --age
 └── src/
     ├── main/java/...       # 核心业务源码（接入/编排/检索/生成/校验/执行/缓存/会话）
     ├── main/resources/     # 配置文件、语义指标库与极简前端页面
-    └── test/java/...       # 255 项全绿自动化单元与对抗性测试
+    └── test/java/...       # 269 项全绿自动化单元与对抗性测试
 ```
 
 
