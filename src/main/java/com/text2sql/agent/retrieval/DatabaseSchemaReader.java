@@ -78,7 +78,7 @@ public class DatabaseSchemaReader {
      * 读取外键关系。
      *
      * <p>为什么值得单独查：外键是**数据库自己声明的真相**，比任何文档都可靠。
-     * 阶段 1 把它当提示给模型，阶段 3 会用它构图算最短路径。
+     * 阶段 1 把它当提示给模型，阶段 3 会用它构图构造生成树。
      */
     public List<SchemaContext.ForeignKey> readForeignKeys() {
         String sql = """

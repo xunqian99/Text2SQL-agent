@@ -229,7 +229,7 @@ class JoinPathPlannerTest {
 
     @Test
     @DisplayName("planForTargets：仅保留连接目标表的最短主干边，排除未涉及的候选表")
-    void planForTargetsExtractsMinimalSteinerPath() {
+    void planForTargetsExtractsMinimalSpanningTree() {
         // 图结构:
         // orders -> customers -> regions
         // orders -> sellers
