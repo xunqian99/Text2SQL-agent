@@ -6,12 +6,12 @@ param(
 )
 
 if (-not $DryRun -and -not $env:AGENT_LLM_API_KEY) {
-  Write-Error "真实评估需要 AGENT_LLM_API_KEY（或 application-local.yml 的 api-key）。dry-run 可加 -DryRun。"
+  Write-Error "AGENT_LLM_API_KEY is required for a real eval. Use -DryRun for the offline self-check."
   exit 1
 }
 
-$arguments = "--spring.profiles.active=local --server.port=$Port --agent.eval.enabled=true --agent.eval.split=$Split --agent.eval.limit=$Limit"
-if ($DryRun) { $arguments += " --agent.eval.dry-run=true" }
+$mavenArgs = "--spring.profiles.active=local --server.port=$Port --agent.eval.enabled=true --agent.eval.split=$Split --agent.eval.limit=$Limit"
+if ($DryRun) { $mavenArgs += " --agent.eval.dry-run=true" }
 
-Write-Host "mvn spring-boot:run `"-Dspring-boot.run.arguments=$arguments`""
-mvn spring-boot:run "-Dspring-boot.run.arguments=$arguments"
+Write-Host "Running Maven eval (split=$Split, limit=$Limit, dryRun=$DryRun)..."
+mvn spring-boot:run "-Dspring-boot.run.arguments=$mavenArgs"

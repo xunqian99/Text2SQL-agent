@@ -251,9 +251,11 @@ mvn spring-boot:run "-Dspring-boot.run.arguments=--spring.profiles.active=local 
 ### 一键复现
 
 ```powershell
-powershell -File scripts/run_eval.ps1 -Split eval
-powershell -File scripts/run_eval.ps1 -Split all -DryRun
+powershell -ExecutionPolicy Bypass -File scripts/run_eval.ps1 -Split eval
+powershell -ExecutionPolicy Bypass -File scripts/run_eval.ps1 -Split all -DryRun
 ```
+
+> Windows PowerShell 默认执行策略可能拦截未签名脚本；`-ExecutionPolicy Bypass` 只对本次进程生效，不需要改系统策略。
 
 ```bash
 bash scripts/run_eval.sh eval
