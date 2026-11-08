@@ -10,23 +10,26 @@
 > - [`eval-20261108-212550.json`](eval-20261108-212550.json) —— 第二次 86%
 > - [`token-summary-20261108.json`](token-summary-20261108.json) —— 第一次 101 次 / 240,061 token
 > - [`token-summary-20261108-run2.json`](token-summary-20261108-run2.json) —— 第二次 101 次 / 238,524 token
-> - [`cost-20261108.json`](cost-20261108.json) —— 本项目逐条 JSONL 成本（历史两次上限 + 3 条 cache-aware smoke）
+> - [`eval-20261108-221405.json`](eval-20261108-221405.json) —— 第三次 84%（cache-aware 全量）
+> - [`token-summary-20261108-cachefull.json`](token-summary-20261108-cachefull.json) —— 第三次 102 次 / 248,428 token，cache 命中 89.27%
+> - [`cost-20261108.json`](cost-20261108.json) —— 本项目逐条 JSONL 成本（历史两次上限 + cache-aware smoke/全量）
 >
 > 历史 84% / 85% 报告已本地归档到 `_archive/20261108-205341/reports/`（不入库），数字保留在
 > [docs/EVALUATION.md](../docs/EVALUATION.md)。
 
-## 0. 2026-11-08 两次独立运行（当前主口径）
+## 0. 2026-11-08 三次独立运行（当前主口径）
 
 | 报告 | 配置 | 执行准确率 | SQL 有效 | 平均 prompt token | 平均 / P95 |
 |---|---|---|---:|---:|---:|---:|
 | [`eval-20261108-210214.json`](eval-20261108-210214.json) | deepseek-flash / p8 / local / eval 100（第一次） | **85.00% (85/100)** | 100% | 1966.58 | 3658 / 12607ms |
 | [`eval-20261108-212550.json`](eval-20261108-212550.json) | deepseek-flash / p8 / local / eval 100（第二次） | **86.00% (86/100)** | 100% | 1971.09 | 3532 / 12064ms |
+| [`eval-20261108-221405.json`](eval-20261108-221405.json) | deepseek-flash / p8 / local / eval 100（第三次，cache-aware） | **84.00% (84/100)** | 100% | 1994.36 | 4021 / 17265ms |
 | [`eval-20261108-211110-dryrun.json`](eval-20261108-211110-dryrun.json) | dry-run / local / 200（修复后） | **100.00% (200/200)** | 100% | 0 | 75 / 317ms |
 | [`eval-20261108-205522-dryrun.json`](eval-20261108-205522-dryrun.json) | dry-run / local / 200（修复前） | 96.00% (192/200) | 96% | 0 | 60 / 278ms |
 
-Token 汇总：第一次 [`token-summary-20261108.json`](token-summary-20261108.json)（101 次：prompt 196,658 + completion 43,403 = 240,061）；第二次 [`token-summary-20261108-run2.json`](token-summary-20261108-run2.json)（101 次：prompt 197,109 + completion 41,415 = 238,524）。
+Token 汇总：第一次 [`token-summary-20261108.json`](token-summary-20261108.json)（101 次：prompt 196,658 + completion 43,403 = 240,061）；第二次 [`token-summary-20261108-run2.json`](token-summary-20261108-run2.json)（101 次：prompt 197,109 + completion 41,415 = 238,524）；第三次 [`token-summary-20261108-cachefull.json`](token-summary-20261108-cachefull.json)（102 次：prompt 199,436 + completion 48,992 = 248,428，cache 命中 89.27%，成本 ¥0.2209）。
 
-两次失败集合 12/15 重合；并集 17 条。
+三次并集 18 条，12 条三次都失败；单题波动 6 条。
 
 历史报告已本地归档到 `_archive/20261108-205341/reports/`（不入库）；本目录只保留当前主口径与 dry-run 自检。
 
