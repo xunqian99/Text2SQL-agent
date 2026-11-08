@@ -1238,9 +1238,6 @@ public class AgentProperties {
          */
         private int repeat = 1;
 
-        /** 是否用 Java 侧重新执行 gold_sql（而不是直接读 gold_results.json 快照）。 */
-        private boolean recomputeGold = true;
-
         /** 阶段 5：评估中是否启用自纠错重试。默认关闭，保持已有基线可复现。 */
         private boolean selfCorrectionEnabled = false;
 
@@ -1348,14 +1345,6 @@ public class AgentProperties {
 
         public void setRepeat(int repeat) {
             this.repeat = repeat;
-        }
-
-        public boolean isRecomputeGold() {
-            return recomputeGold;
-        }
-
-        public void setRecomputeGold(boolean recomputeGold) {
-            this.recomputeGold = recomputeGold;
         }
 
         public boolean isSelfCorrectionEnabled() {

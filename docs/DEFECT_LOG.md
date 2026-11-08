@@ -88,3 +88,9 @@
 3. **"别用修改标准答案让系统变好看"**：有 6 条失败查明是 gold SQL 里写了无关 join
    （4 条悬空行数为 0、2 条会过滤掉 775 个无明细订单）。我没有改 gold，
    因为那会让 47%→52%→62%→71%→84% 这条曲线失去可比性——只把它记录成评估集缺陷。
+
+## 九、2026-11-08 补充：CTE 数据修改 / FROM 表函数（H2/H4）
+
+- 实测绕过：`WITH x AS (DELETE FROM orders RETURNING *) SELECT * FROM x` 的最外层是 `PlainSelect`，只判 `instanceof Select` 会放行；`SELECT * FROM dblink(...)` / `pg_ls_dir(...)` 走 `FromItemVisitor`，函数黑名单覆盖不到。
+- 修法：`SqlValidator.collectCteAndFromViolations` 检查 `WithItem.getStatement()`（避免 DML CTE 的 `ClassCastException`）与 FROM 的 `TableFunction`；`ToolExecutor.CHECK_JOIN` 强制 `表.列 = 表.列` 并校验真实列。
+- 回归：新增 6 条对抗用例，`AdversarialSqlTest` 47 → 53；`mvn test` 280/0/0/0；dry-run 200/200。

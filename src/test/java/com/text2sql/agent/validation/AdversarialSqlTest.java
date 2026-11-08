@@ -288,4 +288,36 @@ class AdversarialSqlTest {
 
         assertThat(result.valid()).as("必须拒绝：%s", sql).isFalse();
     }
+
+    // ------------------------------------------------------------------
+    // 3. 数据修改 CTE / FROM 表函数：顶层像 SELECT 的绕过
+    // ------------------------------------------------------------------
+
+    @ParameterizedTest(name = "数据修改 CTE 被拦截：{0}")
+    @ValueSource(strings = {
+            "WITH x AS (DELETE FROM orders RETURNING *) SELECT * FROM x",
+            "WITH x AS (INSERT INTO orders (order_id) VALUES ('1') RETURNING *) SELECT * FROM x",
+            "WITH x AS (UPDATE orders SET order_status = 'x' RETURNING *) SELECT * FROM x",
+    })
+    void rejectsDataModifyingCte(String sql) {
+        ValidationResult result = validator.validate(sql, schema);
+
+        assertThat(result.valid()).as("必须拦下：%s", sql).isFalse();
+        assertThat(result.violations()).extracting(ValidationResult.Violation::code)
+                .contains(ValidationResult.Code.NOT_SELECT);
+    }
+
+    @ParameterizedTest(name = "FROM 表函数被拦截：{0}")
+    @ValueSource(strings = {
+            "SELECT * FROM dblink('host=x', 'SELECT 1') AS r(a int)",
+            "SELECT * FROM pg_ls_dir('/')",
+            "SELECT * FROM pg_stat_file('/etc/passwd')",
+    })
+    void rejectsTableFunctionsInFrom(String sql) {
+        ValidationResult result = validator.validate(sql, schema);
+
+        assertThat(result.valid()).as("必须拦下：%s", sql).isFalse();
+        assertThat(result.violations()).extracting(ValidationResult.Violation::code)
+                .contains(ValidationResult.Code.FORBIDDEN_FUNCTION);
+    }
 }

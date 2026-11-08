@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Matcher;
 
 /**
  * 侦察工具执行中心。
@@ -170,7 +171,59 @@ public class ToolExecutor {
         String t2 = parts[1].strip().toLowerCase(Locale.ROOT);
         String onCondition = parts[2].strip();
 
-        String testSql = "SELECT COUNT(*) AS match_count FROM " + t1 + " JOIN " + t2 + " ON " + onCondition + " LIMIT 1";
+        // 表名必须命中 catalog：用规范名回填，防止模型给出不存在的表，
+        // 也避免表名被直接拼进语句。
+        var t1Opt = catalog.full().tables().stream()
+                .filter(t -> t.name().equalsIgnoreCase(t1))
+                .findFirst();
+        if (t1Opt.isEmpty()) {
+            return ToolResult.error("表 " + t1 + " 不存在");
+        }
+        var t2Opt = catalog.full().tables().stream()
+                .filter(t -> t.name().equalsIgnoreCase(t2))
+                .findFirst();
+        if (t2Opt.isEmpty()) {
+            return ToolResult.error("表 " + t2 + " 不存在");
+        }
+        if (t1Opt.get().name().equalsIgnoreCase(t2Opt.get().name())) {
+            return ToolResult.error("连表的两表不能相同");
+        }
+        var table1 = t1Opt.get();
+        var table2 = t2Opt.get();
+        String canonT1 = table1.name();
+        String canonT2 = table2.name();
+
+        // 连接条件必须是「表.列 = 表.列」的等值形式。
+        //
+        // 为什么不直接拼接模型给的 onCondition：它来自模型输出，等于不可信输入。
+        // 直接拼进 ON 子句会开一个注入面（任意 SQL 片段、ON 1=1 笛卡尔积）。
+        // 这里强制等值形式，并逐个校验列是否真实存在，否则拒绝。
+        Matcher m = JOIN_CONDITION_PATTERN.matcher(onCondition);
+        if (!m.matches()) {
+            return ToolResult.error(
+                    "连接条件必须是「表.列 = 表.列」的等值形式，例如 "
+                            + canonT1 + "." + primaryKeyOf(table1) + " = " + canonT2 + "." + foreignKeyGuess(table2, table1)
+                            + "；不支持 ON 1=1 这类笛卡尔积或任意表达式");
+        }
+        String leftTable = m.group(1);
+        String leftCol = m.group(2);
+        String rightTable = m.group(3);
+        String rightCol = m.group(4);
+
+        if (!isJoinColumn(leftTable, leftCol, canonT1, table1, canonT2, table2)
+                || !isJoinColumn(rightTable, rightCol, canonT1, table1, canonT2, table2)) {
+            return ToolResult.error("连接条件里的表名/列名不匹配，请检查两侧分别属于哪张表");
+        }
+        // 等值两侧必须分别来自两张表，否则等于自己连自己。
+        boolean leftIsT1 = leftTable.equalsIgnoreCase(canonT1);
+        boolean rightIsT1 = rightTable.equalsIgnoreCase(canonT1);
+        if (leftIsT1 == rightIsT1) {
+            return ToolResult.error("等值连接的两侧必须分别来自 " + canonT1 + " 和 " + canonT2);
+        }
+
+        String testSql = "SELECT COUNT(*) AS match_count FROM " + canonT1
+                + " JOIN " + canonT2 + " ON " + leftTable + "." + leftCol + " = " + rightTable + "." + rightCol
+                + " LIMIT 1";
         var valResult = sqlValidator.validate(testSql, schema);
         if (!valResult.valid()) {
             return ToolResult.error("Join 语法或表校验未通过：" + valResult.describe());
@@ -178,8 +231,47 @@ public class ToolExecutor {
 
         QueryResult qr = sqlExecutor.execute(valResult.sql());
         String count = (qr.rowCount() > 0 && !qr.rows().get(0).isEmpty()) ? qr.rows().get(0).get(0) : "0";
-        String out = "连表测试 (" + t1 + " JOIN " + t2 + " ON " + onCondition + ") 匹配行数: " + count;
+        String out = "连表测试 (" + canonT1 + " JOIN " + canonT2 + " ON "
+                + leftTable + "." + leftCol + " = " + rightTable + "." + rightCol + ") 匹配行数: " + count;
         return ToolResult.ok(out, qr.columns(), qr.rows());
+    }
+
+    /** 连接条件的等值形式：表.列 = 表.列 */
+    private static final java.util.regex.Pattern JOIN_CONDITION_PATTERN = java.util.regex.Pattern.compile(
+            "^([A-Za-z_][A-Za-z0-9_]*)\\.([A-Za-z_][A-Za-z0-9_]*)\\s*=\\s*([A-Za-z_][A-Za-z0-9_]*)\\.([A-Za-z_][A-Za-z0-9_]*)$");
+
+    /** 校验某个「表.列」引用：表名必须命中两表之一，且列确实存在于该表。 */
+    private boolean isJoinColumn(String refTable, String refCol,
+                                 String canonT1, SchemaContext.Table table1,
+                                 String canonT2, SchemaContext.Table table2) {
+        SchemaContext.Table target;
+        if (refTable.equalsIgnoreCase(canonT1)) {
+            target = table1;
+        } else if (refTable.equalsIgnoreCase(canonT2)) {
+            target = table2;
+        } else {
+            return false;
+        }
+        return target.columns().stream().anyMatch(c -> c.name().equalsIgnoreCase(refCol));
+    }
+
+    /** 取表的主键列名，用于错误提示里给出可照抄的例子。 */
+    private static String primaryKeyOf(SchemaContext.Table table) {
+        return table.columns().stream()
+                .filter(SchemaContext.Column::primaryKey)
+                .map(SchemaContext.Column::name)
+                .findFirst()
+                .orElse("id");
+    }
+
+    /** 猜测另一张表上可能的外键列名，仅用于错误提示，不参与任何安全判断。 */
+    private static String foreignKeyGuess(SchemaContext.Table table, SchemaContext.Table other) {
+        String otherPk = primaryKeyOf(other);
+        return table.columns().stream()
+                .map(SchemaContext.Column::name)
+                .filter(c -> c.equalsIgnoreCase(otherPk) || c.toLowerCase(Locale.ROOT).endsWith("_id"))
+                .findFirst()
+                .orElse("id");
     }
 
     /**

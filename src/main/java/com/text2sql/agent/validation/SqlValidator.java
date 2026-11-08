@@ -9,9 +9,12 @@ import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.Statements;
 import net.sf.jsqlparser.statement.select.Limit;
+import net.sf.jsqlparser.statement.select.ParenthesedSelect;
 import net.sf.jsqlparser.statement.select.PlainSelect;
 import net.sf.jsqlparser.statement.select.Select;
 import net.sf.jsqlparser.statement.select.SetOperationList;
+import net.sf.jsqlparser.statement.select.TableFunction;
+import net.sf.jsqlparser.statement.select.WithItem;
 import net.sf.jsqlparser.util.TablesNamesFinder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -101,6 +104,10 @@ public class SqlValidator {
                     new ValidationResult.Violation(ValidationResult.Code.NOT_SELECT,
                             "只允许 SELECT 语句，实际是 " + statement.getClass().getSimpleName())), false);
         }
+
+        // ---- 3b) WITH 子句里的数据修改 CTE（H2）与 FROM 子句里的表函数（H4）。
+        //        两者都是「顶层看着像 SELECT，实际藏着写操作或危险函数」的绕过。
+        collectCteAndFromViolations(select, violations);
 
         // ---- 4) 危险函数黑名单。
         collectForbiddenFunctions(select, violations);
@@ -220,6 +227,76 @@ public class SqlValidator {
 
         hit.forEach(name -> violations.add(new ValidationResult.Violation(
                 ValidationResult.Code.FORBIDDEN_FUNCTION, "使用了禁止的函数：" + name)));
+    }
+
+    /**
+     * 堵住两条「顶层像 SELECT、实际藏着别的操作」的绕过。
+     *
+     * <p><b>H2：数据修改 CTE</b>
+     *
+     * <p>PostgreSQL 允许把写操作放进 WITH 子句，再在外层 SELECT 里引用：
+     * <pre>WITH d AS (DELETE FROM orders RETURNING order_id) SELECT * FROM d</pre>
+     * 这整条语句的最外层节点就是 {@link PlainSelect}，所以只判断
+     * {@code instanceof Select} 会放行。真正的 {@code DELETE} 藏在
+     * {@link WithItem} 里。
+     *
+     * <p><b>为什么不能调 {@code WithItem.getSelect()}</b>：对 DML CTE 调它会抛
+     * {@code ClassCastException}（JSqlParser 内部对 {@code ParenthesedSelect}
+     * 做的是裸强转，DML CTE 存的是 {@code ParenthesedDelete}）。
+     * 必须用 {@link WithItem#getStatement()} 拿到原始语句对象，再判它是不是
+     * {@code ParenthesedSelect}。
+     *
+     * <p><b>H4：FROM 子句里的表函数</b>
+     *
+     * <p>危险函数黑名单用的是 {@code ExpressionVisitorAdapter}，它只覆盖表达式，
+     * 不覆盖 FROM 子句——而 {@code FROM pg_ls_dir('/')}、{@code dblink(...)}
+     * 这类表函数走的是 {@code FromItemVisitor}，于是整条黑名单对 FROM 子句失效。
+     * 表函数里既有真正的 SSRF（{@code dblink} 跨库读取），也有目录/文件枚举
+     * （{@code pg_ls_dir}、{@code pg_stat_file}）。
+     *
+     * <p>业务问数的 WITH 只会是 SELECT、FROM 只会是真实业务表或派生表，
+     * 两者一旦出现别的形态就拒绝——护栏宁可多拦，不可放过写操作。
+     */
+    private void collectCteAndFromViolations(Select select, List<ValidationResult.Violation> violations) {
+        net.sf.jsqlparser.expression.ExpressionVisitorAdapter<Void> expressionVisitor =
+                new net.sf.jsqlparser.expression.ExpressionVisitorAdapter<>();
+        net.sf.jsqlparser.statement.select.FromItemVisitorAdapter<Void> fromItemVisitor =
+                new net.sf.jsqlparser.statement.select.FromItemVisitorAdapter<>() {
+                    @Override
+                    public <S> Void visit(TableFunction tableFunction, S context) {
+                        violations.add(new ValidationResult.Violation(
+                                ValidationResult.Code.FORBIDDEN_FUNCTION,
+                                "FROM 子句不允许使用表函数：" + tableFunction));
+                        return null;
+                    }
+
+                    @Override
+                    public <S> Void visit(ParenthesedSelect parenthesedSelect, S context) {
+                        net.sf.jsqlparser.statement.select.Select inner = parenthesedSelect.getSelect();
+                        return inner == null ? null : inner.accept(getSelectVisitor(), context);
+                    }
+                };
+        net.sf.jsqlparser.statement.select.SelectVisitorAdapter<Void> selectVisitor =
+                new net.sf.jsqlparser.statement.select.SelectVisitorAdapter<>(expressionVisitor, fromItemVisitor) {
+                    @Override
+                    public <S> Void visit(PlainSelect plainSelect, S context) {
+                        if (plainSelect.getWithItemsList() != null) {
+                            for (WithItem<?> item : plainSelect.getWithItemsList()) {
+                                Object body = item.getStatement();
+                                if (body != null && !(body instanceof ParenthesedSelect)) {
+                                    violations.add(new ValidationResult.Violation(
+                                            ValidationResult.Code.NOT_SELECT,
+                                            "WITH 子句只允许 SELECT，检测到数据修改语句 "
+                                                    + body.getClass().getSimpleName()));
+                                }
+                            }
+                        }
+                        return super.visit(plainSelect, context);
+                    }
+                };
+        expressionVisitor.setSelectVisitor(selectVisitor);
+        fromItemVisitor.setSelectVisitor(selectVisitor).setExpressionVisitor(expressionVisitor);
+        select.accept(selectVisitor, null);
     }
 
     /**

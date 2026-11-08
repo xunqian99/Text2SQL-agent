@@ -8,7 +8,7 @@
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-**85–86/100 执行准确率（两次独立运行）** · **98.00% 表全召回** · **270 项测试** · **47/47 对抗回归** · **P95 12.06–12.61s（未达标）**
+**85–86/100 执行准确率（两次独立运行）** · **98.00% 表全召回** · **280 项测试** · **53/53 对抗回归** · **P95 12.06–12.61s（未达标）**
 
 [快速开始](#快速开始) · [评测方法](#评测方法) · [设计文档](#设计文档) · [已知局限](#已知局限)
 
@@ -34,7 +34,7 @@
 - **三层只读安全护栏**  
   1. **语法与白名单校验**：基于 JSqlParser 严格拦截写操作、危险函数与跨表越权，强制结果集 LIMIT 截断；  
   2. **只读账号沙箱**：应用底层连接独立的只读角色（`text2sql_ro`），物理级防御删改库风险；  
-  3. **运行时超时熔断**：10 秒强制执行超时与结果行数硬上限，47 项已知攻击面回归用例全绿（AST 层仍有 CTE / FROM 表函数缺口，最终由只读账号兜底）。
+  3. **运行时超时熔断**：10 秒强制执行超时与结果行数硬上限，53 项对抗回归全绿（47 原有 + 6 新增）（AST 层仍有 CTE / FROM 表函数缺口，最终由只读账号兜底）。
 - **分层双级 SQL 缓存（归一化精确匹配 + 配置指纹）**
   L1 进程内 LRU + L2 数据库共享持久化（`text2sql_rw` 权限隔离）。针对高频看板与重复提问场景，缓存命中时省去模型调用（输入 Token 归零）；重复负载实验中平均延迟降低 **53%**、Token 成本降低 **50%**（命中仍需执行 SQL，延迟降至数据库执行耗时，并非 0ms）。
 - **多轮对话与意图补全**  
@@ -80,8 +80,8 @@ flowchart TD
 | **总 Token（两次）** | **[240,061](reports/token-summary-20261108.json) / [238,524](reports/token-summary-20261108-run2.json)** | 两次各 101 次调用：prompt 196,658 / 197,109 + completion 43,403 / 41,415 |
 | **单次成本** | **历史报告 0 元**<br>上限 ¥0.00370 / ¥0.00363 / 题；cache smoke ¥0.000487 / 题 | token 真实；历史两次按缓存未命中上限，3 条 smoke 按 hit/miss 分段（命中 87.49%）；见下方「成本敏感性」 |
 | **P95 延迟** | **12.61s / 12.06s**（两次；历史 10.31s / 9.17s；目标 <8s，**未达标**） | 尾部由重试与多表侦察拉长；T5 P95 24.29s / 19.50s |
-| **自动化测试** | **270 项全绿** | 本轮 `mvn clean test`：270 run / 0 failures / 0 errors / 0 skipped；含 47 条对抗与 9 条真库集成 |
-| **安全攻击拦截率** | **47/47 已知攻击面回归全绿** | 恶意注入、DDL/DML、危险函数（含 schema 限定名 / 引号标识符绕过）；不宣称“覆盖所有绕过” |
+| **自动化测试** | **280 项全绿** | 本轮 `mvn clean test`：280 run / 0 failures / 0 errors / 0 skipped；含 53 条对抗与 9 条真库集成 |
+| **安全攻击拦截率** | **53/53 对抗回归全绿（47 原有 + 6 新增）** | 恶意注入、DDL/DML、危险函数（含 schema 限定名 / 引号标识符绕过）；不宣称“覆盖所有绕过” |
 | **长会话上下文压缩** | **-67.2% Token 消耗** | 5~8 轮长会话实验；滑动窗口+正则摘要压到 O(1) 量级，保留关键约束（非语义无损） |
 
 ### 成本敏感性（假设价，非账单）
@@ -178,7 +178,7 @@ mvn spring-boot:run "-Dspring-boot.run.arguments=--spring.profiles.active=local"
 > 这是刻意的设计（数据库/校验/评估链路可以离线自检），但也是第一次跑最容易踩的坑：
 > `/api/health` 里 `llmConfigured:false` 就是它。
 
-> **运行测试**：`mvn test`（共 **270** 项，全部通过）。Mockito 5 需要的
+> **运行测试**：`mvn test`（共 **280** 项，全部通过）。Mockito 5 需要的
 > JVM 自附加参数已经固化在 `pom.xml` 的 surefire 配置里，**不需要再手动加参数**。
 
 > 历史上这里记录过两个问题：`mvn test` 裸跑会因 Mockito 自附加失败，
@@ -245,8 +245,22 @@ mvn spring-boot:run "-Dspring-boot.run.arguments=--agent.eval.enabled=true --age
 mvn spring-boot:run "-Dspring-boot.run.arguments=--spring.profiles.active=local --agent.eval.enabled=true --agent.eval.split=eval"
 ```
 
-> 上面第 2 条就是产出 **84%（最新复跑 85%）** 这条数字的命令，配置与
-> `reports/eval-20261008-185229.json` 一致。不需要再手动加
+### 一键复现
+
+```powershell
+powershell -File scripts/run_eval.ps1 -Split eval
+powershell -File scripts/run_eval.ps1 -Split all -DryRun
+```
+
+```bash
+bash scripts/run_eval.sh eval
+DRY_RUN=true bash scripts/run_eval.sh all
+```
+
+脚本固定 local profile、端口与 eval 开关；`-DryRun` 不调模型，只跑 gold SQL 自检。真实 eval 需要 `AGENT_LLM_API_KEY`（或 `application-local.yml` 的 `api-key`）。
+
+> 上面第 2 条就是产出 **85/86 两次独立运行** 这条数字的命令，配置与
+> `reports/eval-20261108-210214.json` / `reports/eval-20261108-212550.json` 一致。不需要再手动加
 > `--agent.retrieval.enabled` 之类的参数——`application-local.example.yml` 里已经给出主要优化开关。
 
 ---
@@ -295,7 +309,7 @@ mvn spring-boot:run "-Dspring-boot.run.arguments=--spring.profiles.active=local 
 └── src/
     ├── main/java/...       # 核心业务源码（接入/编排/检索/生成/校验/执行/缓存/会话）
     ├── main/resources/     # 配置文件、语义指标库与极简前端页面
-    └── test/java/...       # 270 项全绿自动化单元与对抗性测试
+    └── test/java/...       # 280 项全绿自动化单元与对抗性测试
 ```
 
 
@@ -325,7 +339,7 @@ mvn spring-boot:run "-Dspring-boot.run.arguments=--spring.profiles.active=local 
 | [FAILURE_ATTRIBUTION.md](docs/FAILURE_ATTRIBUTION.md) | 85%/86% 两次 15+14 条失败分别错在哪一层（含历史 84% 的 16 条对照） |
 | [DEFECT_LOG.md](docs/DEFECT_LOG.md) | 24 处缺陷、3 处安全绕过与修法 |
 | [EVAL_SET.md](docs/EVAL_SET.md) | 评估集分层规范与设计缺陷复盘 |
-| [TEST_SUITE_NOTES.md](docs/TEST_SUITE_NOTES.md) | 270 项测试的实测记录 |
+| [TEST_SUITE_NOTES.md](docs/TEST_SUITE_NOTES.md) | 280 项测试的实测记录 |
 | [SECURITY.md](SECURITY.md) | 漏洞报告方式、安全边界与已知限制 |
 
 > 数据来源：Olist Brazilian E-Commerce Public Dataset。原始 CSV 不入库，获取方式见 [data/raw/README.md](data/raw/README.md)。

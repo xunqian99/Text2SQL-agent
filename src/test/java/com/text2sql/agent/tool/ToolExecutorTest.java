@@ -36,10 +36,16 @@ class ToolExecutorTest {
         executor = new ToolExecutor(catalog, sqlExecutor, sqlValidator, planAnalyzer);
 
         mockSchema = new SchemaContext(
-                List.of(new SchemaContext.Table("orders", null, List.of(
-                        new SchemaContext.Column("order_id", "text", false, null),
-                        new SchemaContext.Column("order_status", "text", false, null)))),
-                List.of(), "", "CREATE TABLE orders(order_id text, order_status text);");
+                List.of(
+                        new SchemaContext.Table("orders", null, List.of(
+                                new SchemaContext.Column("order_id", "text", false, null),
+                                new SchemaContext.Column("customer_id", "text", false, null),
+                                new SchemaContext.Column("order_status", "text", false, null))),
+                        new SchemaContext.Table("customers", null, List.of(
+                                new SchemaContext.Column("customer_id", "text", false, null)))),
+                List.of(), "",
+                "CREATE TABLE orders(order_id text, customer_id text, order_status text);\n"
+                        + "CREATE TABLE customers(customer_id text);");
 
         when(catalog.full()).thenReturn(mockSchema);
     }

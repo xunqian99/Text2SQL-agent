@@ -5,8 +5,8 @@
 
 ## 2026-11-08 重测
 
-`mvn clean test`：**Tests run: 270, Failures: 0, Errors: 0, Skipped: 0**。
-本次数据库在线，9 条真库集成测试实际执行（不是跳过）；`AdversarialSqlTest` 47 条全绿。
+`mvn clean test`：**Tests run: 280, Failures: 0, Errors: 0, Skipped: 0**。
+本次数据库在线，9 条真库集成测试实际执行（不是跳过）；`AdversarialSqlTest` 53 条全绿。
 
 dry-run 的 trusted gold SQL 修复后复跑 `mvn test`：**270/0/0/0**，无回归。
 
@@ -26,7 +26,7 @@ BUILD SUCCESS
 
 分层确认：
 
-- `AdversarialSqlTest`：**47 条对抗用例全部拦截**（含 schema 限定名、带引号函数名、
+- `AdversarialSqlTest`：**53 条对抗用例全部拦截**（47 原有 + 6 新增 CTE/FROM）（含 schema 限定名、带引号函数名、
   CTE/子查询内隐藏危险函数等绕过手法）。
 - `SqlValidatorTest`：19 项。
 - `SessionStoreTest`：5 项，连续单独运行 10 次均通过（不再有偶发失败）。
