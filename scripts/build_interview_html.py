@@ -238,6 +238,7 @@ def split_body(lines):
         s = line.strip()
         if not s or s == "---":
             flush()
+            blocks.append(("blank", ""))
             continue
         if s.startswith("**面试官想听**"):
             flush()
@@ -266,6 +267,12 @@ def render_question(q, index):
     hint = [b for b in blocks if b[0] == "hint"]
     ans, fus = [], []
     state = "ans"
+
+    def target():
+        if state == "ans" or not fus:
+            return ans
+        return fus[-1]["a"]
+
     for kind, text in blocks:
         if kind == "hint":
             continue
@@ -276,10 +283,8 @@ def render_question(q, index):
             if fus:
                 fus[-1]["a"].append(text)
             state = "fa"
-        elif kind == "quote":
-            (ans if state == "ans" else fus[-1]["a"] if fus else ans).append(text)
         else:
-            (ans if state == "ans" else fus[-1]["a"] if fus else ans).append(text)
+            target().append(text)
 
     body = []
     if hint:
@@ -359,6 +364,7 @@ def build():
 
     css = CSS
     js = JS.replace("__TOTAL__", str(total))
+    hero = HERO.format(total=total, parts=len(parts))
 
     doc = (
         "<!DOCTYPE html>\n<html lang=\"zh-CN\" data-theme=\"light\">\n<head>\n"
@@ -369,8 +375,8 @@ def build():
         + TOPBAR.format(total=total)
         + '<div class="shell">\n<aside class="sidebar" id="sidebar">\n'
         '<div class="side-head">目录</div>\n<nav class="nav">\n' + "\n".join(nav) + "\n</nav>\n"
-        '<div class="side-foot">共 %d 题 · 13 部分</div>\n</aside>\n' % total
-        + '<main class="main">\n' + HERO + "\n" + "\n".join(main) + "\n</main>\n</div>\n"
+        + '<div class="side-foot">共 %d 题 · %d 部分</div>\n</aside>\n' % (total, len(parts))
+        + '<main class="main">\n' + hero + "\n" + "\n".join(main) + "\n</main>\n</div>\n"
         + '<button class="to-top" id="toTop" title="回到顶部" aria-label="回到顶部">'
         + '<svg viewBox="0 0 20 20" width="17" height="17" aria-hidden="true"><path d="M10 15V6M5.5 10L10 5.5 14.5 10" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>'
         + "</button>\n"
@@ -685,10 +691,10 @@ HERO = """
 <div class="hero">
   <h1>Text2SQL Agent 面试题库</h1>
   <p>面向 Java 后端 / AI 应用开发岗，按「由浅入深、可追问」组织。答案默认收起 —— 先自己讲一遍，再点开对照。</p>
-  <p>所有数字取自本项目实测：三次独立运行 84 / 85 / 86，280 项测试，53 条对抗，¥0.221 / 100 题。</p>
+  <p>只围绕这一个项目：主链路、评测、检索、安全、缓存，以及它真实用到的 Java / Spring / PostgreSQL。所有数字取自实测：三次独立运行 84 / 85 / 86，280 项测试，53 条对抗，¥0.221 / 100 题。</p>
   <div class="stats">
-    <div class="stat"><b>137</b><span>道题</span></div>
-    <div class="stat"><b>13</b><span>个部分</span></div>
+    <div class="stat"><b>{total}</b><span>道题</span></div>
+    <div class="stat"><b>{parts}</b><span>个章节</span></div>
     <div class="stat"><b>84–86</b><span>执行准确率</span></div>
     <div class="stat"><b>12</b><span>条稳定失败</span></div>
     <div class="stat"><b>¥0.0022</b><span>单题成本</span></div>

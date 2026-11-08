@@ -1,9 +1,9 @@
 # Text2SQL Agent 面试题库（2026 版）
 
 > 面向 Java 后端 / AI 应用开发岗，按「由浅入深、可追问」组织。
-> 用法：先背 Part 0 的三版自我介绍；再按 Part 1–10 过一遍；然后用 Part 11–12 做简历压力测试；最后用 Part 13 练开放题。
+> 用法：先背 Part 0 的三版自我介绍；再按 Part 1–10 过一遍主链路；然后用 Part 11 做行为面、Part 12 补技术底座；最后用 Part 13 练开放题。
 > 难度：★ 基础 / ★★ 中级 / ★★★ 高级（会被追问两层以上）。
-> 共 137 题。所有数字均取自本项目实测（三次运行 84/85/86、280 项测试、53 条对抗、¥0.221/100 题）。
+> 共 152 题。所有数字均取自本项目实测（三次运行 84/85/86、280 项测试、53 条对抗、¥0.221/100 题）。
 > 交互版（答案折叠 / 关键词搜索 / 难度筛选 / 掌握进度）：[interview-2026.html](interview-2026.html)
 
 ## 目录
@@ -20,7 +20,7 @@
 - [Part 9 · 多轮与 Agent](#part-9--多轮与-agent)
 - [Part 10 · 工程化、测试与部署](#part-10--工程化测试与部署)
 - [Part 11 · 简历与行为面](#part-11--简历与行为面)
-- [Part 12 · 简历其他内容（Java / Redis / 项目二）](#part-12--简历其他内容java--redis--项目二)
+- [Part 12 · 这个项目的技术底座（Java / Spring / PostgreSQL）](#part-12--这个项目的技术底座java--spring--postgresql)
 - [Part 13 · 设计题与开放追问](#part-13--设计题与开放追问)
 - [附录 A · 12 条稳定失败逐条答法](#附录-a--12-条稳定失败逐条答法)
 - [附录 B · 必背数字与一句话总结](#附录-b--必背数字与一句话总结)
@@ -683,109 +683,290 @@
 **答**：**没有真实用户和真实流量**。我的 84–86 是在自建 200 条评测集上测的，题目是我自己按业务域分层造的，它证明“系统在已知分布上稳定”，不证明“在陌生用户的脏问题上稳定”。第二个短板是**没做过高并发和线上运维**——P95 12–17s 在评估场景可接受，在交互场景不可接受。
 
 **追问**：那你凭什么让我信你能做线上？
-**追问答**：我不主张我现在能做线上。我主张的是：我知道线上需要什么（鉴权、租户、RLS、限流、traceId、告警、灰度），并且已经把“已知边界”写进 `SECURITY.md` 而不是藏起来。能把边界说清的人，补上这些比“以为自己已经生产级”的人快。
+**追问答**：我不主张我现在能做线上。我主张的是：我知道线上需要什么（鉴权、租户、RLS、限流、traceId、告警、灰度），并且已经把"已知边界"写进 `SECURITY.md` 而不是藏起来。能把边界说清的人，补上这些比"以为自己已经生产级"的人快。
+
+### Q11.15 用 STAR 讲一遍这个项目。 ★★
+
+**答**：面试官要的是结构，不是流水账。
+
+**S（背景）**：业务同学要数据得提需求、等排期，一个"上月各州订单量"要等两天。Text2SQL 看起来能解决，但市面上的 demo 都只报一个准确率，**错了不知道为什么错**。
+
+**T（我的任务）**：不是"做一个能生成 SQL 的东西"，是"做一个能把误差拆开的实验台"——先能测准，再谈优化。
+
+**A（动作，重点讲取舍）**：三件事。① 自建 200 条六层评测集 + `ResultNormalizer`（不做规范化，执行准确率根本不可信）；② 检索用"领域词典 + 关系扩展 + 连通性修复"而不是向量，因为 37 张表规模下词典够用且**可解释**；③ 三层护栏（AST 白名单 / 只读账号 / 10s + 200 行），并且实测出 4 类 AST 绕过再回灌加固。
+
+**R（结果，带数字和边界）**：三次独立运行 84/85/86，SQL 有效执行率 100%，16 条失败逐条归因——**检索 0 条、输出形状 7 条**；单题成本 ¥0.0022，cache 命中 89.27%。边界是 T5 深层 Join 只有 40–60%、P95 12–17s、单租户。
+
+**追问**：A 里最难的取舍是哪个？
+**追问答**：不用向量。这个选择顶着"2026 年还不用 embedding？"的质疑，但我有数据支撑：失败归因里没有一条是"表没找全"导致的，说明检索不是瓶颈；而向量会引入不可解释的召回，错了说不清为什么。**用评测数据裁决技术选型，比用流行度裁决可靠。**
+
+### Q11.16 如果给你一个全新的项目，你会怎么推进？ ★★★
+
+**答**：按六步走，每步都有交付物，不是"先写代码"。
+
+1. **需求澄清**——问清"成功长什么样"。这个项目里就是"准确率到多少算能用、错了谁兜底"，没问清就会做出一个漂亮但没人敢用的东西。
+2. **定验收口径**——先定指标和评测方法，再写实现。顺序反了就会变成"做完再找指标证明它好"。
+3. **设计带备选**——主方案 + 降级方案 + 回滚点。比如检索用词典，备选是加向量；护栏用 AST，备选是只读账号兜底（两层都留）。
+4. **拆任务留缓冲**——按"能独立验证"切，不按"能独立提交"切。
+5. **开发即验证**——每层都有测试，不留到最后补。
+6. **上线看数据**——监控、告警、灰度、回滚预案。**没有可观测性的上线不算上线。**
+
+**追问**：如果时间只够做一半呢？
+**追问答**：砍功能，不砍评测。我的排序是"评测体系 > 安全护栏 > 功能覆盖"。因为没有评测你就不知道自己在变好还是变坏，没有护栏你连给人试用都不敢。
+
+### Q11.17 你怎么保证自己的结论不是自欺？ ★★★
+
+**答**：三个具体做法，不是态度问题。
+
+1. **跑多次看波动**——单次 86% 说明不了什么，所以我跑了三次（84/85/86），并且统计出"12 条三次都失败、6 条单次波动"。写范围而不是写最高值。
+2. **区分"我改对了"和"数据碰巧对了"**——每次改动都要有对照。比如 Agent 工具侦察，我做了开关对照，没增益就默认关，不因为它"看起来高级"就留着。
+3. **主动找反例**——安全这块我写了一个 `BypassTest` 专门攻击自己的校验器，实测出 4 类绕过（DML CTE、LATERAL、FROM 表函数、SELECT INTO），然后才回灌加固。**自己找出的洞比被人捅出来的洞便宜得多。**
+
+**追问**：那你有没有过"结论错了"的时候？
+**追问答**：有。dry-run 一开始是 192/200，我以为是 gold SQL 有问题，实际是**我的校验器用检索子集去校验 gold 的无关 join**，属于自伤。改成 `fullSchema()` 校验后 200/200。这个 bug 的价值在于：它证明了"评测工具本身也要被评测"。
 
 ---
 
-## Part 12 · 简历其他内容（Java / Redis / 项目二）
+## Part 12 · 这个项目的技术底座（Java / Spring / PostgreSQL）
 
-> 这一部分不是 Text2SQL 的主战场，但简历上写了，面试官一定会抽查。
+> 这一部分是通用八股，但**每道题都挂在项目里真实的一段代码或一个决策上**。
+> 答法统一：先说「项目里怎么用的」，再补原理，最后接追问。只会背原理、说不出项目在哪用了，等于没答。
 
-### Q12.1 Java 21 有什么新特性？项目里用了吗？ ★★
+### Q12.1 Java 21 有什么新特性？项目里真用了吗？ ★★
 
-**答**：record（`AgentResponse`、`LlmCallRecord`、`SchemaContext` 大量使用）、pattern matching for instanceof（`usage.getNativeUsage() instanceof OpenAiApi.Usage`）、switch expression（状态映射）、text block（SQL/prompt）、虚拟线程（项目未用，因为评估是串行、LLM 调用是阻塞 IO，收益不明显）。不要背全部特性，讲你真正用过的。
+**答**：用了四个：**record**（`AgentResponse`、`LlmCallRecord`、`SchemaContext` 都是 record，天然不可变、自动 `equals/hashCode`，正好适合"一次响应的快照"）；**pattern matching for instanceof**（`usage.getNativeUsage() instanceof OpenAiApi.Usage u` 直接绑定变量，省掉强转）；**switch expression**（状态映射，无 `break` 不穿透）；**text block**（SQL 和 prompt 模板，避免几十个 `\n` 拼接）。
 
-### Q12.2 线程池参数怎么设？项目里哪里用了并发？ ★★
+**追问**：虚拟线程用了吗？
+**追问答**：没用。评估是串行的、LLM 调用是阻塞 IO，虚拟线程解决的是"高并发阻塞 IO 下线程不够"，我这个场景并发度是 1，换虚拟线程收益为零，反而多一层不确定性。我不用它不是因为不会，是因为不需要。
 
-**答**：项目主链路是单请求同步，评估串行；并发点主要是 Hikari 连接池（只读 5、持久化 4）、BYOK 客户端 LRU 的同步 Map、LlmCallLog 的锁。线程池参数按“CPU 密集/IO 密集”讲：IO 密集可大于核数，但要有队列和拒绝策略；项目没做高并发，所以不吹线程池调优。
+### Q12.2 String 为什么设计成不可变？项目里拼 prompt 用什么？ ★★
 
-### Q12.3 AQS/CAS 怎么理解？ ★★
+**答**：三个原因：**字符串常量池要复用**（可变的话池里的值会被改坏）、**hashCode 可以缓存**（HashMap 的 key 大量是 String）、**天然线程安全**（不可变对象发布即安全）。`final` 修饰类和 `private final char[]`（JDK 9 后是 `byte[]` + coder）保证内部状态不可改。
 
-**答**：CAS 是“比较并交换”的原子指令，解决无锁更新的原子性；AQS 用 `volatile state` + CLH 队列管理同步状态，ReentrantLock/CountDownLatch 都基于它。项目里没有直接用 AQS，但 `ConcurrentHashMap`、`LinkedHashMap` 的同步包装、Hikari 内部都用并发容器/锁；不要硬编“我用了 AQS”。
+项目里拼 prompt **不用 `+` 也不用 String**，用 `StringBuilder`——`PromptBuilder` 要顺序追加 schema、指标、few-shot、问题四段，中间还有条件分支；用 `+` 每拼一次生成一个新 String，在 7401 字符的 DDL 上会放大成几十次拷贝。拼完 `.toString()` 一次性产出。
 
-### Q12.4 Spring Boot 自动装配原理？ ★★
+**追问**：那 StringBuffer 呢？
+**追问答**：`StringBuffer` 每个方法都加 `synchronized`，单线程下是纯开销。`PromptBuilder` 是方法内的局部变量，不可能被多线程共享，所以用 `StringBuilder`。
 
-**答**：`@SpringBootApplication` = `@EnableAutoConfiguration` + `@ComponentScan` + `@Configuration`；`@EnableAutoConfiguration` 通过 `AutoConfigurationImportSelector` 读 `META-INF/spring/...AutoConfiguration.imports`，按 `@ConditionalOnClass/@ConditionalOnMissingBean` 等条件装配。项目里刻意关掉 Spring AI 自动配置（`spring.ai.model.chat=none`），改成手工装配，避免没 Key 启动失败。
+### Q12.3 equals 和 hashCode 的约定？项目里哪里踩到这个点？ ★★
 
-### Q12.5 MySQL 索引/最左前缀/覆盖索引？ ★★
+**答**：约定是「`equals` 相等则 `hashCode` 必须相等」，反过来不成立。破坏它的后果很具体：对象放进 `HashMap` 后 `get` 不到——因为 `get` 先用 hashCode 定位桶，桶里再用 equals 比对，hashCode 不一致连桶都进不去。
 
-**答**：InnoDB 聚簇索引按主键组织数据，二级索引叶子存主键；联合索引 `(a,b,c)` 遵循最左前缀，范围查询会截断后续列；覆盖索引是查询列都在索引里，避免回表。项目主库是 PostgreSQL，但简历写了 MySQL；被问时讲清“原理相通，项目实际用 PG”。
+项目里真用到了：dev/eval 切分用的是 `Math.floorMod(id.hashCode(), 2)`。**为什么不用 `id.hashCode() % 2`**——因为 `hashCode` 可能为负，`%` 在 Java 里结果跟着被除数符号走，会得到 `-1`，切分就漏了一半。`floorMod` 保证结果非负。这个坑我是写完测试才发现的，不是背来的。
 
-### Q12.6 事务隔离级别/MVCC？ ★★
+**追问**：record 的 equals 是怎么实现的？
+**追问答**：编译器按**所有组件字段**逐个 `equals`（数组字段用 `Arrays.equals`），`hashCode` 用 `Objects.hash`。所以我给 `LlmCallRecord` 加 `cacheHitTokens` 字段时，它的 `equals/hashCode` 自动跟着变——这是 record 的好处，也是坑：如果拿 record 当 `HashMap` 的 key，加字段会让历史 key 失效。
 
-**答**：MySQL 默认 RR，InnoDB 用 undo log + read view 实现 MVCC，快照读不加锁；当前读（`FOR UPDATE`）加 next-key lock 防幻读。PostgreSQL 默认 Read Committed，用 MVCC + SSI 可串行化。项目里业务查询是只读，不需要事务；持久化写入是单条 INSERT/UPDATE。
+### Q12.4 ArrayList 和 LinkedList 怎么选？项目里的结果集为什么是 `List<Map<String,Object>>`？ ★★
 
-### Q12.7 Redis 缓存穿透/击穿/雪崩？ ★★
+**答**：`ArrayList` 是数组，随机访问 O(1)、尾部插入摊还 O(1)、中间插入 O(n)；`LinkedList` 是双向链表，头尾插入 O(1)、随机访问 O(n)，而且每个节点多两个指针 + 对象头，内存开销大约是三倍。**实践里 99% 用 ArrayList**，因为 CPU 缓存友好性带来的常数优势远大于理论复杂度差异。
 
-**答**：穿透=查不存在的数据，用布隆过滤器/空值缓存；击穿=热点 key 过期，用互斥锁/逻辑过期；雪崩=大量 key 同时过期，用随机 TTL/多级缓存/熔断。项目二用了 Redis BitMap/ZSet，Text2SQL 项目用的是进程内 LRU + PG 表，不是 Redis；别混。
+结果集用 `List<Map<String,Object>>` 是因为 JDBC 的 `ResultSet` 是游标式的、必须边走边取，而我要先做**结果规范化**（列名归一、数值精度统一、行序无关比较）再比对，必须把它物化成内存结构。代价是内存——所以我用 200 行硬上限把上界钉死，不是"先查出来再看有多少"。
 
-### Q12.8 Redis + Lua + Redisson 一人一单怎么实现？ ★★★
+**追问**：为什么不用 `List<Entity>`？
+**追问答**：因为 SQL 是模型生成的，返回哪些列、什么别名，运行时才知道，没有固定的实体可以映射。硬造一个"万能实体"（201 个字段）比 Map 更糟。
 
-**答**：Lua 脚本把“查库存 + 查是否已下单 + 扣库存 + 记录用户”放在一次原子执行里，避免 check-then-act 竞态；Redisson 分布式锁兜底跨 key 操作，注意锁续期（watchdog）和锁失效后的幂等。失败模式：Lua 里不能做耗时操作、集群模式下多 key 要同 slot、锁超时要大于业务执行时间。
+### Q12.5 HashMap 的原理？为什么负载因子 0.75、为什么 8 转红黑树？ ★★
 
-### Q12.9 RocketMQ 削峰怎么保证不丢/不重复？ ★★★
+**答**：数组 + 链表 + 红黑树。`hash = h ^ (h >>> 16)` 让高 16 位参与运算（否则 `(n-1) & hash` 只用到低位，高位全浪费）；容量取 2 的幂，用 `(n-1) & hash` 代替取模；**0.75** 是"空间 vs 冲突"的经验平衡点——再高冲突概率陡增，再低浪费一半空间；链表到 **8** 且容量 ≥ 64 转红黑树（`O(n)` → `O(log n)`），退化到 **6** 转回链表，留 2 的缓冲避免在边界反复转换。
 
-**答**：生产端同步发送 + 重试 + 本地消息表；Broker 持久化 + 主从；消费端手动 ACK + 幂等键（订单号）去重。削峰是“把同步下单变成异步处理”，要接受最终一致；不能只说“用了 RocketMQ”，要讲清重复消费和消息丢失的兜底。
+**追问**：为什么容量必须是 2 的幂？扩容时元素怎么移动？
+**追问答**：两个好处。一是 `(n-1) & hash` 等价于取模但快得多（位运算 vs 除法）；二是 `n-1` 的低位全 1，散列更均匀。扩容时因为容量翻倍，元素的新下标只有两种可能：**留在原位**，或者**移动到 `原下标 + oldCap`**——判据就是 `hash & oldCap` 是不是 0，不需要重新算 hash。这是 JDK 8 相对 JDK 7 的重要优化。
 
-### Q12.10 项目二 1000 并发/80%/57% 怎么测的？ ★★★
+### Q12.6 ConcurrentHashMap 怎么保证线程安全？项目的 LRU 为什么不用它？ ★★★
 
-**答**：这是简历里最容易被追问穿的一条。标准答法要给出：机器配置、JMeter 脚本、基线 RT/TPS、优化前后的对比、瓶颈在哪。如果没有压测报告，就把数字改成“完成 1000 并发压测，定位并优化了 X”，不要报具体百分比；面试官要的是证据链，不是数字。
+**答**：JDK 7 是**分段锁**（Segment 继承 ReentrantLock，锁 1/16 的桶）；JDK 8 改成 **CAS + synchronized 锁单个桶头节点**——`put` 时桶为空就 CAS 直接放，有冲突才 synchronized 锁住链表头，锁粒度从"段"降到"桶"，并发度大幅提高。扩容支持多线程协助迁移（`helpTransfer`）。
 
-### Q12.11 HashMap 原理？为什么阈值是 8 转红黑树？ ★★
+项目里 `SqlCache` 的 L1 是 **LRU 32**，我用的是 `LinkedHashMap` 加 `removeEldestEntry` 重写，外面套同步——**不是 ConcurrentHashMap**。原因是：LRU 的"访问顺序"语义要求每次 `get` 都要改链表结构（把节点移到队尾），`ConcurrentHashMap` 根本不维护顺序；而且 `get` 变成写操作后，它的无锁读优势也没了。32 个元素的临界区极短，`synchronized` 足够。
 
-**答**：数组 + 链表 + 红黑树；`hash = h ^ (h >>> 16)` 让高位参与运算；容量 2 的幂，用 `(n-1) & hash` 代替取模；负载因子 0.75 是“空间 vs 冲突”的经验平衡点；链表长度到 8 且容量 ≥ 64 转红黑树（`O(n)` → `O(log n)`），退化到 6 转回链表（留 2 的缓冲避免反复转换）。
+**追问**：那高并发下 `synchronized` 不会成瓶颈吗？
+**追问答**：会，但要看量级。我的场景是单机、评估串行，QPS 个位数；临界区里只做一次链表移动，纳秒级。**如果是高并发，正确解法不是换 ConcurrentHashMap，而是换 Caffeine**——它用 W-TinyLFU 做淘汰、分段锁 + 读缓冲，专门解决这个问题。我不上 Caffeine 是因为不想为 32 个元素引一个依赖。
 
-**追问**：为什么容量必须是 2 的幂？
-**追问答**：为了让 `(n-1) & hash` 等价于取模，且 `n-1` 的低位全 1，散列更均匀。扩容时元素要么留在原位、要么移动 `oldCap`，不需要重新计算 hash——这是 JDK 8 相对 JDK 7 头插改尾插之外的另一个优化。
+### Q12.7 fail-fast 是什么？项目里怎么避开的？ ★
 
-### Q12.12 JVM 内存结构与 GC，项目里调过吗？ ★★
+**答**：集合的 `modCount` 在结构修改时自增，迭代器每次 `next()` 校验它，不一致就抛 `ConcurrentModificationException`——目的是**尽早暴露并发修改的 bug**，而不是保证安全。`ArrayList`、`HashMap` 都是 fail-fast；`CopyOnWriteArrayList`、`ConcurrentHashMap` 的迭代器是 fail-safe（弱一致，遍历的是快照）。
 
-**答**：堆（新生代 Eden + 2×Survivor、老年代）、方法区/元空间、虚拟机栈、本地方法栈、程序计数器；对象优先在 Eden 分配，熬过 `MaxTenuringThreshold` 进老年代。GC 分 Minor/Full，收集器有 Serial/Parallel/CMS/G1/ZGC。**项目里没调过 GC**——单实例、低 QPS、堆压力小，`-Xmx` 用的是默认值。硬讲调优参数是给自己挖坑。
+项目里我刻意避开：`ResultNormalizer` 做规范化时**新建列表**而不是在原列表上 `remove`/`add`，因为结果集要保留原样做对比，原地改既踩 fail-fast 又破坏可比性。
+
+**追问**：怎么安全地边遍历边删？
+**追问答**：用 `Iterator.remove()`，或者 `removeIf()`（内部就是 Iterator），或者收集到新集合。`for-each` 里直接 `list.remove()` 必炸。
+
+### Q12.8 线程池七个参数？项目里为什么几乎不用线程池？ ★★
+
+**答**：`corePoolSize`、`maximumPoolSize`、`keepAliveTime`、`unit`、`workQueue`、`threadFactory`、`handler`。执行顺序是：核心线程 → 队列 → 非核心线程 → 拒绝策略。**最容易答错的是顺序**——不是"先扩到最大再排队"，是"先排队，队列满了才扩线程"，所以用无界队列（`LinkedBlockingQueue` 默认容量 `Integer.MAX_VALUE`）时 `maximumPoolSize` 永远不生效。
+
+项目主链路是**单请求同步**、评估**串行**，没有自建线程池。有个常见混淆要说清：**Hikari 是连接池不是线程池**（只读 5、持久化 4），它管的是数据库连接的生命周期，不是任务调度。如果将来要并行跑评估，我会用固定大小线程池 + 有界队列 + `CallerRunsPolicy`（降速而不是丢弃），而不是 `Executors.newFixedThreadPool`（无界队列会 OOM）。
+
+**追问**：线程数怎么定？
+**追问答**：CPU 密集约 `N+1`，IO 密集约 `2N` 起步、按"等待时间/计算时间"的比例放大。但这个公式只在"任务是均匀的"时成立；LLM 调用是长尾 IO（P95 是均值的好几倍），真正该做的是**限流 + 超时**，不是调线程数。
+
+### Q12.9 ThreadLocal 的原理？为什么会内存泄漏？ ★★
+
+**答**：每个 `Thread` 持有一个 `ThreadLocalMap`，key 是 `ThreadLocal` 的**弱引用**，value 是强引用。泄漏的原因：key 被 GC 后变成 `null`，但 value 还被 Entry 强引用着，线程不死（线程池里的核心线程）value 就永远不回收。所以用完必须 `remove()`——`remove` 会清掉 key 为 null 的 Entry。
+
+项目里**没有直接用 ThreadLocal**。会话状态是 `ConcurrentHashMap<sessionId, Session>`，因为会话要跨请求、跨线程存活，放 ThreadLocal 反而错（下一个请求可能是另一个线程）。但我知道 Spring 在用它：`TransactionSynchronizationManager` 用 ThreadLocal 绑连接（这也是"事务在子线程失效"的根因），`RequestContextHolder` 用 ThreadLocal 存当前请求。
+
+### Q12.10 volatile、CAS、AQS 各自解决什么问题？ ★★★
+
+**答**：三个不同层次。**volatile** 解决可见性和有序性（写立即刷主存、读强制从主存读、禁止指令重排），**不保证原子性**——`i++` 依然不安全。**CAS** 解决原子性：`compareAndSwap(expected, new)` 由 CPU 指令保证"比较 + 交换"不可分割，失败就重试（自旋），代价是 ABA 问题和自旋开销。**AQS** 是更高层的框架：用一个 `volatile int state` 表示同步状态，加一个 CLH 双向队列排队，`ReentrantLock`/`CountDownLatch`/`Semaphore` 都基于它。
+
+项目里没有直接用 AQS，但间接依赖：`ConcurrentHashMap` 的桶头用 CAS + synchronized，Hikari 内部用 `AtomicInteger` 管连接数。**不要硬编"我用了 AQS"**——面试官问一句"你继承 AbstractQueuedSynchronizer 实现过什么"就穿帮了。
+
+**追问**：ABA 是什么？怎么解？
+**追问答**：值从 A 改成 B 又改回 A，CAS 以为没变过。解法是加版本号，`AtomicStampedReference` 就是干这个的。
+
+### Q12.11 synchronized 和 ReentrantLock 的区别？项目里用了吗？ ★★
+
+**答**：`synchronized` 是 JVM 层面（`monitorenter/monitorexit` 指令），自动释放、非公平、不可中断、不支持超时；`ReentrantLock` 是 AQS 实现，可公平/非公平、可 `tryLock(timeout)`、可中断、可多条件队列，但必须 `finally` 释放。JDK 6 之后 `synchronized` 有偏向锁/轻量级锁/锁消除等优化，简单场景性能不差。
+
+项目里用的是 `synchronized`，在 `LlmCallLog` 写 JSONL 那一段——文件追加不是线程安全的，且是低频写（每次 LLM 调用一次）。不用 `ReentrantLock` 是因为没有"需要超时或中断"的场景，用更简单的那个。
+
+**追问**：锁升级的过程？
+**追问答**：无锁 → 偏向锁（同一线程重入，只在对象头记线程 ID）→ 轻量级锁（CAS 自旋）→ 重量级锁（monitor 阻塞）。注意 JDK 15 起偏向锁默认关闭、JDK 18 移除——如果面试官问"现在还有偏向锁吗"，答"已经移除了"比背四级升级更加分。
+
+### Q12.12 JMM 和 happens-before 是什么？项目里哪里依赖它？ ★★★
+
+**答**：JMM 定义的是**多线程下读写的可见性规则**，不是硬件内存模型。核心是 happens-before：如果 A happens-before B，那 A 的写对 B 可见。八条规则里最常用的四条：程序顺序、监视器锁（解锁 hb 后续加锁）、volatile（写 hb 后续读）、线程启动/join。
+
+项目里最接近可见性问题的是 `LlmCallLog` 的计数和 `SqlCache` 的读写——它们靠 `synchronized` 和 `ConcurrentHashMap` 提供的 happens-before 保证。如果我图省事改成"普通 `HashMap` + 一个 `boolean` 标志位"，就会出现"写线程已经写完了，读线程还看到旧值"，而且**这种 bug 在 x86 上大概率复现不了**，最难查。
+
+### Q12.13 JVM 内存结构和 GC，项目里调过吗？ ★★
+
+**答**：堆（Eden + 2×Survivor + 老年代）、元空间（JDK 8 起取代永久代，在本地内存）、虚拟机栈、本地方法栈、程序计数器。对象优先在 Eden 分配，熬过 `MaxTenuringThreshold` 或同龄对象超过 Survivor 一半就晋升老年代。GC 分 Minor/Full，收集器有 Serial/Parallel/CMS/G1/ZGC。
+
+**项目里没调过 GC**——单实例、低 QPS、堆压力小，`-Xmx` 用的默认值。硬讲调优参数是给自己挖坑，我会直接说"没调过，因为没遇到压力"，然后讲我**知道**该看什么。
 
 **追问**：那你怎么排查 OOM？
-**追问答**：`-XX:+HeapDumpOnOutOfMemoryError` 拿 dump，MAT 看 dominator tree 找最大持有链。这个项目最可能 OOM 的点是“全量结果集入内存”——所以我加了 200 行上限和 `maxRows+1` 探测，从源头掐掉。
+**追问答**：三步：`-XX:+HeapDumpOnOutOfMemoryError` 让它在崩的时候留 dump；`jmap`/MAT 看 dominator tree 找最大持有链；定位到是"一次取太多"还是"该释放没释放"。这个项目最可能 OOM 的点就是**全量结果集入内存**，所以我从源头掐掉——200 行硬上限 + `maxRows+1` 探测，不是等 OOM 了再治。
 
-### Q12.13 synchronized 和 ReentrantLock 的区别？ ★★
+### Q12.14 线上 CPU 飙高怎么排查？接口变慢怎么定位？ ★★★
 
-**答**：`synchronized` 是 JVM 层面（monitor 指令），自动释放、非公平、不可中断、不支持超时；`ReentrantLock` 是 AQS 实现，可公平/非公平、可 `tryLock(timeout)`、可中断、可多条件队列，但必须 `finally` 释放。JDK 6 之后 `synchronized` 有偏向锁/轻量级锁优化，简单场景性能不差。
+**答**：CPU 飙高：`top -Hp <pid>` 找最耗 CPU 的线程 → 线程 ID 转 16 进制 → `jstack <pid> | grep -A 20 <nid>` 看栈 → 判断是死循环、频繁 GC（`jstat -gcutil` 看 FGC 次数）、还是锁竞争自旋。
 
-**追问**：项目里用了吗？
-**追问答**：用了 `synchronized`，在 `LlmCallLog` 写 JSONL 那一段——文件追加不是线程安全的，且这里是低频写（每次 LLM 调用一次），不值得上锁对象。`ReentrantLock` 没用，因为没有“需要超时或中断”的场景。
+接口变慢：先分层定位，不要一上来就看代码。**入口层**看 P50/P95/P99 分位（只看均值会被长尾骗）；**依赖层**看是 DB 慢、LLM 慢、还是自己算得慢——我的 `LlmCallRecord` 里记了每次调用的延迟，`AgentResponse` 里带分段耗时，能直接切开；**DB 层**看 `EXPLAIN` 是不是走了全表扫。
 
-### Q12.14 Spring 事务在什么情况下会失效？ ★★★
+这个项目 P95 12–17s 就是靠分段耗时定位的：瓶颈在 **LLM 生成**（占 80%+），不在检索、不在执行。所以优化方向是"少调一次"（缓存、合并改写与生成），不是"把检索写得更快"。
 
-**答**：五类：1）**自调用**——同类内部 `this.method()` 不走代理；2）**方法非 public**（默认代理模式下）；3）**异常被吞**——`catch` 了没抛，或抛的是受检异常而 `rollbackFor` 没配；4）**类没被 Spring 管理**——自己 `new` 出来的对象；5）**多数据源/多线程**——事务绑定在 ThreadLocal 上，子线程拿不到。
+### Q12.15 类加载的双亲委派是什么？Spring Boot 的 fat jar 怎么跑起来的？ ★★
+
+**答**：双亲委派是"收到加载请求先交给父加载器，父加载器加载不了才自己加载"。`Bootstrap → Extension/Platform → Application`。好处是**安全**（`java.lang.String` 永远是核心库那份，不会被自定义的同名类顶掉）和**避免重复加载**。
+
+Spring Boot 的 fat jar 是个特殊场景：`BOOT-INF/lib/*.jar` 是**嵌套 jar**，标准 `URLClassLoader` 只能读 jar 里的文件，读不了"jar 里的 jar"。所以 Boot 自己实现了类加载器（2.x 是 `LaunchedURLClassLoader`，3.2 起换了新的 nested jar 实现），把嵌套 jar 映射成可读的 URL。双亲委派仍然保留，只是层级多了一层——`LaunchedURLClassLoader` 的 parent 是应用类加载器。
+
+**追问**：怎么打破双亲委派？
+**追问答**：重写 `loadClass` 不调 `super`（Tomcat 的 `WebappClassLoader` 就是这样，Web 应用优先加载自己的类）；或者用线程上下文类加载器（JDBC 的 `DriverManager` 就是这么找到厂商驱动的）。
+
+### Q12.16 Spring 的 IoC 和 AOP 原理？项目里 AOP 用在哪？ ★★
+
+**答**：IoC 是控制反转——对象的创建和依赖装配交给容器，你只声明"我需要什么"（构造器参数/`@Autowired`），不自己 `new`。AOP 是面向切面——把横切逻辑（事务、日志、权限）从业务代码里抽出来，靠**动态代理**织入：目标类有接口用 JDK 动态代理，没接口用 CGLIB 生成子类。
+
+**项目里没有自定义切面**，这是实话。我用到的是 Spring 提供的现成切面：`@Transactional`（虽然这个项目只读，没真用上）。如果要加，最合适的是"给每次 LLM 调用统一埋点"——但我没加，因为 `LlmCallRecord` 是**显式记账**，切面拿不到 token 数、cache 命中数这些只有响应体里才有的东西。可观测性要的是准确，不是优雅。
+
+### Q12.17 Bean 的生命周期？循环依赖怎么用三级缓存解决？ ★★★
+
+**答**：实例化（构造器）→ 属性填充（依赖注入）→ `Aware` 回调 → `BeanPostProcessor.postProcessBeforeInitialization` → `@PostConstruct` / `InitializingBean.afterPropertiesSet` → `postProcessAfterInitialization`（**AOP 代理在这里生成**）→ 使用 → `@PreDestroy`。
+
+三级缓存：`singletonObjects`（成品）、`earlySingletonObjects`（半成品）、`singletonFactories`（ObjectFactory）。A 依赖 B、B 依赖 A 时：A 实例化后把"能产出 A 早期引用的工厂"放进三级缓存 → 去创建 B → B 注入 A 时从三级缓存拿到 A 的早期引用（如果 A 需要代理，这一步就提前生成代理）→ B 完成 → A 完成。**核心是"提前暴露未完成的对象"**。
+
+**追问**：为什么需要三级而不是两级？
+**追问答**：为了**延迟决定要不要生成代理**。如果 A 需要 AOP 代理，正常情况下代理是在初始化后生成的；两级缓存必须在"提前暴露"时就生成代理，那所有 Bean 都会被提前代理，违背"尽量晚"的原则。三级缓存的 ObjectFactory 让 `getEarlyBeanReference` 在**真被依赖时**才决定。
+
+**追问**：构造器注入的循环依赖能解决吗？
+**追问答**：不能。构造器注入要求"创建 A 之前先有 B、创建 B 之前先有 A"，死锁在实例化阶段，三级缓存还没生效。Spring Boot 2.6+ 默认禁止循环依赖（`spring.main.allow-circular-references=false`），出现就启动失败——这是好事，逼你把设计改对。
+
+### Q12.18 Spring 事务在什么情况下会失效？ ★★★
+
+**答**：五类：1）**自调用**——同类内部 `this.method()` 不走代理，注解形同虚设；2）**方法非 public**（CGLIB 代理下）；3）**异常被吞**——`catch` 了没抛，或抛受检异常而 `rollbackFor` 没配（默认只回滚 `RuntimeException`）；4）**类没被 Spring 管理**——自己 `new` 出来的对象；5）**多线程**——事务绑在 ThreadLocal 上，子线程拿不到同一个连接。
 
 **追问**：你这个项目有事务吗？
-**追问答**：业务查询是只读，不需要事务；持久化是单条 INSERT/UPDATE，也不需要。所以我没有“用了事务”可以吹——但我知道上面五类失效，因为这是 Java 后端必考项，不是项目专属。
+**追问答**：业务查询是只读，不需要事务；持久化是单条 INSERT/UPDATE，也不需要。所以我**没有"用了事务"可以吹**。但我知道这五类失效——因为这是 Java 后端必考项，不是项目专属。
 
-### Q12.15 项目二的架构讲一下？ ★★
+### Q12.19 事务的传播行为有几种？举一个必须用 `REQUIRES_NEW` 的场景。 ★★★
 
-**答**：按“接入层 → 业务层 → 存储层”讲，别背名词：Nginx 负载 → Spring Boot 应用 → MySQL 存订单/商品、Redis 存库存和一人一单标记、RocketMQ 做下单削峰。关键链路是“秒杀下单”：先 Redis 预扣库存 + Lua 原子判重，成功才发 MQ，消费端落库并做幂等。
+**答**：七种。`REQUIRED`（默认，有就加入、没有就新建）、`REQUIRES_NEW`（挂起外层、自己开新的）、`NESTED`（嵌套，靠 savepoint，外层回滚会带着它回滚）、`SUPPORTS`、`NOT_SUPPORTED`、`MANDATORY`、`NEVER`。
 
-**追问**：为什么库存放 Redis 不放 MySQL？
-**追问答**：因为秒杀场景下 MySQL 行锁会把并发打回串行，QPS 上不去。Redis 单线程 + Lua 保证原子性，能扛住瞬时流量；MySQL 只做最终的持久化和对账。代价是要处理“Redis 扣了但落库失败”的不一致——用 MQ 重试 + 定时对账兜底。
+必须用 `REQUIRES_NEW` 的场景：**"业务失败也要留痕"**——比如下单失败要写一条失败日志，如果和业务同一个事务，业务回滚会把日志一起滚掉，就查不到为什么失败了。这个项目里对应的是 `LlmCallLog`：LLM 调用失败我也要记一条（状态、耗时、错误），这条记录**不能**跟着失败一起回滚。我现在是用独立的连接直接 INSERT 绕开的，本质上就是 `REQUIRES_NEW` 想要的效果。
 
-### Q12.16 项目二最难的点是什么？ ★★★
+### Q12.20 Spring Boot 自动装配的原理？项目为什么把它关掉？ ★★
 
-**答**：**一致性**，不是性能。秒杀链路里有三个状态：Redis 库存、MQ 消息、MySQL 订单，任意一步失败都会不一致。我的处理是：Redis 扣减成功才发消息（本地消息表保证不丢）、消费端用订单号做幂等键（保证不重）、定时任务扫“Redis 已扣但 MySQL 无单”做补偿。
+**答**：`@SpringBootApplication` = `@EnableAutoConfiguration` + `@ComponentScan` + `@Configuration`。`@EnableAutoConfiguration` 通过 `AutoConfigurationImportSelector` 读 `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`（Boot 2.7 之前是 `spring.factories`），拿到候选配置类后按 `@ConditionalOnClass`、`@ConditionalOnMissingBean`、`@ConditionalOnProperty` 等条件过滤，最后才注册。
 
-**追问**：那 1000 并发/80%/57% 是怎么来的？
-**追问答**：这里我要说实话——如果没有压测报告，我不该报具体百分比。正确说法是“做过 1000 并发压测，定位到瓶颈在 X，优化后 QPS 提升明显”。数字要有 JMeter 脚本、机器配置、前后对比支撑，否则第一个追问就崩。
+项目里**刻意关掉了 Spring AI 的自动配置**（`spring.ai.model.chat=none`），改成手工装配 `OpenAiApi` + `OpenAiChatModel`。原因很实际：自动配置在**没有 API Key 时会让应用启动失败**，而我的项目要支持"没有 Key 也能跑测试、跑 dry-run"。手工装配可以把"缺 Key"变成一个运行时的明确错误，而不是启动期的崩溃。
 
-### Q12.17 怎么防超卖？ ★★★
+**追问**：`@ConditionalOnMissingBean` 有什么用？
+**追问答**：让自动配置**可被覆盖**——你只要自己声明一个同类型的 Bean，自动配置就退让。这是 Spring Boot"约定优于配置但不锁死"的关键机制。
 
-**答**：三层：1）**Redis 预扣**——Lua 脚本里 `if stock > 0 then decr`，判断和扣减原子；2）**数据库兜底**——`update stock set num = num - 1 where id = ? and num > 0`，靠 `num > 0` 条件 + 行锁保证不会扣成负数，影响行数为 0 就回滚 Redis；3）**幂等**——一人一单用 `setnx` 或 ZSet 去重，防同一用户重复下单。
+### Q12.21 SpringMVC 一个请求的完整流程？Filter 和 Interceptor 什么区别？ ★★
 
-**追问**：Lua 里为什么不能做耗时操作？
-**追问答**：Redis 是单线程执行命令的，Lua 脚本执行期间会阻塞其他所有请求。脚本里做 `keys *` 或者循环几万次，直接把整个 Redis 拖死。所以我的脚本只有几条 O(1) 命令。
+**答**：请求 → `DispatcherServlet` → `HandlerMapping` 找到 handler（含拦截器链）→ `preHandle` → `HandlerAdapter` 调用方法（参数解析、`@RequestBody` 反序列化）→ 返回值经 `HttpMessageConverter` 写出 → `postHandle` → `afterCompletion`。异常走 `HandlerExceptionResolver`。
 
-### Q12.18 接口幂等怎么做？ ★★
+**区别**：Filter 是 Servlet 规范、在 `DispatcherServlet` **之前**，拿得到 `ServletRequest` 但拿不到 handler 信息；Interceptor 是 Spring MVC 的、在 DispatcherServlet **之内**，拿得到 handler 和 `ModelAndView`，也能在 `afterCompletion` 里做清理。
 
-**答**：常见四种：1）**唯一索引**——最可靠，靠数据库兜底；2）**token 机制**——先取 token，提交时删 token，删成功才处理；3）**状态机**——只允许 `待支付 → 已支付`，重复请求状态不匹配就拒；4）**分布式锁 + 业务号**——`setnx(orderNo)` 短期锁。秒杀场景我用的是 1 + 3 组合，锁只用来削峰不去重。
+项目里两者都没自定义——Spring Boot 内嵌 Tomcat，我直接用 `@RestController`。**如果要做鉴权或限流，选 Filter**（更早、能拦掉静态资源）；**要做"按接口维度记耗时"，选 Interceptor**（能拿到 handler 方法）。
+
+### Q12.22 PostgreSQL 的索引和执行计划，和 MySQL 有什么不一样？ ★★★
+
+**答**：最大的结构差异：**InnoDB 是聚簇索引**（数据就存在主键 B+ 树的叶子节点上），**PostgreSQL 是堆表 + 独立索引**（索引叶子存的是 `ctid`，指向堆里的物理位置）。所以 PG 的"回表"是 index scan 之后再 heap fetch，代价比 InnoDB 的"二级索引→主键→聚簇"更直接，但 PG 没有"按主键物理有序"这回事。
+
+执行计划我用的是 `EXPLAIN (FORMAT JSON)`——因为要**程序化判断代价**，不是给人看。`QueryPlanAnalyzer` 解析 JSON 里的 `Total Cost`，超过阈值就判 `HIGH_RISK_COST` 直接拒掉，这是"防写"之外的第二道成本护栏。MySQL 的 `EXPLAIN` 默认是表格，也有 `FORMAT=JSON`，但字段名完全不同。
+
+**追问**：PG 的 index-only scan 需要什么条件？
+**追问答**：索引里要有查询涉及的所有列，**并且** visibility map 标记该页 all-visible（靠 VACUUM 维护）。所以 PG 的"覆盖索引"比 MySQL 更依赖维护动作——表更新频繁时 index-only scan 会退化成 index scan + heap fetch。
+
+### Q12.23 回表、覆盖索引是什么？和项目的列剪枝有关系吗？ ★★
+
+**答**：回表是"二级索引查到主键，再回主键索引取整行"；覆盖索引是"查询要的列都在索引里，不用回表"。`EXPLAIN` 里 MySQL 显示 `Using index`，PG 显示 `Index Only Scan`。
+
+**和列剪枝的关系是"副产品"**：`ColumnPruner` 的 7 条保全规则是为了压缩 DDL（7401 → 约 1271 字符，−82.7%）和减少列名歧义，不是为了性能。但列少了确实更容易命中覆盖索引——**这是顺带的，不是我当初的目的**。面试时把"目的"和"副产品"分清，比硬把两件事说成因果更可信。
+
+### Q12.24 深分页为什么慢？怎么优化？项目里有这个问题吗？ ★★
+
+**答**：`LIMIT 100000, 20` 的语义是"扫过前 100000 行，丢掉，再取 20 行"——**扫描量随偏移量线性增长**，越翻越慢。优化两条路：**延迟关联**（先用覆盖索引查出主键，再 join 回表，减少回表次数）；**游标/keyset 分页**（`WHERE id > :lastId ORDER BY id LIMIT 20`，走索引定位，O(1) 起跳）。
+
+项目里**没有这个问题**，因为我压根没做分页——结果集是 `LIMIT 201` 硬上限（取 201 行是为了判断"是否超 200"，多取一行做探测），没有 OFFSET。如果将来要给用户翻页，必须上 keyset，不能用 OFFSET。
+
+### Q12.25 事务隔离级别和 MVCC？PG 和 MySQL 有什么不同？ ★★
+
+**答**：四个级别：读未提交、读已提交、可重复读、串行化，分别解决脏读、不可重复读、幻读。MySQL InnoDB 默认**可重复读**，靠 undo log + read view 实现 MVCC，快照读不加锁；当前读（`FOR UPDATE`）加 next-key lock 防幻读。PostgreSQL 默认**读已提交**，同样是 MVCC，但它的"可重复读"实现是快照隔离（SI），幻读也不会出现；串行化用 SSI（可串行化快照隔离），靠检测冲突而不是加锁。
+
+项目里业务查询全是只读，**不需要事务**；持久化是单条 INSERT/UPDATE，靠单语句的原子性就够。所以我没有"处理过高并发事务"的经验可以吹，这块只能讲原理。
+
+### Q12.26 项目里用了哪些设计模式？为什么用它而不是 if-else？ ★★★
+
+**答**：四个真的用了：
+
+1. **策略**——`SchemaProvider` 是接口，`FullSchemaProvider`（全量）和 `HybridSchemaProvider`（检索）可替换。好处是 dry-run 时能切成全量校验 gold SQL，而主链路仍走检索，**同一套编排代码不用改**。
+2. **工厂方法**——`LlmCallRecord.of(...)` 有多个重载（带 cache / 不带 cache），把"怎么算成本"收在工厂里，调用方不需要知道计价公式。
+3. **建造者**——`PromptBuilder` 顺序追加 schema、指标、few-shot、问题，中间有条件分支；用构造器会变成十几个参数的重载地狱。
+4. **单例**——Spring Bean 默认单例，`SchemaCatalog`、`SqlCache` 都是，因为它们是"进程内共享状态"，多实例会重复加载元数据。
+
+**没用的**：责任链。`SqlValidator` 是一组 check 方法顺序执行、把 `Violation` 收集到 List 里，**没有 next 指针**，严格说不是责任链。面试官如果问"你这算责任链吗"，我会说"不算，它是收集式校验，好处是一次能报出所有问题而不是第一个就返回"——这个区别是真的，硬套反而露怯。
+
+**追问**：策略模式比 if-else 好在哪？
+**追问答**：三点：**开闭**（加一种实现不改调用方）、**可测**（每个策略单独单测，不用构造巨型分支）、**依赖倒置**（编排层依赖接口不依赖实现）。但策略不是无脑用——只有 2 个分支且不会增长时，if-else 更直白。
+
+### Q12.27 单例有几种写法？双检锁为什么要加 volatile？ ★★
+
+**答**：饿汉（类加载即创建，简单但可能浪费）、懒汉 + 同步（性能差）、**双检锁**（`volatile` + 两次 null 检查）、**静态内部类**（利用类加载机制保证线程安全，最推荐）、**枚举**（《Effective Java》推荐，天然防反射和反序列化破坏）。
+
+双检锁必须加 `volatile`，原因是**指令重排**：`instance = new Singleton()` 不是原子的，分三步——分配内存、初始化对象、把引用指向内存。2 和 3 可能重排，导致另一个线程在第一次检查时看到**非 null 但未初始化完成**的对象。`volatile` 禁止这个重排。
+
+项目里没手写单例——Spring Bean 默认就是单例，容器保证。但 `SqlCache` 的 L1 是**每个实例一份**的 `LinkedHashMap`，如果将来要保证全局唯一，我会用静态内部类而不是双检锁。
+
+### Q12.28 调用外部 HTTP 服务（比如 LLM）要注意什么？ ★★★
+
+**答**：五件事，缺一个就出事：
+
+1. **超时**——必须设**连接超时**和**读超时**两个，且读超时要按 P99 设（LLM 生成慢，设 3s 会把正常请求全掐死）。不设超时等于把线程永久借出去。
+2. **重试**——只对**幂等 + 可重试**的错误重试（超时、5xx、429），指数退避 + 抖动，且要有上限。**4xx 不重试**（参数错了重试一万次还是错）。
+3. **连接复用**——底层用连接池，不要每次 `new` 一个 client。BYOK 场景下我按 Key 缓存 client（LRU 32），避免每个请求都重建。
+4. **熔断/降级**——连续失败到阈值就快速失败，别让请求排队把线程池打满。我的降级是"明确报错 + 缓存兜底"，**不返回半成品 SQL**，因为错的 SQL 比没有 SQL 更危险。
+5. **可观测**——每次调用记模型、token、延迟、状态、成本。没有这层，你连"慢在哪"都说不出来。
+
+**追问**：超时时间怎么定？
+**追问答**：从**下游的 P99** 往上取，不是拍脑袋。这个项目 P95 是 12–17s，说明单次生成本来就要十几秒，超时设 3s 是自残。同时要有**总预算**（一次请求最多允许多少次 LLM 调用），否则"重试 2 次 × 改写 1 次 × 生成 1 次"会把延迟乘起来。
 
 ---
-
 ## Part 13 · 设计题与开放追问
 
 > 这一部分没有标准答案，考的是“你能不能把已有经验迁移到新约束上”。答法统一是：先问清约束 → 说方案 → 说代价 → 说怎么验证。
@@ -831,7 +1012,27 @@
 
 ### Q13.10 现场白板：画一下主链路。 ★★
 
-**答**：`问题 → QuestionRewriter（是否追问）→ SchemaRetriever（词典匹配 + 关系扩展 + 连通性修复，Top-8）→ JoinPlanner（Dijkstra 最短路 + Prim 生长）→ ColumnPruner（7 条保全规则）→ PromptBuilder（schema + 指标 + few-shot）→ LLM → SqlValidator（AST 白名单 + 函数黑名单）→ QueryExecutor（只读账号 + 10s + 200 行）→ ResultNormalizer → 返回`。旁路两条：`SqlCache`（L1 LRU + L2 PG）在检索前查、`LlmCallRecord` 在每次 LLM 调用后记账。**画的时候一定要标出“哪一步失败会导致什么错误类型”**，这是加分项。
+**答**：`问题 → QuestionRewriter（是否追问）→ SchemaRetriever（词典匹配 + 关系扩展 + 连通性修复，Top-8）→ JoinPlanner（Dijkstra 最短路 + Prim 生长）→ ColumnPruner（7 条保全规则）→ PromptBuilder（schema + 指标 + few-shot）→ LLM → SqlValidator（AST 白名单 + 函数黑名单）→ QueryExecutor（只读账号 + 10s + 200 行）→ ResultNormalizer → 返回`。旁路两条：`SqlCache`（L1 LRU + L2 PG）在检索前查、`LlmCallRecord` 在每次 LLM 调用后记账。**画的时候一定要标出"哪一步失败会导致什么错误类型"**，这是加分项。
+
+### Q13.11 Text2SQL 和 RAG 是同一类问题吗？你的经验能迁移多少？ ★★★
+
+**答**：**骨架相同，检索对象不同**。两者都是"检索 → 拼上下文 → 生成 → 校验"，但 RAG 检索的是**文本块**，Text2SQL 检索的是**结构（表/列/关系）**。
+
+能迁移的三点：① **检索质量决定上限**——RAG 里 chunk 切坏了，再强的模型也答不对；这里表选错了，SQL 一定错。② **上下文预算是硬约束**——RAG 要控 chunk 数，我要控表数（全量 DDL 7401 字符压到 1271）；③ **评测方法**——分层集 + 失败归因 + 执行准确率，这套方法论换个领域照样能用。
+
+不能迁移的一点：**RAG 没有"可执行的真值"**。Text2SQL 的 gold SQL 一跑就知道对错，是天然的强监督；RAG 的答案对不对要靠人判或者 LLM 判，评测成本高一个量级。这也是我选 Text2SQL 做项目的原因之一——**它有干净的评测信号**。
+
+### Q13.12 如果要把这个做成产品，第一个月做什么？ ★★★
+
+**答**：不做功能，做"能被人放心试"的最小闭环。
+
+1. **第 1 周：接一个真实业务库**（不是 Olist 合成数据），看词典和指标注册表在脏数据上崩在哪。
+2. **第 2 周：加鉴权和租户**——不是加个登录框，是把"这个用户能看哪些表/列"做成检索的前置过滤，而不是生成后再拦。这决定了架构，晚做要重构。
+3. **第 3 周：可观测 + 反馈闭环**——每次回答记 SQL、耗时、用户是否点了"有用/没用"。**用户点"没用"是最便宜的标注数据**，比我再造 200 条评测集有用。
+4. **第 4 周：灰度给 5 个人用**，只开只读 + 只开 3 个主题域，收集 100 条真实问题再决定下一步。
+
+**追问**：为什么不先做性能优化（P95 12–17s）？
+**追问答**：因为现在还没人用。12–17s 在"等人试用"阶段是可接受的，在"天天用"阶段才是致命的。**优化要跟着真实痛点走，不然优化的可能是个假问题**——这也是我为什么不把"降到 8s"排在第一位。
 
 ---
 
