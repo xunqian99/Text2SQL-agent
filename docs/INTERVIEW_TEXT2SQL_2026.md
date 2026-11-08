@@ -4,6 +4,7 @@
 > 用法：先背 Part 0 的三版自我介绍；再按 Part 1–10 过一遍；然后用 Part 11–12 做简历压力测试；最后用 Part 13 练开放题。
 > 难度：★ 基础 / ★★ 中级 / ★★★ 高级（会被追问两层以上）。
 > 共 137 题。所有数字均取自本项目实测（三次运行 84/85/86、280 项测试、53 条对抗、¥0.221/100 题）。
+> 交互版（答案折叠 / 关键词搜索 / 难度筛选 / 掌握进度）：[interview-2026.html](interview-2026.html)
 
 ## 目录
 
@@ -365,7 +366,7 @@
 
 ### Q5.5 模型返回带解释、markdown 围栏，怎么清洗？ ★★
 
-**答**：`SqlExtractor` 三步：取第一个 ```sql 围栏；剥掉 `SQL:`/`SQL：` 前缀；按空行切掉尾部解释，只保留以 SQL 关键字或 `, ) ;` 开头的续行。抽不出 SQL 就抛 `GenerationException(UNPARSEABLE)`，而不是把整段解释当 SQL 送进校验器——那会报 `PARSE_ERROR`，被误归因为「模型写错 SQL」。
+**答**：`SqlExtractor` 三步：取第一个 SQL 代码围栏；剥掉 `SQL:`/`SQL：` 前缀；按空行切掉尾部解释，只保留以 SQL 关键字或 `, ) ;` 开头的续行。抽不出 SQL 就抛 `GenerationException(UNPARSEABLE)`，而不是把整段解释当 SQL 送进校验器——那会报 `PARSE_ERROR`，被误归因为「模型写错 SQL」。
 
 ### Q5.6 为什么 prompt 要版本号？ ★★
 
