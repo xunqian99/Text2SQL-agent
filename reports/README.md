@@ -6,21 +6,26 @@
 
 > **当前入库的报告**：`reports/*.json` 默认被 `.gitignore` 排除；当前只强制入库本轮主口径与 token 汇总：
 >
-> - [`eval-20261108-210214.json`](eval-20261108-210214.json) —— 2026-11-08 重测 85%
-> - [`token-summary-20261108.json`](token-summary-20261108.json) —— 101 次调用 / 240,061 token
+> - [`eval-20261108-210214.json`](eval-20261108-210214.json) —— 第一次 85%
+> - [`eval-20261108-212550.json`](eval-20261108-212550.json) —— 第二次 86%
+> - [`token-summary-20261108.json`](token-summary-20261108.json) —— 第一次 101 次 / 240,061 token
+> - [`token-summary-20261108-run2.json`](token-summary-20261108-run2.json) —— 第二次 101 次 / 238,524 token
 >
 > 历史 84% / 85% 报告已本地归档到 `_archive/20261108-205341/reports/`（不入库），数字保留在
 > [docs/EVALUATION.md](../docs/EVALUATION.md)。
 
-## 0. 2026-11-08 重测（当前主口径）
+## 0. 2026-11-08 两次独立运行（当前主口径）
 
 | 报告 | 配置 | 执行准确率 | SQL 有效 | 平均 prompt token | 平均 / P95 |
 |---|---|---|---:|---:|---:|---:|
-| [`eval-20261108-210214.json`](eval-20261108-210214.json) | deepseek-flash / p8 / local / eval 100 | **85.00% (85/100)** | 100% | 1966.58 | 3658 / 12607ms |
+| [`eval-20261108-210214.json`](eval-20261108-210214.json) | deepseek-flash / p8 / local / eval 100（第一次） | **85.00% (85/100)** | 100% | 1966.58 | 3658 / 12607ms |
+| [`eval-20261108-212550.json`](eval-20261108-212550.json) | deepseek-flash / p8 / local / eval 100（第二次） | **86.00% (86/100)** | 100% | 1971.09 | 3532 / 12064ms |
 | [`eval-20261108-211110-dryrun.json`](eval-20261108-211110-dryrun.json) | dry-run / local / 200（修复后） | **100.00% (200/200)** | 100% | 0 | 75 / 317ms |
 | [`eval-20261108-205522-dryrun.json`](eval-20261108-205522-dryrun.json) | dry-run / local / 200（修复前） | 96.00% (192/200) | 96% | 0 | 60 / 278ms |
 
-Token 汇总：[`token-summary-20261108.json`](token-summary-20261108.json)（101 次调用：prompt 196,658 + completion 43,403 = 240,061）。
+Token 汇总：第一次 [`token-summary-20261108.json`](token-summary-20261108.json)（101 次：prompt 196,658 + completion 43,403 = 240,061）；第二次 [`token-summary-20261108-run2.json`](token-summary-20261108-run2.json)（101 次：prompt 197,109 + completion 41,415 = 238,524）。
+
+两次失败集合 12/15 重合；并集 17 条。
 
 历史报告已本地归档到 `_archive/20261108-205341/reports/`（不入库）；本目录只保留当前主口径与 dry-run 自检。
 
