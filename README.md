@@ -2,6 +2,7 @@
 
 > 中文业务问题 → 只读 PostgreSQL SQL → 结构化结果。基于 Olist 37 表电商数仓，面向“可评估、可解释、可归因”的 Text2SQL Agent。
 
+![CI](https://github.com/xunqian99/Text2SQL-agent/actions/workflows/ci.yml/badge.svg)
 ![Java](https://img.shields.io/badge/Java-21-orange)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.16-6DB33F)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1)
@@ -11,8 +12,9 @@
 
 [快速开始](#快速开始) · [评测方法](#评测方法) · [设计文档](#设计文档) · [已知局限](#已知局限)
 
-<!-- TODO: 录制 20s Web 界面 GIF 后放到 docs/assets/demo.gif，并取消下面一行注释 -->
-<!-- ![demo](docs/assets/demo.gif) -->
+![Demo](docs/assets/ui-ask.png)
+
+*示例：2018 年销售额 Top 5 州；SQL 通过 AST 校验，底部是检索表、模型和 token/耗时分解。*
 
 ## 这是什么 / 不是什么
 
@@ -78,7 +80,7 @@ flowchart TD
 | **总 Token（84% 轮）** | **[249,036](reports/token-summary-20261008.json)** | 104 次调用：prompt 202,935 + completion 46,101；按 100 题均 2,490 |
 | **单次成本** | **0 元（单价未配置）** | token 是真实统计；金额是“没算”，不是免费 |
 | **P95 延迟** | **10.31s**（复跑 **9.17s**，目标 <8s，**未达标**） | 尾部由重试与多表 Agent 侦察拉长；主口径与复跑两个数都保留 |
-| **自动化测试** | **269 项全绿** | 含 47 条对抗用例、9 条连真实 PostgreSQL 的集成测试（无库时自动跳过） |
+| **自动化测试** | **269 项全绿** | 本地含 47 条对抗用例、9 条真库集成测试；CI 无库时这 9 条自动跳过 |
 | **安全攻击拦截率** | **100% (47/47)** | 恶意注入、DDL/DML、危险函数（含 schema 限定名 / 引号标识符绕过）全数硬拦截 |
 | **长会话上下文压缩** | **-67.2% Token 消耗** | 5~8 轮长会话实验；滑动窗口+正则摘要压到 O(1) 量级，保留关键约束（非语义无损） |
 
@@ -293,8 +295,15 @@ mvn spring-boot:run "-Dspring-boot.run.arguments=--spring.profiles.active=local 
 | [DEFECT_LOG.md](docs/DEFECT_LOG.md) | 24 处缺陷、3 处安全绕过与修法 |
 | [EVAL_SET.md](docs/EVAL_SET.md) | 评估集分层规范与设计缺陷复盘 |
 | [TEST_SUITE_NOTES.md](docs/TEST_SUITE_NOTES.md) | 269 项测试的实测记录 |
+| [SECURITY.md](SECURITY.md) | 漏洞报告方式、安全边界与已知限制 |
 
 > 数据来源：Olist Brazilian E-Commerce Public Dataset。原始 CSV 不入库，获取方式见 [data/raw/README.md](data/raw/README.md)。
+
+---
+
+## Contributing
+
+个人项目，欢迎 Issue / PR。提交前请先看 [CONTRIBUTING.md](CONTRIBUTING.md) 的代码、范围与评估集约定。
 
 ---
 
