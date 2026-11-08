@@ -10,6 +10,7 @@
 > - [`eval-20261108-212550.json`](eval-20261108-212550.json) —— 第二次 86%
 > - [`token-summary-20261108.json`](token-summary-20261108.json) —— 第一次 101 次 / 240,061 token
 > - [`token-summary-20261108-run2.json`](token-summary-20261108-run2.json) —— 第二次 101 次 / 238,524 token
+> - [`cost-20261108.json`](cost-20261108.json) —— 本项目逐条 JSONL 成本（官方空闲价，缓存未命中上限）
 >
 > 历史 84% / 85% 报告已本地归档到 `_archive/20261108-205341/reports/`（不入库），数字保留在
 > [docs/EVALUATION.md](../docs/EVALUATION.md)。
