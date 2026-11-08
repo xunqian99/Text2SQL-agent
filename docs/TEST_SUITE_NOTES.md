@@ -3,6 +3,11 @@
 > 目的：验证简历/README 里"测试全绿"这一宣称是否可复现。
 > 结论：**`mvn test` 裸跑即可全绿**（250+ 项）。此前记录的两个问题都已修掉，见文末「已修复」。
 
+## 2026-11-08 重测
+
+`mvn clean test`：**Tests run: 269, Failures: 0, Errors: 0, Skipped: 0**。
+本次数据库在线，9 条真库集成测试实际执行（不是跳过）；`AdversarialSqlTest` 47 条全绿。
+
 ## 一、实测环境
 
 - JDK：OpenJDK 21.0.11 (Corretto)
