@@ -48,29 +48,13 @@
 
 ```mermaid
 flowchart TD
-    Q[中文业务问题] --> SESS{多轮会话检测}
-    SESS -- 追问/代词指代 --> REW[指代消解 QuestionRewriter<br/>滑动窗口偏好压缩 O(1)]
-    SESS -- 首问/独立问题 --> AMB{口径歧义检查}
-    REW --> AMB
-    AMB -- 命中歧义 --> ASK[反问确认 / 澄清]
-    AMB -- 无歧义 --> C1[L1 进程内 LRU 缓存]
-    C1 -- 命中 --> VAL[AST 安全校验]
-    C1 -- 未命中 --> C2[L2 数据库持久化语义缓存]
-    C2 -- 命中 --> VAL
-    C2 -- 未命中 --> RET[Schema 词典检索<br/>领域词典最大匹配 + 实体枚举对齐 ValueRetriever<br/>外键定向连接树规划 JoinPathPlanner]
-    RET --> SEM[业务口径注入<br/>metrics.yml 匹配与依赖过滤]
-    SEM --> LLM[LLM SQL 生成 / ReAct 工具侦察]
-    LLM --> VAL
-    VAL -- AST 校验通过 --> COST{EXPLAIN 预执行代价评估<br/>Cost Guard · 算子下推与笛卡尔积拦截}
-    COST -- 代价超标/笛卡尔积 --> RETRY{自省与反思重试<br/>错误信息/执行代价回灌}
-    COST -- 计划安全 --> EXE[沙箱物理执行<br/>只读账号 text2sql_ro · 10s超时]
-    EXE -- 执行成功 --> CHK{启发式语义不变量校验<br/>ResultChecker · 8组规则}
-    CHK -- 发现语义倒错/空结果 --> RETRY
-    CHK -- 校验通过 --> CACHE[写入 L1 + L2 缓存与会话记录]
-    VAL -- AST 拒绝 --> RETRY
-    EXE -- 执行失败 --> RETRY
-    CACHE --> OUT[结构化结果表格 + 耗时分解 + Token 审计]
-    ASK --> OUT
+    Q["中文问题"] --> R["改写 / 澄清 / 缓存"]
+    R --> S["Schema 检索 + 口径注入"]
+    S --> G["SQL 生成 / Agent 侦察"]
+    G --> V["AST + EXPLAIN 护栏"]
+    V --> X["只读执行：text2sql_ro + 10s 超时"]
+    X --> K["结果检查 / 自纠错"]
+    K --> O["结果 + 耗时 + Token 审计"]
 ```
 
 ---
