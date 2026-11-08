@@ -296,7 +296,6 @@ mvn spring-boot:run "-Dspring-boot.run.arguments=--spring.profiles.active=local 
 | [DEFECT_LOG.md](docs/DEFECT_LOG.md) | 24 处缺陷、3 处安全绕过与修法 |
 | [EVAL_SET.md](docs/EVAL_SET.md) | 评估集分层规范与设计缺陷复盘 |
 | [TEST_SUITE_NOTES.md](docs/TEST_SUITE_NOTES.md) | 269 项测试的实测记录 |
-| [PROJECT_GLOSSARY.md](docs/PROJECT_GLOSSARY.md) | 项目术语、类名与“别乱说”的词 |
 | [SECURITY.md](SECURITY.md) | 漏洞报告方式、安全边界与已知限制 |
 
 > 数据来源：Olist Brazilian E-Commerce Public Dataset。原始 CSV 不入库，获取方式见 [data/raw/README.md](data/raw/README.md)。
