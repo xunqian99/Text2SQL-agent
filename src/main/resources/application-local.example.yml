@@ -1,0 +1,57 @@
+# 本地 / 演示环境配置模板。
+#
+# 用法：
+#   cp src/main/resources/application-local.example.yml src/main/resources/application-local.yml
+#   然后在 application-local.yml 里填自己的 API Key（该文件已被 .gitignore 忽略）。
+#
+# 不要把这个文件改成真实 Key 后提交；Key 也不应该写进 README、Issue 或截图。
+
+agent:
+  llm:
+    provider: openai-compatible
+    # OpenAI 兼容端点。base-url 不要带 /v1，路径由 completions-path 拼。
+    base-url: https://api.deepseek.com
+    completions-path: /v1/chat/completions
+    model: deepseek-flash
+    temperature: 0.0
+    # deepseek-flash 是推理模型，reasoning_content 与 content 共用 max_tokens。
+    max-tokens: 8192
+    timeout-seconds: 60
+    # 从环境变量读取，缺省为空；不要在这里写真实 Key。
+    api-key: ${AGENT_LLM_API_KEY:}
+    # 成本单价（元 / 千 token）。留 0 表示只统计 token，不估算金额。
+    input-price-per-1k: 0.0
+    output-price-per-1k: 0.0
+
+  retrieval:
+    enabled: true
+    top-k: 8
+    column-pruning-enabled: true
+    join-hints-enabled: true
+    join-list-enabled: false
+    join-plan-enabled: true
+
+  semantic:
+    enabled: true
+
+  fewshot:
+    enabled: true
+    max-examples: 2
+
+  result-checker:
+    enabled: true
+
+  self-correction:
+    enabled: true
+    max-attempts: 2
+
+  conversation:
+    enabled: true
+    max-turns: 5
+    reuse-schema: true
+    rewrite-with-llm: true
+
+  guard:
+    explain-cost-guard-enabled: true
+    max-allowed-cost: 100000.0
+    reject-cartesian-product: true
