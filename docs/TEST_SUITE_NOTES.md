@@ -5,8 +5,10 @@
 
 ## 2026-11-08 重测
 
-`mvn clean test`：**Tests run: 269, Failures: 0, Errors: 0, Skipped: 0**。
+`mvn clean test`：**Tests run: 270, Failures: 0, Errors: 0, Skipped: 0**。
 本次数据库在线，9 条真库集成测试实际执行（不是跳过）；`AdversarialSqlTest` 47 条全绿。
+
+dry-run 的 trusted gold SQL 修复后复跑 `mvn test`：**270/0/0/0**，无回归。
 
 ## 一、实测环境
 
@@ -18,7 +20,7 @@
 
 ```
 mvn test
-Tests run: 269, Failures: 0, Errors: 0, Skipped: 0
+Tests run: 270, Failures: 0, Errors: 0, Skipped: 0
 BUILD SUCCESS
 ```
 
@@ -60,7 +62,7 @@ JDK 9+ 默认禁止自附加（`jdk.attach.allowAttachSelf=false`）。
 
 ## 四、面试答辩口径
 
-- 被问"测试全绿吗"：**269 项全部通过，`mvn test` 一条命令即可复现**。
+- 被问"测试全绿吗"：**270 项全部通过，`mvn test` 一条命令即可复现**。
 - 被问"测试里有没有坑"：可以主动讲上面两个——一个是**把环境知识固化进构建配置**，
   一个是**用严格不等号写超时判据导致的边界 flake**。后者比"全绿"更能体现
   你知道测试的边界在哪。

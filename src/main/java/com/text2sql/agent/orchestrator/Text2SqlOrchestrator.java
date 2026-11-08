@@ -507,10 +507,16 @@ public class Text2SqlOrchestrator {
     public AgentResponse askWithFixedSql(String question, String sql, LlmCallRecord llmCall) {
         long totalStarted = System.nanoTime();
         long retrievalStarted = System.nanoTime();
-        SchemaContext schema = schemaProvider.provide(question);
+        SchemaContext retrieved = schemaProvider.provide(question);
         long retrievalMs = elapsedMs(retrievalStarted);
-        return validateAndExecute(question, sql, llmCall, schema, schema.tables().size(),
-                schema.tableNames(), schema.ddlText() == null ? 0 : schema.ddlText().length(),
+        // dry-run 的输入是 trusted gold SQL：校验用全量 schema，避免把
+        // gold 里「不产出列、只起过滤作用」的 join 误判成检索漏表。
+        // 检索指标仍按 retrieved 记录，召回率不会因此虚高。
+        SchemaContext validationSchema = properties.getEval().isDryRun()
+                ? schemaProvider.fullSchema() : retrieved;
+        return validateAndExecute(question, sql, llmCall, validationSchema,
+                retrieved.tables().size(), retrieved.tableNames(),
+                retrieved.ddlText() == null ? 0 : retrieved.ddlText().length(),
                 retrievalMs, 0, totalStarted);
     }
 
@@ -583,7 +589,11 @@ public class Text2SqlOrchestrator {
         }
 
         // 阶段 5 闭环防御：EXPLAIN 执行代价与全表笛卡尔积预执行护栏
-        if (properties.getGuard().isExplainCostGuardEnabled() && queryPlanAnalyzer != null) {
+        // dry-run 用 trusted gold SQL 自检，不应用运行时代价护栏去卡它；
+        // 代价护栏的职责是拦截模型生成的慢查询/笛卡尔积。
+        if (!properties.getEval().isDryRun()
+                && properties.getGuard().isExplainCostGuardEnabled()
+                && queryPlanAnalyzer != null) {
             var analysis = queryPlanAnalyzer.analyze(validation.sql());
             if (!analysis.safe()) {
                 log.warn("SQL 触发高危执行计划护栏拦截：{}", analysis.riskDescription());

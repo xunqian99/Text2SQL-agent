@@ -17,7 +17,8 @@
 | 报告 | 配置 | 执行准确率 | SQL 有效 | 平均 prompt token | 平均 / P95 |
 |---|---|---|---:|---:|---:|---:|
 | [`eval-20261108-210214.json`](eval-20261108-210214.json) | deepseek-flash / p8 / local / eval 100 | **85.00% (85/100)** | 100% | 1966.58 | 3658 / 12607ms |
-| [`eval-20261108-205522-dryrun.json`](eval-20261108-205522-dryrun.json) | dry-run / local / 200 | 96.00% (192/200) | 96% | 0 | 60 / 278ms |
+| [`eval-20261108-211110-dryrun.json`](eval-20261108-211110-dryrun.json) | dry-run / local / 200（修复后） | **100.00% (200/200)** | 100% | 0 | 75 / 317ms |
+| [`eval-20261108-205522-dryrun.json`](eval-20261108-205522-dryrun.json) | dry-run / local / 200（修复前） | 96.00% (192/200) | 96% | 0 | 60 / 278ms |
 
 Token 汇总：[`token-summary-20261108.json`](token-summary-20261108.json)（101 次调用：prompt 196,658 + completion 43,403 = 240,061）。
 

@@ -10,4 +10,15 @@ package com.text2sql.agent.retrieval;
 public interface SchemaProvider {
 
     SchemaContext provide(String question);
+
+    /**
+     * 全量 schema，供 dry-run 的 trusted gold SQL 校验使用。
+     *
+     * <p>dry-run 的目的是验证评估器/校验器/执行器自身没坏，输入是 gold SQL，
+     * 不是模型生成结果。此时不应该用检索子集去卡 gold 里那些「不产出列、
+     * 只起过滤作用」的 join；检索召回率由 retrieval 指标单独报告。
+     */
+    default SchemaContext fullSchema() {
+        return provide("");
+    }
 }

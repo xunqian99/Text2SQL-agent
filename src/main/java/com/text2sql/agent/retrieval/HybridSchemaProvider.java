@@ -108,6 +108,11 @@ public class HybridSchemaProvider implements SchemaProvider {
     }
 
     @Override
+    public SchemaContext fullSchema() {
+        return catalog.full();
+    }
+
+    @Override
     public SchemaContext provide(String question) {
         SchemaContext full = catalog.full();
         RetrievalResult result = retriever.retrieve(question);

@@ -58,6 +58,11 @@ public class FullSchemaProvider implements SchemaProvider {
     }
 
     @Override
+    public SchemaContext fullSchema() {
+        return catalog.full();
+    }
+
+    @Override
     public SchemaContext provide(String question) {
         // 阶段 1 的形态：整库塞入，不做表筛选。
         //

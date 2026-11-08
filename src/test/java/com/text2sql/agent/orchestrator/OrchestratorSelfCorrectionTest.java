@@ -15,6 +15,7 @@ import com.text2sql.agent.validation.ValidationResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import java.util.List;
 
@@ -285,5 +286,42 @@ class OrchestratorSelfCorrectionTest {
         assertThat(response.sql()).contains("JOIN customers ON orders.customer_id = customers.customer_id");
         verify(generator, times(1))
                 .generateCorrection(anyString(), any(), anyString(), anyString(), any());
+    }
+
+    @Test
+    @DisplayName("dry-run：trusted gold SQL 用全量 schema 校验，检索指标仍按子集记录")
+    void dryRunValidatesGoldSqlAgainstFullSchema() {
+        properties.getEval().setDryRun(true);
+
+        SchemaContext retrieved = new SchemaContext(
+                List.of(new SchemaContext.Table("orders", null, List.of(
+                        new SchemaContext.Column("order_id", "text", false, null)))),
+                List.of(), "", "TABLE orders");
+        SchemaContext full = new SchemaContext(
+                List.of(
+                        new SchemaContext.Table("orders", null, List.of(
+                                new SchemaContext.Column("order_id", "text", false, null))),
+                        new SchemaContext.Table("customers", null, List.of(
+                                new SchemaContext.Column("customer_id", "text", false, null)))),
+                List.of(), "", "TABLE orders\nTABLE customers");
+        when(schemaProvider.provide(anyString())).thenReturn(retrieved);
+        when(schemaProvider.fullSchema()).thenReturn(full);
+        when(validator.validate(anyString(), any())).thenAnswer(inv ->
+                ValidationResult.ok(inv.getArgument(0)));
+        when(executor.execute(anyString()))
+                .thenReturn(new QueryResult(List.of("order_id"), List.of(List.of("1")), false, 1));
+
+        AgentResponse response = orchestrator().askWithFixedSql("有多少订单？",
+                "SELECT o.order_id FROM orders o JOIN customers c ON c.customer_id = o.order_id", null);
+
+        assertThat(response.success()).isTrue();
+        ArgumentCaptor<SchemaContext> schemaCaptor = ArgumentCaptor.forClass(SchemaContext.class);
+        verify(validator).validate(anyString(), schemaCaptor.capture());
+        assertThat(schemaCaptor.getValue().tableNames())
+                .as("dry-run 必须用全量 schema 校验 trusted gold SQL")
+                .containsExactly("orders", "customers");
+        assertThat(response.retrievedTables())
+                .as("检索指标仍按实际召回的子集记录，不能虚高")
+                .containsExactly("orders");
     }
 }
