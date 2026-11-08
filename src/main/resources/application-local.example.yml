@@ -19,9 +19,12 @@ agent:
     timeout-seconds: 60
     # 从环境变量读取，缺省为空；不要在这里写真实 Key。
     api-key: ${AGENT_LLM_API_KEY:}
-    # 成本单价（元 / 千 token）。留 0 表示只统计 token，不估算金额。
-    input-price-per-1k: 0.0
-    output-price-per-1k: 0.0
+    # 成本单价（元 / 千 token）。DeepSeek V4.1 Flash 官方空闲价：
+    # 输入缓存未命中 1 元/百万 = 0.001；输出 4 元/百万 = 0.004；
+    # 缓存命中 0.02 元/百万 = 0.00002。高峰时段翻倍。
+    input-price-per-1k: 0.001
+    output-price-per-1k: 0.004
+    cache-hit-price-per-1k: 0.00002
 
   retrieval:
     enabled: true

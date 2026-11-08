@@ -3,9 +3,9 @@
     "model": "deepseek-flash (DeepSeek-V4.1-Flash-1017)",
     "currency": "CNY",
     "period": "off-peak",
-    "cache": "miss-upper-bound",
     "inputPricePer1m": 1.0,
     "outputPricePer1m": 4.0,
+    "cacheHitPricePer1m": 0.02,
     "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing/",
     "asOf": "2026-11-08"
   },
@@ -15,6 +15,10 @@
       "promptTokens": 196658,
       "completionTokens": 43403,
       "totalTokens": 240061,
+      "cacheHitTokens": 0,
+      "cacheMissTokens": 196658,
+      "cacheHitRate": 0.0,
+      "costMode": "upper-bound",
       "costYuan": 0.37027,
       "perCallYuan": 0.003666,
       "status": {
@@ -33,6 +37,10 @@
       "promptTokens": 1917,
       "completionTokens": 84,
       "totalTokens": 2001,
+      "cacheHitTokens": 0,
+      "cacheMissTokens": 1917,
+      "cacheHitRate": 0.0,
+      "costMode": "upper-bound",
       "costYuan": 0.002253,
       "perCallYuan": 0.002253,
       "status": {
@@ -50,6 +58,10 @@
       "promptTokens": 197109,
       "completionTokens": 41415,
       "totalTokens": 238524,
+      "cacheHitTokens": 0,
+      "cacheMissTokens": 197109,
+      "cacheHitRate": 0.0,
+      "costMode": "upper-bound",
       "costYuan": 0.362769,
       "perCallYuan": 0.003592,
       "status": {
@@ -68,6 +80,10 @@
       "promptTokens": 395684,
       "completionTokens": 84902,
       "totalTokens": 480586,
+      "cacheHitTokens": 0,
+      "cacheMissTokens": 395684,
+      "cacheHitRate": 0.0,
+      "costMode": "upper-bound",
       "costYuan": 0.735292,
       "perCallYuan": 0.003622,
       "status": {
@@ -80,7 +96,28 @@
       "label": "combined",
       "since": "2026-11-08T20:50:00",
       "until": "2026-11-08T21:30:00"
+    },
+    {
+      "calls": 3,
+      "promptTokens": 5852,
+      "completionTokens": 157,
+      "totalTokens": 6009,
+      "cacheHitTokens": 5120,
+      "cacheMissTokens": 732,
+      "cacheHitRate": 0.8749,
+      "costMode": "cache-aware",
+      "costYuan": 0.001462,
+      "perCallYuan": 0.000487,
+      "status": {
+        "OK": 3
+      },
+      "models": {
+        "deepseek-flash": 3
+      },
+      "label": "cacheSmoke",
+      "since": "2026-11-08T21:48:00",
+      "until": "2026-11-08T21:49:00"
     }
   ],
-  "note": "只统计本项目 JSONL 的调用，不依赖控制台账单；JSONL 未记录 cache hit/miss，按缓存未命中价计算，结果是上限。"
+  "note": "只统计本项目 JSONL；run1/smoke/run2/combined 无 cache 字段，按缓存未命中上限；cacheSmoke 带 cache 字段，按 hit/miss 分段计价。"
 }

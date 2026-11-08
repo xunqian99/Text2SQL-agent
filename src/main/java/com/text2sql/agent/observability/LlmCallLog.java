@@ -106,6 +106,8 @@ public class LlmCallLog implements AutoCloseable {
                 record.promptChars(),
                 record.latencyMs(),
                 record.costYuan(),
+                record.cacheHitTokens(),
+                record.cacheMissTokens(),
                 properties.getObservability().isIncludeContent() ? prompt : null,
                 properties.getObservability().isIncludeContent() ? response : null);
 
@@ -191,6 +193,8 @@ public class LlmCallLog implements AutoCloseable {
             int promptChars,
             long latencyMs,
             double costYuan,
+            int cacheHitTokens,
+            int cacheMissTokens,
             String prompt,
             String response) {
     }

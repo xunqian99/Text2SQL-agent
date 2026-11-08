@@ -318,16 +318,29 @@ public class LlmSqlGenerator {
     private LlmCallRecord buildRecord(ChatResponse response, int promptChars, long latencyMs, String model) {
         Integer in = null;
         Integer out = null;
+        Integer cacheHit = null;
+        Integer cacheMiss = null;
         ChatResponseMetadata metadata = response.getMetadata();
         if (metadata != null) {
             Usage usage = metadata.getUsage();
             if (usage != null) {
                 in = usage.getPromptTokens();
                 out = usage.getCompletionTokens();
+                // DeepSeek 在 prompt_tokens_details.cached_tokens 里给出缓存命中数；
+                // Spring AI 的 OpenAiApi.Usage 会把它映射到 PromptTokensDetails。
+                if (usage.getNativeUsage() instanceof OpenAiApi.Usage nativeUsage
+                        && nativeUsage.promptTokensDetails() != null) {
+                    cacheHit = nativeUsage.promptTokensDetails().cachedTokens();
+                    if (cacheHit != null && in != null) {
+                        cacheMiss = Math.max(0, in - cacheHit);
+                    }
+                }
             }
         }
-        return LlmCallRecord.of(model, in, out, promptChars, latencyMs,
-                properties.getLlm().getInputPricePer1k(), properties.getLlm().getOutputPricePer1k());
+        return LlmCallRecord.of(model, in, out, cacheHit, cacheMiss, promptChars, latencyMs,
+                properties.getLlm().getInputPricePer1k(),
+                properties.getLlm().getOutputPricePer1k(),
+                properties.getLlm().getCacheHitPricePer1k());
     }
 
     /**

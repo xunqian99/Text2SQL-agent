@@ -227,6 +227,8 @@ public class AgentProperties {
         /** 成本估算单价（元 / 千 token）。阶段 6 会用真实单价替换，这里先留 0 表示不估算。 */
         private double inputPricePer1k = 0.0;
         private double outputPricePer1k = 0.0;
+        /** 缓存命中输入的单价（元 / 千 token）。DeepSeek 空闲价约 0.00002。 */
+        private double cacheHitPricePer1k = 0.0;
 
         public String getProvider() {
             return provider;
@@ -306,6 +308,14 @@ public class AgentProperties {
 
         public void setOutputPricePer1k(double outputPricePer1k) {
             this.outputPricePer1k = outputPricePer1k;
+        }
+
+        public double getCacheHitPricePer1k() {
+            return cacheHitPricePer1k;
+        }
+
+        public void setCacheHitPricePer1k(double cacheHitPricePer1k) {
+            this.cacheHitPricePer1k = cacheHitPricePer1k;
         }
     }
 
