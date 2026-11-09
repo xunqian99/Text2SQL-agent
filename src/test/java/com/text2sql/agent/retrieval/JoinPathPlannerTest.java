@@ -268,4 +268,54 @@ class JoinPathPlannerTest {
                 (e.fromTable().equals("orders") && e.toTable().equals("customers")) ||
                 (e.fromTable().equals("customers") && e.toTable().equals("regions")));
     }
+
+    @Test
+    @DisplayName("planForTargets：斯坦纳树算法避免局部贪心分支，在会员与区域查询中排除虚假 sellers 支路")
+    void planForTargetsAvoidsSpuriousSellerBranch() {
+        // 模拟 T5-001 真实拓扑：
+        // 目标表：order_items, members, regions
+        // 候选表：order_items, orders, customers, members, sellers, regions
+        // 路径 1: order_items -> sellers -> regions (局部贪心 2 跳)
+        // 路径 2: order_items -> orders -> customers -> regions (3 跳)
+        // 路径 3: customers -> members (1 跳)
+        // 全局最优树应复用 customers 连通 regions 与 members，绝不能引入无关表 sellers
+        SchemaContext schema = new SchemaContext(List.of(
+                new SchemaContext.Table("order_items", null, List.of()),
+                new SchemaContext.Table("orders", null, List.of()),
+                new SchemaContext.Table("customers", null, List.of()),
+                new SchemaContext.Table("members", null, List.of()),
+                new SchemaContext.Table("sellers", null, List.of()),
+                new SchemaContext.Table("regions", null, List.of())),
+                List.of(
+                        new SchemaContext.ForeignKey("order_items", "order_id", "orders", "order_id"),
+                        new SchemaContext.ForeignKey("order_items", "seller_id", "sellers", "seller_id"),
+                        new SchemaContext.ForeignKey("orders", "customer_id", "customers", "customer_id")
+                ), "", "");
+
+        com.text2sql.agent.retrieval.glossary.Glossary glossary = new com.text2sql.agent.retrieval.glossary.Glossary(
+                List.of(
+                        new com.text2sql.agent.retrieval.glossary.Glossary.Relation("customers.customer_state", "regions.region_code"),
+                        new com.text2sql.agent.retrieval.glossary.Glossary.Relation("sellers.seller_state", "regions.region_code"),
+                        new com.text2sql.agent.retrieval.glossary.Glossary.Relation("customers.customer_unique_id", "members.customer_unique_id")
+                ),
+                java.util.Map.of());
+
+        JoinGraph graph = JoinGraph.from(schema, glossary);
+
+        var targets = java.util.Set.of("order_items", "members", "regions");
+        var ranked = List.of("order_items", "orders", "sellers", "regions", "customers", "members");
+
+        var plan = JoinPathPlanner.planForTargets(graph, targets, ranked);
+
+        assertThat(plan.isEmpty()).isFalse();
+        // 验证全局最小生成树：必须经由 customers 桥接，绝不能包含 sellers
+        java.util.Set<String> planTables = new java.util.HashSet<>();
+        plan.edges().forEach(e -> {
+            planTables.add(e.fromTable());
+            planTables.add(e.toTable());
+        });
+
+        assertThat(planTables).contains("order_items", "orders", "customers", "regions", "members");
+        assertThat(planTables).doesNotContain("sellers");
+    }
 }

@@ -2,8 +2,10 @@ package com.text2sql.agent.retrieval;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -281,13 +283,6 @@ public final class JoinPathPlanner {
             return new Plan(null, List.of(), normalizedTargets.size());
         }
 
-        // 确定根节点：优先选择 rankedTables 中排名最靠前的 targetTable
-        String root = rankedTables.stream()
-                .map(JoinPathPlanner::normalize)
-                .filter(normalizedTargets::contains)
-                .findFirst()
-                .orElse(normalizedTargets.iterator().next());
-
         Set<String> allowedTables = new LinkedHashSet<>();
         rankedTables.forEach(t -> allowedTables.add(normalize(t)));
         allowedTables.addAll(normalizedTargets);
@@ -299,37 +294,119 @@ public final class JoinPathPlanner {
             adj.computeIfAbsent(normalize(edge.toTable()), k -> new ArrayList<>()).add(edge);
         }
 
-        if (!adj.containsKey(root)) {
+        // 基于斯坦纳树（Steiner Minimal Spanning Tree）近似算法构建连接拓扑：
+        // 避免单一根节点径向 Dijkstra 导致的冗余支路发散（例如把已在树中的节点当作未知节点重复寻找多余连路）。
+        // 尝试每个目标表作为种子根，挑选覆盖目标最多、边总代价最小的最优主干生成树。
+        List<String> candidateRoots = new ArrayList<>();
+        for (String r : rankedTables) {
+            String norm = normalize(r);
+            if (normalizedTargets.contains(norm) && adj.containsKey(norm) && !candidateRoots.contains(norm)) {
+                candidateRoots.add(norm);
+            }
+        }
+        for (String t : normalizedTargets) {
+            if (adj.containsKey(t) && !candidateRoots.contains(t)) {
+                candidateRoots.add(t);
+            }
+        }
+
+        if (candidateRoots.isEmpty()) {
             return new Plan(null, List.of(), normalizedTargets.size());
         }
 
-        Set<JoinGraph.Edge> selectedEdges = new LinkedHashSet<>();
-        for (String target : normalizedTargets) {
-            if (target.equals(root)) {
+        Set<JoinGraph.Edge> bestEdges = null;
+        double minTotalCost = Double.MAX_VALUE;
+        long bestSpannedCount = 0;
+
+        for (String root : candidateRoots) {
+            Set<JoinGraph.Edge> edges = buildSteinerTreeForRoot(root, normalizedTargets, adj);
+            if (edges.isEmpty()) {
                 continue;
             }
-            List<JoinGraph.Edge> path = findShortestPath(root, target, adj);
-            if (path != null) {
-                selectedEdges.addAll(path);
+            Set<String> spanned = new HashSet<>();
+            for (JoinGraph.Edge e : edges) {
+                spanned.add(normalize(e.fromTable()));
+                spanned.add(normalize(e.toTable()));
+            }
+            long spannedTargets = normalizedTargets.stream().filter(spanned::contains).count();
+            double cost = totalCost(edges);
+
+            if (bestEdges == null || spannedTargets > bestSpannedCount || (spannedTargets == bestSpannedCount && cost < minTotalCost)) {
+                bestEdges = edges;
+                minTotalCost = cost;
+                bestSpannedCount = spannedTargets;
             }
         }
 
-        if (selectedEdges.isEmpty()) {
+        if (bestEdges == null || bestEdges.isEmpty()) {
             return new Plan(null, List.of(), normalizedTargets.size());
         }
 
-        return plan(new ArrayList<>(selectedEdges), rankedTables);
+        return plan(new ArrayList<>(bestEdges), rankedTables);
     }
 
-    private static List<JoinGraph.Edge> findShortestPath(String start, String target, Map<String, List<JoinGraph.Edge>> adj) {
+    private static Set<JoinGraph.Edge> buildSteinerTreeForRoot(
+            String root, Set<String> normalizedTargets, Map<String, List<JoinGraph.Edge>> adj) {
+        Set<JoinGraph.Edge> selectedEdges = new LinkedHashSet<>();
+        Set<String> treeNodes = new LinkedHashSet<>();
+        treeNodes.add(root);
+
+        Set<String> remainingTargets = new LinkedHashSet<>(normalizedTargets);
+        remainingTargets.remove(root);
+
+        while (!remainingTargets.isEmpty()) {
+            List<JoinGraph.Edge> bestPath = null;
+            double bestCost = Double.MAX_VALUE;
+            String bestTarget = null;
+
+            for (String target : remainingTargets) {
+                List<JoinGraph.Edge> path = findShortestPathToTree(treeNodes, target, adj);
+                if (path != null && !path.isEmpty()) {
+                    double cost = totalCost(path);
+                    if (cost < bestCost) {
+                        bestCost = cost;
+                        bestPath = path;
+                        bestTarget = target;
+                    }
+                }
+            }
+
+            if (bestPath == null || bestTarget == null) {
+                break;
+            }
+
+            selectedEdges.addAll(bestPath);
+            for (JoinGraph.Edge edge : bestPath) {
+                treeNodes.add(normalize(edge.fromTable()));
+                treeNodes.add(normalize(edge.toTable()));
+            }
+            remainingTargets.remove(bestTarget);
+            remainingTargets.removeIf(treeNodes::contains);
+        }
+
+        return selectedEdges;
+    }
+
+    private static double totalCost(Collection<JoinGraph.Edge> edges) {
+        double cost = 0.0;
+        for (JoinGraph.Edge e : edges) {
+            cost += e.isForeignKey() ? 1.0 : 2.0;
+        }
+        return cost;
+    }
+
+    private static List<JoinGraph.Edge> findShortestPathToTree(
+            Set<String> treeNodes, String target, Map<String, List<JoinGraph.Edge>> adj) {
         record NodeDist(String node, double dist) {}
         Map<String, Double> dist = new LinkedHashMap<>();
         Map<String, JoinGraph.Edge> prevEdge = new LinkedHashMap<>();
         Map<String, String> prevNode = new LinkedHashMap<>();
 
         java.util.PriorityQueue<NodeDist> pq = new java.util.PriorityQueue<>(Comparator.comparingDouble(NodeDist::dist));
-        dist.put(start, 0.0);
-        pq.add(new NodeDist(start, 0.0));
+        for (String node : treeNodes) {
+            dist.put(node, 0.0);
+            pq.add(new NodeDist(node, 0.0));
+        }
 
         while (!pq.isEmpty()) {
             NodeDist curr = pq.poll();
@@ -346,7 +423,6 @@ public final class JoinPathPlanner {
                         ? normalize(edge.toTable())
                         : normalize(edge.fromTable());
 
-                // 外键边代价 1.0，推断边代价 2.0（优先走外键硬事实）
                 double weight = edge.isForeignKey() ? 1.0 : 2.0;
                 double newDist = curr.dist() + weight;
 
@@ -359,13 +435,13 @@ public final class JoinPathPlanner {
             }
         }
 
-        if (!dist.containsKey(target)) {
-            return null; // 无法连通
+        if (!dist.containsKey(target) || treeNodes.contains(target)) {
+            return List.of();
         }
 
         List<JoinGraph.Edge> path = new ArrayList<>();
         String curr = target;
-        while (!curr.equals(start)) {
+        while (curr != null && !treeNodes.contains(curr)) {
             JoinGraph.Edge edge = prevEdge.get(curr);
             if (edge == null) {
                 break;
