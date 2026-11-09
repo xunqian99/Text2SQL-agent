@@ -100,17 +100,7 @@ public class MetricRegistry {
             boolean aliasHit = metric.aliases().stream()
                     .filter(alias -> alias != null && !alias.isBlank())
                     .anyMatch(alias -> text.contains(normalizeForMatch(alias)));
-            if (!aliasHit) {
-                continue;
-            }
-            boolean requiredHit = metric.requiredPhrases().isEmpty()
-                    || metric.requiredPhrases().stream()
-                    .anyMatch(phrase -> phrase != null && !phrase.isBlank()
-                            && text.contains(normalizeForMatch(phrase)));
-            boolean excludedHit = metric.excludedPhrases().stream()
-                    .anyMatch(phrase -> phrase != null && !phrase.isBlank()
-                            && text.contains(normalizeForMatch(phrase)));
-            if (requiredHit && !excludedHit) {
+            if (aliasHit) {
                 hits.add(metric);
             }
         }

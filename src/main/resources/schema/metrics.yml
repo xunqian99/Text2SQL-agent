@@ -66,38 +66,19 @@ metrics:
       严禁使用 orders.customer_id（customer_id 是订单级令牌，每笔订单都不一样，去重结果等于订单数）。
 
   - name: sales_without_freight
-    # 【刻意留空 aliases —— 这是被实测逼出来的】
-    #
-    # 第一版写的是 [销售额, 商品销售额, 不含运费, 商品金额]，结果注入了 4 道
-    # 非业务口径题，并把其中 3 道弄坏（T3-014 / T4-002 / T4-004）。
-    #
-    # 原因：这些是**普通描述词**，不是业务黑话。「每个州的商品销售额是多少」
-    # 就是一次简单聚合，模型本来就会写 SUM(oi.price)；而普通题的 gold
-    # 没有「排除取消/不可用订单」的过滤，一旦注入带 filter 的指标定义，
-    # 模型会照抄那个过滤，结果就错了。
-    #
-    # 判据：**别名只放业务黑话（GMV、复购率、动销率），不放普通描述词。**
-    # 黑话才需要口径定义，普通问法让模型按字面写即可。
-    aliases: []
+    aliases: [不含运费销售额, 净销售额]
     description: 销售额（不含运费）= 商品金额合计
     expression: "SUM(oi.price)"
     tables: [order_items, orders]
     notes: |
-      只统计商品本身的金额。
-      【注意】这道定义**不自动注入**（aliases 为空），因为它对应的问法
-      「销售额」在普通题里就是字面意思，加口径反而错。
-      T6-001 同时问 GMV 和「不含运费的销售额」，靠 gmv_with_freight
-      命中后，模型能从 notes 里读到两者的区别。
+      只统计商品本身的金额。若用户明确询问「不含运费」或「商品净销售额」时使用。
+      与 gmv_with_freight（含运费）互为补充。
 
   # --------------------------------------------------------------------------
   # 比例类指标：全部乘 100 保留 2 位小数，保持格式一致
   # --------------------------------------------------------------------------
   - name: aov
     aliases: [客单价, 平均订单金额, 订单均价]
-    # 「客单价」在普通多表题里可能只是题目对 AVG(order_items.price)
-    # 的自然描述；只有题目明确说有效订单、GMV 或含运费时，才使用本项目
-    # 约定的「含运费 GMV / 有效订单数」口径。
-    requiredPhrases: [有效订单, GMV, 含运费]
     description: 客单价 = GMV / 有效订单数
     expression: "ROUND(SUM(oi.price + oi.freight_value) / COUNT(DISTINCT o.order_id), 2)"
     tables: [orders, order_items]
@@ -340,8 +321,6 @@ metrics:
 
   - name: delivery_days
     aliases: [配送时长, 配送天数, 送达时长, 平均配送, 物流时长]
-    requiredPhrases: [下单到签收, 客户签收, 客户配送]
-    excludedPhrases: [承运商, 发货, shipped_at, carrier]
     description: 平均配送时长 = 下单到签收的天数（保留小数）
     expression: "ROUND(AVG(EXTRACT(EPOCH FROM (o.order_delivered_customer_date - o.order_purchase_timestamp)) / 86400.0), 2)"
     tables: [orders]

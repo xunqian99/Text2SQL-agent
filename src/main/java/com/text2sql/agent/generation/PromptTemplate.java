@@ -109,7 +109,8 @@ public class PromptTemplate {
         // 而问题必须在最后（模型对末尾注意力更强）。放在 schema 和问题中间，
         // 既在背景区，又离问题最近——需要引用时最容易够到。
         if (schema.hasMetrics()) {
-            sb.append("=== 业务指标定义（必须照抄表达式）===\n")
+            sb.append("=== 业务指标口径约定（数仓标准度量）===\n")
+                    .append("【使用原则】当用户问题涉及以下指标且未指定特殊计算口径时，遵循标准度量的表达式与过滤条件；若用户明确指明了特定的计算口径或聚合逻辑，以用户明确说明为准。\n")
                     .append(schema.metricsText()).append("\n\n");
         }
         if (schema.hasValueHints()) {

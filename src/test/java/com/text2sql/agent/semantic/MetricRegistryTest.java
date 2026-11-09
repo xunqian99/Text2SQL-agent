@@ -58,25 +58,16 @@ class MetricRegistryTest {
     }
 
     @Test
-    @DisplayName("同一术语按上下文选择口径：普通客单价不注入含运费指标")
-    void appliesContextConditions() {
+    @DisplayName("按标准业务别名命中：问「客单价」命中 aov，问「配送时长」命中 delivery_days")
+    void findsMetricsByStandardAliases() {
         MetricRegistry registry = loaded();
 
-        assertThat(registry.findMentioned("客单价最高的 10 个客户是谁？客单价按订单平均金额算。"))
-                .noneMatch(m -> m.name().equals("aov"));
         assertThat(registry.findMentioned("有效订单的订单数、下单人数、客单价分别是多少？"))
                 .anyMatch(m -> m.name().equals("aov"));
-    }
-
-    @Test
-    @DisplayName("承运商配送时长不套用下单到签收指标")
-    void excludesDifferentDeliveryScope() {
-        MetricRegistry registry = loaded();
-
-        assertThat(registry.findMentioned("每家承运商的平均配送时长是多少天？"))
-                .noneMatch(m -> m.name().equals("delivery_days"));
-        assertThat(registry.findMentioned("各州的平均配送时长（下单到签收）是多少天？"))
+        assertThat(registry.findMentioned("各州的平均配送时长是多少天？"))
                 .anyMatch(m -> m.name().equals("delivery_days"));
+        assertThat(registry.findMentioned("净销售额是多少？"))
+                .anyMatch(m -> m.name().equals("sales_without_freight"));
     }
 
     @Test
