@@ -322,7 +322,7 @@ metrics:
   - name: delivery_days
     aliases: [配送时长, 配送天数, 送达时长, 平均配送, 物流时长]
     description: 平均配送时长 = 下单到签收的天数（保留小数）
-    expression: "ROUND(AVG(EXTRACT(EPOCH FROM (o.order_delivered_customer_date - o.order_purchase_timestamp)) / 86400.0), 2)"
+    expression: "ROUND((AVG(EXTRACT(EPOCH FROM (o.order_delivered_customer_date - o.order_purchase_timestamp)) / 86400.0))::numeric, 2)"
     tables: [orders]
     notes: |
       【两个易错点】

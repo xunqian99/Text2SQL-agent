@@ -74,6 +74,7 @@ public class PromptTemplate {
                    - 当问题询问「比例 / 占比 / 比率」且未显式提及百分比（%）时，输出 0~1 的小数比率，用 ROUND(分子::NUMERIC / 分母, 4) 保留四位小数。
                    - 当问题明确询问「百分比」或带有「%」时，才输出 ROUND(100.0 * 分子 / 分母, 2)。
                    - 其余一般金额、单价、平均值，统一用 ROUND(表达式, 2) 保留两位小数。
+                   - 【PostgreSQL 严格类型约束】PostgreSQL 的 ROUND(val, n) 仅接受 NUMERIC 类型！若表达式涉及 EXTRACT(EPOCH FROM ...) 或浮点计算/AVG，返回值是 DOUBLE PRECISION，必须显式加 ::NUMERIC 转换（例如 ROUND((AVG(EXTRACT(EPOCH FROM ...)) / 86400.0)::NUMERIC, 2)），绝对禁止对 DOUBLE PRECISION 直接传 2 个参数调用 ROUND。
                 13. 按时间分组与时间字段选择：
                    - 用 DATE_TRUNC('month'|'week'|'day', 时间列) 作为分组列，不要用 to_char 把时间转成 'YYYY-MM' 这类字符串。
                    - 问题涉及各月/每个月/每周等周期统计时，若表内有自身的业务时间字段（如 refunds.requested_at, support_tickets.created_at, members.register_date, settlements.period_start），优先使用本表对应业务时间，不要无故关联 orders 表。

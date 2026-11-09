@@ -2641,22 +2641,29 @@
     // ================= 语义展现字典：物理列名与外文枚举业务可读化映射 =================
     const COLUMN_SEMANTIC_MAP = {
       'product_category_name': '商品品类',
-      'product_id': '商品编码 (ID)',
+      'category_name': '商品品类',
+      'product_id': '商品编号 (ID)',
       'order_id': '订单编号 (ID)',
       'customer_id': '客户编号 (ID)',
+      'customer_unique_id': '唯一客户标识 (UUID)',
       'customer_state': '客户所在省/州',
       'customer_city': '客户所在城市',
       'seller_id': '商家编号 (ID)',
       'seller_state': '商家所在省/州',
       'seller_city': '商家所在城市',
+      'state': '所在省/州',
+      'city': '所在城市',
       'gmv': '成交总额 GMV (元)',
       'sales_amount': '销售总额 (元)',
       'total_amount': '总金额 (元)',
       'total_sales': '销售总额 (元)',
+      'total_gmv': '成交总额 GMV (元)',
       'price': '商品单价 (元)',
       'avg_price': '平均单价 (元)',
-      'freight_value': '运费 (元)',
+      'freight_value': '物流运费 (元)',
+      'avg_freight': '平均运费 (元)',
       'order_count': '订单总量 (笔)',
+      'orders_count': '订单总量 (笔)',
       'cnt': '数量 (笔)',
       'total_orders': '订单总量 (笔)',
       'item_count': '商品件数',
@@ -2666,12 +2673,24 @@
       'payment_installments': '分期期数',
       'review_score': '评价得分',
       'avg_score': '平均评价评分',
+      'avg_review_score': '平均评价评分',
       'month': '统计月份',
+      'order_month': '统计月份',
       'date': '统计日期',
+      'purchase_date': '下单日期',
       'year': '年份',
-      'avg_delivery_days': '平均履约耗时 (天)',
-      'customer_count': '客户人数',
-      'repeat_rate': '客户复购率'
+      'order_year': '年份',
+      'avg_delivery_days': '平均配送耗时 (天)',
+      'delivery_days': '平均配送耗时 (天)',
+      'avg_days': '平均耗时 (天)',
+      'customer_count': '客户总数 (人)',
+      'total_customers': '客户总数 (人)',
+      'seller_count': '商家总数 (家)',
+      'repeat_rate': '客户复购率',
+      'repurchase_rate': '客户复购率',
+      'retention_pct': '客户留存率 (%)',
+      'refund_rate': '订单退款率',
+      'sla_compliance_rate': 'SLA 达成率'
     };
 
     const VALUE_SEMANTIC_MAP = {
@@ -2691,6 +2710,23 @@
       'papelaria': '文具办公 (papelaria)',
       'eletronicos': '影音数码 (eletronicos)',
       'ferramentas_jardim': '园艺五金 (ferramentas_jardim)',
+      'pet_shop': '宠物用品 (pet_shop)',
+      'fashion_bolsas_e_acessorios': '时尚箱包 (fashion_bolsas)',
+      'malas_e_acessorios': '箱包配件 (malas_acessorios)',
+      'consoles_games': '游戏主机 (consoles_games)',
+      'instrumentos_musicais': '乐器音响 (instrumentos)',
+      'livros_interesse_geral': '通用图书 (livros)',
+      'cool_stuff': '潮玩酷玩 (cool_stuff)',
+      'casa_construcao': '家居建材 (casa_construcao)',
+      'alimentos_bebidas': '食品饮料 (alimentos_bebidas)',
+      'alimentos': '休闲食品 (alimentos)',
+      'bebidas': '酒水饮料 (bebidas)',
+      'climatizacao': '暖通空调 (climatizacao)',
+      'eletrodomesticos': '生活家电 (eletrodomesticos)',
+      'eletrodomesticos_2': '大型家电 (eletrodomesticos_2)',
+      'eletroportateis': '厨房小电 (eletroportateis)',
+      'artigos_de_festas': '派对用品 (artigos_festas)',
+      'construcao_ferramentas_construcao': '施工工具 (ferramentas)',
       'delivered': '已送达',
       'shipped': '已发货',
       'invoiced': '已开票',
@@ -2713,13 +2749,72 @@
       'DF': '巴西利亚联邦区 (DF)',
       'ES': '圣埃斯皮里图 (ES)',
       'GO': '戈亚斯 (GO)',
-      'PE': '伯南布哥 (PE)'
+      'PE': '伯南布哥 (PE)',
+      'CE': '塞阿腊 (CE)',
+      'PA': '帕拉 (PA)',
+      'MT': '马托格罗索 (MT)',
+      'MA': '马拉尼昂 (MA)',
+      'MS': '南马托格罗索 (MS)',
+      'PB': '帕拉伊巴 (PB)',
+      'RN': '北里奥格兰德 (RN)',
+      'PI': '皮奥伊 (PI)',
+      'AL': '阿拉戈斯 (AL)',
+      'SE': '塞尔希培 (SE)',
+      'TO': '托坎廷斯 (TO)',
+      'RO': '朗多尼亚 (RO)',
+      'AM': '亚马孙 (AM)',
+      'AC': '阿克里 (AC)',
+      'AP': '阿马帕 (AP)',
+      'RR': '罗赖马 (RR)'
     };
 
     function getColumnTitle(col) {
       if (!col) return '';
-      const key = String(col).trim().toLowerCase();
-      return COLUMN_SEMANTIC_MAP[key] || col;
+      const raw = String(col).trim();
+      const key = raw.toLowerCase();
+
+      // 1. 精准匹配语义字典
+      if (COLUMN_SEMANTIC_MAP[key]) return COLUMN_SEMANTIC_MAP[key];
+
+      // 2. 启发式模糊模式匹配
+      if (key.includes('delivery') && (key.includes('day') || key.includes('time') || key.includes('duration') || key.includes('avg'))) {
+        return '平均配送耗时 (天)';
+      }
+      if (key.includes('freight')) return '物流运费 (元)';
+      if (key.includes('gmv') || (key.includes('sales') && !key.includes('count')) || key.includes('revenue')) {
+        return '销售总额 (元)';
+      }
+      if (key.includes('price')) {
+        return (key.includes('avg') || key.includes('mean')) ? '平均单价 (元)' : '商品单价 (元)';
+      }
+      if (key.includes('discount')) return '优惠金额 (元)';
+      if (key.includes('amount') || key.includes('payment_val')) return '金额 (元)';
+      if (key.includes('rate') || key.includes('ratio') || key.includes('pct') || key.includes('percent')) {
+        if (key.includes('repeat') || key.includes('repurchase')) return '客户复购率';
+        if (key.includes('refund')) return '退款率';
+        if (key.includes('sla')) return 'SLA 达成率';
+        return '比率 / 占比';
+      }
+      if (key.includes('score')) {
+        return (key.includes('avg') || key.includes('mean')) ? '平均评分' : '评价得分';
+      }
+      if (key.includes('count') || key.includes('total_order') || key === 'cnt' || key.includes('orders')) {
+        if (key.includes('customer') || key.includes('user')) return '客户总数 (人)';
+        if (key.includes('seller')) return '商家总数 (家)';
+        if (key.includes('product') || key.includes('item')) return '商品件数 (件)';
+        return '订单总量 (笔)';
+      }
+      if (key.includes('category')) return '商品品类';
+      if (key.includes('state')) return '省份 / 州';
+      if (key.includes('city')) return '城市';
+      if (key.includes('status')) return '状态';
+      if (key.includes('month')) return '统计月份';
+      if (key.includes('year')) return '统计年份';
+      if (key.includes('date') || key.includes('timestamp') || key.includes('time')) return '统计时间';
+      if (key.endsWith('_id') || key === 'id') return '业务编号 (ID)';
+
+      // 3. 兜底格式化：去掉下划线，转换为自然词汇
+      return raw.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
     }
 
     function formatCellSemantic(colName, val) {
@@ -2906,10 +3001,35 @@
       const friendlyY = getColumnTitle(yCol);
       const friendlyX = getColumnTitle(xCol);
 
+      function cleanAxisLabel(raw) {
+        if (raw === null || raw === undefined) return '';
+        const rawStr = String(raw).trim();
+        if (VALUE_SEMANTIC_MAP[rawStr]) return VALUE_SEMANTIC_MAP[rawStr];
+
+        // 智能清洗 PostgreSQL 日期时间戳，如 "2017-01-01 00:00:00.0" 或 "2017-01-01T00:00:00"
+        const tsMatch = rawStr.match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?(?:\.\d+)?)?$/);
+        if (tsMatch) {
+          const yr = tsMatch[1];
+          const mo = tsMatch[2];
+          const day = tsMatch[3];
+          const hr = tsMatch[4] || '00';
+          const mi = tsMatch[5] || '00';
+          // 月度截断（如每月1号且时间为 00:00:00），直接提取为 YYYY-MM
+          if (day === '01' && hr === '00' && mi === '00') {
+            return `${yr}-${mo}`;
+          }
+          // 纯日期时间归零，显示 YYYY-MM-DD
+          if (hr === '00' && mi === '00') {
+            return `${yr}-${mo}-${day}`;
+          }
+          return `${yr}-${mo}-${day} ${hr}:${mi}`;
+        }
+        return rawStr;
+      }
+
       const xData = rows.map(r => {
         const raw = isArrayRow ? r[xIdx] : r[xCol];
-        const rawStr = String(raw || '').trim();
-        return VALUE_SEMANTIC_MAP[rawStr] || rawStr;
+        return cleanAxisLabel(raw);
       });
 
       const yData = rows.map(r => {
@@ -2918,6 +3038,11 @@
         const val = parseFloat(numStr);
         return isNaN(val) ? 0 : val;
       });
+
+      // 密度检测与防重叠倾斜算法
+      const isDense = xData.length > 7;
+      const rotateDeg = isDense ? 35 : (xData.some(d => String(d).length > 8) ? 25 : 0);
+      const bottomPadding = isDense ? '28%' : '18%';
 
       myChart.setOption({
         title: {
@@ -2932,31 +3057,29 @@
             return `<b>${escapeHtml(p.name)}</b><br/>${escapeHtml(friendlyY)}: <b>${Number(p.value).toLocaleString()}</b>`;
           }
         },
-        grid: { left: '3%', right: '4%', bottom: '26%', top: '16%', containLabel: true },
+        grid: { left: '3%', right: '4%', bottom: bottomPadding, top: '16%', containLabel: true },
         xAxis: {
           type: 'category',
           data: xData,
           axisLine: { lineStyle: { color: '#dcdfe6' } },
           axisLabel: {
             interval: 0,
-            rotate: 0,
+            rotate: rotateDeg,
             fontSize: 11,
             color: '#606266',
-            lineHeight: 15,
+            lineHeight: 14,
             formatter: function(val) {
               if (!val) return '';
-              // 如果包含括号解释，如 "beleza_saude (美妆个护)"，拆分为两行完整显示，不截断
+              if (rotateDeg > 0) {
+                // 已倾斜展示时，避免在格内换行导致重合
+                return val.length > 18 ? val.substring(0, 16) + '..' : val;
+              }
+              // 水平不倾斜时，如果包含括号解释，如 "beleza_saude (美妆个护)"，拆为两行
               if (val.includes(' (')) {
                 return val.replace(' (', '\n(');
               }
-              // 如果较长，按每 11 个字符自动折行，绝不使用省略号截断
-              if (val.length > 11) {
-                let res = '';
-                const step = 10;
-                for (let i = 0; i < val.length; i += step) {
-                  res += val.substring(i, i + step) + (i + step < val.length ? '\n' : '');
-                }
-                return res;
+              if (val.length > 8) {
+                return val.substring(0, 7) + '..';
               }
               return val;
             }
