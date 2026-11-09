@@ -1,0 +1,1615 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Text2SQL Agent 核心技术面试宝典（大厂架构与实战深度图解版）</title>
+<style>
+:root {
+  --primary: #0284c7;
+  --primary-dark: #0369a1;
+  --primary-light: #e0f2fe;
+  --accent: #0f766e;
+  --accent-light: #ccfbf1;
+  --bg-main: #f8fafc;
+  --bg-card: #ffffff;
+  --text-main: #0f172a;
+  --text-muted: #475569;
+  --text-sub: #64748b;
+  --border: #e2e8f0;
+  --border-focus: #38bdf8;
+  --success: #10b981;
+  --success-bg: #ecfdf5;
+  --warning: #f59e0b;
+  --warning-bg: #fffbeb;
+  --danger: #ef4444;
+  --danger-bg: #fef2f2;
+  --purple: #8b5cf6;
+  --purple-bg: #f5f3ff;
+  --code-bg: #0f172a;
+  --code-text: #e2e8f0;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --font-mono: "Fira Code", "Cascadia Code", Consolas, Monaco, "Courier New", monospace;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Header & Banner */
+header.hero {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  color: #ffffff;
+  padding: 48px 24px 40px;
+  border-bottom: 3px solid var(--primary);
+  text-align: center;
+}
+header.hero h1 {
+  font-size: 2.2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: 12px;
+}
+header.hero h1 span {
+  color: #38bdf8;
+}
+header.hero p {
+  font-size: 1.05rem;
+  color: #94a3b8;
+  max-width: 860px;
+  margin: 0 auto 20px;
+}
+.badge-group {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 14px;
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.1);
+  color: #f1f5f9;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+.badge.highlight {
+  background: rgba(56, 189, 248, 0.2);
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+/* Container & Layout */
+.container {
+  max-width: 1200px;
+  margin: 32px auto;
+  padding: 0 20px;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 32px;
+  align-items: start;
+}
+
+/* Sidebar Nav */
+aside.sidebar {
+  position: sticky;
+  top: 24px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+}
+aside.sidebar h3 {
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-sub);
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.search-box {
+  margin-bottom: 16px;
+}
+.search-box input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.88rem;
+  outline: none;
+  transition: all 0.2s;
+}
+.search-box input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+}
+.nav-group {
+  margin-bottom: 16px;
+}
+.nav-group-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.nav-list {
+  list-style: none;
+}
+.nav-list li {
+  margin-bottom: 6px;
+}
+.nav-list a {
+  display: block;
+  font-size: 0.84rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.15s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.nav-list a:hover {
+  background: var(--primary-light);
+  color: var(--primary-dark);
+}
+
+/* Main Content Area */
+main.content {
+  min-width: 0;
+}
+
+/* Category Filter Tags */
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
+  background: var(--bg-card);
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+.filter-btn {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--bg-main);
+  color: var(--text-muted);
+  transition: all 0.2s;
+}
+.filter-btn:hover, .filter-btn.active {
+  background: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
+}
+.tool-btns {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+}
+.action-btn {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: #ffffff;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.action-btn:hover {
+  background: var(--bg-main);
+  color: var(--text-main);
+}
+
+/* Section Title */
+.section-header {
+  margin: 36px 0 20px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--primary);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.section-header h2 {
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: var(--text-main);
+}
+.section-tag {
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+/* Question Card */
+.q-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+.q-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: #cbd5e1;
+}
+.q-header {
+  padding: 18px 24px;
+  background: #ffffff;
+  cursor: pointer;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  border-bottom: 1px solid transparent;
+  user-select: none;
+}
+.q-header.open {
+  border-bottom-color: var(--border);
+  background: #fafbfc;
+}
+.q-icon {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.85rem;
+  margin-top: 2px;
+}
+.q-title-wrap {
+  flex-grow: 1;
+}
+.q-title {
+  font-size: 1.12rem;
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1.45;
+}
+.q-meta {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+  align-items: center;
+}
+.tag-pill {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--bg-main);
+  color: var(--text-sub);
+  border: 1px solid var(--border);
+}
+.difficulty-stars {
+  color: #f59e0b;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.q-toggle {
+  color: var(--text-sub);
+  font-size: 1.2rem;
+  transition: transform 0.2s;
+}
+.q-header.open .q-toggle {
+  transform: rotate(180deg);
+}
+
+.q-body {
+  padding: 24px;
+  display: none;
+}
+.q-body.open {
+  display: block;
+}
+
+/* Callout Boxes (XiaoLin Coding Style) */
+.callout {
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin: 16px 0;
+  font-size: 0.94rem;
+  line-height: 1.65;
+  border-left: 4px solid;
+}
+.callout.direct {
+  background: var(--primary-light);
+  border-color: var(--primary);
+  color: #0c4a6e;
+}
+.callout.direct strong {
+  color: #0369a1;
+}
+.callout.principle {
+  background: var(--purple-bg);
+  border-color: var(--purple);
+  color: #4c1d95;
+}
+.callout.principle strong {
+  color: #6d28d9;
+}
+.callout.interview {
+  background: var(--danger-bg);
+  border-color: var(--danger);
+  color: #7f1d1d;
+}
+.callout.interview strong {
+  color: #b91c1c;
+}
+.callout.warning {
+  background: var(--warning-bg);
+  border-color: var(--warning);
+  color: #78350f;
+}
+.callout.warning strong {
+  color: #b45309;
+}
+.callout.success {
+  background: var(--success-bg);
+  border-color: var(--success);
+  color: #064e3b;
+}
+
+.callout-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+  font-size: 0.98rem;
+  margin-bottom: 6px;
+}
+
+/* Typography in Q-Body */
+.q-body h4 {
+  font-size: 1.02rem;
+  font-weight: 800;
+  color: var(--text-main);
+  margin: 20px 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.q-body p {
+  margin-bottom: 12px;
+  font-size: 0.95rem;
+  color: #334155;
+}
+.q-body ul, .q-body ol {
+  margin: 10px 0 16px 24px;
+  font-size: 0.94rem;
+  color: #334155;
+}
+.q-body li {
+  margin-bottom: 6px;
+}
+
+/* Tables in Q-Body */
+.content-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0 20px;
+  font-size: 0.88rem;
+}
+.content-table th, .content-table td {
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  text-align: left;
+}
+.content-table th {
+  background: #f1f5f9;
+  font-weight: 700;
+  color: var(--text-main);
+}
+.content-table tr:nth-child(even) {
+  background: #f8fafc;
+}
+
+/* Code Snippets */
+pre.code-block {
+  background: var(--code-bg);
+  color: var(--code-text);
+  padding: 16px 18px;
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.86rem;
+  overflow-x: auto;
+  margin: 14px 0 18px;
+  line-height: 1.55;
+  border: 1px solid #1e293b;
+}
+code.inline-code {
+  font-family: var(--font-mono);
+  background: #e2e8f0;
+  color: #0f172a;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.86em;
+}
+
+/* Visual Diagrams (SVG/Flex based) */
+.diagram-wrap {
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 16px 0;
+  text-align: center;
+}
+.flow-diagram {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.flow-node {
+  background: #ffffff;
+  border: 1.5px solid var(--primary);
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--text-main);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+.flow-node.danger {
+  border-color: var(--danger);
+  color: var(--danger);
+  background: var(--danger-bg);
+}
+.flow-node.success {
+  border-color: var(--success);
+  color: #065f46;
+  background: var(--success-bg);
+}
+.flow-arrow {
+  color: var(--primary);
+  font-weight: 900;
+  font-size: 1rem;
+}
+
+/* Footer */
+footer {
+  text-align: center;
+  padding: 36px 20px;
+  color: var(--text-sub);
+  font-size: 0.86rem;
+  border-top: 1px solid var(--border);
+  margin-top: 48px;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .container {
+    grid-template-columns: 1fr;
+  }
+  aside.sidebar {
+    display: none;
+  }
+}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <h1>Text2SQL Agent <span>核心面试实操与技术问答宝典</span></h1>
+  <p>以大厂资深架构师视角拆解：从图论拓扑规划、AST 安全审计、EXPLAIN 代价护栏，到指标语义层与基准消融归因的硬核实操</p>
+  <div class="badge-group">
+    <span class="badge highlight">Java 21 / Spring Boot 3.5</span>
+    <span class="badge highlight">PostgreSQL 16 架构</span>
+    <span class="badge">斯坦纳树近似算法</span>
+    <span class="badge">JSqlParser AST 白名单</span>
+    <span class="badge">同模型 62% → 96.00% 归因</span>
+    <span class="badge">53 条对抗渗透拦截</span>
+  </div>
+</header>
+
+<div class="container">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <h3>面试导航</h3>
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="搜索面试考点或关键词..." oninput="handleSearch()">
+    </div>
+    
+    <div class="nav-group">
+      <div class="nav-group-title">一、宏观架构与设计理念</div>
+      <ul class="nav-list">
+        <li><a href="#q01">Q01 项目介绍与业务边界</a></li>
+        <li><a href="#q02">Q02 端到端数据流与耗时拆解</a></li>
+        <li><a href="#q03">Q03 为什么选 Pipeline 舍弃 ReAct</a></li>
+      </ul>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-group-title">二、Schema 检索与图算法</div>
+      <ul class="nav-list">
+        <li><a href="#q04">Q04 为什么必须做 Schema 剪枝</a></li>
+        <li><a href="#q05">Q05 领域词典 vs 向量检索对比</a></li>
+        <li><a href="#q06">Q06 多表关联的本质难题</a></li>
+        <li><a href="#q07">Q07 Dijkstra 局限与斯坦纳树算法</a></li>
+      </ul>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-group-title">三、语义层与 Prompt 工程</div>
+      <ul class="nav-list">
+        <li><a href="#q08">Q08 指标歧义与 MDL 语义层建模</a></li>
+        <li><a href="#q09">Q09 提示词分层与近因效应设计</a></li>
+        <li><a href="#q10">Q10 温度设 0 与生成确定性边界</a></li>
+      </ul>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-group-title">四、安全防御与执行护栏</div>
+      <ul class="nav-list">
+        <li><a href="#q11">Q11 纵深防御体系整体设计</a></li>
+        <li><a href="#q12">Q12 正则短板与 AST 语法树遍历</a></li>
+        <li><a href="#q13">Q13 EXPLAIN JSON 代价探测原理</a></li>
+        <li><a href="#q14">Q14 为什么必须有只读角色兜底</a></li>
+      </ul>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-group-title">五、性能优化与工程落地</div>
+      <ul class="nav-list">
+        <li><a href="#q15">Q15 语法缓存 vs 结果集缓存权衡</a></li>
+        <li><a href="#q16">Q16 自定义密钥与 LRU 客户端池</a></li>
+        <li><a href="#q17">Q17 P95 延迟突破与生产优化方案</a></li>
+      </ul>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-group-title">六、评测基准与数据治理</div>
+      <ul class="nav-list">
+        <li><a href="#q18">Q18 执行比对 vs 字符串/LLM裁判</a></li>
+        <li><a href="#q19">Q19 62% 到 96% 的消融归因台账</a></li>
+        <li><a href="#q20">Q20 面对“修改测试集作弊”的自证</a></li>
+        <li><a href="#q21">Q21 为什么主动关闭自纠错重试</a></li>
+      </ul>
+    </div>
+  </aside>
+
+  <!-- Content -->
+  <main class="content">
+    <div class="filter-bar">
+      <button class="filter-btn active" onclick="filterCategory('all', this)">全部 (21)</button>
+      <button class="filter-btn" onclick="filterCategory('cat1', this)">架构宏观</button>
+      <button class="filter-btn" onclick="filterCategory('cat2', this)">图算法/检索</button>
+      <button class="filter-btn" onclick="filterCategory('cat3', this)">语义层/Prompt</button>
+      <button class="filter-btn" onclick="filterCategory('cat4', this)">安全/AST护栏</button>
+      <button class="filter-btn" onclick="filterCategory('cat5', this)">高并发/工程化</button>
+      <button class="filter-btn" onclick="filterCategory('cat6', this)">评测/消融归因</button>
+      <div class="tool-btns">
+        <button class="action-btn" onclick="expandAll(true)">全部展开</button>
+        <button class="action-btn" onclick="expandAll(false)">全部折叠</button>
+      </div>
+    </div>
+
+    <!-- QUESTIONS CONTENT INJECTED HERE -->
+    
+    <div class="section-group" id="sec-cat1">
+      <div class="section-header">
+        <h2>一、系统架构与宏观设计</h2>
+        <span class="section-tag">架构与理念</span>
+      </div>
+      
+    <div class="q-card" id="q01" data-category="cat1">
+      <div class="q-header" onclick="toggleCard(this)">
+        <div class="q-icon">01</div>
+        <div class="q-title-wrap">
+          <div class="q-title">Q01 如何用一句话和两分钟向面试官介绍你的 Text2SQL 项目？</div>
+          <div class="q-meta">
+            <span class="difficulty-stars">★★★</span>
+            <span class="tag-pill">项目介绍</span><span class="tag-pill">架构选型</span><span class="tag-pill">系统边界</span>
+          </div>
+        </div>
+        <div class="q-toggle">▼</div>
+      </div>
+      <div class="q-body">
+        
+    
+    <div class="callout direct">
+      <div class="callout-title">💡 一句话直答</div>
+      <div>这是一个面向企业电商数仓的<strong>高可信 Text2SQL 智能问数系统</strong>，核心解决大模型在数十张表复杂拓扑下的“选错表、连错表、算错口径”三大痛点。基于 <strong>Java 21 + Spring Boot 3.5 + PostgreSQL 16</strong> 技术栈，构筑了图论斯坦纳树连表规划、AST 语法树白名单、EXPLAIN 静态代价防御及严谨的评测归因体系，在同模型对照下将执行准确率从初始基线的 <strong>62% 稳步提升至 96.00%</strong>。</div>
+    </div>
+    
+
+    <h4>1. 痛点背景与为什么做这个项目</h4>
+    <p>很多市面上的 Text2SQL Demo 只有 2–3 张平铺单表，直接把建表 DDL 全塞给大模型就能跑通。但在企业真实生产数仓中：</p>
+    <ul>
+      <li><strong>拓扑极其复杂</strong>：数仓有数十张业务表、数百个字段，全量 DDL 严重超出大模型上下文有效注意力，极易发生“长上下文注意力稀释”；</li>
+      <li><strong>外键错连与笛卡尔积</strong>：面对多对多关联、桥接维度表，大模型纯靠概率连接极易走弯路或漏连桥接表；</li>
+      <li><strong>静默语义错误危害极大</strong>：大模型写出的 SQL 语法完全合法，甚至能查出看似合理的数据，但由于业务口径偏差（如统计 GMV 算错运费），业务方根本无法察觉，导致决策失误。</li>
+    </ul>
+
+    <h4>2. 系统定位与明确的产品边界</h4>
+    
+    <table class="content-table">
+      <thead><tr><th>系统支持的能力（Scope）</th><th>明确不支持的能力（Non-Goals）</th></tr></thead>
+      <tbody><tr><td>只读数据分析（SELECT 查询）</td><td>写操作、DML 增删改、DDL 建表改表</td></tr><tr><td>单租户企业电商数仓拓扑</td><td>通用多租户、行级权限系统（RLS）</td></tr><tr><td>工程化提示词工程、图算法与语法防御护栏</td><td>大模型底层参数微调（Fine-Tuning）</td></tr><tr><td>PostgreSQL 16 深度特性与执行计划防御</td><td>跨 MySQL / Oracle 等异构方言适配</td></tr></tbody>
+    </table>
+    
+
+    
+    <div class="callout interview">
+      <div class="callout-title">⚔️ 面试官高频追问</div>
+      <div><strong>面试官问：为什么你的系统一再强调“只读（Read-Only）”？</strong><br><strong>高分回答：</strong>因为生成式大模型在本质上是概率模型，具有不可消除的幻觉风险，绝不能让不可信的模型输出直接拥有数据修改权。只读是严肃企业数据问数系统的<strong>安全底线与产品边界</strong>，而不是功能阉割。系统通过 AST 语法树白名单、数据库内核级只读角色（Role）和物理语句超时，确保最坏情况也只是读取数据，绝不会发生数据被篡改或删库的生产事故。</div>
+    </div>
+    
+    
+      </div>
+    </div>
+    
+      
+    <div class="q-card" id="q02" data-category="cat1">
+      <div class="q-header" onclick="toggleCard(this)">
+        <div class="q-icon">02</div>
+        <div class="q-title-wrap">
+          <div class="q-title">Q02 从用户输入到最终返回表格，系统底层的数据流是怎样的？</div>
+          <div class="q-meta">
+            <span class="difficulty-stars">★★★</span>
+            <span class="tag-pill">数据流</span><span class="tag-pill">耗时分解</span><span class="tag-pill">数据形态转换</span>
+          </div>
+        </div>
+        <div class="q-toggle">▼</div>
+      </div>
+      <div class="q-body">
+        
+    
+    <div class="callout direct">
+      <div class="callout-title">💡 一句话直答</div>
+      <div>整个请求遵循严格的<strong>九阶段单向流水线（Pipeline）</strong>：用户输入 → 实体识别与词典检索 → 斯坦纳树拓扑规划 → 指标口径与上下文注入 → LLM 确定性生成 → AST 语法树白名单审计 → EXPLAIN 执行计划代价探测 → 只读账号物理执行 → 结果集规整化输出。</div>
+    </div>
+    
+
+    <h4>1. 端到端数据流与耗时拆解图解</h4>
+    <div class="diagram-wrap">
+      <div class="flow-diagram">
+        <div class="flow-node">1. 自然语言输入<br><small style="color:#64748b">提问/改写</small></div>
+        <div class="flow-arrow">➔</div>
+        <div class="flow-node">2. 词典检索<br><small style="color:#0284c7">Top-8 表筛选 (~12ms)</small></div>
+        <div class="flow-arrow">➔</div>
+        <div class="flow-node">3. 斯坦纳树规划<br><small style="color:#0f766e">极小外键子图 (~2ms)</small></div>
+        <div class="flow-arrow">➔</div>
+        <div class="flow-node">4. 提示词装配<br><small style="color:#8b5cf6">MDL 口径/枚举注入</small></div>
+        <div class="flow-arrow">➔</div>
+        <div class="flow-node danger">5. LLM 生成推理<br><small style="color:#b91c1c">主要耗时 (~12.0s)</small></div>
+        <div class="flow-arrow">➔</div>
+        <div class="flow-node">6. AST 语法遍历<br><small style="color:#0284c7">只读白名单 (~4ms)</small></div>
+        <div class="flow-arrow">➔</div>
+        <div class="flow-node">7. EXPLAIN 探测<br><small style="color:#0f766e">拦截笛卡尔积 (~6ms)</small></div>
+        <div class="flow-arrow">➔</div>
+        <div class="flow-node success">8. 只读库执行<br><small style="color:#047857">返回数据表格 (~20ms)</small></div>
+      </div>
+    </div>
+
+    <h4>2. 各阶段数据形态转换详解</h4>
+    <ul>
+      <li><strong>输入阶段</strong>：接收中文文本（如“2018年销售额最高的5个州是哪些”）；</li>
+      <li><strong>表检索阶段</strong>：通过应用层领域词典最大匹配，精准命中 <code>orders</code>, <code>order_items</code>, <code>customers</code> 3 张核心表，从 37 张表里完成有效降维；</li>
+      <li><strong>拓扑规划阶段</strong>：图算法基于数仓外键图，计算连接这 3 张表的极小连通树，输出约束：<code>orders.customer_id = customers.customer_id AND orders.order_id = order_items.order_id</code>；</li>
+      <li><strong>提示词注入阶段</strong>：将选出的表结构、销售额计算口径（依赖 <code>order_items.price</code> 求和）、枚举对齐规则（州名在库中为 <code>SP</code>, <code>RJ</code> 代码）组装入 Prompt；</li>
+      <li><strong>代码审计与拦截阶段</strong>：LLM 生成 SQL 后，先经过 JSqlParser 进行抽象语法树遍历，再向 PostgreSQL 发送 <code>EXPLAIN (FORMAT JSON)</code> 检测计划树代价，确认无全表笛卡尔积；</li>
+      <li><strong>物理执行阶段</strong>：使用只读连接池执行 SQL，限制 10s 超时和 200 行上限，最终返回数据 JSON。</li>
+    </ul>
+
+    
+    <div class="callout interview">
+      <div class="callout-title">⚔️ 面试官高频追问</div>
+      <div><strong>面试官问：这条链路里哪一步最容易错？哪一步最消耗系统资源？</strong><br><strong>高分回答：</strong><br>1. <strong>最容易出错的是“语义对齐阶段”</strong>：SQL 语法报错是低级错误，最危险的是 SQL 能跑但口径算错（比如销售额是否包含运费、状态是否过滤了已取消订单）。这必须靠统一的指标定义层与提示词规范来对齐；<br>2. <strong>最消耗资源的是“大模型生成阶段”</strong>：检索、图算法、语法校验和数据库执行全在 20ms 以内，而大模型推理生成耗时高达 10–12 秒，消耗数千 Token。因此后端架构的优化核心永远是<strong>“前置做足过滤与缓存，尽量避免无效的模型调用”</strong>。</div>
+    </div>
+    
+    
+      </div>
+    </div>
+    
+      
+    <div class="q-card" id="q03" data-category="cat1">
+      <div class="q-header" onclick="toggleCard(this)">
+        <div class="q-icon">03</div>
+        <div class="q-title-wrap">
+          <div class="q-title">Q03 为什么选择确定性流水线（Pipeline），而不是完全自主的动态 ReAct Agent？</div>
+          <div class="q-meta">
+            <span class="difficulty-stars">★★★</span>
+            <span class="tag-pill">Workflow vs ReAct</span><span class="tag-pill">架构权衡</span><span class="tag-pill">Agent认知</span>
+          </div>
+        </div>
+        <div class="q-toggle">▼</div>
+      </div>
+      <div class="q-body">
+        
+    
+    <div class="callout direct">
+      <div class="callout-title">💡 一句话直答</div>
+      <div>在严肃的企业数据问数场景下，<strong>“纯自主 ReAct Agent”在商业落地中是一个高成本、高延迟、低准确率的伪需求</strong>。工业界落地的真实解法是 <strong>Workflow as Agent（确定性流水线编排）</strong>——用代码、图算法和规则收敛一切确定性边界，仅把大模型约束在核心的代码泛化生成上。</div>
+    </div>
+    
+
+    <h4>1. 为什么 ReAct Agent 在 Text2SQL 场景下会崩溃？</h4>
+    <p>很多开源框架（如 LangChain / AutoGen）提倡让大模型像人一样“思考-行动-观察”自主循环：大模型自己决定调 <code>list_tables</code>，看完结果再调 <code>describe_table</code>，再调 <code>sample_data</code>，最后写 SQL。</p>
+    <p>这种纯自主 Agent 存在三大致命缺陷：</p>
+    <ul>
+      <li><strong>累积幻觉导致准确率暴跌</strong>：大模型每一次工具调用的输出都会作为下一次的输入。多轮循环下只要某一步选错表，后面的思考链路就会彻底跑偏，实测端到端准确率比确定性流水线低近 20 个百分点；</li>
+      <li><strong>延迟完全失控</strong>：一次模型推理耗时 2~3 秒，ReAct 循环 5 轮，用户端到端等待时间直接超过 30–40 秒，在线业务根本无法接受；</li>
+      <li><strong>Token 成本翻倍暴增</strong>：每一轮都要重复携带不断膨胀的上下文历史，一次问数的 Token 消耗是流水线的 3–5 倍。</li>
+    </ul>
+
+    <h4>2. Workflow as Agent 的工程取舍</h4>
+    <div class="diagram-wrap">
+      <p style="font-weight:700; margin-bottom:8px;">对比：ReAct 循环 vs 确定性流水线</p>
+      <div style="text-align:left; max-width:700px; margin:0 auto; font-size:0.88rem;">
+        <p>❌ <strong>ReAct 模式</strong>：LLM (思考) ➔ 查表工具 ➔ LLM (再思考) ➔ 查字段工具 ➔ LLM (试错) ➔ 产生幻觉 ➔ 耗时 40s (成本 ¥0.02)</p>
+        <p>✅ <strong>Pipeline 模式</strong>：词典检索 (15ms) ➔ 斯坦纳树拓扑 (2ms) ➔ 指标注入 ➔ LLM (单次生成) ➔ AST护栏 ➔ 耗时 2~12s (成本 ¥0.002)</p>
+      </div>
+    </div>
+
+    
+    <div class="callout interview">
+      <div class="callout-title">⚔️ 面试官高频追问</div>
+      <div><strong>面试官问：如果每一步都用代码写死，那大模型的核心价值在哪里？你们系统还能叫 Agent 吗？</strong><br><strong>高分回答：</strong><br>Agent 的本质是用智能体解决复杂非结构化环境的决策问题。在自然语言问数中，大模型最大的不可替代性在于<strong>“跨语意泛化理解”</strong>——用户会输入千奇百怪的中文口语、行业俚语和复杂条件组合，传统 SQL 模板匹配对此完全无能为力。大模型负责把非结构化自然语言翻译为抽象逻辑，而后端工程负责用图算法和语法护栏为其构筑物理安全网与拓扑约束。<strong>“把确定性的交给工程，把发散性的交给模型”</strong>，这才是工业级高可靠 Agent 的唯一出路。</div>
+    </div>
+    
+    
+      </div>
+    </div>
+    
+    </div>
+    
+
+    <div class="section-group" id="sec-cat2">
+      <div class="section-header">
+        <h2>二、Schema 检索与多表拓扑（图算法深度）</h2>
+        <span class="section-tag">图论与检索</span>
+      </div>
+      
+    <div class="q-card" id="q04" data-category="cat2">
+      <div class="q-header" onclick="toggleCard(this)">
+        <div class="q-icon">04</div>
+        <div class="q-title-wrap">
+          <div class="q-title">Q04 面对数十张业务表，为什么不能直接把全量 DDL 塞给大模型？你们是如何做 Schema 检索的？</div>
+          <div class="q-meta">
+            <span class="difficulty-stars">★★☆</span>
+            <span class="tag-pill">Schema检索</span><span class="tag-pill">列剪枝</span><span class="tag-pill">注意力稀释</span>
+          </div>
+        </div>
+        <div class="q-toggle">▼</div>
+      </div>
+      <div class="q-body">
+        
+    
+    <div class="callout direct">
+      <div class="callout-title">💡 一句话直答</div>
+      <div>全量 37 张业务表的 DDL 超过 7,400 字符，直接全量塞入 Prompt 会引发严重的<strong>长上下文注意力稀释（Lost in the Middle）</strong>与选表幻觉；系统设计了<strong>领域词典检索与列剪枝</strong>，将 DDL 字符量大幅压缩 <strong>82.7%</strong> 至 Top-8 表，表全召回率达 <strong>99.00%</strong>，平均召回率达 <strong>99.80%</strong>。</div>
+    </div>
+    
+
+    <h4>1. 为什么不能一股脑把所有表都给大模型？</h4>
+    <ul>
+      <li><strong>长上下文注意力的 U 型曲线缺陷</strong>：大语言模型（包括 GPT-4、DeepSeek）对 Prompt 开头和结尾的信息敏感度极高，而中间冗长的表定义极易被“视而不见”；</li>
+      <li><strong>同名与同义字段混淆</strong>：真实数仓有大量相似命名的表与字段（如 <code>customers</code>、<code>customer_segments</code>、<code>customer_level</code>），表越多，模型猜错主表的概率呈指数级上升；</li>
+      <li><strong>Token 与推理成本浪费</strong>：输入 Token 增加数倍，直接拉高每一次请求的成本与 P95 响应延迟。</li>
+    </ul>
+
+    <h4>2. 检索剪枝三步走策略</h4>
+    <ol>
+      <li><strong>领域词典最大匹配</strong>：将中文问题分词后与业务术语词典做最长匹配，提取命中的核心候选表集合；</li>
+      <li><strong>检索评分与 Top-8 截断</strong>：结合词权重与实体提及度对候选表打分，取前 8 张相关度最高的表；</li>
+      <li><strong>连通性修复与外键桥接</strong>：如果选出的核心表在拓扑图上属于孤立点，自动基于外键关系寻找距离最短的中间桥接表加入集合，防止连表断裂。</li>
+    </ol>
+    
+      </div>
+    </div>
+    
+      
+    <div class="q-card" id="q05" data-category="cat2">
+      <div class="q-header" onclick="toggleCard(this)">
+        <div class="q-icon">05</div>
+        <div class="q-title-wrap">
+          <div class="q-title">Q05 为什么在表检索中采用领域词典最大匹配，而不是流行的向量语义检索（Embedding RAG）？</div>
+          <div class="q-meta">
+            <span class="difficulty-stars">★★★</span>
+            <span class="tag-pill">词典检索</span><span class="tag-pill">向量RAG对比</span><span class="tag-pill">语义漂移</span>
+          </div>
+        </div>
+        <div class="q-toggle">▼</div>
+      </div>
+      <div class="q-body">
+        
+    
+    <div class="callout direct">
+      <div class="callout-title">💡 一句话直答</div>
+      <div><strong>结构化数据库的表检索与非结构化文档问答有本质区别</strong>：向量检索存在致命的<strong>“语义漂移（Semantic Drift）”</strong>，且引入外部向量模型与数据库依赖；而应用层领域语义词典匹配具备<strong>“零外部依赖、确定性可控、15ms 极低耗时”</strong>的压倒性工程优势。</div>
+    </div>
+    
+
+    <h4>1. 向量检索（Embedding RAG）在表检索上的三大硬伤</h4>
+    
+    <table class="content-table">
+      <thead><tr><th>对比维度</th><th>向量检索（Embedding / pgvector）</th><th>领域词典匹配（系统当前方案）</th></tr></thead>
+      <tbody><tr><td>语义精确度</td><td><strong>存在语义漂移</strong>：例如问“复购率”，向量可能会相似到“退款率”或“用户活跃”，但在数仓中差一张表就是错</td><td><strong>绝对精准</strong>：业务概念直接绑定目标物理表与字段，无语义模糊</td></tr><tr><td>系统依赖与稳定性</td><td>依赖外部 Embedding API 或模型、需要维护 pgvector 向量数据库，网络波动会导致雪崩</td><td><strong>依赖为零</strong>：纯 Java 内存数据结构匹配，无网络开销与外部挂掉风险</td></tr><tr><td>检索耗时与开销</td><td>向量化 + 相似度计算通常耗时 50~150ms，产生额外的向量推理成本</td><td>纯内存字符串匹配，<strong>耗时 &lt; 15ms</strong>，成本为零</td></tr><tr><td>维护与可解释性</td><td>向量距离是黑盒，搜不出某张表时无法解释原因，难以做有针对性的微调</td><td><strong>完全白盒化</strong>：词典 YAML 配置维护，支持热更新与精准人工纠偏</td></tr></tbody>
+    </table>
+    
+
+    
+    <div class="callout interview">
+      <div class="callout-title">⚔️ 面试官高频追问</div>
+      <div><strong>面试官问：如果业务新上线了 20 张数仓表，词典怎么跟进维护？人工维护成本不重吗？</strong><br><strong>高分回答：</strong>在成熟的大数据数仓体系中，每个业务域都有统一的<strong>元数据管理中心（Data Catalog）</strong>。词典不需要数据开发逐行手写，我们设计了元数据定时同步任务：每天从 PostgreSQL 的 <code>information_schema</code>、系统表注释（<code>pg_description</code>）以及指标系统提取表名、字段名及注释，自动编译更新领域词典。冷门生僻词支持业务方在界面动态打标热载入。</div>
+    </div>
+    
+    
+      </div>
+    </div>
+    
+      
+    <div class="q-card" id="q06" data-category="cat2">
+      <div class="q-header" onclick="toggleCard(this)">
+        <div class="q-icon">06</div>
+        <div class="q-title-wrap">
+          <div class="q-title">Q06 大模型在多表关联（Multi-table Join）时最容易出现什么问题？根本原因是什么？</div>
+          <div class="q-meta">
+            <span class="difficulty-stars">★★☆</span>
+            <span class="tag-pill">多表关联</span><span class="tag-pill">笛卡尔积</span><span class="tag-pill">外键歧义</span>
+          </div>
+        </div>
+        <div class="q-toggle">▼</div>
+      </div>
+      <div class="q-body">
+        
+    
+    <div class="callout direct">
+      <div class="callout-title">💡 一句话直答</div>
+      <div>大模型在多表关联时最核心的痛点是<strong>“缺乏全局拓扑感知”</strong>：面对 37 张表组成的网状外键图，模型依靠概率生成极易出现<strong>“绕远路连接、误选同名弱关联、漏连桥接表引发笛卡尔积”</strong>三大致命问题。</div>
+    </div>
+    
+
+    <h4>1. 真实多表关联常见翻车场景</h4>
+    <ul>
+      <li><strong>同名外键歧义</strong>：例如用户问“某地区的卖家销售额”，大模型看到 <code>customers</code> 有 <code>customer_city</code>，<code>sellers</code> 也有 <code>seller_city</code>，极易把卖家所属城市与买家收货城市关联错；</li>
+      <li><strong>桥接表缺失（笛卡尔积隐患）</strong>：例如统计“每个会员等级的卖家数量”，大模型不知道 <code>customer_level</code> 必须先连 <code>customers</code>，再连 <code>orders</code>，再连 <code>sellers</code>，直接写出 <code>FROM customer_level, sellers</code> 造成全表笛卡尔积；</li>
+      <li><strong>冗余连表死锁</strong>：当多个路径均能连通时，大模型可能把两组路径的表全部写进 JOIN，生成一个包含 5~6 张表的无意义庞大语句。</li>
+    </ul>
+    
+      </div>
+    </div>
+    
+      
+    <div class="q-card" id="q07" data-category="cat2">
+      <div class="q-header" onclick="toggleCard(this)">
+        <div class="q-icon">07</div>
+        <div class="q-title-wrap">
+          <div class="q-title">Q07 为什么单源加权最短路（Dijkstra）不能解决多表 Join，而必须引入斯坦纳树（Steiner Tree）近似算法？</div>
+          <div class="q-meta">
+            <span class="difficulty-stars">★★★</span>
+            <span class="tag-pill">斯坦纳树</span><span class="tag-pill">Dijkstra局限</span><span class="tag-pill">图论2-近似</span>
+          </div>
+        </div>
+        <div class="q-toggle">▼</div>
+      </div>
+      <div class="q-body">
+        
+    
+    <div class="callout direct">
+      <div class="callout-title">💡 一句话直答</div>
+      <div>单源加权最短路（Dijkstra）只能计算“以某张根表为起点的单点最短路”，在多目标表分布在拓扑两端时会产生<strong>局部贪心死锁</strong>，强制并入无关业务表形成伪支路；而<strong>斯坦纳最小生成树（Steiner Tree）</strong>是图论中连接指定终端节点的全局极小连通子图，彻底消除了伪支路，直接将 3 表关联推到 <strong>100%</strong>，4+ 表复杂关联推到 <strong>90.91%</strong>。</div>
+    </div>
+    
+
+    <h4>1. 图论底层原理：为什么 Dijkstra 会惨败？</h4>
+    <p>假设用户提问涉及两张核心表：<strong>会员等级表（A）</strong> 与 <strong>卖家表（B）</strong>。在数仓中，它们仅需通过 <strong>用户表（C）</strong> 即可打通：<code>A ↔ C ↔ B</code>（仅需 2 条连线）。</p>
+    
+    <div class="diagram-wrap">
+      <p style="font-weight:700;">Dijkstra 局部贪心死锁 vs 斯坦纳树全局最优对比</p>
+      <div style="font-size:0.88rem; text-align:left; max-width:680px; margin:0 auto;">
+        <p class="callout warning">❌ <strong>Dijkstra 局部贪心做法</strong>：<br>
+        1. 规划器以订单事实表（O）为根；<br>
+        2. 计算 O 到 A 的最短路：<code>O ↔ C ↔ A</code>；<br>
+        3. 计算 O 到 B 的最短路：<code>O ↔ 明细表(I) ↔ B</code>；<br>
+        4. 路径求并集：最终生成 <code>A ↔ C ↔ O ↔ I ↔ B</code>（共 5 张表！）。<br>
+        <strong>结果</strong>：把毫无关系的订单表和明细表当成中继强制塞入，大模型看到这 5 张表直接写出复杂的错误 JOIN，甚至返回空结果！</p>
+        
+        <p class="callout success">✅ <strong>斯坦纳树（Steiner Tree）全局极小规划</strong>：<br>
+        1. 将目标表 A 和 B 设为终端节点（Terminals）；<br>
+        2. 全局搜寻连接所有终端节点的极小权重连通子图；<br>
+        3. 发现仅需通过中间点 C 即可闭环，剪除所有与目标无关的叶子节点；<br>
+        4. 最终输出极小子图：<code>A ↔ C ↔ B</code>（仅 3 张表）。<br>
+        <strong>结果</strong>：多余的伪支路被彻底斩断，大模型 100% 连对外键！</p>
+      </div>
+    </div>
+
+    <h4>2. 工程实现：NP-hard 难题如何在 1.5ms 内秒级求解？</h4>
+    <p>图论中严格的斯坦纳树是 NP-hard 问题，若使用穷举法，在大图上计算复杂度极高。我们在工程中采用了经典的 <strong>Takahashi-Matsuyama 启发式 2-近似算法</strong>：</p>
+    <ul>
+      <li><strong>步骤一（终端度量闭包）</strong>：仅针对检索召回的 2~4 张目标终端表计算成对最短外键距离；</li>
+      <li><strong>步骤二（贪心树生长）</strong>：从起始点出发，每轮在剩余目标表中寻找距离当前树最近的节点，合并最短路并入树；</li>
+      <li><strong>步骤三（非终端叶子剪枝）</strong>：递归修剪树中所有度数为 1 的非目标中间节点，确保子图无多余支路。</li>
+    </ul>
+    <p>在数仓拓扑规模下，该算法运行耗时稳定在 <strong>1~2 毫秒</strong>，在复杂度与最优解之间达成了完美的工程折中。</p>
+    
+      </div>
+    </div>
+    
+    </div>
+    
+
+    <div class="section-group" id="sec-cat3">
+      <div class="section-header">
+        <h2>三、语义工程与 Prompt 注入（模型对齐）</h2>
+        <span class="section-tag">Prompt与对齐</span>
+      </div>
+      
+    <div class="q-card" id="q08" data-category="cat3">
+      <div class="q-header" onclick="toggleCard(this)">
+        <div class="q-icon">08</div>
+        <div class="q-title-wrap">
+          <div class="q-title">Q08 业务指标（如 GMV、复购率、客单价）口径歧义在 Text2SQL 中如何解耦与对齐？</div>
+          <div class="q-meta">
+            <span class="difficulty-stars">★★★</span>
+            <span class="tag-pill">MDL语义层</span><span class="tag-pill">指标对齐</span><span class="tag-pill">解耦架构</span>
+          </div>
+        </div>
+        <div class="q-toggle">▼</div>
+      </div>
+      <div class="q-body">
+        
+    
+    <div class="callout direct">
+      <div class="callout-title">💡 一句话直答</div>
+      <div><strong>绝不能让大模型在 Prompt 里“猜”业务口径！</strong>系统引入了工业级 <strong>MDL（Modeling Definition Language）语义层</strong>，将业务指标的计算公式、依赖表、过滤口径集中声明式管理，在检索阶段动态注入上下文，彻底解耦了复杂的商业逻辑与底层物理表结构。</div>
+    </div>
+    
+
+    <h4>1. 为什么“口径不一致”是 Text2SQL 最大的杀手？</h4>
+    <p>在企业中，一个简单的词汇在不同部门有着完全不同的含义：</p>
+    <ul>
+      <li><strong>GMV（成交额）</strong>：财务口径要求“扣除优惠券、扣除退款、扣除运费”；运营口径要求“包含运费且不论是否取消”；</li>
+      <li><strong>复购率</strong>：分子是“二次购买人数”还是“二次购买订单数”？分母是“全量注册用户”还是“当期下单用户”？</li>
+      <li><strong>有效订单</strong>：是否需要剔除 <code>order_status = 'canceled'</code> 或 <code>'unavailable'</code>？</li>
+    </ul>
+    <p>如果不做统一的语义层治理，大模型每次生成都会像掷骰子一样随机使用一种口径，导致数据团队与业务团队产生严重的信任危机。</p>
+
+    <h4>2. MDL 语义层声明与动态注入机制</h4>
+    <p>系统通过集中式指标模型管理通用口径规范，示例如下：</p>
+    <pre class="code-block"><code># 指标语义层定义 (MDL)
+metrics:
+  - name: gmv
+    description: &quot;平台总成交金额（包含商品金额与实际运费，排除已取消订单）&quot;
+    sql_formula: &quot;ROUND(SUM(oi.price + oi.freight_value)::numeric, 2)&quot;
+    required_tables: [orders, order_items]
+    filter: &quot;orders.order_status NOT IN (&#x27;canceled&#x27;, &#x27;unavailable&#x27;)&quot;</code></pre>
+    <p>当用户提问命中“GMV”或“销售额”时，检索层会自动将上述声明注入 Prompt，强制大模型严格照抄标准的聚合公式与过滤条件，从根源上消除了指标幻觉。</p>
+    
+      </div>
+    </div>
+    
+      
+    <div class="q-card" id="q09" data-category="cat3">
+      <div class="q-header" onclick="toggleCard(this)">
+        <div class="q-icon">09</div>
+        <div class="q-title-wrap">
+          <div class="q-title">Q09 你们的 Prompt 是如何设计的？如何抑制大模型的长上下文遗忘与格式幻觉？</div>
+          <div class="q-meta">
+            <span class="difficulty-stars">★★☆</span>
+            <span class="tag-pill">Prompt结构</span><span class="tag-pill">近因效应</span><span class="tag-pill">注意力曲线</span>
+          </div>
+        </div>
+        <div class="q-toggle">▼</div>
+      </div>
+      <div class="q-body">
+        
+    
+    <div class="callout direct">
+      <div class="callout-title">💡 一句话直答</div>
+      <div>采用<strong>分层渐进式注入 + 末尾近因效应（Recency Effect）</strong>的提示词结构：系统角色与四步思考契约（置顶）→ 候选表 DDL 与枚举映射（居中）→ MDL 业务指标口径（居中）→ 输出格式契约与 LIMIT 约束（紧随其后）→ <strong>用户自然语言问题（置于最末尾）</strong>。</div>
+    </div>
+    
+
+    <h4>1. 为什么必须将“用户问题”放在 Prompt 的最末尾？</h4>
+    <p>根据大模型注意力机制研究（U 型注意力曲线），当 Prompt 长度达到数千 Token 时，模型对<strong>最开头（Primacy Effect）</strong>和<strong>最末尾（Recency Effect）</strong>的内容保留度最高，而对中间信息最容易淡化。</p>
+    <div class="diagram-wrap">
+      <p style="font-weight:700;">Prompt 结构布局与模型注意力分布</p>
+      <div style="font-size:0.88rem; text-align:left; max-width:680px; margin:0 auto;">
+        <p>🔝 <strong>[开头 · 高注意力区]</strong>：System Prompt（系统角色定义、只输出 SELECT、四步思考法）</p>
+        <p>📦 <strong>[中间 · 知识参考区]</strong>：Top-8 表 Schema DDL、枚举映射字典（州代码对应关系）、MDL 指标口径</p>
+        <p>🔒 <strong>[后置 · 强约束区]</strong>：格式契约（禁止输出 Markdown 解释、必须 LIMIT 200、除零防护）</p>
+        <p>🎯 <strong>[末尾 · 激活触发区]</strong>：<strong>用户原始问题</strong>（最后被模型读取，直接指导输出第一行 Token）</p>
+      </div>
+    </div>
+    <p>这种结构能让大模型在“脑中”装填完所有的业务资料与纪律规范后，以最强烈的注意力对焦在具体问题上，极大抑制了答非所问与格式失控。</p>
+    
+      </div>
+    </div>
+    
+      
+    <div class="q-card" id="q10" data-category="cat3">
+      <div class="q-header" onclick="toggleCard(this)">
+        <div class="q-icon">10</div>
+        <div class="q-title-wrap">
+          <div class="q-title">Q10 为什么将模型生成采样温度（Temperature）设为 0？大模型真能实现确定性输出吗？</div>
+          <div class="q-meta">
+            <span class="difficulty-stars">★★☆</span>
+            <span class="tag-pill">温度参数</span><span class="tag-pill">确定性边界</span><span class="tag-pill">浮点数波动</span>
+          </div>
+        </div>
+        <div class="q-toggle">▼</div>
+      </div>
+      <div class="q-body">
+        
+    
+    <div class="callout direct">
+      <div class="callout-title">💡 一句话直答</div>
+      <div>Text2SQL 是严肃的<strong>确定性代码生成与数据检索任务</strong>，不需要文学创作的发散想象；<strong>将 Temperature 设为 0 可以最大程度压制采样随机性</strong>，使同一输入产生稳定、确定、可复现的 SQL 输出。</div>
+    </div>
+    
+
+    
+    <div class="callout interview">
+      <div class="callout-title">⚔️ 面试官高频追问</div>
+      <div><strong>面试官问：Temperature 设为 0，大模型的输出就真的 100% 确定了吗？为什么复跑偶尔还会出现 1~2 题波动？</strong><br><strong>高分回答：</strong><br>温度设为 0 并不等同于绝对的数学确定性。在真实工程中，依然存在三种微观波动源：<br>1. <strong>服务端批处理（Continuous Batching）的不确定性</strong>：云端大模型服务在并发调度时，每次请求被打包进 GPU 的 Batch 大小不同，浮点数矩阵并行相加的顺序微弱差异会导致末位精度的漂移；<br>2. <strong>模型版本灰度微调</strong>：云厂商线上模型常年进行后台细微调优与对齐；<br>3. <strong>Top-K 与核采样的截断边界</strong>：多分支概率几乎完全相等时可能发生平局。</div>
+    </div>
+    
+    
+      </div>
+    </div>
+    
+    </div>
+    
+
+    <div class="section-group" id="sec-cat4">
+      <div class="section-header">
+        <h2>四、安全防御与执行护栏（纵深防御体系）</h2>
+        <span class="section-tag">安全与AST</span>
+      </div>
+      
+    <div class="q-card" id="q11" data-category="cat4">
+      <div class="q-header" onclick="toggleCard(this)">
+        <div class="q-icon">11</div>
+        <div class="q-title-wrap">
+          <div class="q-title">Q11 绝不能信任大模型输出！你们是如何防范越权删库与 SQL 注入渗透的？</div>
+          <div class="q-meta">
+            <span class="difficulty-stars">★★★</span>
+            <span class="tag-pill">三层护栏</span><span class="tag-pill">安全防御</span><span class="tag-pill">53条渗透用例</span>
+          </div>
+        </div>
+        <div class="q-toggle">▼</div>
+      </div>
+      <div class="q-body">
+        
+    
+    <div class="callout direct">
+      <div class="callout-title">💡 一句话直答</div>
+      <div>绝不能信任大模型输出的任何代码！系统构筑了<strong>“应用层 AST 语法白名单 → 执行前 EXPLAIN 代价探测 → 数据库内核级只读角色（Role）隔离”</strong>的三层纵深防御体系（Defense in Depth），并在自动化回归测试中注入 <strong>53 条对抗渗透用例全量拦截验证</strong>。</div>
+    </div>
+    
+
+    <h4>1. 三层纵深防御架构图解</h4>
+    <div class="diagram-wrap">
+      <div class="flow-diagram">
+        <div class="flow-node danger">LLM 生成 SQL<br><small style="color:#b91c1c">不可信外部输入</small></div>
+        <div class="flow-arrow">➔</div>
+        <div class="flow-node">第 1 层：JSqlParser AST<br><small style="color:#0284c7">严格只读白名单 / 语法树遍历</small></div>
+        <div class="flow-arrow">➔</div>
+        <div class="flow-node">第 2 层：EXPLAIN 计划探测<br><small style="color:#0f766e">拦截全表笛卡尔积与超时代价</small></div>
+        <div class="flow-arrow">➔</div>
+        <div class="flow-node success">第 3 层：内核只读角色<br><small style="color:#047857">text2sql_ro + 10s物理超时</small></div>
+      </div>
+    </div>
+
+    <h4>2. 三层防线的职责边界</h4>
+    <ul>
+      <li><strong>第一道防线（AST 语法树白名单）</strong>：在 JVM 内存中将 SQL 解析为 AST 语法树，拦截一切非 SELECT 语句、拦截多语句分号拼接、拦截系统表/表函数越权调用；</li>
+      <li><strong>第二道防线（EXPLAIN 代价防御）</strong>：将 SQL 送往数据库仅做静态“彩排”，探测是否存在无关联条件的 Nested Loop（笛卡尔积），防止慢查询拖垮生产库；</li>
+      <li><strong>第三道防线（数据库内核权限硬约束）</strong>：使用无任何写权限的 <code>text2sql_ro</code> 专属连接池执行，设置 <code>statement_timeout = '10s'</code>。即使应用层两道代码检查全部失守，物理连接依然强制报错拒绝。</li>
+    </ul>
+    
+      </div>
+    </div>
+    
+      
+    <div class="q-card" id="q12" data-category="cat4">
+      <div class="q-header" onclick="toggleCard(this)">
+        <div class="q-icon">12</div>
+        <div class="q-title-wrap">
+          <div class="q-title">Q12 为什么要用 JSqlParser 做 AST 语法分析树遍历，而不用正则表达式做关键字过滤？</div>
+          <div class="q-meta">
+            <span class="difficulty-stars">★★★</span>
+            <span class="tag-pill">JSqlParser</span><span class="tag-pill">AST语法树</span><span class="tag-pill">正则穿透缺陷</span>
+          </div>
+        </div>
+        <div class="q-toggle">▼</div>
+      </div>
+      <div class="q-body">
+        
+    
+    <div class="callout direct">
+      <div class="callout-title">💡 一句话直答</div>
+      <div><strong>用正则表达式过滤 SQL 危险关键字是典型的防君子不防小人</strong>！大语言模型具有无限的编码变种生成能力，正则极易被注释混淆、大小写变异、CTE 嵌套和系统命名空间完全击穿；必须使用 <strong>JSqlParser 将 SQL 解析为抽象语法树（AST）</strong>，通过 Visitor 模式逐个节点进行类型安全的白名单遍历。</div>
+    </div>
+    
+
+    <h4>1. 真实渗透中，正则表达式被击穿的三个典型漏洞</h4>
+    
+    <table class="content-table">
+      <thead><tr><th>攻击场景</th><th>渗透示例</th><th>为什么正则表达式会失效</th><th>AST 如何完美拦截</th></tr></thead>
+      <tbody><tr><td>系统表命名空间逃逸</td><td><code>SELECT * FROM pg_catalog.pg_user</code></td><td>正则通常匹配单独的单词 <code>pg_user</code>，带限定名时正则匹配漏判</td><td>AST 的 <code>Table.getFullyQualifiedName()</code> 解析出命名空间，白名单直接拦截</td></tr><tr><td>CTE 隐藏数据删除</td><td><code>WITH deleted AS (DELETE FROM orders RETURNING *) SELECT * FROM deleted;</code></td><td>正则看到开头是 <code>SELECT</code> 或包含 <code>WITH</code> 判为安全读取</td><td>AST 递归遍历 CTE 的 <code>WithItem</code>，检测到内部节点为 <code>Delete</code>，直接抛出安全异常</td></tr><tr><td>表函数与代码执行</td><td><code>SELECT * FROM dblink('host=...', 'DROP TABLE users')</code></td><td>正则难以穷举数据库数十种内置的底层远程连接与文件读取表函数</td><td>AST 的 <code>Function</code> 访问器校验函数名白名单，非聚合函数直接拦截</td></tr></tbody>
+    </table>
+    
+
+    <h4>2. AST Visitor 核心遍历代码逻辑</h4>
+    <pre class="code-block"><code>// JSqlParser 抽象语法树遍历核心逻辑
+Statement stmt = CCJSqlParserUtil.parse(sql);
+if (!(stmt instanceof PlainSelect select)) {
+    throw new SecurityException(&quot;只允许单条 SELECT 语句，禁止多语句或复合操作&quot;);
+}
+select.accept(new SelectVisitorAdapter() {
+    @Override
+    public void visit(Table table) {
+        String tableName = table.getName().toLowerCase();
+        if (!ALLOWED_TABLES.contains(tableName)) {
+            throw new SecurityException(&quot;越权访问未授权表: &quot; + tableName);
+        }
+    }
+});</code></pre>
+    
+      </div>
+    </div>
+    
+      
+    <div class="q-card" id="q13" data-category="cat4">
+      <div class="q-header" onclick="toggleCard(this)">
+        <div class="q-icon">13</div>
+        <div class="q-title-wrap">
+          <div class="q-title">Q13 如何利用 PostgreSQL 的 EXPLAIN JSON 执行计划在物理查数前拦截慢查询与笛卡尔积？</div>
+          <div class="q-meta">
+            <span class="difficulty-stars">★★★</span>
+            <span class="tag-pill">EXPLAIN计划</span><span class="tag-pill">笛卡尔积拦截</span><span class="tag-pill">Index Cond</span>
+          </div>
+        </div>
+        <div class="q-toggle">▼</div>
+      </div>
+      <div class="q-body">
+        
+    
+    <div class="callout direct">
+      <div class="callout-title">💡 一句话直答</div>
+      <div>语法正确的 SQL 也可能拖垮数据库！在真正执行前，系统调用 PostgreSQL 原生 <code>EXPLAIN (FORMAT JSON)</code> 获取静态执行计划树，递归检测各层节点的代价（Cost）与连接算子，<strong>重点探测并硬拦截无索引连接条件的嵌套循环（Nested Loop Without Index Cond）</strong>，杜绝全表笛卡尔积。</div>
+    </div>
+    
+
+    <h4>1. 为什么“笛卡尔积”必须在执行前硬拦截？</h4>
+    <p>数仓中的核心事实表（如订单明细表）通常在数百万行级别。大模型如果在连表时遗漏了 <code>ON</code> 关联条件，两张大表就会发生笛卡尔乘积，输出行数膨胀为数万亿级别，直接导致数据库 CPU 100% 满载、磁盘 I/O 耗尽，拖垮整库业务。</p>
+
+    <h4>2. 执行计划树如何识别“危险的笛卡尔积”？</h4>
+    <p>并非所有的 <code>Nested Loop</code> 都是笛卡尔积。如果外表只有 1 行，内表走主键索引（Index Cond），这是最高效的查询方式之一。因此静态分析器必须做到<strong>精准识别，严禁误杀</strong>：</p>
+    <ul>
+      <li><strong>危险特征（硬拦截）</strong>：算子为 <code>Nested Loop</code>，且子节点中<strong>没有任何 <code>Index Cond</code> 或 <code>Join Filter</code> 条件</strong>，两表直接进行全表扫描配对；</li>
+      <li><strong>安全特征（正常放行）</strong>：算子带有明确的 <code>Index Cond: (orders.id = items.order_id)</code>，属于标准的索引关联下推。</li>
+    </ul>
+    
+      </div>
+    </div>
+    
+      
+    <div class="q-card" id="q14" data-category="cat4">
+      <div class="q-header" onclick="toggleCard(this)">
+        <div class="q-icon">14</div>
+        <div class="q-title-wrap">
+          <div class="q-title">Q14 既然系统层有了 AST 校验与 EXPLAIN 检查，为什么还需要数据库内核级只读角色隔离？</div>
+          <div class="q-meta">
+            <span class="difficulty-stars">★★☆</span>
+            <span class="tag-pill">只读角色</span><span class="tag-pill">statement_timeout</span><span class="tag-pill">纵深防御</span>
+          </div>
+        </div>
+        <div class="q-toggle">▼</div>
+      </div>
+      <div class="q-body">
+        
+    
+    <div class="callout direct">
+      <div class="callout-title">💡 一句话直答</div>
+      <div><strong>任何纯应用层的软件安全检查都无法排除存在未知的 0-day 漏洞或方言解析盲区</strong>；引入数据库内核级的 <code>text2sql_ro</code> 只读角色，是用物理隔离兜底的<strong>纵深防御原则</strong>，确保最坏情况下即便应用层发生漏洞穿透，数据库也无法发生数据损坏。</div>
+    </div>
+    
+
+    <h4>1. 数据库只读账号的最小权限原则配置</h4>
+    <pre class="code-block"><code>-- 生产级只读角色初始化脚本
+CREATE ROLE text2sql_ro LOGIN PASSWORD &#x27;strong_password&#x27;;
+REVOKE ALL ON ALL TABLES IN SCHEMA public FROM text2sql_ro;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO text2sql_ro;
+-- 物理强制单语句 10 秒超时，防止慢查询占满连接池
+ALTER ROLE text2sql_ro SET statement_timeout = &#x27;10000&#x27;;
+-- 物理限制内存工作区大小
+ALTER ROLE text2sql_ro SET work_mem = &#x27;16MB&#x27;;</code></pre>
+
+    
+    <div class="callout interview">
+      <div class="callout-title">⚔️ 面试官高频追问</div>
+      <div><strong>面试官问：如果你们系统既有 AST 拦截、又有只读角色，为什么还要做 10 秒超时？</strong><br><strong>高分回答：</strong><br>只读角色只保证“不能修改数据”，但并不保证“不能耗尽服务器资源”。恶意的黑客可以构造一条极其复杂的合规只读 SQL（例如超多层子查询关联），在百万级大表上做全量排序与哈希计算，持续占用数据库 CPU 和连接资源，引发<strong>拒绝服务攻击（DoS）</strong>。10 秒强制物理超时（<code>statement_timeout</code>）是防止慢查询与死锁拖死数据库连接池的最终物理屏障。</div>
+    </div>
+    
+    
+      </div>
+    </div>
+    
+    </div>
+    
+
+    <div class="section-group" id="sec-cat5">
+      <div class="section-header">
+        <h2>五、高并发、性能与缓存设计（工程落地）</h2>
+        <span class="section-tag">并发与缓存</span>
+      </div>
+      
+    <div class="q-card" id="q15" data-category="cat5">
+      <div class="q-header" onclick="toggleCard(this)">
+        <div class="q-icon">15</div>
+        <div class="q-title-wrap">
+          <div class="q-title">Q15 系统如何设计缓存来降低昂贵的大模型推理成本与延迟？为什么缓存 SQL 而不是缓存结果集？</div>
+          <div class="q-meta">
+            <span class="difficulty-stars">★★★</span>
+            <span class="tag-pill">二级缓存</span><span class="tag-pill">SQL缓存 vs 结果缓存</span><span class="tag-pill">数据时效</span>
+          </div>
+        </div>
+        <div class="q-toggle">▼</div>
+      </div>
+      <div class="q-body">
+        
+    
+    <div class="callout direct">
+      <div class="callout-title">💡 一句话直答</div>
+      <div><strong>在实时数据问数系统中缓存结果集是致命的架构坏味道</strong>（会导致业务返回已过期的陈旧数据且毫无感知）；系统采用的是基于<strong>“问题语法归一化 + 配置指纹”的 SQL 二级缓存</strong>，命中后跳过耗时数秒的大模型生成阶段，但仍向数据库物理查数，在实现 <strong>Token 消耗降低 50%、P50 延迟降低 53%</strong> 的同时，保证了业务数据的 100% 实时新鲜。</div>
+    </div>
+    
+
+    <h4>1. 为什么“缓存 SQL”远胜于“缓存查询结果”？</h4>
+    
+    <table class="content-table">
+      <thead><tr><th>对比维度</th><th>方案 A：缓存查询结果集（Result Cache）</th><th>方案 B：缓存 SQL 结构（SQL Cache，系统方案）</th></tr></thead>
+      <tbody><tr><td>数据时效性（Freshness）</td><td>❌ <strong>产生脏数据</strong>：昨天查出的销售额今天变成了旧值，业务无法察觉</td><td>✅ <strong>永远最新</strong>：SQL 是查数逻辑，每次物理查最新库数据</td></tr><tr><td>内存开销</td><td>❌ <strong>开销不可控</strong>：大表格有几千行数据，占用数 MB 堆内存，极易引发 GC 停顿</td><td>✅ <strong>极度轻量</strong>：一条 SQL 字符串仅占几百字节，内存占用恒定</td></tr><tr><td>降本提效收益</td><td>省去模型调用 + 数据库查数</td><td><strong>省去最昂贵的大模型推理（节省 10~12 秒与全部 Token）</strong></td></tr></tbody>
+    </table>
+    
+
+    <h4>2. 配置指纹的作用</h4>
+    <p>同一个问题在不同配置下（例如调整了 Prompt 版本、切换了模型、修改了业务口径）生成的 SQL 是不同的。因此缓存的 Key 必须由<strong>“去除标点与多余空格的归一化问题 + Prompt 配置 Hash 指纹”</strong>联合计算 SHA-256，确保配置变更后旧缓存立即失效，防止逻辑污染。</p>
+    
+      </div>
+    </div>
+    
+      
+    <div class="q-card" id="q16" data-category="cat5">
+      <div class="q-header" onclick="toggleCard(this)">
+        <div class="q-icon">16</div>
+        <div class="q-title-wrap">
+          <div class="q-title">Q16 用户自定义密钥（BYOK）中，如何利用 LinkedHashMap 实现 LRU 客户端池并杜绝 OOM 内存泄漏？</div>
+          <div class="q-meta">
+            <span class="difficulty-stars">★★★</span>
+            <span class="tag-pill">BYOK透传</span><span class="tag-pill">LRU客户端池</span><span class="tag-pill">DCL双重检查锁</span><span class="tag-pill">防OOM</span>
+          </div>
+        </div>
+        <div class="q-toggle">▼</div>
+      </div>
+      <div class="q-body">
+        
+    
+    <div class="callout direct">
+      <div class="callout-title">💡 一句话直答</div>
+      <div>请求头中的 <code>X-Api-Key</code> 是外部不受信任的动态输入；如果直接使用无界的 <code>ConcurrentHashMap</code> 缓存持有底层 HTTP 连接池的 <code>ChatModel</code> 客户端，恶意调用方可以通过随机伪造海量 Key 引发<strong>“输入决定内存分配”的 JVM 堆内存耗尽（OOM）致命漏洞</strong>；系统通过继承 <code>LinkedHashMap</code> 实现容量为 32 的 <strong>LRU 客户端池</strong>，配合双重检查锁（DCL）兼顾了高并发复用与内存安全。</div>
+    </div>
+    
+
+    <h4>1. 生产级 LRU 客户端池实现代码解析</h4>
+    <pre class="code-block"><code>// LlmSqlGenerator 中的防 OOM 客户端池核心实现
+private static final int MAX_DYNAMIC_MODELS = 32;
+
+// 1. 基于 LinkedHashMap(accessOrder=true) 构建访问顺序 LRU 容器
+private final Map&lt;String, ChatModel&gt; dynamicChatModels = Collections.synchronizedMap(
+    new LinkedHashMap&lt;&gt;(16, 0.75f, true) {
+        @Override
+        protected boolean removeEldestEntry(Map.Entry&lt;String, ChatModel&gt; eldest) {
+            // 数量超过 32 时，自动淘汰最久未活跃的客户端并被 GC 回收
+            return size() &gt; MAX_DYNAMIC_MODELS;
+        }
+    });
+
+// 2. 双重检查锁 (DCL) 解析客户端
+public ChatModel resolveChatModel(String apiKey) {
+    if (dynamicChatModels.containsKey(apiKey)) {
+        return dynamicChatModels.get(apiKey);
+    }
+    // 耗时的底层连接池与 RestClient 构建放在同步块外部，避免阻塞其他线程
+    ChatModel built = buildChatModel(apiKey);
+    synchronized (dynamicChatModels) {
+        // 二次检查防止高并发下重复 put
+        return dynamicChatModels.computeIfAbsent(apiKey, k -&gt; built);
+    }
+}</code></pre>
+
+    
+    <div class="callout interview">
+      <div class="callout-title">⚔️ 面试官高频追问</div>
+      <div><strong>面试官问：为什么不用现成的开源缓存库（如 Caffeine / Guava Cache），非要用原生 LinkedHashMap？</strong><br><strong>高分回答：</strong><br>做架构必须考量<strong>“引入依赖的边际收益与维护代价”</strong>。客户端池的容量上限仅为 32，没有复杂的滑动过期或多线程分段写需求。重写 <code>LinkedHashMap</code> 的 <code>removeEldestEntry</code> 只需十几行标准 JDK 代码，没有任何外部侵入与类加载负担；引入 Caffeine 会带来额外的依赖树、版本冲突风险与不可忽视的包体积增长。在足够轻量的场景下，优先采用原生标准库是最佳实践。</div>
+    </div>
+    
+    
+      </div>
+    </div>
+    
+      
+    <div class="q-card" id="q17" data-category="cat5">
+      <div class="q-header" onclick="toggleCard(this)">
+        <div class="q-icon">17</div>
+        <div class="q-title-wrap">
+          <div class="q-title">Q17 P95 延迟高达 12.8 秒，在真实生产高并发场景下该如何真正优化系统延迟？</div>
+          <div class="q-meta">
+            <span class="difficulty-stars">★★★</span>
+            <span class="tag-pill">P95延迟优化</span><span class="tag-pill">SSE盲区</span><span class="tag-pill">语义缓存</span><span class="tag-pill">模型级联路由</span>
+          </div>
+        </div>
+        <div class="q-toggle">▼</div>
+      </div>
+      <div class="q-body">
+        
+    
+    <div class="callout direct">
+      <div class="callout-title">💡 一句话直答</div>
+      <div><strong>改用 WebSocket 或 SSE 流式输出不能真正解决物理延迟，它只是欺骗感官的 UI 障眼法</strong>！物理总耗时依然受制于大模型生成，且会破坏后置 AST 安全防御的原子性；要在生产高并发场景下真正把 P95 压进 8 秒内，工业界的硬核解法是<strong>“分级语义缓存（Semantic Cache）”配合“大小模型级联路由（Model Cascading）”</strong>。</div>
+    </div>
+    
+
+    <h4>1. 为什么“流式输出（SSE）”在 Text2SQL 场景下行不通？</h4>
+    <ul>
+      <li><strong>物理耗时一毫秒没少</strong>：用户要的是最终的数据表格，不是看模型打字敲 SQL。在完整的 SQL 语法树出来前，数据库根本无法物理执行，从点击到出表的端到端延迟依然是 12.8 秒；</li>
+      <li><strong>破坏安全拦截的事务性</strong>：模型吐到最后在子查询里写了个非法表，AST 白名单此时执行硬拦截抛异常。前端此时已经流式展示了一大半，如何回滚界面？这会导致前端状态机彻底崩溃。</li>
+    </ul>
+
+    <h4>2. 真正的生产性能优化演进方向</h4>
+    <div class="diagram-wrap">
+      <div style="text-align:left; max-width:680px; margin:0 auto; font-size:0.88rem;">
+        <p>🚀 <strong>方案一：分级语义缓存（Semantic Cache）</strong><br>
+        当前基于精确匹配的二级缓存命中率约 20%。生产级应引入基于问题向量相似度的语义缓存（如 pgvector / Redis VL）。对常见重复或相似提问（如“昨日销量”、“各省订单统计”），相似度 &gt; 0.95 时直接 <strong>50ms 走缓存返回</strong>，从概率分布上直接将整体 P95 强行拉低；</p>
+        
+        <p>🚀 <strong>方案二：大小模型级联路由（Model Cascading）</strong><br>
+        单表/双表的简单聚合查询（占总业务量 40%）不需要调用百亿参数大模型，直接路由至本地轻量 7B 参数模型（如 Qwen-7B-Coder，1.5 秒出字）；只有判定为 3 表以上复杂拓扑时才路由给大模型。分级削峰，既压低了延迟又节省了算力成本。</p>
+      </div>
+    </div>
+    
+      </div>
+    </div>
+    
+    </div>
+    
+
+    <div class="section-group" id="sec-cat6">
+      <div class="section-header">
+        <h2>六、评测基准、消融实验与数据治理</h2>
+        <span class="section-tag">评测与消融</span>
+      </div>
+      
+    <div class="q-card" id="q18" data-category="cat6">
+      <div class="q-header" onclick="toggleCard(this)">
+        <div class="q-icon">18</div>
+        <div class="q-title-wrap">
+          <div class="q-title">Q18 你们的评测集是如何搭建的？为什么用执行准确率而不是字符串匹配或大模型裁判？</div>
+          <div class="q-meta">
+            <span class="difficulty-stars">★★☆</span>
+            <span class="tag-pill">评测金标准</span><span class="tag-pill">执行比对</span><span class="tag-pill">ResultSet规范化</span>
+          </div>
+        </div>
+        <div class="q-toggle">▼</div>
+      </div>
+      <div class="q-body">
+        
+    
+    <div class="callout direct">
+      <div class="callout-title">💡 一句话直答</div>
+      <div>字符串比对会把合法但别名不同、Join 顺序不同的正确 SQL 判错；大模型裁判成本高且自身存在幻觉风险；<strong>执行准确率（Execution Accuracy）是将标注 SQL 与生成 SQL 分别在物理数据库执行，通过数值四舍五入、空值规整、多重集排序比对真实结果集</strong>，是目前学术界与工业界最严谨、唯一可复现的客观金标准。</div>
+    </div>
+    
+
+    <h4>1. 三种评测方式优劣全面对比</h4>
+    
+    <table class="content-table">
+      <thead><tr><th>评测方案</th><th>评测机制</th><th>致命缺陷</th><th>结论</th></tr></thead>
+      <tbody><tr><td>SQL 字符串完全匹配</td><td>直接 <code>goldSql.equals(genSql)</code></td><td>无法识别语义等价：多一个空格、表别名不同、Join 换位都会被无情误杀</td><td>❌ 工业界完全不可用</td></tr><tr><td>大模型当裁判（LLM-as-a-Judge）</td><td>让 GPT-4 判断两段 SQL 是否等价</td><td>裁判模型自身存在幻觉；无法捕捉细微的字段口径差异；调用成本极高且评判不可复现</td><td>❌ 适合辅助解释，不可用于计分</td></tr><tr><td><strong>执行准确率（Execution Accuracy）</strong></td><td>两条 SQL 真实入库执行，规整化比对 ResultSet</td><td>对测试集环境有依赖，需要自建标准沙箱库</td><td>✅ <strong>系统采用的唯一金标准</strong></td></tr></tbody>
+    </table>
+    
+    
+      </div>
+    </div>
+    
+      
+    <div class="q-card" id="q19" data-category="cat6">
+      <div class="q-header" onclick="toggleCard(this)">
+        <div class="q-icon">19</div>
+        <div class="q-title-wrap">
+          <div class="q-title">Q19 在同模型对照下，端到端准确率从 62% 提升到 96%，这 34 个百分点的提升是怎么量化归因出来的？</div>
+          <div class="q-meta">
+            <span class="difficulty-stars">★★★</span>
+            <span class="tag-pill">消融实验</span><span class="tag-pill">62%到96%</span><span class="tag-pill">量化归因台账</span>
+          </div>
+        </div>
+        <div class="q-toggle">▼</div>
+      </div>
+      <div class="q-body">
+        
+    
+    <div class="callout direct">
+      <div class="callout-title">💡 一句话直答</div>
+      <div>在严格控制模型底座（<code>deepseek-flash</code>）完全不变的前提下，<strong>34 个百分点的提升是由清晰的四步工程消融归因构成的</strong>：初始基线 62% → 业务口径注入 (+9pp) → 外键图与时序规范 (+13pp) → 斯坦纳树全局拓扑规划 (+4pp，达到 88% 未清洗基线) → 评测基准数据治理 (+8pp，达到 96.00% 最终实测)。</div>
+    </div>
+    
+
+    <h4>1. 同模型全链路消融台账</h4>
+    
+    <table class="content-table">
+      <thead><tr><th>迭代阶段</th><th>核心工程改动</th><th>执行准确率</th><th>增量贡献</th><th>归因解释</th></tr></thead>
+      <tbody><tr><td>1. 零样本检索基线</td><td>纯 Top-8 Schema DDL 裸跑</td><td>62.00%</td><td>—</td><td>模型缺乏业务口径与连表约束，多表题大面积死锁</td></tr><tr><td>2. 业务口径注入</td><td>引入集中式指标定义（GMV/运费等公式）</td><td>71.00%</td><td>+9.00pp</td><td>彻底消除了常见商业指标的口径计算幻觉</td></tr><tr><td>3. 外键拓扑与时序规范</td><td>提示词补充外键连接及标准日期转换规范</td><td>84.00%</td><td>+13.00pp</td><td>消除了 2 表基础连表断裂与日期截断失真</td></tr><tr><td>4. <strong>斯坦纳树近似算法</strong></td><td>重构多表规划器，消除局部贪心伪支路</td><td><strong>88.00%</strong></td><td><strong>+4.00pp</strong></td><td>4+ 表复杂关联准确率由 50% 暴增至 90.91%，3 表达 100%</td></tr><tr><td>5. <strong>评测基准数据治理</strong></td><td>消除原标注隐式过滤与口径死锁（问题零改动）</td><td><strong>96.00%</strong></td><td><strong>+8.00pp</strong></td><td>剥离早期 AI 自动生成评测集时的标注瑕疵，恢复公正尺子</td></tr></tbody>
+    </table>
+    
+    
+      </div>
+    </div>
+    
+      
+    <div class="q-card" id="q20" data-category="cat6">
+      <div class="q-header" onclick="toggleCard(this)">
+        <div class="q-icon">20</div>
+        <div class="q-title-wrap">
+          <div class="q-title">Q20 面试官追问：“你的准确率达到 96%，是不是改测试集刷出来的？” 该如何从数据治理的角度严密自证？</div>
+          <div class="q-meta">
+            <span class="difficulty-stars">★★★</span>
+            <span class="tag-pill">基准清洗</span><span class="tag-pill">数据治理</span><span class="tag-pill">防作弊自证</span>
+          </div>
+        </div>
+        <div class="q-toggle">▼</div>
+      </div>
+      <div class="q-body">
+        
+    
+    <div class="callout direct">
+      <div class="callout-title">💡 一句话直答</div>
+      <div><strong>绝对没有作弊！我们坚守了三条不可逾越的评测底线</strong>：1. 中文业务问题文本一个字没改；2. Dev/Eval 数据集的 Hash 划分算法一行没动；3. 标准标注 SQL 跑自检保持 100% 通过；提升是由算法升级（62%→88%）与消除标注私货（88%→96%）两部分严格组成的。</div>
+    </div>
+    
+
+    <h4>1. 早期 AI 自动生成基准时的典型标注私货缺陷</h4>
+    <p>深挖剩余 12 条失败日志，发现其中 8 条属于评测集标注本身的瑕疵：</p>
+    <ul>
+      <li><strong>偷加未说明的过滤条件</strong>：例如中文题目只问“统计下过单的会员分布”，标注 SQL 却私自在最后写了 <code>HAVING count(order_id) &gt;= 2</code>（偷偷加了“2 次以上”的未提及条件）；</li>
+      <li><strong>同义字段平局误判</strong>：同一口径的两个题目，一个要求输出 <code>level_name</code>，另一个强制要求输出 <code>level_id</code>；大模型输出了名称，虽然业务完全正确却被无情判错；</li>
+      <li><strong>内连接漏算空行</strong>：标准 SQL 在标签统计里使用了 <code>INNER JOIN</code>，直接把没有订单的几百个打标会员漏掉了，而大模型使用了正确的 <code>LEFT JOIN</code> 却被判负。</li>
+    </ul>
+    <p>进行<strong>评测集数据治理（Data Cleansing）</strong>，抹掉的是评测尺子上的铁锈，而不是讨巧把题目改简单。</p>
+    
+      </div>
+    </div>
+    
+      
+    <div class="q-card" id="q21" data-category="cat6">
+      <div class="q-header" onclick="toggleCard(this)">
+        <div class="q-icon">21</div>
+        <div class="q-title-wrap">
+          <div class="q-title">Q21 启发式自纠错（Self-Correction）在很多简历上吹得很神，为什么你们实测后选择主动默认关闭？</div>
+          <div class="q-meta">
+            <span class="difficulty-stars">★★★</span>
+            <span class="tag-pill">自纠错ROI</span><span class="tag-pill">错误回灌</span><span class="tag-pill">反思机制真相</span>
+          </div>
+        </div>
+        <div class="q-toggle">▼</div>
+      </div>
+      <div class="q-body">
+        
+    
+    <div class="callout direct">
+      <div class="callout-title">💡 一句话直答</div>
+      <div><strong>不讲投入产出比（ROI）的自纠错就是自嗨</strong>！在斯坦纳树与口径强约束下，系统单次生成准确率已达 96.00%；实测剩余的 4 条错误属于复杂多层嵌套逻辑的深度误解；模型首轮未想通时，回灌错误只会引发同义反复；重试成功率为 0 却导致 Token 翻倍、延迟翻倍，因此主动将其默认关闭。</div>
+    </div>
+    
+
+    
+    <div class="callout interview">
+      <div class="callout-title">⚔️ 面试官高频追问</div>
+      <div><strong>面试官问：很多人简历上都吹自己有“反思机制”，能自动纠错重试，你为什么反而把它关了？</strong><br><strong>高分回答：</strong><br>做架构必须看<strong>投入产出比（ROI）</strong>。我们针对空结果、比率越界、金额为负等设计了 8 条严密的启发式校验规则并支持回灌重试。但在 100 道真实题目的评估大盘上实测：它总共仅触发了 1 次，救回成功率为 0！<br>因为在高质量的前置工程约束下，语法错误已经被消灭了，剩下的属于深层逻辑理解瓶颈。把错误信息丢回去，大模型只会换一种语法再写一遍逻辑错误的 SQL。为了 0% 的挽救概率让所有用户的响应耗时从 12 秒飙升到 24 秒、Token 消耗翻倍，是极不负责任的做法。<strong>把力气花在“前置一次做对”，远比“寄希望于后置碰运气重试”更有价值。</strong></div>
+    </div>
+    
+    
+      </div>
+    </div>
+    
+    </div>
+    
+
+  </main>
+</div>
+
+<footer>
+  <p>Text2SQL Agent 技术与面试答辩全集 · 基于真实电商数仓评测与生产级 Java 后端防御工程</p>
+</footer>
+
+<script>
+function toggleCard(header) {
+  header.classList.toggle('open');
+  const body = header.nextElementSibling;
+  body.classList.toggle('open');
+}
+
+function expandAll(open) {
+  document.querySelectorAll('.q-header').forEach(h => {
+    if (open) {
+      h.classList.add('open');
+      h.nextElementSibling.classList.add('open');
+    } else {
+      h.classList.remove('open');
+      h.nextElementSibling.classList.remove('open');
+    }
+  });
+}
+
+function filterCategory(cat, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.q-card').forEach(card => {
+    if (cat === 'all' || card.dataset.category === cat) {
+      card.style.display = 'block';
+    } else {
+      card.style.display = 'none';
+    }
+  });
+  document.querySelectorAll('.section-group').forEach(sec => {
+    if (cat === 'all') {
+      sec.style.display = 'block';
+    } else if (sec.id === 'sec-' + cat) {
+      sec.style.display = 'block';
+    } else {
+      sec.style.display = 'none';
+    }
+  });
+}
+
+function handleSearch() {
+  const query = document.getElementById('searchInput').value.trim().toLowerCase();
+  document.querySelectorAll('.q-card').forEach(card => {
+    const text = card.innerText.toLowerCase();
+    if (!query || text.includes(query)) {
+      card.style.display = 'block';
+    } else {
+      card.style.display = 'none';
+    }
+  });
+}
+</script>
+</body>
+</html>
