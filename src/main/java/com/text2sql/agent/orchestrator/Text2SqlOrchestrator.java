@@ -9,6 +9,7 @@ import com.text2sql.agent.generation.LlmSqlGenerator;
 import com.text2sql.agent.observability.LlmCallRecord;
 import com.text2sql.agent.retrieval.SchemaContext;
 import com.text2sql.agent.retrieval.SchemaProvider;
+import com.text2sql.agent.validation.CheckResult;
 import com.text2sql.agent.validation.SqlValidator;
 import com.text2sql.agent.validation.ValidationResult;
 import org.slf4j.Logger;
@@ -425,6 +426,10 @@ public class Text2SqlOrchestrator {
      * 会让系统的表现比不重试更差——实测里出现过「首次能跑通、重试反而执行失败」
      * 的情况。所以只有第二次**成功**才用它，否则原样返回第一次的结果。
      *
+     * <p><b>第二次成功也不等于更好</b>。首次是「执行成功但被启发式规则判可疑」时，
+     * 第二次必须**也通过同一套校验**才配替换；否则保留首次。没有这一步，
+     * 一次规则误报就会把本来正确的答案换成错的（比率越界规则上真实发生过）。
+     *
      * <p>代价必须可查：{@code combineAttempts} 会把两次调用的 token 和延迟相加，
      * 这样「每次调用花了多少」这个数字不会被重试悄悄稀释。
      */
@@ -436,6 +441,9 @@ public class Text2SqlOrchestrator {
 
         boolean shouldRetry = false;
         String feedback = null;
+        // 首次「执行成功但结果可疑」时记录命中的规则，供重试后的择优判定使用。
+        // 首次是执行/校验失败时保持 null：那种情况下第二次只要能跑通就一定更好，无需再比。
+        String firstSuspicion = null;
 
         if (retryAllowed) {
             if (!first.success()) {
@@ -447,10 +455,9 @@ public class Text2SqlOrchestrator {
                 var check = resultChecker.check(question, first.sql(), qr);
                 if (check.suspicious()) {
                     shouldRetry = true;
+                    firstSuspicion = check.rule();
                     log.info("启发式结果校验命中异常（规则：{}）：{}", check.rule(), check.reason());
-                    feedback = "上一条 SQL 执行成功，但经系统启发式规则检测发现结果可疑：\n"
-                            + check.reason() + "\n上一条 SQL：\n" + first.sql()
-                            + "\n请仔细核对计算逻辑、关联条件与过滤条件，重新生成正确的 SQL。";
+                    feedback = correctionFeedback(question, first, check);
                 }
             }
         }
@@ -469,11 +476,51 @@ public class Text2SqlOrchestrator {
                 ? askWithCorrection(question, first.sql(), feedback, model, apiKey)
                 : askWithCorrection(question, first.sql(), feedback, model);
         if (second.success()) {
+            // 择优而非覆盖：首次是「成功但可疑」时，第二次也必须通过同一套校验才配替换。
+            // 否则会出现「首次正确、被规则误判 → 重试 → 第二次也能跑但答错 → 采用第二次」，
+            // 准确率不升反降（这个坑在 ResultChecker 的比率规则上真实发生过）。
+            if (firstSuspicion != null) {
+                QueryResult qr2 = new QueryResult(second.columns(), second.rows(), second.truncated(), 0L);
+                var secondCheck = resultChecker.check(question, second.sql(), qr2);
+                if (secondCheck.suspicious()) {
+                    log.info("重试结果仍被判定可疑（本次规则：{}，首次规则：{}），保留首次结果",
+                            secondCheck.rule(), firstSuspicion);
+                    return first;
+                }
+            }
             log.info("重试成功，采用第二次结果");
             return AgentResponse.combineAttempts(first, second);
         }
         log.warn("重试仍未成功（{}），保留首次结果", second.status());
         return first;
+    }
+
+    /**
+     * 把启发式校验的判定结果整理成「可执行的修改指令」。
+     *
+     * <p>和 {@link #retryFeedback} 的分工：那个对应「执行/校验失败」，模型本来就知道错在哪；
+     * 这个对应「执行成功但结果可疑」，模型自己看不到问题，所以必须把命中的规则、
+     * 判定依据、问题原文、实际返回的行数与列名都摆出来。否则模型只能盲改，
+     * 很容易把本来正确的部分一起改坏——这也是「重试反而降准确率」的另一半原因。
+     */
+    private static String correctionFeedback(String question, AgentResponse first, CheckResult check) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("上一条 SQL 已成功执行，但触发了结果合理性校验，判定结果可能不对。\n");
+        sb.append("命中规则：").append(check.rule()).append('\n');
+        sb.append("判定依据：").append(check.reason()).append('\n');
+        sb.append("用户问题：").append(question).append('\n');
+        sb.append("上一条 SQL：\n").append(first.sql()).append('\n');
+        int rows = first.rows() == null ? 0 : first.rows().size();
+        sb.append("实际返回：").append(rows).append(" 行");
+        if (first.columns() != null && !first.columns().isEmpty()) {
+            sb.append("，输出列：").append(String.join(", ", first.columns()));
+        }
+        sb.append("\n请只针对上述可疑点做最小修改，重新给出完整 SQL，已经正确的部分不要改动：\n");
+        sb.append("- 问题要求的每个维度（时间/地区/类目）和指标都必须出现在 SELECT 或 GROUP BY 中，输出列不能少\n");
+        sb.append("- 聚合口径要与问题一致：问「平均」用 AVG，问「多少笔/多少个」用 COUNT，需要去重时用 COUNT(DISTINCT ...)\n");
+        sb.append("- WHERE 里的枚举、状态、地区取值必须与 schema 中给出的实际值一致，注意大小写与拼写\n");
+        sb.append("- 只使用 schema 中真实存在的表和列，数值 ROUND 到两位小数，并保留 LIMIT\n");
+        return sb.toString();
     }
 
     /** 把首次失败的真实原因整理成反馈。**只包含模型自己能观察到的信息，不含标准答案。** */

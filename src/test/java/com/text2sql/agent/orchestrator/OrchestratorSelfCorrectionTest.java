@@ -324,4 +324,121 @@ class OrchestratorSelfCorrectionTest {
                 .as("检索指标仍按实际召回的子集记录，不能虚高")
                 .containsExactly("orders");
     }
+
+    // ---------------------------------------------------------------
+    // 择优而非覆盖：首次「成功但可疑」时，第二次也必须通过同一套校验才配替换。
+    // 没有这条规则，一次规则误报就会把本来正确的答案换成错的。
+    // ---------------------------------------------------------------
+
+    private void enableSuspiciousRetry() {
+        properties.getSelfCorrection().setEnabled(true);
+        properties.getSelfCorrection().setMaxAttempts(2);
+        properties.getResultChecker().setEnabled(true);
+        when(validator.validate(anyString(), any())).thenAnswer(inv ->
+                ValidationResult.ok(inv.getArgument(0)));
+    }
+
+    /** 带 WHERE 的查询返回 0 行，且问题不是在问「哪些没有」，会命中 EMPTY_RESULT 规则。 */
+    private static QueryResult emptyResult() {
+        return new QueryResult(List.of("count"), List.of(), false, 1);
+    }
+
+    private static QueryResult oneRow() {
+        return new QueryResult(List.of("count"), List.of(List.of("42")), false, 1);
+    }
+
+    @Test
+    @DisplayName("重试结果仍可疑：保留首次，不用一个同样可疑的答案覆盖")
+    void keepsFirstWhenRetryStillSuspicious() {
+        enableSuspiciousRetry();
+
+        String firstSql = "SELECT COUNT(*) FROM orders WHERE state = 'CA' LIMIT 10";
+        String secondSql = "SELECT COUNT(*) FROM orders WHERE state = 'XX' LIMIT 10";
+        when(generator.generate(anyString(), any()))
+                .thenReturn(new GeneratedSql(firstSql, "raw", call(100, 10, 50)));
+        when(generator.generateCorrection(anyString(), any(), anyString(), anyString(), any()))
+                .thenReturn(new GeneratedSql(secondSql, "raw", call(200, 20, 70)));
+        when(executor.execute(firstSql)).thenReturn(emptyResult());
+        when(executor.execute(secondSql)).thenReturn(emptyResult());
+
+        AgentResponse response = orchestrator().ask("加州有多少订单？");
+
+        assertThat(response.sql())
+                .as("两次都被判可疑时，应保留首次——第二次没有证据更好")
+                .isEqualTo(firstSql);
+    }
+
+    @Test
+    @DisplayName("重试结果通过校验：采用第二次，说明择优不是一律保留首次")
+    void takesRetryWhenRetryPassesCheck() {
+        enableSuspiciousRetry();
+
+        String firstSql = "SELECT COUNT(*) FROM orders WHERE state = 'CA' LIMIT 10";
+        String secondSql = "SELECT COUNT(*) FROM orders WHERE state = 'CA' AND order_id IS NOT NULL LIMIT 10";
+        when(generator.generate(anyString(), any()))
+                .thenReturn(new GeneratedSql(firstSql, "raw", call(100, 10, 50)));
+        when(generator.generateCorrection(anyString(), any(), anyString(), anyString(), any()))
+                .thenReturn(new GeneratedSql(secondSql, "raw", call(200, 20, 70)));
+        when(executor.execute(firstSql)).thenReturn(emptyResult());
+        when(executor.execute(secondSql)).thenReturn(oneRow());
+
+        AgentResponse response = orchestrator().ask("加州有多少订单？");
+
+        assertThat(response.sql()).isEqualTo(secondSql);
+        assertThat(response.success()).isTrue();
+        assertThat(response.llmCall().promptTokens())
+                .as("两次调用都要记账").isEqualTo(300);
+    }
+
+    @Test
+    @DisplayName("首次执行失败时不做择优：第二次只要能跑通就采用")
+    void takesRetryWhenFirstFailed() {
+        enableSuspiciousRetry();
+
+        String secondSql = "SELECT COUNT(*) FROM orders WHERE state = 'CA' LIMIT 10";
+        when(generator.generate(anyString(), any()))
+                .thenReturn(new GeneratedSql("SELECT bad FROM orders", "raw", call(100, 10, 50)));
+        when(generator.generateCorrection(anyString(), any(), anyString(), anyString(), any()))
+                .thenReturn(new GeneratedSql(secondSql, "raw", call(200, 20, 70)));
+        when(executor.execute("SELECT bad FROM orders"))
+                .thenThrow(new SqlExecutionException("column \"bad\" does not exist", null));
+        when(executor.execute(secondSql)).thenReturn(emptyResult());
+
+        AgentResponse response = orchestrator().ask("加州有多少订单？");
+
+        assertThat(response.success())
+                .as("首次不可用时，第二次即使结果可疑也优于「无结果」")
+                .isTrue();
+        assertThat(response.sql()).isEqualTo(secondSql);
+    }
+
+    @Test
+    @DisplayName("校验命中时的反馈要带上规则码、问题原文和实际输出列")
+    void correctionFeedbackCarriesEvidence() {
+        enableSuspiciousRetry();
+
+        String firstSql = "SELECT COUNT(*) FROM orders WHERE state = 'CA' LIMIT 10";
+        when(generator.generate(anyString(), any()))
+                .thenReturn(new GeneratedSql(firstSql, "raw", call(100, 10, 50)));
+        when(generator.generateCorrection(anyString(), any(), anyString(), anyString(), any()))
+                .thenReturn(new GeneratedSql(firstSql, "raw", call(200, 20, 70)));
+        when(executor.execute(firstSql)).thenReturn(emptyResult());
+
+        orchestrator().ask("加州有多少订单？");
+
+        ArgumentCaptor<String> feedbackCaptor = ArgumentCaptor.forClass(String.class);
+        verify(generator).generateCorrection(anyString(), any(), anyString(),
+                feedbackCaptor.capture(), any());
+        String feedback = feedbackCaptor.getValue();
+        assertThat(feedback)
+                .as("必须让模型看到命中了哪条规则，而不是只说「可疑」")
+                .contains("EMPTY_RESULT");
+        assertThat(feedback).contains("加州有多少订单？");
+        assertThat(feedback)
+                .as("把实际输出列摆出来，模型才知道自己返回了什么")
+                .contains("count");
+        assertThat(feedback)
+                .as("要求最小修改，避免把正确的部分一起改坏")
+                .contains("最小修改");
+    }
 }
