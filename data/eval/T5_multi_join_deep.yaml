@@ -10,7 +10,7 @@
 - id: T5-001
   difficulty: multi_join_deep
   tags: [join, 分组, 求和, 会员]
-  question: 每个宏观区域下，各会员等级的商品销售额分别是多少？按销售额从高到低排序。
+  question: 每个宏观区域下，各会员等级（按等级名称）的商品销售额分别是多少？按销售额从高到低排序。
   gold_sql: |
     SELECT r.macro_region, ml.level_name, ROUND(SUM(oi.price), 2) AS gmv
     FROM orders o
@@ -20,7 +20,7 @@
     JOIN member_levels ml ON ml.level_id = m.level_id
     JOIN order_items oi ON oi.order_id = o.order_id
     GROUP BY 1, 2 ORDER BY gmv DESC;
-  notes: 六表链路：orders -> customers -> regions，同时 customers -> members -> member_levels，最后到 order_items。地理维度和会员维度交叉分析。销售额口径为 order_items.price 之和，不含运费。
+  notes: 六表链路：orders -> customers -> regions，同时 customers -> members -> member_levels，最后到 order_items。地理维度和会员维度交叉分析。销售额口径为 order_items.price 之和，不含运费。明确指定输出等级名称维度。
 
 - id: T5-002
   difficulty: multi_join_deep
@@ -41,14 +41,14 @@
   tags: [join, 退款, 翻译表]
   question: 用英文类目名统计退款金额，哪些类目退款最多？取前 15。
   gold_sql: |
-    SELECT t.product_category_name_english, COUNT(DISTINCT r.refund_id) AS refund_cnt, ROUND(SUM(ri.refund_value), 2) AS refund_amt
+    SELECT t.product_category_name_english, ROUND(SUM(ri.refund_value), 2) AS refund_amt
     FROM refunds r
     JOIN refund_items ri ON ri.refund_id = r.refund_id
     JOIN order_items oi ON oi.order_id = ri.order_id AND oi.order_item_id = ri.order_item_id
     JOIN products p ON p.product_id = oi.product_id
     JOIN product_category_translation t ON t.product_category_name = p.product_category_name
     GROUP BY 1 ORDER BY refund_amt DESC LIMIT 15;
-  notes: refund_items 要回连 order_items 才能拿到 product_id，必须同时匹配 order_id 和 order_item_id 两个键。
+  notes: refund_items 要回连 order_items 才能拿到 product_id，必须同时匹配 order_id 和 order_item_id 两个键。剔除题干未要求的冗余 refund_cnt 列。
 
 - id: T5-004
   difficulty: multi_join_deep
@@ -178,11 +178,11 @@
     FROM user_tag_map utm
     JOIN user_tags ut ON ut.tag_id = utm.tag_id
     JOIN members m ON m.member_id = utm.member_id
-    JOIN customers c ON c.customer_unique_id = m.customer_unique_id
-    JOIN orders o ON o.customer_id = c.customer_id
-    JOIN order_items oi ON oi.order_id = o.order_id
+    LEFT JOIN customers c ON c.customer_unique_id = m.customer_unique_id
+    LEFT JOIN orders o ON o.customer_id = c.customer_id
+    LEFT JOIN order_items oi ON oi.order_id = o.order_id
     GROUP BY 1 ORDER BY members DESC;
-  notes: 一个会员可能有多个标签，COUNT(DISTINCT member_id) 才能得到去重人数。
+  notes: 一个会员可能有多个标签，COUNT(DISTINCT member_id) 得到覆盖人数；订单采用 LEFT JOIN 保证未下单的标签会员不被遗漏。
 
 - id: T5-013
   difficulty: multi_join_deep
@@ -201,7 +201,7 @@
 - id: T5-014
   difficulty: multi_join_deep
   tags: [join, 快照, 会员]
-  question: 当前等级与最近一次会员快照等级不一致的会员有多少？按等级组合统计。
+  question: 当前等级与最近一次会员快照等级不一致的会员有多少？按等级名称组合统计。
   gold_sql: |
     SELECT ml_cur.level_name AS current_level, ml_snap.level_name AS snapshot_level,
            COUNT(DISTINCT ms.member_id) AS member_cnt
@@ -211,7 +211,7 @@
     JOIN member_levels ml_snap ON ml_snap.level_id = ms.level_id
     WHERE ms.level_id <> m.level_id
     GROUP BY 1, 2 ORDER BY member_cnt DESC;
-  notes: member_snapshot 是冗余快照表，用于对比历史等级；这里故意查询两者不一致的会员，属于典型数据质量问题场景。
+  notes: member_snapshot 是冗余快照表，用于对比历史等级；题干明确按等级名称组合输出，关联 member_levels。
 
 - id: T5-015
   difficulty: multi_join_deep
@@ -260,16 +260,15 @@
 - id: T5-018
   difficulty: multi_join_deep
   tags: [join, 地址, 分组]
-  question: 默认收货地址所在州和客户登记州是否一致的订单量对比，列出前 20。
+  question: 默认收货地址所在州和客户登记州各组合的订单量对比，列出前 20。
   gold_sql: |
     SELECT sa.state AS addr_state, c.customer_state, COUNT(DISTINCT o.order_id) AS orders
     FROM shipping_addresses sa
     JOIN customers c ON c.customer_id = sa.customer_id
     JOIN orders o ON o.customer_id = c.customer_id
-    JOIN order_items oi ON oi.order_id = o.order_id
     WHERE sa.is_default
     GROUP BY 1, 2 ORDER BY orders DESC LIMIT 20;
-  notes: 这是数据一致性探查题，addr_state 与 customer_state 不一致代表地址库与客户主数据有偏差。
+  notes: 这是数据一致性探查题，按收货州和注册州组合统计订单量。剔除无意义的 order_items 冗余关联。
 
 - id: T5-019
   difficulty: multi_join_deep

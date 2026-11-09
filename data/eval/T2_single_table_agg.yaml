@@ -28,10 +28,10 @@
   tags: [聚合, 平均]
   question: 平均每个订单有多少条明细？
   gold_sql: |
-    SELECT ROUND(AVG(cnt), 4) FROM (
+    SELECT ROUND(AVG(cnt), 2) FROM (
       SELECT order_id, COUNT(*) AS cnt FROM order_items GROUP BY order_id
     ) t;
-  notes: 必须先按订单聚合再求平均，直接对 order_items 求 AVG 是错的。
+  notes: 必须先按订单聚合再求平均，直接对 order_items 求 AVG 是错的。对齐全局两位小数标准。
 
 - id: T2-005
   difficulty: single_table_agg

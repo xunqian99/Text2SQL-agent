@@ -249,7 +249,7 @@
 - id: T4-024
   difficulty: multi_join
   tags: [join, 分组]
-  question: 每个仓库负责了多少个发货单？
+  question: 每个仓库（按仓库名称）负责了多少个发货单？
   gold_sql: |
     SELECT w.warehouse_name, COUNT(*) AS cnt
     FROM shipments s JOIN warehouses w ON w.warehouse_id = s.warehouse_id
@@ -359,14 +359,14 @@
   question: 客单价最高的 10 个客户是谁？客单价按订单平均金额算。
   gold_sql: |
     SELECT c.customer_unique_id,
-           ROUND(SUM(oi.price) / COUNT(DISTINCT o.order_id), 2) AS avg_order_value
+           ROUND(SUM(oi.price + oi.freight_value) / COUNT(DISTINCT o.order_id), 2) AS avg_order_value
     FROM orders o
     JOIN customers c ON c.customer_id = o.customer_id
     JOIN order_items oi ON oi.order_id = o.order_id
+    WHERE o.order_status NOT IN ('canceled', 'unavailable')
     GROUP BY 1
-    HAVING COUNT(DISTINCT o.order_id) >= 2
     ORDER BY avg_order_value DESC LIMIT 10;
-  notes: 加了 HAVING 过滤只买过一单的客户，否则客单价会等于订单金额，没有统计意义。
+  notes: 对齐 metrics.yml 标准客单价口径（含运费有效订单），剔除题干未声明的私货 HAVING 过滤。
 
 - id: T4-036
   difficulty: multi_join

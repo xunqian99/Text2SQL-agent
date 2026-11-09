@@ -139,7 +139,7 @@
       WHERE EXTRACT(YEAR FROM order_purchase_timestamp) IN (2017, 2018)
       GROUP BY 1, 2
     )
-    SELECT cur.mo AS month, prev.cnt AS y2017, cur.cnt AS y2018,
+    SELECT cur.mo AS month,
            cur.cnt - prev.cnt AS yoy_change
     FROM monthly cur
     JOIN monthly prev ON prev.mo = cur.mo AND prev.yr = 2017
