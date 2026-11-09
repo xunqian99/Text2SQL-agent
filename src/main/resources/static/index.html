@@ -905,10 +905,23 @@
       gap: 6px;
       font-size: 12.5px;
       font-weight: 600;
-      cursor: pointer;
+      cursor: grab;
+      user-select: none;
+      -webkit-user-select: none;
       z-index: 99;
+      touch-action: none;
+      transition: background 0.2s, box-shadow 0.2s;
     }
-    .floating-copilot-btn:hover { background: #409eff; }
+    .floating-copilot-btn:hover {
+      background: #409eff;
+      box-shadow: 0 6px 18px rgba(64, 158, 255, 0.4);
+    }
+    .floating-copilot-btn.dragging {
+      cursor: grabbing;
+      opacity: 0.92;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+      transition: none;
+    }
 
     .copilot-drawer {
       position: fixed;
@@ -1499,7 +1512,8 @@
   </div>
 
   <!-- ================= 悬浮 Copilot 助手球 ================= -->
-  <div class="floating-copilot-btn" title="唤起 AI 智能分析抽屉" onclick="toggleCopilotDrawer()">
+  <div class="floating-copilot-btn" id="floatingCopilotBtn" title="按住可随意拖拽移动位置，点击唤起 AI 即席问数抽屉">
+    <i class="ri-drag-move-2-line" style="font-size: 13px; opacity: 0.75; margin-right: -2px;"></i>
     <i class="ri-robot-2-fill" style="font-size: 16px;"></i>
     <span>AI 即席问数</span>
   </div>
@@ -2857,9 +2871,99 @@
       setTimeout(() => myChart.resize(), 30);
     }
 
-    // ================= 悬浮 Copilot 抽屉 =================
+    // ================= 悬浮 Copilot 抽屉与拖拽交互 =================
     function toggleCopilotDrawer() {
       document.getElementById('copilotDrawer').classList.toggle('active');
+    }
+
+    function initDraggableCopilotBtn() {
+      const btn = document.getElementById('floatingCopilotBtn');
+      if (!btn) return;
+
+      let isDragging = false;
+      let hasMoved = false;
+      let startX = 0;
+      let startY = 0;
+      let initialLeft = 0;
+      let initialTop = 0;
+
+      const onPointerDown = (e) => {
+        isDragging = true;
+        hasMoved = false;
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        startX = clientX;
+        startY = clientY;
+
+        const rect = btn.getBoundingClientRect();
+        initialLeft = rect.left;
+        initialTop = rect.top;
+
+        btn.classList.add('dragging');
+
+        window.addEventListener('mousemove', onPointerMove, { passive: false });
+        window.addEventListener('mouseup', onPointerUp);
+        window.addEventListener('touchmove', onPointerMove, { passive: false });
+        window.addEventListener('touchend', onPointerUp);
+      };
+
+      const onPointerMove = (e) => {
+        if (!isDragging) return;
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const dx = clientX - startX;
+        const dy = clientY - startY;
+
+        if (!hasMoved && Math.hypot(dx, dy) > 5) {
+          hasMoved = true;
+        }
+
+        if (hasMoved) {
+          if (e.cancelable) e.preventDefault();
+          const btnWidth = btn.offsetWidth;
+          const btnHeight = btn.offsetHeight;
+          const maxX = window.innerWidth - btnWidth - 8;
+          const maxY = window.innerHeight - btnHeight - 8;
+
+          const newX = Math.min(Math.max(8, initialLeft + dx), maxX);
+          const newY = Math.min(Math.max(8, initialTop + dy), maxY);
+
+          btn.style.left = newX + 'px';
+          btn.style.top = newY + 'px';
+          btn.style.right = 'auto';
+          btn.style.bottom = 'auto';
+        }
+      };
+
+      const onPointerUp = () => {
+        if (!isDragging) return;
+        isDragging = false;
+        btn.classList.remove('dragging');
+
+        window.removeEventListener('mousemove', onPointerMove);
+        window.removeEventListener('mouseup', onPointerUp);
+        window.removeEventListener('touchmove', onPointerMove);
+        window.removeEventListener('touchend', onPointerUp);
+
+        // 未发生拖曳位移时，视为纯点击，唤起或收起抽屉
+        if (!hasMoved) {
+          toggleCopilotDrawer();
+        }
+      };
+
+      btn.addEventListener('mousedown', onPointerDown);
+      btn.addEventListener('touchstart', onPointerDown, { passive: true });
+
+      // 窗口拉伸时防止按钮被挤出屏幕边缘
+      window.addEventListener('resize', () => {
+        if (btn.style.left && btn.style.left !== 'auto') {
+          const rect = btn.getBoundingClientRect();
+          const maxX = window.innerWidth - btn.offsetWidth - 8;
+          const maxY = window.innerHeight - btn.offsetHeight - 8;
+          if (rect.left > maxX) btn.style.left = Math.max(8, maxX) + 'px';
+          if (rect.top > maxY) btn.style.top = Math.max(8, maxY) + 'px';
+        }
+      });
     }
 
     async function submitDrawerAiQuery() {
@@ -2933,9 +3037,10 @@
       el.focus();
     }
 
-    // 默认加载控制台首页
+    // 默认加载控制台首页与交互组件
     window.addEventListener('DOMContentLoaded', () => {
       initDashboard();
+      initDraggableCopilotBtn();
     });
   </script>
 </body>
