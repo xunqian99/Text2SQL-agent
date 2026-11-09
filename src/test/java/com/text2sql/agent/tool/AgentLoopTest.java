@@ -98,4 +98,49 @@ class AgentLoopTest {
         assertThat(result.sql()).isEqualTo("SELECT count(*) FROM orders;");
         verify(toolExecutor, never()).execute(any(), any());
     }
+
+    @Test
+    @DisplayName("最后一轮仍在调工具：不执行工具，走强制收口拿到 SQL，而不是把 [TOOL_CALL] 当 SQL")
+    void testFinalRoundStillCallingToolsFallsBackToForcedFinalize() {
+        String toolOnly = "[TOOL_CALL] INSPECT_COLUMN(orders.order_status)";
+        when(generator.callMessages(anyList(), startsWith("AGENT_ROUND_"), any()))
+                .thenReturn(new GeneratedSql(null, toolOnly, call(200, 20)));
+
+        String finalizeOutput = "[FINAL_SQL] SELECT count(*) FROM orders";
+        when(generator.callMessages(anyList(), eq("AGENT_FINALIZE"), any()))
+                .thenReturn(new GeneratedSql("SELECT count(*) FROM orders", finalizeOutput, call(100, 10)));
+        when(toolExecutor.execute(any(ToolCall.class), eq(mockSchema)))
+                .thenReturn(ToolResult.ok("delivered: 96478", List.of("order_status", "cnt"), List.of()));
+
+        GeneratedSql result = agentLoop.run("订单有多少", mockSchema, 3, null);
+
+        assertThat(result.sql())
+                .as("必须拿到真实 SQL，不能是 [TOOL_CALL] 文本")
+                .isEqualTo("SELECT count(*) FROM orders");
+        assertThat(result.sql()).doesNotContain("TOOL_CALL");
+        // 最后一轮不再执行工具（执行了也没下一轮消费结果）
+        verify(toolExecutor, times(2)).execute(any(), any());
+        verify(generator).callMessages(anyList(), eq("AGENT_FINALIZE"), any());
+    }
+
+    @Test
+    @DisplayName("一轮里连发两个 [TOOL_CALL]：两个都执行，不被丢弃")
+    void testMultipleToolCallsInOneRound() {
+        String twoCalls = """
+                [TOOL_CALL] INSPECT_COLUMN(orders.order_status)
+                [TOOL_CALL] INSPECT_TABLE(orders)""";
+        when(generator.callMessages(anyList(), eq("AGENT_ROUND_1"), any()))
+                .thenReturn(new GeneratedSql(null, twoCalls, call(200, 20)));
+        when(generator.callMessages(anyList(), eq("AGENT_ROUND_2"), any()))
+                .thenReturn(new GeneratedSql("SELECT count(*) FROM orders",
+                        "[FINAL_SQL] SELECT count(*) FROM orders", call(200, 20)));
+        when(toolExecutor.execute(any(ToolCall.class), eq(mockSchema)))
+                .thenReturn(ToolResult.ok("ok", List.of("c"), List.of()));
+
+        GeneratedSql result = agentLoop.run("订单有多少", mockSchema, 3, null);
+
+        assertThat(result.sql()).isEqualTo("SELECT count(*) FROM orders");
+        verify(toolExecutor, times(1)).execute(argThat(c -> c.type() == ToolType.INSPECT_COLUMN), eq(mockSchema));
+        verify(toolExecutor, times(1)).execute(argThat(c -> c.type() == ToolType.INSPECT_TABLE), eq(mockSchema));
+    }
 }

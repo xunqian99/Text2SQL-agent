@@ -37,44 +37,59 @@ public final class ToolParser {
     private ToolParser() {}
 
     /**
-     * 解析模型输出。
+     * 解析模型输出中的**全部**工具调用。
      *
-     * @param text 模型原始输出
-     * @return 解析出的工具调用；若没有显式工具调用标记，返回 null
+     * <p>为什么需要这个：实测里模型经常一条消息里连发两个工具调用
+     * （{@code [TOOL_CALL] INSPECT_COLUMN(a.b)} 换行 {@code [TOOL_CALL] INSPECT_COLUMN(c.d)}），
+     * 旧实现只取第一个，第二个被丢掉；更糟的是括号配对从第一个左括号开始扫，
+     * 两个调用会互相干扰，最终 {@code parse} 返回 null，整段文本被当成 SQL
+     * 送进校验层，报 {@code PARSE_ERROR}——归因会错写成「模型写错 SQL」。
+     *
+     * @return 按出现顺序排列的工具调用；没有则返回空列表
      */
-    public static ToolCall parse(String text) {
+    public static java.util.List<ToolCall> parseAll(String text) {
+        java.util.List<ToolCall> calls = new java.util.ArrayList<>();
         if (text == null || text.isBlank()) {
-            return null;
+            return calls;
         }
 
-        // 优先检查是否输出 [FINAL_SQL]
+        // [FINAL_SQL] 优先级最高：出现即视为定稿，同一段里不再解析工具调用。
         Matcher finalMatcher = FINAL_SQL_PATTERN.matcher(text);
         if (finalMatcher.find()) {
-            String sql = finalMatcher.group(1).strip();
-            return new ToolCall(ToolType.FINAL_SQL, sql, text);
+            calls.add(new ToolCall(ToolType.FINAL_SQL, finalMatcher.group(1).strip(), text));
+            return calls;
         }
 
-        // 检查 [TOOL_CALL]
         Matcher headMatcher = TOOL_CALL_HEAD_PATTERN.matcher(text);
-        if (headMatcher.find()) {
+        int from = 0;
+        while (headMatcher.find(from)) {
             String toolName = headMatcher.group(1).strip().toUpperCase();
             int openParenIndex = headMatcher.end() - 1;
             int closeParenIndex = findMatchingParen(text, openParenIndex);
             if (closeParenIndex < 0) {
-                // 括号不配对：模型输出本身不完整，按「没有可执行工具调用」处理。
-                return null;
+                // 括号不配对：后面的内容都不可信，停止解析。
+                break;
             }
             String arg = text.substring(openParenIndex + 1, closeParenIndex).strip();
             try {
-                ToolType type = ToolType.valueOf(toolName);
-                return new ToolCall(type, arg, text);
+                calls.add(new ToolCall(ToolType.valueOf(toolName), arg, text));
             } catch (IllegalArgumentException e) {
-                // 未知工具名
-                return null;
+                // 未知工具名：跳过这一条，继续找后面的
             }
+            from = closeParenIndex + 1;
         }
+        return calls;
+    }
 
-        return null;
+    /**
+     * 解析模型输出。
+     *
+     * @param text 模型原始输出
+     * @return 解析出的第一个工具调用；若没有显式工具调用标记，返回 null
+     */
+    public static ToolCall parse(String text) {
+        var all = parseAll(text);
+        return all.isEmpty() ? null : all.get(0);
     }
 
     /**

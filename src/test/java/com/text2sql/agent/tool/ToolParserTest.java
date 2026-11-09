@@ -86,4 +86,41 @@ class ToolParserTest {
         ToolCall call = ToolParser.parse(text);
         assertThat(call).isNull();
     }
+
+    @Test
+    @DisplayName("一条消息里连发两个 [TOOL_CALL]：两个都要解析出来")
+    void parsesAllToolCallsInOneMessage() {
+        String text = """
+                [TOOL_CALL] INSPECT_COLUMN(orders.order_status)
+                [TOOL_CALL] INSPECT_TABLE(orders)""";
+        var calls = ToolParser.parseAll(text);
+        assertThat(calls).hasSize(2);
+        assertThat(calls.get(0).type()).isEqualTo(ToolType.INSPECT_COLUMN);
+        assertThat(calls.get(0).argument()).isEqualTo("orders.order_status");
+        assertThat(calls.get(1).type()).isEqualTo(ToolType.INSPECT_TABLE);
+        assertThat(calls.get(1).argument()).isEqualTo("orders");
+    }
+
+    @Test
+    @DisplayName("[FINAL_SQL] 出现即定稿，同一段里的 [TOOL_CALL] 不再解析")
+    void finalSqlWinsOverToolCalls() {
+        String text = """
+                [TOOL_CALL] INSPECT_TABLE(orders)
+                [FINAL_SQL] SELECT 1""";
+        var calls = ToolParser.parseAll(text);
+        assertThat(calls).hasSize(1);
+        assertThat(calls.get(0).type()).isEqualTo(ToolType.FINAL_SQL);
+    }
+
+    @Test
+    @DisplayName("两个调用各含括号参数：不能互相干扰")
+    void parsesMultipleCallsWithNestedParens() {
+        String text = """
+                [TOOL_CALL] SAMPLE_QUERY(SELECT COUNT(*) FROM orders)
+                [TOOL_CALL] CHECK_JOIN(orders, customers, orders.customer_id = customers.customer_id)""";
+        var calls = ToolParser.parseAll(text);
+        assertThat(calls).hasSize(2);
+        assertThat(calls.get(0).argument()).isEqualTo("SELECT COUNT(*) FROM orders");
+        assertThat(calls.get(1).argument()).contains("orders.customer_id = customers.customer_id");
+    }
 }
