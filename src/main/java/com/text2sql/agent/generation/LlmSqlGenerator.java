@@ -17,6 +17,7 @@ import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.ai.openai.api.OpenAiApi;
+import org.springframework.ai.tool.ToolCallback;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -295,6 +296,72 @@ public class LlmSqlGenerator {
         callLog.record(record, logTag, "messages[" + messages.size() + "]", raw);
         return new GeneratedSql(SqlExtractor.extract(raw), raw, record);
     }
+
+    /**
+     * Agent 循环专用：带原生工具的多轮调用，返回**原始响应**而不是抽好的 SQL。
+     *
+     * <p>和 {@link #callMessages} 的区别：那个方法假定响应里一定有 SQL，会直接调
+     * {@code SqlExtractor.extract}，遇到「只有 tool_calls、没有文本」的响应就抛
+     * {@code UNPARSEABLE}。Agent 循环恰恰需要看到 tool_calls 本身，所以这里把
+     * ChatResponse 原样交回给调用方判断。
+     *
+     * @param callbacks 本轮可用的工具；传空列表表示**本轮禁止调用工具**——
+     *                  这比在 prompt 里写「禁止调用」可靠，因为协议层根本没有工具可调
+     */
+    public AgentTurn callWithTools(List<Message> messages, List<ToolCallback> callbacks,
+                                   String logTag, String modelOverride, String apiKeyOverride) {
+        ChatModel targetModel = resolveChatModel(apiKeyOverride);
+        if (targetModel == null) {
+            throw new GenerationException(GenerationException.Reason.NOT_CONFIGURED,
+                    "未配置 API Key，无法调用 LLM。");
+        }
+
+        int promptChars = messages.stream().mapToInt(m -> m.getText() == null ? 0 : m.getText().length()).sum();
+        String model = (modelOverride == null || modelOverride.isBlank())
+                ? properties.getLlm().getModel() : modelOverride;
+
+        var optionsBuilder = OpenAiChatOptions.builder()
+                .model(model)
+                .temperature(properties.getLlm().getTemperature())
+                .maxTokens(properties.getLlm().getMaxTokens())
+                // 必须关掉框架内部的工具执行循环。
+                //
+                // Spring AI 默认 internalToolExecutionEnabled=true：它会自己执行工具、
+                // 自己继续追问模型，直到模型不再发起调用，最后只把**最终文本**返回。
+                // 结果是调用方永远看不到 tool_calls，自定义的 AgentLoop 会误判成
+                // 「模型一次工具都没调」——实测就是这么被误导的。
+                // 关掉之后，每轮的 tool_calls 原样交回，由 AgentLoop 决定执行哪些、
+                // 什么时候收口、以及怎么记账。
+                .internalToolExecutionEnabled(false);
+        if (callbacks != null && !callbacks.isEmpty()) {
+            optionsBuilder.toolCallbacks(callbacks);
+        }
+
+        long started = System.nanoTime();
+        ChatResponse response;
+        try {
+            response = targetModel.call(new Prompt(messages, optionsBuilder.build()));
+        } catch (Exception e) {
+            throw new GenerationException(GenerationException.Reason.CALL_FAILED,
+                    "LLM 调用失败：" + e.getMessage(), e);
+        }
+        long latencyMs = (System.nanoTime() - started) / 1_000_000;
+
+        String raw = extractText(response);
+        LlmCallRecord record = buildRecord(response, promptChars, latencyMs, model);
+        log.info("LLM [{}] 调用完成：{}", logTag, record.summary());
+        callLog.record(record, logTag, "messages[" + messages.size() + "]", raw);
+        return new AgentTurn(response, record, raw);
+    }
+
+    /**
+     * 一轮 Agent 调用的产物。
+     *
+     * @param response 原始响应，调用方从 {@code getResult().getOutput().getToolCalls()} 判断是否有工具调用
+     * @param call     本轮调用的计量记录
+     * @param raw      模型输出的文本部分（可能为空，例如只有 tool_calls 时）
+     */
+    public record AgentTurn(ChatResponse response, LlmCallRecord call, String raw) {}
 
     private String extractText(ChatResponse response) {
         if (response == null || response.getResult() == null) {
