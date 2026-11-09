@@ -252,9 +252,11 @@ def split_body(lines):
         elif s.startswith("**追问答**"):
             flush()
             blocks.append(("fa", re.sub(r"^\*\*追问答\*\*[：:]\s*", "", s)))
-        elif s.startswith(">"):
+        elif s.startswith(">") or s.startswith("|") or re.match(r"^\s*(?:[-*]|\d+[.)])\s+", s):
+            # 列表/表格/引用必须按行保留，不能 join 成一个段落；
+            # 否则 render_blocks 看不到行边界，表格会变成一行、列表会变成 "- xxx" 文本。
             flush()
-            blocks.append(("quote", s.lstrip(">").strip()))
+            blocks.append(("p", s))
         else:
             buf.append(s)
     flush()
