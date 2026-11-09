@@ -1,5 +1,6 @@
 package com.text2sql.agent.tool;
 
+import com.text2sql.agent.config.AgentProperties;
 import com.text2sql.agent.generation.GeneratedSql;
 import com.text2sql.agent.generation.GenerationException;
 import com.text2sql.agent.generation.LlmSqlGenerator;
@@ -47,11 +48,14 @@ public class AgentLoop {
     private final LlmSqlGenerator generator;
     private final PromptTemplate promptTemplate;
     private final ToolExecutor toolExecutor;
+    private final AgentProperties properties;
 
-    public AgentLoop(LlmSqlGenerator generator, PromptTemplate promptTemplate, ToolExecutor toolExecutor) {
+    public AgentLoop(LlmSqlGenerator generator, PromptTemplate promptTemplate,
+                     ToolExecutor toolExecutor, AgentProperties properties) {
         this.generator = generator;
         this.promptTemplate = promptTemplate;
         this.toolExecutor = toolExecutor;
+        this.properties = properties;
     }
 
     /**
@@ -110,7 +114,7 @@ public class AgentLoop {
             // 这条指令放在临时列表里、不写进 history：否则它会在后续轮次继续生效，
             // 模型会一直侦察不肯定稿。
             List<Message> roundMessages = history;
-            if (round == 1 && maxRounds > 1) {
+            if (round == 1 && maxRounds > 1 && properties.getToolUse().isForceFirstInvestigation()) {
                 roundMessages = new ArrayList<>(history);
                 roundMessages.add(new UserMessage(
                         "【第一轮要求】这一轮先不要写 SQL。请调用工具确认你写这条 SQL 之前最不确定的一件事："

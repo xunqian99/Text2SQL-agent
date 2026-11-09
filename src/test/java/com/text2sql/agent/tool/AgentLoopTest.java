@@ -1,5 +1,6 @@
 package com.text2sql.agent.tool;
 
+import com.text2sql.agent.config.AgentProperties;
 import com.text2sql.agent.generation.GeneratedSql;
 import com.text2sql.agent.generation.LlmSqlGenerator;
 import com.text2sql.agent.generation.PromptTemplate;
@@ -37,6 +38,7 @@ class AgentLoopTest {
     private PromptTemplate promptTemplate;
     private ToolExecutor toolExecutor;
     private AgentLoop agentLoop;
+    private AgentProperties properties;
     private SchemaContext mockSchema;
 
     @BeforeEach
@@ -44,7 +46,8 @@ class AgentLoopTest {
         generator = mock(LlmSqlGenerator.class);
         promptTemplate = new PromptTemplate();
         toolExecutor = mock(ToolExecutor.class);
-        agentLoop = new AgentLoop(generator, promptTemplate, toolExecutor);
+        properties = new AgentProperties();
+        agentLoop = new AgentLoop(generator, promptTemplate, toolExecutor, properties);
 
         mockSchema = new SchemaContext(
                 List.of(new SchemaContext.Table("orders", null, List.of(

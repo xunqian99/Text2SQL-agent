@@ -1098,6 +1098,15 @@ public class AgentProperties {
         /** 最大工具交互轮次。 */
         private int maxRounds = 3;
 
+        /**
+         * 是否强制第一轮必须先调用工具侦察。
+         *
+         * <p>默认 false。实测强制之后 100 题准确率从 85% 掉到 81%：简单题被拖去
+         * 查不必要的东西，反而把原本正确的答案改坏（8 条变错、4 条变对）。
+         * 只有真正需要侦察的场景才该付出这个代价，所以默认交给模型自己判断。
+         */
+        private boolean forceFirstInvestigation = false;
+
         public boolean isEnabled() {
             return enabled;
         }
@@ -1112,6 +1121,14 @@ public class AgentProperties {
 
         public void setTableThreshold(int tableThreshold) {
             this.tableThreshold = tableThreshold;
+        }
+
+        public boolean isForceFirstInvestigation() {
+            return forceFirstInvestigation;
+        }
+
+        public void setForceFirstInvestigation(boolean forceFirstInvestigation) {
+            this.forceFirstInvestigation = forceFirstInvestigation;
         }
 
         public int getMaxRounds() {
