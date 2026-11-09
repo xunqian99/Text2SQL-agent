@@ -2638,6 +2638,119 @@
       chatArea.scrollTop = chatArea.scrollHeight;
     }
 
+    // ================= 语义展现字典：物理列名与外文枚举业务可读化映射 =================
+    const COLUMN_SEMANTIC_MAP = {
+      'product_category_name': '商品品类',
+      'product_id': '商品编码 (ID)',
+      'order_id': '订单编号 (ID)',
+      'customer_id': '客户编号 (ID)',
+      'customer_state': '客户所在省/州',
+      'customer_city': '客户所在城市',
+      'seller_id': '商家编号 (ID)',
+      'seller_state': '商家所在省/州',
+      'seller_city': '商家所在城市',
+      'gmv': '成交总额 GMV (元)',
+      'sales_amount': '销售总额 (元)',
+      'total_amount': '总金额 (元)',
+      'total_sales': '销售总额 (元)',
+      'price': '商品单价 (元)',
+      'avg_price': '平均单价 (元)',
+      'freight_value': '运费 (元)',
+      'order_count': '订单总量 (笔)',
+      'cnt': '数量 (笔)',
+      'total_orders': '订单总量 (笔)',
+      'item_count': '商品件数',
+      'order_status': '订单状态',
+      'payment_type': '支付方式',
+      'payment_value': '支付金额 (元)',
+      'payment_installments': '分期期数',
+      'review_score': '评价得分',
+      'avg_score': '平均评价评分',
+      'month': '统计月份',
+      'date': '统计日期',
+      'year': '年份',
+      'avg_delivery_days': '平均履约耗时 (天)',
+      'customer_count': '客户人数',
+      'repeat_rate': '客户复购率'
+    };
+
+    const VALUE_SEMANTIC_MAP = {
+      'cama_mesa_banho': '家居家纺 (cama_mesa)',
+      'beleza_saude': '健康美妆 (beleza_saude)',
+      'esporte_lazer': '运动休闲 (esporte_lazer)',
+      'informatica_acessorios': '数码配件 (informatica)',
+      'relogios_presentes': '钟表礼品 (relogios)',
+      'utilidades_domesticas': '居家百货 (utilidades)',
+      'telefonia': '手机通讯 (telefonia)',
+      'automotivo': '汽车用品 (automotivo)',
+      'brinquedos': '玩具母婴 (brinquedos)',
+      'artes': '工艺礼品 (artes)',
+      'bebes': '母婴用品 (bebes)',
+      'perfumaria': '香水彩妆 (perfumaria)',
+      'moveis_decoracao': '家具装饰 (moveis_decoracao)',
+      'papelaria': '文具办公 (papelaria)',
+      'eletronicos': '影音数码 (eletronicos)',
+      'ferramentas_jardim': '园艺五金 (ferramentas_jardim)',
+      'delivered': '已送达',
+      'shipped': '已发货',
+      'invoiced': '已开票',
+      'processing': '处理中',
+      'canceled': '已取消',
+      'created': '已创建',
+      'approved': '已审核',
+      'unavailable': '已失效',
+      'credit_card': '信用卡',
+      'boleto': 'Boleto 票据',
+      'voucher': '代金券',
+      'debit_card': '借记卡',
+      'SP': '圣保罗 (SP)',
+      'RJ': '里约热内卢 (RJ)',
+      'MG': '米纳斯吉拉斯 (MG)',
+      'RS': '南里奥格兰德 (RS)',
+      'PR': '巴拉那 (PR)',
+      'SC': '圣卡塔琳娜 (SC)',
+      'BA': '巴伊亚 (BA)',
+      'DF': '巴西利亚联邦区 (DF)',
+      'ES': '圣埃斯皮里图 (ES)',
+      'GO': '戈亚斯 (GO)',
+      'PE': '伯南布哥 (PE)'
+    };
+
+    function getColumnTitle(col) {
+      if (!col) return '';
+      const key = String(col).trim().toLowerCase();
+      return COLUMN_SEMANTIC_MAP[key] || col;
+    }
+
+    function formatCellSemantic(colName, val) {
+      if (val === null || val === undefined) return '';
+      const valStr = String(val).trim();
+      const colKey = String(colName || '').toLowerCase();
+
+      // 匹配枚举字典
+      if (VALUE_SEMANTIC_MAP[valStr]) {
+        return `<span class="cell-semantic" title="原始物理值: ${escapeHtml(valStr)}"><span style="color: var(--el-blue); font-weight: 600;">●</span> ${escapeHtml(VALUE_SEMANTIC_MAP[valStr])}</span>`;
+      }
+
+      // 货币金额列智能千分位
+      if (colKey.includes('gmv') || colKey.includes('price') || colKey.includes('amount') || colKey.includes('sales')) {
+        const num = parseFloat(valStr.replace(/[^0-9.-]/g, ''));
+        if (!isNaN(num)) {
+          return `¥${num.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        }
+      }
+
+      // 订单量、件数等计数列千分位
+      if (colKey.includes('count') || colKey === 'cnt' || colKey.includes('total_orders')) {
+        const num = parseInt(valStr, 10);
+        if (!isNaN(num) && String(num) === valStr) {
+          return num.toLocaleString('zh-CN') + ' 笔';
+        }
+      }
+
+      return escapeHtml(valStr);
+    }
+
     function renderAiResult(container, resp) {
       chartCounter++;
       const chartId = 'aiChart-' + chartCounter;
@@ -2676,7 +2789,7 @@
         html += `
           <div id="table-wrap-${chartId}" class="table-responsive-box" style="margin-top: 8px;">
             <table class="corp-table">
-              <thead><tr>${columns.map(c => `<th>${escapeHtml(String(c))}</th>`).join('')}</tr></thead>
+              <thead><tr>${columns.map(c => `<th title="物理字段: ${escapeHtml(String(c))}">${escapeHtml(getColumnTitle(c))}</th>`).join('')}</tr></thead>
               <tbody>
                 ${rows.map(r => `<tr>${columns.map((c, idx) => {
                   const rawVal = isArrayRow ? r[idx] : r[c];
@@ -2691,15 +2804,15 @@
                       </span>
                     </td>`;
                   }
-                  if (valStr.length > 32) {
-                    const shortVal = valStr.substring(0, 30) + '...';
+                  if (valStr.length > 40) {
+                    const shortVal = valStr.substring(0, 36) + '...';
                     return `<td>
                       <span class="cell-overflow copyable" data-tooltip="${escapeHtml(valStr)}" data-tooltip-title="${escapeHtml(colName)}" data-copy="${escapeHtml(valStr)}">
                         ${escapeHtml(shortVal)}
                       </span>
                     </td>`;
                   }
-                  return `<td>${escapeHtml(valStr)}</td>`;
+                  return `<td>${formatCellSemantic(colName, rawVal)}</td>`;
                 }).join('')}</tr>`).join('')}
               </tbody>
             </table>
@@ -2777,10 +2890,13 @@
 
       const xCol = columns[xIdx];
       const yCol = columns[yIdx];
+      const friendlyY = getColumnTitle(yCol);
+      const friendlyX = getColumnTitle(xCol);
 
       const xData = rows.map(r => {
         const raw = isArrayRow ? r[xIdx] : r[xCol];
-        return String(raw || '');
+        const rawStr = String(raw || '').trim();
+        return VALUE_SEMANTIC_MAP[rawStr] || rawStr;
       });
 
       const yData = rows.map(r => {
@@ -2792,7 +2908,7 @@
 
       myChart.setOption({
         title: {
-          text: '智能问数统计可视化 (' + yCol + ')',
+          text: `智能问数可视化：${friendlyX} ~ ${friendlyY}`,
           left: 'center',
           textStyle: { fontSize: 13, fontWeight: '700', color: '#303133' }
         },
@@ -2800,7 +2916,7 @@
           trigger: 'axis',
           formatter: function(params) {
             const p = params[0];
-            return `<b>${escapeHtml(p.name)}</b><br/>${escapeHtml(yCol)}: <b>${Number(p.value).toLocaleString()}</b>`;
+            return `<b>${escapeHtml(p.name)}</b><br/>${escapeHtml(friendlyY)}: <b>${Number(p.value).toLocaleString()}</b>`;
           }
         },
         grid: { left: '3%', right: '4%', bottom: '26%', top: '16%', containLabel: true },
@@ -2845,7 +2961,7 @@
           }
         },
         series: [{
-          name: yCol,
+          name: friendlyY,
           type: 'bar',
           data: yData,
           barMaxWidth: 65,
