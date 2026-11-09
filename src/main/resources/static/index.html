@@ -2795,8 +2795,17 @@
                   const rawVal = isArrayRow ? r[idx] : r[c];
                   const valStr = rawVal !== null && rawVal !== undefined ? String(rawVal) : '';
                   const colName = String(c || '');
-                  const isId = (colName.toLowerCase().includes('id') || valStr.length > 20) && !valStr.includes(' ') && valStr.length > 16;
-                  if (isId) {
+                  const trimVal = valStr.trim();
+
+                  // 1. 优先走业务语义字典转译（品类、状态、支付方式等）
+                  if (VALUE_SEMANTIC_MAP[trimVal]) {
+                    return `<td>${formatCellSemantic(colName, rawVal)}</td>`;
+                  }
+
+                  // 2. 真实哈希或 ID 截断保护（32位MD5/UUID，或显式 id 字段且长于12位）
+                  const isExplicitId = colName.toLowerCase().includes('id') && valStr.length > 12;
+                  const isHexHash = /^[a-f0-9]{24,}$/i.test(trimVal) || /^[a-f0-9-]{32,}$/i.test(trimVal);
+                  if (isExplicitId || isHexHash) {
                     const shortVal = valStr.substring(0, 16) + '...';
                     return `<td style="font-family: monospace; font-size: 12px;">
                       <span class="cell-overflow copyable" data-tooltip="${escapeHtml(valStr)}" data-tooltip-title="${escapeHtml(colName)}" data-copy="${escapeHtml(valStr)}">
@@ -2804,6 +2813,8 @@
                       </span>
                     </td>`;
                   }
+
+                  // 3. 超长普通文本截断（大于 40 字符）
                   if (valStr.length > 40) {
                     const shortVal = valStr.substring(0, 36) + '...';
                     return `<td>
@@ -2812,6 +2823,8 @@
                       </span>
                     </td>`;
                   }
+
+                  // 4. 其他常规值（含金额、计数等自动格式化）
                   return `<td>${formatCellSemantic(colName, rawVal)}</td>`;
                 }).join('')}</tr>`).join('')}
               </tbody>
