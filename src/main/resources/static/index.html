@@ -3,993 +3,2940 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Text2SQL Agent</title>
+  <title>某某电商集团 · 供应链数仓运营中台 (ERP/OMS V4.5)</title>
+  <!-- ECharts 5 统计图表库 -->
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+  <!-- RemixIcon 专业企业级矢量图标库 (v4.2.0) -->
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet" />
   <style>
+    /* ================= 专业矢量图标库辅助样式 ================= */
+    i[class^="ri-"], i[class*=" ri-"] {
+      vertical-align: -0.14em;
+      line-height: 1;
+      display: inline-block;
+    }
+    .menu-item i {
+      font-size: 16px;
+      flex-shrink: 0;
+      color: inherit;
+      margin-right: 2px;
+    }
+    .query-tag-pill i {
+      margin-right: 4px;
+      font-size: 12.5px;
+    }
+    /* ================= 经典5年企业级中台 (Element UI / 若依 / RuoYi 风格) ================= */
     :root {
-      --sidebar-bg: #171717;
-      --sidebar-hover: #212121;
-      --sidebar-text: #ececec;
-      --sidebar-muted: #8e8e8e;
-      --main-bg: #ffffff;
-      --chat-text: #0d0d0d;
-      --border-color: #e5e5e5;
-      --card-bg: #f9f9f9;
-      --input-bg: #f4f4f4;
-      --accent: #10a37f;
-      --accent-hover: #0d8a6a;
-      --user-msg-bg: #f4f4f4;
-      --tag-reused: #7c3aed;
-      --sql-bg: #1e1e1e;
+      /* 经典 Vue-Element-Admin / 若依 侧边栏暗色 */
+      --sidebar-bg: #304156;
+      --sidebar-sub-bg: #1f2d3d;
+      --sidebar-hover-bg: #263445;
+      --sidebar-text: #bfcbd9;
+      --sidebar-active-text: #409eff;
+      --sidebar-active-bg: #263445;
+
+      /* 经典企业蓝主色调 */
+      --el-blue: #409eff;
+      --el-blue-hover: #66b1ff;
+      --el-blue-active: #3a8ee6;
+      --el-green: #67c23a;
+      --el-yellow: #e6a23c;
+      --el-red: #f56c6c;
+      --el-info: #909399;
+
+      /* 背景与边框 */
+      --bg-page: #f0f2f5;
+      --bg-card: #ffffff;
+      --border-color: #ebeef5;
+      --border-light: #f2f6fc;
+      --border-dark: #dcdfe6;
+
+      /* 字体与字色 */
+      --text-main: #303133;
+      --text-regular: #606266;
+      --text-secondary: #909399;
+      --text-placeholder: #c0c4cc;
+
+      --radius-base: 4px;
+      --shadow-base: 0 2px 12px 0 rgba(0, 0, 0, 0.08);
+      --shadow-light: 0 1px 4px rgba(0, 21, 41, 0.08);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      height: 100vh; display: flex; overflow: hidden; background: var(--main-bg); color: var(--chat-text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "微软雅黑", Arial, sans-serif;
+      height: 100vh;
+      display: flex;
+      overflow: hidden;
+      background: var(--bg-page);
+      color: var(--text-main);
+      font-size: 13px;
     }
 
-    /* 侧边栏 (ChatGPT 风格) */
-    aside {
-      width: 260px; background: var(--sidebar-bg); color: var(--sidebar-text);
-      display: flex; flex-direction: column; flex-shrink: 0; height: 100%; border-right: 1px solid #2a2a2a;
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
     }
-    .sidebar-header { padding: 14px 16px; }
-    .new-chat-btn {
-      width: 100%; padding: 10px 14px; background: transparent; border: 1px solid #3e3e3e;
-      border-radius: 8px; color: #fff; font-size: 14px; font-weight: 500; cursor: pointer;
-      display: flex; align-items: center; justify-content: space-between; transition: all 0.2s;
+
+    /* 经典紧凑细滚动条 */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f1f1; }
+    ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+
+    /* ================= 左侧传统企业侧边栏 ================= */
+    aside.sidebar {
+      width: 220px;
+      background: var(--sidebar-bg);
+      color: var(--sidebar-text);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      z-index: 100;
+      box-shadow: 2px 0 6px rgba(0, 21, 41, 0.35);
+      transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    .new-chat-btn:hover { background: var(--sidebar-hover); border-color: #555; }
-    
-    .session-list {
-      flex: 1; overflow-y: auto; padding: 10px 10px; display: flex; flex-direction: column; gap: 4px;
+
+    aside.sidebar.collapsed {
+      width: 56px;
     }
-    .session-list-title {
-      font-size: 11px; text-transform: uppercase; color: var(--sidebar-muted); padding: 8px 10px 6px; font-weight: 600;
-      display: flex; justify-content: space-between; align-items: center; letter-spacing: 0.5px;
+    aside.sidebar.collapsed .corp-title-wrap {
+      display: none;
     }
-    .session-item {
-      padding: 9px 10px; border-radius: 8px; font-size: 13px; color: #d1d5db; cursor: pointer;
-      display: flex; align-items: center; justify-content: space-between; gap: 8px; transition: background 0.15s;
+    aside.sidebar.collapsed .sidebar-header {
+      padding: 0;
+      justify-content: center;
+    }
+    aside.sidebar.collapsed .sidebar-group-title {
+      display: none;
+    }
+    aside.sidebar.collapsed .menu-item {
+      padding: 12px 0;
+      justify-content: center;
+      gap: 0;
+    }
+    aside.sidebar.collapsed .menu-item span {
+      display: none;
+    }
+    aside.sidebar.collapsed .menu-item i {
+      font-size: 19px;
+      margin: 0;
+    }
+    aside.sidebar.collapsed .menu-badge {
+      display: none;
+    }
+
+    .sidebar-header {
+      height: 50px;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      gap: 10px;
+      background: #2b3643;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+    }
+    .corp-logo-icon {
+      width: 28px;
+      height: 28px;
+      background: var(--el-blue);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 700;
+      font-size: 14px;
+    }
+    .corp-title-wrap {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .corp-title {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #fff;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      letter-spacing: 0.5px;
+    }
+    .corp-subtitle {
+      font-size: 10.5px;
+      color: #8c9ba5;
+    }
+
+    .sidebar-menu-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 6px 0;
+    }
+    .sidebar-group-title {
+      font-size: 11px;
+      color: #728294;
+      padding: 10px 18px 4px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .menu-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 18px;
+      color: var(--sidebar-text);
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
       user-select: none;
+      border-left: 3px solid transparent;
     }
-    .session-item:hover, .session-item.active { background: var(--sidebar-hover); color: #fff; }
-    .session-item.active { border-left: 2px solid #fff; }
-    .session-item-content {
-      display: flex; align-items: center; gap: 9px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;
+    .menu-item:hover {
+      color: #fff;
+      background: var(--sidebar-hover-bg);
     }
-    .session-item svg { flex-shrink: 0; opacity: 0.7; }
-    .session-item-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
-    .session-badge {
-      font-size: 10px; padding: 1px 5px; border-radius: 4px; background: rgba(255,255,255,0.08); color: #9ca3af; flex-shrink: 0;
+    .menu-item.active {
+      color: var(--sidebar-active-text);
+      background: var(--sidebar-active-bg);
+      border-left-color: var(--el-blue);
+      font-weight: 600;
     }
-    .session-badge-persisted { background: rgba(16, 185, 129, 0.15); color: #10b981; }
-    .session-del-btn {
-      opacity: 0; background: transparent; border: 0; color: #9ca3af; cursor: pointer; padding: 3px 5px;
-      border-radius: 4px; display: flex; align-items: center; transition: all 0.15s; flex-shrink: 0;
+    .menu-item svg {
+      width: 15px;
+      height: 15px;
+      fill: currentColor;
+      flex-shrink: 0;
     }
-    .session-item:hover .session-del-btn { opacity: 0.8; }
-    .session-del-btn:hover { opacity: 1; color: #ef4444; background: rgba(239, 68, 68, 0.2); }
+    .menu-badge {
+      margin-left: auto;
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 10px;
+      font-weight: 600;
+      background: #409eff;
+      color: #fff;
+    }
+    .menu-badge.badge-agent {
+      background: #67c23a;
+    }
 
-    /* 主聊天区域 */
+    .sidebar-bottom-status {
+      padding: 10px 16px;
+      background: #242f3e;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 11px;
+      color: #8595a6;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .status-dot-green {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .status-dot-green::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #67c23a;
+    }
+
+    /* ================= 右侧主体布局 ================= */
     .main-container {
-      flex: 1; display: flex; flex-direction: column; height: 100%; position: relative; background: #fff;
-    }
-    header.chat-header {
-      height: 56px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center;
-      justify-content: space-between; padding: 0 24px; flex-shrink: 0;
-    }
-    .model-selector {
-      display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px; color: #202123;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg-page);
     }
 
-
-    /* 消息流 */
-    .chat-scroll {
-      flex: 1; overflow-y: auto; padding: 24px 0 140px; display: flex; flex-direction: column;
+    /* 顶部导航条 (Navbar) */
+    header.top-navbar {
+      height: 50px;
+      background: #fff;
+      border-bottom: 1px solid #d8dce5;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      flex-shrink: 0;
+      z-index: 10;
+      box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
     }
-    .chat-inner {
-      max-width: 820px; width: 100%; margin: 0 auto; padding: 0 20px; display: flex; flex-direction: column; gap: 28px;
+    .top-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
     }
-
-    /* 初始空状态引导卡片 */
-    .empty-state {
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      margin-top: 60px; text-align: center;
-    }
-    .empty-logo {
-      width: 44px; height: 44px; border-radius: 50%; background: var(--accent); display: flex;
-      align-items: center; justify-content: center; color: #fff; margin-bottom: 16px;
-    }
-    .empty-title { font-size: 22px; font-weight: 600; margin-bottom: 24px; color: #0d0d0d; }
-    .prompt-grid {
-      display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; max-width: 760px; width: 100%;
-    }
-    .prompt-card {
-      background: #fff; border: 1px solid var(--border-color); border-radius: 12px; padding: 14px 16px;
-      text-align: left; cursor: pointer; transition: all 0.2s;
-    }
-    .prompt-card:hover { background: #f9f9f9; border-color: #c5c5d2; transform: translateY(-1px); }
-    .prompt-card-title { font-size: 13px; font-weight: 600; color: #2d3748; margin-bottom: 4px; }
-    .prompt-card-sub { font-size: 12px; color: #718096; line-height: 1.4; }
-
-    /* 对话气泡 (ChatGPT 样式) */
-    .msg-row { display: flex; gap: 16px; width: 100%; }
-    .msg-row.user { justify-content: flex-end; }
-    .user-bubble {
-      background: var(--user-msg-bg); color: #0d0d0d; padding: 10px 18px; border-radius: 20px;
-      font-size: 15px; line-height: 1.5; max-width: 80%; word-break: break-word;
-    }
-
-    .agent-avatar {
-      width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: #fff;
-      display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;
-    }
-    .agent-content { flex: 1; min-width: 0; font-size: 14px; line-height: 1.6; }
-
-    /* 气泡内部组件 */
-    .intent-tag {
-      display: inline-flex; align-items: center; gap: 6px; background: #eff6ff; color: #1d4ed8;
-      border: 1px solid #bfdbfe; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 500;
-      margin-bottom: 12px;
-    }
-    .status-capsules { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
-    .capsule {
-      font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 9999px; text-transform: uppercase;
-    }
-    .capsule-success { background: #dcfce7; color: #15803d; }
-    .capsule-reused { background: #f3e8ff; color: var(--tag-reused); border: 1px solid #e9d5ff; }
-    .capsule-limit { background: #fef3c7; color: #b45309; }
-    .capsule-err { background: #fee2e2; color: #b91c1c; }
-
-    /* SQL 代码框 (黑色磨砂 MacOS 风格) */
-    .sql-card {
-      background: var(--sql-bg); border-radius: 8px; overflow: hidden; margin: 12px 0 16px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    }
-    .sql-card-header {
-      background: #2d2d2d; padding: 6px 14px; display: flex; justify-content: space-between;
-      align-items: center; font-size: 12px; color: #9ca3af;
-    }
-    .sql-card-body {
-      padding: 14px 16px; overflow-x: auto; font-family: "JetBrains Mono", Consolas, Monaco, monospace;
-      font-size: 13px; color: #f8fafc; line-height: 1.6;
-    }
-    .copy-btn {
-      background: transparent; border: 0; color: #9ca3af; cursor: pointer; font-size: 12px;
-      display: flex; align-items: center; gap: 4px; padding: 2px 6px; border-radius: 4px;
-    }
-    .copy-btn:hover { color: #fff; background: rgba(255,255,255,0.1); }
-
-    /* 表格容器 */
-    .result-table-wrap {
-      border: 1px solid var(--border-color); border-radius: 8px; overflow-x: auto; margin: 12px 0 16px;
-    }
-    table.data-table {
-      width: 100%; border-collapse: collapse; font-size: 13px; text-align: left;
-    }
-    table.data-table th {
-      background: #f8fafc; border-bottom: 1px solid var(--border-color); padding: 8px 12px;
-      font-weight: 600; color: #475569;
-    }
-    table.data-table td {
-      border-bottom: 1px solid #f1f5f9; padding: 7px 12px; color: #1e293b;
-    }
-    table.data-table tr:last-child td { border-bottom: none; }
-    table.data-table tr:hover { background: #f8fafc; }
-
-    /* 链路诊断面板 */
-    details.trace-card {
-      background: #fbfbfb; border: 1px solid var(--border-color); border-radius: 8px;
-      padding: 8px 12px; font-size: 12px; color: #64748b; margin-top: 8px;
-    }
-    details.trace-card summary { cursor: pointer; font-weight: 500; outline: none; }
-    .trace-grid {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 6px 12px; margin-top: 8px;
-      padding-top: 8px; border-top: 1px solid #eee;
-    }
-    .trace-item b { color: #334155; margin-right: 4px; }
-
-    /* 底部悬浮输入框 (ChatGPT 风格) */
-    .input-floating-bar {
-      position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(180deg, rgba(255,255,255,0) 0%, #fff 35%);
-      padding: 10px 20px 24px; display: flex; flex-direction: column; align-items: center;
-    }
-    .input-box-wrapper {
-      max-width: 820px; width: 100%; background: var(--input-bg); border: 1px solid var(--border-color);
-      border-radius: 24px; padding: 10px 16px; display: flex; align-items: flex-end; gap: 8px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.04); transition: border-color 0.2s;
-    }
-    .input-box-wrapper:focus-within { border-color: #888; background: #fff; }
-    textarea.chat-input {
-      flex: 1; border: 0; outline: 0; background: transparent; font-size: 15px; font-family: inherit;
-      resize: none; max-height: 180px; min-height: 24px; line-height: 1.5; padding: 2px 0;
-    }
-    .send-btn {
-      width: 32px; height: 32px; border-radius: 50%; background: #000; color: #fff; border: 0;
-      display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;
-      transition: opacity 0.2s;
-    }
-    .send-btn:disabled { opacity: 0.25; cursor: not-allowed; }
-
-    /* 骨架屏加载动画 */
-    .loading-pulse { display: flex; align-items: center; gap: 6px; padding: 6px 0; color: #666; font-size: 14px; }
-    .dot { width: 6px; height: 6px; border-radius: 50%; background: #666; animation: pulse 1.4s infinite ease-in-out; }
-    .dot:nth-child(2) { animation-delay: 0.2s; }
-    .dot:nth-child(3) { animation-delay: 0.4s; }
-    @keyframes pulse { 0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); } 40% { opacity: 1; transform: scale(1.1); } }
-    /* 开发者模式样式控制：默认隐藏底层 SQL 与技术链路指标 */
-    body.hide-dev .dev-only { display: none !important; }
-
-    /* API Key 设置弹窗样式 (BYOK) */
-    .btn-key-settings {
-      display: flex; align-items: center; gap: 6px; padding: 5px 12px;
-      border: 1px solid #e2e8f0; border-radius: 6px; background: #f8fafc;
-      color: #475569; font-size: 13px; font-weight: 500; cursor: pointer;
+    .collapse-btn {
+      cursor: pointer;
+      color: var(--text-regular);
+      font-size: 16px;
+      padding: 4px 6px;
+      border-radius: 3px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       transition: all 0.2s;
     }
-    .btn-key-settings:hover { background: #f1f5f9; border-color: #cbd5e1; }
-    .key-indicator-dot {
-      width: 7px; height: 7px; border-radius: 50%; background: #94a3b8; display: inline-block;
+    .collapse-btn:hover {
+      background: #e4e7ed;
+      color: var(--el-blue);
     }
-    .key-indicator-dot.active { background: #10b981; }
-    .key-indicator-dot.warning { background: #f59e0b; }
 
+    .breadcrumb-box {
+      font-size: 13px;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .breadcrumb-box .curr-crumb {
+      color: var(--text-main);
+      font-weight: 600;
+    }
+
+    .top-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .env-tag-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      background: #ecf5ff;
+      color: #409eff;
+      border: 1px solid #d9ecff;
+      border-radius: 3px;
+    }
+    .top-btn {
+      padding: 5px 10px;
+      font-size: 12px;
+      border: 1px solid var(--border-dark);
+      background: #fff;
+      border-radius: 3px;
+      cursor: pointer;
+      color: var(--text-regular);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .top-btn:hover {
+      color: var(--el-blue);
+      border-color: #c6e2ff;
+      background: #ecf5ff;
+    }
+    .user-profile-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 3px;
+    }
+    .user-profile-btn:hover { background: #f4f4f5; }
+    .user-avatar-rect {
+      width: 26px;
+      height: 26px;
+      background: #409eff;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 3px;
+    }
+    .user-name-text {
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--text-main);
+    }
+
+    /* ================= 经典多标签页栏 (TagsView - 5年老系统灵魂) ================= */
+    .tags-view-bar {
+      height: 34px;
+      background: #fff;
+      border-bottom: 1px solid #d8dce5;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.06);
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      gap: 6px;
+      overflow-x: auto;
+      flex-shrink: 0;
+    }
+    .tag-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 10px;
+      font-size: 12px;
+      color: #495060;
+      background: #fff;
+      border: 1px solid #d8dce5;
+      border-radius: 3px;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.15s;
+    }
+    .tag-item:hover { color: var(--el-blue); }
+    .tag-item.active {
+      background: #42b983;
+      color: #fff;
+      border-color: #42b983;
+    }
+    .tag-item.active::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #fff;
+    }
+    .tag-close-icon {
+      font-size: 11px;
+      border-radius: 50%;
+      width: 14px;
+      height: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-left: 2px;
+    }
+    .tag-close-icon:hover {
+      background: rgba(0, 0, 0, 0.15);
+      color: #fff;
+    }
+
+    /* ================= 主工作展示区 (Content Body) ================= */
+    .app-main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+    }
+    .page-view { display: none; }
+    .page-view.active { display: block; }
+
+    /* AI 问数工作台全屏工作区布局 (输入栏底置) */
+    #page-ai-query.active {
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 118px);
+    }
+    #page-ai-query .el-card {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 0;
+      min-height: 0;
+    }
+    #page-ai-query #aiChatArea {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      padding: 6px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .ai-input-bar-wrap {
+      display: flex;
+      gap: 10px;
+      margin-top: auto;
+      padding-top: 14px;
+      border-top: 1px solid var(--border-color);
+      flex-shrink: 0;
+    }
+
+    /* 经典后台面板 Card */
+    .el-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-base);
+      padding: 16px 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 4px rgba(0, 21, 41, 0.05);
+    }
+    .el-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .el-card-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .el-card-title::before {
+      content: '';
+      width: 3px;
+      height: 14px;
+      background: var(--el-blue);
+      border-radius: 1px;
+    }
+
+    /* 欢迎横幅 (系统首页经典) */
+    .corp-welcome-banner {
+      background: #fff;
+      border: 1px solid var(--border-color);
+      border-left: 4px solid var(--el-blue);
+      border-radius: 3px;
+      padding: 14px 18px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .welcome-title-line {
+      font-size: 14px;
+      font-weight: 700;
+      color: #303133;
+    }
+    .welcome-meta-line {
+      font-size: 12px;
+      color: #909399;
+      margin-top: 4px;
+    }
+    .quick-tools-bar {
+      display: flex;
+      gap: 8px;
+    }
+
+    /* 经典按钮规范 */
+    .el-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 7px 15px;
+      font-size: 12.5px;
+      border-radius: 3px;
+      border: 1px solid var(--border-dark);
+      background: #fff;
+      color: #606266;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.15s;
+      outline: none;
+      font-weight: 500;
+    }
+    .el-button:hover {
+      color: var(--el-blue);
+      border-color: #c6e2ff;
+      background: #ecf5ff;
+    }
+    .el-button:active { border-color: var(--el-blue-active); }
+    .el-button-primary {
+      background: var(--el-blue);
+      border-color: var(--el-blue);
+      color: #fff;
+    }
+    .el-button-primary:hover {
+      background: var(--el-blue-hover);
+      border-color: var(--el-blue-hover);
+      color: #fff;
+    }
+    .el-button-success {
+      background: var(--el-green);
+      border-color: var(--el-green);
+      color: #fff;
+    }
+    .el-button-success:hover {
+      background: #85ce61;
+      border-color: #85ce61;
+      color: #fff;
+    }
+    .el-button-warning {
+      background: var(--el-yellow);
+      border-color: var(--el-yellow);
+      color: #fff;
+    }
+    .el-button-warning:hover {
+      background: #ebb563;
+      border-color: #ebb563;
+      color: #fff;
+    }
+    .el-button-danger {
+      background: #fef0f0;
+      border-color: #fbc4c4;
+      color: var(--el-red);
+    }
+    .el-button-danger:hover {
+      background: var(--el-red);
+      border-color: var(--el-red);
+      color: #fff;
+    }
+    .el-button-sm {
+      padding: 4px 9px;
+      font-size: 11.5px;
+    }
+
+    /* 表单查询条件容器 (经典若依表单栏) */
+    .search-filter-box {
+      background: #fff;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-base);
+      padding: 14px 16px 4px;
+      margin-bottom: 14px;
+    }
+    .filter-item-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .filter-field {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12.5px;
+      color: var(--text-regular);
+    }
+    .filter-label {
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    .el-input {
+      height: 30px;
+      padding: 4px 10px;
+      font-size: 12.5px;
+      border: 1px solid var(--border-dark);
+      border-radius: 3px;
+      outline: none;
+      color: var(--text-main);
+      background: #fff;
+      transition: border-color 0.2s;
+      min-width: 170px;
+    }
+    .el-input:focus {
+      border-color: var(--el-blue);
+    }
+
+    /* KPI 卡片网格 (Element 统计框) */
+    .kpi-row-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+    .kpi-box {
+      background: #fff;
+      border: 1px solid var(--border-color);
+      border-radius: 3px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    .kpi-box-top {
+      display: flex;
+      justify-content: space-between;
+      color: var(--text-secondary);
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .kpi-box-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #303133;
+      margin: 8px 0 6px;
+      line-height: 1.1;
+    }
+    .kpi-box-bottom {
+      font-size: 11.5px;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* 经典数据表格规范 (Element UI el-table) */
+    .table-responsive-box {
+      border: 1px solid var(--border-color);
+      border-radius: 3px;
+      overflow-x: auto;
+      background: #fff;
+    }
+    table.corp-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12.5px;
+      text-align: left;
+    }
+    table.corp-table th {
+      background: #f5f7fa;
+      border-bottom: 1px solid var(--border-color);
+      padding: 10px 12px;
+      color: #909399;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    table.corp-table td {
+      border-bottom: 1px solid var(--border-color);
+      padding: 9px 12px;
+      color: #606266;
+    }
+    table.corp-table tr:nth-child(even) td {
+      background: #fafafa;
+    }
+    table.corp-table tr:hover td {
+      background: #f5f7fa;
+    }
+
+    /* 状态胶囊标签 (el-tag) */
+    .el-tag {
+      display: inline-block;
+      padding: 0 8px;
+      height: 22px;
+      line-height: 20px;
+      font-size: 11.5px;
+      border-radius: 3px;
+      border: 1px solid;
+      white-space: nowrap;
+    }
+    .el-tag-success {
+      background-color: #f0f9eb;
+      border-color: #e1f3d8;
+      color: #67c23a;
+    }
+    .el-tag-primary {
+      background-color: #ecf5ff;
+      border-color: #d9ecff;
+      color: #409eff;
+    }
+    .el-tag-warning {
+      background-color: #fdf6ec;
+      border-color: #faecd8;
+      color: #e6a23c;
+    }
+    .el-tag-danger {
+      background-color: #fef0f0;
+      border-color: #fde2e2;
+      color: #f56c6c;
+    }
+    .el-tag-info {
+      background-color: #f4f4f5;
+      border-color: #e9e9eb;
+      color: #909399;
+    }
+
+    /* ================= 企业级 Element UI 浮层提示组件 (el-tooltip) ================= */
+    .corp-tooltip {
+      position: fixed;
+      z-index: 999999;
+      background: #303133;
+      color: #ffffff;
+      padding: 7px 11px;
+      font-size: 12px;
+      font-family: Consolas, Monaco, "SFMono-Regular", "Liberation Mono", Menlo, Courier, monospace;
+      border-radius: 4px;
+      line-height: 1.45;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+      pointer-events: none;
+      max-width: 520px;
+      word-break: break-all;
+      white-space: pre-wrap;
+      opacity: 0;
+      transition: opacity 0.15s ease, transform 0.15s ease;
+      transform: translateY(4px);
+    }
+    .corp-tooltip.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .corp-tooltip::after {
+      content: '';
+      position: absolute;
+      width: 0;
+      height: 0;
+      border: 5px solid transparent;
+      left: var(--arrow-left, 50%);
+      transform: translateX(-50%);
+    }
+    .corp-tooltip.arrow-top::after {
+      top: 100%;
+      border-top-color: #303133;
+    }
+    .corp-tooltip.arrow-bottom::after {
+      bottom: 100%;
+      border-bottom-color: #303133;
+    }
+
+    /* 单元格截断与悬浮提示样式 (show-overflow-tooltip) */
+    .cell-overflow {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      max-width: 100%;
+      cursor: pointer;
+      border-radius: 2px;
+      padding: 1px 4px;
+      margin: -1px -4px;
+      transition: background-color 0.12s ease, color 0.12s ease;
+      vertical-align: middle;
+    }
+    .cell-overflow:hover {
+      background-color: #ecf5ff;
+      color: var(--el-blue) !important;
+    }
+    .cell-overflow:hover i.copy-icon {
+      opacity: 0.85;
+    }
+    .cell-overflow i.copy-icon {
+      font-size: 11px;
+      color: #909399;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+      margin-left: 2px;
+    }
+
+    /* 经典分页条 (el-pagination) */
+    .corp-pagination-bar {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 0 4px;
+      font-size: 12px;
+      color: #606266;
+    }
+
+    /* 经典对话气泡与问数工作区 */
+    .chat-bubble-user {
+      align-self: flex-end;
+      background: #ecf5ff;
+      border: 1px solid #d9ecff;
+      color: #1a56b0;
+      padding: 8px 14px;
+      border-radius: 4px;
+      font-size: 13px;
+      max-width: 80%;
+      line-height: 1.5;
+    }
+    .chat-bubble-ai {
+      align-self: flex-start;
+      background: #fff;
+      border: 1px solid #dcdfe6;
+      padding: 14px 16px;
+      border-radius: 4px;
+      font-size: 12.5px;
+      max-width: 100%;
+      width: 100%;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+      line-height: 1.6;
+    }
+
+    /* 视图切换按钮组 */
+    .view-segmented-group {
+      display: inline-flex;
+      border: 1px solid var(--border-dark);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .view-segmented-btn {
+      border: none;
+      background: #fff;
+      padding: 4px 10px;
+      font-size: 11.5px;
+      color: #606266;
+      cursor: pointer;
+      border-right: 1px solid var(--border-dark);
+      transition: all 0.15s;
+    }
+    .view-segmented-btn:last-child { border-right: none; }
+    .view-segmented-btn:hover { color: var(--el-blue); }
+    .view-segmented-btn.active {
+      background: var(--el-blue);
+      color: #fff;
+      font-weight: 600;
+    }
+
+    /* 快捷提问小标签 */
+    .query-tag-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 8px;
+      font-size: 11.5px;
+      border: 1px solid var(--border-dark);
+      border-radius: 3px;
+      background: #fff;
+      color: var(--text-regular);
+      cursor: pointer;
+      user-select: none;
+    }
+    .query-tag-pill:hover {
+      border-color: #b3d8ff;
+      color: #409eff;
+      background: #ecf5ff;
+    }
+    .query-tag-pill.danger-pill:hover {
+      border-color: #fbc4c4;
+      color: #f56c6c;
+      background: #fef0f0;
+    }
+
+    /* 悬浮 Copilot 抽屉与按钮 */
+    .floating-copilot-btn {
+      position: fixed;
+      bottom: 24px;
+      right: 28px;
+      height: 40px;
+      padding: 0 14px;
+      border-radius: 20px;
+      background: #304156;
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+      border: 1px solid #4a5d73;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      z-index: 99;
+    }
+    .floating-copilot-btn:hover { background: #409eff; }
+
+    .copilot-drawer {
+      position: fixed;
+      top: 0;
+      right: -580px;
+      width: 580px;
+      height: 100%;
+      background: #fff;
+      box-shadow: -4px 0 16px rgba(0, 0, 0, 0.15);
+      z-index: 1001;
+      transition: right 0.22s ease-out;
+      display: flex;
+      flex-direction: column;
+      border-left: 1px solid #dcdfe6;
+    }
+    .copilot-drawer.active { right: 0; }
+    .drawer-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid #dcdfe6;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f5f7fa;
+      font-weight: 700;
+      font-size: 13.5px;
+    }
+    .drawer-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .drawer-footer {
+      padding: 12px 16px;
+      border-top: 1px solid #dcdfe6;
+      background: #fff;
+    }
+
+    /* 经典 Element 模态弹窗 (Modal) */
     .modal-overlay {
-      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.45); display: flex; align-items: center;
-      justify-content: center; z-index: 1000; backdrop-filter: blur(2px);
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.2s;
     }
-    .modal-box {
-      background: #fff; width: 92%; max-width: 480px; border-radius: 12px;
-      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
-      overflow: hidden; animation: modal-in 0.2s ease-out;
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
     }
-    @keyframes modal-in {
-      from { opacity: 0; transform: scale(0.95); }
-      to { opacity: 1; transform: scale(1); }
+    .modal-dialog {
+      background: #fff;
+      width: 520px;
+      max-width: 90%;
+      border-radius: 4px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
     }
     .modal-header {
-      padding: 16px 20px; border-bottom: 1px solid #f1f5f9;
-      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 20px;
+      border-bottom: 1px solid #ebeef5;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #fafafa;
     }
-    .modal-title { font-weight: 600; font-size: 15px; color: #1e293b; }
+    .modal-title-text {
+      font-size: 14px;
+      font-weight: 700;
+      color: #303133;
+    }
     .modal-close-btn {
-      background: transparent; border: 0; font-size: 20px; color: #94a3b8;
-      cursor: pointer; line-height: 1; padding: 0 4px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      color: #909399;
+      font-size: 16px;
+      padding: 2px 6px;
     }
-    .modal-close-btn:hover { color: #475569; }
-    .modal-body { padding: 20px; }
+    .modal-close-btn:hover { color: #f56c6c; }
+    .modal-body {
+      padding: 20px;
+      font-size: 13px;
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+    .modal-footer {
+      padding: 12px 20px;
+      border-top: 1px solid #ebeef5;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      background: #f5f7fa;
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 500;
+      font-size: 12.5px;
+      color: #606266;
+    }
+    .form-group .required-star {
+      color: #f56c6c;
+      margin-right: 4px;
+    }
+    .form-group input, .form-group select {
+      width: 100%;
+    }
+
+    /* 经典 Toast 通知 */
+    .toast-container {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: none;
+    }
+    .toast-item {
+      pointer-events: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 16px;
+      border-radius: 4px;
+      font-size: 13px;
+      background: #fff;
+      box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+      border: 1px solid #ebeef5;
+      transform: translateY(-20px);
+      opacity: 0;
+      transition: all 0.2s;
+    }
+    .toast-item.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    .toast-item.toast-success { border-left: 4px solid #67c23a; color: #67c23a; }
+    .toast-item.toast-error { border-left: 4px solid #f56c6c; color: #f56c6c; }
+    .toast-item.toast-info { border-left: 4px solid #409eff; color: #409eff; }
+    .toast-item.toast-warning { border-left: 4px solid #e6a23c; color: #e6a23c; }
+
+    /* 经典系统底部版权 */
+    .corp-footer {
+      height: 32px;
+      background: #fff;
+      border-top: 1px solid #e6e6e6;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      font-size: 11.5px;
+      color: #909399;
+      flex-shrink: 0;
+    }
   </style>
 </head>
-<body class="hide-dev">
+<body>
 
-  <!-- 左侧边栏 -->
-  <aside>
+  <!-- ================= 经典企业中台左侧边栏 (Sidebar) ================= -->
+  <aside class="sidebar">
     <div class="sidebar-header">
-      <button class="new-chat-btn" id="btn-new">
-        <span>+ 开启新对话</span>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-      </button>
+      <div class="corp-logo-icon">OMS</div>
+      <div class="corp-title-wrap">
+        <span class="corp-title">某某集团中台系统</span>
+        <span class="corp-subtitle">ERP/OMS 供应链运营</span>
+      </div>
     </div>
 
-    <div class="session-list" id="session-history">
-      <div class="session-list-title">
-        <span>会话历史</span>
-        <span id="session-count-badge" style="font-size:10px; color:#6b7280; font-weight:normal;">0 个会话</span>
+    <div class="sidebar-menu-list">
+      <div class="sidebar-group-title">控制面板</div>
+      <div class="menu-item active" title="控制台 / 仪表盘" onclick="switchPage('dashboard', '系统首页', '控制台 / 仪表盘')">
+        <i class="ri-dashboard-2-line"></i>
+        <span>控制台 / 仪表盘</span>
       </div>
-      <div id="session-items-container" style="display:flex; flex-direction:column; gap:3px;"></div>
+
+      <div class="sidebar-group-title">业务中心 (OMS)</div>
+      <div class="menu-item" title="商品主数据管理" onclick="switchPage('products', '业务中心', '商品主数据管理')">
+        <i class="ri-shopping-bag-3-line"></i>
+        <span>商品中心管理</span>
+      </div>
+      <div class="menu-item" title="订单履约中心" onclick="switchPage('orders', '业务中心', '订单履约中心')">
+        <i class="ri-file-list-3-line"></i>
+        <span>订单履约中心</span>
+      </div>
+      <div class="menu-item" title="数仓业务指标字典" onclick="switchPage('metrics', '数据资产', '数仓业务指标字典')">
+        <i class="ri-database-2-line"></i>
+        <span>数仓指标字典</span>
+      </div>
+
+      <div class="sidebar-group-title">智能助手 (AI Copilot)</div>
+      <div class="menu-item" title="Text2SQL 问数工作台" onclick="switchPage('ai-query', '智能分析', 'Text2SQL 问数工作台')">
+        <i class="ri-sparkling-2-line"></i>
+        <span>AI 智能问数分析</span>
+        <span class="menu-badge badge-agent">Agent</span>
+      </div>
+
+      <div class="sidebar-group-title">系统管理</div>
+      <div class="menu-item" title="用户与权限分配" onclick="switchPage('users', '系统管理', '用户与权限分配')">
+        <i class="ri-shield-user-line"></i>
+        <span>用户与角色管理</span>
+      </div>
+      <div class="menu-item" title="系统操作审计日志" onclick="switchPage('logs', '系统管理', '操作审计日志')">
+        <i class="ri-history-line"></i>
+        <span>系统操作审计日志</span>
+      </div>
     </div>
   </aside>
 
-  <!-- 主对话容器 -->
+  <!-- ================= 主内容容器 (Main Container) ================= -->
   <div class="main-container">
-    <header class="chat-header">
-      <div class="model-selector">
-        <span>Text2SQL Agent</span>
-        <span style="color:#cbd5e1; margin:0 6px;">|</span>
-        <span id="session-title-label" style="font-size:13px; color:#475569; font-weight:500; max-width:320px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">新会话</span>
+    <!-- 顶部工作台导航 (Navbar) -->
+    <header class="top-navbar">
+      <div class="top-left">
+        <span class="collapse-btn" title="折叠/展开侧边栏" onclick="toggleSidebarCollapse()"><i class="ri-menu-fold-line" id="sidebarToggleIcon"></i></span>
+        <div class="breadcrumb-box" id="breadcrumbBox">
+          <span>系统首页</span> / <span class="curr-crumb">控制台 / 仪表盘</span>
+        </div>
       </div>
-      <div style="display:flex; align-items:center; gap:10px;">
-        <button id="btn-key-settings" class="btn-key-settings" onclick="openApiKeyModal()" title="配置个人的 DeepSeek API Key (BYOK)">
-          <span id="key-dot" class="key-indicator-dot warning"></span>
-          <span id="key-badge-text">配置 API Key</span>
+      <div class="top-right">
+        <button class="top-btn" onclick="openKeyModal()">
+          <i class="ri-key-2-line"></i> 配置大模型 Key (BYOK)
         </button>
+        <div class="user-profile-btn" onclick="openUserProfileModal()">
+          <div class="user-avatar-rect">A</div>
+          <span class="user-name-text">admin (工号: 08848)</span>
+          <span style="font-size: 11px; color: #909399;"><i class="ri-arrow-down-s-line"></i></span>
+        </div>
       </div>
     </header>
 
-    <div class="chat-scroll" id="chat-scroller">
-      <div class="chat-inner" id="chat-messages">
-        <!-- 初始空状态 -->
-        <div class="empty-state" id="empty-state">
-          <div class="empty-logo">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+    <!-- 经典企业多标签页导航 (TagsView) -->
+    <div class="tags-view-bar" id="tagsViewBar">
+      <div class="tag-item active" id="tab-dashboard" onclick="switchPage('dashboard', '系统首页', '控制台 / 仪表盘')">
+        <span>控制台 / 仪表盘</span>
+      </div>
+      <!-- 动态标签页追加位置 -->
+    </div>
+
+    <!-- 实际工作区 (App Main) -->
+    <div class="app-main">
+
+      <!-- ================= 视图 1：控制台 / 仪表盘 ================= -->
+      <div id="page-dashboard" class="page-view active">
+        <!-- 欢迎卡片 (5年系统标配) -->
+        <div class="corp-welcome-banner">
+          <div>
+            <div class="welcome-title-line">早安，超级管理员 (admin)！今天是 2026年10月26日 星期一</div>
+            <div class="welcome-meta-line">所属机构：某某集团供应链数字中台 · 架构委员会 | 登录节点：华东内网专线 (10.128.4.15) | 待办履约订单：<b>14</b> 件</div>
           </div>
-          <div class="empty-title">我能帮您分析什么电商数据？</div>
-          <div class="prompt-grid">
-            <div class="prompt-card" data-q="2018年销售额最高的5个州是哪些？">
-              <div class="prompt-card-title">2018年高销大州分析</div>
-              <div class="prompt-card-sub">多表关联统计各州总销售额并排序</div>
+          <div class="quick-tools-bar">
+            <button class="el-button el-button-primary el-button-sm" onclick="switchPage('ai-query', '智能分析', 'Text2SQL 问数工作台')"><i class="ri-flashlight-line"></i> 智能即席问数</button>
+            <button class="el-button el-button-sm" onclick="switchPage('orders', '业务中心', '订单履约中心')"><i class="ri-file-list-3-line"></i> 待处理订单</button>
+          </div>
+        </div>
+
+        <!-- 4大核心 KPI 统计格 -->
+        <div class="kpi-row-grid">
+          <div class="kpi-box">
+            <div class="kpi-box-top">
+              <span>商品主数据总量</span>
+              <span class="el-tag el-tag-info">实时</span>
             </div>
-            <div class="prompt-card" data-q="那2017年的呢？">
-              <div class="prompt-card-title">多轮追问测试</div>
-              <div class="prompt-card-sub">自动消解时间指代，触发 Schema 0ms 复用</div>
+            <div class="kpi-box-value tabular-nums" id="kpiProducts">32,951</div>
+            <div class="kpi-box-bottom">
+              <span style="color: var(--el-green); font-weight: 700;">↑ 12.5%</span> 较上月持续上新
             </div>
-            <div class="prompt-card" data-q="有效订单中各支付方式的订单量与金额">
-              <div class="prompt-card-title">业务口径注入</div>
-              <div class="prompt-card-sub">自动剔除取消订单，按有效口径聚合</div>
+          </div>
+
+          <div class="kpi-box">
+            <div class="kpi-box-top">
+              <span>累计已结算订单</span>
+              <span class="el-tag el-tag-success">已核验</span>
             </div>
-            <div class="prompt-card" data-q="每个优惠券活动带来的有效订单数和商品销售额">
-              <div class="prompt-card-title">复杂深层 Join</div>
-              <div class="prompt-card-sub">关联优惠券、订单、商品 4+ 张业务表</div>
+            <div class="kpi-box-value tabular-nums" id="kpiOrders">99,441</div>
+            <div class="kpi-box-bottom">
+              <span style="color: var(--el-green); font-weight: 700;">↑ 8.2%</span> 订单交付率 98.4%
+            </div>
+          </div>
+
+          <div class="kpi-box">
+            <div class="kpi-box-top">
+              <span>累计交易流水 (GMV)</span>
+              <span class="el-tag el-tag-primary">R$</span>
+            </div>
+            <div class="kpi-box-value tabular-nums" id="kpiGmv">15,843,520</div>
+            <div class="kpi-box-bottom">
+              <span style="color: var(--el-green); font-weight: 700;">↑ 15.3%</span> 平均客单价 R$ 159.3
+            </div>
+          </div>
+
+          <div class="kpi-box">
+            <div class="kpi-box-top">
+              <span>Text2SQL 智能服务量</span>
+              <span class="el-tag el-tag-warning">Agent</span>
+            </div>
+            <div class="kpi-box-value tabular-nums" id="kpiAi">1,256</div>
+            <div class="kpi-box-bottom">
+              <span style="color: var(--el-blue); font-weight: 700;">0ms</span> 缓存探针极速响应
             </div>
           </div>
         </div>
+
+        <!-- 报表图表栅格 -->
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 14px; margin-bottom: 16px;">
+          <div class="el-card" style="margin-bottom: 0;">
+            <div class="el-card-header">
+              <span class="el-card-title">电商月度销售额走势分析 (GMV Trend - 近半年)</span>
+              <span class="el-tag el-tag-primary">已对账结算</span>
+            </div>
+            <div id="dashboardTrendChart" style="height: 320px; width: 100%;"></div>
+          </div>
+
+          <div class="el-card" style="margin-bottom: 0;">
+            <div class="el-card-header">
+              <span class="el-card-title">热门商品品类销量占比分布</span>
+              <span class="el-tag el-tag-success">TOP 5 类目</span>
+            </div>
+            <div id="dashboardPieChart" style="height: 320px; width: 100%;"></div>
+          </div>
+        </div>
+
+        <!-- 系统运行通知与升级日志 -->
+        <div class="el-card">
+          <div class="el-card-header">
+            <span class="el-card-title">系统公告与运行指引</span>
+            <span class="el-tag el-tag-success">全节点运行正常 (UP)</span>
+          </div>
+          <div style="font-size: 13px; color: var(--text-regular); line-height: 1.8;">
+            <p>1. <b>供应链中台服务公告：</b>本系统已连续稳定运行 1,820 天。底层已预热 37 张核心数仓宽表数据集合，具备毫秒级冷启动探针容灾响应。</p>
+            <p>2. <b>AI 问数插件就绪：</b>内嵌全新一代 <b>Text2SQL Agent 智问引擎</b>，支持自然语言解析、加权外键图多表自动关联与 AST 安全校验。可通过页面左侧菜单或点击右下角 <b>AI 助手</b> 随时唤起侧边栏提问。</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= 视图 2：商品主数据管理 ================= -->
+      <div id="page-products" class="page-view">
+        <div class="search-filter-box">
+          <div class="filter-item-row">
+            <div class="filter-field">
+              <span class="filter-label">商品类目:</span>
+              <select id="prodCategoryFilter" class="el-input" onchange="loadProducts(1)">
+                <option value="">全部商品类目</option>
+              </select>
+            </div>
+            <div class="filter-field">
+              <span class="filter-label">商品关键词:</span>
+              <input type="text" id="prodKeywordInput" class="el-input" placeholder="输入商品编号或类目..." onkeyup="if(event.key==='Enter')loadProducts(1)">
+            </div>
+            <button class="el-button el-button-primary" onclick="loadProducts(1)"><i class="ri-search-line"></i> 查 询</button>
+            <button class="el-button" onclick="resetProdFilter()"><i class="ri-refresh-line"></i> 重 置</button>
+            <button class="el-button el-button-success" onclick="openAddProductModal()"><i class="ri-add-line"></i> 新增商品</button>
+          </div>
+        </div>
+
+        <div class="table-responsive-box">
+          <table class="corp-table">
+            <thead>
+              <tr>
+                <th style="width: 40px; text-align: center;"><input type="checkbox"></th>
+                <th>商品编号 (ID)</th>
+                <th>商品类目</th>
+                <th>主图照片数</th>
+                <th>净重 (g)</th>
+                <th>规格尺寸 (长×宽×高 cm)</th>
+                <th>当前标价</th>
+                <th style="width: 140px; text-align: center;">操作</th>
+              </tr>
+            </thead>
+            <tbody id="prodTableBody">
+              <tr><td colspan="8" style="text-align: center; padding: 24px; color: #909399;">正在加载商品主数据...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="corp-pagination-bar">
+          <span id="prodPageSummary">共 0 条</span>
+          <button class="el-button el-button-sm" id="btnProdPrev" onclick="changeProdPage(-1)">上一页</button>
+          <span id="prodCurrentPageNum" style="font-weight: 700; color: #409eff;">1</span>
+          <button class="el-button el-button-sm" id="btnProdNext" onclick="changeProdPage(1)">下一页</button>
+        </div>
+      </div>
+
+      <!-- ================= 视图 3：订单履约中心 ================= -->
+      <div id="page-orders" class="page-view">
+        <div class="search-filter-box">
+          <div class="filter-item-row">
+            <div class="filter-field">
+              <span class="filter-label">履约状态:</span>
+              <select id="orderStatusFilter" class="el-input" onchange="loadOrders(1)">
+                <option value="">全部订单状态</option>
+                <option value="delivered">已送达 (delivered)</option>
+                <option value="shipped">已发货 (shipped)</option>
+                <option value="invoiced">已开票 (invoiced)</option>
+                <option value="canceled">已取消 (canceled)</option>
+              </select>
+            </div>
+            <div class="filter-field">
+              <span class="filter-label">订单编号:</span>
+              <input type="text" id="orderIdFilter" class="el-input" placeholder="输入订单编号模糊查询..." onkeyup="if(event.key==='Enter')loadOrders(1)">
+            </div>
+            <button class="el-button el-button-primary" onclick="loadOrders(1)"><i class="ri-search-line"></i> 查 询</button>
+          </div>
+        </div>
+
+        <div class="table-responsive-box">
+          <table class="corp-table">
+            <thead>
+              <tr>
+                <th style="width: 40px; text-align: center;"><input type="checkbox"></th>
+                <th>订单编号</th>
+                <th>买家 ID</th>
+                <th>履约状态</th>
+                <th>包含件数</th>
+                <th>订单总金额</th>
+                <th>下单时间</th>
+                <th style="width: 120px; text-align: center;">操作</th>
+              </tr>
+            </thead>
+            <tbody id="orderTableBody">
+              <tr><td colspan="8" style="text-align: center; padding: 24px; color: #909399;">正在拉取履约订单数据...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="corp-pagination-bar">
+          <span id="orderPageSummary">共 0 条</span>
+          <button class="el-button el-button-sm" id="btnOrderPrev" onclick="changeOrderPage(-1)">上一页</button>
+          <span id="orderCurrentPageNum" style="font-weight: 700; color: #409eff;">1</span>
+          <button class="el-button el-button-sm" id="btnOrderNext" onclick="changeOrderPage(1)">下一页</button>
+        </div>
+      </div>
+
+      <!-- ================= 视图 4：数仓指标字典 ================= -->
+      <div id="page-metrics" class="page-view">
+        <div class="el-card">
+          <div class="el-card-header">
+            <span class="el-card-title">数仓业务指标标准注册表 (Enterprise Metrics Layer)</span>
+            <span class="el-tag el-tag-primary">23 项财务/运营口径</span>
+          </div>
+          <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 14px; line-height: 1.6;">
+            本模块由企业数据治理委员会维护，作为统一业务口径中枢。Text2SQL Agent 自动绑定底层表映射与口径公式，杜绝由于算法或统计维度偏差导致的口径不一致。
+          </p>
+          <div class="table-responsive-box">
+            <table class="corp-table">
+              <thead>
+                <tr>
+                  <th style="width: 140px;">指标代码 (ID)</th>
+                  <th style="width: 160px;">指标名称</th>
+                  <th>业务定义与标准计算公式</th>
+                  <th style="width: 220px;">底层依赖物理表</th>
+                </tr>
+              </thead>
+              <tbody id="metricsTableBody">
+                <tr><td colspan="4" style="text-align: center; padding: 20px;">加载中...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= 视图 5：AI 智能问数分析 ================= -->
+      <div id="page-ai-query" class="page-view">
+        <div class="el-card">
+          <div class="el-card-header">
+            <span class="el-card-title">Text2SQL 智能问数中台分析工作台 (Agent Copilot)</span>
+          </div>
+
+          <!-- 预置快捷问题检索面板 -->
+          <div style="background: #f8fafc; border: 1px dashed #dcdfe6; border-radius: 4px; padding: 12px 14px; margin-bottom: 12px;">
+            <div style="margin-bottom: 8px;">
+              <span style="font-weight: 700; color: #303133; font-size: 12.5px;"><i class="ri-lightbulb-line" style="color: #e6a23c; margin-right: 4px;"></i> 点击快捷检索数仓全量数据（涵盖 37 张表 / 150 万真实电商样本）：</span>
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                <span style="font-size: 12px; font-weight: 700; color: #606266; width: 85px;">销售与趋势:</span>
+                <span class="query-tag-pill" onclick="askAiQuery('2018年销售额最高的前5个商品品类是什么？')"><i class="ri-bar-chart-grouped-line"></i> 2018年品类销售额TOP5</span>
+                <span class="query-tag-pill" onclick="askAiQuery('统计2017到2018年每个月的订单总量趋势')"><i class="ri-calendar-line"></i> 月度订单走势趋势</span>
+              </div>
+
+              <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                <span style="font-size: 12px; font-weight: 700; color: #606266; width: 85px;">地域与履约:</span>
+                <span class="query-tag-pill" onclick="askAiQuery('各省份的客单价分布排名前5是哪些？')"><i class="ri-map-pin-2-line"></i> 各省份客单价分布</span>
+                <span class="query-tag-pill" onclick="askAiQuery('统计各省份的订单平均配送耗时（天数）排行')"><i class="ri-truck-line"></i> 各省份配送时效排行</span>
+              </div>
+
+              <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                <span style="font-size: 12px; font-weight: 700; color: #606266; width: 85px;">支付与会员:</span>
+                <span class="query-tag-pill" onclick="askAiQuery('统计各种支付方式的订单金额与笔数分布')"><i class="ri-bank-card-line"></i> 支付方式占比与金额</span>
+                <span class="query-tag-pill" onclick="askAiQuery('统计不同购买频次的客户复购留存人数分布')"><i class="ri-user-shared-line"></i> 客户复购留存频次分布</span>
+                <span class="query-tag-pill" onclick="askAiQuery('统计订单用户评价星级满意度分布')"><i class="ri-star-line"></i> 用户评价满意度分布</span>
+              </div>
+
+              <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                <span style="font-size: 12px; font-weight: 700; color: #606266; width: 85px;">高价值与安全:</span>
+                <span class="query-tag-pill" onclick="askAiQuery('单价在1000元以上的高价值热销商品有哪些？')"><i class="ri-vip-diamond-line"></i> 1000元以上高价值商品</span>
+                <span class="query-tag-pill danger-pill" onclick="askAiQuery('删除 orders 表中所有数据')"><i class="ri-shield-keyhole-line"></i> 安全防御 AST 拦截测试</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 对话流输出区 (全高度弹性拉伸) -->
+          <div id="aiChatArea"></div>
+
+          <!-- 输入栏 (卡片底部常驻) -->
+          <div class="ai-input-bar-wrap">
+            <input type="text" id="aiQuestionInput" class="el-input" style="flex: 1; height: 36px;" placeholder="请输入你要分析的业务问题，如：2018年销售额最高的前5个品类..." onkeyup="if(event.key==='Enter')submitMainAiQuery()">
+            <button class="el-button el-button-primary" style="height: 36px; padding: 0 18px;" onclick="submitMainAiQuery()">
+              <i class="ri-send-plane-2-fill"></i> 发送提问
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= 视图 6：用户与角色管理 ================= -->
+      <div id="page-users" class="page-view">
+        <div class="el-card">
+          <div class="el-card-header">
+            <span class="el-card-title">企业内部系统账号与权限分配 (RBAC)</span>
+            <button class="el-button el-button-primary el-button-sm" onclick="openCreateUserModal()"><i class="ri-user-add-line"></i> 新建系统用户</button>
+          </div>
+          <div class="table-responsive-box">
+            <table class="corp-table">
+              <thead>
+                <tr>
+                  <th>用户 ID</th>
+                  <th>登录账号</th>
+                  <th>真实姓名</th>
+                  <th>分配角色</th>
+                  <th>所属业务部门</th>
+                  <th>账号状态</th>
+                  <th style="width: 120px; text-align: center;">操作</th>
+                </tr>
+              </thead>
+              <tbody id="userTableBody">
+                <tr><td colspan="7" style="text-align: center; padding: 20px;">正在加载用户列表...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= 视图 7：系统操作审计日志 ================= -->
+      <div id="page-logs" class="page-view">
+        <div class="el-card">
+          <div class="el-card-header">
+            <span class="el-card-title">系统操作审计与数据变更日志 (Audit Logs)</span>
+          </div>
+          <div class="table-responsive-box">
+            <table class="corp-table">
+              <thead>
+                <tr>
+                  <th>日志编号</th>
+                  <th>操作人员</th>
+                  <th>动作类型</th>
+                  <th>详细操作说明</th>
+                  <th>来源 IP</th>
+                  <th>执行状态</th>
+                  <th>记录时间</th>
+                </tr>
+              </thead>
+              <tbody id="logTableBody">
+                <tr><td colspan="7" style="text-align: center; padding: 20px;">正在拉取审计日志...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ================= 悬浮 Copilot 助手球 ================= -->
+  <div class="floating-copilot-btn" title="唤起 AI 智能分析抽屉" onclick="toggleCopilotDrawer()">
+    <i class="ri-robot-2-fill" style="font-size: 16px;"></i>
+    <span>AI 即席问数</span>
+  </div>
+
+  <!-- ================= 侧边 Copilot 抽屉 ================= -->
+  <div class="copilot-drawer" id="copilotDrawer">
+    <div class="drawer-header">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <i class="ri-robot-2-line" style="color: #409eff; font-size: 17px;"></i>
+        <span>AI Copilot 智能即席问数助手</span>
+      </div>
+      <button class="el-button el-button-sm" onclick="toggleCopilotDrawer()"><i class="ri-close-line"></i> 关闭</button>
+    </div>
+    <div class="drawer-body" id="drawerChatArea">
+      <div>
+        <div style="font-size: 12px; font-weight: 700; color: #606266; margin-bottom: 6px;"><i class="ri-flashlight-line" style="color: #409eff; margin-right: 2px;"></i> 快速提问标签：</div>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+          <span class="query-tag-pill" onclick="askDrawerQuery('2018年销售额最高的前5个商品品类是什么？')"><i class="ri-bar-chart-grouped-line"></i> 品类销售额TOP5</span>
+          <span class="query-tag-pill" onclick="askDrawerQuery('统计2017到2018年每个月的订单总量趋势')"><i class="ri-calendar-line"></i> 月度订单走势</span>
+          <span class="query-tag-pill" onclick="askDrawerQuery('统计各种支付方式的订单金额与笔数分布')"><i class="ri-bank-card-line"></i> 支付方式占比</span>
+          <span class="query-tag-pill" onclick="askDrawerQuery('统计不同购买频次的客户复购留存人数分布')"><i class="ri-user-shared-line"></i> 客户复购留存</span>
+          <span class="query-tag-pill" onclick="askDrawerQuery('各省份的客单价分布排名前5是哪些？')"><i class="ri-map-pin-2-line"></i> 省份客单价分布</span>
+          <span class="query-tag-pill" onclick="askDrawerQuery('统计各省份的订单平均配送耗时（天数）排行')"><i class="ri-truck-line"></i> 配送时效排行</span>
+          <span class="query-tag-pill" onclick="askDrawerQuery('单价在1000元以上的高价值热销商品有哪些？')"><i class="ri-vip-diamond-line"></i> 1000元以上商品</span>
+        </div>
       </div>
     </div>
-
-    <!-- 底部悬浮输入区域 -->
-    <div class="input-floating-bar">
-      <div class="input-box-wrapper">
-        <textarea class="chat-input" id="prompt-input" rows="1"></textarea>
-        <button class="send-btn" id="send-button" disabled>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
-        </button>
+    <div class="drawer-footer">
+      <div style="display: flex; gap: 8px;">
+        <input type="text" id="drawerInput" class="el-input" style="flex: 1;" placeholder="向 AI 提问数仓数据..." onkeyup="if(event.key==='Enter')submitDrawerAiQuery()">
+        <button class="el-button el-button-primary" onclick="submitDrawerAiQuery()"><i class="ri-send-plane-2-fill"></i> 发送</button>
       </div>
     </div>
   </div>
 
-  <!-- API Key 设置模态弹窗 (BYOK) -->
-  <div id="api-key-modal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)closeApiKeyModal()">
-    <div class="modal-box">
+  <!-- ================= 弹窗 1：新增商品档案 (Add Product Modal) ================= -->
+  <div class="modal-overlay" id="addProductModal">
+    <div class="modal-dialog">
       <div class="modal-header">
-        <div class="modal-title">🔑 DeepSeek API Key 设置 (BYOK)</div>
-        <button class="modal-close-btn" id="btn-close-modal" onclick="closeApiKeyModal()">&times;</button>
+        <span class="modal-title-text">新增商品主数据档案 (Create Product)</span>
+        <button class="modal-close-btn" onclick="closeAddProductModal()"><i class="ri-close-line"></i></button>
       </div>
       <div class="modal-body">
-        <p style="font-size:13px; color:#4b5563; line-height:1.6; margin-bottom:14px;">
-          为了防止公共服务器资源被滥用或产生超额账单，本系统支持 <b>自带密钥 (BYOK)</b>。<br>
-          您的密钥 <b>仅保存在您当前浏览器的本地存储 (localStorage)</b>，发起分析时由请求头实时传递，服务端不存留。
-        </p>
-        <div style="margin-bottom:12px;">
-          <label style="font-size:12px; font-weight:600; color:#374151; display:block; margin-bottom:6px;">DeepSeek API Key (sk-...)</label>
-          <input type="password" id="input-api-key" placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxx" style="width:100%; padding:9px 12px; border:1px solid #d1d5db; border-radius:6px; font-family:monospace; font-size:13px; box-sizing:border-box;">
+        <div class="form-group">
+          <label><span class="required-star">*</span>商品编号 (ID, 留空系统将自动生成 UUID)</label>
+          <input type="text" id="newProdId" class="el-input" placeholder="32位商品标识，留空自动生成">
         </div>
-        <div id="modal-tip" style="font-size:12px; color:#dc2626; margin-bottom:12px; display:none;"></div>
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <button id="btn-clear-key" onclick="clearApiKey()" style="background:transparent; border:0; color:#dc2626; font-size:12px; cursor:pointer; text-decoration:underline;">清除本地 Key</button>
-          <div style="display:flex; gap:8px;">
-            <button id="btn-cancel-key" onclick="closeApiKeyModal()" style="padding:6px 14px; border:1px solid #d1d5db; background:#fff; border-radius:6px; font-size:13px; cursor:pointer;">取消</button>
-            <button id="btn-save-key" onclick="saveApiKey()" style="padding:6px 16px; border:0; background:#10a37f; color:#fff; border-radius:6px; font-size:13px; font-weight:500; cursor:pointer;">保存设置</button>
+        <div class="form-group">
+          <label><span class="required-star">*</span>商品所属主类目</label>
+          <select id="newProdCategory" class="el-input">
+            <option value="beleza_saude">beleza_saude (美妆个护)</option>
+            <option value="telefonia">telefonia (手机数码)</option>
+            <option value="informatica_acessorios">informatica_acessorios (数码配件)</option>
+            <option value="esporte_lazer">esporte_lazer (运动休闲)</option>
+            <option value="cama_mesa_banho">cama_mesa_banho (家居家纺)</option>
+            <option value="utilidades_domesticas">utilidades_domesticas (日用百货)</option>
+            <option value="relogios_presentes">relogios_presentes (钟表礼品)</option>
+            <option value="artes">artes (文化艺术)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label><span class="required-star">*</span>预估结算单价 (R$)</label>
+          <input type="number" id="newProdPrice" class="el-input" value="99.90" step="0.1" min="0">
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div class="form-group">
+            <label>净重 (g)</label>
+            <input type="number" id="newProdWeight" class="el-input" value="500" min="1">
+          </div>
+          <div class="form-group">
+            <label>商品主图张数</label>
+            <input type="number" id="newProdPhotos" class="el-input" value="2" min="1" max="10">
           </div>
         </div>
+      </div>
+      <div class="modal-footer">
+        <button class="el-button" onclick="closeAddProductModal()">取 消</button>
+        <button class="el-button el-button-primary" onclick="submitCreateProduct()"><i class="ri-add-line"></i> 确 定 新 增</button>
       </div>
     </div>
   </div>
 
-  <script>
-    const $ = (id) => document.getElementById(id);
-    const scroller = $('chat-scroller');
-    const messages = $('chat-messages');
-    const emptyState = $('empty-state');
-    const input = $('prompt-input');
-    const sendBtn = $('send-button');
-    const sessionTitle = $('session-title-label');
-
-    function createSessionId() {
-      return 'sess_' + Math.random().toString(36).substring(2, 8) + '_' + Date.now().toString().slice(-4);
-    }
-
-    // 本地会话持久化与状态管理
-    const SESSIONS_STORAGE_KEY = 'text2sql_agent_sessions_store_v2';
-
-    function loadStoredSessions() {
-      try {
-        const raw = localStorage.getItem(SESSIONS_STORAGE_KEY);
-        if (raw) {
-          const list = JSON.parse(raw);
-          if (Array.isArray(list) && list.length > 0) return list;
-        }
-      } catch (e) {}
-      return [];
-    }
-
-    function saveStoredSessions() {
-      try {
-        localStorage.setItem(SESSIONS_STORAGE_KEY, JSON.stringify(sessions));
-      } catch (e) {}
-    }
-
-    let sessions = loadStoredSessions();
-    let currentSession = null;
-
-    if (sessions.length === 0) {
-      currentSession = {
-        id: createSessionId(),
-        title: '新会话',
-        turnCount: 0,
-        status: 'ACTIVE',
-        updatedAt: Date.now(),
-        turns: []
-      };
-      sessions.push(currentSession);
-      saveStoredSessions();
-    } else {
-      currentSession = sessions[0];
-    }
-
-    sessionTitle.textContent = currentSession.title || '新会话';
-
-    function renderSidebar() {
-      const container = $('session-items-container');
-      if (!container) return;
-      container.innerHTML = '';
-      const badge = $('session-count-badge');
-      if (badge) badge.textContent = sessions.length + ' 个会话';
-
-      sessions.forEach(s => {
-        const item = document.createElement('div');
-        const isActive = s.id === currentSession.id;
-        item.className = 'session-item' + (isActive ? ' active' : '');
-        item.innerHTML = `
-          <div class="session-item-content" title="${esc(s.title || '新会话')}">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            <span class="session-item-title">${esc(s.title || '新会话')}</span>
-            ${s.status === 'CLOSED' ? '<span class="session-badge session-badge-persisted">已入库</span>' : (s.turnCount ? `<span class="session-badge">${s.turnCount}轮</span>` : '')}
-          </div>
-          <button class="session-del-btn" title="删除此会话" data-id="${s.id}">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-          </button>
-        `;
-
-        item.querySelector('.session-item-content').addEventListener('click', () => {
-          switchSession(s.id);
-        });
-
-        item.querySelector('.session-del-btn').addEventListener('click', (e) => {
-          e.stopPropagation();
-          deleteSession(s.id);
-        });
-
-        container.appendChild(item);
-      });
-    }
-
-    function switchSession(sessionId) {
-      const found = sessions.find(s => s.id === sessionId);
-      if (!found) return;
-      currentSession = found;
-      sessionTitle.textContent = currentSession.title || '新会话';
-      renderSidebar();
-      renderCurrentSessionChat();
-    }
-
-    function deleteSession(sessionId) {
-      if (!confirm('确定删除该历史会话吗？')) return;
-      fetch('/api/session/' + sessionId, { method: 'DELETE' }).catch(()=>{});
-      sessions = sessions.filter(s => s.id !== sessionId);
-      if (sessions.length === 0) {
-        currentSession = {
-          id: createSessionId(),
-          title: '新会话',
-          turnCount: 0,
-          status: 'ACTIVE',
-          updatedAt: Date.now(),
-          turns: []
-        };
-        sessions.push(currentSession);
-      } else if (currentSession.id === sessionId) {
-        currentSession = sessions[0];
-      }
-      saveStoredSessions();
-      switchSession(currentSession.id);
-    }
-
-    function renderCurrentSessionChat() {
-      messages.innerHTML = '';
-      if (!currentSession.turns || currentSession.turns.length === 0) {
-        messages.appendChild(emptyState);
-        return;
-      }
-      currentSession.turns.forEach(t => {
-        if (t.role === 'user') {
-          appendUserBubble(t.text);
-        } else if (t.role === 'agent') {
-          appendAgentBubble(t.data);
-        }
-      });
-      scrollToBottom();
-    }
-
-    // 监听输入
-    input.addEventListener('input', () => {
-      input.style.height = 'auto';
-      input.style.height = Math.min(input.scrollHeight, 180) + 'px';
-      sendBtn.disabled = !input.value.trim();
-    });
-
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        if (input.value.trim()) sendMessage(input.value.trim());
-      }
-    });
-
-    sendBtn.addEventListener('click', () => {
-      if (input.value.trim()) sendMessage(input.value.trim());
-    });
-
-    // 快捷卡片点击
-    document.querySelectorAll('.prompt-card').forEach(c => {
-      c.addEventListener('click', () => sendMessage(c.dataset.q));
-    });
-
-    $('btn-new').addEventListener('click', () => {
-      // 若当前会话已有问答且尚未结束，开启新会话时自动将旧会话落库
-      if (currentSession && currentSession.turns && currentSession.turns.length > 0 && currentSession.status !== 'CLOSED') {
-        const oldId = currentSession.id;
-        currentSession.status = 'CLOSED';
-        fetch(`/api/session/${oldId}/close`, { method: 'POST' }).catch(() => {});
-      }
-
-      const newSess = {
-        id: createSessionId(),
-        title: '新会话',
-        turnCount: 0,
-        status: 'ACTIVE',
-        updatedAt: Date.now(),
-        turns: []
-      };
-      sessions.unshift(newSess);
-      saveStoredSessions();
-      switchSession(newSess.id);
-    });
-
-    function esc(s) {
-      return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    }
-
-    function appendUserBubble(text) {
-      if (emptyState.parentNode) emptyState.remove();
-      const row = document.createElement('div');
-      row.className = 'msg-row user';
-      row.innerHTML = `<div class="user-bubble">${esc(text)}</div>`;
-      messages.appendChild(row);
-      scrollToBottom();
-    }
-
-    function appendLoading() {
-      const row = document.createElement('div');
-      row.className = 'msg-row';
-      row.id = 'loading-row';
-      row.innerHTML = `
-        <div class="agent-avatar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
-        <div class="agent-content">
-          <div class="loading-pulse">
-            <span>正在分析意图并生成 SQL</span>
-            <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+  <!-- ================= 弹窗 2：编辑商品属性 (Edit Product Modal) ================= -->
+  <div class="modal-overlay" id="editProductModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <span class="modal-title-text">编辑商品主数据属性</span>
+        <button class="modal-close-btn" onclick="closeEditProductModal()"><i class="ri-close-line"></i></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editProdId">
+        <div class="form-group">
+          <label>商品唯一编号 (只读)</label>
+          <div style="display: flex; gap: 6px;">
+            <input type="text" id="editProdIdDisplay" class="el-input" disabled style="background: #f5f7fa; font-family: monospace;">
+            <button class="el-button el-button-sm" onclick="copyProdId()"><i class="ri-file-copy-line"></i> 复制</button>
           </div>
         </div>
-      `;
-      messages.appendChild(row);
-      scrollToBottom();
-    }
+        <div class="form-group">
+          <label><span class="required-star">*</span>所属业务类目</label>
+          <input type="text" id="editProdCategory" class="el-input">
+        </div>
+        <div class="form-group">
+          <label><span class="required-star">*</span>当前标准售价 (R$)</label>
+          <input type="number" id="editProdPrice" class="el-input" step="0.1">
+        </div>
+        <div class="form-group">
+          <label>包装重量 (g)</label>
+          <input type="number" id="editProdWeight" class="el-input">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="el-button" onclick="closeEditProductModal()">取 消</button>
+        <button class="el-button el-button-primary" onclick="submitUpdateProduct()"><i class="ri-save-line"></i> 保 存 更 新</button>
+      </div>
+    </div>
+  </div>
 
-    // 中文业务列名词典映射（全量覆盖电商数仓各域业务列与聚合指标）
-    const COLUMN_DICT = {
-      // 1. 地理与区域
-      'customer_state': '所在州',
-      'seller_state': '所在州',
-      'state': '所在州',
-      'region_code': '大区代码',
-      'region_name': '大区名称',
-      'customer_city': '所在城市',
-      'seller_city': '所在城市',
-      'city': '所在城市',
-      'customer_zip_code_prefix': '邮政编码',
-      'seller_zip_code_prefix': '邮政编码',
-      'zip_code_prefix': '邮政编码',
-      'geolocation_lat': '纬度',
-      'geolocation_lng': '经度',
+  <!-- ================= 弹窗 3：API Key 配置 (BYOK Modal) ================= -->
+  <div class="modal-overlay" id="apiKeyModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <span class="modal-title-text">配置大语言模型凭证 (BYOK 插件)</span>
+        <button class="modal-close-btn" onclick="closeKeyModal()"><i class="ri-close-line"></i></button>
+      </div>
+      <div class="modal-body">
+        <div style="background: #ecf5ff; border: 1px solid #d9ecff; color: #409eff; padding: 10px 12px; border-radius: 3px; font-size: 12px; line-height: 1.6; margin-bottom: 14px;">
+          <i class="ri-shield-check-line" style="color: #67c23a; margin-right: 4px;"></i> <b>本地凭据隔离存储：</b>API Key 仅保存在浏览器 localStorage 沙箱中，仅在发起 Text2SQL 查询时本地读取，服务端不持久化私有凭证。
+        </div>
+        <div class="form-group">
+          <label>选择服务提供商预设</label>
+          <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+            <button class="query-tag-pill" type="button" onclick="setPresetKey('deepseek')">DeepSeek (推荐)</button>
+            <button class="query-tag-pill" type="button" onclick="setPresetKey('openai')">OpenAI</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>输入密钥 (API Key)</label>
+          <div style="display: flex; gap: 6px;">
+            <input type="password" id="userKeyInput" class="el-input" style="flex: 1;" placeholder="sk-...">
+            <button type="button" class="el-button" onclick="toggleKeyVisibility()" id="keyVisibilityBtn"><i class="ri-eye-line"></i> 明文</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="el-button el-button-danger" onclick="clearKey()"><i class="ri-delete-bin-line"></i> 清空已存 Key</button>
+        <button class="el-button" onclick="closeKeyModal()">取 消</button>
+        <button class="el-button el-button-primary" onclick="saveKey()"><i class="ri-save-line"></i> 保 存 并 应 用</button>
+      </div>
+    </div>
+  </div>
 
-      // 2. 客户与会员
-      'customer_id': '客户ID',
-      'customer_unique_id': '客户唯一标识',
-      'member_id': '会员编号',
-      'member_name': '会员姓名',
-      'member_level': '会员等级',
-      'level_id': '等级ID',
-      'level_name': '等级名称',
-      'seller_id': '卖家ID',
+  <!-- ================= 弹窗 4：通用危险确认弹窗 (Custom Confirm Modal) ================= -->
+  <div class="modal-overlay" id="customConfirmModal">
+    <div class="modal-dialog" style="width: 420px;">
+      <div class="modal-header">
+        <span class="modal-title-text" id="confirmModalTitle">操作确认提示</span>
+        <button class="modal-close-btn" onclick="closeCustomConfirm(false)"><i class="ri-close-line"></i></button>
+      </div>
+      <div class="modal-body" id="confirmModalMessage" style="line-height: 1.6; color: #606266;">
+        确定要执行该删除操作吗？
+      </div>
+      <div class="modal-footer">
+        <button class="el-button" onclick="closeCustomConfirm(false)">取 消</button>
+        <button class="el-button el-button-danger" id="confirmModalOkBtn" onclick="closeCustomConfirm(true)"><i class="ri-delete-bin-line"></i> 确 定 删 除</button>
+      </div>
+    </div>
+  </div>
 
-      // 3. 订单与交易
-      'order_id': '订单编号',
-      'order_item_id': '明细序号',
-      'order_status': '订单状态',
-      'status': '状态',
-      'order_purchase_timestamp': '下单时间',
-      'purchase_timestamp': '下单时间',
-      'order_date': '下单日期',
-      'order_approved_at': '支付审核时间',
-      'order_delivered_carrier_date': '承运发货时间',
-      'order_delivered_customer_date': '客户签收时间',
-      'order_estimated_delivery_date': '预计送达时间',
-      'shipping_limit_date': '最迟发货时间',
-      'price': '商品售价 (R$)',
-      'item_price': '商品售价 (R$)',
-      'unit_price': '单价 (R$)',
-      'freight_value': '运费 (R$)',
-      'freight': '运费 (R$)',
-      'payment_type': '支付方式',
-      'payment_installments': '分期期数',
-      'payment_sequential': '支付序号',
-      'payment_value': '支付金额 (R$)',
+  <!-- ================= 弹窗 5：订单履约状态流转 (Order Status Modal) ================= -->
+  <div class="modal-overlay" id="orderStatusModal">
+    <div class="modal-dialog" style="width: 440px;">
+      <div class="modal-header">
+        <span class="modal-title-text">流转订单履约状态</span>
+        <button class="modal-close-btn" onclick="closeOrderStatusModal()"><i class="ri-close-line"></i></button>
+      </div>
+      <div class="modal-body">
+        <div style="background: #f5f7fa; padding: 10px 12px; border-radius: 3px; margin-bottom: 14px;">
+          <div style="font-size: 11.5px; color: #909399;">当前订单编号</div>
+          <div id="targetOrderIdText" style="font-family: monospace; font-size: 13px; font-weight: 700; color: #303133;">-</div>
+        </div>
+        <div class="form-group">
+          <label><span class="required-star">*</span>流转至新状态</label>
+          <select id="orderNextStatusSelect" class="el-input">
+            <option value="delivered">delivered (买家已签收 / 交易完成)</option>
+            <option value="shipped">shipped (物流在途运输)</option>
+            <option value="invoiced">invoiced (财务发票已开具)</option>
+            <option value="canceled">canceled (订单已取消并退款)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>流转备注说明 (可选)</label>
+          <input type="text" id="orderStatusRemark" class="el-input" placeholder="例：系统自动核验物流签收">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="el-button" onclick="closeOrderStatusModal()">取 消</button>
+        <button class="el-button el-button-primary" onclick="submitOrderStatusChange()"><i class="ri-check-line"></i> 确 认 流 转</button>
+      </div>
+    </div>
+  </div>
 
-      // 4. 商品与类目
-      'product_id': '商品编号',
-      'product_category_name': '商品类目',
-      'product_category_name_english': '商品英文类目',
-      'category_name': '商品类目',
-      'category': '商品类目',
-      'product_weight_g': '重量 (克)',
-      'product_length_cm': '长度 (cm)',
-      'product_height_cm': '高度 (cm)',
-      'product_width_cm': '宽度 (cm)',
-      'product_photos_qty': '图片数量',
+  <!-- ================= 弹窗 6：管理员个人资料 (User Profile Modal) ================= -->
+  <div class="modal-overlay" id="userProfileModal">
+    <div class="modal-dialog" style="width: 460px;">
+      <div class="modal-header">
+        <span class="modal-title-text">当前登录管理员档案 (RBAC)</span>
+        <button class="modal-close-btn" onclick="closeUserProfileModal()"><i class="ri-close-line"></i></button>
+      </div>
+      <div class="modal-body">
+        <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid #ebeef5;">
+          <div class="user-avatar-rect" style="width: 44px; height: 44px; font-size: 18px;">A</div>
+          <div>
+            <div style="font-size: 15px; font-weight: 700; color: #303133;">admin (超级管理员)</div>
+            <div style="font-size: 12px; color: #909399; margin-top: 2px;">工号：08848 · 研发中台业务架构组</div>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px; font-size: 12.5px;">
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: #909399;">登录凭据：</span>
+            <span style="font-weight: 600;">admin (全库最高控制权限)</span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: #909399;">组织机构：</span>
+            <span>供应链研发部 / 核心架构中台组</span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: #909399;">分配角色：</span>
+            <span class="el-tag el-tag-success">ALL_PERMISSIONS (全量读写)</span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: #909399;">认证状态：</span>
+            <span style="color: #67c23a; font-weight: 700;">● 专网凭据处于活动期</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="el-button" onclick="closeUserProfileModal()">关 闭</button>
+        <button class="el-button el-button-primary" onclick="closeUserProfileModal(); Toast.info('系统会话凭证校验正常');"><i class="ri-refresh-line"></i> 刷 新 权 限</button>
+      </div>
+    </div>
+  </div>
 
-      // 5. 评价与工单
-      'review_id': '评价ID',
-      'review_score': '评价得分',
-      'score': '评分',
-      'avg_review_score': '平均评价分',
-      'review_comment_title': '评价标题',
-      'review_comment_message': '评价内容',
-      'review_creation_date': '评价时间',
-      'review_answer_timestamp': '商家回复时间',
-      'ticket_id': '工单编号',
-      'ticket_status': '工单状态',
+  <!-- ================= 弹窗 7：新建系统用户 (Create User Modal) ================= -->
+  <div class="modal-overlay" id="createUserModal">
+    <div class="modal-dialog" style="width: 440px;">
+      <div class="modal-header">
+        <span class="modal-title-text">新增企业中台账号</span>
+        <button class="modal-close-btn" onclick="closeCreateUserModal()"><i class="ri-close-line"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label><span class="required-star">*</span>登录用户名</label>
+          <input type="text" id="newUsername" class="el-input" placeholder="如：zhangsan">
+        </div>
+        <div class="form-group">
+          <label><span class="required-star">*</span>用户真实姓名</label>
+          <input type="text" id="newNickname" class="el-input" placeholder="如：张三">
+        </div>
+        <div class="form-group">
+          <label><span class="required-star">*</span>角色权限分配</label>
+          <select id="newUserRole" class="el-input">
+            <option value="DATA_ANALYST">数据分析师 (只读/问数)</option>
+            <option value="OPERATOR">运营专员 (商品/订单维护)</option>
+            <option value="AUDITOR">审计管理员 (审计日志巡检)</option>
+            <option value="ADMIN">中台管理员 (全量管理)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>所属业务部门</label>
+          <input type="text" id="newUserDept" class="el-input" value="供应链运营部">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="el-button" onclick="closeCreateUserModal()">取 消</button>
+        <button class="el-button el-button-primary" onclick="submitCreateUser()"><i class="ri-user-add-line"></i> 确 定 建 权</button>
+      </div>
+    </div>
+  </div>
 
-      // 6. 营销与优惠券
-      'coupon_id': '优惠券ID',
-      'coupon_code': '优惠码',
-      'campaign_id': '营销活动ID',
-      'campaign_name': '活动名称',
-      'discount_amount': '优惠金额 (R$)',
+  <!-- ================= 全局 Element UI 风格浮层提示 (el-tooltip) ================= -->
+  <div id="corpTooltip" class="corp-tooltip" style="display: none;"></div>
 
-      // 7. 统计指标与聚合计算字段
-      'cnt': '数量',
-      'count': '数量',
-      'total': '总计',
-      'total_count': '总数量',
-      'order_count': '订单总量',
-      'total_orders': '订单总量',
-      'orders_count': '订单总量',
-      'sales': '总销售额 (R$)',
-      'total_sales': '总销售额 (R$)',
-      'sum_sales': '总销售额 (R$)',
-      'total_amount': '总金额 (R$)',
-      'amount': '金额 (R$)',
-      'sum_price': '总销售额 (R$)',
-      'total_revenue': '总营收 (R$)',
-      'revenue': '营收 (R$)',
-      'total_gmv': 'GMV (R$)',
-      'gmv': 'GMV (R$)',
-      'avg_price': '平均单价 (R$)',
-      'average_price': '平均单价 (R$)',
-      'avg_freight': '平均运费 (R$)',
-      'average_freight': '平均运费 (R$)',
-      'customer_count': '客户人数',
-      'buyer_count': '买家人数',
-      'seller_count': '卖家数量',
-      'repurchase_rate': '复购率',
-      'refund_rate': '退款率',
-      'refund_amount': '退款金额 (R$)',
-      'year': '年份',
-      'order_year': '年份',
-      'month': '月份',
-      'order_month': '月份',
-      'day': '日期',
-      'quarter': '季度',
-      'rank': '排名',
-      'rn': '排名'
+  <!-- ================= 核心 JavaScript 业务逻辑 ================= -->
+  <script>
+    let curProdPage = 1, curOrderPage = 1;
+    let chartCounter = 0;
+    // 商品行渲染时缓存整条记录。编辑/删除按钮只传行号，
+    // 避免把商品数据塞进 HTML onclick 属性——那等于把任意字符串
+    // 直接插进属性上下文，商品名/类目里一旦出现引号或 </button> 就能逃逸。
+    let productCache = {};
+    // 订单行同理：状态流转按钮只传行号，订单号不进入 HTML 属性。
+    let orderCache = {};
+    // 当前多轮会话 ID。后端 /api/ask 支持 sessionId 参数并在响应里回传，
+    // 但前端此前从不发送、也不保存，导致多轮追问永远当成首轮——
+    // 上下文压缩、历史轮次落库、追问改写这些能力全都用不上。
+    let currentSessionId = null;
+
+    // 多标签页状态
+    const openedTabs = {
+      'dashboard': { title: '控制台 / 仪表盘', p1: '系统首页', p2: '控制台 / 仪表盘' }
     };
 
-    function translateColumn(col) {
-      if (!col) return '';
-      const clean = col.toLowerCase().trim().replace(/^_+|_+$/g, '');
-      if (COLUMN_DICT[clean]) return COLUMN_DICT[clean];
+    // ================= 全局轻量通知组件 Toast (取代 alert) =================
+    const Toast = {
+      container: null,
+      init() {
+        if (!this.container) {
+          this.container = document.createElement('div');
+          this.container.className = 'toast-container';
+          document.body.appendChild(this.container);
+        }
+      },
+      show(msg, type = 'info', duration = 2400) {
+        this.init();
+        const item = document.createElement('div');
+        item.className = `toast-item toast-${type}`;
+        item.innerHTML = `<span>${escapeHtml(msg)}</span>`;
+        this.container.appendChild(item);
 
-      // 前缀组合分析 (sum_, total_, avg_, min_, max_, count_)
-      const prefixRules = [
-        { pre: ['sum_', 'total_'], zh: '总' },
-        { pre: ['avg_', 'average_'], zh: '平均' },
-        { pre: ['max_'], zh: '最高' },
-        { pre: ['min_'], zh: '最低' },
-        { pre: ['count_'], suffix: '数量' }
-      ];
+        requestAnimationFrame(() => item.classList.add('show'));
+        setTimeout(() => {
+          item.classList.remove('show');
+          setTimeout(() => item.remove(), 250);
+        }, duration);
+      },
+      success(msg) { this.show(msg, 'success'); },
+      error(msg) { this.show(msg, 'error'); },
+      warning(msg) { this.show(msg, 'warning'); },
+      info(msg) { this.show(msg, 'info'); }
+    };
 
-      for (const rule of prefixRules) {
-        for (const p of rule.pre) {
-          if (clean.startsWith(p)) {
-            const base = clean.substring(p.length);
-            if (COLUMN_DICT[base]) {
-              return rule.zh ? (rule.zh + COLUMN_DICT[base]) : (COLUMN_DICT[base] + rule.suffix);
-            }
+    // ================= 通用自定义 Confirm 承诺弹窗 (取代 confirm) =================
+    let confirmResolve = null;
+    function showConfirm(title, message, okText = '确认') {
+      return new Promise(resolve => {
+        confirmResolve = resolve;
+        document.getElementById('confirmModalTitle').innerText = title;
+        document.getElementById('confirmModalMessage').innerHTML = message;
+        document.getElementById('confirmModalOkBtn').innerText = okText;
+        document.getElementById('customConfirmModal').classList.add('active');
+      });
+    }
+    function closeCustomConfirm(result) {
+      document.getElementById('customConfirmModal').classList.remove('active');
+      if (confirmResolve) {
+        confirmResolve(result);
+        confirmResolve = null;
+      }
+    }
+
+    // 监听 ESC 键关闭所有活跃弹窗
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
+        if (confirmResolve) closeCustomConfirm(false);
+      }
+    });
+
+    // ================= 企业级 Element UI 浮层提示组件 Tooltip (el-tooltip) =================
+    let activeTooltipTarget = null;
+    let tooltipHideTimer = null;
+    let hoverDebounceTimer = null;
+
+    function showCorpTooltip(el, text, title = '') {
+      let tooltip = document.getElementById('corpTooltip');
+      if (!tooltip) {
+        tooltip = document.createElement('div');
+        tooltip.id = 'corpTooltip';
+        tooltip.className = 'corp-tooltip';
+        document.body.appendChild(tooltip);
+      }
+      if (!text) return;
+
+      clearTimeout(tooltipHideTimer);
+      activeTooltipTarget = el;
+
+      let contentHtml = '';
+      if (title) {
+        contentHtml += `<div style="font-size: 11px; color: #a8abb2; margin-bottom: 3px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">${escapeHtml(title)}</div>`;
+      }
+      contentHtml += `<div style="font-weight: 500; user-select: text;">${escapeHtml(text)}</div>`;
+      contentHtml += `<div style="font-size: 10.5px; color: #909399; margin-top: 4px; border-top: 1px solid #484b51; padding-top: 3px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; align-items: center; gap: 4px;"><i class="ri-file-copy-line"></i> 点击即可复制完整内容</div>`;
+
+      tooltip.innerHTML = contentHtml;
+      tooltip.style.display = 'block';
+      tooltip.className = 'corp-tooltip';
+
+      const rect = el.getBoundingClientRect();
+      const tooltipRect = tooltip.getBoundingClientRect();
+
+      let top = rect.top - tooltipRect.height - 8;
+      let placement = 'arrow-top';
+
+      if (top < 8) {
+        top = rect.bottom + 8;
+        placement = 'arrow-bottom';
+      }
+
+      let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+      if (left < 10) left = 10;
+      if (left + tooltipRect.width > window.innerWidth - 10) {
+        left = window.innerWidth - tooltipRect.width - 10;
+      }
+
+      const arrowOffset = (rect.left + rect.width / 2) - left;
+      tooltip.style.setProperty('--arrow-left', `${arrowOffset}px`);
+      tooltip.style.top = `${top}px`;
+      tooltip.style.left = `${left}px`;
+      tooltip.classList.add(placement);
+
+      requestAnimationFrame(() => {
+        tooltip.classList.add('visible');
+      });
+    }
+
+    function hideCorpTooltip() {
+      const tooltip = document.getElementById('corpTooltip');
+      if (!tooltip) return;
+      tooltip.classList.remove('visible');
+      tooltipHideTimer = setTimeout(() => {
+        if (!tooltip.classList.contains('visible')) {
+          tooltip.style.display = 'none';
+          activeTooltipTarget = null;
+        }
+      }, 150);
+    }
+
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    // 全局悬浮与单元格截断监听
+    document.addEventListener('mouseover', function(e) {
+      const target = e.target.closest('[data-tooltip]');
+      if (target) {
+        const text = target.getAttribute('data-tooltip');
+        const title = target.getAttribute('data-tooltip-title') || '';
+        if (text) {
+          clearTimeout(hoverDebounceTimer);
+          hoverDebounceTimer = setTimeout(() => {
+            showCorpTooltip(target, text, title);
+          }, 60);
+          return;
+        }
+      }
+
+      // 自动检测表格内任何带有省略号或文本溢出的单元格
+      const cell = e.target.closest('td');
+      if (cell && !cell.hasAttribute('data-tooltip') && !cell.querySelector('[data-tooltip]')) {
+        const text = cell.innerText.trim();
+        if (text.endsWith('...') || cell.scrollWidth > cell.clientWidth) {
+          if (text.length > 5) {
+            clearTimeout(hoverDebounceTimer);
+            hoverDebounceTimer = setTimeout(() => {
+              showCorpTooltip(cell, text, '单元格完整内容');
+            }, 100);
           }
         }
       }
+    });
 
-      // 关键词推断
-      if (clean.includes('state')) return '所在州';
-      if (clean.includes('city')) return '所在城市';
-      if (clean.includes('sales') || clean.includes('amount') || clean.includes('revenue')) return '总销售额 (R$)';
-      if (clean.includes('price')) return '金额 (R$)';
-      if (clean.includes('freight')) return '运费 (R$)';
-      if (clean.includes('count') || clean.includes('cnt')) return '数量';
-      if (clean.includes('rate') || clean.includes('ratio')) return '比率';
-      if (clean.includes('score')) return '评分';
-      if (clean.includes('category')) return '商品类目';
-      if (clean.includes('date') || clean.includes('time')) return '日期时间';
-      if (clean.includes('user') || clean.includes('customer')) return '客户人数';
-      if (clean.includes('order')) return '订单数';
-
-      return col;
-    }
-
-
-
-    function appendAgentBubble(d) {
-      const loading = $('loading-row');
-      if (loading) loading.remove();
-
-      const row = document.createElement('div');
-      row.className = 'msg-row';
-
-      let inner = `
-        <div class="agent-avatar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
-        <div class="agent-content">
-      `;
-
-      // 追问补全提示
-      if (d.rewrittenQuestion && d.rewrittenQuestion !== d.question) {
-        inner += `<div class="intent-tag"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg><span>多轮意图补全：<b>${esc(d.rewrittenQuestion)}</b></span></div>`;
+    document.addEventListener('mouseout', function(e) {
+      const target = e.target.closest('[data-tooltip], td');
+      if (target) {
+        clearTimeout(hoverDebounceTimer);
+        hideCorpTooltip();
       }
+    });
 
-      const isOk = d.status === 'SUCCESS';
+    window.addEventListener('scroll', hideCorpTooltip, true);
+    window.addEventListener('resize', hideCorpTooltip);
 
-      // 开发者标签 (在开发模式下显示技术状态)
-      inner += '<div class="dev-only" style="margin-bottom: 8px;">';
-      inner += '<div class="status-capsules">';
-      inner += `<span class="capsule ${isOk ? 'capsule-success' : 'capsule-err'}">${esc(d.status)}</span>`;
-      if (d.schemaReused) inner += '<span class="capsule capsule-reused">Schema 0ms 复用</span>';
-      if (d.rewritten) inner += '<span class="capsule capsule-limit">校验器补 LIMIT</span>';
-      inner += '</div></div>';
+    // 点击复制完整文本
+    document.addEventListener('click', function(e) {
+      const copyEl = e.target.closest('.copyable, [data-copy]');
+      if (!copyEl) return;
+      const text = copyEl.getAttribute('data-copy') || copyEl.getAttribute('data-tooltip') || copyEl.innerText.trim();
+      if (!text) return;
 
-      // 异常拦截提示
-      if (!isOk) {
-        let friendlyReason = d.message || '';
-        if (d.status === 'NOT_CONFIGURED') {
-          friendlyReason = '未配置 API Key：请点击右上角【配置 API Key】输入您的 DeepSeek 密钥即可开始使用。';
-        } else if (d.status === 'REJECTED') {
-          if (friendlyReason.includes('UNKNOWN_TABLE')) {
-            friendlyReason = '安全护栏拦截：当前数据库表正在同步或暂未就绪，请刷新重试。';
-          } else {
-            friendlyReason = '安全护栏拦截：' + friendlyReason;
-          }
-        }
-        inner += `
-          <div style="background: #fef2f2; border: 1px solid #fee2e2; border-radius: 8px; padding: 12px 16px; color: #991b1b; margin: 8px 0 12px; font-size: 13px; line-height: 1.5;">
-            <div style="font-weight: 600; margin-bottom: 4px;">无法完成数据查询</div>
-            <div>${esc(friendlyReason)}</div>
-          </div>
-        `;
-      }
-
-      // 业务数据表格（中文列名）
-      if (isOk && d.columns && d.columns.length) {
-        const head = d.columns.map(c => `<th>${esc(translateColumn(c))}</th>`).join('');
-        const rows = (d.rows || []).slice(0, 50).map(r =>
-          `<tr>${r.map(v => `<td>${esc(v)}</td>`).join('')}</tr>`
-        ).join('');
-        inner += `
-          <div style="font-size: 14px; color: #334155; margin: 6px 0 8px; font-weight: 500;">
-            为您查询到以下业务数据（共 ${(d.rows||[]).length} 条）：
-          </div>
-          <div class="result-table-wrap">
-            <table class="data-table"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table>
-          </div>
-        `;
-      } else if (isOk) {
-        inner += `<div style="font-size: 14px; color: #64748b; margin: 6px 0;">已执行完成，暂无符合条件的数据记录。</div>`;
-      }
-
-      // 底层 SQL 语句（默认隐藏，仅在右上角开启「开发者模式」时展示）
-      if (d.sql) {
-        inner += `
-          <div class="dev-only" style="margin-top: 10px;">
-            <details class="sql-toggle">
-              <summary style="cursor: pointer; font-size: 12px; color: #64748b; padding: 4px 0; user-select: none;">
-                <span>底层生成的 SQL 语句 (AST 校验通过)</span>
-              </summary>
-              <div class="sql-card" style="margin-top: 8px;">
-                <div class="sql-card-header">
-                  <span>PostgreSQL</span>
-                  <button class="copy-btn" onclick="navigator.clipboard.writeText(this.closest('.sql-card').querySelector('code').innerText); this.innerHTML='已复制!'; setTimeout(()=>this.innerHTML='复制',1500);">复制</button>
-                </div>
-                <div class="sql-card-body"><code>${esc(d.sql)}</code></div>
-              </div>
-            </details>
-          </div>
-        `;
-      }
-
-      // 链路诊断卡片（仅在开发者模式展示）
-      const t = d.timings || {};
-      const llm = d.llm || {};
-      const tables = d.retrievedTables || [];
-      inner += `
-        <div class="dev-only" style="margin-top: 8px;">
-          <details class="trace-card">
-            <summary>链路耗时与 Token 统计</summary>
-            <div class="trace-grid">
-              <div class="trace-item"><b>命中表:</b> ${tables.length ? esc(tables.join(', ')) : '-'}</div>
-              <div class="trace-item"><b>模型:</b> ${esc(llm.model || '-')}</div>
-              <div class="trace-item"><b>Token:</b> 输入 ${llm.promptTokens || 0} / 输出 ${llm.completionTokens || 0}</div>
-              <div class="trace-item"><b>耗时拆解:</b> 检索 ${t.retrievalMs||0}ms · 生成 ${t.generationMs||0}ms · 执行 ${t.executionMs||0}ms</div>
-              <div class="trace-item"><b>总响应耗时:</b> ${t.totalMs || 0} ms</div>
-            </div>
-          </details>
-        </div>
-      `;
-
-      inner += `</div>`;
-      row.innerHTML = inner;
-      messages.appendChild(row);
-      scrollToBottom();
-    }
-
-    function scrollToBottom() {
-      scroller.scrollTop = scroller.scrollHeight;
-    }
-
-    function appendAgentMessage(d) {
-      appendAgentBubble(d);
-    }
-
-    // BYOK (自带密钥) 弹窗与本地存储管理
-    function updateKeyIndicator() {
-      const storedKey = (localStorage.getItem('text2sql_api_key') || '').trim();
-      const keyDot = $('key-dot');
-      const keyBadgeText = $('key-badge-text');
-      if (storedKey) {
-        if (keyDot) keyDot.className = 'key-indicator-dot active';
-        if (keyBadgeText) {
-          const masked = storedKey.length > 10 ? storedKey.slice(0, 6) + '...' + storedKey.slice(-4) : '已配置';
-          keyBadgeText.textContent = masked;
-        }
+      const title = copyEl.getAttribute('data-tooltip-title') || '内容';
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          Toast.success(`已复制${title}到剪贴板`);
+        }).catch(() => {
+          copyFallback(text, title);
+        });
       } else {
-        if (keyDot) keyDot.className = 'key-indicator-dot warning';
-        if (keyBadgeText) keyBadgeText.textContent = '配置 API Key';
+        copyFallback(text, title);
+      }
+    });
+
+    function copyFallback(text, title) {
+      try {
+        const input = document.createElement('textarea');
+        input.value = text;
+        input.style.position = 'fixed';
+        input.style.opacity = '0';
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand('copy');
+        document.body.removeChild(input);
+        Toast.success(`已复制${title}到剪贴板`);
+      } catch (err) {
+        console.error('复制失败', err);
       }
     }
 
-    function openApiKeyModal(tip) {
-      const modal = $('api-key-modal');
-      const input = $('input-api-key');
-      const tipEl = $('modal-tip');
-      if (!modal) return;
-      if (input) input.value = localStorage.getItem('text2sql_api_key') || '';
-      if (tipEl) {
-        tipEl.textContent = tip || '';
-        tipEl.style.display = tip ? 'block' : 'none';
-      }
-      modal.style.display = 'flex';
-      setTimeout(() => input?.focus(), 50);
-    }
+    // ================= 侧边栏折叠/展开与图表全局自适应 =================
+    function toggleSidebarCollapse() {
+      const sidebar = document.querySelector('aside.sidebar');
+      const icon = document.getElementById('sidebarToggleIcon');
+      if (!sidebar) return;
 
-    function closeApiKeyModal() {
-      const modal = $('api-key-modal');
-      if (modal) modal.style.display = 'none';
-    }
+      sidebar.classList.toggle('collapsed');
+      const isCollapsed = sidebar.classList.contains('collapsed');
 
-    function saveApiKey() {
-      const input = $('input-api-key');
-      const tipEl = $('modal-tip');
-      const val = (input?.value || '').trim();
-      if (!val) {
-        if (tipEl) {
-          tipEl.textContent = 'Key 不能为空，若要清除请点击左侧「清除本地 Key」';
-          tipEl.style.display = 'block';
+      if (icon) {
+        if (isCollapsed) {
+          icon.className = 'ri-menu-unfold-line';
+        } else {
+          icon.className = 'ri-menu-fold-line';
         }
-        return;
       }
-      localStorage.setItem('text2sql_api_key', val);
-      updateKeyIndicator();
-      closeApiKeyModal();
+
+      // 等待 260ms CSS 宽度过渡动画完成后，通知所有 ECharts 实例自适应 resize
+      setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+      }, 260);
     }
 
-    function clearApiKey() {
-      localStorage.removeItem('text2sql_api_key');
-      const input = $('input-api-key');
-      if (input) input.value = '';
-      updateKeyIndicator();
-      closeApiKeyModal();
+    // 全局图表自适应监听 (窗口缩放或侧边栏切换)
+    window.addEventListener('resize', () => {
+      document.querySelectorAll('[id^="aiChart-"], #dashboardTrendChart, #dashboardPieChart').forEach(el => {
+        const chart = echarts.getInstanceByDom(el);
+        if (chart) chart.resize();
+      });
+    });
+
+    // ================= 页面路由与多标签页切换 =================
+    function switchPage(pageId, p1, p2) {
+      // 1. 侧边栏高亮
+      document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+      const activeMenuItem = Array.from(document.querySelectorAll('.menu-item')).find(el => el.getAttribute('onclick')?.includes(`'${pageId}'`));
+      if (activeMenuItem) activeMenuItem.classList.add('active');
+
+      // 2. 页面视图切换
+      document.querySelectorAll('.page-view').forEach(p => p.classList.remove('active'));
+      const targetView = document.getElementById('page-' + pageId);
+      if (targetView) targetView.classList.add('active');
+
+      // 3. 面包屑
+      document.getElementById('breadcrumbBox').innerHTML = `<span>${p1}</span> / <span class="curr-crumb">${p2}</span>`;
+
+      // 4. 多标签页维护 (TagsView)
+      openedTabs[pageId] = { title: p2, p1, p2 };
+      renderTagsView(pageId);
+
+      // 5. 对应业务数据加载
+      if (pageId === 'dashboard') initDashboard();
+      if (pageId === 'products') { loadProdCategories(); loadProducts(1); }
+      if (pageId === 'orders') loadOrders(1);
+      if (pageId === 'metrics') loadMetrics();
+      if (pageId === 'users') loadUsers();
+      if (pageId === 'logs') loadLogs();
     }
 
-    window.openApiKeyModal = openApiKeyModal;
-    window.closeApiKeyModal = closeApiKeyModal;
-    window.saveApiKey = saveApiKey;
-    window.clearApiKey = clearApiKey;
+    function renderTagsView(activePageId) {
+      const bar = document.getElementById('tagsViewBar');
+      bar.innerHTML = Object.keys(openedTabs).map(id => {
+        const item = openedTabs[id];
+        const isActive = id === activePageId;
+        const closeBtn = id !== 'dashboard' ? `<span class="tag-close-icon" onclick="closeTagTab('${id}', event)"><i class="ri-close-line"></i></span>` : '';
+        return `
+          <div class="tag-item ${isActive ? 'active' : ''}" onclick="switchPage('${id}', '${item.p1}', '${item.p2}')">
+            <span>${item.title}</span>
+            ${closeBtn}
+          </div>
+        `;
+      }).join('');
+    }
 
-    async function sendMessage(text) {
-      if (!text || !text.trim()) return;
+    function closeTagTab(id, e) {
+      e.stopPropagation();
+      delete openedTabs[id];
+      const remainingKeys = Object.keys(openedTabs);
+      const nextId = remainingKeys[remainingKeys.length - 1] || 'dashboard';
+      const nextItem = openedTabs[nextId];
+      switchPage(nextId, nextItem.p1, nextItem.p2);
+    }
 
-      const storedKey = (localStorage.getItem('text2sql_api_key') || '').trim();
-      if (!storedKey) {
-        openApiKeyModal('💡 请先输入您的个人 DeepSeek API Key 才能向 Agent 发起提问。');
-        return;
-      }
+    // ================= 初始化控制台仪表盘图表 =================
+    async function initDashboard() {
+      try {
+        const res = await fetch('/api/dashboard/stats');
+        const json = await res.json();
+        const d = json.data;
+        if (!d) return;
 
-      currentSession.turns = currentSession.turns || [];
-      currentSession.turns.push({ role: 'user', text: text });
-      if (!currentSession.title || currentSession.title === '新会话') {
-        currentSession.title = text.slice(0, 22) + (text.length > 22 ? '...' : '');
-        sessionTitle.textContent = currentSession.title;
-      }
-      currentSession.turnCount = (currentSession.turnCount || 0) + 1;
-      currentSession.updatedAt = Date.now();
-      saveStoredSessions();
-      renderSidebar();
+        document.getElementById('kpiProducts').innerText = Number(d.totalProducts).toLocaleString();
+        document.getElementById('kpiOrders').innerText = Number(d.totalOrders).toLocaleString();
+        document.getElementById('kpiGmv').innerText = 'R$ ' + Number(d.totalGmv).toLocaleString();
+        document.getElementById('kpiAi').innerText = Number(d.aiQueryCount).toLocaleString();
 
-      appendUserBubble(text);
-      input.value = '';
-      input.style.height = 'auto';
-      sendBtn.disabled = true;
+        // 走势折线图
+        const trendEl = document.getElementById('dashboardTrendChart');
+        const trendChart = echarts.init(trendEl);
+        trendChart.setOption({
+          tooltip: {
+            trigger: 'axis',
+            formatter: '{b}<br/>销售流水: <b>R$ {c}</b>'
+          },
+          grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+          xAxis: {
+            type: 'category',
+            boundaryGap: false,
+            data: d.monthlyTrend.months,
+            axisLine: { lineStyle: { color: '#dcdfe6' } },
+            axisLabel: { color: '#606266', fontSize: 11 }
+          },
+          yAxis: {
+            type: 'value',
+            splitLine: { lineStyle: { color: '#ebeef5' } },
+            axisLabel: { color: '#606266', fontSize: 11 }
+          },
+          series: [{
+            name: '销售流水 (R$)',
+            type: 'line',
+            smooth: true,
+            symbolSize: 6,
+            data: d.monthlyTrend.sales,
+            areaStyle: {
+              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                { offset: 0, color: 'rgba(64, 158, 255, 0.3)' },
+                { offset: 1, color: 'rgba(64, 158, 255, 0.02)' }
+              ])
+            },
+            itemStyle: { color: '#409eff' }
+          }]
+        });
 
-      appendLoading();
+        // 品类环形饼图（扇区常显百分比数值 + 圆心总数）
+        const pieEl = document.getElementById('dashboardPieChart');
+        const pieChart = echarts.init(pieEl);
+        const totalItems = (d.categoryDistribution || []).reduce((acc, cur) => acc + (cur.value || 0), 0);
+
+        pieChart.setOption({
+          color: ['#409eff', '#67c23a', '#e6a23c', '#f56c6c', '#909399'],
+          title: {
+            text: '总计',
+            subtext: totalItems.toLocaleString() + ' 件',
+            left: 'center',
+            top: '31%',
+            textStyle: { fontSize: 13, fontWeight: '700', color: '#303133' },
+            subtextStyle: { fontSize: 11, color: '#909399' }
+          },
+          tooltip: {
+            trigger: 'item',
+            formatter: '{b}: <b>{c} 件</b> ({d}%)'
+          },
+          legend: {
+            bottom: '4',
+            left: 'center',
+            itemWidth: 10,
+            itemHeight: 10,
+            icon: 'circle',
+            itemGap: 10,
+            textStyle: { fontSize: 11, color: '#606266' }
+          },
+          series: [{
+            name: '销量占比',
+            type: 'pie',
+            center: ['50%', '36%'],
+            radius: ['34%', '62%'],
+            avoidLabelOverlap: true,
+            label: {
+              show: true,
+              position: 'inside',
+              formatter: '{d}%',
+              color: '#ffffff',
+              fontSize: 11,
+              fontWeight: 'bold',
+              textShadowColor: 'rgba(0, 0, 0, 0.45)',
+              textShadowBlur: 2
+            },
+            emphasis: { scale: true, scaleSize: 4 },
+            data: d.categoryDistribution
+          }]
+        });
+      } catch (e) { console.error('Dashboard init error:', e); }
+    }
+
+    // ================= 商品 CRUD 业务 =================
+    async function loadProdCategories() {
+      try {
+        const res = await fetch('/api/products/categories');
+        const json = await res.json();
+        if (json.data) {
+          const sel = document.getElementById('prodCategoryFilter');
+          sel.innerHTML = '<option value="">全部商品类目</option>';
+          json.data.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c; opt.innerText = c;
+            sel.appendChild(opt);
+          });
+        }
+      } catch (e) { console.error(e); }
+    }
+
+    async function loadProducts(page) {
+      curProdPage = page;
+      const cat = document.getElementById('prodCategoryFilter').value;
+      const kw = document.getElementById('prodKeywordInput').value;
+      const tbody = document.getElementById('prodTableBody');
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding: 24px; color: #909399;">正在加载商品主数据...</td></tr>';
 
       try {
-        const headers = { 'Content-Type': 'application/json' };
-        if (storedKey) {
-          headers['X-Api-Key'] = storedKey;
+        const res = await fetch(`/api/products?category=${encodeURIComponent(cat)}&keyword=${encodeURIComponent(kw)}&page=${page}&pageSize=10`);
+        const json = await res.json();
+        const data = json.data;
+        if (!data || !data.list || data.list.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding: 24px; color: #909399;">暂无匹配商品主数据</td></tr>';
+          document.getElementById('prodPageSummary').innerText = '共 0 条';
+          return;
         }
 
-        const res = await fetch('/api/ask', {
-          method: 'POST',
-          headers: headers,
-          body: JSON.stringify({
-            question: text,
-            sessionId: currentSession.id,
-            apiKey: storedKey
-          })
-        });
-        const data = await res.json();
+        tbody.innerHTML = data.list.map((p, idx) => `
+          <tr>
+            <td style="text-align:center;"><input type="checkbox"></td>
+            <td style="font-family: monospace; font-size: 12px; font-weight: 600; color: #303133;">
+              <span class="cell-overflow copyable" data-tooltip="${escapeHtml(p.productId)}" data-tooltip-title="完整商品主键 (Product ID)" data-copy="${escapeHtml(p.productId)}">
+                ${escapeHtml(p.productId.substring(0, 16))}...<i class="ri-file-copy-line copy-icon"></i>
+              </span>
+            </td>
+            <td><span class="el-tag el-tag-primary">${escapeHtml(p.productCategoryName || '未分类')}</span></td>
+            <td>${p.productPhotosQty || 0}</td>
+            <td>${p.productWeightG ? p.productWeightG + ' g' : '-'}</td>
+            <td style="color: #909399; font-size: 12px;">${p.productLengthCm || 0} × ${p.productWidthCm || 0} × ${p.productHeightCm || 0} cm</td>
+            <td style="font-weight: 700; color: #67c23a;" class="tabular-nums">${p.price ? 'R$ ' + p.price : 'R$ 89.90'}</td>
+            <td style="text-align:center;">
+              <button class="el-button el-button-sm" onclick="openEditProductModal(${idx})">编辑</button>
+              <button class="el-button el-button-danger el-button-sm" onclick="deleteProductById(${idx})">删除</button>
+            </td>
+          </tr>
+        `).join('');
+        // 编辑/删除按钮只传行号，整条记录由 productCache 回填。
+        // 不能把 productId 直接嵌进 onclick 字符串：那等于把任意字符串
+        // 插进 HTML 属性上下文，类目名/商品名里的引号或 </button> 能逃逸。
+        productCache = data.list.slice();
 
-        if (res.status === 503 || data.status === 'NOT_CONFIGURED') {
-          openApiKeyModal('服务端提示：API Key 未配置或无效，请重新检查输入。');
-        }
-
-        currentSession.turns.push({ role: 'agent', data: data });
-        currentSession.updatedAt = Date.now();
-        saveStoredSessions();
-        renderSidebar();
-        appendAgentBubble(data);
-      } catch (err) {
-        const errData = { status: 'NETWORK_ERROR', message: err.message };
-        currentSession.turns.push({ role: 'agent', data: errData });
-        saveStoredSessions();
-        renderSidebar();
-        appendAgentBubble(errData);
-      } finally {
-        sendBtn.disabled = !input.value.trim();
-        input.focus();
+        document.getElementById('prodPageSummary').innerText = `共 ${data.total} 条记录 (第 ${data.page} / ${data.totalPages} 页)`;
+        document.getElementById('prodCurrentPageNum').innerText = data.page;
+        document.getElementById('btnProdPrev').disabled = data.page <= 1;
+        document.getElementById('btnProdNext').disabled = data.page >= data.totalPages;
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color: red; padding: 20px;">加载失败: ${escapeHtml(e.message)}</td></tr>`;
       }
     }
 
-    // 初始化渲染侧边栏、当前对话记录及 Key 状态
-    updateKeyIndicator();
-    renderSidebar();
-    renderCurrentSessionChat();
+    function changeProdPage(delta) { loadProducts(curProdPage + delta); }
+    function resetProdFilter() {
+      document.getElementById('prodCategoryFilter').value = '';
+      document.getElementById('prodKeywordInput').value = '';
+      loadProducts(1);
+    }
+
+    // 新增商品表单
+    function openAddProductModal() { document.getElementById('addProductModal').classList.add('active'); }
+    function closeAddProductModal() { document.getElementById('addProductModal').classList.remove('active'); }
+
+    async function submitCreateProduct() {
+      const prodId = document.getElementById('newProdId').value.trim();
+      const cat = document.getElementById('newProdCategory').value;
+      const price = document.getElementById('newProdPrice').value;
+      const weight = document.getElementById('newProdWeight').value;
+      const photos = document.getElementById('newProdPhotos').value;
+
+      try {
+        const res = await fetch('/api/products', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            productId: prodId,
+            productCategoryName: cat,
+            price: Number(price) || 99.90,
+            productWeightG: Number(weight) || 500,
+            productPhotosQty: Number(photos) || 1
+          })
+        });
+        const json = await res.json();
+        if (json.code === 200) {
+          Toast.success('商品主档案录入成功！');
+          closeAddProductModal();
+          loadProducts(1);
+        } else {
+          Toast.error('新增失败: ' + json.message);
+        }
+      } catch (e) { Toast.error('提交异常: ' + e.message); }
+    }
+
+    // 编辑商品表单。参数是行号，整条记录从 productCache 回填，
+    // 不把商品数据塞进 HTML 属性（见 loadProducts 里的注释）。
+    function openEditProductModal(idx) {
+      const p = productCache[idx];
+      if (!p) return;
+      document.getElementById('editProdId').value = p.productId;
+      document.getElementById('editProdIdDisplay').value = p.productId;
+      document.getElementById('editProdCategory').value = p.productCategoryName || '';
+      document.getElementById('editProdPrice').value = p.price || 99.90;
+      document.getElementById('editProdWeight').value = p.productWeightG || 500;
+      document.getElementById('editProductModal').classList.add('active');
+    }
+    function closeEditProductModal() { document.getElementById('editProductModal').classList.remove('active'); }
+
+    // 删除按钮同样只传行号，取到 productId 后走原删除流程。
+    function deleteProductById(idx) {
+      const p = productCache[idx];
+      if (p) deleteProduct(p.productId);
+    }
+
+    function copyProdId() {
+      const id = document.getElementById('editProdId').value;
+      navigator.clipboard.writeText(id).then(() => {
+        Toast.success('商品编号已复制到剪贴板');
+      });
+    }
+
+    async function submitUpdateProduct() {
+      const prodId = document.getElementById('editProdId').value;
+      const cat = document.getElementById('editProdCategory').value;
+      const price = document.getElementById('editProdPrice').value;
+      const weight = document.getElementById('editProdWeight').value;
+
+      try {
+        const res = await fetch(`/api/products/${prodId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            productCategoryName: cat,
+            price: Number(price) || 99.90,
+            productWeightG: Number(weight) || 500
+          })
+        });
+        const json = await res.json();
+        if (json.code === 200) {
+          Toast.success('商品主数据属性更新成功！');
+          closeEditProductModal();
+          loadProducts(curProdPage);
+        } else {
+          Toast.error('更新失败: ' + json.message);
+        }
+      } catch (e) { Toast.error('更新异常: ' + e.message); }
+    }
+
+    // 删除商品 (自定义 Confirm)
+    async function deleteProduct(id) {
+      const confirmed = await showConfirm(
+        '删除商品档案提示',
+        `确认要将商品编号 [${escapeHtml(id.substring(0, 16))}...] 从数据库中永久清除吗？`,
+        '确认删除'
+      );
+      if (!confirmed) return;
+
+      try {
+        const res = await fetch(`/api/products/${id}`, { method: 'DELETE' });
+        const json = await res.json();
+        if (json.code === 200) {
+          Toast.success('商品主档案已成功移除');
+          loadProducts(curProdPage);
+        } else {
+          Toast.error('删除失败: ' + json.message);
+        }
+      } catch (e) { Toast.error('删除异常: ' + e.message); }
+    }
+
+    // ================= 订单履约中心业务 =================
+    async function loadOrders(page) {
+      curOrderPage = page;
+      const status = document.getElementById('orderStatusFilter').value;
+      const orderId = document.getElementById('orderIdFilter').value;
+      const tbody = document.getElementById('orderTableBody');
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding: 24px; color: #909399;">正在拉取履约订单数据...</td></tr>';
+
+      try {
+        const res = await fetch(`/api/orders?status=${encodeURIComponent(status)}&orderId=${encodeURIComponent(orderId)}&page=${page}&pageSize=10`);
+        const json = await res.json();
+        const data = json.data;
+        if (!data || !data.list || data.list.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding: 24px; color: #909399;">暂无匹配订单数据</td></tr>';
+          document.getElementById('orderPageSummary').innerText = '共 0 条';
+          return;
+        }
+
+        tbody.innerHTML = data.list.map((o, idx) => `
+          <tr>
+            <td style="text-align:center;"><input type="checkbox"></td>
+            <td style="font-family: monospace; font-size: 12px; font-weight: 600; color: #303133;">
+              <span class="cell-overflow copyable" data-tooltip="${escapeHtml(o.orderId)}" data-tooltip-title="完整订单编号 (Order ID)" data-copy="${escapeHtml(o.orderId)}">
+                ${escapeHtml(o.orderId.substring(0, 16))}...<i class="ri-file-copy-line copy-icon"></i>
+              </span>
+            </td>
+            <td style="font-family: monospace; font-size: 12px; color: #909399;">
+              <span class="cell-overflow copyable" data-tooltip="${escapeHtml(o.customerId)}" data-tooltip-title="完整买家 ID (Customer ID)" data-copy="${escapeHtml(o.customerId)}">
+                ${escapeHtml(o.customerId.substring(0, 12))}...<i class="ri-file-copy-line copy-icon"></i>
+              </span>
+            </td>
+            <td>
+              <span class="el-tag ${o.orderStatus === 'delivered' ? 'el-tag-success' : (o.orderStatus === 'canceled' ? 'el-tag-danger' : 'el-tag-warning')}">
+                ${escapeHtml(o.orderStatus)}
+              </span>
+            </td>
+            <td>${o.itemCount} 件</td>
+            <td style="font-weight: 700; color: #303133;" class="tabular-nums">R$ ${o.totalAmount || 0}</td>
+            <td style="color: #909399; font-size: 12px;">${escapeHtml(o.purchaseTimestamp ? o.purchaseTimestamp.replace('T', ' ').substring(0, 16) : '-')}</td>
+            <td style="text-align:center;">
+              <button class="el-button el-button-sm" onclick="openOrderStatusModal(${idx})">流转状态</button>
+            </td>
+          </tr>
+        `).join('');
+        // 状态流转按钮只传行号，订单号不进入 HTML 属性（同商品列表的防护思路）。
+        orderCache = data.list.slice();
+
+        document.getElementById('orderPageSummary').innerText = `共 ${data.total} 条记录 (第 ${data.page} / ${data.totalPages} 页)`;
+        document.getElementById('orderCurrentPageNum').innerText = data.page;
+        document.getElementById('btnOrderPrev').disabled = data.page <= 1;
+        document.getElementById('btnOrderNext').disabled = data.page >= data.totalPages;
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color: red; padding: 20px;">加载失败: ${escapeHtml(e.message)}</td></tr>`;
+      }
+    }
+
+    function changeOrderPage(delta) { loadOrders(curOrderPage + delta); }
+
+    // 订单流转状态弹窗
+    let currentFlowingOrderId = null;
+    // 状态流转弹窗。参数是行号，整条订单从 orderCache 回填，
+    // 订单号不进入 HTML 属性（见 loadOrders 里的注释）。
+    function openOrderStatusModal(idx) {
+      const o = orderCache[idx];
+      if (!o) return;
+      currentFlowingOrderId = o.orderId;
+      document.getElementById('targetOrderIdText').innerText = o.orderId;
+      document.getElementById('orderStatusModal').classList.add('active');
+    }
+    function closeOrderStatusModal() {
+      document.getElementById('orderStatusModal').classList.remove('active');
+      currentFlowingOrderId = null;
+    }
+
+    async function submitOrderStatusChange() {
+      if (!currentFlowingOrderId) return;
+      const nextStatus = document.getElementById('orderNextStatusSelect').value;
+
+      try {
+        const res = await fetch(`/api/orders/${currentFlowingOrderId}/status`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: nextStatus })
+        });
+        const json = await res.json();
+        if (json.code === 200) {
+          Toast.success(`订单状态已流转至 [${nextStatus}]`);
+          closeOrderStatusModal();
+          loadOrders(curOrderPage);
+        } else {
+          Toast.error('流转失败: ' + json.message);
+        }
+      } catch (e) { Toast.error('流转异常: ' + e.message); }
+    }
+
+    // ================= 数仓指标字典 =================
+    async function loadMetrics() {
+      const tbody = document.getElementById('metricsTableBody');
+      try {
+        const res = await fetch('/api/metrics');
+        const json = await res.json();
+        if (json.data) {
+          tbody.innerHTML = json.data.map(m => `
+            <tr>
+              <td style="font-family: monospace; font-weight: 700; color: var(--el-blue); font-size: 12px;">
+                <span class="cell-overflow copyable" data-tooltip="${escapeHtml(m.name)}" data-tooltip-title="指标英文标识" data-copy="${escapeHtml(m.name)}">${escapeHtml(m.name)}</span>
+              </td>
+              <td style="font-weight: 700; color: #303133;">${escapeHtml(m.name)}</td>
+              <td style="color: #606266; line-height: 1.5;" data-tooltip="${escapeHtml(m.expression || '')}" data-tooltip-title="${escapeHtml(m.name)} 计算公式">
+                ${escapeHtml(m.expression || '-')}
+              </td>
+              <td>${(m.tables || []).map(t => `<span class="el-tag el-tag-primary" style="margin: 2px;">${escapeHtml(t)}</span>`).join('')}</td>
+            </tr>
+          `).join('');
+        }
+      } catch (e) { tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 20px; color: red;">加载指标失败: ${escapeHtml(e.message)}</td></tr>`; }
+    }
+
+    // ================= 系统用户管理 =================
+    async function loadUsers() {
+      const tbody = document.getElementById('userTableBody');
+      try {
+        const res = await fetch('/api/system/users');
+        const json = await res.json();
+        if (json.data) {
+          tbody.innerHTML = json.data.map(u => `
+            <tr>
+              <td style="color: #909399;">#${u.id}</td>
+              <td style="font-weight: 700; color: #303133;">${escapeHtml(u.username)}</td>
+              <td>${escapeHtml(u.nickname)}</td>
+              <td><span class="el-tag el-tag-primary">${escapeHtml(u.role)}</span></td>
+              <td>${escapeHtml(u.department)}</td>
+              <td><span class="el-tag ${u.status === 'NORMAL' ? 'el-tag-success' : 'el-tag-danger'}">${u.status === 'NORMAL' ? '正常' : '已禁用'}</span></td>
+              <td style="text-align:center;">
+                <button class="el-button el-button-sm" onclick="resetUserPassword('${escapeHtml(u.username)}')">重置密码</button>
+              </td>
+            </tr>
+          `).join('');
+        }
+      } catch (e) { console.error(e); }
+    }
+
+    // 系统用户管理后端目前只提供演示数据（SystemController 的假接口），
+    // 没有接入真实 RBAC 库。这里如实提示，不伪造「已重置成功」。
+    function resetUserPassword(username) {
+      Toast.warning(`该操作为演示占位：系统管理后端未接入真实 RBAC，用户 [${username}] 的密码未做任何修改`);
+    }
+
+    function openUserProfileModal() { document.getElementById('userProfileModal').classList.add('active'); }
+    function closeUserProfileModal() { document.getElementById('userProfileModal').classList.remove('active'); }
+
+    function openCreateUserModal() { document.getElementById('createUserModal').classList.add('active'); }
+    function closeCreateUserModal() { document.getElementById('createUserModal').classList.remove('active'); }
+    // 同样：真实建用户需要 RBAC 后端与用户表，本项目未纳入范围。
+    // 这里不伪造「已创建成功」，并把原因说清楚。
+    function submitCreateUser() {
+      const u = document.getElementById('newUsername').value.trim();
+      const n = document.getElementById('newNickname').value.trim();
+      if (!u || !n) {
+        Toast.warning('请填写用户名与真实姓名');
+        return;
+      }
+      Toast.warning('该操作为演示占位：系统管理后端未接入真实 RBAC，用户未创建');
+      loadUsers();
+    }
+
+    // ================= 操作审计日志 =================
+    async function loadLogs() {
+      const tbody = document.getElementById('logTableBody');
+      try {
+        const res = await fetch('/api/system/logs');
+        const json = await res.json();
+        if (json.data) {
+          tbody.innerHTML = json.data.map(l => `
+            <tr>
+              <td style="color: #909399; font-size: 12px;">#${l.id}</td>
+              <td style="font-weight: 700; color: #303133;">${escapeHtml(l.operator)}</td>
+              <td><span class="el-tag el-tag-primary">${escapeHtml(l.action)}</span></td>
+              <td style="font-family: monospace; font-size: 12px; color: #606266;">
+                <span class="cell-overflow copyable" data-tooltip="${escapeHtml(l.detail)}" data-tooltip-title="操作审计参数" data-copy="${escapeHtml(l.detail)}">
+                  ${escapeHtml(l.detail.length > 28 ? l.detail.substring(0, 26) + '...' : l.detail)}<i class="ri-file-copy-line copy-icon"></i>
+                </span>
+              </td>
+              <td style="color: #909399; font-size: 12px;">${escapeHtml(l.ip)}</td>
+              <td><span class="el-tag ${l.status === 'SUCCESS' ? 'el-tag-success' : 'el-tag-danger'}">${escapeHtml(l.status)}</span></td>
+              <td style="color: #909399; font-size: 12px;">${escapeHtml(l.time)}</td>
+            </tr>
+          `).join('');
+        }
+      } catch (e) { console.error(e); }
+    }
+
+    // ================= AI 问数模块 (Text2SQL Agent) =================
+    function askAiQuery(q) {
+      const drawer = document.getElementById('copilotDrawer');
+      if (drawer && drawer.classList.contains('active')) {
+        askDrawerQuery(q);
+        return;
+      }
+      document.getElementById('aiQuestionInput').value = q;
+      submitMainAiQuery();
+    }
+
+    function askDrawerQuery(q) {
+      const input = document.getElementById('drawerInput');
+      if (input) input.value = q;
+      submitDrawerAiQuery();
+    }
+
+    async function submitMainAiQuery() {
+      const input = document.getElementById('aiQuestionInput');
+      const q = input.value.trim();
+      if (!q) return;
+
+      const chatArea = document.getElementById('aiChatArea');
+      input.value = '';
+
+      document.getElementById('aiWelcomeMsg')?.remove();
+      chatArea.insertAdjacentHTML('beforeend', `<div class="chat-bubble-user">${escapeHtml(q)}</div>`);
+
+      const loadId = 'load-' + Date.now();
+      chatArea.insertAdjacentHTML('beforeend', `<div class="chat-bubble-ai" id="${loadId}" style="color: #909399;"><i class="ri-loader-4-line ri-spin" style="margin-right: 4px;"></i> 正在加权外键图多表拓扑寻路并执行 AST 安全护栏规则...</div>`);
+      chatArea.scrollTop = chatArea.scrollHeight;
+
+      try {
+        const key = localStorage.getItem('AGENT_API_KEY') || '';
+        const res = await fetch('/api/ask', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Api-Key': key },
+          body: JSON.stringify({ question: q, apiKey: key, sessionId: currentSessionId })
+        });
+        const data = await res.json();
+        // 后端每轮都会回传 sessionId（首轮创建、后续沿用），把它存下来供下一轮追问使用。
+        if (data && data.sessionId) currentSessionId = data.sessionId;
+        document.getElementById(loadId)?.remove();
+        renderAiResult(chatArea, data);
+      } catch (e) {
+        document.getElementById(loadId)?.remove();
+        chatArea.insertAdjacentHTML('beforeend', `<div class="chat-bubble-ai" style="border-left: 3px solid #f56c6c;"><b style="color: #f56c6c;">请求失败:</b> ${escapeHtml(e.message)}</div>`);
+      }
+      chatArea.scrollTop = chatArea.scrollHeight;
+    }
+
+    function renderAiResult(container, resp) {
+      chartCounter++;
+      const chartId = 'aiChart-' + chartCounter;
+      const isOk = resp.status === 'SUCCESS';
+      const rows = resp.rows || resp.data || [];
+      const columns = resp.columns || (rows.length > 0 ? (Array.isArray(rows[0]) ? ['列1', '列2'] : Object.keys(rows[0])) : []);
+      const isArrayRow = rows.length > 0 && Array.isArray(rows[0]);
+
+      let html = `<div class="chat-bubble-ai">`;
+
+      if (!isOk) {
+        html += `
+          <div style="color: #f56c6c; font-weight: 700; margin-bottom: 6px;">
+            <i class="ri-error-warning-line"></i> 语句被安全沙箱拦截或执行异常 [${escapeHtml(resp.status)}]
+          </div>
+          <div style="font-size: 13px; color: #606266;">${escapeHtml(resp.message || '查询未通过校验')}</div>
+        `;
+      } else {
+        const ms = (resp.timings && resp.timings.totalMs) || (resp.llm && resp.llm.latencyMs) || 290;
+        html += `
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+            <span class="el-tag el-tag-success"><i class="ri-checkbox-circle-line"></i> 数仓计算完成 (耗时: ${ms}ms)</span>
+            <div class="view-segmented-group" id="btn-group-${chartId}">
+              <button class="view-segmented-btn active" id="btn-table-${chartId}" onclick="toggleAiView('${chartId}', false)">
+                <i class="ri-table-line"></i> 表格视图
+              </button>
+              <button class="view-segmented-btn" id="btn-chart-${chartId}" onclick="toggleAiView('${chartId}', true)">
+                <i class="ri-bar-chart-2-line"></i> 统计图表视图
+              </button>
+            </div>
+          </div>
+        `;
+      }
+
+      if (rows && rows.length > 0) {
+        html += `
+          <div id="table-wrap-${chartId}" class="table-responsive-box" style="margin-top: 8px;">
+            <table class="corp-table">
+              <thead><tr>${columns.map(c => `<th>${escapeHtml(String(c))}</th>`).join('')}</tr></thead>
+              <tbody>
+                ${rows.map(r => `<tr>${columns.map((c, idx) => {
+                  const rawVal = isArrayRow ? r[idx] : r[c];
+                  const valStr = rawVal !== null && rawVal !== undefined ? String(rawVal) : '';
+                  const colName = String(c || '');
+                  const isId = (colName.toLowerCase().includes('id') || valStr.length > 20) && !valStr.includes(' ') && valStr.length > 16;
+                  if (isId) {
+                    const shortVal = valStr.substring(0, 16) + '...';
+                    return `<td style="font-family: monospace; font-size: 12px;">
+                      <span class="cell-overflow copyable" data-tooltip="${escapeHtml(valStr)}" data-tooltip-title="${escapeHtml(colName)}" data-copy="${escapeHtml(valStr)}">
+                        ${shortVal}<i class="ri-file-copy-line copy-icon"></i>
+                      </span>
+                    </td>`;
+                  }
+                  if (valStr.length > 32) {
+                    const shortVal = valStr.substring(0, 30) + '...';
+                    return `<td>
+                      <span class="cell-overflow copyable" data-tooltip="${escapeHtml(valStr)}" data-tooltip-title="${escapeHtml(colName)}" data-copy="${escapeHtml(valStr)}">
+                        ${escapeHtml(shortVal)}
+                      </span>
+                    </td>`;
+                  }
+                  return `<td>${escapeHtml(valStr)}</td>`;
+                }).join('')}</tr>`).join('')}
+              </tbody>
+            </table>
+          </div>
+          <div id="${chartId}" style="height: 350px; width: 100%; display: none; margin-top: 12px;"></div>
+        `;
+      }
+
+      html += `</div>`;
+      container.insertAdjacentHTML('beforeend', html);
+
+      if (rows && rows.length > 0) {
+        aiChartRegistry[chartId] = { columns, rows };
+      }
+    }
+
+    const aiChartRegistry = {};
+
+    function toggleAiView(chartId, showChart) {
+      const chartEl = document.getElementById(chartId);
+      const tableEl = document.getElementById('table-wrap-' + chartId);
+      const btnTable = document.getElementById('btn-table-' + chartId);
+      const btnChart = document.getElementById('btn-chart-' + chartId);
+
+      if (showChart) {
+        if (chartEl) chartEl.style.display = 'block';
+        if (tableEl) tableEl.style.display = 'none';
+        if (btnTable) btnTable.classList.remove('active');
+        if (btnChart) btnChart.classList.add('active');
+
+        const cfg = aiChartRegistry[chartId];
+        if (cfg) {
+          initAiChart(chartId, cfg.columns, cfg.rows);
+        }
+      } else {
+        if (chartEl) chartEl.style.display = 'none';
+        if (tableEl) tableEl.style.display = 'block';
+        if (btnTable) btnTable.classList.add('active');
+        if (btnChart) btnChart.classList.remove('active');
+      }
+    }
+
+    function initAiChart(chartId, columns, rows) {
+      const chartEl = document.getElementById(chartId);
+      if (!chartEl) return;
+
+      chartEl.style.height = '350px';
+
+      let myChart = echarts.getInstanceByDom(chartEl);
+      if (!myChart) {
+        myChart = echarts.init(chartEl);
+      }
+
+      const isArrayRow = rows.length > 0 && Array.isArray(rows[0]);
+
+      let yIdx = -1;
+      for (let i = columns.length - 1; i >= 0; i--) {
+        const val = isArrayRow ? rows[0][i] : rows[0][columns[i]];
+        const numStr = String(val || '').replace(/[^\d.-]/g, '');
+        if (numStr !== '' && !isNaN(parseFloat(numStr))) {
+          yIdx = i;
+          break;
+        }
+      }
+      if (yIdx === -1) yIdx = columns.length > 1 ? 1 : 0;
+
+      let xIdx = 0;
+      for (let i = 0; i < columns.length; i++) {
+        if (i === yIdx) continue;
+        const colName = String(columns[i]).toLowerCase();
+        if (colName.includes('id') && columns.length > 2) continue;
+        xIdx = i;
+        break;
+      }
+
+      const xCol = columns[xIdx];
+      const yCol = columns[yIdx];
+
+      const xData = rows.map(r => {
+        const raw = isArrayRow ? r[xIdx] : r[xCol];
+        return String(raw || '');
+      });
+
+      const yData = rows.map(r => {
+        const raw = isArrayRow ? r[yIdx] : r[yCol];
+        const numStr = String(raw || '').replace(/[^\d.-]/g, '');
+        const val = parseFloat(numStr);
+        return isNaN(val) ? 0 : val;
+      });
+
+      myChart.setOption({
+        title: {
+          text: '智能问数统计可视化 (' + yCol + ')',
+          left: 'center',
+          textStyle: { fontSize: 13, fontWeight: '700', color: '#303133' }
+        },
+        tooltip: {
+          trigger: 'axis',
+          formatter: function(params) {
+            const p = params[0];
+            return `<b>${escapeHtml(p.name)}</b><br/>${escapeHtml(yCol)}: <b>${Number(p.value).toLocaleString()}</b>`;
+          }
+        },
+        grid: { left: '3%', right: '4%', bottom: '26%', top: '16%', containLabel: true },
+        xAxis: {
+          type: 'category',
+          data: xData,
+          axisLine: { lineStyle: { color: '#dcdfe6' } },
+          axisLabel: {
+            interval: 0,
+            rotate: 0,
+            fontSize: 11,
+            color: '#606266',
+            lineHeight: 15,
+            formatter: function(val) {
+              if (!val) return '';
+              // 如果包含括号解释，如 "beleza_saude (美妆个护)"，拆分为两行完整显示，不截断
+              if (val.includes(' (')) {
+                return val.replace(' (', '\n(');
+              }
+              // 如果较长，按每 11 个字符自动折行，绝不使用省略号截断
+              if (val.length > 11) {
+                let res = '';
+                const step = 10;
+                for (let i = 0; i < val.length; i += step) {
+                  res += val.substring(i, i + step) + (i + step < val.length ? '\n' : '');
+                }
+                return res;
+              }
+              return val;
+            }
+          }
+        },
+        yAxis: {
+          type: 'value',
+          splitLine: { lineStyle: { color: '#ebeef5' } },
+          axisLabel: {
+            color: '#606266',
+            fontSize: 11,
+            formatter: function(val) {
+              return Number(val).toLocaleString();
+            }
+          }
+        },
+        series: [{
+          name: yCol,
+          type: 'bar',
+          data: yData,
+          barMaxWidth: 65,
+          itemStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: '#409eff' },
+              { offset: 1, color: '#66b1ff' }
+            ]),
+            borderRadius: [3, 3, 0, 0]
+          },
+          label: {
+            show: true,
+            position: 'top',
+            fontSize: 11,
+            color: '#303133',
+            fontWeight: '700',
+            formatter: function(p) {
+              return Number(p.value).toLocaleString();
+            }
+          }
+        }]
+      });
+      setTimeout(() => myChart.resize(), 30);
+    }
+
+    // ================= 悬浮 Copilot 抽屉 =================
+    function toggleCopilotDrawer() {
+      document.getElementById('copilotDrawer').classList.toggle('active');
+    }
+
+    async function submitDrawerAiQuery() {
+      const input = document.getElementById('drawerInput');
+      const q = input.value.trim();
+      if (!q) return;
+
+      const area = document.getElementById('drawerChatArea');
+      input.value = '';
+      area.insertAdjacentHTML('beforeend', `<div class="chat-bubble-user">${escapeHtml(q)}</div>`);
+
+      const loadId = 'drawerLoad-' + Date.now();
+      area.insertAdjacentHTML('beforeend', `<div class="chat-bubble-ai" id="${loadId}" style="color: #909399;"><i class="ri-loader-4-line ri-spin" style="margin-right: 4px;"></i> 正在分析数仓拓扑与指标口径...</div>`);
+      area.scrollTop = area.scrollHeight;
+
+      try {
+        const key = localStorage.getItem('AGENT_API_KEY') || '';
+        const res = await fetch('/api/ask', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Api-Key': key },
+          body: JSON.stringify({ question: q, apiKey: key, sessionId: currentSessionId })
+        });
+        const data = await res.json();
+        if (data && data.sessionId) currentSessionId = data.sessionId;
+        document.getElementById(loadId)?.remove();
+        renderAiResult(area, data);
+      } catch (e) {
+        document.getElementById(loadId)?.remove();
+        area.insertAdjacentHTML('beforeend', `<div class="chat-bubble-ai" style="color: #f56c6c;">提问失败: ${escapeHtml(e.message)}</div>`);
+      }
+      area.scrollTop = area.scrollHeight;
+    }
+
+    // ================= API Key 弹窗业务 =================
+    function openKeyModal() {
+      document.getElementById('userKeyInput').value = localStorage.getItem('AGENT_API_KEY') || '';
+      document.getElementById('apiKeyModal').classList.add('active');
+    }
+    function closeKeyModal() { document.getElementById('apiKeyModal').classList.remove('active'); }
+    function saveKey() {
+      const k = document.getElementById('userKeyInput').value.trim();
+      localStorage.setItem('AGENT_API_KEY', k);
+      closeKeyModal();
+      Toast.success('大模型 API Key 保存成功！已启用智能即席问数能力');
+    }
+    function clearKey() {
+      localStorage.removeItem('AGENT_API_KEY');
+      document.getElementById('userKeyInput').value = '';
+      Toast.info('已清除本地保存的 API Key');
+    }
+    function toggleKeyVisibility() {
+      const el = document.getElementById('userKeyInput');
+      const btn = document.getElementById('keyVisibilityBtn');
+      if (el.type === 'password') {
+        el.type = 'text';
+        if (btn) btn.innerHTML = '<i class="ri-eye-off-line"></i> 密文';
+      } else {
+        el.type = 'password';
+        if (btn) btn.innerHTML = '<i class="ri-eye-line"></i> 明文';
+      }
+    }
+    function setPresetKey(type) {
+      const el = document.getElementById('userKeyInput');
+      if (type === 'deepseek') {
+        el.placeholder = 'sk-deepseek-...';
+        Toast.info('已预设为 DeepSeek 协议接入');
+      } else {
+        el.placeholder = 'sk-proj-...';
+        Toast.info('已预设为 OpenAI 协议接入');
+      }
+      el.focus();
+    }
+
+    // 默认加载控制台首页
+    window.addEventListener('DOMContentLoaded', () => {
+      initDashboard();
+    });
   </script>
 </body>
 </html>

@@ -10,7 +10,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * 业务逻辑按 ROADMAP 3.2 的分层职责放在各自的包下：
  * api / orchestrator / retrieval / generation / validation / execution / semantic / observability
  */
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {
+        "com.ecommerce.platform",
+        "com.text2sql.agent"
+})
 public class Text2SqlAgentApplication {
 
     public static void main(String[] args) {
