@@ -122,7 +122,7 @@ Invoke-RestMethod -Method Post -Uri http://localhost:8080/api/ask `
 ### 5. 测试与评估
 
 ```bash
-mvn test   # 280 项
+mvn test   # 279 项测试
 ```
 
 ```powershell
@@ -159,11 +159,11 @@ DRY_RUN=true bash scripts/run_eval.sh all
 ```
 src/main/java        # 接入 / 编排 / 检索 / 生成 / 校验 / 执行 / 缓存 / 会话
 src/main/resources   # 配置、glossary / metrics / few-shot、前端
-src/test/java        # 280 项测试
+src/test/java        # 279 项测试
 data/schema          # DDL + 只读/读写角色
 data/eval            # 200 条评估集
 docs/                # ROADMAP / EVALUATION / FAILURE_ATTRIBUTION ...
-reports/             # 三次 eval + token + cost
+reports/             # 历史评测与最新 v2 报告、token + cost
 scripts/             # 重建库、评估、成本
 docker/              # PostgreSQL 容器
 ```
@@ -172,12 +172,11 @@ docker/              # PostgreSQL 容器
 
 | 限制 | 现状 |
 |---|---|
-| 深层多表 Join | T5 **40–60%**；10 条样本，±1 题就是 10pp |
-| 检索精确率 | 约 **28%**（Top-8 召回优先，噪声表靠生成/AST/执行兜底） |
-| P95 延迟 | **12–17s**，目标 <8s，未达标 |
-| 多租户 / 权限 | 单租户、只读账号、无 RLS |
-| 评估集 | 开发期看过全量，只能作内部回归参照，不宣称无泄漏泛化 |
-| Agent 模式 | 已实现、有测试，但未在评估集量出增益；84–86 不是 Agent 跑出来的 |
+| P95 延迟 | **12.81s**（目标 <8s，**未达标**；主要瓶颈在 LLM 生成耗时与长上下文网络传输） |
+| 检索精确率 | 约 **28%**（Top-8 召回优先策略，召回率 99.8%，带进 5–6 张噪声表，靠斯坦纳树拓扑与生成约束剪枝） |
+| 多租户 / 权限 | 单租户、只读账号 `text2sql_ro`、无 RLS（行级安全隔离），不可直接外网裸露 |
+| 跨业务域泛化 | 评估集聚焦于 Olist 电商场景，不宣称无需配置语义字典即可跨业务域开箱即用 |
+| Agent 交互模式 | 动态 ReAct Agent 模式代码已就绪，但面对 96% Pipeline 基线未量化出正向 ROI（延迟与成本翻倍），默认保持 Pipeline 编排 |
 
 ## 设计文档
 
