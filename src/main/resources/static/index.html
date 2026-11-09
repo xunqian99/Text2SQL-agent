@@ -888,80 +888,6 @@
       background: #fef0f0;
     }
 
-    /* 悬浮 Copilot 抽屉与按钮 */
-    .floating-copilot-btn {
-      position: fixed;
-      bottom: 24px;
-      right: 28px;
-      height: 40px;
-      padding: 0 14px;
-      border-radius: 20px;
-      background: #304156;
-      color: #fff;
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
-      border: 1px solid #4a5d73;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 12.5px;
-      font-weight: 600;
-      cursor: grab;
-      user-select: none;
-      -webkit-user-select: none;
-      z-index: 99;
-      touch-action: none;
-      transition: background 0.2s, box-shadow 0.2s;
-    }
-    .floating-copilot-btn:hover {
-      background: #409eff;
-      box-shadow: 0 6px 18px rgba(64, 158, 255, 0.4);
-    }
-    .floating-copilot-btn.dragging {
-      cursor: grabbing;
-      opacity: 0.92;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-      transition: none;
-    }
-
-    .copilot-drawer {
-      position: fixed;
-      top: 0;
-      right: -580px;
-      width: 580px;
-      height: 100%;
-      background: #fff;
-      box-shadow: -4px 0 16px rgba(0, 0, 0, 0.15);
-      z-index: 1001;
-      transition: right 0.22s ease-out;
-      display: flex;
-      flex-direction: column;
-      border-left: 1px solid #dcdfe6;
-    }
-    .copilot-drawer.active { right: 0; }
-    .drawer-header {
-      padding: 14px 18px;
-      border-bottom: 1px solid #dcdfe6;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: #f5f7fa;
-      font-weight: 700;
-      font-size: 13.5px;
-    }
-    .drawer-body {
-      flex: 1;
-      overflow-y: auto;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-    .drawer-footer {
-      padding: 12px 16px;
-      border-top: 1px solid #dcdfe6;
-      background: #fff;
-    }
-
     /* 经典 Element 模态弹窗 (Modal) */
     .modal-overlay {
       position: fixed;
@@ -1511,43 +1437,6 @@
     </div>
   </div>
 
-  <!-- ================= 悬浮 Copilot 助手球 ================= -->
-  <div class="floating-copilot-btn" id="floatingCopilotBtn" title="按住可随意拖拽移动位置，点击唤起 AI 即席问数抽屉">
-    <i class="ri-drag-move-2-line" style="font-size: 13px; opacity: 0.75; margin-right: -2px;"></i>
-    <i class="ri-robot-2-fill" style="font-size: 16px;"></i>
-    <span>AI 即席问数</span>
-  </div>
-
-  <!-- ================= 侧边 Copilot 抽屉 ================= -->
-  <div class="copilot-drawer" id="copilotDrawer">
-    <div class="drawer-header">
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <i class="ri-robot-2-line" style="color: #409eff; font-size: 17px;"></i>
-        <span>AI Copilot 智能即席问数助手</span>
-      </div>
-      <button class="el-button el-button-sm" onclick="toggleCopilotDrawer()"><i class="ri-close-line"></i> 关闭</button>
-    </div>
-    <div class="drawer-body" id="drawerChatArea">
-      <div>
-        <div style="font-size: 12px; font-weight: 700; color: #606266; margin-bottom: 6px;"><i class="ri-flashlight-line" style="color: #409eff; margin-right: 2px;"></i> 快速提问标签：</div>
-        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-          <span class="query-tag-pill" onclick="askDrawerQuery('2018年销售额最高的前5个商品品类是什么？')"><i class="ri-bar-chart-grouped-line"></i> 品类销售额TOP5</span>
-          <span class="query-tag-pill" onclick="askDrawerQuery('统计2017到2018年每个月的订单总量趋势')"><i class="ri-calendar-line"></i> 月度订单走势</span>
-          <span class="query-tag-pill" onclick="askDrawerQuery('统计各种支付方式的订单金额与笔数分布')"><i class="ri-bank-card-line"></i> 支付方式占比</span>
-          <span class="query-tag-pill" onclick="askDrawerQuery('统计不同购买频次的客户复购留存人数分布')"><i class="ri-user-shared-line"></i> 客户复购留存</span>
-          <span class="query-tag-pill" onclick="askDrawerQuery('各省份的客单价分布排名前5是哪些？')"><i class="ri-map-pin-2-line"></i> 省份客单价分布</span>
-          <span class="query-tag-pill" onclick="askDrawerQuery('统计各省份的订单平均配送耗时（天数）排行')"><i class="ri-truck-line"></i> 配送时效排行</span>
-          <span class="query-tag-pill" onclick="askDrawerQuery('单价在1000元以上的高价值热销商品有哪些？')"><i class="ri-vip-diamond-line"></i> 1000元以上商品</span>
-        </div>
-      </div>
-    </div>
-    <div class="drawer-footer">
-      <div style="display: flex; gap: 8px;">
-        <input type="text" id="drawerInput" class="el-input" style="flex: 1;" placeholder="向 AI 提问数仓数据..." onkeyup="if(event.key==='Enter')submitDrawerAiQuery()">
-        <button class="el-button el-button-primary" onclick="submitDrawerAiQuery()"><i class="ri-send-plane-2-fill"></i> 发送</button>
-      </div>
-    </div>
-  </div>
 
   <!-- ================= 弹窗 1：新增商品档案 (Add Product Modal) ================= -->
   <div class="modal-overlay" id="addProductModal">
@@ -2589,19 +2478,8 @@
 
     // ================= AI 问数模块 (Text2SQL Agent) =================
     function askAiQuery(q) {
-      const drawer = document.getElementById('copilotDrawer');
-      if (drawer && drawer.classList.contains('active')) {
-        askDrawerQuery(q);
-        return;
-      }
       document.getElementById('aiQuestionInput').value = q;
       submitMainAiQuery();
-    }
-
-    function askDrawerQuery(q) {
-      const input = document.getElementById('drawerInput');
-      if (input) input.value = q;
-      submitDrawerAiQuery();
     }
 
     async function submitMainAiQuery() {
@@ -3123,132 +3001,6 @@
       setTimeout(() => myChart.resize(), 30);
     }
 
-    // ================= 悬浮 Copilot 抽屉与拖拽交互 =================
-    function toggleCopilotDrawer() {
-      document.getElementById('copilotDrawer').classList.toggle('active');
-    }
-
-    function initDraggableCopilotBtn() {
-      const btn = document.getElementById('floatingCopilotBtn');
-      if (!btn) return;
-
-      let isDragging = false;
-      let hasMoved = false;
-      let startX = 0;
-      let startY = 0;
-      let initialLeft = 0;
-      let initialTop = 0;
-
-      const onPointerDown = (e) => {
-        isDragging = true;
-        hasMoved = false;
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        startX = clientX;
-        startY = clientY;
-
-        const rect = btn.getBoundingClientRect();
-        initialLeft = rect.left;
-        initialTop = rect.top;
-
-        btn.classList.add('dragging');
-
-        window.addEventListener('mousemove', onPointerMove, { passive: false });
-        window.addEventListener('mouseup', onPointerUp);
-        window.addEventListener('touchmove', onPointerMove, { passive: false });
-        window.addEventListener('touchend', onPointerUp);
-      };
-
-      const onPointerMove = (e) => {
-        if (!isDragging) return;
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        const dx = clientX - startX;
-        const dy = clientY - startY;
-
-        if (!hasMoved && Math.hypot(dx, dy) > 5) {
-          hasMoved = true;
-        }
-
-        if (hasMoved) {
-          if (e.cancelable) e.preventDefault();
-          const btnWidth = btn.offsetWidth;
-          const btnHeight = btn.offsetHeight;
-          const maxX = window.innerWidth - btnWidth - 8;
-          const maxY = window.innerHeight - btnHeight - 8;
-
-          const newX = Math.min(Math.max(8, initialLeft + dx), maxX);
-          const newY = Math.min(Math.max(8, initialTop + dy), maxY);
-
-          btn.style.left = newX + 'px';
-          btn.style.top = newY + 'px';
-          btn.style.right = 'auto';
-          btn.style.bottom = 'auto';
-        }
-      };
-
-      const onPointerUp = () => {
-        if (!isDragging) return;
-        isDragging = false;
-        btn.classList.remove('dragging');
-
-        window.removeEventListener('mousemove', onPointerMove);
-        window.removeEventListener('mouseup', onPointerUp);
-        window.removeEventListener('touchmove', onPointerMove);
-        window.removeEventListener('touchend', onPointerUp);
-
-        // 未发生拖曳位移时，视为纯点击，唤起或收起抽屉
-        if (!hasMoved) {
-          toggleCopilotDrawer();
-        }
-      };
-
-      btn.addEventListener('mousedown', onPointerDown);
-      btn.addEventListener('touchstart', onPointerDown, { passive: true });
-
-      // 窗口拉伸时防止按钮被挤出屏幕边缘
-      window.addEventListener('resize', () => {
-        if (btn.style.left && btn.style.left !== 'auto') {
-          const rect = btn.getBoundingClientRect();
-          const maxX = window.innerWidth - btn.offsetWidth - 8;
-          const maxY = window.innerHeight - btn.offsetHeight - 8;
-          if (rect.left > maxX) btn.style.left = Math.max(8, maxX) + 'px';
-          if (rect.top > maxY) btn.style.top = Math.max(8, maxY) + 'px';
-        }
-      });
-    }
-
-    async function submitDrawerAiQuery() {
-      const input = document.getElementById('drawerInput');
-      const q = input.value.trim();
-      if (!q) return;
-
-      const area = document.getElementById('drawerChatArea');
-      input.value = '';
-      area.insertAdjacentHTML('beforeend', `<div class="chat-bubble-user">${escapeHtml(q)}</div>`);
-
-      const loadId = 'drawerLoad-' + Date.now();
-      area.insertAdjacentHTML('beforeend', `<div class="chat-bubble-ai" id="${loadId}" style="color: #909399;"><i class="ri-loader-4-line ri-spin" style="margin-right: 4px;"></i> 正在分析数仓拓扑与指标口径...</div>`);
-      area.scrollTop = area.scrollHeight;
-
-      try {
-        const key = localStorage.getItem('AGENT_API_KEY') || '';
-        const res = await fetch('/api/ask', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-Api-Key': key },
-          body: JSON.stringify({ question: q, apiKey: key, sessionId: currentSessionId })
-        });
-        const data = await res.json();
-        if (data && data.sessionId) currentSessionId = data.sessionId;
-        document.getElementById(loadId)?.remove();
-        renderAiResult(area, data);
-      } catch (e) {
-        document.getElementById(loadId)?.remove();
-        area.insertAdjacentHTML('beforeend', `<div class="chat-bubble-ai" style="color: #f56c6c;">提问失败: ${escapeHtml(e.message)}</div>`);
-      }
-      area.scrollTop = area.scrollHeight;
-    }
-
     // ================= API Key 弹窗业务 =================
     function openKeyModal() {
       document.getElementById('userKeyInput').value = localStorage.getItem('AGENT_API_KEY') || '';
@@ -3292,7 +3044,6 @@
     // 默认加载控制台首页与交互组件
     window.addEventListener('DOMContentLoaded', () => {
       initDashboard();
-      initDraggableCopilotBtn();
     });
   </script>
 </body>
