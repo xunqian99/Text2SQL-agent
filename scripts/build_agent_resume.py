@@ -97,10 +97,10 @@ def main():
             "• **语义层建模与会话管理：**对齐指标字典注入标准口径约束；实现多轮会话指代消解与滑动窗口摘要压缩，长会话 **Token 消耗降低 67.2%**；引入主动反问机制（**Human-in-the-Loop**），对“销售额”等模糊词前置确认口径，避免静默业务错误。"
         ),
 
-        # 专业技能 - AI Agent (112 字，与原版 112 字一字不差)
+        # 专业技能 - AI Agent (严格 114 字，通用技能树抽象，杜绝单一项目复述)
         (
             "• AI Agent 研发：深入掌握 Text2SQL 核心链路",
-            "• **AI Agent 研发：**掌握智能体核心链路（**ReAct 范式、Function Calling 工具编排、多轮指代消解与会话压缩**）；熟练掌握斯坦纳树上下文工程与 **AST 安全护栏**；具备基准评测集设计与消融归因能力；"
+            "• **AI Agent 研发：**掌握智能体架构（**ReAct 范式、Function Calling 工具编排**）；熟悉**上下文工程**与多轮会话压缩；掌握输入输出**安全护栏（Guardrails）**；具备 **LLM 基准评测集设计与消融分析**能力；"
         ),
     ]
 
@@ -154,10 +154,17 @@ def main():
             else:
                 zo.writestr(n, payload[n])
 
-    if os.path.exists(DST):
-        os.remove(DST)
-    shutil.move(TMP, DST)
-    print("成功生成: %s" % DST)
+    try:
+        if os.path.exists(DST):
+            os.remove(DST)
+        shutil.move(TMP, DST)
+        print("成功生成: %s" % DST)
+    except PermissionError:
+        alt = "简历-江松涛-AI应用开发(最新).docx"
+        if os.path.exists(alt):
+            os.remove(alt)
+        shutil.move(TMP, alt)
+        print("提示: %s 正被 WPS/Word 占用，已优先写入到: %s" % (DST, alt))
 
 
 if __name__ == "__main__":
