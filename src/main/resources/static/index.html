@@ -2736,7 +2736,41 @@
 
       let html = `<div class="chat-bubble-ai">`;
 
-      if (!isOk) {
+      if (resp.status === 'NEEDS_CLARIFICATION') {
+        html += `
+          <div style="border-left: 3px solid #e6a23c; padding: 12px 14px; background: #fdf6ec; border-radius: 4px; margin-bottom: 8px;">
+            <div style="color: #b88230; font-weight: 700; margin-bottom: 6px; font-size: 13px;">
+              业务口径确认
+            </div>
+            <div style="font-size: 13px; color: #303133; line-height: 1.6; margin-bottom: 8px;">
+              ${escapeHtml(resp.message || '请确认具体业务统计口径')}
+            </div>
+        `;
+        const msg = resp.message || '';
+        if (msg.includes('销售额')) {
+          html += `
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;">
+              <button class="view-segmented-btn" style="border: 1px solid #dcdfe6; background: #fff; color: #409eff; padding: 4px 12px; cursor: pointer; border-radius: 4px; font-size: 12px;" onclick="askAiQuery('含运费的销售额')">含运费 GMV</button>
+              <button class="view-segmented-btn" style="border: 1px solid #dcdfe6; background: #fff; color: #409eff; padding: 4px 12px; cursor: pointer; border-radius: 4px; font-size: 12px;" onclick="askAiQuery('不含运费的销售额')">不含运费 商品金额</button>
+            </div>
+          `;
+        } else if (msg.includes('活跃用户')) {
+          html += `
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;">
+              <button class="view-segmented-btn" style="border: 1px solid #dcdfe6; background: #fff; color: #409eff; padding: 4px 12px; cursor: pointer; border-radius: 4px; font-size: 12px;" onclick="askAiQuery('当月有下单的活跃用户')">当月有下单</button>
+              <button class="view-segmented-btn" style="border: 1px solid #dcdfe6; background: #fff; color: #409eff; padding: 4px 12px; cursor: pointer; border-radius: 4px; font-size: 12px;" onclick="askAiQuery('当月有登录的活跃用户')">当月有登录</button>
+            </div>
+          `;
+        } else if (msg.includes('复购率')) {
+          html += `
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;">
+              <button class="view-segmented-btn" style="border: 1px solid #dcdfe6; background: #fff; color: #409eff; padding: 4px 12px; cursor: pointer; border-radius: 4px; font-size: 12px;" onclick="askAiQuery('全部下单用户的复购率')">全部下单用户</button>
+              <button class="view-segmented-btn" style="border: 1px solid #dcdfe6; background: #fff; color: #409eff; padding: 4px 12px; cursor: pointer; border-radius: 4px; font-size: 12px;" onclick="askAiQuery('注册满30天用户的复购率')">注册满天数用户</button>
+            </div>
+          `;
+        }
+        html += `</div>`;
+      } else if (!isOk) {
         html += `
           <div style="color: #f56c6c; font-weight: 700; margin-bottom: 6px;">
             <i class="ri-error-warning-line"></i> 语句被安全沙箱拦截或执行异常 [${escapeHtml(resp.status)}]
