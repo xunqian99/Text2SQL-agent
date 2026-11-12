@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>课程设计汇报：高可信 Text2SQL 智能数据问数系统</title>
+  <style>
+    :root {
+      --bg: #0B1120;
+      --card-bg: #1E293B;
+      --card-light: #162032;
+      --border: #334155;
+      --primary: #38BDF8;
+      --success: #34D399;
+      --danger: #F87171;
+      --warn: #FBBF24;
+      --text-main: #F8FAFC;
+      --text-sub: #CBD5E1;
+      --text-muted: #94A3B8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* 顶部控制栏 */
+    .top-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 48px;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      z-index: 100;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .top-bar .project-name {
+      color: var(--text-main);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--primary);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+
+    .controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .btn {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 4px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+
+    .btn:hover {
+      background: var(--border);
+      color: var(--primary);
+    }
+
+    /* 幻灯片视口 */
+    .viewport {
+      width: 100%;
+      height: calc(100vh - 48px);
+      margin-top: 48px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .slide-container {
+      width: 100%;
+      max-width: 1333px;
+      aspect-ratio: 16 / 9;
+      background: var(--bg);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      position: relative;
+      overflow: hidden;
+      display: none;
+      padding: 40px 48px;
+      flex-direction: column;
+    }
+
+    .slide-container.active {
+      display: flex;
+      animation: fadeIn 0.3s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* 幻灯片头部 */
+    .slide-header {
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+      padding-bottom: 16px;
+    }
+
+    .slide-header-left .category {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--primary);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .slide-header-left .title {
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .slide-number {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-muted);
+      font-feature-settings: "tnum";
+    }
+
+    /* 内容网格 */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      flex: 1;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 20px;
+      flex: 1;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 20px;
+      flex: 1;
+    }
+
+    /* 通用卡片 */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .card.light {
+      background: var(--card-light);
+    }
+
+    .card-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-title span.tag {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    .card-body {
+      font-size: 14px;
+      line-height: 1.7;
+      color: var(--text-sub);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .card-body strong {
+      color: var(--text-main);
+    }
+
+    .danger-text { color: var(--danger); }
+    .success-text { color: var(--success); }
+    .primary-text { color: var(--primary); }
+    .warn-text { color: var(--warn); }
+
+    /* 指标块 */
+    .stat-row {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      justify-content: center;
+      flex: 1;
+    }
+
+    .stat-box {
+      background: var(--card-light);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .stat-box .num {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    .stat-box .details {
+      text-align: right;
+    }
+
+    .stat-box .label {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .stat-box .desc {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* 底部演讲口播提示（可选隐藏） */
+    .speaker-note {
+      margin-top: 12px;
+      background: rgba(15, 23, 42, 0.6);
+      border-left: 3px solid var(--primary);
+      padding: 8px 12px;
+      font-size: 12px;
+      color: var(--text-muted);
+      border-radius: 0 4px 4px 0;
+    }
+
+    /* 打印与导出适配 */
+    @media print {
+      body {
+        overflow: visible;
+        background: #fff;
+        color: #000;
+      }
+      .top-bar, .controls { display: none !important; }
+      .viewport {
+        height: auto;
+        margin: 0;
+        padding: 0;
+        display: block;
+      }
+      .slide-container {
+        display: flex !important;
+        page-break-after: always;
+        break-after: page;
+        border: 1px solid #ccc;
+        background: #fff !important;
+        color: #111 !important;
+        margin-bottom: 20px;
+      }
+      .card { background: #f8f9fa !important; border-color: #ddd !important; }
+      .card-body, .card-title, .title, strong { color: #111 !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 顶部控制栏 -->
+  <div class="top-bar">
+    <div class="project-name">
+      <span class="badge">SE 2026</span>
+      <span>高可信 Text2SQL 智能数据问数系统 · 课程设计答辩</span>
+    </div>
+    <div class="controls">
+      <span>快捷键：[←] 上一页  [→] 下一页  [F] 全屏</span>
+      <button class="btn" onclick="prevSlide()">上一页</button>
+      <span id="slideIndicator" style="font-weight:700; color:var(--text-main)">01 / 10</span>
+      <button class="btn" onclick="nextSlide()">下一页</button>
+      <button class="btn" onclick="toggleFullScreen()">全屏演示</button>
+      <button class="btn" onclick="window.print()">打印/导出PDF</button>
+    </div>
+  </div>
+
+  <div class="viewport">
+
+    <!-- SLIDE 1 -->
+    <div class="slide-container active" id="slide-1">
+      <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+        <span class="badge" style="margin-bottom: 20px; font-size: 13px; padding: 4px 14px;">软件工程技术专业 · 本科课程设计汇报</span>
+        <h1 style="font-size: 38px; font-weight: 800; line-height: 1.3; margin-bottom: 16px; color: var(--text-main);">
+          基于 Java 21 与图拓扑规划的<br>
+          <span style="color: var(--primary);">高可信 Text2SQL 智能数据问数系统</span>
+        </h1>
+        <p style="font-size: 18px; color: var(--text-muted); max-width: 800px; margin-bottom: 36px;">
+          —— 软件工程视角下的大模型应用架构设计、质量防御与人机协同研发实践
+        </p>
+        <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px 36px; display: inline-flex; gap: 32px; font-size: 14px;">
+          <div><strong style="color: var(--text-muted);">汇报人：</strong> <strong>江松涛</strong></div>
+          <div><strong style="color: var(--text-muted);">指导教师：</strong> <strong>答辩评审委员会</strong></div>
+          <div><strong style="color: var(--text-muted);">技术栈：</strong> <span class="primary-text">Java 21 · Spring Boot 3 · PostgreSQL · JSqlParser · Steiner Tree</span></div>
+        </div>
+      </div>
+      <div class="speaker-note">
+        <strong>答辩点题：</strong>“各位老师好，我的课题核心是用严谨的软件工程思想（需求量化、纵深防御、图算法、测试闭环）约束大模型的随机性与不可控性。”
+      </div>
+    </div>
+
+    <!-- SLIDE 2 -->
+    <div class="slide-container" id="slide-2">
+      <div class="slide-header">
+        <div class="slide-header-left">
+          <div class="category">Problem Analysis · 痛点与问题定义</div>
+          <div class="title">业务现状与直接调用大模型的“三大致命陷阱”</div>
+        </div>
+        <div class="slide-number">02 / 10</div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">
+            <span>数仓业务现状与提数瓶颈</span>
+            <span class="tag warn-text" style="background: rgba(251,191,36,0.15);">业务端痛点</span>
+          </div>
+          <div class="card-body">
+            <div><strong>• 提数链路漫长：</strong> 业务人员提出需求 $\to$ 数据分析师排期 $\to$ 人工编写 SQL，单个指标问数响应通常需要 2~3 天。</div>
+            <div><strong>• 数仓拓扑复杂：</strong> 电商数仓涵盖 37 张表，外键交织繁琐，业务口径黑话较多，非技术人员完全无法自主提取数据。</div>
+            <div><strong>• 核心工程目标：</strong> 构建高可信的自然语言到生产级只读 SQL 转换系统，实现安全秒级自助式提数。</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">
+            <span>直接调用大模型（LLM）的工程死穴</span>
+            <span class="tag danger-text" style="background: rgba(248,113,113,0.15);">质量失控风险</span>
+          </div>
+          <div class="card-body">
+            <div><strong>• 陷阱 1 · 拓扑断链（Schema 幻觉）：</strong> 超过 3 张表关联时，模型依靠概率拼凑外键，经常引入不存在的伪支路甚至死循环环路。</div>
+            <div><strong>• 陷阱 2 · 物理击穿（Resource Exhaustion）：</strong> 偶发生成缺失 Join Filter 的隐式笛卡尔积或大表全扫，秒级打满只读库 CPU 与 Buffer Pool。</div>
+            <div><strong>• 陷阱 3 · 数据越权（Security Escape）：</strong> 存在生成 DDL/DML 篡改数据风险，或利用别名与系统限定名跨库窃取元数据。</div>
+          </div>
+        </div>
+      </div>
+      <div class="speaker-note">
+        <strong>口播提示：</strong>“软件工程的第一步是问题定义。我们不仅解决提数慢，更要消除大模型在生产落地时的拓扑断链、物理击穿与越权逃逸三大风险。”
+      </div>
+    </div>
+
+    <!-- SLIDE 3 -->
+    <div class="slide-container" id="slide-3">
+      <div class="slide-header">
+        <div class="slide-header-left">
+          <div class="category">Requirements Engineering · 需求工程与规格矩阵</div>
+          <div class="title">从功能性诉求到非功能工程红线（SRS）</div>
+        </div>
+        <div class="slide-number">03 / 10</div>
+      </div>
+      <div class="grid-4">
+        <div class="card">
+          <div class="card-title">
+            <span>功能性需求 (Functional)</span>
+            <span class="tag primary-text" style="background: rgba(56,189,248,0.15);">意图转换</span>
+          </div>
+          <div class="card-body">
+            <div><strong>• 多表深度拓扑查询：</strong> 覆盖单表过滤、聚合汇总及 1~5 表长链路关联查询。</div>
+            <div><strong>• PostgreSQL 方言适配：</strong> 严格输出符合物理数仓规范的标准只读 SQL。</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">
+            <span>安全性质量属性 (Security)</span>
+            <span class="tag danger-text" style="background: rgba(248,113,113,0.15);">100% 只读</span>
+          </div>
+          <div class="card-body">
+            <div><strong>• 语法级绝对只读：</strong> 严禁任何 DDL（DROP/ALTER）与 DML（INSERT/UPDATE）操作。</div>
+            <div><strong>• 元数据防逃逸：</strong> 彻底阻断访问 pg_catalog 等系统字典表。</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">
+            <span>可靠性与性能 (Performance)</span>
+            <span class="tag success-text" style="background: rgba(52,211,153,0.15);">物理熔断</span>
+          </div>
+          <div class="card-body">
+            <div><strong>• 执行计划代价预检：</strong> 执行前递归分析代价树，拦截大表无约束笛卡尔积。</div>
+            <div><strong>• 语法归一化二级缓存：</strong> 热点查询直接命中缓存，延迟压降 50% 以上。</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">
+            <span>经济性与可观测 (Cost & Usability)</span>
+            <span class="tag warn-text" style="background: rgba(251,191,36,0.15);">成本可控</span>
+          </div>
+          <div class="card-body">
+            <div><strong>• 极低推理成本：</strong> 精准 Schema 剪枝，单次查询调用成本压低至 0.002 元。</div>
+            <div><strong>• 全链路日志归因：</strong> 耗时、Token 计费、SQL 执行日志全程透明可追溯。</div>
+          </div>
+        </div>
+      </div>
+      <div class="speaker-note">
+        <strong>口播提示：</strong>“软件工程强调质量内建。我们绝不停留在‘能跑就行’，而是将安全性、性能防击穿与成本作为刚性验收红线。”
+      </div>
+    </div>
+
+    <!-- SLIDE 4 -->
+    <div class="slide-container" id="slide-4">
+      <div class="slide-header">
+        <div class="slide-header-left">
+          <div class="category">System Architecture · 系统架构设计</div>
+          <div class="title">三层纵深防御体系与单一职责解耦模型</div>
+        </div>
+        <div class="slide-number">04 / 10</div>
+      </div>
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-title">
+            <span>Layer 1 · 输入前置拓扑规划</span>
+            <span class="tag primary-text" style="background: rgba(56,189,248,0.15);">确定性图算法</span>
+          </div>
+          <div class="card-body">
+            <div><strong>• 领域词典精准匹配：</strong> 双路检索用户 Query 命中的物理表与核心字段。</div>
+            <div><strong>• 斯坦纳树外键求解：</strong> 在数仓拓扑图中求解最小加权连通子树，补全桥接表。</div>
+            <div><strong>• 动态 Schema 剪枝：</strong> 剔除无关表，仅将必要上下文注入 Prompt，消灭幻觉源头。</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">
+            <span>Layer 2 · 大模型受控推理</span>
+            <span class="tag warn-text" style="background: rgba(251,191,36,0.15);">语义转换器</span>
+          </div>
+          <div class="card-body">
+            <div><strong>• 单一职责严格解耦：</strong> 大模型仅负责“自然语言 $\to$ 只读 SQL”转换，不承担安全职责。</div>
+            <div><strong>• 结构化输出约束：</strong> 强制纯净 SQL 输出，剥离多余解释文本。</div>
+            <div><strong>• 二级指纹缓存：</strong> 命中语法哈希指纹时直返结果，跳过大模型。</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">
+            <span>Layer 3 · 输出后置纵深安全防御</span>
+            <span class="tag success-text" style="background: rgba(52,211,153,0.15);">双重物理防护罩</span>
+          </div>
+          <div class="card-body">
+            <div><strong>• 防线 A · JSqlParser AST：</strong> 解析语法树根节点，强制纯读，阻断系统表限定名。</div>
+            <div><strong>• 防线 B · EXPLAIN 预检：</strong> 递归代价树，识别无 Join 约束的 Nested Loop 笛卡尔积。</div>
+            <div><strong>• 防线 C · 只读账号兜底：</strong> 数据库用户只读权限 + 10 秒硬超时保障。</div>
+          </div>
+        </div>
+      </div>
+      <div class="speaker-note">
+        <strong>口播提示：</strong>“遵循纵深防御思想。大模型只是受控黑盒翻译器；输入前用图算法补全外键，输出后用 AST 和 EXPLAIN 两道物理锁直接熔断恶意与慢查询。”
+      </div>
+    </div>
+
+    <!-- SLIDE 5 -->
+    <div class="slide-container" id="slide-5">
+      <div class="slide-header">
+        <div class="slide-header-left">
+          <div class="category">Algorithm Engineering · 核心算法工程</div>
+          <div class="title">基于斯坦纳树（Steiner Tree）近似算法的外键路径规划</div>
+        </div>
+        <div class="slide-number">05 / 10</div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">
+            <span>方案选型对比：为什么局部贪心算法会崩溃？</span>
+            <span class="tag warn-text" style="background: rgba(251,191,36,0.15);">技术权衡</span>
+          </div>
+          <div class="card-body">
+            <div><strong>• 被否方案 · 贪心 BFS / 最短路：</strong> 数仓存在大量环形外键网络。贪心搜索只能找到单对节点最优，在 3 表以上时极易走偏，产生伪支路孤岛。</div>
+            <div><strong>• 采纳方案 · 斯坦纳树近似算法：</strong> 将 37 张表抽象为加权图，命中表作为终端节点，计算覆盖全部终端节点的最小边权生成子树，自动补全中间过渡表。</div>
+            <div><strong>• 数学权重防挤压设计：</strong> 直接命中表赋予基准权，扩展伴生表施加 0.4 强衰减，比较器二级保送，确保核心目标不被边缘表挤占。</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">
+            <span>实测效果：图算法带来的确定性量化飞跃</span>
+            <span class="tag success-text" style="background: rgba(52,211,153,0.15);">实测增益</span>
+          </div>
+          <div class="stat-row">
+            <div class="stat-box">
+              <div class="num">99.00%</div>
+              <div class="details">
+                <div class="label">表检索全召回率</div>
+                <div class="desc">200 题基准评测集中准确捕获目标拓扑关键表</div>
+              </div>
+            </div>
+            <div class="stat-box">
+              <div class="num" style="color: var(--success);">100%</div>
+              <div class="details">
+                <div class="label">3 表关联准确率</div>
+                <div class="desc">跨用户、订单、明细表多表连接无断链、无伪支路</div>
+              </div>
+            </div>
+            <div class="stat-box">
+              <div class="num" style="color: var(--warn);">90.91%</div>
+              <div class="details">
+                <div class="label">4 表及以上复杂查询准确率</div>
+                <div class="desc">突破传统大模型在深层关联链中的生成瓶颈</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="speaker-note">
+        <strong>口播提示：</strong>“用数学与图论的确定性弥补大模型的概率不确定性。斯坦纳树算法把 3 表关联准确率直接拉满到 100%。”
+      </div>
+    </div>
+
+    <!-- SLIDE 6 -->
+    <div class="slide-container" id="slide-6">
+      <div class="slide-header">
+        <div class="slide-header-left">
+          <div class="category">Defensive Engineering · 质量与安全防线</div>
+          <div class="title">AST 静态语法白名单与 PostgreSQL 原生 EXPLAIN 熔断</div>
+        </div>
+        <div class="slide-number">06 / 10</div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">
+            <span>防线 1 · JSqlParser AST 语法树审计</span>
+            <span class="tag primary-text" style="background: rgba(56,189,248,0.15);">代码级审计</span>
+          </div>
+          <div class="card-body">
+            <div><strong>• 纯只读语法结构白名单：</strong> 严格校验 AST 根节点仅允许为 <code>PlainSelect</code>，绝对阻断 DDL、DML 与分号批处理注入。</div>
+            <div><strong>• 系统表限定名穿透防御：</strong> 深度递归扫描所有 Table 节点，严禁通过 <code>pg_catalog.</code> 或 <code>information_schema.</code> 嗅探数仓元数据。</div>
+            <div><strong>• 别名逃逸漏洞修复：</strong> 实测排查出 3 处利用子查询别名隐藏敏感表的安全逃逸漏洞，完成深度遍历全量封堵。</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">
+            <span>防线 2 · PostgreSQL EXPLAIN 物理代价拦截</span>
+            <span class="tag danger-text" style="background: rgba(248,113,113,0.15);">物理级熔断</span>
+          </div>
+          <div class="card-body">
+            <div><strong>• 原生执行计划树递归解析：</strong> 调用 <code>EXPLAIN (FORMAT JSON)</code>，递归计算整棵树的 Total Cost 与预估扫描行数。</div>
+            <div><strong>• 隐式笛卡尔积硬拦截：</strong> 重点识别节点为 <code>Nested Loop</code> 且无连接条件的大表交叉扫描，在数据扫描前物理熔断。</div>
+            <div><strong>• 故障左移（Shift Left）：</strong> 相比于 10s 超时事后止损，毫秒级预检杜绝慢查询触碰磁盘 IO 与 Buffer Pool，保障生产库稳定。</div>
+          </div>
+        </div>
+      </div>
+      <div class="speaker-note">
+        <strong>口播提示：</strong>“回答‘敢不敢让模型生成的 SQL 直接执行’的问题：我们不敢！因此做了两道物理锁：AST 静态分析防越权，EXPLAIN 代价分析防宕机。”
+      </div>
+    </div>
+
+    <!-- SLIDE 7 -->
+    <div class="slide-container" id="slide-7">
+      <div class="slide-header">
+        <div class="slide-header-left">
+          <div class="category">Human-AI Co-Engineering · 人机协同研发</div>
+          <div class="title">AI 辅助软件工程：我们如何建立人机契约与增量演进</div>
+        </div>
+        <div class="slide-number">07 / 10</div>
+      </div>
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-title">
+            <span>1. 建立工程契约 (AGENTS.md)</span>
+            <span class="tag primary-text" style="background: rgba(56,189,248,0.15);">规则约束</span>
+          </div>
+          <div class="card-body">
+            <div><strong>• 严禁虚假迎合：</strong> 设定人机交互铁律，AI 必须像挑剔的架构师一样直击设计与代码漏洞。</div>
+            <div><strong>• 强制技术与设计导读：</strong> 每次交付必须说清数据流、标记追踪（如 directHits vs expandedTables）与数学防挤压。</div>
+            <div><strong>• 依赖版本先跑通：</strong> 先只生成 pom.xml 并验证可用，坚决杜绝版本幻觉。</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">
+            <span>2. 增量迭代与敏捷演进</span>
+            <span class="tag warn-text" style="background: rgba(251,191,36,0.15);">敏捷 Sprint</span>
+          </div>
+          <div class="card-body">
+            <div><strong>• 微阶段粒度交付：</strong> 拒绝一次性大块生成。拆解为 Schema 检索、拓扑图、AST 审计等微步骤稳步推进。</div>
+            <div><strong>• 严密 Git Commit 资产沉淀：</strong> 每一个阶段通过测试，立即执行 Git commit，确保每个功能都有回滚点。</div>
+            <div><strong>• 架构决策人类把关：</strong> AI 输出候选方案，人类工程师根据软件工程复杂度做最终技术裁决。</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">
+            <span>3. 对抗式审计与闭环重构</span>
+            <span class="tag success-text" style="background: rgba(52,211,153,0.15);">红蓝对抗</span>
+          </div>
+          <div class="card-body">
+            <div><strong>• 人类充当红队审计官：</strong> 人类针对 AI 代码构造 53 条恶意渗透用例，当场击穿并发现 3 处系统表逃逸缺陷。</div>
+            <div><strong>• 驱动 AI 深度重构：</strong> 将漏洞测试用例反哺给 AI，督促其修补边界防线。</div>
+            <div><strong>• 工程师角色升维：</strong> 从键盘打字员升级为需求拆解者、架构裁决官与质量守护者。</div>
+          </div>
+        </div>
+      </div>
+      <div class="speaker-note">
+        <strong>口播提示：</strong>“这一页是亮点：AI 不是全自动黑盒外包，而是人机结对编程。人类制定契约、当安全红队、做最终裁决，AI 负责增量实现。”
+      </div>
+    </div>
+
+    <!-- SLIDE 8 -->
+    <div class="slide-container" id="slide-8">
+      <div class="slide-header">
+        <div class="slide-header-left">
+          <div class="category">Quality Assurance · 测试与缺陷治理</div>
+          <div class="title">质量保障体系：三层自动化测试网与数据治理闭环</div>
+        </div>
+        <div class="slide-number">08 / 10</div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">
+            <span>三层自动化测试网（全部通过）</span>
+            <span class="tag primary-text" style="background: rgba(56,189,248,0.15);">测试保障</span>
+          </div>
+          <div class="stat-row">
+            <div class="stat-box">
+              <div class="num" style="color: var(--success);">279 项</div>
+              <div class="details">
+                <div class="label">自动化回归测试</div>
+                <div class="desc">覆盖 AST 分析、连接池、拓扑图算法、二级缓存机制</div>
+              </div>
+            </div>
+            <div class="stat-box">
+              <div class="num" style="color: var(--danger);">53 条</div>
+              <div class="details">
+                <div class="label">对抗渗透与越权用例</div>
+                <div class="desc">针对 DDL、跨库查询、别名逃逸等高危攻击实施 100% 拦截</div>
+              </div>
+            </div>
+            <div class="stat-box">
+              <div class="num" style="color: var(--primary);">200 题</div>
+              <div class="details">
+                <div class="label">真实数仓基准评测集</div>
+                <div class="desc">覆盖 6 层由浅入深难度的完整数仓业务场景，同模型对照</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">
+            <span>缺陷归因闭环与评测集数据治理</span>
+            <span class="tag warn-text" style="background: rgba(251,191,36,0.15);">工程闭环</span>
+          </div>
+          <div class="card-body">
+            <div><strong>• 科学的四层错误归因体系：</strong> 每次评测失败精准定责：是表选错、字段选错、Join 错还是口径冲突？拒绝盲猜调参。</div>
+            <div><strong>• 评测集数据治理反哺：</strong> 通过执行日志分析，在问题文本零修改的前提下消除标注噪声与业务口径冲突。</div>
+            <div><strong>• 规范的工程资产沉淀：</strong> 沉淀了完整的 <code>DEFECT_LOG.md</code> 缺陷台账与 <code>FAILURE_ATTRIBUTION.md</code> 归因报告，体现严谨的工程素养。</div>
+          </div>
+        </div>
+      </div>
+      <div class="speaker-note">
+        <strong>口播提示：</strong>“软件工程讲求质量可验证。300 多项测试与缺陷归因闭环，保证了系统不是碰巧跑通，而是拥有极高的工程确定性。”
+      </div>
+    </div>
+
+    <!-- SLIDE 9 -->
+    <div class="slide-container" id="slide-9">
+      <div class="slide-header">
+        <div class="slide-header-left">
+          <div class="category">Engineering Metrics · 度量与成效</div>
+          <div class="title">软件工程度量与成效：用严谨的基准数据说话</div>
+        </div>
+        <div class="slide-number">09 / 10</div>
+      </div>
+      <div class="grid-4">
+        <div class="card">
+          <div class="card-title">
+            <span>端到端执行准确率</span>
+            <span class="tag success-text" style="background: rgba(52,211,153,0.15);">大幅提升</span>
+          </div>
+          <div class="card-body">
+            <div style="font-size: 32px; font-weight: 800; color: var(--success);">96.00% <span style="font-size: 16px; color: var(--text-muted);">(+34.00%)</span></div>
+            <div>在 200 题基准评测中，同模型（DeepSeek）对照下，由初始基线的 <strong>62%</strong> 跃升至 <strong>96.00%</strong>。</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">
+            <span>SQL 物理有效执行率</span>
+            <span class="tag primary-text" style="background: rgba(56,189,248,0.15);">零报错</span>
+          </div>
+          <div class="card-body">
+            <div style="font-size: 32px; font-weight: 800; color: var(--primary);">100% <span style="font-size: 16px; color: var(--text-muted);">(0 崩溃)</span></div>
+            <div>生成的 SQL 物理有效执行率达 100%，彻底消除了语法错误导致的数据库报错。</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">
+            <span>系统延迟与 Token 开销</span>
+            <span class="tag warn-text" style="background: rgba(251,191,36,0.15);">性能翻倍</span>
+          </div>
+          <div class="card-body">
+            <div style="font-size: 32px; font-weight: 800; color: var(--warn);">-53% <span style="font-size: 16px; color: var(--text-muted);">(Token -50%)</span></div>
+            <div>二级 SQL 规范化缓存赋能，热点重复查询跳过模型推理，响应延迟降低 53%。</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">
+            <span>单次查询平均成本</span>
+            <span class="tag primary-text" style="background: rgba(56,189,248,0.15);">极致性价比</span>
+          </div>
+          <div class="card-body">
+            <div style="font-size: 32px; font-weight: 800; color: var(--primary);">0.002 元 <span style="font-size: 16px; color: var(--text-muted);">(两厘钱)</span></div>
+            <div>精准剪枝与砍掉无效重试将 Token 消耗控制到极限，单次查询仅需 2 厘钱，商用可行。</div>
+          </div>
+        </div>
+      </div>
+      <div class="speaker-note">
+        <strong>口播提示：</strong>“用数字说话：准确率从 62% 提高到 96%，单次查询成本仅需 2 厘钱，充分展现了软件工程对大模型生产落地的倍增价值。”
+      </div>
+    </div>
+
+    <!-- SLIDE 10 -->
+    <div class="slide-container" id="slide-10">
+      <div class="slide-header">
+        <div class="slide-header-left">
+          <div class="category">Conclusion & Retrospective · 反思与展望</div>
+          <div class="title">工程反思与总结：科学证伪决策与工程师角色进化</div>
+        </div>
+        <div class="slide-number">10 / 10</div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">
+            <span>科学工程证伪：主动砍掉“启发式重试”</span>
+            <span class="tag warn-text" style="background: rgba(251,191,36,0.15);">工程务实精神</span>
+          </div>
+          <div class="card-body">
+            <div><strong>• 初始技术设想：</strong> 设计了在 SQL 报错时将错误信息回传给模型进行启发式自动重试的机制。</div>
+            <div><strong>• 实测数据残酷证伪：</strong> 在 200 题基准实测中发现，模型的盲猜二次纠错成功率接近于 0，反而使网络延迟翻倍、Token 消耗急剧膨胀。</div>
+            <div><strong>• 果断止损下线：</strong> 不为了“功能看起来多”而保留无效功能，果断关闭重试。这体现了软件工程尊重实测数据、敢于做减法的科学态度。</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">
+            <span>工程师角色进化与开源资产沉淀</span>
+            <span class="tag primary-text" style="background: rgba(56,189,248,0.15);">总结与展望</span>
+          </div>
+          <div class="card-body">
+            <div><strong>• 工程师的角色升维：</strong> 在 AI 时代，软件工程师不再是代码打字工，而是业务架构的裁决者与安全测试红队。软件工程方法论比以往任何时候都更加关键。</div>
+            <div><strong>• 开源资产沉淀：</strong> 架构源码、测试套件与评测基准已全部开源于 GitHub（<code>github.com/xunqian99/Text2SQL-agent</code>）。</div>
+            <div><strong>• 未来规划：</strong> 下一步将静态 Schema 字典升级为语义指标层（Semantic Layer DSL），统一口径治理。</div>
+          </div>
+        </div>
+      </div>
+      <div class="speaker-note">
+        <strong>口播提示：</strong>“敢于根据实测数据砍掉无效的启发式重试，体现了求实与反思。AI 是加速器，而软件工程是方向盘与刹车。谢谢各位老师！”
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    let currentSlide = 1;
+    const totalSlides = 10;
+
+    function showSlide(n) {
+      document.querySelectorAll('.slide-container').forEach(el => el.classList.remove('active'));
+      const activeEl = document.getElementById(`slide-${n}`);
+      if (activeEl) {
+        activeEl.classList.add('active');
+      }
+      document.getElementById('slideIndicator').innerText = `${String(n).padStart(2, '0')} / ${String(totalSlides).padStart(2, '0')}`;
+      currentSlide = n;
+    }
+
+    function prevSlide() {
+      if (currentSlide > 1) {
+        showSlide(currentSlide - 1);
+      }
+    }
+
+    function nextSlide() {
+      if (currentSlide < totalSlides) {
+        showSlide(currentSlide + 1);
+      }
+    }
+
+    function toggleFullScreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      }
+    }
+
+    // 键盘快捷键监听
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+        nextSlide();
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        prevSlide();
+      } else if (e.key === 'f' || e.key === 'F') {
+        toggleFullScreen();
+      }
+    });
+  </script>
+</body>
+</html>
