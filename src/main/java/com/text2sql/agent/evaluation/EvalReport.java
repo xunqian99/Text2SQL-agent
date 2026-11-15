@@ -71,7 +71,11 @@ public record EvalReport(
             boolean productionSelfCorrectionEnabled,
             int productionSelfCorrectionMaxAttempts,
             boolean selfCorrectionEnabled,
-            int selfCorrectionMaxAttempts) {
+            int selfCorrectionMaxAttempts,
+            String gitCommit,
+            String worktreeState,
+            String datasetSha256,
+            String sampleIdsSha256) {
     }
 
     /**

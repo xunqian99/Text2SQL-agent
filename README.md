@@ -8,7 +8,7 @@
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-**96.00% 执行准确率 (96/100)** · **99.00% 表全召回** · **290 项测试** · **53/53 对抗回归** · **P95 12.81s（未达标）**
+**96.00% 执行准确率 (96/100)** · **99.00% 表全召回** · **292 项测试全部通过** · **53/53 对抗回归** · **P95 12.81s（未达标）**
 
 [快速开始](#快速开始) · [基准结果](#基准结果) · [评测方法](#评测方法) · [已知局限](#已知局限) · [设计文档](#设计文档)
 
@@ -60,7 +60,7 @@ flowchart TD
 | Prompt Token | **2107** | 2131 | 1967 / 1971 / 1994 |
 | 100 题推理成本 | **¥0.223 / 100 题**（单题 ¥0.00223） | ¥0.294 / 100 题 | ¥0.221 / 100 题 |
 | P50 / P95 延迟 | **2.00s / 12.81s**（目标 <8s，未达标） | 1.98s / 14.31s | 1.89s / 12.06–17.27s |
-| 测试 / 安全护栏 | **279 全绿 / 53 条对抗 100% 拦截** | 279 全绿 / 53 条对抗 | 280 全绿 / 53 条对抗 |
+| 测试 / 安全护栏 | **292 项全通过 / 53 条对抗 100% 拦截** | 279 全绿 / 53 条对抗 | 280 全绿 / 53 条对抗 |
 | dry-run 自检 | **200/200 (100%)** | 200/200 (100%) | 200/200 (100%) |
 
 > 逐条明细报告：[最新 96% 报告 (v2)](reports/eval-20261109-181803.json) · [清洗前 88% 报告](reports/eval-20261109-175426.json) · [历史基准 1](reports/eval-20261108-210214.json) · [历史基准 2](reports/eval-20261108-212550.json) · [历史基准 3](reports/eval-20261108-221405.json)。消融对比、基准清洗说明与成本公式详见 [docs/EVALUATION.md](docs/EVALUATION.md)。
@@ -122,7 +122,7 @@ Invoke-RestMethod -Method Post -Uri http://localhost:8080/api/ask `
 ### 5. 测试与评估
 
 ```bash
-mvn test   # 279 项测试
+mvn test   # 当前：292 项全部通过
 ```
 
 ```powershell
@@ -159,7 +159,7 @@ DRY_RUN=true bash scripts/run_eval.sh all
 ```
 src/main/java        # 接入 / 编排 / 检索 / 生成 / 校验 / 执行 / 缓存 / 会话
 src/main/resources   # 配置、glossary / metrics / few-shot、前端
-src/test/java        # 279 项测试
+src/test/java        # 当前：292 项全部通过
 data/schema          # DDL + 只读/读写角色
 data/eval            # 200 条评估集
 docs/                # ROADMAP / EVALUATION / FAILURE_ATTRIBUTION ...
@@ -183,6 +183,7 @@ docker/              # PostgreSQL 容器
 | 文档 | 回答的问题 |
 |---|---|
 | [ROADMAP.md](docs/ROADMAP.md) | 做什么、不做什么、每阶段验收与取舍 |
+| [IMPROVEMENT_PLAN.md](docs/IMPROVEMENT_PLAN.md) | 当前短板、分阶段改进方案与可量化验收路径 |
 | [EVALUATION.md](docs/EVALUATION.md) | 消融、指标口径、历史报告、成本公式 |
 | [FAILURE_ATTRIBUTION.md](docs/FAILURE_ATTRIBUTION.md) | 三次 15+14+16 条失败分别错在哪一层 |
 | [DEFECT_LOG.md](docs/DEFECT_LOG.md) | 缺陷、安全绕过与修法 |

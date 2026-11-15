@@ -7,10 +7,15 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -113,19 +118,7 @@ public class EvalItemLoader {
 
     public List<EvalItem> load(String dir, List<String> layers, int limit) {
         Path base = Path.of(dir);
-        if (!Files.isDirectory(base)) {
-            throw new IllegalStateException("评估集目录不存在：" + base.toAbsolutePath());
-        }
-
-        List<Path> files;
-        try (Stream<Path> stream = Files.list(base)) {
-            files = stream
-                    .filter(p -> p.getFileName().toString().matches("T\\d+_.*\\.ya?ml"))
-                    .sorted(Comparator.comparing(p -> p.getFileName().toString()))
-                    .toList();
-        } catch (IOException e) {
-            throw new UncheckedIOException("无法列出评估集目录：" + base.toAbsolutePath(), e);
-        }
+        List<Path> files = evalFiles(base);
 
         List<EvalItem> items = new ArrayList<>();
         for (Path file : files) {
@@ -142,6 +135,58 @@ public class EvalItemLoader {
             items = items.subList(0, limit);
         }
         return List.copyOf(items);
+    }
+
+    /** Hashes the exact source files in stable filename order, including YAML formatting. */
+    public String datasetSha256(String dir) {
+        MessageDigest digest = sha256();
+        for (Path file : evalFiles(Path.of(dir))) {
+            byte[] name = file.getFileName().toString().getBytes(StandardCharsets.UTF_8);
+            byte[] content;
+            try {
+                content = Files.readAllBytes(file);
+            } catch (IOException e) {
+                throw new UncheckedIOException("无法读取评估集文件：" + file.toAbsolutePath(), e);
+            }
+            digest.update(ByteBuffer.allocate(Integer.BYTES).putInt(name.length).array());
+            digest.update(name);
+            digest.update(ByteBuffer.allocate(Integer.BYTES).putInt(content.length).array());
+            digest.update(content);
+        }
+        return HexFormat.of().formatHex(digest.digest());
+    }
+
+    /** Hashes selected sample IDs independently from the full benchmark fingerprint. */
+    public static String sampleIdsSha256(List<EvalItem> items) {
+        MessageDigest digest = sha256();
+        items.stream().map(EvalItem::id).sorted().forEach(id -> {
+            byte[] value = id.getBytes(StandardCharsets.UTF_8);
+            digest.update(ByteBuffer.allocate(Integer.BYTES).putInt(value.length).array());
+            digest.update(value);
+        });
+        return HexFormat.of().formatHex(digest.digest());
+    }
+
+    private static List<Path> evalFiles(Path base) {
+        if (!Files.isDirectory(base)) {
+            throw new IllegalStateException("评估集目录不存在：" + base.toAbsolutePath());
+        }
+        try (Stream<Path> stream = Files.list(base)) {
+            return stream
+                    .filter(p -> p.getFileName().toString().matches("T\\d+_.*\\.ya?ml"))
+                    .sorted(Comparator.comparing(p -> p.getFileName().toString()))
+                    .toList();
+        } catch (IOException e) {
+            throw new UncheckedIOException("无法列出评估集目录：" + base.toAbsolutePath(), e);
+        }
+    }
+
+    private static MessageDigest sha256() {
+        try {
+            return MessageDigest.getInstance("SHA-256");
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("当前 Java 运行时不支持 SHA-256", e);
+        }
     }
 
     private List<EvalItem> readFile(Path file) {

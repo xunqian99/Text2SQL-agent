@@ -20,6 +20,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
@@ -28,6 +29,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -176,6 +178,7 @@ public class EvalRunner implements ApplicationRunner {
         Map<String, EvalReport.Overall> byTableCount = groupByExpectedTableCount(outcomes);
 
         EvalReport.Retrieval retrieval = aggregateRetrieval(items, outcomes);
+        RepositorySnapshot repository = repositorySnapshot();
 
         EvalReport.Meta meta = new EvalReport.Meta(
                 LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
@@ -198,10 +201,51 @@ public class EvalRunner implements ApplicationRunner {
                 properties.getSelfCorrection().isEnabled(),
                 properties.getSelfCorrection().getMaxAttempts(),
                 properties.getEval().isSelfCorrectionEnabled(),
-                properties.getEval().getSelfCorrectionMaxAttempts());
+                properties.getEval().getSelfCorrectionMaxAttempts(),
+                repository.commit(),
+                repository.worktreeState(),
+                loader.datasetSha256(properties.getEval().getDir()),
+                EvalItemLoader.sampleIdsSha256(items));
 
         return new EvalReport(meta, aggregate(outcomes), byLayer, byTableCount, failures, retrieval,
                 aggregateCorrection(outcomes));
+    }
+
+    private RepositorySnapshot repositorySnapshot() {
+        String commit = gitOutput("rev-parse", "--verify", "HEAD");
+        String status = gitOutput("status", "--porcelain", "--untracked-files=all");
+        String state = status == null ? "UNKNOWN" : status.isBlank() ? "CLEAN" : "DIRTY";
+        return new RepositorySnapshot(commit == null ? "UNKNOWN" : commit, state);
+    }
+
+    private String gitOutput(String... args) {
+        List<String> command = new ArrayList<>();
+        command.add("git");
+        command.addAll(List.of(args));
+        Process process = null;
+        try {
+            process = new ProcessBuilder(command)
+                    .directory(Path.of("").toAbsolutePath().toFile())
+                    .redirectErrorStream(true)
+                    .start();
+            if (!process.waitFor(2, TimeUnit.SECONDS)) {
+                process.destroyForcibly();
+                return null;
+            }
+            String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8).strip();
+            return process.exitValue() == 0 ? output : null;
+        } catch (IOException e) {
+            return null;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            if (process != null) {
+                process.destroyForcibly();
+            }
+            return null;
+        }
+    }
+
+    private record RepositorySnapshot(String commit, String worktreeState) {
     }
 
     private EvalReport.Correction aggregateCorrection(List<ItemOutcome> outcomes) {
@@ -521,6 +565,9 @@ public class EvalRunner implements ApplicationRunner {
         sb.append(String.format("模式      : %s%n", meta.dryRun() ? "dry-run（用 gold_sql 自检评估器）" : "真实链路"));
         sb.append(String.format("模型      : %s%n", meta.model()));
         sb.append(String.format("prompt    : %s%n", meta.promptVersion()));
+        sb.append(String.format("代码版本  : %s (%s)%n", meta.gitCommit(), meta.worktreeState()));
+        sb.append(String.format("数据指纹  : %s%n", meta.datasetSha256()));
+        sb.append(String.format("样本指纹  : %s%n", meta.sampleIdsSha256()));
         sb.append(String.format("样本数    : %d%n", meta.itemCount()));
         sb.append(String.format("schema    : %d 张表%n", meta.schemaTableCount()));
         sb.append("\n");
