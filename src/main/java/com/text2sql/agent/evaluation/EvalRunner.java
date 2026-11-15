@@ -392,9 +392,10 @@ public class EvalRunner implements ApplicationRunner {
      */
     private ItemOutcome evaluateOne(EvalItem item, boolean dryRun) {
         List<List<String>> expected;
+        QueryResult gold;
         boolean ordered = ResultNormalizer.orderMatters(item.goldSql());
         try {
-            QueryResult gold = executor.execute(item.goldSql());
+            gold = executor.execute(item.goldSql());
             expected = ResultNormalizer.normalize(gold, ordered);
         } catch (SqlExecutionException e) {
             // gold_sql 跑不通 = 评估集本身有问题，不是模型的错。
@@ -408,14 +409,15 @@ public class EvalRunner implements ApplicationRunner {
                 : orchestrator.ask(item.question());
 
         List<List<String>> actual = actual(firstResponse, ordered);
-        boolean correct = firstResponse.success() && ResultNormalizer.equivalent(expected, actual);
+        boolean correct = firstResponse.success() && ResultNormalizer.equivalent(
+                gold, item.goldSql(), queryResult(firstResponse), firstResponse.sql());
         if (shouldCorrect(dryRun, correct, firstResponse)) {
             String feedback = correctionFeedback(item, firstResponse);
             AgentResponse correctedResponse = orchestrator.askWithCorrection(
                     item.question(), firstResponse.sql(), feedback);
             List<List<String>> correctedActual = actual(correctedResponse, ordered);
-            boolean corrected = correctedResponse.success()
-                    && ResultNormalizer.equivalent(expected, correctedActual);
+            boolean corrected = correctedResponse.success() && ResultNormalizer.equivalent(
+                    gold, item.goldSql(), queryResult(correctedResponse), correctedResponse.sql());
             LlmCallRecord correctionCall = correctedResponse.llmCall();
             LlmCallRecord combined = LlmCallRecord.combine(firstResponse.llmCall(), correctionCall);
             AgentResponse merged = mergeAttempts(firstResponse, correctedResponse, combined);
@@ -460,6 +462,10 @@ public class EvalRunner implements ApplicationRunner {
                 ? ResultNormalizer.normalize(
                         new QueryResult(response.columns(), response.rows(), response.truncated(), 0L), ordered)
                 : List.of();
+    }
+
+    private QueryResult queryResult(AgentResponse response) {
+        return new QueryResult(response.columns(), response.rows(), response.truncated(), 0);
     }
 
     private static AgentResponse mergeAttempts(AgentResponse first, AgentResponse second,

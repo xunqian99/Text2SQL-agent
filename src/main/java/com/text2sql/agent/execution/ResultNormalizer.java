@@ -1,5 +1,15 @@
 package com.text2sql.agent.execution;
 
+import net.sf.jsqlparser.expression.Expression;
+import net.sf.jsqlparser.expression.LongValue;
+import net.sf.jsqlparser.parser.CCJSqlParserUtil;
+import net.sf.jsqlparser.schema.Column;
+import net.sf.jsqlparser.statement.Statement;
+import net.sf.jsqlparser.statement.select.OrderByElement;
+import net.sf.jsqlparser.statement.select.PlainSelect;
+import net.sf.jsqlparser.statement.select.Select;
+import net.sf.jsqlparser.statement.select.SelectItem;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.DateTimeException;
@@ -31,7 +41,7 @@ import java.util.regex.Pattern;
  *       展示不同。它们可以归一；{@code 2018-01}、{@code 2018-Q1} 这类有损字符串
  *       不展开，因为那需要额外约定粒度。</li>
  *   <li><b>行顺序</b>：只有 {@code ORDER BY} 与 {@code LIMIT} 同时出现时，
- *       顺序才承载语义（「销量最高的 10 个」顺序错了就是错的）。
+ *       排名组顺序才承载语义；排序键相同的并列行不要求固定先后。
  *       单纯的 ORDER BY 只是展示用，不应影响判定。</li>
  * </ol>
  *
@@ -170,5 +180,163 @@ public final class ResultNormalizer {
      */
     public static boolean equivalent(List<List<String>> expected, List<List<String>> actual) {
         return expected.equals(actual);
+    }
+
+    /**
+     * Compare ordered query results while accounting for unspecified order among tied rows.
+     * The fallback stays strict whenever the ORDER BY keys cannot be mapped to output columns.
+     */
+    public static boolean equivalent(QueryResult expected, String expectedSql,
+                                     QueryResult actual, String actualSql) {
+        boolean ordered = orderMatters(expectedSql);
+        List<List<String>> normalizedExpected = normalize(expected, ordered);
+        List<List<String>> normalizedActual = normalize(actual, ordered);
+        if (normalizedExpected.equals(normalizedActual)) {
+            return true;
+        }
+        if (!ordered || !orderMatters(actualSql)) {
+            return false;
+        }
+
+        List<OrderKey> expectedKeys = resolveOrderKeys(expectedSql, expected.columns());
+        List<OrderKey> actualKeys = resolveOrderKeys(actualSql, actual.columns());
+        if (expectedKeys == null || !expectedKeys.equals(actualKeys)
+                || !keysFitRows(normalizedExpected, expectedKeys)
+                || !keysFitRows(normalizedActual, actualKeys)) {
+            return false;
+        }
+        return equivalentWithTies(normalizedExpected, normalizedActual, expectedKeys);
+    }
+
+    private static boolean keysFitRows(List<List<String>> rows, List<OrderKey> keys) {
+        return rows.stream().allMatch(row -> keys.stream()
+                .allMatch(key -> key.columnIndex() < row.size()));
+    }
+
+    private static List<OrderKey> resolveOrderKeys(String sql, List<String> columns) {
+        try {
+            Statement statement = CCJSqlParserUtil.parse(sql);
+            if (!(statement instanceof Select select) || !(select instanceof PlainSelect plain)
+                    || plain.getOrderByElements() == null || plain.getOrderByElements().isEmpty()) {
+                return null;
+            }
+            List<OrderKey> keys = new ArrayList<>();
+            for (OrderByElement element : plain.getOrderByElements()) {
+                int index = resolveOutputColumn(element.getExpression(), plain.getSelectItems(), columns);
+                if (index < 0) {
+                    return null;
+                }
+                keys.add(new OrderKey(index, element.isAsc(), element.getNullOrdering()));
+            }
+            return List.copyOf(keys);
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private static int resolveOutputColumn(Expression orderExpression, List<SelectItem<?>> selectItems,
+                                           List<String> columns) {
+        if (orderExpression instanceof LongValue ordinal) {
+            long value = ordinal.getValue();
+            return value >= 1 && value <= columns.size() ? (int) value - 1 : -1;
+        }
+        if (!(orderExpression instanceof Column orderColumn)) {
+            return -1;
+        }
+
+        String name = unquote(orderColumn.getColumnName());
+        int match = -1;
+        for (int i = 0; i < columns.size(); i++) {
+            if (name.equalsIgnoreCase(unquote(columns.get(i)))) {
+                if (match >= 0) {
+                    return -1;
+                }
+                match = i;
+            }
+        }
+        if (match >= 0) {
+            return match;
+        }
+
+        for (int i = 0; i < selectItems.size() && i < columns.size(); i++) {
+            SelectItem<?> item = selectItems.get(i);
+            if (item.getAlias() != null
+                    && name.equalsIgnoreCase(unquote(item.getAlias().getName()))) {
+                if (match >= 0) {
+                    return -1;
+                }
+                match = i;
+            }
+        }
+        return match;
+    }
+
+    private static String unquote(String identifier) {
+        if (identifier == null) {
+            return "";
+        }
+        String value = identifier.strip();
+        if (value.length() >= 2 && ((value.startsWith("\"") && value.endsWith("\""))
+                || (value.startsWith("`") && value.endsWith("`")))) {
+            return value.substring(1, value.length() - 1);
+        }
+        return value;
+    }
+
+    private static boolean equivalentWithTies(List<List<String>> expected, List<List<String>> actual,
+                                              List<OrderKey> keys) {
+        if (expected.size() != actual.size()) {
+            return false;
+        }
+        int expectedStart = 0;
+        int actualStart = 0;
+        while (expectedStart < expected.size() && actualStart < actual.size()) {
+            List<String> expectedOrder = orderValues(expected.get(expectedStart), keys);
+            List<String> actualOrder = orderValues(actual.get(actualStart), keys);
+            if (!expectedOrder.equals(actualOrder)) {
+                return false;
+            }
+
+            int expectedEnd = groupEnd(expected, expectedStart, keys, expectedOrder);
+            int actualEnd = groupEnd(actual, actualStart, keys, actualOrder);
+            if (sameRows(expected.subList(expectedStart, expectedEnd),
+                    actual.subList(actualStart, actualEnd))) {
+                expectedStart = expectedEnd;
+                actualStart = actualEnd;
+                continue;
+            }
+
+            // LIMIT may select any rows tied at its boundary; ties before the boundary remain exact.
+            return expectedEnd == expected.size() && actualEnd == actual.size();
+        }
+        return expectedStart == expected.size() && actualStart == actual.size();
+    }
+
+    private static int groupEnd(List<List<String>> rows, int start, List<OrderKey> keys,
+                                List<String> orderValues) {
+        int end = start + 1;
+        while (end < rows.size() && orderValues(rows.get(end), keys).equals(orderValues)) {
+            end++;
+        }
+        return end;
+    }
+
+    private static List<String> orderValues(List<String> row, List<OrderKey> keys) {
+        return keys.stream().map(key -> row.get(key.columnIndex())).toList();
+    }
+
+    private static boolean sameRows(List<List<String>> left, List<List<String>> right) {
+        if (left.size() != right.size()) {
+            return false;
+        }
+        List<List<String>> sortedLeft = new ArrayList<>(left);
+        List<List<String>> sortedRight = new ArrayList<>(right);
+        sortedLeft.sort(ResultNormalizer::compareRows);
+        sortedRight.sort(ResultNormalizer::compareRows);
+        return sortedLeft.equals(sortedRight);
+    }
+
+    private record OrderKey(int columnIndex, boolean ascending,
+                            OrderByElement.NullOrdering nullOrdering) {
     }
 }

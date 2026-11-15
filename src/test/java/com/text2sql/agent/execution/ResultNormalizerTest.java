@@ -142,4 +142,54 @@ class ResultNormalizerTest {
                 ResultNormalizer.normalize(expected, false),
                 ResultNormalizer.normalize(actual, false))).isTrue();
     }
+
+    @Test
+    @DisplayName("Top-N 并列组内部顺序不同仍然等价")
+    void acceptsReorderedRowsInsideTiedRankGroup() {
+        String sql = "SELECT name, score FROM scores ORDER BY score DESC LIMIT 4";
+        QueryResult expected = new QueryResult(List.of("name", "score"), List.of(
+                List.of("A", "10"), List.of("B", "8"), List.of("C", "8"), List.of("D", "7")), false, 0);
+        QueryResult actual = new QueryResult(List.of("name", "score"), List.of(
+                List.of("A", "10"), List.of("C", "8"), List.of("B", "8"), List.of("D", "7")), false, 0);
+
+        assertThat(ResultNormalizer.equivalent(expected, sql, actual, sql)).isTrue();
+    }
+
+    @Test
+    @DisplayName("Top-N 截断落在并列组时允许选择同分的不同记录")
+    void acceptsDifferentRowsAtTiedLimitBoundary() {
+        String sql = "SELECT name, score FROM scores ORDER BY score DESC LIMIT 3";
+        QueryResult expected = new QueryResult(List.of("name", "score"), List.of(
+                List.of("A", "10"), List.of("B", "8"), List.of("C", "8")), false, 0);
+        QueryResult actual = new QueryResult(List.of("name", "score"), List.of(
+                List.of("A", "10"), List.of("B", "8"), List.of("X", "8")), false, 0);
+
+        assertThat(ResultNormalizer.equivalent(expected, sql, actual, sql)).isTrue();
+    }
+
+    @Test
+    @DisplayName("排名组不同或非边界组内容不同仍然判错")
+    void rejectsDifferentRanksAndNonBoundaryRows() {
+        String sql = "SELECT name, score FROM scores ORDER BY score DESC LIMIT 3";
+        QueryResult expected = new QueryResult(List.of("name", "score"), List.of(
+                List.of("A", "10"), List.of("B", "8"), List.of("C", "8")), false, 0);
+        QueryResult wrongRank = new QueryResult(List.of("name", "score"), List.of(
+                List.of("B", "10"), List.of("A", "8"), List.of("C", "8")), false, 0);
+        QueryResult wrongBeforeBoundary = new QueryResult(List.of("name", "score"), List.of(
+                List.of("X", "10"), List.of("B", "8"), List.of("C", "8")), false, 0);
+
+        assertThat(ResultNormalizer.equivalent(expected, sql, wrongRank, sql)).isFalse();
+        assertThat(ResultNormalizer.equivalent(expected, sql, wrongBeforeBoundary, sql)).isFalse();
+    }
+
+    @Test
+    @DisplayName("排序键无法映射到输出列时保留严格比较")
+    void staysStrictWhenOrderKeyIsNotProjected() {
+        String expectedSql = "SELECT name FROM scores ORDER BY score DESC LIMIT 2";
+        String actualSql = "SELECT name FROM scores ORDER BY score DESC LIMIT 2";
+        QueryResult expected = new QueryResult(List.of("name"), List.of(List.of("A"), List.of("B")), false, 0);
+        QueryResult actual = new QueryResult(List.of("name"), List.of(List.of("B"), List.of("A")), false, 0);
+
+        assertThat(ResultNormalizer.equivalent(expected, expectedSql, actual, actualSql)).isFalse();
+    }
 }
