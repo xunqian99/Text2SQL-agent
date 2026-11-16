@@ -1,24 +1,22 @@
 package com.text2sql.agent.generation;
 
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * 从模型的自由文本里抠出 SQL。
+ * 规范化模型输出最外层的 SQL 包装，不猜测或改写 SQL 正文。
  *
- * <p>为什么需要这一步：prompt 里要求「只输出 SQL」，但实测模型经常附带解释、
- * 加 markdown 围栏、或者在 SQL 后面补一句"以上 SQL 已排除取消订单"。
- * 这些都是**合理的模型行为**，不该被判为失败。所以容错放在这里，
- * 而不是靠反复调 prompt 去逼模型——调 prompt 是碰运气，写解析是确定性工程。
+ * <p>只剥整段回复边界的独立围栏行以及一个 SQL: 标签。兼容缺失单侧围栏，
+ * 不全局替换反引号，不截第一个分号，也不搜索并选取回复中间的第一个代码块。
  *
- * <p>被否掉的方案：用正则匹配 `SELECT ... ;`。看着简单，但 SQL 里可能
- * 包含字符串字面量、子查询、CTE，正则很容易在第一个分号处截断，
- * 或者把注释里的内容当成 SQL。这里改为「先剥围栏，再取第一个语句块」。
+ * <p>不再按空行删除“疑似解释”：SQL 字符串、注释、CTE、OFFSET 等都可能跨空行，
+ * 误删会静默改变查询。多语句和多块输出不能通过“只取第一块”被洗成合法单查询。
+ * SQL 语法及只读性仍由 SqlValidator 和数据库负责；本类不声称完成 SQL 校验。
  */
 public final class SqlExtractor {
 
-    private static final Pattern FENCED = Pattern.compile("```(?:sql|postgresql|SQL)?\\s*(.*?)```", Pattern.DOTALL);
-    private static final Pattern LEADING_LABEL = Pattern.compile("^\\s*(?:SQL|sql)\\s*[:：]\\s*", Pattern.MULTILINE);
+    private static final Pattern OPENING_FENCE = Pattern.compile("```(?:sql|postgresql)?", Pattern.CASE_INSENSITIVE);
+    private static final Pattern LEADING_LABEL = Pattern.compile("\\ASQL\\h*[:：]\\s*", Pattern.CASE_INSENSITIVE);
+    private static final Pattern DOLLAR_QUOTE = Pattern.compile("\\$(?:[\\p{L}_][\\p{L}\\p{N}_]*)?\\$");
 
     private SqlExtractor() {
     }
@@ -33,62 +31,85 @@ public final class SqlExtractor {
         }
         String text = raw.strip();
 
-        // 1) 有代码围栏就取围栏内的内容。只取第一块：后面通常是解释文字或示例。
-        Matcher m = FENCED.matcher(text);
-        if (m.find()) {
-            text = m.group(1);
+        // 标签可位于围栏外或围栏内，但每个位置只处理一次，不循环“清洗”正文。
+        text = stripLabel(text);
+        int firstBreak = text.indexOf('\n');
+        String firstLine = (firstBreak < 0 ? text : text.substring(0, firstBreak)).strip();
+        if (OPENING_FENCE.matcher(firstLine).matches()) {
+            text = firstBreak < 0 ? "" : text.substring(firstBreak + 1).strip();
         }
-
-        text = LEADING_LABEL.matcher(text.strip()).replaceFirst("");
-        text = text.strip();
-
-        if (text.isEmpty()) {
+        int lastBreak = text.lastIndexOf('\n');
+        String lastLine = text.substring(lastBreak + 1).strip();
+        if (lastLine.equals("```")) {
+            text = lastBreak < 0 ? "" : text.substring(0, lastBreak).strip();
+        }
+        text = stripLabel(text);
+        if (text.isBlank()) {
             throw new GenerationException(GenerationException.Reason.UNPARSEABLE, "模型返回内容里没有 SQL");
         }
+        rejectUnconsumedFences(text);
+        return text;
+    }
 
-        // 2) 如果模型在 SQL 后面附了解释，砍掉解释。判据是出现空行且后面不再有 SQL 关键字。
-        String trimmed = cutTrailingProse(text);
-        if (trimmed.isBlank()) {
-            throw new GenerationException(GenerationException.Reason.UNPARSEABLE, "模型返回内容里没有 SQL");
-        }
-        return trimmed.strip();
+    private static String stripLabel(String text) {
+        return LEADING_LABEL.matcher(text).replaceFirst("").strip();
     }
 
     /**
-     * 砍掉 SQL 之后的中文解释。
-     *
-     * <p>策略保守：只在「空行」处分段，且只保留仍然以 SQL 关键字开头、
-     * 或明显是 SQL 续行（以 , ) ; 或关键字开头）的段落。宁可少砍，
-     * 也不要把合法的 CTE 尾部砍掉——多留一点解释顶多让校验器报错，
-     * 砍错了会静默生成一条语义不同的 SQL，那更糟。
+     * 只用于识别 SQL 词法区域外残留的 Markdown，不解析语法或授权。
+     * 字符串/标识符/dollar quote/嵌套注释中的反引号属于正文，必须原样保留。
+     * 未闭合的 SQL 由下游解析器/数据库拒绝，不能在这里自动补引号或修语句。
      */
-    private static String cutTrailingProse(String text) {
-        String[] blocks = text.split("\\n\\s*\\n");
-        StringBuilder kept = new StringBuilder();
-        for (String block : blocks) {
-            if (kept.length() > 0 && !looksLikeSqlContinuation(block)) {
-                break;
+    private static void rejectUnconsumedFences(String sql) {
+        char quote = 0;
+        boolean escapeString = false;
+        boolean lineComment = false;
+        int blockDepth = 0;
+        String dollarTag = null;
+        for (int i = 0; i < sql.length(); i++) {
+            char c = sql.charAt(i);
+            char next = i + 1 < sql.length() ? sql.charAt(i + 1) : '\0';
+            if (lineComment) {
+                if (c == '\n' || c == '\r') lineComment = false;
+            } else if (blockDepth > 0) {
+                if (c == '/' && next == '*') { blockDepth++; i++; }
+                else if (c == '*' && next == '/') { blockDepth--; i++; }
+            } else if (dollarTag != null) {
+                if (sql.startsWith(dollarTag, i)) {
+                    i += dollarTag.length() - 1;
+                    dollarTag = null;
+                }
+            } else if (quote != 0) {
+                if (escapeString && c == '\\') i++;
+                else if (c == quote) {
+                    if (next == quote) i++;
+                    else quote = 0;
+                }
+            } else if (c == '-' && next == '-') {
+                lineComment = true;
+                i++;
+            } else if (c == '/' && next == '*') {
+                blockDepth = 1;
+                i++;
+            } else if (c == '\'' || c == '"') {
+                quote = c;
+                escapeString = c == '\'' && i > 0
+                        && (sql.charAt(i - 1) == 'E' || sql.charAt(i - 1) == 'e')
+                        && (i < 2 || !identifierPart(sql.charAt(i - 2)));
+            } else if (c == '$' && (i == 0 || !identifierPart(sql.charAt(i - 1)))) {
+                var tag = DOLLAR_QUOTE.matcher(sql).region(i, sql.length());
+                if (tag.lookingAt()) {
+                    dollarTag = tag.group();
+                    i += dollarTag.length() - 1;
+                }
+            } else if (sql.startsWith("```", i)) {
+                throw new GenerationException(GenerationException.Reason.UNPARSEABLE,
+                        "模型输出含非外层代码围栏；只接受一段 SQL，不截取多个代码块或围栏外说明");
             }
-            if (kept.length() > 0) {
-                kept.append("\n\n");
-            }
-            kept.append(block.strip());
         }
-        return kept.toString();
     }
 
-    private static boolean looksLikeSqlContinuation(String block) {
-        String s = block.stripLeading().toUpperCase();
-        if (s.isEmpty()) {
-            return false;
-        }
-        for (String kw : new String[]{"SELECT", "WITH", "FROM", "WHERE", "GROUP", "ORDER", "HAVING",
-                "LIMIT", "JOIN", "LEFT", "RIGHT", "INNER", "FULL", "CROSS", "UNION", "ON", "AND", "OR"}) {
-            if (s.startsWith(kw)) {
-                return true;
-            }
-        }
-        char first = block.stripLeading().charAt(0);
-        return first == ',' || first == ')' || first == ';';
+    private static boolean identifierPart(char c) {
+        return Character.isLetterOrDigit(c) || c == '_' || c == '$';
     }
 }
