@@ -15,6 +15,13 @@ try {
   $codeCommit = (& git rev-parse HEAD).Trim()
   $protected = @('src', 'pom.xml', 'data/eval', 'data/holdout', 'scripts/run_eval.ps1', 'scripts/run_holdout_baseline.ps1')
   if ((& git status --porcelain -- $protected).Count -gt 0) { throw 'Commit evaluation-related source and suites before running.' }
+  # A clean text diff can hide CRLF conversion. Frozen YAML/JSON must match committed bytes exactly.
+  $frozenFiles = @(& git ls-files -- data/eval data/holdout | Where-Object { $_ -match '(?:/T\d+_.*\.ya?ml$|/manifest\.json$)' })
+  foreach ($frozenFile in $frozenFiles) {
+    $workingObject = (& git hash-object --no-filters -- $frozenFile).Trim()
+    $committedObject = (& git rev-parse "${codeCommit}:$frozenFile").Trim()
+    if ($workingObject -cne $committedObject) { throw "Frozen file bytes differ from checkout: $frozenFile (check line endings)." }
+  }
   if (-not $DryRunOnly -and [string]::IsNullOrWhiteSpace($env:AGENT_LLM_API_KEY)) {
     $env:AGENT_LLM_API_KEY = [Environment]::GetEnvironmentVariable('AGENT_LLM_API_KEY', 'User')
   }
