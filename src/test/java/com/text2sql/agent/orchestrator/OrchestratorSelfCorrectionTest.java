@@ -6,6 +6,7 @@ import com.text2sql.agent.execution.QueryResult;
 import com.text2sql.agent.execution.SqlExecutionException;
 import com.text2sql.agent.execution.SqlExecutor;
 import com.text2sql.agent.generation.GeneratedSql;
+import com.text2sql.agent.generation.GenerationException;
 import com.text2sql.agent.generation.LlmSqlGenerator;
 import com.text2sql.agent.observability.LlmCallRecord;
 import com.text2sql.agent.retrieval.SchemaContext;
@@ -103,6 +104,30 @@ class OrchestratorSelfCorrectionTest {
     }
 
     @Test
+    @DisplayName("首答无法提取 SQL 后重试：首答账目也计入最终响应")
+    void includesUnparseableFirstCallInSuccessfulRetryAccounting() {
+        properties.getSelfCorrection().setEnabled(true);
+        properties.getSelfCorrection().setMaxAttempts(2);
+
+        when(generator.generate(anyString(), any()))
+                .thenThrow(new GenerationException(GenerationException.Reason.UNPARSEABLE,
+                        "模型返回空内容", call(100, 8192, 40000)))
+                .thenReturn(new GeneratedSql("SELECT order_id FROM orders LIMIT 10", "raw",
+                        call(200, 20, 500)));
+        when(validator.validate(anyString(), any())).thenAnswer(inv ->
+                ValidationResult.ok(inv.getArgument(0)));
+        when(executor.execute("SELECT order_id FROM orders LIMIT 10"))
+                .thenReturn(new QueryResult(List.of("order_id"), List.of(List.of("1")), false, 1));
+
+        AgentResponse response = orchestrator().ask("有多少订单？");
+
+        assertThat(response.success()).isTrue();
+        assertThat(response.llmCall().promptTokens()).isEqualTo(300);
+        assertThat(response.llmCall().completionTokens()).isEqualTo(8212);
+        assertThat(response.llmCall().latencyMs()).isEqualTo(40500);
+    }
+
+    @Test
     @DisplayName("重试仍失败：保留首次结果，不被更差的重试覆盖")
     void keepsFirstResultWhenRetryFails() {
         properties.getSelfCorrection().setEnabled(true);
@@ -122,6 +147,60 @@ class OrchestratorSelfCorrectionTest {
 
         assertThat(response.status()).isEqualTo(AgentResponse.Status.EXECUTION_FAILED);
         assertThat(response.sql()).as("必须是首次那条 SQL").isEqualTo("SELECT first_sql FROM orders");
+        assertThat(response.llmCall().promptTokens()).isEqualTo(300);
+        assertThat(response.llmCall().completionTokens()).isEqualTo(30);
+        assertThat(response.llmCall().latencyMs()).isEqualTo(120);
+    }
+
+    @Test
+    void keepsFirstAnswerButAccountsForTruncatedCorrection() {
+        properties.getSelfCorrection().setEnabled(true);
+        properties.getSelfCorrection().setMaxAttempts(2);
+        when(generator.generate(anyString(), any()))
+                .thenReturn(new GeneratedSql("SELECT bad FROM orders", "raw", call(100, 10, 50)));
+        when(validator.validate(anyString(), any())).thenAnswer(inv -> ValidationResult.ok(inv.getArgument(0)));
+        when(executor.execute(anyString())).thenThrow(new SqlExecutionException("bad column", null));
+        when(generator.generateCorrection(anyString(), any(), anyString(), anyString(), any()))
+                .thenThrow(new GenerationException(GenerationException.Reason.OUTPUT_TRUNCATED,
+                        "truncated", call(200, 1024, 70)));
+
+        AgentResponse response = orchestrator().ask("有多少订单？");
+
+        assertThat(response.sql()).isEqualTo("SELECT bad FROM orders");
+        assertThat(response.status()).isEqualTo(AgentResponse.Status.EXECUTION_FAILED);
+        assertThat(response.llmCall().promptTokens()).isEqualTo(300);
+        assertThat(response.llmCall().completionTokens()).isEqualTo(1034);
+    }
+
+    @Test
+    void generationRetryUsesTheOnlyRemainingAttemptEvenIfItsSqlFails() {
+        properties.getSelfCorrection().setEnabled(true);
+        properties.getSelfCorrection().setMaxAttempts(2);
+        when(generator.generate(anyString(), any()))
+                .thenThrow(new GenerationException(GenerationException.Reason.UNPARSEABLE, "empty", call(100, 10, 50)))
+                .thenReturn(new GeneratedSql("SELECT bad FROM orders", "raw", call(200, 20, 70)));
+        when(validator.validate(anyString(), any())).thenAnswer(inv -> ValidationResult.ok(inv.getArgument(0)));
+        when(executor.execute(anyString())).thenThrow(new SqlExecutionException("bad column", null));
+
+        AgentResponse response = orchestrator().ask("有多少订单？");
+
+        assertThat(response.llmCall().promptTokens()).isEqualTo(300);
+        verify(generator, times(2)).generate(anyString(), any());
+        verify(generator, never()).generateCorrection(anyString(), any(), anyString(), anyString(), any());
+    }
+
+    @Test
+    void maxAttemptsOneDoesNotRetryUnparseableGeneration() {
+        properties.getSelfCorrection().setEnabled(true);
+        properties.getSelfCorrection().setMaxAttempts(1);
+        when(generator.generate(anyString(), any()))
+                .thenThrow(new GenerationException(GenerationException.Reason.UNPARSEABLE, "empty", call(100, 10, 50)));
+
+        AgentResponse response = orchestrator().ask("有多少订单？");
+
+        assertThat(response.status()).isEqualTo(AgentResponse.Status.GENERATION_FAILED);
+        assertThat(response.llmCall().promptTokens()).isEqualTo(100);
+        verify(generator, times(1)).generate(anyString(), any());
     }
 
     @Test
@@ -366,6 +445,8 @@ class OrchestratorSelfCorrectionTest {
         assertThat(response.sql())
                 .as("两次都被判可疑时，应保留首次——第二次没有证据更好")
                 .isEqualTo(firstSql);
+        assertThat(response.llmCall().promptTokens()).isEqualTo(300);
+        assertThat(response.llmCall().completionTokens()).isEqualTo(30);
     }
 
     @Test

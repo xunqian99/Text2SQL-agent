@@ -1,5 +1,7 @@
 package com.text2sql.agent.generation;
 
+import com.text2sql.agent.observability.LlmCallRecord;
+
 /**
  * 生成层的失败信号。
  *
@@ -16,22 +18,37 @@ public class GenerationException extends RuntimeException {
         /** 调用失败（网络、超时、限流、鉴权）。属于基础设施问题。 */
         CALL_FAILED,
         /** 调用成功但返回内容里提不出合法 SQL。属于模型质量问题。 */
-        UNPARSEABLE
+        UNPARSEABLE,
+        /** 服务端明确报告输出预算用尽；不能把半条 SQL 当完整回答执行。 */
+        OUTPUT_TRUNCATED
     }
 
     private final Reason reason;
+    private final LlmCallRecord callRecord;
 
     public GenerationException(Reason reason, String message) {
-        super(message);
-        this.reason = reason;
+        this(reason, message, null, null);
     }
 
     public GenerationException(Reason reason, String message, Throwable cause) {
+        this(reason, message, null, cause);
+    }
+
+    public GenerationException(Reason reason, String message, LlmCallRecord callRecord) {
+        this(reason, message, callRecord, null);
+    }
+
+    public GenerationException(Reason reason, String message, LlmCallRecord callRecord, Throwable cause) {
         super(message, cause);
         this.reason = reason;
+        this.callRecord = callRecord;
     }
 
     public Reason getReason() {
         return reason;
+    }
+
+    public LlmCallRecord getCallRecord() {
+        return callRecord;
     }
 }

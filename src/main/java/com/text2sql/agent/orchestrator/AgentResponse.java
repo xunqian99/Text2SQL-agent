@@ -126,8 +126,14 @@ public record AgentResponse(
      * 不能让一次糟糕的重试把原本可用的答案覆盖掉。
      */
     public static AgentResponse combineAttempts(AgentResponse first, AgentResponse second) {
+        return combineAttempts(first, second, true);
+    }
+
+    /** 选择答案与累计费用相互独立：保留首答也必须支付第二次调用的费用。 */
+    public static AgentResponse combineAttempts(AgentResponse first, AgentResponse second, boolean useSecond) {
         if (first == null) return second;
         if (second == null) return first;
+        AgentResponse selected = useSecond ? second : first;
         Timings a = first.timings();
         Timings b = second.timings();
         Timings summed = new Timings(
@@ -136,12 +142,12 @@ public record AgentResponse(
                 ms(a, Timings::validationMs) + ms(b, Timings::validationMs),
                 ms(a, Timings::executionMs) + ms(b, Timings::executionMs),
                 ms(a, Timings::totalMs) + ms(b, Timings::totalMs));
-        return new AgentResponse(second.question(), second.status(), second.sql(), second.message(),
-                second.violations(), second.columns(), second.rows(), second.truncated(),
-                second.rewritten(),
+        return new AgentResponse(selected.question(), selected.status(), selected.sql(), selected.message(),
+                selected.violations(), selected.columns(), selected.rows(), selected.truncated(),
+                selected.rewritten(),
                 com.text2sql.agent.observability.LlmCallRecord.combine(first.llmCall(), second.llmCall()),
-                second.schemaTableCount(), second.retrievedTables(), second.schemaDdlChars(), summed,
-                second.sessionId(), second.rewrittenQuestion(), second.schemaReused());
+                selected.schemaTableCount(), selected.retrievedTables(), selected.schemaDdlChars(), summed,
+                selected.sessionId(), selected.rewrittenQuestion(), selected.schemaReused());
     }
 
     private static long ms(Timings t, java.util.function.ToLongFunction<Timings> getter) {

@@ -225,6 +225,8 @@ public class Text2SqlOrchestrator {
 
         long generationStarted = System.nanoTime();
         GeneratedSql generated;
+        LlmCallRecord retryGenerationCall = null;
+        boolean generationRetried = false;
         String generationQuestion = effectiveQuestion;
         if (convEnabled && session != null && session.contextSummary() != null && !session.contextSummary().isEmpty()) {
             generationQuestion = effectiveQuestion + "\n\n" + session.contextSummary().condensedSummaryText();
@@ -247,19 +249,24 @@ public class Text2SqlOrchestrator {
                         : generator.generate(generationQuestion, schema);
             }
         } catch (GenerationException e) {
-            if (properties.getSelfCorrection().isEnabled() && e.getReason() != GenerationException.Reason.NOT_CONFIGURED) {
+            if (properties.getSelfCorrection().isEnabled() && properties.getSelfCorrection().getMaxAttempts() > 1
+                    && e.getReason() != GenerationException.Reason.NOT_CONFIGURED) {
+                generationRetried = true;
                 log.warn("首次生成异常（{}：{}），尝试重试一次生成", e.getReason(), e.getMessage());
                 try {
                     generated = (apiKey != null && !apiKey.isBlank())
                             ? generator.generate(generationQuestion, schema, null, apiKey)
                             : generator.generate(generationQuestion, schema);
+                    retryGenerationCall = e.getCallRecord();
                 } catch (GenerationException e2) {
                     long generationMs = elapsedMs(generationStarted);
                     AgentResponse.Status status = e2.getReason() == GenerationException.Reason.NOT_CONFIGURED
                             ? AgentResponse.Status.NOT_CONFIGURED
                             : AgentResponse.Status.GENERATION_FAILED;
                     log.warn("重试生成仍失败（{}）：{}", e2.getReason(), e2.getMessage());
-                    AgentResponse fail = AgentResponse.failed(question, status, null, e2.getMessage(), null,
+                    LlmCallRecord failedCalls = LlmCallRecord.combine(rewriteCall,
+                            LlmCallRecord.combine(e.getCallRecord(), e2.getCallRecord()));
+                    AgentResponse fail = AgentResponse.failed(question, status, null, e2.getMessage(), failedCalls,
                             tableCount, retrievedTables, ddlChars,
                             timings(retrievalMs, generationMs, 0, 0, elapsedMs(totalStarted)));
                     if (convEnabled) {
@@ -274,7 +281,8 @@ public class Text2SqlOrchestrator {
                         ? AgentResponse.Status.NOT_CONFIGURED
                         : AgentResponse.Status.GENERATION_FAILED;
                 log.warn("生成失败（{}）：{}", e.getReason(), e.getMessage());
-                AgentResponse fail = AgentResponse.failed(question, status, null, e.getMessage(), null,
+                LlmCallRecord failedCalls = LlmCallRecord.combine(rewriteCall, e.getCallRecord());
+                AgentResponse fail = AgentResponse.failed(question, status, null, e.getMessage(), failedCalls,
                         tableCount, retrievedTables, ddlChars,
                         timings(retrievalMs, generationMs, 0, 0, elapsedMs(totalStarted)));
                 if (convEnabled) {
@@ -290,9 +298,9 @@ public class Text2SqlOrchestrator {
         // 改写是一次真实的模型调用：不合并的话，token 与成本每轮都会少算一次，
         // 表现为「报告里的成本和实际账单对不上，差得不多但总有差值」。
         AgentResponse first = validateAndExecute(question, generated.sql(),
-                com.text2sql.agent.observability.LlmCallRecord.combine(rewriteCall, generated.call()),
+                LlmCallRecord.combine(rewriteCall, LlmCallRecord.combine(retryGenerationCall, generated.call())),
                 schema, tableCount, retrievedTables, ddlChars, retrievalMs, generationMs, totalStarted);
-        AgentResponse result = retryIfFailed(generationQuestion, first, apiKey);
+        AgentResponse result = generationRetried ? first : retryIfFailed(generationQuestion, first, apiKey);
 
         if (cacheKey != null && result.success()) {
             cache.put(cacheKey, result.sql());
@@ -485,14 +493,14 @@ public class Text2SqlOrchestrator {
                 if (secondCheck.suspicious()) {
                     log.info("重试结果仍被判定可疑（本次规则：{}，首次规则：{}），保留首次结果",
                             secondCheck.rule(), firstSuspicion);
-                    return first;
+                    return AgentResponse.combineAttempts(first, second, false);
                 }
             }
             log.info("重试成功，采用第二次结果");
             return AgentResponse.combineAttempts(first, second);
         }
         log.warn("重试仍未成功（{}），保留首次结果", second.status());
-        return first;
+        return AgentResponse.combineAttempts(first, second, false);
     }
 
     /**
@@ -607,7 +615,7 @@ public class Text2SqlOrchestrator {
             AgentResponse.Status status = e.getReason() == GenerationException.Reason.NOT_CONFIGURED
                     ? AgentResponse.Status.NOT_CONFIGURED
                     : AgentResponse.Status.GENERATION_FAILED;
-            return AgentResponse.failed(question, status, null, e.getMessage(), null, tableCount,
+            return AgentResponse.failed(question, status, null, e.getMessage(), e.getCallRecord(), tableCount,
                     retrievedTables, ddlChars,
                     timings(retrievalMs, generationMs, 0, 0, elapsedMs(totalStarted)));
         }

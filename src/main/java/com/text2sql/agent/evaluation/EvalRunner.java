@@ -110,6 +110,10 @@ public class EvalRunner implements ApplicationRunner {
         List<EvalItem> items = loader.load();
         boolean dryRun = properties.getEval().isDryRun();
 
+        if (!dryRun && properties.getLlm().getApiKey().isBlank()) {
+            throw new IllegalStateException("真实评测缺少 agent.llm.api-key，已在模型调用前终止；请配置环境变量或使用 dry-run");
+        }
+
         if (items.isEmpty()) {
             throw new IllegalStateException("评估集为空，检查 agent.eval.dir 与 agent.eval.layers");
         }
@@ -127,6 +131,7 @@ public class EvalRunner implements ApplicationRunner {
             items = expanded;
         }
         log.info("开始评估：{} 条，dryRun={}，model={}", items.size(), dryRun, properties.getLlm().getModel());
+        log.info("评测实际配置（不含密钥）：{}", effectiveConfig());
 
         List<EvalReport.Failure> failures = new ArrayList<>();
         List<ItemOutcome> outcomes = new ArrayList<>();
@@ -205,10 +210,37 @@ public class EvalRunner implements ApplicationRunner {
                 repository.commit(),
                 repository.worktreeState(),
                 loader.datasetSha256(properties.getEval().getDir()),
-                EvalItemLoader.sampleIdsSha256(items));
+                EvalItemLoader.sampleIdsSha256(items),
+                effectiveConfig());
 
         return new EvalReport(meta, aggregate(outcomes), byLayer, byTableCount, failures, retrieval,
                 aggregateCorrection(outcomes));
+    }
+
+    private Map<String, Object> effectiveConfig() {
+        Map<String, Object> config = new LinkedHashMap<>();
+        var llm = properties.getLlm();
+        var retrieval = properties.getRetrieval();
+        config.put("maxTokens", llm.getMaxTokens());
+        config.put("temperature", llm.getTemperature());
+        config.put("inputPricePer1k", llm.getInputPricePer1k());
+        config.put("outputPricePer1k", llm.getOutputPricePer1k());
+        config.put("cacheHitPricePer1k", llm.getCacheHitPricePer1k());
+        config.put("costEstimated", llm.getInputPricePer1k() > 0 || llm.getOutputPricePer1k() > 0);
+        config.put("clarificationEnabled", properties.getClarification().isEnabled());
+        config.put("resultCheckerEnabled", properties.getResultChecker().isEnabled());
+        config.put("columnPruningEnabled", retrieval.isColumnPruningEnabled());
+        config.put("joinPlanEnabled", retrieval.isJoinPlanEnabled());
+        config.put("joinListEnabled", retrieval.isJoinListEnabled());
+        config.put("bridgeRepairEnabled", retrieval.isBridgeRepairEnabled());
+        config.put("semanticEnabled", properties.getSemantic().isEnabled());
+        config.put("fewshotEnabled", properties.getFewshot().isEnabled());
+        config.put("fewshotMaxExamples", properties.getFewshot().getMaxExamples());
+        config.put("cacheEnabled", properties.getCache().isEnabled());
+        config.put("routingEnabled", properties.getRouting().isEnabled());
+        config.put("toolUseEnabled", properties.getToolUse().isEnabled());
+        config.put("conversationEnabled", properties.getConversation().isEnabled());
+        return config;
     }
 
     private RepositorySnapshot repositorySnapshot() {

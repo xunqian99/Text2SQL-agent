@@ -75,7 +75,9 @@ public record EvalReport(
             String gitCommit,
             String worktreeState,
             String datasetSha256,
-            String sampleIdsSha256) {
+            String sampleIdsSha256,
+            /** 影响答案与金额的实际参数；显式白名单，绝不序列化 Key 和密码。 */
+            Map<String, Object> effectiveConfig) {
     }
 
     /**

@@ -187,11 +187,17 @@ public class LlmSqlGenerator {
         //获取模型的output
         String raw = extractText(response);
         LlmCallRecord record = buildRecord(response, promptChars, latencyMs, model);
+        String sql;
+        try {
+            requireComplete(response, record);
+            sql = SqlExtractor.extract(raw);
+        } catch (GenerationException e) {
+            log.warn("LLM 返回内容无法提取 SQL：{}", record.summary());
+            callLog.record(record, e.getReason().name(), user, raw);
+            throw new GenerationException(e.getReason(), e.getMessage(), record, e);
+        }
         log.info("LLM 调用完成：{}", record.summary());
         callLog.record(record, "OK", user, raw);
-
-        //将模型输出的sql进行提取，因为模型可能会生产sql之外的内容
-        String sql = SqlExtractor.extract(raw);
         return new GeneratedSql(sql, raw, record);
     }
 
@@ -250,9 +256,18 @@ public class LlmSqlGenerator {
         long latencyMs = (System.nanoTime() - started) / 1_000_000;
         String raw = extractText(response);
         LlmCallRecord record = buildRecord(response, promptChars, latencyMs, model);
+        String sql;
+        try {
+            requireComplete(response, record);
+            sql = SqlExtractor.extract(raw);
+        } catch (GenerationException e) {
+            log.warn("LLM 自纠错返回内容无法提取 SQL：{}", record.summary());
+            callLog.record(record, e.getReason().name() + "_CORRECTION", user, raw);
+            throw new GenerationException(e.getReason(), e.getMessage(), record, e);
+        }
         log.info("LLM 自纠错完成：{}", record.summary());
         callLog.record(record, "CORRECTION", user, raw);
-        return new GeneratedSql(SqlExtractor.extract(raw), raw, record);
+        return new GeneratedSql(sql, raw, record);
     }
 
     /**
@@ -292,9 +307,18 @@ public class LlmSqlGenerator {
         long latencyMs = (System.nanoTime() - started) / 1_000_000;
         String raw = extractText(response);
         LlmCallRecord record = buildRecord(response, promptChars, latencyMs, model);
+        String sql;
+        try {
+            requireComplete(response, record);
+            sql = SqlExtractor.extract(raw);
+        } catch (GenerationException e) {
+            log.warn("LLM [{}] 返回内容无法提取 SQL：{}", logTag, record.summary());
+            callLog.record(record, e.getReason().name() + "_" + logTag, "messages[" + messages.size() + "]", raw);
+            throw new GenerationException(e.getReason(), e.getMessage(), record, e);
+        }
         log.info("LLM [{}] 调用完成：{}", logTag, record.summary());
         callLog.record(record, logTag, "messages[" + messages.size() + "]", raw);
-        return new GeneratedSql(SqlExtractor.extract(raw), raw, record);
+        return new GeneratedSql(sql, raw, record);
     }
 
     /**
@@ -349,6 +373,13 @@ public class LlmSqlGenerator {
 
         String raw = extractText(response);
         LlmCallRecord record = buildRecord(response, promptChars, latencyMs, model);
+        try {
+            requireComplete(response, record);
+        } catch (GenerationException e) {
+            callLog.record(record, e.getReason().name() + "_" + logTag,
+                    "messages[" + messages.size() + "]", raw);
+            throw e;
+        }
         log.info("LLM [{}] 调用完成：{}", logTag, record.summary());
         callLog.record(record, logTag, "messages[" + messages.size() + "]", raw);
         return new AgentTurn(response, record, raw);
@@ -362,6 +393,17 @@ public class LlmSqlGenerator {
      * @param raw      模型输出的文本部分（可能为空，例如只有 tool_calls 时）
      */
     public record AgentTurn(ChatResponse response, LlmCallRecord call, String raw) {}
+
+    /** 只依据服务端结束原因，不凭 token 数猜测截断；完整回答也可能刚好用满预算。 */
+    static void requireComplete(ChatResponse response, LlmCallRecord record) {
+        if (response != null && response.getResult() != null
+                && response.getResult().getMetadata() != null
+                && "length".equalsIgnoreCase(response.getResult().getMetadata().getFinishReason())) {
+            throw new GenerationException(GenerationException.Reason.OUTPUT_TRUNCATED,
+                    "模型输出达到 token 上限，回答被截断；请检查 agent.llm.max-tokens（推理与最终 SQL 共用预算）",
+                    record);
+        }
+    }
 
     private String extractText(ChatResponse response) {
         if (response == null || response.getResult() == null) {
