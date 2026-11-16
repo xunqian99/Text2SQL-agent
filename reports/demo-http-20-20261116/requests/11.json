@@ -1,0 +1,189 @@
+{
+  "index" : 11,
+  "caseId" : "T3-002",
+  "request" : {
+    "question" : "2017 年和 2018 年各有多少笔订单？",
+    "sessionId" : "demo20-T3-002"
+  },
+  "exchange" : {
+    "startedAt" : "2026-11-16T15:02:56.646452700Z",
+    "httpStatus" : 200,
+    "rawBody" : "{\"status\":\"SUCCESS\",\"sql\":\"SELECT EXTRACT(YEAR FROM order_purchase_timestamp) AS order_year,\\n       COUNT(*) AS order_count\\nFROM orders\\nWHERE order_purchase_timestamp >= '2017-01-01'\\n  AND order_purchase_timestamp < '2019-01-01'\\nGROUP BY 1\\nORDER BY 1\\nLIMIT 10;\",\"message\":null,\"violations\":[],\"columns\":[\"order_year\",\"order_count\"],\"rows\":[[\"2017\",\"45101\"],[\"2018\",\"54011\"]],\"truncated\":false,\"rewritten\":false,\"rowCount\":2,\"schemaTableCount\":8,\"retrievedTables\":[\"orders\",\"customers\",\"order_items\",\"order_payments\",\"order_reviews\",\"coupon_usages\",\"refund_items\",\"refunds\"],\"schemaDdlChars\":1573,\"llm\":{\"model\":\"deepseek-flash\",\"promptTokens\":2158,\"completionTokens\":326,\"totalTokens\":2484,\"latencyMs\":2419,\"costYuan\":0.0015804},\"timings\":{\"retrievalMs\":1,\"generationMs\":2420,\"validationMs\":3,\"executionMs\":30,\"totalMs\":2457},\"sessionId\":\"demo20-T3-002\",\"rewrittenQuestion\":null,\"schemaReused\":false,\"budget\":{\"requestId\":\"49f31709-278d-4ad5-8f12-dda6e882d040\",\"timeoutMs\":15000,\"maxModelCalls\":2,\"modelCalls\":1,\"unknownUsageCalls\":0,\"elapsedMs\":2457,\"termination\":\"COMPLETE\",\"stage\":\"CONVERSATION\",\"retrySkippedReason\":null,\"stageMs\":{\"CLARIFICATION\":0,\"CACHE_WRITE\":0,\"RESULT_CHECK\":0,\"RETRIEVAL\":1,\"CONVERSATION\":0,\"CACHE\":0,\"GENERATION\":0,\"MODEL\":2420,\"EXECUTION\":26,\"SESSION\":0,\"ADMISSION\":0,\"VALIDATION\":3,\"EXPLAIN\":4},\"cancellationRejected\":0,\"timingsVersion\":\"request-budget-exclusive-v1\",\"otherMs\":3,\"currentStageMs\":0}}",
+    "body" : {
+      "status" : "SUCCESS",
+      "sql" : "SELECT EXTRACT(YEAR FROM order_purchase_timestamp) AS order_year,\n       COUNT(*) AS order_count\nFROM orders\nWHERE order_purchase_timestamp >= '2017-01-01'\n  AND order_purchase_timestamp < '2019-01-01'\nGROUP BY 1\nORDER BY 1\nLIMIT 10;",
+      "message" : null,
+      "violations" : [ ],
+      "columns" : [ "order_year", "order_count" ],
+      "rows" : [ [ "2017", "45101" ], [ "2018", "54011" ] ],
+      "truncated" : false,
+      "rewritten" : false,
+      "rowCount" : 2,
+      "schemaTableCount" : 8,
+      "retrievedTables" : [ "orders", "customers", "order_items", "order_payments", "order_reviews", "coupon_usages", "refund_items", "refunds" ],
+      "schemaDdlChars" : 1573,
+      "llm" : {
+        "model" : "deepseek-flash",
+        "promptTokens" : 2158,
+        "completionTokens" : 326,
+        "totalTokens" : 2484,
+        "latencyMs" : 2419,
+        "costYuan" : 0.0015804
+      },
+      "timings" : {
+        "retrievalMs" : 1,
+        "generationMs" : 2420,
+        "validationMs" : 3,
+        "executionMs" : 30,
+        "totalMs" : 2457
+      },
+      "sessionId" : "demo20-T3-002",
+      "rewrittenQuestion" : null,
+      "schemaReused" : false,
+      "budget" : {
+        "requestId" : "49f31709-278d-4ad5-8f12-dda6e882d040",
+        "timeoutMs" : 15000,
+        "maxModelCalls" : 2,
+        "modelCalls" : 1,
+        "unknownUsageCalls" : 0,
+        "elapsedMs" : 2457,
+        "termination" : "COMPLETE",
+        "stage" : "CONVERSATION",
+        "retrySkippedReason" : null,
+        "stageMs" : {
+          "CLARIFICATION" : 0,
+          "CACHE_WRITE" : 0,
+          "RESULT_CHECK" : 0,
+          "RETRIEVAL" : 1,
+          "CONVERSATION" : 0,
+          "CACHE" : 0,
+          "GENERATION" : 0,
+          "MODEL" : 2420,
+          "EXECUTION" : 26,
+          "SESSION" : 0,
+          "ADMISSION" : 0,
+          "VALIDATION" : 3,
+          "EXPLAIN" : 4
+        },
+        "cancellationRejected" : 0,
+        "timingsVersion" : "request-budget-exclusive-v1",
+        "otherMs" : 3,
+        "currentStageMs" : 0
+      }
+    },
+    "httpWallMs" : 2462
+  },
+  "businessCorrect" : true,
+  "healthAfter" : {
+    "startedAt" : "2026-11-16T15:02:59.109538800Z",
+    "httpStatus" : 200,
+    "rawBody" : "{\"status\":\"UP\",\"ready\":true,\"llmConfigured\":true,\"schemaAvailable\":true,\"schemaTableCount\":37,\"readinessScope\":\"global-client-configuration-and-schema-snapshot\",\"providerVerified\":false,\"databaseLiveVerified\":false,\"mode\":\"demo\",\"activeProfiles\":[\"local\",\"demo\"],\"model\":\"deepseek-flash\",\"capabilities\":{\"retrieval\":true,\"columnPruning\":true,\"joinPlan\":true,\"semantic\":true,\"fewshot\":true,\"clarification\":true,\"selfCorrection\":true,\"resultChecker\":true,\"conversation\":true,\"cache\":false,\"persistence\":false,\"toolUse\":false,\"routing\":false,\"explainGuard\":true},\"limits\":{\"queryTimeoutSeconds\":10,\"requestBudgetEnabled\":true,\"requestTimeoutMs\":15000,\"maxModelCalls\":2,\"maxRows\":200}}",
+    "body" : {
+      "status" : "UP",
+      "ready" : true,
+      "llmConfigured" : true,
+      "schemaAvailable" : true,
+      "schemaTableCount" : 37,
+      "readinessScope" : "global-client-configuration-and-schema-snapshot",
+      "providerVerified" : false,
+      "databaseLiveVerified" : false,
+      "mode" : "demo",
+      "activeProfiles" : [ "local", "demo" ],
+      "model" : "deepseek-flash",
+      "capabilities" : {
+        "retrieval" : true,
+        "columnPruning" : true,
+        "joinPlan" : true,
+        "semantic" : true,
+        "fewshot" : true,
+        "clarification" : true,
+        "selfCorrection" : true,
+        "resultChecker" : true,
+        "conversation" : true,
+        "cache" : false,
+        "persistence" : false,
+        "toolUse" : false,
+        "routing" : false,
+        "explainGuard" : true
+      },
+      "limits" : {
+        "queryTimeoutSeconds" : 10,
+        "requestBudgetEnabled" : true,
+        "requestTimeoutMs" : 15000,
+        "maxModelCalls" : 2,
+        "maxRows" : 200
+      }
+    },
+    "httpWallMs" : 2
+  },
+  "sessionsAfter" : {
+    "startedAt" : "2026-11-16T15:02:59.111648500Z",
+    "httpStatus" : 200,
+    "rawBody" : "[{\"sessionId\":\"demo20-T3-002\",\"title\":\"2017 年和 2018 年各有多少笔订单？\",\"turnCount\":1,\"status\":\"ACTIVE\",\"createdAt\":\"2026-11-16T15:02:56.647865100Z\",\"lastActiveAt\":\"2026-11-16T15:02:59.107400Z\"},{\"sessionId\":\"demo20-T3-001\",\"title\":\"每个月的订单数量是多少？按月份排序。\",\"turnCount\":1,\"status\":\"ACTIVE\",\"createdAt\":\"2026-11-16T15:02:55.219768500Z\",\"lastActiveAt\":\"2026-11-16T15:02:56.321750Z\"},{\"sessionId\":\"demo20-T2-003\",\"title\":\"订单明细的平均商品价格是多少？\",\"turnCount\":1,\"status\":\"ACTIVE\",\"createdAt\":\"2026-11-16T15:02:53.979991100Z\",\"lastActiveAt\":\"2026-11-16T15:02:54.907452600Z\"},{\"sessionId\":\"demo20-T2-002\",\"title\":\"所有订单的运费总额是多少？\",\"turnCount\":1,\"status\":\"ACTIVE\",\"createdAt\":\"2026-11-16T15:02:52.806278400Z\",\"lastActiveAt\":\"2026-11-16T15:02:53.660474100Z\"},{\"sessionId\":\"demo20-T2-001\",\"title\":\"所有订单明细的商品金额加起来一共是多少？\",\"turnCount\":1,\"status\":\"ACTIVE\",\"createdAt\":\"2026-11-16T15:02:51.390805800Z\",\"lastActiveAt\":\"2026-11-16T15:02:52.484739800Z\"},{\"sessionId\":\"demo20-T1-003\",\"title\":\"已取消的订单有多少笔？\",\"turnCount\":1,\"status\":\"ACTIVE\",\"createdAt\":\"2026-11-16T15:02:49.747297500Z\",\"lastActiveAt\":\"2026-11-16T15:02:51.091335500Z\"},{\"sessionId\":\"demo20-T1-001\",\"title\":\"一共有多少笔订单？\",\"turnCount\":1,\"status\":\"ACTIVE\",\"createdAt\":\"2026-11-16T15:02:48.320778100Z\",\"lastActiveAt\":\"2026-11-16T15:02:49.411184500Z\"},{\"sessionId\":\"demo20-gmv\",\"title\":\"统计 2018 年全站 GMV（含运费），以及不含运费的销售额，两者分别是多少？\",\"turnCount\":2,\"status\":\"ACTIVE\",\"createdAt\":\"2026-11-16T15:02:41.330395300Z\",\"lastActiveAt\":\"2026-11-16T15:02:47.998161500Z\"},{\"sessionId\":\"demo20-orders\",\"title\":\"2018 年下单的订单有多少笔？\",\"turnCount\":2,\"status\":\"ACTIVE\",\"createdAt\":\"2026-11-16T15:02:40.044927200Z\",\"lastActiveAt\":\"2026-11-16T15:02:45.045484500Z\"}]",
+    "body" : [ {
+      "sessionId" : "demo20-T3-002",
+      "title" : "2017 年和 2018 年各有多少笔订单？",
+      "turnCount" : 1,
+      "status" : "ACTIVE",
+      "createdAt" : "2026-11-16T15:02:56.647865100Z",
+      "lastActiveAt" : "2026-11-16T15:02:59.107400Z"
+    }, {
+      "sessionId" : "demo20-T3-001",
+      "title" : "每个月的订单数量是多少？按月份排序。",
+      "turnCount" : 1,
+      "status" : "ACTIVE",
+      "createdAt" : "2026-11-16T15:02:55.219768500Z",
+      "lastActiveAt" : "2026-11-16T15:02:56.321750Z"
+    }, {
+      "sessionId" : "demo20-T2-003",
+      "title" : "订单明细的平均商品价格是多少？",
+      "turnCount" : 1,
+      "status" : "ACTIVE",
+      "createdAt" : "2026-11-16T15:02:53.979991100Z",
+      "lastActiveAt" : "2026-11-16T15:02:54.907452600Z"
+    }, {
+      "sessionId" : "demo20-T2-002",
+      "title" : "所有订单的运费总额是多少？",
+      "turnCount" : 1,
+      "status" : "ACTIVE",
+      "createdAt" : "2026-11-16T15:02:52.806278400Z",
+      "lastActiveAt" : "2026-11-16T15:02:53.660474100Z"
+    }, {
+      "sessionId" : "demo20-T2-001",
+      "title" : "所有订单明细的商品金额加起来一共是多少？",
+      "turnCount" : 1,
+      "status" : "ACTIVE",
+      "createdAt" : "2026-11-16T15:02:51.390805800Z",
+      "lastActiveAt" : "2026-11-16T15:02:52.484739800Z"
+    }, {
+      "sessionId" : "demo20-T1-003",
+      "title" : "已取消的订单有多少笔？",
+      "turnCount" : 1,
+      "status" : "ACTIVE",
+      "createdAt" : "2026-11-16T15:02:49.747297500Z",
+      "lastActiveAt" : "2026-11-16T15:02:51.091335500Z"
+    }, {
+      "sessionId" : "demo20-T1-001",
+      "title" : "一共有多少笔订单？",
+      "turnCount" : 1,
+      "status" : "ACTIVE",
+      "createdAt" : "2026-11-16T15:02:48.320778100Z",
+      "lastActiveAt" : "2026-11-16T15:02:49.411184500Z"
+    }, {
+      "sessionId" : "demo20-gmv",
+      "title" : "统计 2018 年全站 GMV（含运费），以及不含运费的销售额，两者分别是多少？",
+      "turnCount" : 2,
+      "status" : "ACTIVE",
+      "createdAt" : "2026-11-16T15:02:41.330395300Z",
+      "lastActiveAt" : "2026-11-16T15:02:47.998161500Z"
+    }, {
+      "sessionId" : "demo20-orders",
+      "title" : "2018 年下单的订单有多少笔？",
+      "turnCount" : 2,
+      "status" : "ACTIVE",
+      "createdAt" : "2026-11-16T15:02:40.044927200Z",
+      "lastActiveAt" : "2026-11-16T15:02:45.045484500Z"
+    } ],
+    "httpWallMs" : 3
+  }
+}
