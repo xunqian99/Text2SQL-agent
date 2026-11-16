@@ -13,6 +13,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.chat.messages.SystemMessage;
 
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
@@ -49,7 +50,23 @@ class LlmGenerationModeTest {
         capture(mode, false, "generate");
     }
 
+    static Stream<Arguments> promptCases() {
+        return Stream.of(false, true).flatMap(explicit -> Stream.of(false, true).flatMap(byok ->
+                Stream.of("generate", "correction", "messages", "tools")
+                        .map(path -> Arguments.of(explicit, byok, path))));
+    }
+
+    @ParameterizedTest(name = "explicit={0}, BYOK={1}, path={2}")
+    @MethodSource("promptCases")
+    void selectedPromptReachesWireWithoutChangingProviderMode(boolean explicit, boolean byok, String path) throws Exception {
+        capture("provider-default", byok, path, explicit);
+    }
+
     private void capture(String mode, boolean byok, String path) throws Exception {
+        capture(mode, byok, path, true);
+    }
+
+    private void capture(String mode, boolean byok, String path, boolean explicit) throws Exception {
         var bodies = new LinkedBlockingQueue<JsonNode>();
         var server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         server.createContext("/v1/chat/completions", exchange -> {
@@ -70,14 +87,17 @@ class LlmGenerationModeTest {
         props.getLlm().setApiKey(byok ? "" : "fixture-global-key");
         props.getLlm().setMaxTokens(8192);
         props.getLlm().setReasoningEffort(mode);
+        props.getPrompt().setExplicitReasoningEnabled(explicit);
         props.getObservability().setDir(logsDir.toString());
         props.getObservability().setIncludeContent(false);
+        var template = new PromptTemplate(props);
         try (var log = new LlmCallLog(props)) {
-            var generator = new LlmSqlGenerator(props, new PromptTemplate(), log);
+            var generator = new LlmSqlGenerator(props, template, log);
             String overrideKey = byok ? "fixture-byok-key" : null;
             String overrideModel = "fixture-override";
             var schema = new SchemaContext(List.of(), List.of(), "", "fixture schema");
-            var messages = List.<org.springframework.ai.chat.messages.Message>of(new UserMessage("count orders"));
+            var messages = List.<org.springframework.ai.chat.messages.Message>of(
+                    new SystemMessage(template.systemPrompt()), new UserMessage("count orders"));
             switch (path) {
                 case "generate" -> assertThat(generator.generate("count orders", schema, overrideModel, overrideKey).sql()).isEqualTo("SELECT 1");
                 case "correction" -> generator.generateCorrection("count orders", schema, "SELECT 0", "retry", overrideModel, overrideKey);
@@ -93,6 +113,10 @@ class LlmGenerationModeTest {
         assertThat(body.path("max_tokens").asInt()).isEqualTo(8192);
         assertThat(body.path("temperature").asDouble()).isZero();
         assertThat(body.has("thinking")).isFalse();
+        assertThat(body.path("messages").get(0).path("role").asText()).isEqualTo("system");
+        assertThat(body.path("messages").get(0).path("content").asText()).isEqualTo(template.systemPrompt());
+        assertThat(template.systemPrompt().contains("思考与推理步骤")).isEqualTo(explicit);
+        assertThat(template.systemPrompt()).contains("硬性规则：", "18. 复杂多表关联时");
         if ("provider-default".equals(mode)) assertThat(body.has("reasoning_effort")).isFalse();
         else assertThat(body.path("reasoning_effort").asText()).isEqualTo(mode);
         try (var files = Files.list(logsDir)) {
@@ -100,6 +124,7 @@ class LlmGenerationModeTest {
             assertThat(lines).hasSize(1);
             var entry = json.readTree(lines.getFirst());
             assertThat(entry.path("configuredReasoningEffort").asText()).isEqualTo(mode);
+            assertThat(entry.path("configuredPromptVersion").asText()).isEqualTo(template.version());
             assertThat(entry.path("promptSha256").asText()).hasSize(64);
             assertThat(entry.path("totalTokens").asInt()).isEqualTo(14);
             assertThat(entry.path("prompt").isNull()).isTrue();

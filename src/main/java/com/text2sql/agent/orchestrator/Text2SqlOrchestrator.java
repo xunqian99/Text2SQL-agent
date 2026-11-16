@@ -438,7 +438,7 @@ public class Text2SqlOrchestrator {
         return "%s|%s|r=%b:%d:%b:%b:%b:%b|prune=%b|s=%b|fs=%b:%d|dp=%b|fk=%b|tu=%b|limit=%s:%d|esc=%s"
                 .formatted(
                         properties.getLlm().getModel(),
-                        com.text2sql.agent.generation.PromptTemplate.VERSION,
+                        com.text2sql.agent.generation.PromptTemplate.versionFor(properties),
                         retrieval.isEnabled(),
                         retrieval.getTopK(),
                         retrieval.isJoinHintsEnabled(),

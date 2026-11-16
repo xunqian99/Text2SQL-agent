@@ -1,5 +1,7 @@
 # 评估报告索引
 
+最新实施验证：[显式指令变体](../docs/EXPLICIT_REASONING_VARIANT_20261116.md)、[验证记录](explicit-reasoning-implementation-20261116/verification.json)：Java484/484、离线审计62/62，新增模型调用0次。只验证实验入口，没有新的模型准确率或P95结论。
+
 最新离线诊断：[提示词组成](../docs/PROMPT_COMPOSITION_20261116.md)、[汇总](prompt-composition-20261116/summary.json)：原200道题、600次本地重复比较、194条真实首答指纹对齐，模型调用0次。不代表600道题或新的模型准确率/延迟验收。
 
 ## 2026-11-16 冻结候选集首轮（最新真实基线）

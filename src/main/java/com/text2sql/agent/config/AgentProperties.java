@@ -481,6 +481,17 @@ public class AgentProperties {
      */
     public static class Prompt {
 
+        /** 单因素消融入口：默认保留四步指令；关闭不改变供应商reasoning_effort。 */
+        private boolean explicitReasoningEnabled = true;
+
+        public boolean isExplicitReasoningEnabled() {
+            return explicitReasoningEnabled;
+        }
+
+        public void setExplicitReasoningEnabled(boolean explicitReasoningEnabled) {
+            this.explicitReasoningEnabled = explicitReasoningEnabled;
+        }
+
         /**
          * 是否在上下文里附带数据画像（行数、时间范围）。
          *

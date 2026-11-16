@@ -82,6 +82,20 @@ class AgentLoopTest {
     }
 
     @Test
+    void candidatePromptIsAlsoUsedByTheToolLoopCaller() {
+        properties.getPrompt().setExplicitReasoningEnabled(false);
+        var candidateTemplate = new PromptTemplate(properties);
+        agentLoop = new AgentLoop(generator, candidateTemplate, toolExecutor, properties);
+        when(generator.callWithTools(anyList(), anyList(), eq("AGENT_ROUND_1"), any(), any()))
+                .thenReturn(turn(textResponse("SELECT count(*) FROM orders"), 200, 25));
+        agentLoop.run("订单有多少", mockSchema, 3, null);
+        verify(generator).callWithTools(argThat(messages ->
+                        messages.getFirst().getText().startsWith(candidateTemplate.systemPrompt())
+                                && !messages.getFirst().getText().contains("思考与推理步骤")),
+                anyList(), eq("AGENT_ROUND_1"), any(), any());
+    }
+
+    @Test
     @DisplayName("首轮直接给 SQL：单步终止，不调用任何工具")
     void testImmediateFinalSql() {
         when(generator.callWithTools(anyList(), anyList(), eq("AGENT_ROUND_1"), any(), any()))

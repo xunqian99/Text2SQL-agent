@@ -194,7 +194,7 @@ public class EvalRunner implements ApplicationRunner {
 
         EvalReport.Meta meta = new EvalReport.Meta(
                 LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
-                PromptTemplate.VERSION,
+                PromptTemplate.versionFor(properties),
                 properties.getLlm().getModel(),
                 properties.getLlm().getBaseUrl(),
                 dryRun,
@@ -232,6 +232,7 @@ public class EvalRunner implements ApplicationRunner {
         config.put("maxTokens", llm.getMaxTokens());
         config.put("temperature", llm.getTemperature());
         config.put("configuredReasoningEffort", llm.getReasoningEffort());
+        config.put("explicitReasoningEnabled", properties.getPrompt().isExplicitReasoningEnabled());
         config.put("inputPricePer1k", llm.getInputPricePer1k());
         config.put("outputPricePer1k", llm.getOutputPricePer1k());
         config.put("cacheHitPricePer1k", llm.getCacheHitPricePer1k());

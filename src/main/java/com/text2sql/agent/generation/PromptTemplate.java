@@ -1,6 +1,8 @@
 package com.text2sql.agent.generation;
 
 import com.text2sql.agent.retrieval.SchemaContext;
+import com.text2sql.agent.config.AgentProperties;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
@@ -36,9 +38,29 @@ public class PromptTemplate {
      * 并且要重跑阶段 1 的 baseline 才能对比。
      */
     public static final String VERSION = "p9-mdl-alignment-v9";
+    public static final String NO_EXPLICIT_STEPS_VERSION = "p9-mdl-alignment-v9-no-explicit-steps-v1";
+
+    private final AgentProperties properties;
+
+    public PromptTemplate() {
+        this(new AgentProperties());
+    }
+
+    @Autowired
+    public PromptTemplate(AgentProperties properties) {
+        this.properties = properties;
+    }
+
+    public static String versionFor(AgentProperties properties) {
+        return properties.getPrompt().isExplicitReasoningEnabled() ? VERSION : NO_EXPLICIT_STEPS_VERSION;
+    }
+
+    public String version() {
+        return versionFor(properties);
+    }
 
     public String systemPrompt() {
-        return """
+        String prompt = """
                 你是一个 PostgreSQL 数据分析助手。你的唯一任务是把用户的中文问题翻译成一条可执行的 SQL。
 
                 思考与推理步骤（Chain-of-Thought 思维链）：
@@ -90,6 +112,12 @@ public class PromptTemplate {
                    - 当问题同时询问某维度多个固定枚举值的统计量（如“A和B各有多少笔/多少个”）时，优先使用 COUNT(*) FILTER (WHERE 列 = 'A') AS a, COUNT(*) FILTER (WHERE 列 = 'B') AS b 进行横向条件聚合输出。
                 18. 复杂多表关联时，可在 SELECT 语句首行添加一行以 -- 开头的单行注释说明思路，之后紧接完整 SQL。
                 """.strip();
+        if (properties.getPrompt().isExplicitReasoningEnabled()) return prompt;
+        // Remove exactly this system section, retaining the introduction and all 18 rules.
+        int start = prompt.indexOf("思考与推理步骤");
+        int end = prompt.indexOf("硬性规则", Math.max(0, start));
+        if (start < 0 || end <= start) throw new IllegalStateException("Explicit reasoning section not found");
+        return prompt.substring(0, start) + prompt.substring(end);
     }
 
     /**

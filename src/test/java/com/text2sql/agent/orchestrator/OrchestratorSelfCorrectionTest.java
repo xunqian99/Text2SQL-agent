@@ -77,6 +77,16 @@ class OrchestratorSelfCorrectionTest {
     }
 
     @Test
+    void promptVariantsCannotShareTheSameCacheEntry() {
+        var orch = orchestrator();
+        String defaultSignature = orch.cacheSignature();
+        properties.getPrompt().setExplicitReasoningEnabled(false);
+        assertThat(orch.cacheSignature()).isNotEqualTo(defaultSignature).contains("no-explicit-steps-v1");
+        properties.getPrompt().setExplicitReasoningEnabled(true);
+        assertThat(orch.cacheSignature()).isEqualTo(defaultSignature);
+    }
+
+    @Test
     @DisplayName("重试成功：采用第二次 SQL，且 token 与延迟按两次之和记账")
     void keepsSecondAttemptAndSumsCost() {
         properties.getSelfCorrection().setEnabled(true);
