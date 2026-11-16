@@ -57,7 +57,31 @@ public record AgentResponse(
         Timings timings,
         String sessionId,
         String rewrittenQuestion,
-        boolean schemaReused) {
+        boolean schemaReused,
+        com.text2sql.agent.budget.RequestBudget.Snapshot budget) {
+
+    public AgentResponse(String question, Status status, String sql, String message,
+                         List<String> violations, List<String> columns, List<List<String>> rows,
+                         boolean truncated, boolean rewritten, LlmCallRecord llmCall,
+                         int schemaTableCount, List<String> retrievedTables, int schemaDdlChars,
+                         Timings timings, String sessionId, String rewrittenQuestion, boolean schemaReused) {
+        this(question, status, sql, message, violations, columns, rows, truncated, rewritten, llmCall,
+                schemaTableCount, retrievedTables, schemaDdlChars, timings, sessionId, rewrittenQuestion, schemaReused, null);
+    }
+
+    public AgentResponse withBudget(com.text2sql.agent.budget.RequestBudget.Snapshot value) {
+        // A successful checkpoint may precede a timed-out correction. Total still covers the whole request.
+        Timings measured = value == null ? timings : new Timings(
+                timings == null ? 0 : timings.retrievalMs(), timings == null ? 0 : timings.generationMs(),
+                timings == null ? 0 : timings.validationMs(), timings == null ? 0 : timings.executionMs(), value.elapsedMs());
+        return new AgentResponse(question, status, sql, message, violations, columns, rows, truncated, rewritten,
+                llmCall, schemaTableCount, retrievedTables, schemaDdlChars, measured, sessionId, rewrittenQuestion, schemaReused, value);
+    }
+
+    public AgentResponse withUsage(LlmCallRecord usage) {
+        return new AgentResponse(question, status, sql, message, violations, columns, rows, truncated, rewritten,
+                usage, schemaTableCount, retrievedTables, schemaDdlChars, timings, sessionId, rewrittenQuestion, schemaReused, budget);
+    }
 
     public AgentResponse(String question, Status status, String sql, String message,
                          List<String> violations, List<String> columns, List<List<String>> rows,
@@ -71,7 +95,7 @@ public record AgentResponse(
     public AgentResponse withConversation(String sessionId, String rewrittenQuestion, boolean schemaReused) {
         return new AgentResponse(question, status, sql, message, violations, columns, rows,
                 truncated, rewritten, llmCall, schemaTableCount, retrievedTables, schemaDdlChars, timings,
-                sessionId, rewrittenQuestion, schemaReused);
+                sessionId, rewrittenQuestion, schemaReused, budget);
     }
 
     /**
@@ -99,7 +123,11 @@ public record AgentResponse(
          * NEEDS_CLARIFICATION 是问题没问清。归因时如果把两者混成一类，
          * 会得出「模型爱写违规 SQL」的错误结论。
          */
-        NEEDS_CLARIFICATION
+        NEEDS_CLARIFICATION,
+        /** The shared request deadline expired; usage may still be unknown for an interrupted call. */
+        REQUEST_TIMEOUT,
+        /** Request call budget or bounded worker capacity exhausted. */
+        RESOURCE_LIMITED
     }
 
     /**

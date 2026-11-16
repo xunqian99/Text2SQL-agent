@@ -235,6 +235,12 @@ public class EvalRunner implements ApplicationRunner {
         config.put("outputPricePer1k", llm.getOutputPricePer1k());
         config.put("cacheHitPricePer1k", llm.getCacheHitPricePer1k());
         config.put("costEstimated", llm.getInputPricePer1k() > 0 || llm.getOutputPricePer1k() > 0);
+        var budget = properties.getRequestBudget();
+        config.put("requestBudgetEnabled", budget.isEnabled());
+        config.put("requestTimeoutMs", budget.getTimeoutMs());
+        config.put("requestMaxModelCalls", budget.getMaxModelCalls());
+        config.put("requestMinRetryRemainingMs", budget.getMinRetryRemainingMs());
+        config.put("sdkMaxAttempts", 1);
         config.put("clarificationEnabled", properties.getClarification().isEnabled());
         config.put("resultCheckerEnabled", properties.getResultChecker().isEnabled());
         config.put("columnPruningEnabled", retrieval.isColumnPruningEnabled());

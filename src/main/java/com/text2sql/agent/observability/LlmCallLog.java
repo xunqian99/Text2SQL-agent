@@ -95,7 +95,11 @@ public class LlmCallLog implements AutoCloseable {
      */
     public void record(LlmCallRecord record, String status, String prompt, String response,
                        String promptSha256) {
-        EvaluationTrace.call(record, status, promptSha256);
+        var budget = com.text2sql.agent.budget.RequestBudget.current();
+        boolean usageKnown = record != null && record.totalTokens() > 0;
+        if (budget != null && !budget.observe(record)) status = "LATE_" + status;
+        if (!usageKnown) status += "_UNKNOWN_USAGE";
+        EvaluationTrace.call(usageKnown ? record : null, status, promptSha256);
         if (!enabled() || record == null) {
             return;
         }
@@ -114,7 +118,8 @@ public class LlmCallLog implements AutoCloseable {
                 com.text2sql.agent.generation.PromptFingerprint.VERSION,
                 promptSha256,
                 properties.getObservability().isIncludeContent() ? prompt : null,
-                properties.getObservability().isIncludeContent() ? response : null);
+                properties.getObservability().isIncludeContent() ? response : null,
+                budget == null ? null : budget.id(), budget == null ? null : budget.callNumber(), usageKnown);
 
         // 只有「写文件 + 计数」留在锁内：这两步是本地操作，耗时可忽略。
         // 数据库写入移到锁外——它是网络往返，放进锁里会让所有并发请求
@@ -203,6 +208,6 @@ public class LlmCallLog implements AutoCloseable {
             String promptHashVersion,
             String promptSha256,
             String prompt,
-            String response) {
+            String response, String requestId, Integer callNumber, boolean usageKnown) {
     }
 }

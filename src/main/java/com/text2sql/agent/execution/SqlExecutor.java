@@ -57,6 +57,7 @@ public class SqlExecutor {
      * @throws SqlExecutionException 执行失败（语法错、表不存在、超时等）
      */
     public QueryResult execute(String sql) {
+        com.text2sql.agent.budget.RequestBudget.stage("EXECUTION");
         //写在配置文件里面的配置，最大允许行数，最长时间
         int maxRows = properties.getDb().getMaxRows();
         int timeout = properties.getDb().getQueryTimeoutSeconds();
@@ -139,7 +140,7 @@ public class SqlExecutor {
             // 只读事务：数据库层面的兜底，不依赖代码正确性
             connection.setReadOnly(true);
             PreparedStatement statement = connection.prepareStatement(sql);
-            statement.setQueryTimeout(timeoutSeconds);
+            statement = com.text2sql.agent.budget.BudgetJdbcGuard.protect(connection, statement, timeoutSeconds);
             // 多取一行，用来判断「是不是被截断了」——只取 maxRows 行的话，
             // 结果刚好等于 maxRows 时无法区分「恰好这么多」和「还有更多」。
             statement.setMaxRows(maxRows + 1);

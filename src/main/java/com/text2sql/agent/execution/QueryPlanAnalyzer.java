@@ -78,6 +78,7 @@ public class QueryPlanAnalyzer {
      * 对 SQL 进行预执行代价与执行计划分析。
      */
     public PlanAnalysis analyze(String sql) {
+        com.text2sql.agent.budget.RequestBudget.stage("EXPLAIN");
         if (sql == null || sql.isBlank()) {
             return PlanAnalysis.error("SQL 为空，无法执行计划分析");
         }
@@ -90,8 +91,7 @@ public class QueryPlanAnalyzer {
                     connection -> {
                         connection.setReadOnly(true);
                         PreparedStatement ps = connection.prepareStatement(explainSql);
-                        ps.setQueryTimeout(timeout);
-                        return ps;
+                        return com.text2sql.agent.budget.BudgetJdbcGuard.protect(connection, ps, timeout);
                     },
                     (rs, rowNum) -> rs.getString(1)
             );

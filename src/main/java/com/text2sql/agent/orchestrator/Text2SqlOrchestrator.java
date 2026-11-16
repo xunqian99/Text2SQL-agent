@@ -1,6 +1,8 @@
 package com.text2sql.agent.orchestrator;
 
 import com.text2sql.agent.execution.QueryResult;
+import com.text2sql.agent.budget.RequestBudget;
+import com.text2sql.agent.budget.RequestBudgetRunner;
 import com.text2sql.agent.execution.SqlExecutionException;
 import com.text2sql.agent.execution.SqlExecutor;
 import com.text2sql.agent.generation.GeneratedSql;
@@ -153,7 +155,25 @@ public class Text2SqlOrchestrator {
      * @param apiKey    用户个人 API Key，为 null 时使用系统全局 Key
      */
     public AgentResponse ask(String question, String sessionId, String apiKey) {
+        return ask(question, sessionId, apiKey, false);
+    }
+
+    public AgentResponse ask(String question, String sessionId, String apiKey, boolean endSession) {
+        return RequestBudgetRunner.run(question, sessionId, properties.getRequestBudget(),
+                () -> {
+                    AgentResponse response = askPipeline(question, sessionId, apiKey);
+                    if (endSession && sessionId != null) {
+                        RequestBudget.checkpoint(response);
+                        RequestBudget.stage("SESSION_PERSIST");
+                        closeSession(sessionId);
+                    }
+                    return response;
+                });
+    }
+
+    private AgentResponse askPipeline(String question, String sessionId, String apiKey) {
         long totalStarted = System.nanoTime();
+        RequestBudget.stage("SESSION");
 
         boolean convEnabled = properties.getConversation().isEnabled()
                 && sessionId != null && !sessionId.isBlank();
@@ -168,6 +188,7 @@ public class Text2SqlOrchestrator {
         com.text2sql.agent.observability.LlmCallRecord rewriteCall = null;
 
         if (convEnabled && questionRewriter.isFollowUp(question, session)) {
+            RequestBudget.stage("REWRITE");
             var rewriteOutcome = questionRewriter.rewriteWithOutcome(question, session);
             rewrittenQuestion = rewriteOutcome.question();
             effectiveQuestion = rewrittenQuestion;
@@ -182,6 +203,7 @@ public class Text2SqlOrchestrator {
 
         // 阶段 5：口径没定就先问，不要猜。
         // 放在最前面，是因为它要在花掉一次模型调用之前生效。
+        RequestBudget.stage("CLARIFICATION");
         if (properties.getClarification().isEnabled()) {
             var prompt = ambiguityDetector.clarificationFor(effectiveQuestion);
             if (prompt.isPresent()) {
@@ -196,16 +218,19 @@ public class Text2SqlOrchestrator {
         }
 
         if (schema == null) {
+            RequestBudget.stage("RETRIEVAL");
             long retrievalStarted = System.nanoTime();
             schema = schemaProvider.provide(effectiveQuestion);
             retrievalMs = elapsedMs(retrievalStarted);
         }
 
         int tableCount = schema.tables().size();
+        RequestBudget.schema(schema);
         List<String> retrievedTables = schema.tableNames();
         int ddlChars = schema.ddlText() == null ? 0 : schema.ddlText().length();
 
         // 阶段 6：语义缓存。命中就跳过模型调用，直接拿旧 SQL 走校验和执行。
+        RequestBudget.stage("CACHE");
         String cacheKey = cache.enabled() ? cache.key(effectiveQuestion, cacheSignature()) : null;
         if (cacheKey != null) {
             var cachedSql = cache.get(cacheKey);
@@ -214,6 +239,8 @@ public class Text2SqlOrchestrator {
                 AgentResponse hit = validateAndExecute(question, cachedSql.get(), rewriteCall, schema,
                         tableCount, retrievedTables, ddlChars, retrievalMs, rewriteMs, totalStarted);
                 if (hit.success()) {
+                    EvaluationTrace.attempt("CACHE_SQL", hit);
+                    RequestBudget.checkpoint(hit);
                     if (convEnabled) {
                         recordConversationTurn(session, question, rewrittenQuestion, hit);
                         return hit.withConversation(sessionId, rewrittenQuestion, schemaReused);
@@ -252,7 +279,7 @@ public class Text2SqlOrchestrator {
         } catch (GenerationException e) {
             EvaluationTrace.generationFailure(question, e);
             if (properties.getSelfCorrection().isEnabled() && properties.getSelfCorrection().getMaxAttempts() > 1
-                    && e.getReason() != GenerationException.Reason.NOT_CONFIGURED) {
+                    && e.getReason() != GenerationException.Reason.NOT_CONFIGURED && RequestBudget.allowRetry()) {
                 generationRetried = true;
                 EvaluationTrace.trigger("GENERATION_" + e.getReason().name());
                 log.warn("首次生成异常（{}：{}），尝试重试一次生成", e.getReason(), e.getMessage());
@@ -306,9 +333,11 @@ public class Text2SqlOrchestrator {
                 LlmCallRecord.combine(rewriteCall, LlmCallRecord.combine(retryGenerationCall, generated.call())),
                 schema, tableCount, retrievedTables, ddlChars, retrievalMs, generationMs, totalStarted);
         EvaluationTrace.attempt("INITIAL_SQL", first);
+        RequestBudget.checkpoint(first);
         if (generationRetried) EvaluationTrace.select(2);
         AgentResponse result = generationRetried ? first : retryIfFailed(generationQuestion, first, apiKey);
 
+        RequestBudget.stage("CACHE_WRITE");
         if (cacheKey != null && result.success()) {
             cache.put(cacheKey, result.sql());
         }
@@ -342,6 +371,7 @@ public class Text2SqlOrchestrator {
 
     private void recordConversationTurn(ConversationSession session, String rawQuestion,
                                         String rewrittenQuestion, AgentResponse response) {
+        RequestBudget.stage("CONVERSATION");
         if (session == null) {
             return;
         }
@@ -449,6 +479,7 @@ public class Text2SqlOrchestrator {
      * 这样「每次调用花了多少」这个数字不会被重试悄悄稀释。
      */
     private AgentResponse retryIfFailed(String question, AgentResponse first, String apiKey) {
+        RequestBudget.stage("RESULT_CHECK");
         var config = properties.getSelfCorrection();
         var routing = properties.getRouting();
         boolean escalate = routing.isEnabled() && !routing.getEscalationModel().isBlank();
@@ -477,7 +508,7 @@ public class Text2SqlOrchestrator {
             }
         }
 
-        if (!shouldRetry) {
+        if (!shouldRetry || !RequestBudget.allowRetry()) {
             return first;
         }
         EvaluationTrace.trigger(firstSuspicion == null ? first.status().name() : firstSuspicion);
@@ -606,9 +637,17 @@ public class Text2SqlOrchestrator {
      */
     public AgentResponse askWithCorrection(String question, String previousSql, String feedback,
                                            String modelOverride, String apiKey) {
+        return RequestBudgetRunner.run(question, null, properties.getRequestBudget(),
+                () -> correctionPipeline(question, previousSql, feedback, modelOverride, apiKey));
+    }
+
+    private AgentResponse correctionPipeline(String question, String previousSql, String feedback,
+                                              String modelOverride, String apiKey) {
         long totalStarted = System.nanoTime();
+        RequestBudget.stage("RETRIEVAL");
         long retrievalStarted = System.nanoTime();
         SchemaContext schema = schemaProvider.provide(question);
+        RequestBudget.schema(schema);
         long retrievalMs = elapsedMs(retrievalStarted);
         int tableCount = schema.tables().size();
         List<String> retrievedTables = schema.tableNames();
@@ -639,6 +678,7 @@ public class Text2SqlOrchestrator {
                                              List<String> retrievedTables,
                                              int ddlChars,
                                              long retrievalMs, long generationMs, long totalStarted) {
+        RequestBudget.stage("VALIDATION");
         long validationStarted = System.nanoTime();
         ValidationResult validation = validator.validate(sql, schema);
         long validationMs = elapsedMs(validationStarted);
@@ -659,6 +699,7 @@ public class Text2SqlOrchestrator {
         if (!properties.getEval().isDryRun()
                 && properties.getGuard().isExplainCostGuardEnabled()
                 && queryPlanAnalyzer != null) {
+            RequestBudget.stage("EXPLAIN");
             var analysis = queryPlanAnalyzer.analyze(validation.sql());
             if (!analysis.safe()) {
                 log.warn("SQL 触发高危执行计划护栏拦截：{}", analysis.riskDescription());
@@ -669,6 +710,7 @@ public class Text2SqlOrchestrator {
             }
         }
 
+        RequestBudget.stage("EXECUTION");
         long executionStarted = System.nanoTime();
         QueryResult result;
         try {

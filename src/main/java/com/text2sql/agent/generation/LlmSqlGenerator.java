@@ -18,7 +18,8 @@ import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.ai.openai.api.OpenAiApi;
 import org.springframework.ai.tool.ToolCallback;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import com.text2sql.agent.budget.BudgetHttpRequestFactory;
+import com.text2sql.agent.budget.RequestBudget;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
@@ -178,8 +179,9 @@ public class LlmSqlGenerator {
         long started = System.nanoTime();
         ChatResponse response;
         try {
-            response = targetModel.call(new Prompt(messages, options));
+            response = invoke(targetModel, new Prompt(messages, options), promptSha256);
         } catch (Exception e) {
+            if (e instanceof RequestBudget.Exceeded expired) throw expired;
             com.text2sql.agent.observability.EvaluationTrace.call(null, "CALL_FAILED", promptSha256);
             throw new GenerationException(GenerationException.Reason.CALL_FAILED,
                     "LLM 调用失败：" + e.getMessage(), e);
@@ -251,8 +253,9 @@ public class LlmSqlGenerator {
         long started = System.nanoTime();
         ChatResponse response;
         try {
-            response = targetModel.call(new Prompt(messages, options));
+            response = invoke(targetModel, new Prompt(messages, options), promptSha256);
         } catch (Exception e) {
+            if (e instanceof RequestBudget.Exceeded expired) throw expired;
             com.text2sql.agent.observability.EvaluationTrace.call(null, "CALL_FAILED_CORRECTION", promptSha256);
             throw new GenerationException(GenerationException.Reason.CALL_FAILED,
                     "LLM 自纠错调用失败：" + e.getMessage(), e);
@@ -304,8 +307,10 @@ public class LlmSqlGenerator {
         long started = System.nanoTime();
         ChatResponse response;
         try {
-            response = targetModel.call(new Prompt(messages, options));
+            response = invoke(targetModel, new Prompt(messages, options), promptSha256);
         } catch (Exception e) {
+            if (e instanceof RequestBudget.Exceeded expired) throw expired;
+            com.text2sql.agent.observability.EvaluationTrace.call(null, "CALL_FAILED_" + logTag, promptSha256);
             throw new GenerationException(GenerationException.Reason.CALL_FAILED,
                     "LLM 调用失败：" + e.getMessage(), e);
         }
@@ -370,8 +375,10 @@ public class LlmSqlGenerator {
         long started = System.nanoTime();
         ChatResponse response;
         try {
-            response = targetModel.call(new Prompt(messages, optionsBuilder.build()));
+            response = invoke(targetModel, new Prompt(messages, optionsBuilder.build()), promptSha256);
         } catch (Exception e) {
+            if (e instanceof RequestBudget.Exceeded expired) throw expired;
+            com.text2sql.agent.observability.EvaluationTrace.call(null, "CALL_FAILED_" + logTag, promptSha256);
             throw new GenerationException(GenerationException.Reason.CALL_FAILED,
                     "LLM 调用失败：" + e.getMessage(), e);
         }
@@ -469,13 +476,17 @@ public class LlmSqlGenerator {
      * 整个评估运行器挂在那里，而评估要跑 200 次。给一个明确的 60 秒上限，
      * 失败就记一次失败，继续下一条。
      */
+    private static ChatResponse invoke(ChatModel model, Prompt prompt, String hash) {
+        RequestBudget budget = RequestBudget.current();
+        if (budget != null) budget.startModelCall(hash);
+        return model.call(prompt);
+    }
+
     private static ChatModel buildChatModel(AgentProperties properties, String apiKey) {
         if (!StringUtils.hasText(apiKey)) {
             return null;
         }
-        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-        requestFactory.setConnectTimeout(java.time.Duration.ofSeconds(10));
-        requestFactory.setReadTimeout(java.time.Duration.ofSeconds(properties.getLlm().getTimeoutSeconds()));
+        var requestFactory = new BudgetHttpRequestFactory(properties.getLlm().getTimeoutSeconds());
 
         OpenAiApi api = OpenAiApi.builder()
                 .baseUrl(properties.getLlm().getBaseUrl())
@@ -486,6 +497,7 @@ public class LlmSqlGenerator {
 
         return OpenAiChatModel.builder()
                 .openAiApi(api)
+                .retryTemplate(org.springframework.retry.support.RetryTemplate.builder().maxAttempts(1).build())
                 .defaultOptions(OpenAiChatOptions.builder()
                         .model(properties.getLlm().getModel())
                         .temperature(properties.getLlm().getTemperature())

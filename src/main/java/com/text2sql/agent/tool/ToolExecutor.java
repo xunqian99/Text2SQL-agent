@@ -40,6 +40,7 @@ public class ToolExecutor {
      * 在沙箱环境中执行一个工具调用。
      */
     public ToolResult execute(ToolCall call, SchemaContext schema) {
+        com.text2sql.agent.budget.RequestBudget.stage("TOOL");
         if (call == null || call.type() == null) {
             return ToolResult.error("未知的工具调用");
         }

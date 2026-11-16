@@ -17,7 +17,7 @@ public record EvaluationEvidence(
         String goldResultSha256, String promptHashVersion, String status, String finalSql,
         boolean correct, long wallLatencyMs, AgentResponse.Timings timings, LlmCallRecord totalUsage,
         String retryTrigger, int selectedAttempt, List<EvaluationTrace.Call> calls,
-        List<Attempt> productionAttempts) {
+        List<Attempt> productionAttempts, com.text2sql.agent.budget.RequestBudget.Snapshot budget) {
     private static final ObjectMapper JSON = new ObjectMapper();
 
     public static EvaluationEvidence grade(EvalItem item, QueryResult gold, AgentResponse response,
@@ -30,7 +30,7 @@ public record EvaluationEvidence(
                 .map(a -> new Attempt(a.number(), a.stage(), a.response().status().name(), a.response().sql(),
                         a.response().message(), correct(item, gold, a.response()), a.response().columns(),
                         a.response().rowCount(), a.response().truncated(), resultHash(result(a.response()))))
-                .toList());
+                .toList(), response.budget());
     }
 
     private static boolean correct(EvalItem item, QueryResult gold, AgentResponse response) {

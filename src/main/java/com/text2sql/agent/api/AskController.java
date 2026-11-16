@@ -71,10 +71,9 @@ public class AskController {
         String apiKey = (request.apiKey() != null && !request.apiKey().isBlank())
                 ? request.apiKey()
                 : headerApiKey;
-        AgentResponse response = orchestrator.ask(request.question(), request.sessionId(), apiKey);
-        if (Boolean.TRUE.equals(request.endSession()) && request.sessionId() != null) {
-            orchestrator.closeSession(request.sessionId());
-        }
+        AgentResponse response = Boolean.TRUE.equals(request.endSession())
+                ? orchestrator.ask(request.question(), request.sessionId(), apiKey, true)
+                : orchestrator.ask(request.question(), request.sessionId(), apiKey);
         HttpStatus status = switch (response.status()) {
             case SUCCESS -> HttpStatus.OK;
             case NOT_CONFIGURED -> HttpStatus.SERVICE_UNAVAILABLE;
@@ -82,6 +81,8 @@ public class AskController {
             // 需要澄清是「请求本身信息不足」，不是服务端故障，所以用 400 而不是 5xx。
             case NEEDS_CLARIFICATION -> HttpStatus.BAD_REQUEST;
             case GENERATION_FAILED, EXECUTION_FAILED -> HttpStatus.BAD_GATEWAY;
+            case REQUEST_TIMEOUT -> HttpStatus.GATEWAY_TIMEOUT;
+            case RESOURCE_LIMITED -> HttpStatus.SERVICE_UNAVAILABLE;
         };
         return ResponseEntity.status(status).body(AskResponse.from(response));
     }
@@ -176,7 +177,8 @@ public class AskController {
             Timings timings,
             String sessionId,
             String rewrittenQuestion,
-            boolean schemaReused) {
+            boolean schemaReused,
+            com.text2sql.agent.budget.RequestBudget.Snapshot budget) {
 
         public record Llm(String model, int promptTokens, int completionTokens, int totalTokens,
                           long latencyMs, double costYuan) {
@@ -196,7 +198,7 @@ public class AskController {
             return new AskResponse(r.status().name(), r.sql(), r.message(), r.violations(),
                     r.columns(), r.rows(), r.truncated(), r.rewritten(), r.rowCount(),
                     r.schemaTableCount(), r.retrievedTables(), r.schemaDdlChars(),
-                    llm, timings, r.sessionId(), r.rewrittenQuestion(), r.schemaReused());
+                    llm, timings, r.sessionId(), r.rewrittenQuestion(), r.schemaReused(), r.budget());
         }
     }
 }

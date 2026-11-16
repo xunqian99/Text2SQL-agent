@@ -56,6 +56,11 @@ spring:
       moderation: none
 
 agent:
+  request-budget:
+    enabled: true
+    timeout-ms: 15000
+    max-model-calls: 2
+    min-retry-remaining-ms: 2000
   db:
     # 结果集行数上限。设 200 的理由：评估集里最大的 gold_result 是 73 行，
     # 200 有足够余量；同时 200 行 × 若干列的结果集在 JSON 响应里也只有几十 KB。

@@ -50,7 +50,9 @@ class SqlExtractionPipelineTest {
         when(provider.provide("订单状态有多少种？")).thenReturn(schema);
         var model = mock(ChatModel.class);
         when(model.call(any(Prompt.class))).thenReturn(new ChatResponse(List.of(
-                new Generation(new AssistantMessage(sql + "\n```")))));
+                new Generation(new AssistantMessage(sql + "\n```"))),
+                org.springframework.ai.chat.metadata.ChatResponseMetadata.builder()
+                        .usage(new org.springframework.ai.chat.metadata.DefaultUsage(10, 5)).build()));
         var executor = mock(SqlExecutor.class);
         when(executor.execute(sql)).thenReturn(new QueryResult(
                 List.of("status_count"), List.of(List.of("8")), false, 1));

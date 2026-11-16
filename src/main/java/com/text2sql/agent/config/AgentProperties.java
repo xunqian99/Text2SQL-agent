@@ -32,6 +32,26 @@ public class AgentProperties {
     private ToolUse toolUse = new ToolUse();
     private Conversation conversation = new Conversation();
     private Eval eval = new Eval();
+    private RequestBudgetConfig requestBudget = new RequestBudgetConfig();
+
+    public RequestBudgetConfig getRequestBudget() { return requestBudget; }
+    public void setRequestBudget(RequestBudgetConfig requestBudget) { this.requestBudget = requestBudget; }
+
+    public static class RequestBudgetConfig {
+        // Enabled explicitly in application.yml; bare unit fixtures retain their synchronous contract.
+        private boolean enabled;
+        private long timeoutMs = 15000;
+        private int maxModelCalls = 2;
+        private long minRetryRemainingMs = 2000;
+        public boolean isEnabled() { return enabled; }
+        public void setEnabled(boolean enabled) { this.enabled = enabled; }
+        public long getTimeoutMs() { return timeoutMs; }
+        public void setTimeoutMs(long timeoutMs) { this.timeoutMs = timeoutMs; }
+        public int getMaxModelCalls() { return maxModelCalls; }
+        public void setMaxModelCalls(int maxModelCalls) { this.maxModelCalls = maxModelCalls; }
+        public long getMinRetryRemainingMs() { return minRetryRemainingMs; }
+        public void setMinRetryRemainingMs(long minRetryRemainingMs) { this.minRetryRemainingMs = minRetryRemainingMs; }
+    }
 
     public ToolUse getToolUse() {
         return toolUse;

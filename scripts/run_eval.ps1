@@ -5,6 +5,10 @@ param(
   [switch]$SelfCorrection,
   [switch]$ResultChecker,
   [switch]$DisableClarification,
+  [switch]$DisableRequestBudget,
+  [ValidateRange(1, 120000)][int]$RequestTimeoutMs = 15000,
+  [ValidateRange(1, 16)][int]$RequestMaxModelCalls = 2,
+  [ValidateRange(0, 120000)][int]$RetryReserveMs = 2000,
   [ValidateRange(1, 2)][int]$MaxAttempts = 2,
   [ValidateRange(1, 65535)][int]$Port = 18080,
   [ValidateRange(1, 131072)][int]$MaxTokens = 8192,
@@ -15,6 +19,9 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+if (-not $DisableRequestBudget -and $RetryReserveMs -gt $RequestTimeoutMs) {
+  throw 'RetryReserveMs must not exceed RequestTimeoutMs.'
+}
 $projectRoot = Split-Path -Parent $PSScriptRoot
 if (-not (Test-Path -LiteralPath (Join-Path $projectRoot 'src/main/resources/application-local.yml'))) {
   throw "Missing local profile. Copy src/main/resources/application-local.example.yml to application-local.yml first."
@@ -51,6 +58,10 @@ $mavenArgs = @(
   "--agent.self-correction.enabled=$($SelfCorrection.IsPresent.ToString().ToLowerInvariant())",
   "--agent.self-correction.max-attempts=$attempts",
   "--agent.result-checker.enabled=$($ResultChecker.IsPresent.ToString().ToLowerInvariant())",
+  "--agent.request-budget.enabled=$((!$DisableRequestBudget.IsPresent).ToString().ToLowerInvariant())",
+  "--agent.request-budget.timeout-ms=$RequestTimeoutMs",
+  "--agent.request-budget.max-model-calls=$RequestMaxModelCalls",
+  "--agent.request-budget.min-retry-remaining-ms=$RetryReserveMs",
   '--agent.cache.enabled=false', '--agent.routing.enabled=false',
   '--agent.tool-use.enabled=false', '--agent.conversation.enabled=false'
   '--agent.observability.enabled=true', '--agent.observability.include-content=false',
