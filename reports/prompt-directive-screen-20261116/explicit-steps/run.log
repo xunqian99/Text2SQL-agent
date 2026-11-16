@@ -1,0 +1,426 @@
+Running eval: model=deepseek-flash, maxTokens=8192, reasoningEffort=provider-default, split=dev, selfCorrection=True, resultChecker=True
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] --------------------< com.text2sql:text2sql-agent >---------------------
+[INFO] Building text2sql-agent 0.1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:3.5.16:run (default-cli) > test-compile @ text2sql-agent >>>
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ text2sql-agent ---
+[INFO] Copying 3 resources from src\main\resources to target\classes
+[INFO] Copying 5 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.1:compile (default-compile) @ text2sql-agent ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ text2sql-agent ---
+[INFO] skip non existing resourceDirectory C:\Users\xunqian\Desktop\agent\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.14.1:testCompile (default-testCompile) @ text2sql-agent ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] <<< spring-boot:3.5.16:run (default-cli) < test-compile @ text2sql-agent <<<
+[INFO] 
+[INFO] 
+[INFO] --- spring-boot:3.5.16:run (default-cli) @ text2sql-agent ---
+[INFO] Attaching agents: []
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::               (v3.5.16)
+
+2026-11-16T20:36:39.589+08:00  INFO 36868 --- [text2sql-agent] [           main] c.t.agent.Text2SqlAgentApplication       : Starting Text2SqlAgentApplication using Java 21.0.11 with PID 36868 (C:\Users\xunqian\Desktop\agent\target\classes started by xunqian in C:\Users\xunqian\Desktop\agent)
+2026-11-16T20:36:39.590+08:00  INFO 36868 --- [text2sql-agent] [           main] c.t.agent.Text2SqlAgentApplication       : The following 1 profile is active: "local"
+2026-11-16T20:36:40.711+08:00  INFO 36868 --- [text2sql-agent] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 18080 (http)
+2026-11-16T20:36:40.724+08:00  INFO 36868 --- [text2sql-agent] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-11-16T20:36:40.724+08:00  INFO 36868 --- [text2sql-agent] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.55]
+2026-11-16T20:36:40.773+08:00  INFO 36868 --- [text2sql-agent] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-11-16T20:36:40.773+08:00  INFO 36868 --- [text2sql-agent] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 1148 ms
+2026-11-16T20:36:40.930+08:00  INFO 36868 --- [text2sql-agent] [           main] c.t.agent.semantic.MetricRegistry        : 指标注册表已加载：24 条
+2026-11-16T20:36:41.000+08:00  INFO 36868 --- [text2sql-agent] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-11-16T20:36:41.009+08:00  INFO 36868 --- [text2sql-agent] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-11-16T20:36:41.251+08:00  INFO 36868 --- [text2sql-agent] [           main] c.t.agent.retrieval.SchemaCatalog        : schema 已加载：37 张表 / 201 列 / 13 条外键 / DDL 7401 字符
+2026-11-16T20:36:41.461+08:00  INFO 36868 --- [text2sql-agent] [           main] c.text2sql.agent.fewshot.ExampleLoader   : Few-shot 示例库加载完成：35 条示例
+2026-11-16T20:36:41.656+08:00  INFO 36868 --- [text2sql-agent] [           main] c.t.agent.generation.LlmSqlGenerator     : LLM 已就绪：provider=openai-compatible model=deepseek-flash endpoint=https://api.deepseek.com/v1/chat/completions
+2026-11-16T20:36:41.667+08:00  INFO 36868 --- [text2sql-agent] [           main] c.t.a.clarification.AmbiguityDetector    : 歧义词表已加载：3 条
+2026-11-16T20:36:41.780+08:00  INFO 36868 --- [text2sql-agent] [           main] o.s.b.a.w.s.WelcomePageHandlerMapping    : Adding welcome page: class path resource [static/index.html]
+2026-11-16T20:36:42.020+08:00  INFO 36868 --- [text2sql-agent] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 18080 (http) with context path '/'
+2026-11-16T20:36:42.030+08:00  INFO 36868 --- [text2sql-agent] [           main] c.t.agent.Text2SqlAgentApplication       : Started Text2SqlAgentApplication in 2.894 seconds (process running for 3.162)
+2026-11-16T20:36:42.057+08:00  INFO 36868 --- [text2sql-agent] [           main] c.text2sql.agent.evaluation.EvalRunner   : 开始评估：100 条，dryRun=false，model=deepseek-flash
+2026-11-16T20:36:42.057+08:00  INFO 36868 --- [text2sql-agent] [           main] c.text2sql.agent.evaluation.EvalRunner   : 评测实际配置（不含密钥）：{maxTokens=8192, temperature=0.0, configuredReasoningEffort=provider-default, explicitReasoningEnabled=true, inputPricePer1k=0.001, outputPricePer1k=0.004, cacheHitPricePer1k=2.0E-5, costEstimated=true, requestBudgetEnabled=true, requestTimeoutMs=15000, requestMaxModelCalls=2, requestMinRetryRemainingMs=2000, sdkMaxAttempts=1, clarificationEnabled=true, resultCheckerEnabled=true, columnPruningEnabled=true, joinPlanEnabled=true, joinListEnabled=false, bridgeRepairEnabled=true, semanticEnabled=true, fewshotEnabled=true, fewshotMaxExamples=2, cacheEnabled=false, routingEnabled=false, toolUseEnabled=false, conversationEnabled=false}
+2026-11-16T20:36:42.096+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.glossary.GlossaryLoader  : 语义词典已加载：37 张表有中文描述 / 36 条约定关联（无效条目 0 条）
+2026-11-16T20:36:42.111+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.retrieval.ValueRetriever       : ValueRetriever 枚举与实体倒排索引初始化完成，共收录 296 个映射项
+2026-11-16T20:36:42.117+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1573 字符（全量 7401 字符）
+2026-11-16T20:36:43.353+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2236(prompt=2154,completion=82,cacheHit=1920,cacheMiss=234) latency=1226ms cost=0.0006元 promptChars=5283
+2026-11-16T20:36:43.356+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.observability.LlmCallLog       : LLM 调用记录写入：C:\Users\xunqian\Desktop\agent\reports\prompt-directive-screen-20261116\explicit-steps\llm-calls\llm-calls-20261116.jsonl
+2026-11-16T20:36:43.453+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：2 条主干边，起点 customers，覆盖目标表 [customers, members, orders]
+2026-11-16T20:36:43.453+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[customers, members, orders, member_levels, order_items, order_payments, order_reviews, regions] | DDL 1377 字符（全量 7401 字符）
+2026-11-16T20:36:44.692+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2248(prompt=2192,completion=56,cacheHit=2048,cacheMiss=144) latency=1237ms cost=0.0004元 promptChars=5272
+2026-11-16T20:36:44.750+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[products, order_items, campaign_products, inventory, inventory_movements, product_brand_map, product_category_translation, product_price_history] | DDL 1060 字符（全量 7401 字符）
+2026-11-16T20:36:45.766+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=1962(prompt=1939,completion=23,cacheHit=1792,cacheMiss=147) latency=1017ms cost=0.0003元 promptChars=4522
+2026-11-16T20:36:45.821+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 customers，覆盖目标表 [customers, geolocation, shipping_addresses]
+2026-11-16T20:36:45.822+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 6 张表：[customers, geolocation, shipping_addresses, orders, members, regions] | DDL 1039 字符（全量 7401 字符）
+2026-11-16T20:36:46.534+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2147(prompt=2123,completion=24,cacheHit=1920,cacheMiss=203) latency=711ms cost=0.0003元 promptChars=4973
+2026-11-16T20:36:46.575+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[products, order_items, campaign_products, inventory, inventory_movements, product_brand_map, product_category_translation, product_price_history] | DDL 1060 字符（全量 7401 字符）
+2026-11-16T20:36:47.698+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2002(prompt=1938,completion=64,cacheHit=1792,cacheMiss=146) latency=1122ms cost=0.0004元 promptChars=4522
+2026-11-16T20:36:47.736+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：2 条主干边，起点 order_items，覆盖目标表 [order_items, support_tickets]
+2026-11-16T20:36:47.736+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[order_items, orders, products, sellers, support_tickets, refund_items, settlement_items, ticket_categories] | DDL 1313 字符（全量 7401 字符）
+2026-11-16T20:36:47.737+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：1 条
+2026-11-16T20:36:49.612+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2363(prompt=2180,completion=183,cacheHit=2046,cacheMiss=134) latency=1875ms cost=0.0009元 promptChars=5156
+2026-11-16T20:36:49.666+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 2 张表：[order_payments, orders] | DDL 364 字符（全量 7401 字符）
+2026-11-16T20:36:49.667+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：1 条
+2026-11-16T20:36:50.482+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=1828(prompt=1799,completion=29,cacheHit=1664,cacheMiss=135) latency=817ms cost=0.0003元 promptChars=3808
+2026-11-16T20:36:50.509+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[products, order_items, campaign_products, inventory, inventory_movements, product_brand_map, product_category_translation, product_price_history] | DDL 1050 字符（全量 7401 字符）
+2026-11-16T20:36:51.598+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=1987(prompt=1941,completion=46,cacheHit=1792,cacheMiss=149) latency=1087ms cost=0.0004元 promptChars=4520
+2026-11-16T20:36:51.619+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 customers，覆盖目标表 [customers, orders]
+2026-11-16T20:36:51.619+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[customers, orders, order_items, order_payments, order_reviews, coupon_usages, members, refund_items] | DDL 1245 字符（全量 7401 字符）
+2026-11-16T20:36:53.757+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2322(prompt=2095,completion=227,cacheHit=1920,cacheMiss=175) latency=2138ms cost=0.0011元 promptChars=4926
+2026-11-16T20:36:53.804+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 2 张表：[order_reviews, orders] | DDL 363 字符（全量 7401 字符）
+2026-11-16T20:36:54.807+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=1929(prompt=1886,completion=43,cacheHit=1664,cacheMiss=222) latency=1002ms cost=0.0004元 promptChars=4070
+2026-11-16T20:36:54.828+08:00  INFO 36868 --- [text2sql-agent] [           main] c.text2sql.agent.evaluation.EvalRunner   : 进度 10/100，当前准确率 90.0%（已排除 gold 不可执行条目 0 条）
+2026-11-16T20:36:54.844+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：2 条主干边，起点 order_items，覆盖目标表 [order_items, support_tickets]
+2026-11-16T20:36:54.845+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[order_items, orders, products, sellers, support_tickets, refund_items, settlement_items, ticket_categories] | DDL 1573 字符（全量 7401 字符）
+2026-11-16T20:36:54.845+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：1 条
+2026-11-16T20:36:56.026+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2293(prompt=2264,completion=29,cacheHit=2048,cacheMiss=216) latency=1181ms cost=0.0004元 promptChars=5417
+2026-11-16T20:36:56.055+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：2 条主干边，起点 members，覆盖目标表 [members, search_logs, support_tickets]
+2026-11-16T20:36:56.055+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[members, search_logs, support_tickets, member_levels, ticket_categories, coupon_usages, customers, member_snapshot] | DDL 1198 字符（全量 7401 字符）
+2026-11-16T20:36:59.059+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2476(prompt=2182,completion=294,cacheHit=2048,cacheMiss=134) latency=3003ms cost=0.0014元 promptChars=5070
+2026-11-16T20:36:59.091+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：3 条主干边，起点 members，覆盖目标表 [member_snapshot, members, support_tickets, search_logs]
+2026-11-16T20:36:59.092+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[members, support_tickets, member_snapshot, search_logs, member_levels, ticket_categories, coupon_usages, customers] | DDL 1243 字符（全量 7401 字符）
+2026-11-16T20:36:59.092+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：1 条
+2026-11-16T20:37:00.581+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2316(prompt=2233,completion=83,cacheHit=2048,cacheMiss=185) latency=1488ms cost=0.0006元 promptChars=5209
+2026-11-16T20:37:00.604+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 warehouses，覆盖目标表 [warehouses, shipments]
+2026-11-16T20:37:00.604+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 7 张表：[warehouses, shipments, inventory, inventory_movements, regions, orders, shipment_tracking] | DDL 1137 字符（全量 7401 字符）
+2026-11-16T20:37:02.130+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2241(prompt=2066,completion=175,cacheHit=1920,cacheMiss=146) latency=1525ms cost=0.0009元 promptChars=4734
+2026-11-16T20:37:02.151+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 coupon_usages，覆盖目标表 [coupon_usages, coupons]
+2026-11-16T20:37:02.151+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 5 张表：[coupon_usages, coupons, campaigns, members, orders] | DDL 1026 字符（全量 7401 字符）
+2026-11-16T20:37:02.987+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2153(prompt=2139,completion=14,cacheHit=1920,cacheMiss=219) latency=834ms cost=0.0003元 promptChars=4956
+2026-11-16T20:37:02.999+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 5 张表：[support_tickets, ticket_categories, members, orders, ticket_messages] | DDL 942 字符（全量 7401 字符）
+2026-11-16T20:37:02.999+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：1 条
+2026-11-16T20:37:03.896+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2201(prompt=2180,completion=21,cacheHit=2046,cacheMiss=134) latency=895ms cost=0.0003元 promptChars=5097
+2026-11-16T20:37:03.926+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：4 条主干边，起点 inventory，覆盖目标表 [inventory, support_tickets]
+2026-11-16T20:37:03.927+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 9 张表：[inventory, support_tickets, products, warehouses, ticket_categories, members, orders, ticket_messages, order_items] | DDL 1875 字符（全量 7401 字符）
+2026-11-16T20:37:03.928+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：1 条
+2026-11-16T20:37:05.980+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2609(prompt=2376,completion=233,cacheHit=2176,cacheMiss=200) latency=2053ms cost=0.0012元 promptChars=5844
+2026-11-16T20:37:05.997+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 3 张表：[search_logs, members, products] | DDL 437 字符（全量 7401 字符）
+2026-11-16T20:37:06.890+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=1749(prompt=1736,completion=13,cacheHit=1536,cacheMiss=200) latency=892ms cost=0.0003元 promptChars=3646
+2026-11-16T20:37:06.902+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 3 张表：[campaigns, campaign_products, coupons] | DDL 503 字符（全量 7401 字符）
+2026-11-16T20:37:07.606+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=1931(prompt=1902,completion=29,cacheHit=1664,cacheMiss=238) latency=704ms cost=0.0004元 promptChars=4116
+2026-11-16T20:37:07.622+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 product_price_history，覆盖目标表 [product_price_history, products]
+2026-11-16T20:37:07.622+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[product_price_history, products, order_items, campaign_products, inventory, inventory_movements, product_brand_map, product_category_translation] | DDL 1344 字符（全量 7401 字符）
+2026-11-16T20:37:10.043+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2314(prompt=2027,completion=287,cacheHit=1792,cacheMiss=235) latency=2422ms cost=0.0014元 promptChars=4810
+2026-11-16T20:37:10.054+08:00  INFO 36868 --- [text2sql-agent] [           main] c.text2sql.agent.evaluation.EvalRunner   : 进度 20/100，当前准确率 90.0%（已排除 gold 不可执行条目 0 条）
+2026-11-16T20:37:10.072+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 6 张表：[order_items, orders, products, sellers, refund_items, settlement_items] | DDL 1192 字符（全量 7401 字符）
+2026-11-16T20:37:10.845+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2050(prompt=2010,completion=40,cacheHit=1792,cacheMiss=218) latency=772ms cost=0.0004元 promptChars=4744
+2026-11-16T20:37:10.887+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 6 张表：[order_items, orders, products, sellers, refund_items, settlement_items] | DDL 1192 字符（全量 7401 字符）
+2026-11-16T20:37:11.842+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2039(prompt=2008,completion=31,cacheHit=1792,cacheMiss=216) latency=954ms cost=0.0004元 promptChars=4739
+2026-11-16T20:37:11.877+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1307 字符（全量 7401 字符）
+2026-11-16T20:37:12.925+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2170(prompt=2129,completion=41,cacheHit=1920,cacheMiss=209) latency=1048ms cost=0.0004元 promptChars=5025
+2026-11-16T20:37:12.970+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 2 张表：[order_reviews, orders] | DDL 363 字符（全量 7401 字符）
+2026-11-16T20:37:14.551+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=1996(prompt=1887,completion=109,cacheHit=1664,cacheMiss=223) latency=1580ms cost=0.0007元 promptChars=4071
+2026-11-16T20:37:14.593+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 products，覆盖目标表 [products, product_category_translation]
+2026-11-16T20:37:14.593+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[products, product_category_translation, order_items, campaign_products, inventory, inventory_movements, product_brand_map, product_price_history] | DDL 1380 字符（全量 7401 字符）
+2026-11-16T20:37:16.908+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2300(prompt=2036,completion=264,cacheHit=1792,cacheMiss=244) latency=2315ms cost=0.0013元 promptChars=4849
+2026-11-16T20:37:16.930+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：4 条主干边，起点 sellers，覆盖目标表 [customers, geolocation, shipping_addresses, sellers]
+2026-11-16T20:37:16.930+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[sellers, customers, geolocation, shipping_addresses, order_items, orders, regions, settlements] | DDL 1562 字符（全量 7401 字符）
+2026-11-16T20:37:17.936+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2245(prompt=2209,completion=36,cacheHit=2048,cacheMiss=161) latency=1006ms cost=0.0003元 promptChars=5356
+2026-11-16T20:37:17.992+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：3 条主干边，起点 order_items，覆盖目标表 [sellers, order_items, support_tickets]
+2026-11-16T20:37:17.992+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[order_items, sellers, support_tickets, orders, products, refund_items, regions, settlement_items] | DDL 1670 字符（全量 7401 字符）
+2026-11-16T20:37:17.992+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：1 条
+2026-11-16T20:37:18.974+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2305(prompt=2237,completion=68,cacheHit=2048,cacheMiss=189) latency=981ms cost=0.0005元 promptChars=5315
+2026-11-16T20:37:19.044+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 2 张表：[order_payments, orders] | DDL 364 字符（全量 7401 字符）
+2026-11-16T20:37:19.044+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：1 条
+2026-11-16T20:37:20.416+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=1991(prompt=1806,completion=185,cacheHit=1664,cacheMiss=142) latency=1372ms cost=0.0009元 promptChars=3816
+2026-11-16T20:37:20.456+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[members, member_levels, coupon_usages, customers, member_snapshot, referrals, search_logs, support_tickets] | DDL 1082 字符（全量 7401 字符）
+2026-11-16T20:37:22.157+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2406(prompt=2195,completion=211,cacheHit=2048,cacheMiss=147) latency=1700ms cost=0.0010元 promptChars=5078
+2026-11-16T20:37:22.175+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 3 张表：[campaigns, campaign_products, coupons] | DDL 503 字符（全量 7401 字符）
+2026-11-16T20:37:23.151+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=1942(prompt=1903,completion=39,cacheHit=1664,cacheMiss=239) latency=974ms cost=0.0004元 promptChars=4118
+2026-11-16T20:37:23.160+08:00  INFO 36868 --- [text2sql-agent] [           main] c.text2sql.agent.evaluation.EvalRunner   : 进度 30/100，当前准确率 93.33%（已排除 gold 不可执行条目 0 条）
+2026-11-16T20:37:23.173+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 3 张表：[refunds, orders, refund_items] | DDL 470 字符（全量 7401 字符）
+2026-11-16T20:37:24.177+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=1990(prompt=1903,completion=87,cacheHit=1664,cacheMiss=239) latency=1003ms cost=0.0006元 promptChars=4087
+2026-11-16T20:37:24.196+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：2 条主干边，起点 refunds，覆盖目标表 [refunds, orders, refund_items]
+2026-11-16T20:37:24.196+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[refunds, orders, refund_items, customers, order_items, order_payments, order_reviews, coupon_usages] | DDL 1326 字符（全量 7401 字符）
+2026-11-16T20:37:24.874+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2218(prompt=2153,completion=65,cacheHit=1920,cacheMiss=233) latency=676ms cost=0.0005元 promptChars=5038
+2026-11-16T20:37:24.887+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：2 条主干边，起点 inventory，覆盖目标表 [shipments, warehouses, inventory]
+2026-11-16T20:37:24.888+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[inventory, shipments, warehouses, inventory_movements, orders, products, regions, shipment_tracking] | DDL 1480 字符（全量 7401 字符）
+2026-11-16T20:37:25.645+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2164(prompt=2150,completion=14,cacheHit=1920,cacheMiss=230) latency=756ms cost=0.0003元 promptChars=5079
+2026-11-16T20:37:25.662+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 3 张表：[inventory_movements, products, warehouses] | DDL 440 字符（全量 7401 字符）
+2026-11-16T20:37:26.385+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=1767(prompt=1734,completion=33,cacheHit=1536,cacheMiss=198) latency=721ms cost=0.0004元 promptChars=3643
+2026-11-16T20:37:26.417+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 4 张表：[shipments, warehouses, orders, shipment_tracking] | DDL 633 字符（全量 7401 字符）
+2026-11-16T20:37:27.508+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=1995(prompt=1912,completion=83,cacheHit=1664,cacheMiss=248) latency=1089ms cost=0.0006元 promptChars=4233
+2026-11-16T20:37:27.526+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 support_tickets，覆盖目标表 [support_tickets, ticket_categories]
+2026-11-16T20:37:27.526+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 5 张表：[support_tickets, ticket_categories, members, orders, ticket_messages] | DDL 960 字符（全量 7401 字符）
+2026-11-16T20:37:29.253+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2290(prompt=2148,completion=142,cacheHit=1920,cacheMiss=228) latency=1727ms cost=0.0008元 promptChars=5025
+2026-11-16T20:37:29.275+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 3 张表：[settlements, sellers, settlement_items] | DDL 401 字符（全量 7401 字符）
+2026-11-16T20:37:30.241+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=1802(prompt=1773,completion=29,cacheHit=1536,cacheMiss=237) latency=965ms cost=0.0004元 promptChars=3718
+2026-11-16T20:37:30.257+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 sellers，覆盖目标表 [sellers, settlements]
+2026-11-16T20:37:30.258+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 5 张表：[sellers, settlements, order_items, regions, settlement_items] | DDL 932 字符（全量 7401 字符）
+2026-11-16T20:37:31.181+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=1917(prompt=1883,completion=34,cacheHit=1664,cacheMiss=219) latency=922ms cost=0.0004元 promptChars=4141
+2026-11-16T20:37:31.199+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 products，覆盖目标表 [products, product_category_translation]
+2026-11-16T20:37:31.200+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[products, product_category_translation, order_items, campaign_products, inventory, inventory_movements, product_brand_map, product_price_history] | DDL 1380 字符（全量 7401 字符）
+2026-11-16T20:37:34.534+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2513(prompt=2037,completion=476,cacheHit=1792,cacheMiss=245) latency=3333ms cost=0.0022元 promptChars=4851
+2026-11-16T20:37:34.568+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 6 张表：[order_items, orders, products, sellers, refund_items, settlement_items] | DDL 1192 字符（全量 7401 字符）
+2026-11-16T20:37:36.487+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2263(prompt=2016,completion=247,cacheHit=1792,cacheMiss=224) latency=1919ms cost=0.0012元 promptChars=4748
+2026-11-16T20:37:36.508+08:00  INFO 36868 --- [text2sql-agent] [           main] c.text2sql.agent.evaluation.EvalRunner   : 进度 40/100，当前准确率 92.5%（已排除 gold 不可执行条目 0 条）
+2026-11-16T20:37:36.545+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1573 字符（全量 7401 字符）
+2026-11-16T20:37:39.135+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2499(prompt=2158,completion=341,cacheHit=1920,cacheMiss=238) latency=2589ms cost=0.0016元 promptChars=5289
+2026-11-16T20:37:39.187+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1573 字符（全量 7401 字符）
+2026-11-16T20:37:39.977+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2212(prompt=2156,completion=56,cacheHit=1920,cacheMiss=236) latency=789ms cost=0.0005元 promptChars=5286
+2026-11-16T20:37:40.183+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 6 张表：[order_items, orders, products, sellers, refund_items, settlement_items] | DDL 1206 字符（全量 7401 字符）
+2026-11-16T20:37:42.156+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2255(prompt=2005,completion=250,cacheHit=1792,cacheMiss=213) latency=1974ms cost=0.0012元 promptChars=4782
+2026-11-16T20:37:42.668+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 order_items，覆盖目标表 [orders, order_items]
+2026-11-16T20:37:42.668+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[order_items, orders, products, sellers, customers, order_payments, order_reviews, refund_items] | DDL 1793 字符（全量 7401 字符）
+2026-11-16T20:37:42.668+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 注入业务指标：[aov]
+2026-11-16T20:37:46.537+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=3040(prompt=2459,completion=581,cacheHit=2304,cacheMiss=155) latency=3868ms cost=0.0025元 promptChars=5969
+2026-11-16T20:37:46.878+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1573 字符（全量 7401 字符）
+2026-11-16T20:37:51.053+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2764(prompt=2152,completion=612,cacheHit=1920,cacheMiss=232) latency=4175ms cost=0.0027元 promptChars=5283
+2026-11-16T20:37:51.085+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1573 字符（全量 7401 字符）
+2026-11-16T20:37:54.138+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2581(prompt=2155,completion=426,cacheHit=1920,cacheMiss=235) latency=3051ms cost=0.0020元 promptChars=5285
+2026-11-16T20:37:54.175+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 orders，覆盖目标表 [support_tickets, orders]
+2026-11-16T20:37:54.175+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[orders, support_tickets, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items] | DDL 1590 字符（全量 7401 字符）
+2026-11-16T20:37:54.175+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：1 条
+2026-11-16T20:37:56.373+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2492(prompt=2234,completion=258,cacheHit=2048,cacheMiss=186) latency=2197ms cost=0.0013元 promptChars=5385
+2026-11-16T20:37:56.455+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1739 字符（全量 7401 字符）
+2026-11-16T20:37:58.179+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2487(prompt=2212,completion=275,cacheHit=2048,cacheMiss=164) latency=1722ms cost=0.0013元 promptChars=5449
+2026-11-16T20:37:58.228+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 orders，覆盖目标表 [orders, shipments]
+2026-11-16T20:37:58.228+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, shipments, coupon_usages, refund_items] | DDL 1530 字符（全量 7401 字符）
+2026-11-16T20:38:00.043+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2379(prompt=2164,completion=215,cacheHit=1920,cacheMiss=244) latency=1814ms cost=0.0011元 promptChars=5246
+2026-11-16T20:38:00.073+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1346 字符（全量 7401 字符）
+2026-11-16T20:38:00.073+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：1 条
+2026-11-16T20:38:04.464+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2963(prompt=2189,completion=774,cacheHit=2048,cacheMiss=141) latency=4390ms cost=0.0033元 promptChars=5153
+2026-11-16T20:38:04.495+08:00  INFO 36868 --- [text2sql-agent] [           main] c.text2sql.agent.evaluation.EvalRunner   : 进度 50/100，当前准确率 88.0%（已排除 gold 不可执行条目 0 条）
+2026-11-16T20:38:04.499+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 refund_items，覆盖目标表 [refund_items, refunds]
+2026-11-16T20:38:04.499+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 4 张表：[refund_items, refunds, order_items, orders] | DDL 1001 字符（全量 7401 字符）
+2026-11-16T20:38:05.388+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2110(prompt=2009,completion=101,cacheHit=1792,cacheMiss=217) latency=888ms cost=0.0007元 promptChars=4547
+2026-11-16T20:38:05.407+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 5 张表：[support_tickets, ticket_categories, members, orders, ticket_messages] | DDL 1357 字符（全量 7401 字符）
+2026-11-16T20:38:06.480+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2394(prompt=2249,completion=145,cacheHit=2048,cacheMiss=201) latency=1072ms cost=0.0008元 promptChars=5427
+2026-11-16T20:38:06.524+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 2 张表：[order_reviews, orders] | DDL 589 字符（全量 7401 字符）
+2026-11-16T20:38:07.963+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2092(prompt=1936,completion=156,cacheHit=1792,cacheMiss=144) latency=1438ms cost=0.0008元 promptChars=4296
+2026-11-16T20:38:08.023+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：2 条主干边，起点 members，覆盖目标表 [members, search_logs, support_tickets]
+2026-11-16T20:38:08.023+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[members, search_logs, support_tickets, member_levels, ticket_categories, coupon_usages, customers, member_snapshot] | DDL 1266 字符（全量 7401 字符）
+2026-11-16T20:38:10.446+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2481(prompt=2174,completion=307,cacheHit=1920,cacheMiss=254) latency=2423ms cost=0.0015元 promptChars=5150
+2026-11-16T20:38:10.629+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 customers，覆盖目标表 [customers, orders]
+2026-11-16T20:38:10.629+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[customers, orders, order_items, order_payments, order_reviews, coupon_usages, members, refund_items] | DDL 1281 字符（全量 7401 字符）
+2026-11-16T20:38:13.250+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2502(prompt=2113,completion=389,cacheHit=1920,cacheMiss=193) latency=2619ms cost=0.0018元 promptChars=4974
+2026-11-16T20:38:13.590+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：2 条主干边，起点 orders，覆盖目标表 [products, orders]
+2026-11-16T20:38:13.590+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[orders, products, customers, order_items, order_payments, order_reviews, campaign_products, coupon_usages] | DDL 1462 字符（全量 7401 字符）
+2026-11-16T20:38:17.134+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2698(prompt=2156,completion=542,cacheHit=1920,cacheMiss=236) latency=3544ms cost=0.0024元 promptChars=5201
+2026-11-16T20:38:17.456+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：2 条主干边，起点 orders，覆盖目标表 [sellers, orders]
+2026-11-16T20:38:17.456+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[orders, sellers, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items] | DDL 1363 字符（全量 7401 字符）
+2026-11-16T20:38:19.486+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2393(prompt=2140,completion=253,cacheHit=1920,cacheMiss=220) latency=2028ms cost=0.0013元 promptChars=5078
+2026-11-16T20:38:19.611+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 product_price_history，覆盖目标表 [products, product_price_history]
+2026-11-16T20:38:19.611+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[product_price_history, products, order_items, campaign_products, inventory, inventory_movements, product_brand_map, product_category_translation] | DDL 1344 字符（全量 7401 字符）
+2026-11-16T20:38:20.728+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2245(prompt=2114,completion=131,cacheHit=1920,cacheMiss=194) latency=1116ms cost=0.0008元 promptChars=5027
+2026-11-16T20:38:20.767+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 2 张表：[order_payments, orders] | DDL 388 字符（全量 7401 字符）
+2026-11-16T20:38:21.537+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=1818(prompt=1759,completion=59,cacheHit=1536,cacheMiss=223) latency=769ms cost=0.0005元 promptChars=3731
+2026-11-16T20:38:21.675+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：2 条主干边，起点 order_items，覆盖目标表 [orders, products, order_items]
+2026-11-16T20:38:21.675+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[order_items, orders, products, customers, order_payments, order_reviews, sellers, campaign_products] | DDL 1460 字符（全量 7401 字符）
+2026-11-16T20:38:22.591+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2225(prompt=2152,completion=73,cacheHit=1920,cacheMiss=232) latency=915ms cost=0.0006元 promptChars=5201
+2026-11-16T20:38:22.734+08:00  INFO 36868 --- [text2sql-agent] [           main] c.text2sql.agent.evaluation.EvalRunner   : 进度 60/100，当前准确率 85.0%（已排除 gold 不可执行条目 0 条）
+2026-11-16T20:38:22.941+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：3 条主干边，起点 order_reviews，覆盖目标表 [customers, geolocation, shipping_addresses, order_reviews]
+2026-11-16T20:38:22.942+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 7 张表：[order_reviews, customers, geolocation, shipping_addresses, orders, members, regions] | DDL 1332 字符（全量 7401 字符）
+2026-11-16T20:38:26.639+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2799(prompt=2224,completion=575,cacheHit=2048,cacheMiss=176) latency=3696ms cost=0.0025元 promptChars=5307
+2026-11-16T20:38:26.934+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：2 条主干边，起点 order_payments，覆盖目标表 [order_payments, order_reviews]
+2026-11-16T20:38:26.934+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 3 张表：[order_payments, order_reviews, orders] | DDL 642 字符（全量 7401 字符）
+2026-11-16T20:38:35.451+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=3308(prompt=1953,completion=1355,cacheHit=1792,cacheMiss=161) latency=8517ms cost=0.0056元 promptChars=4352
+2026-11-16T20:38:35.774+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：3 条主干边，起点 order_items，覆盖目标表 [regions, warehouses, order_items]
+2026-11-16T20:38:35.775+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[order_items, regions, warehouses, orders, products, sellers, shipments, customers] | DDL 1455 字符（全量 7401 字符）
+2026-11-16T20:38:38.139+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2511(prompt=2170,completion=341,cacheHit=1920,cacheMiss=250) latency=2366ms cost=0.0017元 promptChars=5245
+2026-11-16T20:38:38.564+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：4 条主干边，起点 customers，覆盖目标表 [member_levels, members, customers, order_items]
+2026-11-16T20:38:38.564+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[customers, member_levels, members, order_items, orders, coupon_usages, member_snapshot, referrals] | DDL 1428 字符（全量 7401 字符）
+2026-11-16T20:38:44.120+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2982(prompt=2214,completion=768,cacheHit=2048,cacheMiss=166) latency=5555ms cost=0.0033元 promptChars=5308
+2026-11-16T20:38:44.489+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 campaigns，覆盖目标表 [campaigns, coupons]
+2026-11-16T20:38:44.489+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 4 张表：[campaigns, coupons, campaign_products, coupon_usages] | DDL 646 字符（全量 7401 字符）
+2026-11-16T20:38:57.236+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=4062(prompt=1960,completion=2102,cacheHit=1792,cacheMiss=168) latency=12746ms cost=0.0086元 promptChars=4260
+2026-11-16T20:38:57.281+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 coupon_usages，覆盖目标表 [coupons, coupon_usages]
+2026-11-16T20:38:57.282+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 5 张表：[coupon_usages, coupons, campaigns, members, orders] | DDL 1072 字符（全量 7401 字符）
+2026-11-16T20:38:57.282+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：1 条
+2026-11-16T20:39:00.174+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2596(prompt=2200,completion=396,cacheHit=2048,cacheMiss=152) latency=2891ms cost=0.0018元 promptChars=5106
+2026-11-16T20:39:00.186+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 warehouses，覆盖目标表 [regions, warehouses]
+2026-11-16T20:39:00.186+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 7 张表：[warehouses, regions, shipments, inventory, inventory_movements, customers, sellers] | DDL 1118 字符（全量 7401 字符）
+2026-11-16T20:39:01.185+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2101(prompt=2044,completion=57,cacheHit=1792,cacheMiss=252) latency=997ms cost=0.0005元 promptChars=4670
+2026-11-16T20:39:01.232+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：2 条主干边，起点 inventory，覆盖目标表 [shipments, warehouses, inventory]
+2026-11-16T20:39:01.232+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[inventory, shipments, warehouses, products, inventory_movements, orders, regions, shipment_tracking] | DDL 1480 字符（全量 7401 字符）
+2026-11-16T20:39:02.540+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2257(prompt=2154,completion=103,cacheHit=1920,cacheMiss=234) latency=1307ms cost=0.0007元 promptChars=5086
+2026-11-16T20:39:02.625+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：3 条主干边，起点 support_tickets，覆盖目标表 [customers, geolocation, shipping_addresses, support_tickets]
+2026-11-16T20:39:02.625+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[support_tickets, customers, geolocation, shipping_addresses, ticket_categories, members, orders, ticket_messages] | DDL 1474 字符（全量 7401 字符）
+2026-11-16T20:39:03.969+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2449(prompt=2304,completion=145,cacheHit=2048,cacheMiss=256) latency=1345ms cost=0.0009元 promptChars=5539
+2026-11-16T20:39:04.046+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 sellers，覆盖目标表 [sellers, settlements]
+2026-11-16T20:39:04.047+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 5 张表：[sellers, settlements, order_items, regions, settlement_items] | DDL 932 字符（全量 7401 字符）
+2026-11-16T20:39:05.561+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2003(prompt=1887,completion=116,cacheHit=1664,cacheMiss=223) latency=1514ms cost=0.0007元 promptChars=4144
+2026-11-16T20:39:05.572+08:00  INFO 36868 --- [text2sql-agent] [           main] c.text2sql.agent.evaluation.EvalRunner   : 进度 70/100，当前准确率 81.43%（已排除 gold 不可执行条目 0 条）
+2026-11-16T20:39:05.608+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：4 条主干边，起点 product_category_translation，覆盖目标表 [product_category_translation, products, refunds]
+2026-11-16T20:39:05.608+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[product_category_translation, products, refunds, order_items, campaign_products, inventory, inventory_movements, orders] | DDL 1520 字符（全量 7401 字符）
+2026-11-16T20:39:20.617+08:00  WARN 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.orchestrator.Text2SqlOrchestrator  : 生成失败（CALL_FAILED）：LLM 调用失败：Error while extracting response for type [org.springframework.ai.openai.api.OpenAiApi$ChatCompletion] and content type [application/json]
+2026-11-16T20:39:20.648+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 orders，覆盖目标表 [refunds, orders]
+2026-11-16T20:39:20.648+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[orders, refunds, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items] | DDL 1297 字符（全量 7401 字符）
+2026-11-16T20:39:22.388+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2347(prompt=2150,completion=197,cacheHit=1920,cacheMiss=230) latency=1741ms cost=0.0011元 promptChars=5004
+2026-11-16T20:39:22.765+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：3 条主干边，起点 customers，覆盖目标表 [customers, geolocation, shipping_addresses, order_items]
+2026-11-16T20:39:22.765+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[customers, order_items, orders, geolocation, shipping_addresses, products, sellers, members] | DDL 1617 字符（全量 7401 字符）
+2026-11-16T20:39:37.772+08:00  WARN 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.orchestrator.Text2SqlOrchestrator  : 生成失败（CALL_FAILED）：LLM 调用失败：Error while extracting response for type [org.springframework.ai.openai.api.OpenAiApi$ChatCompletion] and content type [application/json]
+2026-11-16T20:39:37.906+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：3 条主干边，起点 member_levels，覆盖目标表 [member_levels, members, user_tags, user_tag_map]
+2026-11-16T20:39:37.906+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[member_levels, members, user_tag_map, user_tags, coupon_usages, customers, member_snapshot, referrals] | DDL 1223 字符（全量 7401 字符）
+2026-11-16T20:39:37.907+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：1 条
+2026-11-16T20:39:45.921+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=3643(prompt=2240,completion=1403,cacheHit=2048,cacheMiss=192) latency=8015ms cost=0.0058元 promptChars=5196
+2026-11-16T20:39:46.166+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：3 条主干边，起点 brands，覆盖目标表 [brands, products, order_items]
+2026-11-16T20:39:46.166+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[brands, products, order_items, product_brand_map, campaign_products, inventory, inventory_movements, orders] | DDL 1434 字符（全量 7401 字符）
+2026-11-16T20:39:55.168+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=3828(prompt=2215,completion=1613,cacheHit=2048,cacheMiss=167) latency=9003ms cost=0.0067元 promptChars=5277
+2026-11-16T20:39:55.397+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 shipments，覆盖目标表 [shipments, shipment_tracking]
+2026-11-16T20:39:55.397+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 4 张表：[shipments, shipment_tracking, warehouses, orders] | DDL 741 字符（全量 7401 字符）
+2026-11-16T20:39:59.625+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2548(prompt=1962,completion=586,cacheHit=1792,cacheMiss=170) latency=4227ms cost=0.0025元 promptChars=4348
+2026-11-16T20:39:59.708+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 products，覆盖目标表 [product_category_translation, products]
+2026-11-16T20:39:59.709+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[products, product_category_translation, order_items, campaign_products, inventory, inventory_movements, product_brand_map, product_price_history] | DDL 1380 字符（全量 7401 字符）
+2026-11-16T20:40:04.711+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2814(prompt=2043,completion=771,cacheHit=1792,cacheMiss=251) latency=5001ms cost=0.0034元 promptChars=4861
+2026-11-16T20:40:05.091+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：4 条主干边，起点 member_levels，覆盖目标表 [member_levels, members, order_items]
+2026-11-16T20:40:05.091+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[member_levels, members, order_items, orders, products, sellers, coupon_usages, customers] | DDL 1505 字符（全量 7401 字符）
+2026-11-16T20:40:14.682+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=3832(prompt=2270,completion=1562,cacheHit=2048,cacheMiss=222) latency=9589ms cost=0.0065元 promptChars=5574
+2026-11-16T20:40:15.260+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：3 条主干边，起点 shipments，覆盖目标表 [shipments, warehouses, regions, orders]
+2026-11-16T20:40:15.260+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[shipments, orders, regions, warehouses, customers, order_items, order_payments, order_reviews] | DDL 1426 字符（全量 7401 字符）
+2026-11-16T20:40:27.599+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=4212(prompt=2165,completion=2047,cacheHit=1920,cacheMiss=245) latency=12338ms cost=0.0085元 promptChars=5145
+2026-11-16T20:40:28.093+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：5 条主干边，起点 customers，覆盖目标表 [ticket_categories, support_tickets, customers, geolocation, shipping_addresses, member_levels, members]
+2026-11-16T20:40:28.093+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[customers, member_levels, members, support_tickets, ticket_categories, orders, geolocation, shipping_addresses] | DDL 1566 字符（全量 7401 字符）
+2026-11-16T20:40:28.094+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：1 条
+2026-11-16T20:40:35.787+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=3625(prompt=2308,completion=1317,cacheHit=2174,cacheMiss=134) latency=7693ms cost=0.0054元 promptChars=5617
+2026-11-16T20:40:35.823+08:00  INFO 36868 --- [text2sql-agent] [           main] c.text2sql.agent.evaluation.EvalRunner   : 进度 80/100，当前准确率 73.75%（已排除 gold 不可执行条目 0 条）
+2026-11-16T20:40:35.875+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：2 条主干边，起点 referrals，覆盖目标表 [referrals, member_levels, members]
+2026-11-16T20:40:35.875+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[referrals, member_levels, members, coupon_usages, customers, member_snapshot, search_logs, support_tickets] | DDL 1273 字符（全量 7401 字符）
+2026-11-16T20:40:44.451+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=3692(prompt=2234,completion=1458,cacheHit=2048,cacheMiss=186) latency=8574ms cost=0.0061元 promptChars=5166
+2026-11-16T20:40:44.668+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：3 条主干边，起点 order_items，覆盖目标表 [brands, order_items]
+2026-11-16T20:40:44.668+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[order_items, orders, products, sellers, brands, refund_items, settlement_items, product_brand_map] | DDL 1551 字符（全量 7401 字符）
+2026-11-16T20:40:48.903+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2840(prompt=2124,completion=716,cacheHit=1920,cacheMiss=204) latency=4234ms cost=0.0031元 promptChars=5110
+2026-11-16T20:40:49.024+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.orchestrator.Text2SqlOrchestrator  : 问题存在口径歧义，主动反问：「销售额」有两种常见口径：含运费的 GMV，还是不含运费的商品金额？请确认一种。
+2026-11-16T20:40:49.901+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：4 条主干边，起点 customers，覆盖目标表 [shipment_tracking, customers, geolocation, shipping_addresses, shipments]
+2026-11-16T20:40:49.901+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[customers, shipment_tracking, shipments, orders, geolocation, shipping_addresses, warehouses, members] | DDL 1517 字符（全量 7401 字符）
+2026-11-16T20:40:53.322+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2777(prompt=2274,completion=503,cacheHit=2048,cacheMiss=226) latency=3419ms cost=0.0023元 promptChars=5515
+2026-11-16T20:40:53.845+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：4 条主干边，起点 support_tickets，覆盖目标表 [support_tickets, product_category_translation, products]
+2026-11-16T20:40:53.845+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[support_tickets, ticket_categories, product_category_translation, products, members, orders, ticket_messages, order_items] | DDL 1648 字符（全量 7401 字符）
+2026-11-16T20:40:58.229+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2868(prompt=2256,completion=612,cacheHit=2048,cacheMiss=208) latency=4385ms cost=0.0027元 promptChars=5535
+2026-11-16T20:40:58.486+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：4 条主干边，起点 orders，覆盖目标表 [product_price_history, products, product_category_translation, orders]
+2026-11-16T20:40:58.486+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[orders, product_price_history, products, product_category_translation, customers, order_items, order_payments, order_reviews] | DDL 1713 字符（全量 7401 字符）
+2026-11-16T20:41:13.489+08:00  WARN 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.orchestrator.Text2SqlOrchestrator  : 生成失败（CALL_FAILED）：LLM 调用失败：Error while extracting response for type [org.springframework.ai.openai.api.OpenAiApi$ChatCompletion] and content type [application/json]
+2026-11-16T20:41:13.547+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：2 条主干边，起点 inventory_movements，覆盖目标表 [regions, inventory_movements]
+2026-11-16T20:41:13.547+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 6 张表：[inventory_movements, regions, products, warehouses, customers, sellers] | DDL 1240 字符（全量 7401 字符）
+2026-11-16T20:41:13.547+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：1 条
+2026-11-16T20:41:15.364+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2369(prompt=2114,completion=255,cacheHit=1920,cacheMiss=194) latency=1816ms cost=0.0013元 promptChars=4900
+2026-11-16T20:41:15.460+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 order_items，覆盖目标表 [order_items, orders]
+2026-11-16T20:41:15.460+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 6 张表：[order_items, orders, products, sellers, refund_items, settlement_items] | DDL 1264 字符（全量 7401 字符）
+2026-11-16T20:41:15.461+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 注入业务指标：[gmv_with_freight]
+2026-11-16T20:41:18.405+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2738(prompt=2247,completion=491,cacheHit=2048,cacheMiss=199) latency=2944ms cost=0.0022元 promptChars=5209
+2026-11-16T20:41:18.613+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.orchestrator.Text2SqlOrchestrator  : 问题存在口径歧义，主动反问：「复购率」的分母是全部下单用户，还是注册满一定天数的用户？两者差异很大，请确认。
+2026-11-16T20:41:18.897+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：4 条主干边，起点 members，覆盖目标表 [members, orders, search_logs, support_tickets, customers]
+2026-11-16T20:41:18.897+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[members, orders, search_logs, support_tickets, member_levels, coupon_usages, customers, member_snapshot] | DDL 1394 字符（全量 7401 字符）
+2026-11-16T20:41:18.897+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 注入业务指标：[member_penetration]
+2026-11-16T20:41:25.342+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=3504(prompt=2440,completion=1064,cacheHit=2304,cacheMiss=136) latency=6444ms cost=0.0044元 promptChars=5731
+2026-11-16T20:41:25.578+08:00  INFO 36868 --- [text2sql-agent] [           main] c.text2sql.agent.evaluation.EvalRunner   : 进度 90/100，当前准确率 72.22%（已排除 gold 不可执行条目 0 条）
+2026-11-16T20:41:25.664+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 orders，覆盖目标表 [refunds, orders]
+2026-11-16T20:41:25.664+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[orders, refunds, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items] | DDL 1297 字符（全量 7401 字符）
+2026-11-16T20:41:25.664+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 注入业务指标：[refund_rate, valid_order]
+2026-11-16T20:41:28.320+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2780(prompt=2434,completion=346,cacheHit=2300,cacheMiss=134) latency=2655ms cost=0.0016元 promptChars=5600
+2026-11-16T20:41:28.629+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：4 条主干边，起点 customers，覆盖目标表 [support_tickets, orders, customers, geolocation, shipping_addresses, order_reviews]
+2026-11-16T20:41:28.629+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[customers, orders, geolocation, shipping_addresses, support_tickets, order_items, order_payments, order_reviews] | DDL 1560 字符（全量 7401 字符）
+2026-11-16T20:41:28.629+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 注入业务指标：[low_score_rate]
+2026-11-16T20:41:28.629+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：1 条
+2026-11-16T20:41:36.360+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=3784(prompt=2488,completion=1296,cacheHit=2304,cacheMiss=184) latency=7731ms cost=0.0054元 promptChars=5773
+2026-11-16T20:41:36.506+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：2 条主干边，起点 search_logs，覆盖目标表 [search_logs, referrals]
+2026-11-16T20:41:36.506+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 3 张表：[search_logs, members, products] | DDL 715 字符（全量 7401 字符）
+2026-11-16T20:41:36.506+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 注入业务指标：[conversion_rate, ctr]
+2026-11-16T20:41:37.507+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2163(prompt=2125,completion=38,cacheHit=1920,cacheMiss=205) latency=1000ms cost=0.0004元 promptChars=4707
+2026-11-16T20:41:37.635+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：2 条主干边，起点 customers，覆盖目标表 [members, orders, customers]
+2026-11-16T20:41:37.635+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[customers, members, orders, member_levels, order_items, order_payments, order_reviews, coupon_usages] | DDL 1655 字符（全量 7401 字符）
+2026-11-16T20:41:37.635+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 注入业务指标：[mau]
+2026-11-16T20:41:38.890+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=2681(prompt=2473,completion=208,cacheHit=2304,cacheMiss=169) latency=1254ms cost=0.0010元 promptChars=6017
+2026-11-16T20:41:40.338+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：4 条主干边，起点 customers，覆盖目标表 [member_levels, members, customers, orders, order_items]
+2026-11-16T20:41:40.338+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[customers, member_levels, members, order_items, orders, coupon_usages, member_snapshot, referrals] | DDL 1397 字符（全量 7401 字符）
+2026-11-16T20:41:40.338+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 注入业务指标：[gmv_per_user, gmv_with_freight]
+2026-11-16T20:41:55.348+08:00  WARN 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.orchestrator.Text2SqlOrchestrator  : 生成失败（CALL_FAILED）：LLM 调用失败：Error while extracting response for type [org.springframework.ai.openai.api.OpenAiApi$ChatCompletion] and content type [application/json]
+2026-11-16T20:41:55.636+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.orchestrator.Text2SqlOrchestrator  : 问题存在口径歧义，主动反问：「销售额」有两种常见口径：含运费的 GMV，还是不含运费的商品金额？请确认一种。
+2026-11-16T20:41:55.866+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.orchestrator.Text2SqlOrchestrator  : 问题存在口径歧义，主动反问：「复购率」的分母是全部下单用户，还是注册满一定天数的用户？两者差异很大，请确认。
+2026-11-16T20:41:56.259+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：2 条主干边，起点 customers，覆盖目标表 [customers, order_items, orders]
+2026-11-16T20:41:56.259+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[customers, order_items, orders, products, sellers, members, refund_items, regions] | DDL 1526 字符（全量 7401 字符）
+2026-11-16T20:41:56.259+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 注入业务指标：[gmv_with_freight]
+2026-11-16T20:42:05.198+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.agent.generation.LlmSqlGenerator     : LLM 调用完成：model=deepseek-flash tokens=4061(prompt=2438,completion=1623,cacheHit=2304,cacheMiss=134) latency=8939ms cost=0.0067元 promptChars=5857
+2026-11-16T20:42:05.623+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：3 条主干边，起点 inventory，覆盖目标表 [shipments, warehouses, inventory, inventory_movements]
+2026-11-16T20:42:05.624+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 7 张表：[inventory, inventory_movements, shipments, warehouses, products, orders, shipment_tracking] | DDL 1591 字符（全量 7401 字符）
+2026-11-16T20:42:05.624+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 注入业务指标：[inventory_turnover_days]
+2026-11-16T20:42:05.624+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：1 条
+2026-11-16T20:42:20.635+08:00  WARN 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.orchestrator.Text2SqlOrchestrator  : 生成失败（CALL_FAILED）：LLM 调用失败：Error while extracting response for type [org.springframework.ai.openai.api.OpenAiApi$ChatCompletion] and content type [application/json]
+2026-11-16T20:42:21.396+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：6 条主干边，起点 customers，覆盖目标表 [order_items, support_tickets, customers, user_tags, orders]
+2026-11-16T20:42:21.396+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 9 张表：[customers, order_items, user_tags, orders, support_tickets, members, products, regions, user_tag_map] | DDL 2036 字符（全量 7401 字符）
+2026-11-16T20:42:21.396+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 注入业务指标：[gmv_with_freight]
+2026-11-16T20:42:21.396+08:00  INFO 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：2 条
+2026-11-16T20:42:36.402+08:00  WARN 36868 --- [text2sql-agent] [t2sql-request-0] c.t.a.orchestrator.Text2SqlOrchestrator  : 生成失败（CALL_FAILED）：LLM 调用失败：Error while extracting response for type [org.springframework.ai.openai.api.OpenAiApi$ChatCompletion] and content type [application/json]
+2026-11-16T20:42:36.402+08:00  INFO 36868 --- [text2sql-agent] [           main] c.text2sql.agent.evaluation.EvalRunner   : 进度 100/100，当前准确率 69.0%（已排除 gold 不可执行条目 0 条）
+2026-11-16T20:42:36.682+08:00  INFO 36868 --- [text2sql-agent] [           main] c.text2sql.agent.evaluation.EvalRunner   : 
+================ 评估结果 ================
+模式      : 真实链路
+模型      : deepseek-flash
+prompt    : p9-mdl-alignment-v9
+代码版本  : 466f2230564692928632f73bb3cdacafffa52b83 (DIRTY)
+数据指纹  : c3f290e0fa0be1bd7432ddd2e5a319883e4d9d8cfbc9b58e856b4a807f2f2d19
+样本指纹  : e56df6ab1af53d08382c28d22df2a34bb84f2459d1342ffbc16f2f2ab547ac1a
+样本数    : 100
+schema    : 10 张表
+
+分组                       准确率  69.00% (69/100) | SQL有效  90.00% | 补LIMIT 16 | tokens 1903 | 延迟 avg 3445ms p50 1759ms p95 15004ms | 成本 avg 0.001581元
+single_table_basic       准确率  90.00% (18/20) | SQL有效 100.00% | 补LIMIT 0 | tokens 2068 | 延迟 avg 1384ms p50 1134ms p95 2432ms | 成本 avg 0.000609元
+single_table_agg         准确率  95.00% (19/20) | SQL有效 100.00% | 补LIMIT 6 | tokens 2006 | 延迟 avg 1310ms p50 1019ms p95 2328ms | 成本 avg 0.000697元
+time_window              准确率  71.43% (10/14) | SQL有效 100.00% | 补LIMIT 3 | tokens 2161 | 延迟 avg 2383ms p50 2242ms p95 4422ms | 成本 avg 0.001528元
+multi_join               准确率  47.83% (11/23) | SQL有效  91.30% | 补LIMIT 1 | tokens 1920 | 延迟 avg 4866ms p50 2903ms p95 15007ms | 成本 avg 0.002306元
+multi_join_deep          准确率  50.00% (5/10) | SQL有效  80.00% | 补LIMIT 0 | tokens 1775 | 延迟 avg 6816ms p50 4418ms p95 15004ms | 成本 avg 0.003582元
+business_semantics       准确率  46.15% (6/13) | SQL有效  53.85% | 补LIMIT 6 | tokens 1280 | 延迟 avg 5937ms p50 3017ms p95 15013ms | 成本 avg 0.001672元
+
+---- 按 gold 表数分组（阶段 3 主指标）----
+1 表      准确率  87.72% (50/57)
+2 表      准确率  62.50% (10/16)
+3 表      准确率  35.71% (5/14)
+4+ 表     准确率  30.77% (4/13)
+
+---- 检索层指标 ----
+表全召回率 :  92.00% (100 条有效样本)
+表平均召回 :  95.20%
+表精确率   :  27.86%
+平均召回表 : 6.47 张（baseline 为全部表）
+平均 DDL   : 1172 字符
+完全漏召回 : 4 条
+不完整召回 : 8 条
+  - T5-011 漏 [customers] | 品牌销售额排名前 10 是哪些？销售额按商品金额统计。
+  - T5-013 漏 [campaign_products, campaigns, orders, customers, order_items] | 每个营销活动关联商品实际带来的订单数和销售额，取前 10。
+  - T5-015 漏 [order_items] | 物流轨迹事件类型按客户所在州分布，列出前 20 组（按发货单去重）。
+  - T5-017 漏 [member_levels] | 各工单类目、优先级的工单数和消息条数分别是多少？
+  - T5-020 漏 [inventory] | 按宏观区域和出入库类型统计库存变动笔数与数量合计。
+  - T6-003 漏 [orders, customers] | 复购率是多少？（下单 2 次及以上的用户占全部下单用户的比例）
+  - T6-016 漏 [brands, orders, product_brand_map, order_items] | 各品牌的商品数、动销商品数、销售额和动销率分别是多少？取销售额前 10。
+  - T6-018 漏 [members, orders, customers] | 会员与非会员的复购率分别是多少？
+
+失败案例数: 31
+  - T1-019 [SUCCESS] 还没有送达客户的订单有多少笔？ | 
+  - T1-028 [SUCCESS] 容量最大的仓库是哪一个？ | 
+  - T2-036 [SUCCESS] 商品数量超过 1500 个的类目有哪些？ | 
+  - T3-008 [SUCCESS] 每个月的平均订单金额（按订单明细商品金额计）是多少？ | 
+  - T3-011 [SUCCESS] 每个月的订单量环比增长率是多少？ | 
+  - T3-020 [SUCCESS] 超时送达的订单占已送达订单的比例是多少？ | 
+  - T3-028 [SUCCESS] 最近 30 天内有登录记录的会员有多少人？ | 
+  - T4-001 [SUCCESS] 每个客户的订单数量是多少？取订单最多的 10 个客户。 | 
+  - T4-003 [SUCCESS] 每个商品类目的订单数量是多少？ | 
+  - T4-012 [SUCCESS] 每个州的评价平均分是多少？取评价数最多的 10 个州。 | 
+=========================================
+
+2026-11-16T20:42:36.711+08:00  INFO 36868 --- [text2sql-agent] [           main] c.text2sql.agent.evaluation.EvalRunner   : 评估报告已写入：C:\Users\xunqian\Desktop\agent\reports\prompt-directive-screen-20261116\explicit-steps\eval-20261116-204236.json
+2026-11-16T20:42:36.711+08:00  INFO 36868 --- [text2sql-agent] [           main] c.text2sql.agent.evaluation.EvalRunner   : 评估完成，退出进程（agent.eval.exit-after-run=true）
+2026-11-16T20:42:36.715+08:00  INFO 36868 --- [text2sql-agent] [           main] o.s.b.w.e.tomcat.GracefulShutdown        : Commencing graceful shutdown. Waiting for active requests to complete
+2026-11-16T20:42:36.718+08:00  INFO 36868 --- [text2sql-agent] [tomcat-shutdown] o.s.b.w.e.tomcat.GracefulShutdown        : Graceful shutdown complete
+2026-11-16T20:42:36.721+08:00  INFO 36868 --- [text2sql-agent] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-11-16T20:42:36.724+08:00  INFO 36868 --- [text2sql-agent] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  06:00 min
+[INFO] Finished at: 2026-11-16T20:42:37+08:00
+[INFO] ------------------------------------------------------------------------
