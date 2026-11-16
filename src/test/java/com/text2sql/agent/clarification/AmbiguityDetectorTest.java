@@ -44,6 +44,8 @@ class AmbiguityDetectorTest {
 
         assertThat(detector.clarificationFor("2018 年每个月不含运费的销售额是多少？")).isEmpty();
         assertThat(detector.clarificationFor("2018 年每个月的 GMV 是多少？")).isEmpty();
+        assertThat(detector.clarificationFor("每个州的商品销售额是多少？")).isEmpty();
+        assertThat(detector.clarificationFor("每周的商品销售额分别是多少？")).isEmpty();
     }
 
     @Test
