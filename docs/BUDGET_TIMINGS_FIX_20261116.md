@@ -1,6 +1,6 @@
 # 阶段3：中断请求分段计时修复与验收
 
-**超时响应将耗时清零的缺陷已修复；这不是一次加速。** 15秒受控模型阻塞经实际编排链路返回时，墙钟15011ms、检索37ms、生成14973ms、其余1ms，不再把模型耗时报告为0。Java全量535/535、失败/错误/跳过0；Python离线审计96/96。外部供应商调用0、实际费用0，不更新模型准确率或生产P95，阶段3仍未通过。
+**超时响应将耗时清零的缺陷已修复；这不是一次加速。** 15秒受控模型阻塞经实际编排链路返回时，墙钟15011ms、检索37ms、生成14973ms、其余1ms，不再把模型耗时报告为0。实现提交 `966df6815dfc6823d5263127c2c04234ff9e272f`；Java全量535/535、失败/错误/跳过0，Python离线审计96/96；该提交上Gold200/200、默认/候选各100条提示词与前轮完全一致。外部供应商调用0、实际费用0，不更新模型准确率或生产P95，阶段3仍未通过。
 
 ## 1. 原因、改动与请求数据流
 
@@ -81,11 +81,20 @@ python -m unittest discover -s scripts -p 'test_*.py'
 mvn -q test-compile dependency:build-classpath '-Dmdep.outputFile=target/budget-timings-classpath.txt'
 $timingsCp = 'target/test-classes;target/classes;' + (Get-Content target/budget-timings-classpath.txt -Raw).Trim()
 java -cp $timingsCp com.text2sql.agent.budget.BudgetTimingsAcceptanceProbe target/budget-timings-new.json
+
+# 原基准全部Gold自检，不发送模型请求；使用新的输出目录
+& scripts/run_eval.ps1 -Split all -DryRun -SelfCorrection -ResultChecker -OutputDir reports/budget-timings-gold-new
+
+# 全部100组实际上下文捕获，不发送模型请求；输出必须是新文件
+$timingCommit = (git rev-parse HEAD).Trim()
+java -cp $timingsCp com.text2sql.agent.retrieval.AvailableExamplesPairProbe target/budget-timings-pairs-new.json $timingCommit
 ```
 
 预算开启的HTTP响应与新评测报告获得同一口径；四个字段名保持，`budget`新增3个字段。按旧口径分析的消费者需先读timingsVersion，尤其validationMs现在包含结果检查、executionMs包含EXPLAIN。没有新模型表现或阶段3通过的结论；P95仍需后续真实三轮达到原门槛。
 
-实现检查通过后先提交代码与证据；再在该提交上运行原200题Gold自检及100组提示词捕获，验证业务执行和提示词没有顺带变化，补充记录单独归档。这里不提前声称后续检查已完成。
+实现检查通过后已提交代码及14份证据，见[实现归档清单](../reports/budget-timings-fix-20261116/manifest.json)和[验证记录](../reports/budget-timings-fix-20261116/verification.json)。随后在同提交 `966df68` 完成原200题Gold自检200/200、模型调用0；每题问题、Gold SQL和结果指纹与前轮一致。重新捕获100组Provider配对、300次重复比较和2次全量Provider检查；除codeCommit外，捕获文件与上一轮全部字段相同，默认及候选完整消息各100/100不变。补充证据见[提交后验证](../reports/budget-timings-verification-20261116/verification.json)及[清单](../reports/budget-timings-verification-20261116/manifest.json)。实现归档中的pending字段是提交时状态，已完成状态以这份后续记录为准。
+
+上一轮真实开发筛选的只读证据审计再次通过，未重写其summary；P95未通过、候选不晋级的历史结论保持原样。提交后检查没有调用外部模型，不能因此给当前代码新增一个真实准确率。
 
 ## 5. 设计取舍与面试答辩
 
