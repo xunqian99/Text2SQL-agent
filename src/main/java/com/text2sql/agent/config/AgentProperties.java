@@ -1209,6 +1209,9 @@ public class AgentProperties {
 
         private boolean enabled = false;
         private String dir = "data/eval";
+
+        /** Optional frozen suite manifest; checked before Gold or paid model calls. */
+        private String suiteManifest = "";
         private String outDir = "reports";
 
         /** 0 表示全部跑；阶段 1 验收用 50。 */
@@ -1315,6 +1318,10 @@ public class AgentProperties {
         public void setDir(String dir) {
             this.dir = dir;
         }
+
+        public String getSuiteManifest() { return suiteManifest; }
+
+        public void setSuiteManifest(String suiteManifest) { this.suiteManifest = suiteManifest; }
 
         public String getOutDir() {
             return outDir;

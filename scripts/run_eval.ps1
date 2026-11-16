@@ -9,6 +9,8 @@ param(
   [ValidateRange(1, 65535)][int]$Port = 18080,
   [ValidateRange(1, 131072)][int]$MaxTokens = 8192,
   [string]$OutputDir = 'reports',
+  [string]$DatasetDir = 'data/eval',
+  [string]$SuiteManifest = '',
   [switch]$Preview
 )
 
@@ -29,9 +31,13 @@ if (-not $Preview -and -not $DryRun -and [string]::IsNullOrWhiteSpace($env:AGENT
 }
 
 $attempts = if ($SelfCorrection) { $MaxAttempts } else { 1 }
+foreach ($pathValue in @($DatasetDir, $SuiteManifest, $OutputDir)) {
+  if ($pathValue -match '[\s"'']') { throw 'Evaluation paths must not contain whitespace or quotes.' }
+}
 $mavenArgs = @(
   '--spring.profiles.active=local', "--server.port=$Port",
   '--agent.eval.enabled=true', "--agent.eval.split=$Split", "--agent.eval.limit=$Limit",
+  "--agent.eval.dir=$DatasetDir", "--agent.eval.suite-manifest=$SuiteManifest",
   "--agent.eval.dry-run=$($DryRun.IsPresent.ToString().ToLowerInvariant())",
   "--agent.eval.out-dir=$OutputDir",
   '--agent.eval.exit-after-run=true', '--agent.eval.repeat=1',

@@ -65,10 +65,13 @@ public class EvalRunner implements ApplicationRunner {
     private final SqlExecutor executor;
     private final ObjectMapper jsonMapper;
     private final ConfigurableApplicationContext applicationContext;
+    private final com.text2sql.agent.fewshot.ExampleLoader exampleLoader;
+    private Map<String, Object> suiteIdentity = Map.of();
 
     public EvalRunner(AgentProperties properties, EvalItemLoader loader,
                       Text2SqlOrchestrator orchestrator, SqlExecutor executor,
-                      ObjectMapper jsonMapper, ConfigurableApplicationContext applicationContext) {
+                      ObjectMapper jsonMapper, ConfigurableApplicationContext applicationContext,
+                      com.text2sql.agent.fewshot.ExampleLoader exampleLoader) {
         this.properties = properties;
         this.loader = loader;
         this.orchestrator = orchestrator;
@@ -77,6 +80,7 @@ public class EvalRunner implements ApplicationRunner {
         // 与 EvalItemLoader 内部那个 YAML 实例是两个不同用途的对象。
         this.jsonMapper = jsonMapper;
         this.applicationContext = applicationContext;
+        this.exampleLoader = exampleLoader;
     }
 
     @Override
@@ -109,6 +113,7 @@ public class EvalRunner implements ApplicationRunner {
      */
     public EvalReport runEvaluation() {
         List<EvalItem> items = loader.load();
+        suiteIdentity = EvalSuiteGuard.verify(properties, loader, items, exampleLoader.getExamples());
         boolean dryRun = properties.getEval().isDryRun();
 
         if (!dryRun && properties.getLlm().getApiKey().isBlank()) {
@@ -221,6 +226,7 @@ public class EvalRunner implements ApplicationRunner {
 
     private Map<String, Object> effectiveConfig() {
         Map<String, Object> config = new LinkedHashMap<>();
+        if (!suiteIdentity.isEmpty()) config.put("evaluationSuite", suiteIdentity);
         var llm = properties.getLlm();
         var retrieval = properties.getRetrieval();
         config.put("maxTokens", llm.getMaxTokens());
