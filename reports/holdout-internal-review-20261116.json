@@ -1,0 +1,3465 @@
+{
+  "format": "holdout-internal-semantic-review-v1",
+  "reviewDate": "2026-11-16",
+  "reviewer": "Same AI system internal cross-review subagent; not verified independent human blind review",
+  "independentHumanReviewEstablished": false,
+  "suiteReuse": "Regression use; main agent has already inspected candidate outcomes",
+  "sourceSuiteId": "olist-heldout-candidate-20261116-v1",
+  "datasetSha256": "a7107815a5b6812a704ab5a3f3c71e0b7cdebb57c1ecd99a978f63a864123341",
+  "sourceGoldReport": "reports/holdout-baseline-20261116/holdout-gold/eval-20261116-125733-dryrun.json",
+  "sourceGoldReportSha256": "5a1422fde57341e70b7d0ea3de5d10f7d772006cb505d35d487ad9f44dc10c8f",
+  "coverageCount": 100,
+  "classificationCounts": {
+    "business_confirmation_required": 6,
+    "no_specific_finding": 81,
+    "weak_result_evidence": 12,
+    "confirmed_defect": 1
+  },
+  "severityCounts": {
+    "P2": 15,
+    "no_specific_finding": 81,
+    "P1": 4,
+    "P0": 0
+  },
+  "realModelCalls": 0,
+  "modelTokens": 0,
+  "modelCostYuan": 0,
+  "databaseAccess": "Read-only transactions only; no persistent writes",
+  "resultReproductionLimit": "Current local database results supplement historical hashes. Canonical historical result hashing not reimplemented; byte-identical historical database replay not claimed.",
+  "noFindingLimit": "No specific finding is not a semantic proof. Exhaustive mutation fixtures and independent business approval remain outstanding.",
+  "targetedReadOnlyProbes": {
+    "T3_H009": {
+      "valuesCounterexampleGoldCount": 1,
+      "valuesCounterexampleStatus3Count": 0,
+      "goldCount": 4510,
+      "status3Count": 4510
+    },
+    "T3_H011": {
+      "nonStatus3WithJanuaryResolvedTime": 80,
+      "goldAvgHours": 54.69,
+      "negativeDurationCount": 176
+    },
+    "T3_H014": {
+      "goldAvgDays": 137.31,
+      "negativeDurationCount": 16
+    },
+    "T6_H010": {
+      "excludeNegativeFromNumeratorAndDenominatorPct": 7.23,
+      "denominator": 2615,
+      "goldPct": 45.51,
+      "numerator": 1190,
+      "negativeDurationCount": 1079
+    },
+    "T6_H003": {
+      "wrongInnerJoinDenominator": 53531,
+      "wrongInnerJoinRoundedAov": 160.53,
+      "goldRoundedAov": 160.53,
+      "goldDenominator": 53532
+    },
+    "branchCounts": {
+      "abnormalShipments": 0,
+      "inventoryNullQuantity": 0,
+      "snapshotNullPoints": 0,
+      "searchMarchNullResultCount": 0,
+      "campaignsWithoutProducts": 0,
+      "inventoryNullSafetyStock": 0,
+      "messageNullOrEmptyContent": 0,
+      "campaignsWithoutUsage": 0,
+      "maxBrandMappingsPerProduct": 1,
+      "multiCurrentBrandProducts": 0,
+      "emptyReviewTitle": 0,
+      "ticketCategoriesWithoutUnresolvedTickets": 0
+    }
+  },
+  "items": [
+    {
+      "id": "T1-H001",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "a2559413cc486224cf5542c06f4bcc311b66e6ef5129c68350d696fafa37bdff",
+      "goldSqlSha256": "bcf839f31bd28e760c4701b1a02146d6a74e6ff078fc53a5850b863bc69463c5",
+      "historicalGoldResultSha256": "90ec203f55470ec121a307970ec7192a40a8fc09b74182f641a22407e882ef57",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 1,
+        "columns": [
+          "member_count"
+        ],
+        "scalar": 5208,
+        "shape": "1×1"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "冻结=2，积分>=500，按会员记录计数"
+    },
+    {
+      "id": "T1-H002",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "6a4e1631b5a57f6ea4f7280a5cb676e81c42f5d7016e3826e72b0532b6e5f05c",
+      "goldSqlSha256": "b8b3c05dd8e06167818cebc9d1a547ed1a5f40bd9d732fc8bfac968ee1039eea",
+      "historicalGoldResultSha256": "b97c525e3713a99881f63993c305f6cac1e43c7f61c687d9633bad51d21b0568",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 1,
+        "columns": [
+          "product_count"
+        ],
+        "scalar": 5651,
+        "shape": "1×1"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "重量单位克，BETWEEN 含1000及2000，NULL不计"
+    },
+    {
+      "id": "T1-H003",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "ad592bd2f0bcc2623b239ee464c3dd8e9646dc4e1241cc4c533c1ff9ddd2c272",
+      "goldSqlSha256": "973cd426ed8846b2ec340a0de20b1fe4a34152fb3cb6cbd35bfeba9c3ba1f108",
+      "historicalGoldResultSha256": "a6cba25482a3ffc4f538b9e1a6a78c472b55565790299bf6b81ac2b8c725fb33",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 1,
+        "columns": [
+          "order_count"
+        ],
+        "scalar": 1637,
+        "shape": "1×1"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "全状态，审核时间非空且交承运时间空"
+    },
+    {
+      "id": "T1-H004",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "46933d5666dcc5d9395ce0bcf2eb1ecc24953cbfb669615a23ebb5b8fd156d89",
+      "goldSqlSha256": "552f86c4d228e4906c39007cdfe8fea5ec3137dd7f00e925932bf1c03de570ec",
+      "historicalGoldResultSha256": "042a9411e168ba07c923a325c834601c306c05535a739ddd798597cb8c86055b",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 1,
+        "columns": [
+          "payment_count"
+        ],
+        "scalar": 12207,
+        "shape": "1×1"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "信用卡且分期>6，按支付记录、不按订单去重"
+    },
+    {
+      "id": "T1-H005",
+      "classification": "weak_result_evidence",
+      "severity": "P2",
+      "questionSha256": "551fb7b0a4ffce93948fc57d47cffcf648769d570be7fe00088c828f78745b9f",
+      "goldSqlSha256": "62f9b8080bec0af51f73b591ddc8d757079cb62b53d4bc4bfed61dd8e23c19a4",
+      "historicalGoldResultSha256": "8109c0284386400d5ee708b04216db279de741b5730e12d626acefb874bdaea8",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 1,
+        "columns": [
+          "review_count"
+        ],
+        "scalar": 87656,
+        "shape": "1×1"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "NULL或空字符串标题；空字符串分支无正例"
+    },
+    {
+      "id": "T1-H006",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "78595f3d1340db0ffd1aebb31ebcfcaafb9ca4be6794c0621ba01c940d6ceb73",
+      "goldSqlSha256": "02c1dc5fc834a91d7fb8044e11f24e2d547524addfbbae0f610c1b167ec26b2c",
+      "historicalGoldResultSha256": "13f53ae8061df133b85d899ea800326f80e7bb2fab4dc145498204cf1e86d9f9",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 7,
+        "columns": [
+          "member_id",
+          "points"
+        ],
+        "scalar": null,
+        "shape": "7×2"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "正常=1，积分降序NULL最后，会员ID升序同分"
+    },
+    {
+      "id": "T1-H007",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "42f8415c1cc0381d63b70edb9c4335b84345c35f1e3ec4c2f28bfd08d949d0f3",
+      "goldSqlSha256": "928b12020fbe1cfc93ca834dd5686742a1fb2f2dc710d6374780cae6203e2278",
+      "historicalGoldResultSha256": "48aa71e333bf8e7f0eea57b18cbb6f6ba9fd3568b82715654d6ec17414a9c4dd",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 20,
+        "columns": [
+          "campaign_id",
+          "campaign_name"
+        ],
+        "scalar": null,
+        "shape": "20×2"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "预算>10000，结束=3；ID升序截20"
+    },
+    {
+      "id": "T1-H008",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "0b4c35ed573efc54fc37673b685c5ec0665ea77725997d2879bd292adf5d5919",
+      "goldSqlSha256": "28f40be1b559093ce98be53aa41f066f5aabd9b92c6822326a1b383e0a431a6c",
+      "historicalGoldResultSha256": "ef58af72ab4874371aa9200ff88e508bd9daff927fa1f2fb5d6db4171700412f",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 1,
+        "columns": [
+          "coupon_count"
+        ],
+        "scalar": 80,
+        "shape": "1×1"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "fixed满减，门槛>=100，按优惠券定义记录计"
+    },
+    {
+      "id": "T1-H009",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "69b1c652f83789c034e82794e8bacf318d8769fc340593f8ec395b60bbf6aad8",
+      "goldSqlSha256": "e2ad606146a23f56b528197d043fd59ccbbb242c6e0bfbf51f7606bc54820c94",
+      "historicalGoldResultSha256": "b291f043b91f37391999db927cc08b5405b7e0c60d80b9059258ee3d08536288",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 1,
+        "columns": [
+          "inventory_count"
+        ],
+        "scalar": 1177,
+        "shape": "1×1"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "quantity<safety_stock，NULL比较不计，不按商品去重"
+    },
+    {
+      "id": "T1-H010",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "8caacfa9b5663ecb203d9fc47fb37b72b1f218c53bdee16057deda37634c3b9b",
+      "goldSqlSha256": "29a64505734e65834bf84c9f431d4d4f0b15a402467c5e9898137b97b1e74dff",
+      "historicalGoldResultSha256": "23400b43cb985589bedd822827b27a9b941a141ff2df59d8da75519674455306",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 1,
+        "columns": [
+          "refund_count"
+        ],
+        "scalar": 1353,
+        "shape": "1×1"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "QUAL且退款状态4，按退款单计"
+    },
+    {
+      "id": "T1-H011",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "e35138599df10f6bb50e37a68dd21338000034e0e9187ba63cf91032e969ef41",
+      "goldSqlSha256": "5d892d995eb9697d130a065bca01444eec733a5ce32b41dd26f13e152f25b0b5",
+      "historicalGoldResultSha256": "c18b61cdfbd0da757cca46bec30559e7c3e19606486f63be140dfef9d1f8c5e3",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 1,
+        "columns": [
+          "ticket_count"
+        ],
+        "scalar": 302,
+        "shape": "1×1"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "紧急=4，未解决明确指resolved_at为空"
+    },
+    {
+      "id": "T1-H012",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "2aaf4e7193c2e2d182dbf7954abd413396f0d466ff322bdd48fc0f5fef721416",
+      "goldSqlSha256": "f28d7958b21521b8b31cae4580b7855081bf8d5242612b9de321fbea4ce2909b",
+      "historicalGoldResultSha256": "bd29ee83132033e159ada3f104af165b23f79c8793de8c8f17034b33181d086d",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 8,
+        "columns": [
+          "settlement_id",
+          "net_amount"
+        ],
+        "scalar": null,
+        "shape": "8×2"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "已打款=3，净额降序NULL最后，ID次序"
+    },
+    {
+      "id": "T1-H013",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "d6319f1337e5a59228dc49f0943d2d742d02ff42c61db22ad33e17ad13f9a5ff",
+      "goldSqlSha256": "803d4227df414e4702bf3e1f0390e4c8b8cc9a1ef6907deb715db6c4e700ad9a",
+      "historicalGoldResultSha256": "51d4b74e66d94742df544f1b7fb636041d6354f4947b7741b18163ce8f1790cd",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 1,
+        "columns": [
+          "referral_count"
+        ],
+        "scalar": 557,
+        "shape": "1×1"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "转化时间非空且奖励>0，按邀请记录计"
+    },
+    {
+      "id": "T1-H014",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "b6b5d6ae3d70078cbbac54724796ed2ca9878dc3a1578d3e29bbe8b5da203036",
+      "goldSqlSha256": "69069b93267645cf52616a980f09bc31560406b924f0e55ff7172a408715f298",
+      "historicalGoldResultSha256": "673741b5902f9a4230dd5f623b2fe31a46a92740c8aa85b7bc53dbf4d53dd404",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 1,
+        "columns": [
+          "search_count"
+        ],
+        "scalar": 22,
+        "shape": "1×1"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "result_count=0且点击ID非NULL，非空字符串另无要求"
+    },
+    {
+      "id": "T1-H015",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "334f169e38eb6ed8f9e7e109d16da3b09702a22c95ad8c7a8cd3446bedd0e990",
+      "goldSqlSha256": "6a6ded29de75bfea60a0dcba8aaa480dac41f97b9fb033aaf084121eb7050cb6",
+      "historicalGoldResultSha256": "4f19c9c1d63a183fe493d8e6554730c68426afe26893c800250fbf9653c3b87c",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 1,
+        "columns": [
+          "price_change_count"
+        ],
+        "scalar": 4909,
+        "shape": "1×1"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "新价<旧价，按变更记录计"
+    },
+    {
+      "id": "T1-H016",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "6d15384d5c41a036ab8f5dd9612cb15dca15047f74a00ceb5ebffdddabd474c9",
+      "goldSqlSha256": "bc99c6a622d9a597608ac7707ce49b149486c99b3b85171ba836e6e7a7019f11",
+      "historicalGoldResultSha256": "cc45c65608437a2b8f5a9c8a7cd4279fa814d6e8215f6b16e94a4f01946a5e62",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 1,
+        "columns": [
+          "address_count"
+        ],
+        "scalar": 41746,
+        "shape": "1×1"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "默认地址true且SP，按地址记录计"
+    },
+    {
+      "id": "T1-H017",
+      "classification": "weak_result_evidence",
+      "severity": "P2",
+      "questionSha256": "a1a78cec99bd994d41716fc55b74dc18be2df32701cb4b062768039583274d12",
+      "goldSqlSha256": "0fac1d3971f51504a61fb859bbcc6622f906ac96bce8058437efaeaf0c18a400",
+      "historicalGoldResultSha256": "cabf320c9a5bd800b344570c4aeb3c74ebf92af169710e7562742746b51eba58",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 1,
+        "columns": [
+          "shipment_count"
+        ],
+        "scalar": 0,
+        "shape": "1×1"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "状态3且送达时间NULL；标量0，不是0行"
+    },
+    {
+      "id": "T1-H018",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "d811f1b3f630b94b18628321a990f4d2b69242219f56c43fef60c223b942f311",
+      "goldSqlSha256": "9ec10c6eb22a78b4a643dfaea6b6d32d940aea0be1a8796549d6eaf4dbb0811b",
+      "historicalGoldResultSha256": "bfcd72640c10fb2640426d10deb6bb90dafefb19307bebe386aaea05e2d20402",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 15,
+        "columns": [
+          "seller_city"
+        ],
+        "scalar": null,
+        "shape": "15×1"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "SP城市去重排NULL，城市升序前15"
+    },
+    {
+      "id": "T1-H019",
+      "classification": "weak_result_evidence",
+      "severity": "P2",
+      "questionSha256": "b376b7909ffb1a9383bce866867e01ba0f1e75b32d45b4236732f9f2b9bac705",
+      "goldSqlSha256": "551280920a0fef7748bf15c44fd6f3b8155637c9c2a4612a4c9f89425c30c4ef",
+      "historicalGoldResultSha256": "74db89ed5268eb7e9648ec458ccad345a5221059076858d0afc15413314ab302",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 1,
+        "columns": [
+          "snapshot_count"
+        ],
+        "scalar": 0,
+        "shape": "1×1"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "快照粒度NULL积分；标量0"
+    },
+    {
+      "id": "T1-H020",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "4a908b305255a7eabbc15b3d23d2f29b09ca263dd292981bed1c5fe5f893aeed",
+      "goldSqlSha256": "384b85ba19d365e380abc28ee7980d08e49b81e2801b24368d4be5c3d5390f82",
+      "historicalGoldResultSha256": "12e535614ede75138582d261fe5fc1b6f24f9fab33b9001d708fe210390ac595",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 1,
+        "columns": [
+          "item_count"
+        ],
+        "scalar": 4124,
+        "shape": "1×1"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "运费>商品单价，全部状态明细"
+    },
+    {
+      "id": "T2-H001",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "843d91b006c9bf6e59002de5aa13987eda7726d5437489d402e552c7c96fa9be",
+      "goldSqlSha256": "5c7f5b42a52fe2a92bb0abaf7b0571d7d32e5dc512a8d6be54aca78e96df26e6",
+      "historicalGoldResultSha256": "6bd3654110bdf1106dd3ff7fcba856d51523e23cb8be47138637dc41e3b63225",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 3,
+        "columns": [
+          "status",
+          "member_count",
+          "avg_points"
+        ],
+        "scalar": null,
+        "shape": "3×3"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "状态分组人数，AVG忽略NULL积分，2位小数"
+    },
+    {
+      "id": "T2-H002",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "65cc00f63f6718f5e18a5ae9f2de208d42220bf2e904c9074bc1a137d08e3fa9",
+      "goldSqlSha256": "f9acc30a87455d3d8ae9f09e883f5e9bf50c6dd9d650ee5b0c7d31260b0cfdf0",
+      "historicalGoldResultSha256": "4a800770a107992ec6c2071bf7edb39353464eec0f572a95de04057a2b47ebe5",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 2,
+        "columns": [
+          "discount_type",
+          "coupon_count",
+          "max_discount"
+        ],
+        "scalar": null,
+        "shape": "2×3"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "类型分组COUNT及MAX，类型升序NULL最后"
+    },
+    {
+      "id": "T2-H003",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "69e029ed3dfac937c9fca65cf60608568c2d4ccc6e60bf1a9873293e1c16cb19",
+      "goldSqlSha256": "6580d0c9d7c5ce810c9e9bf5f5cafc0493a4e50142bd375daababcfc5a40882d",
+      "historicalGoldResultSha256": "8515b2e7a8b7492cc3d7ad24f7483a51a90a4ac7405d6b29ce1c9f17bfddae1f",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 4,
+        "columns": [
+          "reason_code",
+          "total_refund"
+        ],
+        "scalar": null,
+        "shape": "4×2"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "状态4金额SUM，金额降序NULL最后，原因次序"
+    },
+    {
+      "id": "T2-H004",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "13d4385ea3b78d625fbd8aba026da487478beae6bf4e194d2d5636fe5156fa08",
+      "goldSqlSha256": "4c1dc6a5b0eb6ea181658a9c1a2a4cef06a7769a24039a23b2d0b056e71717e3",
+      "historicalGoldResultSha256": "5fc6587ca5a5ee6dbc5ffe6d0b1eb52bed3d899b12a76fd93ee420702af936e0",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 5,
+        "columns": [
+          "warehouse_id",
+          "total_quantity"
+        ],
+        "scalar": null,
+        "shape": "5×2"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "仓库SUM库存>=500，HAVING粒度正确"
+    },
+    {
+      "id": "T2-H005",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "ca36b49789e0b932f82d1679822f6375a8ba02be7c02ab4dcbe775fb5cf4f72e",
+      "goldSqlSha256": "140bbfb776e44f622c819e00821fe8d0a7be1ab6e7b008e7b8a1ffa5206e9eac",
+      "historicalGoldResultSha256": "96d90ab32ef585eaf5ffc55f6396cc1c92abdd08511bf547aec31a0f0bdf8284",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 4,
+        "columns": [
+          "priority",
+          "ticket_count"
+        ],
+        "scalar": null,
+        "shape": "4×2"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "解决时间NULL按优先级分组，优先级升序"
+    },
+    {
+      "id": "T2-H006",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "dc5aa4d9175bd93be652f49e580505c73a1a8551436ea6b2040f3b02c8129482",
+      "goldSqlSha256": "06408b63f6a0b1cca7d78761de1ef49b3f885cd7388fad07eed3ae8117451605",
+      "historicalGoldResultSha256": "283c02ff40e492aeeb067a27055058f707b230febcea41ab99e7db97707cf6f6",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 5,
+        "columns": [
+          "payment_type",
+          "payment_count",
+          "total_payment"
+        ],
+        "scalar": null,
+        "shape": "5×3"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "支付记录COUNT及金额SUM，方式排序含NULL组"
+    },
+    {
+      "id": "T2-H007",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "c212d68a4390b903aa42279af9380ca775aada968ea6655ab5d433a49dfbb72c",
+      "goldSqlSha256": "50e67383a75cda27b2f720483a15dc07be8d96e94bd481caace11051cb563f79",
+      "historicalGoldResultSha256": "0a097c43fd19a8af041da79931eb0abaa92d5a5072eadf8fab7e99f2a1158568",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 10,
+        "columns": [
+          "seller_state",
+          "city_count"
+        ],
+        "scalar": null,
+        "shape": "10×2"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "州分组COUNT DISTINCT城市，NULL城市忽略"
+    },
+    {
+      "id": "T2-H008",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "0e33d385ed660370bbec0d4841fb9631de240f374d57ffe63a5c8624cd3d149a",
+      "goldSqlSha256": "e13b34e2d0a1f1f71aa647dc922d730fe91447d7a0c83852511d70ca85fe5280",
+      "historicalGoldResultSha256": "eedf9813a2d0515ea194710a487b78900066638948cf3997ede395dc37177432",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 6,
+        "columns": [
+          "product_category_name",
+          "avg_weight"
+        ],
+        "scalar": null,
+        "shape": "6×2"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "类目/重量非NULL，克平均2位，按舍入后均值排序"
+    },
+    {
+      "id": "T2-H009",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "2ca94f3f00b212e79981c6647aa7078c2016d6316bc1b1b0f68f12a3e166ab2e",
+      "goldSqlSha256": "82fbfc29f61bc66ffa67b5b366e5c490f642fdeeb7753cec8edbf98444298cbd",
+      "historicalGoldResultSha256": "d19b52bae7aea9da24fcf66377bf132c7965a7f54292a5f66f5976978603e093",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 3,
+        "columns": [
+          "status",
+          "shipment_count",
+          "order_count"
+        ],
+        "scalar": null,
+        "shape": "3×3"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "发货记录数与不同订单数分别统计，状态升序"
+    },
+    {
+      "id": "T2-H010",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "83243d26e7ff1297420bdfedebb576817e89bf95dc1176a89c75880e34eb37e3",
+      "goldSqlSha256": "c881a30d4998a42391ebbc335b45492e9715565462928c61027fd8d9d4bd49be",
+      "historicalGoldResultSha256": "161f9e62adf4ab1b50040424befde1f0f8ee714a00abb6ecc4d00b6126339241",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 4,
+        "columns": [
+          "campaign_type",
+          "campaign_count",
+          "total_budget"
+        ],
+        "scalar": null,
+        "shape": "4×3"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "类型至少2活动，HAVING COUNT，预算SUM"
+    },
+    {
+      "id": "T2-H011",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "2d6597d4ea3163cfcd6243237975498c56bad9c59c6316728f9c512fe1d4d59c",
+      "goldSqlSha256": "dd2582e56335f7fd1769ac4401514afc3dceceb49112e58a6b292022e382ec94",
+      "historicalGoldResultSha256": "6a8c6853a20db0d76ebf3687b35f434b040176b843c2266b582827ac7fad4444",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 5,
+        "columns": [
+          "referrer_member_id",
+          "conversion_count",
+          "total_reward"
+        ],
+        "scalar": null,
+        "shape": "5×3"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "已转化邀请记录数，奖励SUM降序NULL最后"
+    },
+    {
+      "id": "T2-H012",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "1a512e3af1fa896db0055cab26b51f08f60c9ac92ef339944a6cd188c4709335",
+      "goldSqlSha256": "323324cf752b9775f28ca0a639d348b4ade99207444c36e8e38bd1e2021ede9b",
+      "historicalGoldResultSha256": "74604204d09943cfaaf1cfeccf3ccf765a3c8a997b1c09e083b7bf012183d8a2",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 4,
+        "columns": [
+          "movement_type",
+          "movement_count",
+          "total_quantity"
+        ],
+        "scalar": null,
+        "shape": "4×3"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "变动类型粒度COUNT和原quantity合计，不擅自加正负号"
+    },
+    {
+      "id": "T2-H013",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "b83d281c15f42db0fb9c973550a307afd3e4f214e39f27a81e0ca64b5fbb0a6a",
+      "goldSqlSha256": "f7dbc8e4ebf51b6feeb1f557e4b0c0fd03d117fdbb3af74dccbccf2408e4fc6d",
+      "historicalGoldResultSha256": "3910d7a0701ee3b218c6a02d2294158464f67127c8f236adb7d380a1608bc8ec",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 9,
+        "columns": [
+          "keyword",
+          "search_count"
+        ],
+        "scalar": null,
+        "shape": "9×2"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "结果>0，排NULL关键词，次数降序关键词升序"
+    },
+    {
+      "id": "T2-H014",
+      "classification": "weak_result_evidence",
+      "severity": "P2",
+      "questionSha256": "110273fc2332ab3214949d0b5051d4bb061a6ec028469796bf1875742afde0ab",
+      "goldSqlSha256": "594669c1741e23f78f0fe7b70f32d047a692c57dc6868618119daad44276311a",
+      "historicalGoldResultSha256": "0350220b44d7dcec6bcac36a60422e9774e747673754a09e07c33b7b9fcdb96b",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 2,
+        "columns": [
+          "sender_type",
+          "message_count",
+          "nonempty_count"
+        ],
+        "scalar": null,
+        "shape": "2×3"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "非NULL且非空字符串为有内容；缺少空内容正例"
+    },
+    {
+      "id": "T2-H015",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "d7e298a8f9c72813628f1e8e3adc14438505f050ca5e98647a7e765c02839d6d",
+      "goldSqlSha256": "bf7067cfb3fa7fd35f42e46ccc5ecfe07313c68a408d95acac813bd1696c2367",
+      "historicalGoldResultSha256": "dd08e84a767e2c991cf9a9a680878d1bb4d1a227fc0087b37f6aded5f713ab33",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 2,
+        "columns": [
+          "status",
+          "total_commission",
+          "total_net"
+        ],
+        "scalar": null,
+        "shape": "2×3"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "结算状态分组，佣金和净额各SUM"
+    },
+    {
+      "id": "T2-H016",
+      "classification": "weak_result_evidence",
+      "severity": "P2",
+      "questionSha256": "01dc9b7b187772e55f626f4ff600a64cbab706b55bca38988bc2b229615a2b7d",
+      "goldSqlSha256": "989fc3c604084f14815e3a7252e94046ed303cab5d6e70ada33c35c7bb0b5587",
+      "historicalGoldResultSha256": "e45c2b02eb2b4e7f4b632106e3bf14b387732fd5a8844b0e47fcb8d7c95a55aa",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 0,
+        "columns": [
+          "product_id",
+          "mapping_count"
+        ],
+        "scalar": null,
+        "shape": "0×2"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "全历史映射COUNT>=3，无正例；非仅当前映射"
+    },
+    {
+      "id": "T2-H017",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "24f4db11fa602c04a6ea9fd035db811abcfa1b96073026c159c15950aac0fddd",
+      "goldSqlSha256": "0900904e00c77c1a429f8c46637990daa2033df2c2546ebc2773f4119dd71e7a",
+      "historicalGoldResultSha256": "9b56787af59e1aa9212851a2b90296aa3c5fce15c1f7a22e80a2d0cfa9200104",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 5,
+        "columns": [
+          "country",
+          "brand_count"
+        ],
+        "scalar": null,
+        "shape": "5×2"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "国家分组品牌记录数，NULL国家保留并排最后"
+    },
+    {
+      "id": "T2-H018",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "121838ac68a14608e3d6ae4d1eb94c02b25cf3044ea2e32f2a4871b881397b37",
+      "goldSqlSha256": "dce4e9342fe1d6294d2556cfef5b06705e0db0aaf6ff4547f38f8962415d1a1b",
+      "historicalGoldResultSha256": "5e6b599122541a43fa097fd10cd8307906d9a5e643bdc25834bb810d5fdd1c23",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 1,
+        "columns": [
+          "refund_qty",
+          "item_count",
+          "total_refund"
+        ],
+        "scalar": null,
+        "shape": "1×3"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "按refund_qty分组，退款明细refund_value合计"
+    },
+    {
+      "id": "T2-H019",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "8b1c9e6a965ecfbbaa751dad2db33d3d183481595ddf79c301e15293f1e437d2",
+      "goldSqlSha256": "d2dacd47c93b0c36dc1c8fb5268c6e6a5e5152123b1a0f85b174b269223bb107",
+      "historicalGoldResultSha256": "e63ca196e798dfe852289559a0b8224b94d164ccbe700de5aa0117243da6a056",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 7,
+        "columns": [
+          "order_status",
+          "first_purchase"
+        ],
+        "scalar": null,
+        "shape": "7×2"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "2018全状态，MIN下单时间，状态升序"
+    },
+    {
+      "id": "T2-H020",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "8ec9f977dfdfd2e74822dbbe097ac3d98dad659abac5c007652eb04494f60b88",
+      "goldSqlSha256": "bbd3c6abaa227d4484269310fc63659539783de4b4639b75dd9c728ac72d6790",
+      "historicalGoldResultSha256": "372be2b76f38bb14f2f384aa8f35eaf2b64bf4b33d1802382e16b6a3d290d820",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 4,
+        "columns": [
+          "seller_id",
+          "total_freight",
+          "item_count"
+        ],
+        "scalar": null,
+        "shape": "4×3"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "卖家明细运费合计及明细条数，不加订单状态过滤"
+    },
+    {
+      "id": "T3-H001",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "dbf81131064b42b6ef2dcdf3f7f5631442de08175215d93c1259d242d8d5cec1",
+      "goldSqlSha256": "2842fb3a53a1de397507602432f1bfcd7e60b2c7639ef562b17eb82de1f659d3",
+      "historicalGoldResultSha256": "b959f28b142652898cc57e1804353b4fdea121738f77c9e04fb07f617574cec2",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 3,
+        "columns": [
+          "month",
+          "order_count"
+        ],
+        "scalar": null,
+        "shape": "3×2"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "2018Q2按YYYY-MM，订单全状态，月份升序"
+    },
+    {
+      "id": "T3-H002",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "2a0715c9c4e262113beaa22fd96ffa6b7ec137c25d2172aa33ba394460f53e3a",
+      "goldSqlSha256": "804533c2f99f2bf048c7a5d2da213fbc864247089a90c4b6be613b5bb36b3823",
+      "historicalGoldResultSha256": "805d51e081b7c4c4d90627e87427019e40da973eb83434ccf3e75e781a35211d",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 1,
+        "columns": [
+          "order_count"
+        ],
+        "scalar": 1398,
+        "shape": "1×1"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "2017-12窗口，ISO周末6/7"
+    },
+    {
+      "id": "T3-H003",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "721dbfced7d6a4c9a83f392ea19d7608666f30ec56dc483c84c7d7fb9fea5d22",
+      "goldSqlSha256": "fb1140fd8e0d48bec7c729535e24237f1af0e88cac21801c239bc229231542a2",
+      "historicalGoldResultSha256": "0f45cb9dd9676a4c4cc42d825199bf0a98bc0fecdb26c719752499efb9851310",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 31,
+        "columns": [
+          "day",
+          "order_count"
+        ],
+        "scalar": null,
+        "shape": "31×2"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "2018-01按date聚合，不补零，最多31"
+    },
+    {
+      "id": "T3-H004",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "013bb97f519d1b4cd072c4e9c2d5e6843db9692696d25ca0dd933921a30c1a43",
+      "goldSqlSha256": "7200f42de1248d0eab50774fa9c13f09e68bbd518673df5d12758f866b6895dc",
+      "historicalGoldResultSha256": "67f0fffb92a2672101912dd270ed4e8e7d247dffd4651b917773c237db83414f",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 1,
+        "columns": [
+          "avg_days"
+        ],
+        "scalar": 15.16,
+        "shape": "1×1"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "2017-11按下单窗口，实际送达非NULL，秒/86400"
+    },
+    {
+      "id": "T3-H005",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "0b9c0992fccda3d22290055f70ba1d846d0cb44cab9f91863a74c3646378cc68",
+      "goldSqlSha256": "802104391ced7be165445d7edcc46001032aac7daec979f0d17bcb5f3915185b",
+      "historicalGoldResultSha256": "9368aeedbe284e31a3b027ce62366f9ed626e479d9ce148a22e8e79fc7ef7489",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 31,
+        "columns": [
+          "day",
+          "ticket_count"
+        ],
+        "scalar": null,
+        "shape": "31×2"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "2018-01按解决时间日计数，不是按创建时间"
+    },
+    {
+      "id": "T3-H006",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "43840de5d3eae26281dad9936e34a37cd61a75f4f4afd65b71987289edf21803",
+      "goldSqlSha256": "6f8fa37dca1b9d59333fb589d8cdd91d097ef448f77b9ea2bebd49a138b88e33",
+      "historicalGoldResultSha256": "3a3880b131701d00947210ad5db0e04a430f07c669b92ca4401dfc8a1284ec54",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 6,
+        "columns": [
+          "month",
+          "total_refund"
+        ],
+        "scalar": null,
+        "shape": "6×2"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "2018H1按申请月份，状态4退款单金额SUM"
+    },
+    {
+      "id": "T3-H007",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "5059353824801303c55f09253ce459ee1f2e3fe78a9a1ce4ea2caefe4cf8923b",
+      "goldSqlSha256": "736387dd79ecb501659011e104456be6aecf7f375b3fbbb91e4095462dbd1f68",
+      "historicalGoldResultSha256": "b3f812ec62527897eb5add134cdddb6b064708be8249d7b57938fad61ec14240",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 24,
+        "columns": [
+          "hour",
+          "search_count"
+        ],
+        "scalar": null,
+        "shape": "24×2"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "2018-03搜索小时整数0..23，不补零"
+    },
+    {
+      "id": "T3-H008",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "00486349c5fe42c05e8cb04fd990aab3085b6e517244a2f9ccc6fcb8b68ee06d",
+      "goldSqlSha256": "d9316dc546c371cf49d602c046d61ddbb8b0a4202c3e897741356143da7103e2",
+      "historicalGoldResultSha256": "c061003807322d8b57176bda093b710b317edafc44410dbbc82b713f19b37da6",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 3,
+        "columns": [
+          "month",
+          "member_count"
+        ],
+        "scalar": null,
+        "shape": "3×2"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "2017Q4按注册日期月份，不是快照时间"
+    },
+    {
+      "id": "T3-H009",
+      "classification": "confirmed_defect",
+      "severity": "P1",
+      "questionSha256": "a86484825b95568c9131a340a5622c21d8fef77f052d3347e3536aed6bd75ba9",
+      "goldSqlSha256": "d599dd256fa98848c07bafe513e5b71562b5a38b8b470c83f6eb8e96a200f474",
+      "historicalGoldResultSha256": "6e6b881140fa5b5ea954c926c5153550b94211f2dc69ad1a18f2763c4dec7ed9",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 1,
+        "columns": [
+          "shipment_count"
+        ],
+        "scalar": 4510,
+        "shape": "1×1"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": ">=7完整24小时正确，但漏已签收状态3条件"
+    },
+    {
+      "id": "T3-H010",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "91532136623c22c02b87eec5d76c67d802b8de765f650bb819e3a83c997629fc",
+      "goldSqlSha256": "8d5e8606343daa67ffa1deeadae3b2b3e1c1cb874cc1623babcf48485312eb2b",
+      "historicalGoldResultSha256": "1a6e352cf39bda8e4ec6061739ca1c96440f659274bf0bd3e98e80ad64837090",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 6,
+        "columns": [
+          "month",
+          "order_count"
+        ],
+        "scalar": null,
+        "shape": "6×2"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "2018H1按使用时间分月，订单去重"
+    },
+    {
+      "id": "T3-H011",
+      "classification": "business_confirmation_required",
+      "severity": "P1",
+      "questionSha256": "ede51422372dee5a33ce0b99abfff39e65c107227c7555a313bdc5aed6793158",
+      "goldSqlSha256": "cc87f61dd9dadca374ce02d10848717bf481b7dca91a03ad6ef0698ca18acb0d",
+      "historicalGoldResultSha256": "c48d6c5ff6ee838637cfc819ee07733befa29a17638cf979f8db5460b827c932",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 1,
+        "columns": [
+          "avg_hours"
+        ],
+        "scalar": 54.69,
+        "shape": "1×1"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "解决时间窗口，秒/3600，176负耗时；当前状态含非3"
+    },
+    {
+      "id": "T3-H012",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "5627b9bfebfdc1ea7ede02f536e5c8b80750377938df332607e6e3518efc9e65",
+      "goldSqlSha256": "50137d93fe9fecadaddecef91228eea0d60fa1df797de650a46ca39ce2596c16",
+      "historicalGoldResultSha256": "4192d91e073358da6737d5ce9f4c71513ae7d1d9022fcd1e45b6c266135362e8",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 2,
+        "columns": [
+          "year",
+          "last_purchase"
+        ],
+        "scalar": null,
+        "shape": "2×2"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "整数2017/2018年各MAX时间，年度窗口正确"
+    },
+    {
+      "id": "T3-H013",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "6fdd5081bdba46c1faeef5ee1b7ead6b207a191296c8893bd01b4b5ffa952719",
+      "goldSqlSha256": "82263f1087f985771c5dca90df7b4a7b81ef13567a35621afae4a59fd402762e",
+      "historicalGoldResultSha256": "1c720578016e57f9c704ab42d3f75c8c4222c54cc0365f70c17e74d070ea56bf",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 4,
+        "columns": [
+          "quarter",
+          "order_count"
+        ],
+        "scalar": null,
+        "shape": "4×2"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "2018整数季度，全部订单，不补零"
+    },
+    {
+      "id": "T3-H014",
+      "classification": "business_confirmation_required",
+      "severity": "P1",
+      "questionSha256": "4c5f8ad2b7543adc4222eaab4be9ccbe699144d49149d80040943ce0e847f5e6",
+      "goldSqlSha256": "d31b84a89255d066843ecd8a4fd902c5e17484ae02a95b3243df10cf2de02fb7",
+      "historicalGoldResultSha256": "2a5aa8e35946ffb24e377454547a0cca89253a0896157d365cd8e76ec59fe1ab",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 1,
+        "columns": [
+          "avg_days"
+        ],
+        "scalar": 137.31,
+        "shape": "1×1"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "2018-04转化时间窗，秒/86400，16负耗时"
+    },
+    {
+      "id": "T3-H015",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "a0a89164eb0e0793a67bddc69bcfda7f5d6d919b04961e983864e48cd023af8d",
+      "goldSqlSha256": "d2a3d013826aebbc678158609ac3cc11fb2e6a00a4cedbd122fd6ff69c9ecee5",
+      "historicalGoldResultSha256": "0ba0a358ba5b9b4e1ed9218d48b83558f2ac62936e669add5ff622ec2d3e0d49",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 31,
+        "columns": [
+          "day",
+          "decrease_count"
+        ],
+        "scalar": null,
+        "shape": "31×2"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "2018-03新价<旧价按变更日，不补零"
+    },
+    {
+      "id": "T3-H016",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "e2588fed5b711b5604c3b65faefaa228a70b4a86f1ad9fa72b935d6a5ab60764",
+      "goldSqlSha256": "21f8d828e849e3286b10f8f62ad1bfb8bdfae9ba6d99a23257d22e5137db7490",
+      "historicalGoldResultSha256": "4dfdd64bbd0bee949fce4f11afa33811e6dba429699dab5524e4a903e9cc9c6d",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 6,
+        "columns": [
+          "month",
+          "total_net"
+        ],
+        "scalar": null,
+        "shape": "6×2"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "2018H1按打款月份，结算状态3，净额SUM"
+    },
+    {
+      "id": "T4-H001",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "dc429efbd81c382ed7bc0fbde84a8a26f1bb04cb80016b253a26e39b2e90310a",
+      "goldSqlSha256": "6faeb42015904eb1107772d58fb244738b74227c07aa33900fba4c9ce242b1f7",
+      "historicalGoldResultSha256": "01747f422af22ea8e4d905cbe7d0b8029b032b9c650e2bb87b0b117d7661a1ed",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 4,
+        "columns": [
+          "level_name",
+          "member_count"
+        ],
+        "scalar": null,
+        "shape": "4×2"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "冻结会员JOIN当前等级，按等级名称聚合"
+    },
+    {
+      "id": "T4-H002",
+      "classification": "weak_result_evidence",
+      "severity": "P2",
+      "questionSha256": "937f9ff29b16f2154a028134b2e7962483ce9cd2df24534fd60047e0623d5e83",
+      "goldSqlSha256": "2d476bb0c80ddd07d4bd97e5443308d454e88425d3193ca3b7c578a721214c44",
+      "historicalGoldResultSha256": "350bac322fd41714eddca96d8ea4e41c6a514a0e6ca76ae7ff0fbc15ee0991f6",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 6,
+        "columns": [
+          "category_id",
+          "category_name",
+          "ticket_count"
+        ],
+        "scalar": null,
+        "shape": "6×3"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "LEFT JOIN且未解决过滤在ON，缺少0计数分类"
+    },
+    {
+      "id": "T4-H003",
+      "classification": "weak_result_evidence",
+      "severity": "P2",
+      "questionSha256": "0a9e8e01068615b2d3cfda96d4ce3cf5871277278a6c65d54c5bf15f4d58c8ba",
+      "goldSqlSha256": "d5b958a90df5c7b9eb2251b7a7c4e40156bf0b1caceda680860ab9407952c4a0",
+      "historicalGoldResultSha256": "f75dd1ef4cc927f93ac8e7fc9b276639fc4d7f39e0fc4caed681ecaad3507fd1",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 5,
+        "columns": [
+          "warehouse_id",
+          "warehouse_name",
+          "shipment_count"
+        ],
+        "scalar": null,
+        "shape": "5×3"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "LEFT JOIN状态4，COUNT右侧PK；全仓库为0"
+    },
+    {
+      "id": "T4-H004",
+      "classification": "weak_result_evidence",
+      "severity": "P2",
+      "questionSha256": "0392f06e50d3d88883d5a838deae136c52ab509e0dba627d6c855810bd380c40",
+      "goldSqlSha256": "6ffb9ba93a1d02fb2850d588d0e59809099bf83b5fa5471e1db97cb6814e146a",
+      "historicalGoldResultSha256": "6f90d711faa0dac3c095f77cdc3fec2c779adb67c0f8385d7e6530b9f38c43e4",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 52,
+        "columns": [
+          "campaign_id",
+          "campaign_name",
+          "usage_count"
+        ],
+        "scalar": null,
+        "shape": "52×3"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "活动→券→使用，按使用PK计数；缺少未使用活动"
+    },
+    {
+      "id": "T4-H005",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "2296d64fec45b6106f4bc381e5e1bf7f91c609863632e847d8065de4d224f344",
+      "goldSqlSha256": "2e8df0157dea8f2d8d88a31fcabb5155378b5948b8dc581e45340c3da8ca8249",
+      "historicalGoldResultSha256": "b6621e776c16b15428bbb65d8067a4294e73edb5825d3d6a22e0f7389d8f3733",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 1,
+        "columns": [
+          "member_count"
+        ],
+        "scalar": 115,
+        "shape": "1×1"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "NOT EXISTS标签映射，全部会员状态，成员粒度"
+    },
+    {
+      "id": "T4-H006",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "f7a13d4e00ea809e592a9822fa94c6782e305f3a6d362b906a520434186d6be4",
+      "goldSqlSha256": "dbc02760cef05f76b43b833e32a85190161ee01b5839285bda1fc4424cf691d9",
+      "historicalGoldResultSha256": "1e30c336a552738ea21d64a9d1160d9b0ac6b8bf3fdcef9bb0d933f9b8c7d3a3",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 6,
+        "columns": [
+          "tag_name",
+          "member_count"
+        ],
+        "scalar": null,
+        "shape": "6×2"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "冻结会员按标签名COUNT DISTINCT，避免映射重复人数"
+    },
+    {
+      "id": "T4-H007",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "d0d1b5496c1b9bfcc0c18cdb934e7b54c62699dd90749a4bc3e71bccc5fee4b0",
+      "goldSqlSha256": "dd2daa33a8129fa3ae701fcff8cf80a6e70534c4a701811f68aecb23865d1dba",
+      "historicalGoldResultSha256": "128eacca72c00abba763d85fef12c0cf3a8dba71ec36e70bd806e9c2a7abe409",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 10,
+        "columns": [
+          "customer_state",
+          "order_count"
+        ],
+        "scalar": null,
+        "shape": "10×2"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "2018Q2订单经唯一customer_id关联州，COUNT订单"
+    },
+    {
+      "id": "T4-H008",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "075d5665e767c68d4d62868a05d28d2ed89f3c33c568b5424bec32b414659bd9",
+      "goldSqlSha256": "437e90e6bcd89372504ac33bb8c6e8e0dbed2ec7f7bcc7ae27e563d27b272ba3",
+      "historicalGoldResultSha256": "ae450426a78f0729f18aab91365cd77045816b058dcc7e0f2d665547e73c8ccc",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 1,
+        "columns": [
+          "total_refund"
+        ],
+        "scalar": 194655.24,
+        "shape": "1×1"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "SP已退款单SUM，不连明细，退款单金额不放大"
+    },
+    {
+      "id": "T4-H009",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "cb304fea27ab6f180e6a49855f902ac3321e720797f05c3b357f1323a05cd8fb",
+      "goldSqlSha256": "0ea83c006455053447d72638025925b3784a0722187c975b4f2d96c42bec1f8c",
+      "historicalGoldResultSha256": "987b81ef16d8b40d272b0e5852f2cf5712b099057451c452c21816789120929c",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 8,
+        "columns": [
+          "seller_state",
+          "total_price"
+        ],
+        "scalar": null,
+        "shape": "8×2"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "卖家州维度SUM明细price，不含运费，不加状态"
+    },
+    {
+      "id": "T4-H010",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "528c841d6f5f4a702156dcd4dcfca92f4d9cb6764b71bd137795bf32553a1958",
+      "goldSqlSha256": "2b24061f634b0dd7b894282a0eea49ebccd2399ac72131f662bd601797febe14",
+      "historicalGoldResultSha256": "507de02cba9e138aaad82caf185db12cb34c54fea3faed923ce3fe6795712715",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 10,
+        "columns": [
+          "brand_id",
+          "brand_name",
+          "product_count"
+        ],
+        "scalar": null,
+        "shape": "10×3"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "当前映射按品牌ID/名称计不同商品，不含无映射品牌"
+    },
+    {
+      "id": "T4-H011",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "62f7a52b652e5439a3f1b084e4c04ff8f48218b4d160e7b6b3c14aed9a592717",
+      "goldSqlSha256": "33162074a39758044b9852d09057a77cd5b7bcf66ed57c12adf49f5f48f49b42",
+      "historicalGoldResultSha256": "40fc5592f9c336a3c0a5442cedc7bcb78ac0832ddfce0ba3edf07dfd96504197",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 5,
+        "columns": [
+          "warehouse_id",
+          "warehouse_name",
+          "shortage_count"
+        ],
+        "scalar": null,
+        "shape": "5×3"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "库存不足记录按仓库ID/名称计，仅保留正例"
+    },
+    {
+      "id": "T4-H012",
+      "classification": "weak_result_evidence",
+      "severity": "P2",
+      "questionSha256": "f735a1ab82323f16d637d66ef62a19a2f6b1049dda3cb31e12fa086cdf39e6ab",
+      "goldSqlSha256": "8ef52f81ec1c64728ed1f611715b9c5416c084e1b40f48b02d807025c386b88c",
+      "historicalGoldResultSha256": "3dfef97bab6d818328ef7baee5856dd44144fa564572fad768e700bf284b0921",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 0,
+        "columns": [
+          "campaign_id",
+          "campaign_name"
+        ],
+        "scalar": null,
+        "shape": "0×2"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "NOT EXISTS活动商品，当前结果恒空"
+    },
+    {
+      "id": "T4-H013",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "5833f91d0d71a11bb3c69b80c41f9ad7e8b1b5b6c5d325f55dba9c278c6ec301",
+      "goldSqlSha256": "bfa937e2d2cf96e05a42a63d83340b1b684f414692ea246e33293464c4cd5daa",
+      "historicalGoldResultSha256": "97b75c891d4b8626e265ed03093eaf99ff259e877940f122bd8108a63d228ca3",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 6,
+        "columns": [
+          "category_name",
+          "message_count"
+        ],
+        "scalar": null,
+        "shape": "6×2"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "分类→工单→消息，按消息条数聚合，不是工单数"
+    },
+    {
+      "id": "T4-H014",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "baa0c3c7afbc7824e14a4d501c8a1f69d217641fa7dff2113d01ecd4ca0a3cb2",
+      "goldSqlSha256": "0b01a198f20fd447bf0ea1a6d61bdea9c9087c7fd56c8e18a79c915572edd813",
+      "historicalGoldResultSha256": "2bf7e5dababf3a9c8a8a101061a0e94356b55548b0bec298caae0154aa439b2b",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 4,
+        "columns": [
+          "level_name",
+          "search_count"
+        ],
+        "scalar": null,
+        "shape": "4×2"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "正常会员搜索日志关联当前等级，按日志行计"
+    },
+    {
+      "id": "T4-H015",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "fb5ce902af65ddbf4ef52b015934653f56f3fac0e638b13d8256891c633d4c32",
+      "goldSqlSha256": "561deb7040506f285803f2b57d9ab13913cfa6614400fc88a2da98f4e9554501",
+      "historicalGoldResultSha256": "ee3fdc478e6906136025edda3f00f98e4ba4c6ec4125ed2623b441f82f90da51",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 3,
+        "columns": [
+          "macro_region",
+          "shipment_count"
+        ],
+        "scalar": null,
+        "shape": "3×2"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "发货→仓库→区域唯一键，大区按发货记录计"
+    },
+    {
+      "id": "T4-H016",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "e1dbbfb47233951f2b9d9bc2cf6f0c44b134535db2375f3dcb5ad26c3259b92b",
+      "goldSqlSha256": "022aa22e550f38cb257e7e30ae3f5909b94105bbb06fbd6306aaf4691abf283c",
+      "historicalGoldResultSha256": "901149bab12ede3dc26e21700522b129067f27da2cfc43a0b5a547e7cf7a9b8c",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 6,
+        "columns": [
+          "product_id",
+          "total_qty"
+        ],
+        "scalar": null,
+        "shape": "6×2"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "2018H1申请且退款状态4，用复合明细键SUM退款数量"
+    },
+    {
+      "id": "T4-H017",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "46629b2543058bd21dff223b65d5720bb0ebbdd0c5123699a9e91cc78a5ac025",
+      "goldSqlSha256": "33934255b8c8af1ee1230f7991e16083ac7b8124b5ff433811dc8d74890fdac2",
+      "historicalGoldResultSha256": "a048f78e8d3ea63e37cdc292fd49fa3fb214553e32bf05ddc0831a19309250f6",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 10,
+        "columns": [
+          "seller_state",
+          "total_net"
+        ],
+        "scalar": null,
+        "shape": "10×2"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "卖家州已打款净额SUM，金额次序及州同分"
+    },
+    {
+      "id": "T4-H018",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "7d43b353fbefba014c20276eec8b57b73b6777f65653139e5c7bbefa517fb84e",
+      "goldSqlSha256": "00385f0c4ccd5881ebebee88f247f28f95809677193d1a2543a6d1e0fae1339f",
+      "historicalGoldResultSha256": "ee82d38f3f6eda4b04bfccf66a29105d608aab0f64002ed8ada5f717ebb2225f",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 7,
+        "columns": [
+          "product_category_name_english",
+          "product_count"
+        ],
+        "scalar": null,
+        "shape": "7×2"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "商品类目翻译唯一键JOIN，按英文名聚合商品数"
+    },
+    {
+      "id": "T4-H019",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "b410f321db82d10ffed0d26b2a077cf28fab31ed694a3500805b51f0b10dd498",
+      "goldSqlSha256": "4541522d698bc44b0668387e812c97c49f30f179330bde67145f0805db83228f",
+      "historicalGoldResultSha256": "84ef380aecaa591c0b35c951af93c78bfa63cfa6f5708f71f68cc3ec42b29bec",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 1,
+        "columns": [
+          "member_count"
+        ],
+        "scalar": 11283,
+        "shape": "1×1"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "正常会员EXISTS使用记录，会员仅计一次"
+    },
+    {
+      "id": "T4-H020",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "d4c5bce0acee75df7792eae5f21861b4bc0563611dcc63f7292ea335a91be38b",
+      "goldSqlSha256": "1f76fb76016638c594c2b61a926dee7b6262ee16b26f17e28ee75305621010f1",
+      "historicalGoldResultSha256": "ead1e7ca210924f1c62bb3c7fdfb51480b0f19fa9c9819e9236ae752e2e2af4a",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 8,
+        "columns": [
+          "order_status",
+          "order_count"
+        ],
+        "scalar": null,
+        "shape": "8×2"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "1星评价，按状态COUNT DISTINCT订单，排无1星组"
+    },
+    {
+      "id": "T4-H021",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "6b4df9898fe45238e005e071205dd5d242f9dfb461cbfdbc04c1247b50e40455",
+      "goldSqlSha256": "e1ef6c4401e889c8fc59b14b2278b169088e2c8f88adb2f7f94a7ac80d5ef8f6",
+      "historicalGoldResultSha256": "f4726004d4e5d53495b827b5e4e1c5361ec415c58fe7ef02235e97143b145c0f",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 5,
+        "columns": [
+          "warehouse_id",
+          "category_count"
+        ],
+        "scalar": null,
+        "shape": "5×2"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "库存→商品按仓库COUNT DISTINCT非NULL类目"
+    },
+    {
+      "id": "T4-H022",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "331b49901bbed3d14ce3fb27a64660a68c18af7550dd601cbf0ceffe48803732",
+      "goldSqlSha256": "b5c02eb706c1b57eb97478e4f90c404aa37074675231e29c2ab6d46f7ba9afde",
+      "historicalGoldResultSha256": "a510636393cf81d4ea23bc5cfec2f9eff8185a9467955f91fdb2fe07dc4530fe",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 6,
+        "columns": [
+          "member_id",
+          "points",
+          "search_count"
+        ],
+        "scalar": null,
+        "shape": "6×3"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "搜索日志按会员ID/当前积分聚合，次数降序ID同分"
+    },
+    {
+      "id": "T5-H001",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "fc94d98fc6a1110841dcb5601269fdbbe127155812e5a4162189b6ebfcae0796",
+      "goldSqlSha256": "5133e7174ea1511025b7f9ed0331dcbde5ffb25ccd0f9450513747b3285c9e15",
+      "historicalGoldResultSha256": "9ed894a9b51eac2e21ddec39dff946c17e1cdc1e6d6ea1fb7e849a58b3f41ea9",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 4,
+        "columns": [
+          "level_name",
+          "total_price"
+        ],
+        "scalar": null,
+        "shape": "4×2"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "自然人→客户→订单→明细，当前等级，2018有效商品金额"
+    },
+    {
+      "id": "T5-H002",
+      "classification": "business_confirmation_required",
+      "severity": "P2",
+      "questionSha256": "e8d080be5a808dfbf4029275324ed6589864a7f28b5903fa8a0621322bcfc700",
+      "goldSqlSha256": "ca859845849255eb13b3d55162692c11bbea40f74de660eb8f610add3f7e6fc2",
+      "historicalGoldResultSha256": "5bcd3e93f9cd6a1f07b888a52bf79f2ea91a5c750b09f1454fe086ae43c364f4",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 5,
+        "columns": [
+          "brand_id",
+          "brand_name",
+          "order_count",
+          "total_price"
+        ],
+        "scalar": null,
+        "shape": "5×4"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "当前品牌2018有效订单DISTINCT及price SUM；跨品牌重叠未入题干"
+    },
+    {
+      "id": "T5-H003",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "77a8d30f30ac5f748427a49a232b18adba2fb3f52f7a064e31ce51c75ed0c37d",
+      "goldSqlSha256": "9db5cdf93efcd988836c8ae99c916a6780b9402e4da5b81fad153f583f40b045",
+      "historicalGoldResultSha256": "c53bbcb3d16afc45753b970a25388d718ca812cb189f20cb7144d5389830368c",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 174,
+        "columns": [
+          "campaign_id",
+          "campaign_name",
+          "level_name",
+          "usage_count"
+        ],
+        "scalar": null,
+        "shape": "174×4"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "活动→券→使用→正常会员→当前等级，使用次数不按订单计"
+    },
+    {
+      "id": "T5-H004",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "09838a0cee4859469f0bb3fc6223412de5abdff5774cc06300fdd69714f055f5",
+      "goldSqlSha256": "6438b36fb1c5dbba0701a5e803d6c64ea6aec7967f0694823ab958e71ee306ac",
+      "historicalGoldResultSha256": "66d524140a94f59db7ac6a9ab2692d4aafa7b233a38c761facd3267144c550b5",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 12,
+        "columns": [
+          "macro_region",
+          "category_name",
+          "ticket_count"
+        ],
+        "scalar": null,
+        "shape": "12×3"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "工单匹配订单/客户/州区域/分类，按大区及分类名计"
+    },
+    {
+      "id": "T5-H005",
+      "classification": "business_confirmation_required",
+      "severity": "P2",
+      "questionSha256": "8290ceb83d44d4e8cb7a6f7e565658b3026af662992d241872a5b7676a17bf33",
+      "goldSqlSha256": "68cd02a7f27b9ffc9ce704eb60fcc8b29efa8762b1a733388dcc5a2bc2358b28",
+      "historicalGoldResultSha256": "b03e6fe7dc14458099b6108c526271adbc93d78eb5a588f372c510a4b277ff9b",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 5,
+        "columns": [
+          "brand_id",
+          "brand_name",
+          "total_refund"
+        ],
+        "scalar": null,
+        "shape": "5×3"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "用退款明细金额，复合明细键正确；多当前品牌需确认"
+    },
+    {
+      "id": "T5-H006",
+      "classification": "business_confirmation_required",
+      "severity": "P2",
+      "questionSha256": "678cf022626fc91eb7b523f96bde3a8c3e6df1b3e406135632c8d7ddd416bd9e",
+      "goldSqlSha256": "953e1c9b373c6c8ad1dceaa13781bd539f78a192c06cc1eeca6d0e3f6af56b78",
+      "historicalGoldResultSha256": "f336bfd4b43317cdfbbca4b9ff07e25185a87cea4597f70f0a1531f09428c9f2",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 10,
+        "columns": [
+          "brand_id",
+          "brand_name",
+          "warehouse_id",
+          "warehouse_name",
+          "total_quantity"
+        ],
+        "scalar": null,
+        "shape": "10×5"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "品牌和仓库ID粒度SUM库存，多个当前品牌可能重复归属"
+    },
+    {
+      "id": "T5-H007",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "aa7e895df5e735414be6838913a297f20fb6366dbc01ea1f8b9be0099581a46d",
+      "goldSqlSha256": "e7c73c56f45cf71e907eaf2f085f27198e1b8945d56e30d32de9e2b409913631",
+      "historicalGoldResultSha256": "618d07fd083509974f0b97bb905f90ef7f09087eca6e0956316480bd932e2a02",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 1,
+        "columns": [
+          "member_count"
+        ],
+        "scalar": 8975,
+        "shape": "1×1"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "正常会员EXISTS结束活动优惠券使用，不加订单状态"
+    },
+    {
+      "id": "T5-H008",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "d34ecbcb7ee71f5792413daaa152e17375614452288e5da9be5e96611b537472",
+      "goldSqlSha256": "2c35dbd30acda98b6df7cff40c25410ed6e248f67f85a039f476746d12411be3",
+      "historicalGoldResultSha256": "43e127b9e64be4202837f0d2f7d3209232b8738c0a1a6d739a97abe3bc04b3f1",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 4,
+        "columns": [
+          "level_name",
+          "member_count"
+        ],
+        "scalar": null,
+        "shape": "4×2"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "当前等级的1星有效订单会员DISTINCT，非评价行数"
+    },
+    {
+      "id": "T5-H009",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "51c7c09a0a7a3fd16af2681ec506d95449834b583d76fce07c484bc25e4655c5",
+      "goldSqlSha256": "8aaca46223c61cc129c8edc7ce02ed5c959945526d163e939b944d3d536916f0",
+      "historicalGoldResultSha256": "402bc9103819dd28d078644f2a4a1fa886d48f519224aef52ba2f04a2aaa7ec0",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 5,
+        "columns": [
+          "macro_region",
+          "total_price"
+        ],
+        "scalar": null,
+        "shape": "5×2"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "2018有效明细按卖家州映射大区，price不含运费"
+    },
+    {
+      "id": "T5-H010",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "7dd78a7c4d86fe7602b45b6dc0bb339496104f59a29fc051ca5cea3b0cfcc179",
+      "goldSqlSha256": "e91bbd330e97fdc2e9198d2a3232123ce6538cf1f0a7cc28235ea33122e6aa74",
+      "historicalGoldResultSha256": "723e63e1347cb3371dc40c1cf861349498ad4212249c73a74c196b9ef603e0ae",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 4,
+        "columns": [
+          "level_name",
+          "total_refund"
+        ],
+        "scalar": null,
+        "shape": "4×2"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "2018申请退款单状态4，经自然人到会员等级，不连明细"
+    },
+    {
+      "id": "T6-H001",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "0fa267141d2b7ac65eeccb06d8a23de451462997085e09d2e61a48adf2252c79",
+      "goldSqlSha256": "edf07f31dda8d0793d19c128f0c3011d5e1b0c24b4644c5c3407d645a3558099",
+      "historicalGoldResultSha256": "050be711a834f8b8c675ab046dc6577c524f4644dfa6759ac368473c4f432d0e",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 1,
+        "columns": [
+          "refund_rate_pct"
+        ],
+        "scalar": 4.2,
+        "shape": "1×1"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "2018有效订单分母，EXISTS已退款分子，百分数2位NULLIF"
+    },
+    {
+      "id": "T6-H002",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "085df6d7cdd1850809969d67a358892f185784cd8066fe5e2214d5024b6a0c2e",
+      "goldSqlSha256": "754640dda6de7acbcb3e49837c107e642edd727c0786918dc58c9eb7262b12c9",
+      "historicalGoldResultSha256": "c0c59c7af4e1c5e5744c18e89910fba85681f4a878f363bf5254a62f9f43227d",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 1,
+        "columns": [
+          "repeat_rate_pct"
+        ],
+        "scalar": 2.04,
+        "shape": "1×1"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "2018H1按自然人下单>=2，分母同窗有效买家，百分数"
+    },
+    {
+      "id": "T6-H003",
+      "classification": "weak_result_evidence",
+      "severity": "P2",
+      "questionSha256": "e5e60e2275f472e6f92504f232cba5f51ad3982324b77a1b2c8ba7d256d96bb7",
+      "goldSqlSha256": "29612c8901df8c3656dfc867004a9d30eb2f7631dc57653c08c0df5857a45450",
+      "historicalGoldResultSha256": "2138615317f87d757b87c861c520541f4fffdf9b217618d01f6114559b30c57f",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 1,
+        "columns": [
+          "aov"
+        ],
+        "scalar": 160.53,
+        "shape": "1×1"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "分子先按订单汇总，LEFT分母含无明细；错误INNER舍入后相同"
+    },
+    {
+      "id": "T6-H004",
+      "classification": "weak_result_evidence",
+      "severity": "P2",
+      "questionSha256": "e16b481c8d93a956c5418a39dda49ecaffcb07f5f92c778740973eca247d1c8a",
+      "goldSqlSha256": "f800cf3774dc044aa56dce2bfa2c35a31ff0b03698882ac3ea327a74723ebda2",
+      "historicalGoldResultSha256": "0e4bfd7ecf12c1f4a333783cc0896ada88f47443896267ae8ed96a665d9282e8",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 1,
+        "columns": [
+          "zero_result_pct"
+        ],
+        "scalar": 0.14,
+        "shape": "1×1"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "2018-03零结果分子，全记录分母；NULL结果无正例"
+    },
+    {
+      "id": "T6-H005",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "09ef13532981b905c933fe52c05b1554861075d00f2d3e51ff9d2cf131c8a439",
+      "goldSqlSha256": "6034316e4439b83acb620c4c39ed1dbe7256385f357e0485a7d26dd49ffc8069",
+      "historicalGoldResultSha256": "f8610e6b6c18baeb259d3db62cdd480d45b5ade1447d41ebf95256a8e93b1e49",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 1,
+        "columns": [
+          "on_time_pct"
+        ],
+        "scalar": 94.91,
+        "shape": "1×1"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "2018Q2按下单窗口，实/预计均非NULL为分母，<=为按期"
+    },
+    {
+      "id": "T6-H006",
+      "classification": "weak_result_evidence",
+      "severity": "P2",
+      "questionSha256": "c978e101bd6ec062fc4e707d6bdfc69fbd831e10261e4f96968fcdf4b7820aa5",
+      "goldSqlSha256": "393de9f6931309cba6f9a6383ddcd84da8d9ba0c61c4da04120315f609c07f62",
+      "historicalGoldResultSha256": "67014c35480c05b8669314c1a794949545f8cbd43bef5e862f041a6dc96d80e1",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 5,
+        "columns": [
+          "warehouse_id",
+          "shortage_pct"
+        ],
+        "scalar": null,
+        "shape": "5×2"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "仓库分母COUNT全记录，NULL比较不进分子；空数量无正例"
+    },
+    {
+      "id": "T6-H007",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "53a74b8b7b7d6c00006c33113daed57d857df9912518aea4de718f7aeefe5b28",
+      "goldSqlSha256": "98cdee35482b8d9b517adac82d7b0e1eb250d869b2e099ccfba8fc6b4d73a169",
+      "historicalGoldResultSha256": "03f7db80885ebaebfa364cf82f6c2e0c4dedcda5ea4170f1c0b0134d3a939a01",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 1,
+        "columns": [
+          "refunded_amount_pct"
+        ],
+        "scalar": 70.43,
+        "shape": "1×1"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "2018H1申请金额，全状态分母，状态4分子COALESCE0"
+    },
+    {
+      "id": "T6-H008",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "2deb4ae2d02167791082a322f9380893c9e8f5c4aa0abbdeaf8e92d8ededd47b",
+      "goldSqlSha256": "3f101d8eb1f8c77ced132cc5749ae5cb0afb802d787614f62e95e1ed46c74334",
+      "historicalGoldResultSha256": "1d4f06b4dfe42a3bec12d1d1fe13c6622795b95e006333f1f7ba8ad378c0de2d",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 1,
+        "columns": [
+          "coupon_order_pct"
+        ],
+        "scalar": 12.07,
+        "shape": "1×1"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "2018有效订单，EXISTS用券分子，全有效订单分母"
+    },
+    {
+      "id": "T6-H009",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "eae39d73386ae683f531a4d84386cb3699bb4766597faadaf6fdda4c3a40cd16",
+      "goldSqlSha256": "04ab11505072409f5734d4f0b51043200da4402233a1890fde05306780807368",
+      "historicalGoldResultSha256": "b89d15a4590b2bd37849efa0791a4cf27e91f3720fa52fa39841cf1dc456b5a4",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 1,
+        "columns": [
+          "referrer_pct"
+        ],
+        "scalar": 1.69,
+        "shape": "1×1"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "正常会员分母，EXISTS已转化邀请分子，邀请人去重"
+    },
+    {
+      "id": "T6-H010",
+      "classification": "business_confirmation_required",
+      "severity": "P1",
+      "questionSha256": "2caf317d308c69300d9a4c4658d48c69d6ddf025f46b33b9c3530ea8d3681493",
+      "goldSqlSha256": "701b1b3a079de17d4927c52f300d26678c46481222d2edca4e40959e96e8413f",
+      "historicalGoldResultSha256": "6b1cbd2f78ebc2ffd3beef4afe9d416621e8b40124079ac8cb262e32313acac4",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 1,
+        "columns": [
+          "sla_pct"
+        ],
+        "scalar": 45.51,
+        "shape": "1×1"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "创建时间窗口，解决非NULL且SLA非NULL；1079负耗时均达标"
+    },
+    {
+      "id": "T6-H011",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "8e3d58eaa3e11f10c5adb1148b4d7133633cc3feea8efa5799e0b414d903588c",
+      "goldSqlSha256": "6431150fb70f4b41b894aa3c84d09da493e6a389a11e59fc713ede02769ed2d5",
+      "historicalGoldResultSha256": "44cc0155866de4aa475f6f000d6ddca2881f3a51df59d077b9292322e7afd33a",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 1,
+        "columns": [
+          "growth_pct"
+        ],
+        "scalar": 3.09,
+        "shape": "1×1"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "2018Q2对Q1，price不含运费，(q2-q1)/q1，0基期NULL"
+    },
+    {
+      "id": "T6-H012",
+      "classification": "no_specific_finding",
+      "severity": null,
+      "questionSha256": "ed87bf82fb3750baf32963f03d67b62e336588142bbba3beefb32e4a220dad03",
+      "goldSqlSha256": "fe308efa0e7de875b8ee7b3aeeb9a9a788a015c09737223db33e3cc0c14496d4",
+      "historicalGoldResultSha256": "37c6526074bd3f59bd7eb5610a61ee267cd184e5e18eea72ad570cf7ab8ed909",
+      "historicalStatus": "SUCCESS",
+      "historicalCorrect": true,
+      "questionHashMatch": true,
+      "goldSqlHashMatch": true,
+      "historicalFinalSqlTextAlignedAfterWhitespaceAndAppendedLimitNormalization": true,
+      "currentReadOnlyResult": {
+        "rowCount": 1,
+        "columns": [
+          "amount_difference"
+        ],
+        "scalar": 1528.02,
+        "shape": "1×1"
+      },
+      "reviewedDimensions": [
+        "question_semantics",
+        "row_grain_and_joins",
+        "output_shape",
+        "units",
+        "denominator_if_applicable",
+        "time_boundary_if_applicable",
+        "null_behavior",
+        "sorting_if_applicable",
+        "empty_zero_result_discrimination"
+      ],
+      "note": "支付/明细分别按订单预聚合再LEFT，缺失0，支付减含运费明细"
+    }
+  ]
+}
