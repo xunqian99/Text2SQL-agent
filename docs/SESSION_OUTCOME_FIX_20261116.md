@@ -14,7 +14,37 @@
 | Java全量 | 566/566 | 失败/错误/跳过0，原53条对抗通过 |
 | 外部模型调用/费用 | 0 / ¥0 | 测试为本地替身，不产生新准确率或生产P95结论 |
 
-实现基于父提交`0839ccb`测量。旧代码复现时仅临时恢复三个本轮生产文件，复现后逐字节还原本轮修改；原始失败与最终测试日志分别归档。实际15秒HTTP补验另行记录，不预先宣称完成。阶段4整体验收仍未通过。
+实现基于父提交`0839ccb`测量，生产修复提交为`b2447bc`。旧代码复现时仅临时恢复三个本轮生产文件，复现后逐字节还原本轮修改；原始失败与最终测试日志分别归档。实际15秒HTTP补验已完成，结果见下节。阶段4整体验收仍未通过。
+
+## 真实HTTP与PostgreSQL补验
+
+使用手动入口`SessionOutcomeAcceptanceProbe`启动独立Spring Boot进程，随机端口51082、仅监听127.0.0.1，启用local,demo配置。保留真实HTTP控制器、编排、检索、SQL校验/EXPLAIN和PostgreSQL执行。全局供应商Key强制为空、供应商地址强制指向本机不可用端口，之后只向生成器注入本地ChatModel替身。纠错场景额外注入固定ResultChecker触发条件；没有修改生产规则。模型返回的10/5 Token为合成值，不是供应商用量；单价全部置0。
+
+| 场景 | HTTP / 业务状态 | HTTP耗时 | 内部耗时 | 模型调用 / 响应时未知用量 | 会话历史 |
+|---|---|---:|---:|---:|---|
+| 正常问2018年订单数 | 200 / SUCCESS，54,011 | 545ms | 282ms | 1 / 0 | 1轮 |
+| 模型生成阻塞15秒 | 504 / REQUEST_TIMEOUT | 15,009ms | 15,001ms | 1 / 1 | 超时1轮、SQL为空、无成功Schema |
+| 首答成功、纠错阻塞至截止时间 | 200 / SUCCESS，54,011 | 15,009ms | 15,000ms | 2 / 1 | 首答SUCCESS与相同SQL，1轮 |
+
+释放两个忽略中断的模型阻塞后，继续等待预算工作线程池activeCount=0，确认整个晚到流水线退出，而不只是模型方法返回。前后完整历史逐项一致，均无重复追加/Schema污染；第三个正常会话原始历史未变化。会话列表在超时返回后即显示turnCount=1。上下文关闭后另行检查端口监听0、进程已退出。
+
+补验合计3个场景、4次本地替身调用、外部供应商调用0、实际供应商费用¥0。超时响应中的unknownUsageCalls=1原样保留：响应时模型尚未返回，晚到日志不能反过来篡改已发布响应；本地替身费用为0也不意味着真实供应商超时免费。
+
+证据位于`reports/session-outcome-http-20261116/`，包含原始HTTP、前后历史、会话列表、合成调用日志、服务日志、退出检查及SHA-256清单。离线审核命令：
+
+```powershell
+python reports/session-outcome-http-20261116/audit_evidence.py
+```
+
+复现命令（输出目录必须不存在，数据库需要按本机文档配置；此工具不是正常启动入口）：
+
+```powershell
+mvn -q test-compile dependency:build-classpath '-Dmdep.outputFile=target/demo-http-classpath.txt'
+$probeCp = 'target/test-classes;target/classes;' + (Get-Content target/demo-http-classpath.txt -Raw).Trim()
+java -cp $probeCp com.text2sql.agent.session.SessionOutcomeAcceptanceProbe reports/session-outcome-http-new
+```
+
+正常场景54,011是当前Olist数据库快照的断言，数据变化后应先核实快照，不能把改断言当作修复生产错误。本轮只新增手动补验入口和证据，业务源文件与`b2447bc`一致；沿用已归档Java566/566，不将3个手动场景加到单元测试数量里。没有重跑付费20条，也没有重写旧85%分数、题目或Gold；本补验不证明真实模型准确率、生产P95、并发顺序或重启后持久化。
 
 ## 技术与设计导读
 
