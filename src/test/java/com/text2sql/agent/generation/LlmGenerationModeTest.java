@@ -125,6 +125,9 @@ class LlmGenerationModeTest {
             var entry = json.readTree(lines.getFirst());
             assertThat(entry.path("configuredReasoningEffort").asText()).isEqualTo(mode);
             assertThat(entry.path("configuredPromptVersion").asText()).isEqualTo(template.version());
+            assertThat(entry.path("configuredSemanticEnabled").asBoolean()).isEqualTo(props.getSemantic().isEnabled());
+            assertThat(entry.path("configuredMetricDefinitionsSha256").asText())
+                    .isEqualTo(com.text2sql.agent.semantic.MetricRegistry.definitionSha256());
             assertThat(entry.path("promptSha256").asText()).hasSize(64);
             assertThat(entry.path("totalTokens").asInt()).isEqualTo(14);
             assertThat(entry.path("prompt").isNull()).isTrue();

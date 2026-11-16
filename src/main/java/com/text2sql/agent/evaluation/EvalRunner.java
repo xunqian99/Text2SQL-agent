@@ -250,6 +250,7 @@ public class EvalRunner implements ApplicationRunner {
         config.put("joinListEnabled", retrieval.isJoinListEnabled());
         config.put("bridgeRepairEnabled", retrieval.isBridgeRepairEnabled());
         config.put("semanticEnabled", properties.getSemantic().isEnabled());
+        config.put("metricDefinitionsSha256", com.text2sql.agent.semantic.MetricRegistry.definitionSha256());
         config.put("fewshotEnabled", properties.getFewshot().isEnabled());
         config.put("fewshotMaxExamples", properties.getFewshot().getMaxExamples());
         config.put("cacheEnabled", properties.getCache().isEnabled());

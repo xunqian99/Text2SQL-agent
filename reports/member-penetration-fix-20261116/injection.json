@@ -1,0 +1,64 @@
+{
+  "format" : "member-metric-injection-v1",
+  "metricDefinitionsSha256" : "e058985a378d57dd5e741b8c7bf9c0873fb69e90c1096814902ca68352182b1d",
+  "loadedMetrics" : 24,
+  "renderedMemberMetric" : "METRIC member_penetration  -- 会员渗透率 = 会员贡献的有效订单 / 全部有效订单\n  表达式: ROUND(100.0 * COUNT(DISTINCT o.order_id) FILTER (WHERE m.member_id IS NOT NULL) / NULLIF(COUNT(DISTINCT o.order_id), 0), 2)\n  过滤条件（默认附加）: o.order_status NOT IN ('canceled', 'unavailable')\n    —— 例外：若题目已把范围限定在某个子集内（如「仅退款订单」「仅某类商品」），则不要重复附加这个过滤。\n  按**订单**算渗透率，不是按人数。members 与 customers 靠\n  customer_unique_id 关联（人级），不是 customer_id（订单级）。\n  从 orders 出发，LEFT JOIN customers 后 LEFT JOIN members，保留非会员订单作为分母。\n  不得用 INNER JOIN members 或在 WHERE 中要求会员非空，否则会丢失非会员分母。\n  分子、分母均按 order_id 去重，防止同一人多条会员记录放大订单数。\n  使用当前会员表判断会员身份；不推断下单时历史会员身份。\n  输出约束（必须遵守）: 输出 0–100 的百分数，保留两位小数；无有效订单时返回 NULL（未定义），不强行记为 0。\n  推荐查询结构（按此结构改写，不要自行发明更慢的等价查询）:\n    SELECT ROUND(100.0 * COUNT(DISTINCT o.order_id) FILTER (WHERE m.member_id IS NOT NULL)\n    / NULLIF(COUNT(DISTINCT o.order_id), 0), 2) AS member_order_pct\n    FROM orders o\n    LEFT JOIN customers c ON c.customer_id = o.customer_id\n    LEFT JOIN members m ON m.customer_unique_id = c.customer_unique_id\n    WHERE o.order_status NOT IN ('canceled', 'unavailable');",
+  "captures" : [ {
+    "provider" : "FullSchemaProvider",
+    "question" : "会员渗透率是多少？",
+    "tables" : [ "brands", "campaign_products", "campaigns", "coupon_usages", "coupons", "customers", "geolocation", "inventory", "inventory_movements", "member_levels", "member_snapshot", "members", "order_items", "order_payments", "order_reviews", "orders", "product_brand_map", "product_category_translation", "product_price_history", "products", "referrals", "refund_items", "refunds", "regions", "search_logs", "sellers", "settlement_items", "settlements", "shipment_tracking", "shipments", "shipping_addresses", "support_tickets", "ticket_categories", "ticket_messages", "user_tag_map", "user_tags", "warehouses" ],
+    "metricsSha256" : "7b4a04c247654dbdd348197765c8a576a52d30d8cceee466bfca6ed7225f92cb",
+    "userMessageSha256" : "a9fdf9b04d255ec17206a0cee4514003b4d289d0482c1ee3c4a244f9999fc2c5"
+  }, {
+    "provider" : "FullSchemaProvider",
+    "question" : "会员订单占比是多少？",
+    "tables" : [ "brands", "campaign_products", "campaigns", "coupon_usages", "coupons", "customers", "geolocation", "inventory", "inventory_movements", "member_levels", "member_snapshot", "members", "order_items", "order_payments", "order_reviews", "orders", "product_brand_map", "product_category_translation", "product_price_history", "products", "referrals", "refund_items", "refunds", "regions", "search_logs", "sellers", "settlement_items", "settlements", "shipment_tracking", "shipments", "shipping_addresses", "support_tickets", "ticket_categories", "ticket_messages", "user_tag_map", "user_tags", "warehouses" ],
+    "metricsSha256" : "7b4a04c247654dbdd348197765c8a576a52d30d8cceee466bfca6ed7225f92cb",
+    "userMessageSha256" : "100b7e43209c2d4f24f40c8b7dff91a1f27c42e00babba559c5ef4fe53d76578"
+  }, {
+    "provider" : "FullSchemaProvider",
+    "question" : "会员占比是多少？",
+    "tables" : [ "brands", "campaign_products", "campaigns", "coupon_usages", "coupons", "customers", "geolocation", "inventory", "inventory_movements", "member_levels", "member_snapshot", "members", "order_items", "order_payments", "order_reviews", "orders", "product_brand_map", "product_category_translation", "product_price_history", "products", "referrals", "refund_items", "refunds", "regions", "search_logs", "sellers", "settlement_items", "settlements", "shipment_tracking", "shipments", "shipping_addresses", "support_tickets", "ticket_categories", "ticket_messages", "user_tag_map", "user_tags", "warehouses" ],
+    "metricsSha256" : "7b4a04c247654dbdd348197765c8a576a52d30d8cceee466bfca6ed7225f92cb",
+    "userMessageSha256" : "b47985ac26069475806b08454899d9bf094270622dddf5eaf9e7018f38ed94be"
+  }, {
+    "provider" : "FullSchemaProvider",
+    "question" : "会员用户贡献的订单占比是多少？（会员渗透率）",
+    "tables" : [ "brands", "campaign_products", "campaigns", "coupon_usages", "coupons", "customers", "geolocation", "inventory", "inventory_movements", "member_levels", "member_snapshot", "members", "order_items", "order_payments", "order_reviews", "orders", "product_brand_map", "product_category_translation", "product_price_history", "products", "referrals", "refund_items", "refunds", "regions", "search_logs", "sellers", "settlement_items", "settlements", "shipment_tracking", "shipments", "shipping_addresses", "support_tickets", "ticket_categories", "ticket_messages", "user_tag_map", "user_tags", "warehouses" ],
+    "metricsSha256" : "7b4a04c247654dbdd348197765c8a576a52d30d8cceee466bfca6ed7225f92cb",
+    "userMessageSha256" : "a912f94240319307186aa79f577a231b7d1c2fc20883cd9c3d3f708c261317c1"
+  }, {
+    "provider" : "HybridSchemaProvider",
+    "question" : "会员渗透率是多少？",
+    "tables" : [ "members", "search_logs", "support_tickets", "member_levels", "ticket_categories", "coupon_usages", "customers", "member_snapshot", "orders" ],
+    "metricsSha256" : "7b4a04c247654dbdd348197765c8a576a52d30d8cceee466bfca6ed7225f92cb",
+    "userMessageSha256" : "064950c06a7dff4882579588873cde362c326fd70a8d2bcde22021a95a63bb58"
+  }, {
+    "provider" : "HybridSchemaProvider",
+    "question" : "会员订单占比是多少？",
+    "tables" : [ "members", "orders", "search_logs", "support_tickets", "customers", "member_levels", "order_items", "order_payments" ],
+    "metricsSha256" : "7b4a04c247654dbdd348197765c8a576a52d30d8cceee466bfca6ed7225f92cb",
+    "userMessageSha256" : "934857eee55faa154550805df7995e71884d2198560a54eb2fc5ce232f540c66"
+  }, {
+    "provider" : "HybridSchemaProvider",
+    "question" : "会员占比是多少？",
+    "tables" : [ "members", "search_logs", "support_tickets", "member_levels", "ticket_categories", "coupon_usages", "customers", "member_snapshot", "orders" ],
+    "metricsSha256" : "7b4a04c247654dbdd348197765c8a576a52d30d8cceee466bfca6ed7225f92cb",
+    "userMessageSha256" : "a689341bfbb2c1174ebc2803de23cef1a6ff5b3303101b0ebf7b8b43b0a518e6"
+  }, {
+    "provider" : "HybridSchemaProvider",
+    "question" : "会员用户贡献的订单占比是多少？（会员渗透率）",
+    "tables" : [ "members", "orders", "search_logs", "support_tickets", "member_levels", "coupon_usages", "customers", "member_snapshot" ],
+    "metricsSha256" : "7b4a04c247654dbdd348197765c8a576a52d30d8cceee466bfca6ed7225f92cb",
+    "userMessageSha256" : "da34a4f1fe436d09f34e409519a43293d940d237364946655b980ed1d156ebbd"
+  } ],
+  "disabledProviderChecks" : 2,
+  "eligibleOrders" : 98207,
+  "memberOrders" : 98207,
+  "oraclePercent" : 100.00,
+  "expressionPercent" : 100.00,
+  "patternPercent" : 100.00,
+  "modelCalls" : 0,
+  "tokens" : 0,
+  "modelCostYuan" : 0
+}

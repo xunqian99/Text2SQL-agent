@@ -1,0 +1,104 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" version="3.0.2" name="com.text2sql.agent.orchestrator.OrchestratorSelfCorrectionTest" time="0.167" tests="23" errors="0" skipped="0" failures="0" flakes="0">
+  <testcase name="promptVariantsCannotShareTheSameCacheEntry" classname="com.text2sql.agent.orchestrator.OrchestratorSelfCorrectionTest" time="0.055" />
+  <testcase name="generationRetryUsesTheOnlyRemainingAttemptEvenIfItsSqlFails" classname="com.text2sql.agent.orchestrator.OrchestratorSelfCorrectionTest" time="0.004">
+    <system-out>21:09:31.793 [main] WARN com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 首次生成异常（UNPARSEABLE：empty），尝试重试一次生成
+21:09:31.796 [main] WARN com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- SQL 执行失败：bad column
+</system-out>
+  </testcase>
+  <testcase name="routingAloneEnablesRetry" classname="com.text2sql.agent.orchestrator.OrchestratorSelfCorrectionTest" time="0.003">
+    <system-out>21:09:31.799 [main] WARN com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- SQL 执行失败：boom
+21:09:31.799 [main] INFO com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 触发自纠错重试（首次状态：EXECUTION_FAILED），并升级到 strong-model
+21:09:31.799 [main] INFO com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 重试成功，采用第二次结果
+</system-out>
+  </testcase>
+  <testcase name="takesRetryWhenRetryPassesCheck" classname="com.text2sql.agent.orchestrator.OrchestratorSelfCorrectionTest" time="0.013">
+    <system-out>21:09:31.804 [main] INFO com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 启发式结果校验命中异常（规则：EMPTY_RESULT）：查询返回了 0 行数据。请检查 WHERE 条件中的字符串常量大小写、状态代码枚举值或 JOIN 条件是否过于严苛。
+21:09:31.804 [main] INFO com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 触发自纠错重试（首次状态：SUCCESS）
+21:09:31.814 [main] INFO com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 重试成功，采用第二次结果
+</system-out>
+  </testcase>
+  <testcase name="keepsValidNegativeGrowthWithoutRetrying" classname="com.text2sql.agent.orchestrator.OrchestratorSelfCorrectionTest" time="0.002" />
+  <testcase name="disabledMetricInjectionDoesNotReadTheDefinitionForCacheKeys" classname="com.text2sql.agent.orchestrator.OrchestratorSelfCorrectionTest" time="0.003" />
+  <testcase name="retriesWhenHeuristicCheckerDetectsSuspiciousResult" classname="com.text2sql.agent.orchestrator.OrchestratorSelfCorrectionTest" time="0.004">
+    <system-out>21:09:31.822 [main] INFO com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 启发式结果校验命中异常（规则：EMPTY_RESULT）：查询返回了 0 行数据。请检查 WHERE 条件中的字符串常量大小写、状态代码枚举值或 JOIN 条件是否过于严苛。
+21:09:31.822 [main] INFO com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 触发自纠错重试（首次状态：SUCCESS）
+21:09:31.823 [main] INFO com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 重试成功，采用第二次结果
+</system-out>
+  </testcase>
+  <testcase name="keepsFirstWhenRetryStillSuspicious" classname="com.text2sql.agent.orchestrator.OrchestratorSelfCorrectionTest" time="0.003">
+    <system-out>21:09:31.826 [main] INFO com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 启发式结果校验命中异常（规则：EMPTY_RESULT）：查询返回了 0 行数据。请检查 WHERE 条件中的字符串常量大小写、状态代码枚举值或 JOIN 条件是否过于严苛。
+21:09:31.826 [main] INFO com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 触发自纠错重试（首次状态：SUCCESS）
+21:09:31.826 [main] INFO com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 重试结果仍被判定可疑（本次规则：EMPTY_RESULT，首次规则：EMPTY_RESULT），保留首次结果
+</system-out>
+  </testcase>
+  <testcase name="takesRetryWhenFirstFailed" classname="com.text2sql.agent.orchestrator.OrchestratorSelfCorrectionTest" time="0.003">
+    <system-out>21:09:31.827 [main] WARN com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- SQL 执行失败：column "bad" does not exist
+21:09:31.830 [main] INFO com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 触发自纠错重试（首次状态：EXECUTION_FAILED）
+21:09:31.830 [main] INFO com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 重试成功，采用第二次结果
+</system-out>
+  </testcase>
+  <testcase name="keepsSecondAttemptAndSumsCost" classname="com.text2sql.agent.orchestrator.OrchestratorSelfCorrectionTest" time="0.003">
+    <system-out>21:09:31.830 [main] WARN com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- SQL 执行失败：column "bad" does not exist
+21:09:31.830 [main] INFO com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 触发自纠错重试（首次状态：EXECUTION_FAILED）
+21:09:31.830 [main] INFO com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 重试成功，采用第二次结果
+</system-out>
+  </testcase>
+  <testcase name="tracesBothFailedGenerationsAndTheActualFinalFailureSelection" classname="com.text2sql.agent.orchestrator.OrchestratorSelfCorrectionTest" time="0.001">
+    <system-out>21:09:31.834 [main] WARN com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 首次生成异常（UNPARSEABLE：empty），尝试重试一次生成
+21:09:31.834 [main] WARN com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 重试生成仍失败（OUTPUT_TRUNCATED）：length
+</system-out>
+  </testcase>
+  <testcase name="includesUnparseableFirstCallInSuccessfulRetryAccounting" classname="com.text2sql.agent.orchestrator.OrchestratorSelfCorrectionTest" time="0.004">
+    <system-out>21:09:31.838 [main] WARN com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 首次生成异常（UNPARSEABLE：模型返回空内容），尝试重试一次生成
+</system-out>
+  </testcase>
+  <testcase name="maxAttemptsOneDoesNotRetryUnparseableGeneration" classname="com.text2sql.agent.orchestrator.OrchestratorSelfCorrectionTest" time="0.003">
+    <system-out>21:09:31.840 [main] WARN com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 生成失败（UNPARSEABLE）：empty
+</system-out>
+  </testcase>
+  <testcase name="escalatesToStrongerModelOnFailure" classname="com.text2sql.agent.orchestrator.OrchestratorSelfCorrectionTest" time="0.003">
+    <system-out>21:09:31.843 [main] WARN com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- SQL 执行失败：boom
+21:09:31.843 [main] INFO com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 触发自纠错重试（首次状态：EXECUTION_FAILED），并升级到 strong-model
+21:09:31.843 [main] INFO com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 重试成功，采用第二次结果
+</system-out>
+  </testcase>
+  <testcase name="doesNotRetryWhenFirstAttemptSucceeds" classname="com.text2sql.agent.orchestrator.OrchestratorSelfCorrectionTest" time="0.0" />
+  <testcase name="dryRunValidatesGoldSqlAgainstFullSchema" classname="com.text2sql.agent.orchestrator.OrchestratorSelfCorrectionTest" time="0.004" />
+  <testcase name="metricDefinitionChangeCannotReuseAnOldCachedSql" classname="com.text2sql.agent.orchestrator.OrchestratorSelfCorrectionTest" time="0.003" />
+  <testcase name="doesNotRetryWhenDisabled" classname="com.text2sql.agent.orchestrator.OrchestratorSelfCorrectionTest" time="0.003">
+    <system-out>21:09:31.856 [main] WARN com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- SQL 执行失败：boom
+</system-out>
+  </testcase>
+  <testcase name="retriesWhenExplainCostGuardFails" classname="com.text2sql.agent.orchestrator.OrchestratorSelfCorrectionTest" time="0.032">
+    <system-out>21:09:31.889 [main] WARN com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- SQL 触发高危执行计划护栏拦截：检测到全表笛卡尔积
+21:09:31.889 [main] INFO com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 触发自纠错重试（首次状态：REJECTED）
+21:09:31.889 [main] INFO com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 重试成功，采用第二次结果
+</system-out>
+  </testcase>
+  <testcase name="keepsFirstAnswerButAccountsForTruncatedCorrection" classname="com.text2sql.agent.orchestrator.OrchestratorSelfCorrectionTest" time="0.004">
+    <system-out>21:09:31.891 [main] WARN com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- SQL 执行失败：bad column
+21:09:31.893 [main] INFO com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 触发自纠错重试（首次状态：EXECUTION_FAILED）
+21:09:31.893 [main] WARN com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 重试仍未成功（GENERATION_FAILED），保留首次结果
+</system-out>
+  </testcase>
+  <testcase name="stillRetriesNegativeGmvAndKeepsGrowthOnTheCorrectedAnswer" classname="com.text2sql.agent.orchestrator.OrchestratorSelfCorrectionTest" time="0.003">
+    <system-out>21:09:31.896 [main] INFO com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 启发式结果校验命中异常（规则：NEGATIVE_METRIC_VALUE）：输出列「gmv」（第 1 列，依据 OUTPUT_LABEL/NON_NEGATIVE_LABEL），第 1 行的值（-100）为负数，按列名被识别为非负金额或数量。请核对该列的表达式和列名；不要改动增长率列或时间范围。
+21:09:31.896 [main] INFO com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 触发自纠错重试（首次状态：SUCCESS）
+21:09:31.896 [main] INFO com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 重试成功，采用第二次结果
+</system-out>
+  </testcase>
+  <testcase name="keepsFirstResultWhenRetryFails" classname="com.text2sql.agent.orchestrator.OrchestratorSelfCorrectionTest" time="0.005">
+    <system-out>21:09:31.899 [main] WARN com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- SQL 执行失败：boom
+21:09:31.899 [main] INFO com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 触发自纠错重试（首次状态：EXECUTION_FAILED）
+21:09:31.899 [main] WARN com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- SQL 执行失败：boom
+21:09:31.899 [main] WARN com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 重试仍未成功（EXECUTION_FAILED），保留首次结果
+</system-out>
+  </testcase>
+  <testcase name="correctionFeedbackCarriesEvidence" classname="com.text2sql.agent.orchestrator.OrchestratorSelfCorrectionTest" time="0.002">
+    <system-out>21:09:31.903 [main] INFO com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 启发式结果校验命中异常（规则：EMPTY_RESULT）：查询返回了 0 行数据。请检查 WHERE 条件中的字符串常量大小写、状态代码枚举值或 JOIN 条件是否过于严苛。
+21:09:31.903 [main] INFO com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 触发自纠错重试（首次状态：SUCCESS）
+21:09:31.903 [main] INFO com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 重试结果仍被判定可疑（本次规则：EMPTY_RESULT，首次规则：EMPTY_RESULT），保留首次结果
+</system-out>
+  </testcase>
+</testsuite>

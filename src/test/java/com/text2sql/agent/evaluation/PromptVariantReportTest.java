@@ -40,6 +40,7 @@ class PromptVariantReportTest {
         assertThat(report.overall().correct()).isEqualTo(1);
         assertThat(report.meta().promptVersion()).isEqualTo(new PromptTemplate(props).version());
         assertThat(report.meta().effectiveConfig()).containsEntry("explicitReasoningEnabled", explicit)
+                .containsEntry("metricDefinitionsSha256", com.text2sql.agent.semantic.MetricRegistry.definitionSha256())
                 .containsEntry("configuredReasoningEffort", "provider-default");
     }
 }

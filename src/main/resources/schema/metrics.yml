@@ -146,12 +146,24 @@ metrics:
   - name: member_penetration
     aliases: [会员渗透率, 会员订单占比, 会员占比]
     description: 会员渗透率 = 会员贡献的有效订单 / 全部有效订单
-    expression: "ROUND(100.0 * COUNT(DISTINCT m.member_id) / COUNT(DISTINCT o.order_id), 2)"
+    expression: "ROUND(100.0 * COUNT(DISTINCT o.order_id) FILTER (WHERE m.member_id IS NOT NULL) / NULLIF(COUNT(DISTINCT o.order_id), 0), 2)"
     tables: [orders, customers, members]
     filter: "o.order_status NOT IN ('canceled', 'unavailable')"
     notes: |
       按**订单**算渗透率，不是按人数。members 与 customers 靠
       customer_unique_id 关联（人级），不是 customer_id（订单级）。
+      从 orders 出发，LEFT JOIN customers 后 LEFT JOIN members，保留非会员订单作为分母。
+      不得用 INNER JOIN members 或在 WHERE 中要求会员非空，否则会丢失非会员分母。
+      分子、分母均按 order_id 去重，防止同一人多条会员记录放大订单数。
+      使用当前会员表判断会员身份；不推断下单时历史会员身份。
+    outputRule: "输出 0–100 的百分数，保留两位小数；无有效订单时返回 NULL（未定义），不强行记为 0。"
+    queryPattern: |
+      SELECT ROUND(100.0 * COUNT(DISTINCT o.order_id) FILTER (WHERE m.member_id IS NOT NULL)
+        / NULLIF(COUNT(DISTINCT o.order_id), 0), 2) AS member_order_pct
+      FROM orders o
+      LEFT JOIN customers c ON c.customer_id = o.customer_id
+      LEFT JOIN members m ON m.customer_unique_id = c.customer_unique_id
+      WHERE o.order_status NOT IN ('canceled', 'unavailable');
 
   - name: low_score_rate
     aliases: [低分率, 差评率, 低分占比, 低分订单, 低分评价, 差评占比]

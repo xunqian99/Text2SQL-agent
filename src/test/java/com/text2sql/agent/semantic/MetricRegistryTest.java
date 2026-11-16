@@ -17,6 +17,24 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class MetricRegistryTest {
 
+    @Test
+    void fingerprintMatchesTheExactClasspathBytesUsedForLoading() throws Exception {
+        try (var in = new org.springframework.core.io.ClassPathResource("schema/metrics.yml").getInputStream()) {
+            byte[] bytes = in.readAllBytes();
+            String expected = java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(bytes));
+            assertThat(MetricRegistry.definitionSha256()).isEqualTo(expected).matches("[0-9a-f]{64}");
+            var parser = new com.fasterxml.jackson.databind.ObjectMapper(new com.fasterxml.jackson.dataformat.yaml.YAMLFactory());
+            var entries = parser.readTree(bytes).path("metrics");
+            var registry = loaded();
+            assertThat(registry.all()).hasSize(entries.size());
+            for (var node : entries) {
+                var actual = registry.all().stream().filter(m -> m.name().equals(node.path("name").asText())).findFirst().orElseThrow();
+                assertThat(actual.expression()).isEqualTo(node.path("expression").asText());
+                if (node.has("queryPattern")) assertThat(actual.queryPattern()).isEqualTo(node.path("queryPattern").asText());
+            }
+        }
+    }
+
     private static MetricRegistry loaded() {
         MetricRegistry registry = new MetricRegistry();
         registry.load();

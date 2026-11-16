@@ -435,7 +435,7 @@ public class Text2SqlOrchestrator {
         var toolUse = properties.getToolUse();
         var guard = properties.getGuard();
         var routing = properties.getRouting();
-        return "%s|%s|r=%b:%d:%b:%b:%b:%b|prune=%b|s=%b|fs=%b:%d|dp=%b|fk=%b|tu=%b|limit=%s:%d|esc=%s"
+        return "%s|%s|r=%b:%d:%b:%b:%b:%b|prune=%b|s=%b|metrics=%s|fs=%b:%d|dp=%b|fk=%b|tu=%b|limit=%s:%d|esc=%s"
                 .formatted(
                         properties.getLlm().getModel(),
                         com.text2sql.agent.generation.PromptTemplate.versionFor(properties),
@@ -447,6 +447,9 @@ public class Text2SqlOrchestrator {
                         retrieval.isBridgeRepairEnabled(),
                         retrieval.isColumnPruningEnabled(),
                         properties.getSemantic().isEnabled(),
+                        // Global snapshot invalidates even persistent SQL cached under an older business definition.
+                        properties.getSemantic().isEnabled()
+                                ? com.text2sql.agent.semantic.MetricRegistry.definitionSha256() : "-",
                         fewshot.isEnabled(),
                         fewshot.getMaxExamples(),
                         prompt.isIncludeDataProfile(),

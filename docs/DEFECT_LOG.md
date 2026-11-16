@@ -1,12 +1,12 @@
 # 缺陷修复记录（Defect Log）
 
-## 2026-11-16 新增待修复：会员渗透率指标定义冲突
+## 2026-11-16 已修复：会员渗透率指标定义冲突
 
-`src/main/resources/schema/metrics.yml`中`member_penetration`的description/notes要求“会员有效订单/全部有效订单”，expression却是`COUNT(DISTINCT m.member_id) / COUNT(DISTINCT o.order_id)`，分子按人数。T6-005候选SQL还用INNER JOIN会员，使分母只剩会员订单；这是[显式指令筛选](PROMPT_DIRECTIVE_RESULTS_20261116.md)发现的生产输入定义缺陷，尚未修复，不改Gold或原69/100、64/100评分。
+`src/main/resources/schema/metrics.yml`中`member_penetration`的description/notes要求“会员有效订单/全部有效订单”，expression却是`COUNT(DISTINCT m.member_id) / COUNT(DISTINCT o.order_id)`，分子按人数。T6-005候选SQL还用INNER JOIN会员，使分母只剩会员订单；这是[显式指令筛选](PROMPT_DIRECTIVE_RESULTS_20261116.md)发现的生产输入定义缺陷，已按[专项验收](MEMBER_PENETRATION_FIX_20261116.md)修复，不改Gold或原69/100、64/100评分。
 
 [离线复核证据](../reports/prompt-directive-screen-20261116/metric-definition-witness.json)确认该指标能在冻结选表中命中，其渲染文本SHA-256与此前实际上下文捕获一致；默认首答消息指纹也一致。字典共加载24项，本次只确认这1项冲突，不能声称其余23项已完成语义审核。
 
-后续修复须同时明确计数实体和Join覆盖范围，不能只把`member_id`换成`order_id`。最小反例：同一会员贡献2笔有效订单、另1笔非会员有效订单，正确占比2/3；人数分子会得到1/3，先INNER JOIN会员再做分母则可能得到1/2。应补该类独立反例、取消订单过滤和空分母边界，检查实际注入文本及查询模板一致性后，再独立评测。Java结构测试通过不证明公式业务正确。本条记录新增缺陷，下面保留历史已修复清单。
+修复已同时明确计数实体和Join覆盖范围：按会员订单ID计数，从orders出发LEFT JOIN保留非会员分母，NULLIF保护空分母，并将指标文件身份加入两级SQL缓存键。最小反例“同一会员2笔有效订单＋非会员1笔”期望66.67%。原22项契约修前6通过/14失败/2错误，修后全通过；加缺失客户边界2项后24/24，完整Java511/511、注入8/8、离线审计74/74。当前真库98,207笔有效订单全属会员，100%不是非会员分母验证证据；未跑新模型评分，未审核其余23项指标。下面保留历史已修复清单。
 
 最新专项：[2026-11-16 SQL 输出边界修复](SQL_EXTRACTION_20261116.md)，修复孤立围栏残留与按代码块/空行有损截取的问题；Java 401/401、63/63 固定边界契约、Gold 200/200。未重跑真实模型。下文保留历史体检记录，不代表当前项目整体达标；P95 与独立盲测仍有缺口。
 

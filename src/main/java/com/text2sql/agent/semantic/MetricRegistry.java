@@ -12,6 +12,9 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -72,6 +75,35 @@ public class MetricRegistry {
     public List<Metric> all() {
         return metrics;
     }
+
+    /** Identity of the exact startup resource bytes parsed below; changing the file requires restart. */
+    public static String definitionSha256() {
+        return SourceSnapshot.VALUE.sha256();
+    }
+
+    // One JVM-wide snapshot prevents cache/log identity from describing different bytes from the registry.
+    // Keep bytes private: callers receive only the digest, never the mutable array.
+    private static final class SourceSnapshot {
+        private static final Source VALUE = read();
+
+        private static Source read() {
+            ClassPathResource resource = new ClassPathResource(RESOURCE);
+            if (!resource.exists()) {
+                log.warn("未找到指标口径注册表 {}，口径注入不生效", RESOURCE);
+                return new Source(null, "missing");
+            }
+            try (InputStream in = resource.getInputStream()) {
+                byte[] bytes = in.readAllBytes();
+                return new Source(bytes, HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes)));
+            } catch (IOException e) {
+                throw new UncheckedIOException("指标注册表读取失败：" + RESOURCE, e);
+            } catch (NoSuchAlgorithmException e) {
+                throw new IllegalStateException("SHA-256 unavailable", e);
+            }
+        }
+    }
+
+    private record Source(byte[] bytes, String sha256) { }
 
     /**
      * 找出问题里提到的指标。
@@ -138,13 +170,10 @@ public class MetricRegistry {
     }
 
     private List<Metric> readResource() {
-        ClassPathResource resource = new ClassPathResource(RESOURCE);
-        if (!resource.exists()) {
-            log.warn("未找到指标口径注册表 {}，口径注入不生效", RESOURCE);
-            return List.of();
-        }
-        try (InputStream in = resource.getInputStream()) {
-            MetricsFile file = yamlObjectMapper.readValue(in, MetricsFile.class);
+        byte[] bytes = SourceSnapshot.VALUE.bytes();
+        if (bytes == null) return List.of();
+        try {
+            MetricsFile file = yamlObjectMapper.readValue(bytes, MetricsFile.class);
             return file == null || file.metrics() == null ? List.of() : file.metrics();
         } catch (IOException e) {
             throw new UncheckedIOException("指标注册表解析失败：" + RESOURCE, e);

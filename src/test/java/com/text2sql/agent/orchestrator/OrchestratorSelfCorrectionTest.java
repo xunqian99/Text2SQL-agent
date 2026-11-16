@@ -77,6 +77,40 @@ class OrchestratorSelfCorrectionTest {
     }
 
     @Test
+    void metricDefinitionChangeCannotReuseAnOldCachedSql() {
+        properties.getCache().setEnabled(true);
+        properties.getSemantic().setEnabled(true);
+        var orch = orchestrator();
+        String oldDigest = com.text2sql.agent.semantic.MetricRegistry.definitionSha256();
+        String oldKey = cache.key("会员订单占比？", orch.cacheSignature());
+        var l2 = mock(org.springframework.jdbc.core.JdbcTemplate.class);
+        org.springframework.test.util.ReflectionTestUtils.setField(cache, "l2", l2);
+        String lookup = "SELECT sql_text FROM semantic_cache WHERE cache_key = ?";
+        when(l2.queryForList(anyString(), org.mockito.ArgumentMatchers.eq(String.class), anyString()))
+                .thenAnswer(inv -> oldKey.equals(inv.getArgument(2)) ? List.of("SELECT old_wrong_formula") : List.of());
+        // Warm L1 from an old persistent entry, then ensure neither layer serves it under the new definition.
+        assertThat(cache.get(oldKey)).contains("SELECT old_wrong_formula");
+        try (var source = org.mockito.Mockito.mockStatic(com.text2sql.agent.semantic.MetricRegistry.class)) {
+            source.when(com.text2sql.agent.semantic.MetricRegistry::definitionSha256).thenReturn("a-new-definition-digest");
+            String newKey = cache.key("会员订单占比？", orch.cacheSignature());
+            assertThat(newKey).isNotEqualTo(oldKey).contains("metrics=a-new-definition-digest");
+            assertThat(cache.get(newKey)).isEmpty();
+            verify(l2).queryForList(lookup, String.class, newKey);
+        }
+        assertThat(orch.cacheSignature()).contains("metrics=" + oldDigest);
+    }
+
+    @Test
+    void disabledMetricInjectionDoesNotReadTheDefinitionForCacheKeys() {
+        properties.getSemantic().setEnabled(false);
+        var orch = orchestrator();
+        try (var source = org.mockito.Mockito.mockStatic(com.text2sql.agent.semantic.MetricRegistry.class)) {
+            assertThat(orch.cacheSignature()).contains("|s=false|metrics=-|");
+            source.verifyNoInteractions();
+        }
+    }
+
+    @Test
     void promptVariantsCannotShareTheSameCacheEntry() {
         var orch = orchestrator();
         String defaultSignature = orch.cacheSignature();
