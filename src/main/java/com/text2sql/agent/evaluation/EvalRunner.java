@@ -253,6 +253,9 @@ public class EvalRunner implements ApplicationRunner {
         config.put("metricDefinitionsSha256", com.text2sql.agent.semantic.MetricRegistry.definitionSha256());
         config.put("fewshotEnabled", properties.getFewshot().isEnabled());
         config.put("fewshotMaxExamples", properties.getFewshot().getMaxExamples());
+        config.put("fewshotRequireAvailableTables", properties.getFewshot().isRequireAvailableTables());
+        config.put("fewshotSelectionPolicy", com.text2sql.agent.fewshot.ExampleSelector.policyVersion(
+                properties.getFewshot().isRequireAvailableTables()));
         config.put("cacheEnabled", properties.getCache().isEnabled());
         config.put("routingEnabled", properties.getRouting().isEnabled());
         config.put("toolUseEnabled", properties.getToolUse().isEnabled());

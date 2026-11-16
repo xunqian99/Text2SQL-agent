@@ -88,6 +88,7 @@ class LlmGenerationModeTest {
         props.getLlm().setMaxTokens(8192);
         props.getLlm().setReasoningEffort(mode);
         props.getPrompt().setExplicitReasoningEnabled(explicit);
+        props.getFewshot().setRequireAvailableTables(byok);
         props.getObservability().setDir(logsDir.toString());
         props.getObservability().setIncludeContent(false);
         var template = new PromptTemplate(props);
@@ -128,6 +129,9 @@ class LlmGenerationModeTest {
             assertThat(entry.path("configuredSemanticEnabled").asBoolean()).isEqualTo(props.getSemantic().isEnabled());
             assertThat(entry.path("configuredMetricDefinitionsSha256").asText())
                     .isEqualTo(com.text2sql.agent.semantic.MetricRegistry.definitionSha256());
+            assertThat(entry.path("configuredFewshotRequireAvailableTables").asBoolean()).isEqualTo(byok);
+            assertThat(entry.path("configuredFewshotSelectionPolicy").asText())
+                    .isEqualTo(com.text2sql.agent.fewshot.ExampleSelector.policyVersion(byok));
             assertThat(entry.path("promptSha256").asText()).hasSize(64);
             assertThat(entry.path("totalTokens").asInt()).isEqualTo(14);
             assertThat(entry.path("prompt").isNull()).isTrue();

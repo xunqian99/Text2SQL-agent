@@ -207,7 +207,8 @@ public class HybridSchemaProvider implements SchemaProvider {
 
         SchemaContext sub = full.subset(tablesForContext, names, ddl).withMetrics(metricsFor(question, names));
         if (properties.getFewshot().isEnabled() && fewshotSelector != null) {
-            var examples = fewshotSelector.select(question, names, properties.getFewshot().getMaxExamples());
+            var examples = fewshotSelector.select(question, names, properties.getFewshot().getMaxExamples(),
+                    properties.getFewshot().isRequireAvailableTables());
             sub = sub.withExamples(examples);
         }
         if (!valueMatches.isEmpty()) {

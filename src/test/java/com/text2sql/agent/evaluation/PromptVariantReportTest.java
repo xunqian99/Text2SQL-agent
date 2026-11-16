@@ -9,7 +9,7 @@ import com.text2sql.agent.generation.PromptTemplate;
 import com.text2sql.agent.orchestrator.AgentResponse;
 import com.text2sql.agent.orchestrator.Text2SqlOrchestrator;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.util.List;
 
@@ -18,10 +18,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class PromptVariantReportTest {
-    @ParameterizedTest @ValueSource(booleans = {true, false})
-    void actualReportIdentifiesSelectedVariant(boolean explicit) {
+    @ParameterizedTest @CsvSource({"true,false", "false,false", "true,true", "false,true"})
+    void actualReportIdentifiesSelectedVariant(boolean explicit, boolean strict) {
         var props = new AgentProperties();
         props.getPrompt().setExplicitReasoningEnabled(explicit);
+        props.getFewshot().setRequireAvailableTables(strict);
         props.getEval().setDryRun(true);
         props.getEval().setSuiteManifest("");
         var item = new EvalItem("fixture-1", "single_table_basic", List.of(), "订单数？", "SELECT 1", null);
@@ -40,6 +41,8 @@ class PromptVariantReportTest {
         assertThat(report.overall().correct()).isEqualTo(1);
         assertThat(report.meta().promptVersion()).isEqualTo(new PromptTemplate(props).version());
         assertThat(report.meta().effectiveConfig()).containsEntry("explicitReasoningEnabled", explicit)
+                .containsEntry("fewshotRequireAvailableTables", strict)
+                .containsEntry("fewshotSelectionPolicy", com.text2sql.agent.fewshot.ExampleSelector.policyVersion(strict))
                 .containsEntry("metricDefinitionsSha256", com.text2sql.agent.semantic.MetricRegistry.definitionSha256())
                 .containsEntry("configuredReasoningEffort", "provider-default");
     }

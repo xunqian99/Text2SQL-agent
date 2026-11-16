@@ -1096,6 +1096,15 @@ public class AgentProperties {
         /** 最多注入的示例数量。 */
         private int maxExamples = 3;
 
+        /** Opt-in candidate: never use an example that references tables absent from the request context. */
+        private boolean requireAvailableTables = false;
+
+        public boolean isRequireAvailableTables() { return requireAvailableTables; }
+
+        public void setRequireAvailableTables(boolean requireAvailableTables) {
+            this.requireAvailableTables = requireAvailableTables;
+        }
+
         public boolean isEnabled() {
             return enabled;
         }

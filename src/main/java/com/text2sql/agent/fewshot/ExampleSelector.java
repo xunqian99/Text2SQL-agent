@@ -16,6 +16,10 @@ import java.util.*;
 @Component
 public class ExampleSelector {
 
+    public static String policyVersion(boolean requireAvailableTables) {
+        return requireAvailableTables ? "available-tables-v1" : "overlap-v1";
+    }
+
     private final ExampleLoader exampleLoader;
 
     public ExampleSelector(ExampleLoader exampleLoader) {
@@ -31,6 +35,11 @@ public class ExampleSelector {
      * @return 排序后的示例列表
      */
     public List<Example> select(String question, Set<String> currentTables, int maxExamples) {
+        return select(question, currentTables, maxExamples, false);
+    }
+
+    public List<Example> select(String question, Set<String> currentTables, int maxExamples,
+                                boolean requireAvailableTables) {
         if (maxExamples <= 0) {
             return List.of();
         }
@@ -56,6 +65,13 @@ public class ExampleSelector {
         for (Example ex : all) {
             if (ex.question().strip().equalsIgnoreCase(normQ)) {
                 // 跳过完全相同的题目，防止 dev 泄漏
+                continue;
+            }
+            if (requireAvailableTables && (ex.tables() == null || ex.tables().isEmpty()
+                    || ex.tables().stream().anyMatch(t -> t == null || t.isBlank()
+                    || !targetTables.contains(t.toLowerCase(Locale.ROOT))))) {
+                // Loader parses real SQL dependencies, including CTE bodies. Empty also means unparseable:
+                // exclude conservatively rather than filling the quota with an unknown-dependency example.
                 continue;
             }
             int overlap = 0;

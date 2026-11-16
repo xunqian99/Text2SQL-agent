@@ -111,6 +111,25 @@ class OrchestratorSelfCorrectionTest {
     }
 
     @Test
+    void exampleSelectionPoliciesCannotReuseEachOthersSqlCache() {
+        properties.getCache().setEnabled(true);
+        properties.getFewshot().setEnabled(true);
+        var orch = orchestrator();
+        String legacy = cache.key("question", orch.cacheSignature());
+        cache.put(legacy, "SELECT old_policy_sql");
+        properties.getFewshot().setRequireAvailableTables(true);
+        String candidate = cache.key("question", orch.cacheSignature());
+        assertThat(candidate).contains("available-tables-v1").isNotEqualTo(legacy);
+        assertThat(cache.get(candidate)).isEmpty();
+        properties.getFewshot().setRequireAvailableTables(false);
+        assertThat(cache.get(cache.key("question", orch.cacheSignature()))).contains("SELECT old_policy_sql");
+        properties.getFewshot().setEnabled(false);
+        String disabled = orch.cacheSignature();
+        properties.getFewshot().setRequireAvailableTables(true);
+        assertThat(orch.cacheSignature()).isEqualTo(disabled);
+    }
+
+    @Test
     void promptVariantsCannotShareTheSameCacheEntry() {
         var orch = orchestrator();
         String defaultSignature = orch.cacheSignature();

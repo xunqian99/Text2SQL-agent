@@ -84,7 +84,7 @@ public class FullSchemaProvider implements SchemaProvider {
         }
         if (properties.getFewshot().isEnabled() && fewshotSelector != null) {
             var examples = fewshotSelector.select(question, Set.copyOf(full.tableNames()),
-                    properties.getFewshot().getMaxExamples());
+                    properties.getFewshot().getMaxExamples(), properties.getFewshot().isRequireAvailableTables());
             resultContext = resultContext.withExamples(examples);
         }
         if (valueRetriever != null) {

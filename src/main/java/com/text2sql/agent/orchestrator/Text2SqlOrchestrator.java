@@ -435,7 +435,7 @@ public class Text2SqlOrchestrator {
         var toolUse = properties.getToolUse();
         var guard = properties.getGuard();
         var routing = properties.getRouting();
-        return "%s|%s|r=%b:%d:%b:%b:%b:%b|prune=%b|s=%b|metrics=%s|fs=%b:%d|dp=%b|fk=%b|tu=%b|limit=%s:%d|esc=%s"
+        return "%s|%s|r=%b:%d:%b:%b:%b:%b|prune=%b|s=%b|metrics=%s|fs=%b:%d:%s|dp=%b|fk=%b|tu=%b|limit=%s:%d|esc=%s"
                 .formatted(
                         properties.getLlm().getModel(),
                         com.text2sql.agent.generation.PromptTemplate.versionFor(properties),
@@ -452,6 +452,8 @@ public class Text2SqlOrchestrator {
                                 ? com.text2sql.agent.semantic.MetricRegistry.definitionSha256() : "-",
                         fewshot.isEnabled(),
                         fewshot.getMaxExamples(),
+                        fewshot.isEnabled() ? com.text2sql.agent.fewshot.ExampleSelector.policyVersion(
+                                fewshot.isRequireAvailableTables()) : "-",
                         prompt.isIncludeDataProfile(),
                         prompt.isIncludeForeignKeys(),
                         toolUse.isEnabled(),
