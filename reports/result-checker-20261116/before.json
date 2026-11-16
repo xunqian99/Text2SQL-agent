@@ -1,0 +1,2318 @@
+{
+  "format" : "result-checker-audit-v1",
+  "columnPolicyVersion" : "legacy-question-wide",
+  "checkerClassSha256" : "c9a59bf2ad795e6d5c615bbac83d0eec163c27e4ee26617b10e4e9e8e2c5c09c",
+  "datasetSha256" : "61fd7005b37d5bebbc92ca9a75858a09c1de3294581996fb4b7dfeafd4884000",
+  "sampleIdsSha256" : "23e99dd69e97258a8675ed36c4fd9b62c4ad1b5f036780825b64faa17c8588c2",
+  "boundaryTotal" : 30,
+  "boundaryContractsMatched" : 13,
+  "boundaries" : [ {
+    "id" : "negative-yoy",
+    "question" : "各月GMV与同比增长率",
+    "sql" : "SELECT 1",
+    "columns" : [ "gmv_2017", "gmv_2018", "yoy_pct" ],
+    "rows" : [ [ "1000", "0.2", "-99.98" ] ],
+    "expectedRule" : null,
+    "actualRule" : "NEGATIVE_METRIC_VALUE",
+    "reason" : "统计金额、数量或价格时出现了负数（-99.98）。请检查计算表达式是否写反或数据筛选有误。",
+    "matchedContract" : false
+  }, {
+    "id" : "positive-yoy-over-100",
+    "question" : "GMV同比增长率",
+    "sql" : "SELECT 1",
+    "columns" : [ "gmv", "yoy_pct" ],
+    "rows" : [ [ "1000", "250" ] ],
+    "expectedRule" : null,
+    "actualRule" : null,
+    "reason" : null,
+    "matchedContract" : true
+  }, {
+    "id" : "negative-mom",
+    "question" : "金额与环比",
+    "sql" : "SELECT 1",
+    "columns" : [ "amount", "mom_rate" ],
+    "rows" : [ [ "100", "-20" ] ],
+    "expectedRule" : null,
+    "actualRule" : "NEGATIVE_METRIC_VALUE",
+    "reason" : "统计金额、数量或价格时出现了负数（-20.0）。请检查计算表达式是否写反或数据筛选有误。",
+    "matchedContract" : false
+  }, {
+    "id" : "growth-named-rate",
+    "question" : "金额增长率",
+    "sql" : "SELECT 1",
+    "columns" : [ "amount", "growth_rate" ],
+    "rows" : [ [ "100", "-20" ] ],
+    "expectedRule" : null,
+    "actualRule" : "NEGATIVE_METRIC_VALUE",
+    "reason" : "统计金额、数量或价格时出现了负数（-20.0）。请检查计算表达式是否写反或数据筛选有误。",
+    "matchedContract" : false
+  }, {
+    "id" : "signed-net-amount",
+    "question" : "净金额是多少",
+    "sql" : "SELECT 1",
+    "columns" : [ "net_amount" ],
+    "rows" : [ [ "-200" ] ],
+    "expectedRule" : null,
+    "actualRule" : "NEGATIVE_METRIC_VALUE",
+    "reason" : "统计金额、数量或价格时出现了负数（-200.0）。请检查计算表达式是否写反或数据筛选有误。",
+    "matchedContract" : false
+  }, {
+    "id" : "signed-delta-count",
+    "question" : "订单数量变化",
+    "sql" : "SELECT 1",
+    "columns" : [ "order_count_change" ],
+    "rows" : [ [ "-10" ] ],
+    "expectedRule" : null,
+    "actualRule" : "NEGATIVE_METRIC_VALUE",
+    "reason" : "统计金额、数量或价格时出现了负数（-10.0）。请检查计算表达式是否写反或数据筛选有误。",
+    "matchedContract" : false
+  }, {
+    "id" : "signed-price-difference",
+    "question" : "价格差额",
+    "sql" : "SELECT 1",
+    "columns" : [ "price_diff" ],
+    "rows" : [ [ "-5" ] ],
+    "expectedRule" : null,
+    "actualRule" : "NEGATIVE_METRIC_VALUE",
+    "reason" : "统计金额、数量或价格时出现了负数（-5.0）。请检查计算表达式是否写反或数据筛选有误。",
+    "matchedContract" : false
+  }, {
+    "id" : "signed-profit",
+    "question" : "利润金额",
+    "sql" : "SELECT 1",
+    "columns" : [ "profit_amount" ],
+    "rows" : [ [ "-15" ] ],
+    "expectedRule" : null,
+    "actualRule" : "NEGATIVE_METRIC_VALUE",
+    "reason" : "统计金额、数量或价格时出现了负数（-15.0）。请检查计算表达式是否写反或数据筛选有误。",
+    "matchedContract" : false
+  }, {
+    "id" : "signed-balance",
+    "question" : "余额金额",
+    "sql" : "SELECT 1",
+    "columns" : [ "balance_amount" ],
+    "rows" : [ [ "-10" ] ],
+    "expectedRule" : null,
+    "actualRule" : "NEGATIVE_METRIC_VALUE",
+    "reason" : "统计金额、数量或价格时出现了负数（-10.0）。请检查计算表达式是否写反或数据筛选有误。",
+    "matchedContract" : false
+  }, {
+    "id" : "unknown-negative-column",
+    "question" : "GMV与其他指标",
+    "sql" : "SELECT 1",
+    "columns" : [ "gmv", "mystery" ],
+    "rows" : [ [ "100", "-8" ] ],
+    "expectedRule" : null,
+    "actualRule" : "NEGATIVE_METRIC_VALUE",
+    "reason" : "统计金额、数量或价格时出现了负数（-8.0）。请检查计算表达式是否写反或数据筛选有误。",
+    "matchedContract" : false
+  }, {
+    "id" : "negative-numeric-dimension",
+    "question" : "订单数量",
+    "sql" : "SELECT 1",
+    "columns" : [ "bucket_id", "order_count" ],
+    "rows" : [ [ "-1", "10" ] ],
+    "expectedRule" : null,
+    "actualRule" : "NEGATIVE_METRIC_VALUE",
+    "reason" : "统计金额、数量或价格时出现了负数（-1.0）。请检查计算表达式是否写反或数据筛选有误。",
+    "matchedContract" : false
+  }, {
+    "id" : "word-containing-rate",
+    "question" : "金额与比例",
+    "sql" : "SELECT 1",
+    "columns" : [ "separate_value", "amount" ],
+    "rows" : [ [ "-1", "100" ] ],
+    "expectedRule" : null,
+    "actualRule" : "RATIO_OUT_OF_BOUNDS",
+    "reason" : "占比/比率列「separate_value」的计算结果（-1.0）超出了合理的百分比范围 [0, 100]。请检查计算公式中的分子与分母是否颠倒。",
+    "matchedContract" : false
+  }, {
+    "id" : "mixed-count-and-ratio",
+    "question" : "订单数量和占比",
+    "sql" : "SELECT 1",
+    "columns" : [ "order_count", "pct" ],
+    "rows" : [ [ "40000", "40" ] ],
+    "expectedRule" : null,
+    "actualRule" : null,
+    "reason" : null,
+    "matchedContract" : true
+  }, {
+    "id" : "chinese-growth",
+    "question" : "金额与同比增长率",
+    "sql" : "SELECT 1",
+    "columns" : [ "金额", "同比增长率" ],
+    "rows" : [ [ "100", "-20" ] ],
+    "expectedRule" : null,
+    "actualRule" : "NEGATIVE_METRIC_VALUE",
+    "reason" : "统计金额、数量或价格时出现了负数（-20.0）。请检查计算表达式是否写反或数据筛选有误。",
+    "matchedContract" : false
+  }, {
+    "id" : "chinese-net",
+    "question" : "净销售金额",
+    "sql" : "SELECT 1",
+    "columns" : [ "净销售金额" ],
+    "rows" : [ [ "-15" ] ],
+    "expectedRule" : null,
+    "actualRule" : "NEGATIVE_METRIC_VALUE",
+    "reason" : "统计金额、数量或价格时出现了负数（-15.0）。请检查计算表达式是否写反或数据筛选有误。",
+    "matchedContract" : false
+  }, {
+    "id" : "camel-growth",
+    "question" : "GMV同比增长率",
+    "sql" : "SELECT 1",
+    "columns" : [ "gmvYoYPct" ],
+    "rows" : [ [ "-50" ] ],
+    "expectedRule" : null,
+    "actualRule" : "NEGATIVE_METRIC_VALUE",
+    "reason" : "统计金额、数量或价格时出现了负数（-50.0）。请检查计算表达式是否写反或数据筛选有误。",
+    "matchedContract" : false
+  }, {
+    "id" : "negative-amount",
+    "question" : "销售金额",
+    "sql" : "SELECT 1",
+    "columns" : [ "amount" ],
+    "rows" : [ [ "-320.5" ] ],
+    "expectedRule" : "NEGATIVE_METRIC_VALUE",
+    "actualRule" : "NEGATIVE_METRIC_VALUE",
+    "reason" : "统计金额、数量或价格时出现了负数（-320.5）。请检查计算表达式是否写反或数据筛选有误。",
+    "matchedContract" : true
+  }, {
+    "id" : "negative-count-with-growth",
+    "question" : "订单数量及同比",
+    "sql" : "SELECT 1",
+    "columns" : [ "order_count", "yoy_pct" ],
+    "rows" : [ [ "-1", "-30" ] ],
+    "expectedRule" : "NEGATIVE_METRIC_VALUE",
+    "actualRule" : "NEGATIVE_METRIC_VALUE",
+    "reason" : "统计金额、数量或价格时出现了负数（-1.0）。请检查计算表达式是否写反或数据筛选有误。",
+    "matchedContract" : true
+  }, {
+    "id" : "negative-gmv-with-growth",
+    "question" : "GMV及同比",
+    "sql" : "SELECT 1",
+    "columns" : [ "gmv_2018", "yoy_pct" ],
+    "rows" : [ [ "-10", "-30" ] ],
+    "expectedRule" : "NEGATIVE_METRIC_VALUE",
+    "actualRule" : "NEGATIVE_METRIC_VALUE",
+    "reason" : "统计金额、数量或价格时出现了负数（-10.0）。请检查计算表达式是否写反或数据筛选有误。",
+    "matchedContract" : true
+  }, {
+    "id" : "lowercase-gmv",
+    "question" : "gmv是多少",
+    "sql" : "SELECT 1",
+    "columns" : [ "gmv" ],
+    "rows" : [ [ "-10" ] ],
+    "expectedRule" : "NEGATIVE_METRIC_VALUE",
+    "actualRule" : null,
+    "reason" : null,
+    "matchedContract" : false
+  }, {
+    "id" : "negative-price",
+    "question" : "价格是多少",
+    "sql" : "SELECT 1",
+    "columns" : [ "unit_price" ],
+    "rows" : [ [ "-1" ] ],
+    "expectedRule" : "NEGATIVE_METRIC_VALUE",
+    "actualRule" : "NEGATIVE_METRIC_VALUE",
+    "reason" : "统计金额、数量或价格时出现了负数（-1.0）。请检查计算表达式是否写反或数据筛选有误。",
+    "matchedContract" : true
+  }, {
+    "id" : "negative-fee",
+    "question" : "费用是多少",
+    "sql" : "SELECT 1",
+    "columns" : [ "shipping_fee" ],
+    "rows" : [ [ "-1" ] ],
+    "expectedRule" : "NEGATIVE_METRIC_VALUE",
+    "actualRule" : "NEGATIVE_METRIC_VALUE",
+    "reason" : "统计金额、数量或价格时出现了负数（-1.0）。请检查计算表达式是否写反或数据筛选有误。",
+    "matchedContract" : true
+  }, {
+    "id" : "negative-quantity",
+    "question" : "商品数量",
+    "sql" : "SELECT 1",
+    "columns" : [ "qty" ],
+    "rows" : [ [ "-1" ] ],
+    "expectedRule" : "NEGATIVE_METRIC_VALUE",
+    "actualRule" : "NEGATIVE_METRIC_VALUE",
+    "reason" : "统计金额、数量或价格时出现了负数（-1.0）。请检查计算表达式是否写反或数据筛选有误。",
+    "matchedContract" : true
+  }, {
+    "id" : "mixed-ratio-with-growth",
+    "question" : "GMV同比与退款率",
+    "sql" : "SELECT 1",
+    "columns" : [ "gmv", "yoy_pct", "refund_rate" ],
+    "rows" : [ [ "100", "-30", "150" ] ],
+    "expectedRule" : "RATIO_OUT_OF_BOUNDS",
+    "actualRule" : "NEGATIVE_METRIC_VALUE",
+    "reason" : "统计金额、数量或价格时出现了负数（-30.0）。请检查计算表达式是否写反或数据筛选有误。",
+    "matchedContract" : false
+  }, {
+    "id" : "negative-refund-ratio",
+    "question" : "退款率",
+    "sql" : "SELECT 1",
+    "columns" : [ "refund_ratio" ],
+    "rows" : [ [ "-1" ] ],
+    "expectedRule" : "RATIO_OUT_OF_BOUNDS",
+    "actualRule" : "RATIO_OUT_OF_BOUNDS",
+    "reason" : "占比/比率列「refund_ratio」的计算结果（-1.0）超出了合理的百分比范围 [0, 100]。请检查计算公式中的分子与分母是否颠倒。",
+    "matchedContract" : true
+  }, {
+    "id" : "chinese-negative-count",
+    "question" : "订单数量",
+    "sql" : "SELECT 1",
+    "columns" : [ "订单数" ],
+    "rows" : [ [ "-1" ] ],
+    "expectedRule" : "NEGATIVE_METRIC_VALUE",
+    "actualRule" : "NEGATIVE_METRIC_VALUE",
+    "reason" : "统计金额、数量或价格时出现了负数（-1.0）。请检查计算表达式是否写反或数据筛选有误。",
+    "matchedContract" : true
+  }, {
+    "id" : "negative-underflow",
+    "question" : "金额是多少",
+    "sql" : "SELECT 1",
+    "columns" : [ "amount" ],
+    "rows" : [ [ "-1e-400" ] ],
+    "expectedRule" : "NEGATIVE_METRIC_VALUE",
+    "actualRule" : null,
+    "reason" : null,
+    "matchedContract" : false
+  }, {
+    "id" : "numeric-boundaries",
+    "question" : "GMV数量与比例",
+    "sql" : "SELECT 1",
+    "columns" : [ "gmv", "order_count", "pct" ],
+    "rows" : [ [ "0", "0", "100" ] ],
+    "expectedRule" : null,
+    "actualRule" : null,
+    "reason" : null,
+    "matchedContract" : true
+  }, {
+    "id" : "null-and-nonnumeric",
+    "question" : "金额是多少",
+    "sql" : "SELECT 1",
+    "columns" : [ "amount", "unit_price" ],
+    "rows" : [ [ "null", "NaN" ] ],
+    "expectedRule" : null,
+    "actualRule" : null,
+    "reason" : null,
+    "matchedContract" : true
+  }, {
+    "id" : "sparse-row",
+    "question" : "金额及同比",
+    "sql" : "SELECT 1",
+    "columns" : [ "amount", "yoy_pct" ],
+    "rows" : [ [ "1" ] ],
+    "expectedRule" : null,
+    "actualRule" : null,
+    "reason" : null,
+    "matchedContract" : true
+  } ],
+  "goldTotal" : 200,
+  "goldSuspicious" : 2,
+  "gold" : [ {
+    "id" : "T1-001",
+    "sqlSha256" : "cf4fd11989fba6adcc2e76d23aa7a66757683edf266d2fe7b8b5690ccfc4c3a6",
+    "resultSha256" : "5eb46a6a0ee1646db56d9dd7ff9d3fe5f29f675b0e04f51abdd92a65a7259196",
+    "columns" : [ "count" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T1-002",
+    "sqlSha256" : "8e2577154e10efc99fcac331806117c123030ae05ae589e1b6a38eccd598fa9f",
+    "resultSha256" : "08fdba65a57e131eb67fdfe24532af9a655e8bb080a5cf85687ae1e904379c8f",
+    "columns" : [ "count" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T1-003",
+    "sqlSha256" : "5707dea5961382fadff0abe8c53ce1f3aade9483c6dcacc39c3e3891abadfbbf",
+    "resultSha256" : "c2beeac30a403ad7bff9bb7a37201e8ee771e41b25d101560fcbc9a0e26e4e29",
+    "columns" : [ "count" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T1-004",
+    "sqlSha256" : "773c9381046138877a2a9ea064e889a8fe342e4fd7f16bd1e0a79a1c9d6cd899",
+    "resultSha256" : "eb2d2c5e0deac90a0ab5d1d9a07bc3d591aed4466937417bbc1651af26dae4bd",
+    "columns" : [ "count" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T1-005",
+    "sqlSha256" : "2618125e4c35cb9dc37ee18b6524ea24bcb70ba36a5b47fc240e3824f49365d3",
+    "resultSha256" : "4dac1f0b332f1459abf1ac12999a3b51e5785523f5cb61647829c20530ff0889",
+    "columns" : [ "count" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T1-006",
+    "sqlSha256" : "5b8d3bd30562565018dc0a253a100e0cdb324870e8a43e446ae6cb4903d68782",
+    "resultSha256" : "433f55e098d0cce3fc133c8eb312d60de942b9cd94f90427aae2305c2e791172",
+    "columns" : [ "count" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T1-007",
+    "sqlSha256" : "624a2e8a2e612804292364b7a1dd94d7ef15ce54bce36a0c88aef209e7854134",
+    "resultSha256" : "7c10b759c420c5542c88d8de83ea680f25aeb08adb61acbd2bef30217b269492",
+    "columns" : [ "count" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T1-008",
+    "sqlSha256" : "b097ba13c930184c858453ab59190c23473ba9e7549c0c36b0e4be17649aa00c",
+    "resultSha256" : "24ca10cfcc434855adde9bd46f6d8c9361e625dee421699fbdebc0d635be6f2b",
+    "columns" : [ "count" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T1-009",
+    "sqlSha256" : "2c4a53e36ee545a1bf08f1a357015a28c7d35cdbe95bef68993f6f57fef46756",
+    "resultSha256" : "c58ac33d4a56c2d27197acb7891fab6332d88e740b561d27588c28d2594c7275",
+    "columns" : [ "count" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T1-010",
+    "sqlSha256" : "a83d72f1c26f1824a3ae5c5bb369c3183f32c838433dd4d17b3179a9fc9b6f13",
+    "resultSha256" : "174eaeee7cf6cf63c03e349d2467907e8cd6d43da540c05be7c0cab3727a3097",
+    "columns" : [ "count" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T1-011",
+    "sqlSha256" : "7b1769a274867ab6f8f3b126334ba89721594f9416f167c85406be18cb8b157c",
+    "resultSha256" : "4fed8155a8a3070c4542ac1a1975df148adb6bad5d194df43a188a8cd796f806",
+    "columns" : [ "count" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T1-012",
+    "sqlSha256" : "6d524d1a72799407278dd321a252b115bdeaa899f7fa8f0e02cb1420c93292cc",
+    "resultSha256" : "f0db3f3da3b16d03e5d982f25c91c14c4812f88a02e8643622dea44f4f377efc",
+    "columns" : [ "order_id", "order_item_id", "price" ],
+    "rows" : 10,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T1-013",
+    "sqlSha256" : "0ef794f8efbcf2c7c1e64b3d78afa13941e6b13b80b2e9b117fd44bd711261ae",
+    "resultSha256" : "a4749c3b4de45a373cd688bc66d725052d4d124396f18ff3c75e6ec164cfb548",
+    "columns" : [ "order_id", "order_item_id", "freight_value" ],
+    "rows" : 5,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T1-014",
+    "sqlSha256" : "bccea99adb9a6e6a864207f80332887a5290219be65a94a0d0cad83c48296340",
+    "resultSha256" : "259ad4af602466cea53b54f6481c5e0e612637297a2c27c5809a52a6d314e2c0",
+    "columns" : [ "count" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T1-015",
+    "sqlSha256" : "3174f80df39395a6440417b66956dafed03538808cd17bb29054fe5fafb90383",
+    "resultSha256" : "dd475c5dc73789e36c49c4c8f2503cec5ac13a3993c83e02f264da5dc116bb5b",
+    "columns" : [ "count" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T1-016",
+    "sqlSha256" : "080344bf5be3a2a80eec9baa5157adb1cc19c3a066e9049f90aa9cc0777864c9",
+    "resultSha256" : "bf7e9414344acea95e6f5de096147cbd01b2c6fc328466f48ff59dd56744e7d8",
+    "columns" : [ "order_id", "payment_installments" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T1-017",
+    "sqlSha256" : "96bda0e53fb0474a1fa2426092cc433200ba59f7ba9d34e8d366cd5968177eb8",
+    "resultSha256" : "6da0853512eafc3773ef5c56c37fcb4d8bc34d6e0b0ab3c7b49bd8611884fea8",
+    "columns" : [ "count" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T1-018",
+    "sqlSha256" : "7324ae6081ea756df8cac80686f5adc6afafb4fda3995298d675e76cc9a4bf5f",
+    "resultSha256" : "8101d83c43157daa9931497b60bc8ac2a437a29a94dd31aeb539596958fc32ae",
+    "columns" : [ "count" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T1-019",
+    "sqlSha256" : "0d94937bdb47824c12928b372923350a8dc9578c49e2bf50201a88ca24f71c1d",
+    "resultSha256" : "781d96a07e979c1ae25eeac8ad627e342b7852b938ca96c471dac03936a8fa2a",
+    "columns" : [ "count" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T1-020",
+    "sqlSha256" : "560da3efaae860a5b2eb8ea4c0a30868835e041578b4806bd50f4fb11337f18c",
+    "resultSha256" : "b136cdadc298b4692bbf3023bb03934119284a688d9559ad95838f9bdde795b4",
+    "columns" : [ "count" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T1-021",
+    "sqlSha256" : "1e85b9543222ab43d40c472f986a8c820b5587dd3e1fb8b4ec23100f2a0def89",
+    "resultSha256" : "667d2ff582040dd0a308fab268caf3691920e1f7e4e98587ceda35a2522f5258",
+    "columns" : [ "count" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T1-022",
+    "sqlSha256" : "cd27c0fb1cb0f5a751710c40d84a3f4cdb83a7355e9ef16eac4734e8b0857660",
+    "resultSha256" : "4b03161a250dc5b82172ab47e7fd0dc9b2a58130d64e06f14feb7f46c5d0b434",
+    "columns" : [ "count" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T1-023",
+    "sqlSha256" : "bb92a0addc302d24d38192e981666875e311b3f42cde3f9b47591e06e19445ae",
+    "resultSha256" : "0452b8b7025d52e0c17109d3fa18296a0656c589a51066d822770c3b5ce9247c",
+    "columns" : [ "count" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T1-024",
+    "sqlSha256" : "e2ae96fff3fab50df451931acf1258923f09377070fa31fb27e04c7fdd81a2b9",
+    "resultSha256" : "5818f5cb2ab57f2ce0f1e883f7d6a982b7f7de3dd3986392d12bc1b3d8cd3d1d",
+    "columns" : [ "count" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T1-025",
+    "sqlSha256" : "2a370eb44ae853d7c86dde50f971e69b2183b872af4da9f99755dca8842d10e5",
+    "resultSha256" : "21219c115740a625b00aaead48fcc46ddb64b29dbd19a73dfd54893a643ebbec",
+    "columns" : [ "count" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T1-026",
+    "sqlSha256" : "f81e26b049f364ebedb603b5bce0ea72410d72cbe06b4f42eee8c7a28f140c7c",
+    "resultSha256" : "61aeac4d6667c3c6342ce368e6a3dfb4e16be50e04c2b110348db25276a02776",
+    "columns" : [ "member_id", "points" ],
+    "rows" : 10,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T1-027",
+    "sqlSha256" : "225bbb17a824fd27b026c0b2eabc337e4b7ef12c9c8a4fa73c5828799a592334",
+    "resultSha256" : "09a7c284c9867b25acdec96a3675858eef1d6e4a2ee10071bca51c383242c477",
+    "columns" : [ "count" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T1-028",
+    "sqlSha256" : "d073d156d6dec1bd89773241a7007e9e2bb6407f7e43b8c654036c036fb98d99",
+    "resultSha256" : "d64afc71a727807849f6fa36d0386533c81c3b60f96a9b6f6eaab6c51b1341a6",
+    "columns" : [ "warehouse_id", "warehouse_name", "capacity" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T1-029",
+    "sqlSha256" : "2b2cb50e2ba11fc3cfa64d96d88b8614c31aaa745ccc7589b6b0e72aab753a9f",
+    "resultSha256" : "92dff531d9cc3af074ad9a730c10fbd1b08b373f528ba8972807645d2ab5dc67",
+    "columns" : [ "count" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T1-030",
+    "sqlSha256" : "fb9acf6a674101a467acc3a3fd4dfe02f4704162a240dc1a5c0eabef7099d6ed",
+    "resultSha256" : "301b3749adc3624f645810e29355944c5acb7a0607ebf3e66098debfc85ad244",
+    "columns" : [ "count" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T1-031",
+    "sqlSha256" : "970f9768f98181c91f9a957398289bda40fb336bd75168f8a51ff496e18e117a",
+    "resultSha256" : "f25ed90c5b162f2784ab94cff0e6fe6a9b46f95f009298e9335e01119798a001",
+    "columns" : [ "count" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T1-032",
+    "sqlSha256" : "115a86d09b2019c9ba29ce75a0626b4b4ee73f95f8ac9a1f628843bd9d2b2b43",
+    "resultSha256" : "3a97910c24d15e04823c3f76771c34b2cfb6e4c4c63d865af91f649572b2e71e",
+    "columns" : [ "count" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T1-033",
+    "sqlSha256" : "b16037ce3176531a9a07581899b75a9c933000492d3fe138284812a140d6ac37",
+    "resultSha256" : "8ea901ccf30ac6be0822bfc25e24d91fdf0a30d42483aab58f25a51612f97301",
+    "columns" : [ "count" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T1-034",
+    "sqlSha256" : "80376c1a2db175879708b1c13c71f3aaeb71501c6b5be908fb0db9a085ad860f",
+    "resultSha256" : "2ffdb44ab6b882fc3608a9cef3f6eb3d62d22513a694daec7d3db72e73568e66",
+    "columns" : [ "count" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T1-035",
+    "sqlSha256" : "74e4cc88bd902b13c0d1ed552eabbf2d6103115ea4815f27176d22d3f064be20",
+    "resultSha256" : "e982c8a90371b2b19337d3b5dedd398bedbffe4acf1088d2829127f242e7ef8d",
+    "columns" : [ "count" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T1-036",
+    "sqlSha256" : "ee6aa9601a434c8e94ee7ee41663ad32417b54aa9de492f0910eb7aa6fcc0315",
+    "resultSha256" : "5b5f7cd6faf9fc9cb5f568ee3e2eed2f3187703f3ac7d1b47b5a91e3c584a8e6",
+    "columns" : [ "count" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T1-037",
+    "sqlSha256" : "3aafb86a6bb166e7a41d94e2cb9cd832f38b3a68340e5d0787c2fef345930afc",
+    "resultSha256" : "cecceb0fbc124a7e4d709e3fbe911ccfd61f69585333d288026c08506fd5bbfd",
+    "columns" : [ "count" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T1-038",
+    "sqlSha256" : "f2b8cbbb3537f799c585b24c2f6d3be3559170d2af10e23e672ea51c783dae29",
+    "resultSha256" : "f37e169b104151bc2842826bb1b0152477d83b2d00114d2b8d05910e9ce7a31a",
+    "columns" : [ "count" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T1-039",
+    "sqlSha256" : "9eca14b0c33bd868d9e4898d860bf5a5a9a81c9ebff4ba99ebd9084ffef9fb06",
+    "resultSha256" : "20f3477633ddce9e44da0ccf6a0afe819fd1880cec517fdef1b1edc8babd19b4",
+    "columns" : [ "count" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T1-040",
+    "sqlSha256" : "02fad7e3f9c6d3e299194454c9f247766a982ad622728cafd1a518e1cebcc4bb",
+    "resultSha256" : "b865fa93fc5a444cfa4478bd14007262d0a70a9347fc3b80f4e65e79f5704779",
+    "columns" : [ "count" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T2-001",
+    "sqlSha256" : "e446cd1e78dd184c812ef7f6f11cef34f3a6303c95d9fb6e95406c02420d0592",
+    "resultSha256" : "0204c8fba4021c2377402ed8c15ee031e074d5e24d674d028bb28496bf7b492d",
+    "columns" : [ "sum" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T2-002",
+    "sqlSha256" : "9ff657c0735dfbcea3a1a21fbfd3c48e9633aac5349e0aa352986582a913c177",
+    "resultSha256" : "9c77c1755c5345eb3a491253cb8c40a75569e4ea92e861688e2b156c3b9568b4",
+    "columns" : [ "sum" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T2-003",
+    "sqlSha256" : "2f95d0fc93dd721846afba1b9e71844e2b369b868b9be75c3f07de0b8a3d61d6",
+    "resultSha256" : "daf9622b7874ff2e80ce674ab0f5266b41b3085d343efb5ce2507427d53c8a1b",
+    "columns" : [ "round" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T2-004",
+    "sqlSha256" : "e7a81172f96ec722eb43bf4d94bec8ef5da7c1aebe272271862e6cc5742904b4",
+    "resultSha256" : "724b858b1882924babe6d74bc5edacab0248f6661c058af2e15a2a9fe52cdb70",
+    "columns" : [ "round" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T2-005",
+    "sqlSha256" : "c77465147a50fd61b22b8be517f5776304d0473bf20173fe95f00176478a89ce",
+    "resultSha256" : "6e72c9028191f6052a3221aa3f74d12eaa2442062e3ff0cf9bd5ef86a35b81dc",
+    "columns" : [ "order_status", "cnt" ],
+    "rows" : 8,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T2-006",
+    "sqlSha256" : "1226e5d545db6ed7eb38a83b78e66176d377298d4b98b172ba39587fa2e36089",
+    "resultSha256" : "e8cdb14c5f18728b3f6f6cb0f30625794270ef8c57a3584cb7b4ffa11042e8d4",
+    "columns" : [ "payment_type", "cnt" ],
+    "rows" : 5,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T2-007",
+    "sqlSha256" : "dda4aa6fa8dbae3cbaa78545217413270b7c09e77e43db4e341aed2fe178a3c7",
+    "resultSha256" : "1d97bbdfe0d2afa9334b7d4de03422126307783b6f6ce31c0bcaa3b5d93378b3",
+    "columns" : [ "review_score", "cnt" ],
+    "rows" : 5,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T2-008",
+    "sqlSha256" : "b41735de038fe859de25e709d62051cbd7fff86560d717fb5a852235394b40fc",
+    "resultSha256" : "8ee05dc10c653ae3deb6d314b76a4c6b0b845b78125bfc6eb6d25a1fe9007cb3",
+    "columns" : [ "customer_state", "cnt" ],
+    "rows" : 5,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T2-009",
+    "sqlSha256" : "d98e8651abaea1555ee1993ecfcdc3fb21dcd6df21809f5e7602da08bb1719ba",
+    "resultSha256" : "a08b4257a7d2e3749555951d6df37635243f653afe9f2f4b5cfdde0918e0184e",
+    "columns" : [ "product_category_name", "cnt" ],
+    "rows" : 10,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T2-010",
+    "sqlSha256" : "199532f8df89840d3b90ef5509e30c5c0c881d1f50d2520589b383c2a631bfb0",
+    "resultSha256" : "3bab90186585755771b1a13f0ff70db7def03e3044ce5ccfa923c0621050f388",
+    "columns" : [ "seller_state", "cnt" ],
+    "rows" : 23,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T2-011",
+    "sqlSha256" : "5266a1019287ef4c82a2a6cc821d179031dca38d14e362fbfd85ad7658b13d30",
+    "resultSha256" : "67a4d6cb4066a23b92a64ae80c0ee58163c1f99dca80d9871114c987d6b84446",
+    "columns" : [ "seller_id", "total" ],
+    "rows" : 10,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T2-012",
+    "sqlSha256" : "a6fdb195d52374e86b3e6e7e79ffc940cb4bdfef841aa4d4a19c5e22a4c0ff35",
+    "resultSha256" : "2481637c6bb909fe3a55b1634c23e197f2adbd2e85788f840e954e292dced731",
+    "columns" : [ "seller_id", "total" ],
+    "rows" : 10,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T2-013",
+    "sqlSha256" : "7aaca342619205adf44715d85a6b29c5ff388ad3e8c04a08a4f65d081e0899c8",
+    "resultSha256" : "0a711c287b6a2c9b8f07c2472c6a1265d8dd351d731536e93b5fba55f9cec3dd",
+    "columns" : [ "delivered", "canceled" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T2-014",
+    "sqlSha256" : "b8fe5968174559c6eae6fabaa8493a7ffaef5a3c28b9b95b787df6cd886c5135",
+    "resultSha256" : "e600698d10a9b7fbf1e970e207a23f45aa9bf7934da3490ff6dac1bd9dea1fb6",
+    "columns" : [ "credit_card", "boleto" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T2-015",
+    "sqlSha256" : "e79de437d9a37a3619f3680b2af1facc61c07e768c003d34e0b0630516a33e17",
+    "resultSha256" : "240f4b3a301bfb1bd1464dc4f878cdf07c0771bdda63886b3c69f399526131fc",
+    "columns" : [ "level_id", "avg_points" ],
+    "rows" : 4,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T2-016",
+    "sqlSha256" : "8dafafcf4eacecc259f0c9e9b7a146259304558ec969f5fa7d7cad1fb4d73c29",
+    "resultSha256" : "1492ebc09835b570cb207fde334fd044c9e3d764ecd84164eadc21f1f2017a12",
+    "columns" : [ "status", "cnt" ],
+    "rows" : 3,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T2-017",
+    "sqlSha256" : "3da5b166d47af22d0ddd6ca892d837267403e4fda367d32dbe3835678296e3f0",
+    "resultSha256" : "82b2e89fbad735f0f75d10580b5b6db110ba90a237af48dcbae3de518ab81392",
+    "columns" : [ "macro_region", "cnt" ],
+    "rows" : 5,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T2-018",
+    "sqlSha256" : "a4848d90276de755d0891063c47caf90923c588cb4768fbed0986aee6208f730",
+    "resultSha256" : "4358e924dbda0f95ae73a911691c90d58dbeaf30e62a05ff0c7c5c57a6c9135f",
+    "columns" : [ "campaign_type", "cnt" ],
+    "rows" : 4,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T2-019",
+    "sqlSha256" : "b8fc2a724d5cc8592b539b53a0efdddb2007a05ba365c3523acb146a047f575b",
+    "resultSha256" : "e6549536e853a5ab0419bc3e3dcca62d0d48fa2004fa23affe854d673fa6d756",
+    "columns" : [ "campaign_id", "budget" ],
+    "rows" : 52,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T2-020",
+    "sqlSha256" : "6885dc95116394b8a6985129fc930c72024bbb0ea791d29d292de06233b0179a",
+    "resultSha256" : "5f96ca3fbe2ab4675de86a07c4d134adebbf7347f1f80a6842ef52ce5ac6242c",
+    "columns" : [ "discount_type", "cnt" ],
+    "rows" : 2,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T2-021",
+    "sqlSha256" : "3a684667819fb37c3deddf072e1082da018e178275100756ceef0588c1df16ae",
+    "resultSha256" : "3ed3260059f7b60749a8c7466b751a355f9e331655284e481e5473398ae30b13",
+    "columns" : [ "reason_code", "cnt" ],
+    "rows" : 4,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T2-022",
+    "sqlSha256" : "b739b66278526255c56c9c3bc00d316a1b570b19d5229718af28a948f259aba7",
+    "resultSha256" : "e36ca520f64849a721c3745addffb32d08d7dd5c45470c060f7542b3fe7f6a31",
+    "columns" : [ "round" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T2-023",
+    "sqlSha256" : "1ffa70a8dd0705b0c193bb79e7aa3fd8144229b03a234982d10a32d3ec9283a5",
+    "resultSha256" : "e528569a4a4abb6ef82a53da3aff7206dfc116dbd966a65aa722c00a6fd391da",
+    "columns" : [ "round" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T2-024",
+    "sqlSha256" : "07a9cb279c0d8aed3420d5b1b1146b79a894763e74c82e3bd07a475a37c4c4ca",
+    "resultSha256" : "4ac4636cb45b6dc75d468120f2f6e3d7fa6b6f35d8a72a3ae2d981193f38a654",
+    "columns" : [ "warehouse_id", "cnt" ],
+    "rows" : 5,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T2-025",
+    "sqlSha256" : "73789ae162b1efc44c888aea43a20f70d612edb04c6abcb16580fb6538151b8c",
+    "resultSha256" : "24159ad227b2087257a59c8e3c81ed34de00c4e9d7b5176e358bd146eb4bab57",
+    "columns" : [ "sum" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T2-026",
+    "sqlSha256" : "91483ab7bde35e977242dddc26b3c459ea1a3dcf1163a60dce5b6b7997ce0ffd",
+    "resultSha256" : "e948d4a4cf083d55b8ecb13da2b375fdcb876361829c7a5c6113cb04962f1b8e",
+    "columns" : [ "warehouse_id", "total_qty" ],
+    "rows" : 5,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T2-027",
+    "sqlSha256" : "05351efdf48eb4b3a5efedc1b71b590e900b4e42747e0259390e3b33b89e7744",
+    "resultSha256" : "804526539d089081c5df42ba9a53fbaf41b9ad04707a1a416b385e30184b9306",
+    "columns" : [ "movement_type", "cnt" ],
+    "rows" : 4,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T2-028",
+    "sqlSha256" : "807c782c1f5f3ef925f6d62d91203cc5806c619583d1178697cc4dd8c91a91f6",
+    "resultSha256" : "dae393487e622b769bb50e023288535eec87e152575734c7a6135d61a8dd7676",
+    "columns" : [ "carrier", "cnt" ],
+    "rows" : 4,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T2-029",
+    "sqlSha256" : "66cd80a37a43c142d4b1b4f9ba8717a4494a1563cfba4e91fc1e268635347606",
+    "resultSha256" : "3433d24546f86a4a85e1ba1e0bed33b69983db09ba35becab7c061a93c722e23",
+    "columns" : [ "status", "cnt" ],
+    "rows" : 3,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T2-030",
+    "sqlSha256" : "7b4e4f68b1b775115b932f5199c5fcaa36196bc45db98f490f25749a1075fd25",
+    "resultSha256" : "02b73536d8e80023874e20169e682aeb804a049adb59b121ae709eb75492b5a6",
+    "columns" : [ "category_id", "cnt" ],
+    "rows" : 6,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T2-031",
+    "sqlSha256" : "afbc0ebd8149f40787f675f125593a10a1a12fa2a32560a13aa46788fe8c450b",
+    "resultSha256" : "70455b6678d76747f1c7a38627d4f3a9a67da57ba5d145dd9f9ffa42cebeb866",
+    "columns" : [ "priority", "cnt" ],
+    "rows" : 4,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T2-032",
+    "sqlSha256" : "944c6bdbe4401e8160538bbc6aae333f5042c63d6f576add6a0b7bdcb43b61e1",
+    "resultSha256" : "c04f4d3ab19e0dd135190badd3f44412acbddf7f25a458be4719d3841b064425",
+    "columns" : [ "status", "cnt" ],
+    "rows" : 2,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T2-033",
+    "sqlSha256" : "dba5525329446c43850fc974365808e695d41c15f59d1cd6fd4676b980dce198",
+    "resultSha256" : "b293172d37c5053533b84bd1e8a9e278e63fd20816adcd9567992b99954b4ba3",
+    "columns" : [ "round" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T2-034",
+    "sqlSha256" : "3b71107e2e97c05e3a75057e329b37d0f36bd1229963f15c1196f94436e2dccb",
+    "resultSha256" : "7e6e757862a1ae6a35de187af232a340ac4c549334e49d9a7e0cc88c692466cf",
+    "columns" : [ "round" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T2-035",
+    "sqlSha256" : "c050e61eb6b9fb486eb25f2971dc8273e2ea6f7f4fe2342541f6b03bf0cc476a",
+    "resultSha256" : "9d10d844c35f6f7b69a5f74df544bee98afc0a5170ad9a8783e23c28af0c90bd",
+    "columns" : [ "keyword", "cnt" ],
+    "rows" : 10,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T2-036",
+    "sqlSha256" : "2621b67a2a99fde269372047cd010ac317ee6b9efbcabedf3b78c59ab372ea6c",
+    "resultSha256" : "496061e8e75a8a9e791ee264e9cf50643190fdfefbb1b83b64ee9be7c6bd7685",
+    "columns" : [ "product_category_name", "cnt" ],
+    "rows" : 7,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T2-037",
+    "sqlSha256" : "50d45eec693bfac72e616345be651619de6db58e8da1e1da9cae6abe5a98405b",
+    "resultSha256" : "8ee05dc10c653ae3deb6d314b76a4c6b0b845b78125bfc6eb6d25a1fe9007cb3",
+    "columns" : [ "customer_state", "cnt" ],
+    "rows" : 5,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T2-038",
+    "sqlSha256" : "9865ca4b882dcfdcb2de373e56901a5a0d1e2d924d95f074f763d1d8adfafb94",
+    "resultSha256" : "acf6fd3b7ea283f980d67766b5acba5eb2afb376c4fcef33a557b4f3251d67b1",
+    "columns" : [ "max_price", "min_price" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T2-039",
+    "sqlSha256" : "74fb951d82ab2093e0916df38786ea0655c036ba4666f4eb9bb0d1ff0741cb72",
+    "resultSha256" : "690d3437758c774d9e2b3d8de666d9e437cbaa8eb09fb3e42e77e2b8edb83069",
+    "columns" : [ "good_rate" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T2-040",
+    "sqlSha256" : "ab50ad252f63c654b3f03fe02cbdd7dd1fe3e4bc58feda14086d221a438800f4",
+    "resultSha256" : "a66398e9c05f496b492716c4b22c39b78ffd62368048229ec82d0402783416cb",
+    "columns" : [ "payment_type", "total" ],
+    "rows" : 5,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T3-001",
+    "sqlSha256" : "e2ca9f4cd4a53fcc2d61706883d44a79a9c4f9e9f8ed95dd9d9d309b55fb55d8",
+    "resultSha256" : "55db7ccff20bd9a3f9337afe7a26cb48a22d73fdae6da5451c1c0a5b29fccbbd",
+    "columns" : [ "month", "cnt" ],
+    "rows" : 25,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T3-002",
+    "sqlSha256" : "00ab301c7a617c31690c829fbc5b3dc01141fe0a1425612837f9495edd169ff0",
+    "resultSha256" : "388965b7d5248ea642ee459421b57be2acba7425a2642e716bca0f599954e694",
+    "columns" : [ "yr", "cnt" ],
+    "rows" : 2,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T3-003",
+    "sqlSha256" : "65a05cf00b6c77aedd066e28277840932be08f3b6ef0b408cee6fbb0a9c2a54d",
+    "resultSha256" : "70d6f4fab37d2259f3423194411c8298ce88093e422d910ca5bd0e8a70504a99",
+    "columns" : [ "quarter", "cnt" ],
+    "rows" : 10,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T3-004",
+    "sqlSha256" : "1d190664fc4dd5e8370e350ec1e1b90aa7d456595da28c6739c50f1b85d24a9d",
+    "resultSha256" : "611679a57f67de4f7fa01a961b182a08a7eb7b1f82dc854951502cc8a00558f0",
+    "columns" : [ "count" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T3-005",
+    "sqlSha256" : "d5dfd73603b6b324dc511700f72e7d51587bf24a811393b39932554b158932f2",
+    "resultSha256" : "e2e94865d357c35c260c838cc58ef1b95800bf9e93d0b71598336f0914fac3a3",
+    "columns" : [ "week_start", "cnt" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T3-006",
+    "sqlSha256" : "dbe132d1ae7ba16900ac9d9add080fdcf9849077045991a135f8b8dbea855ab6",
+    "resultSha256" : "2730d59344a7c85739b159bcda704a0a6ad39da97c7d828ddb4967633d18ff6e",
+    "columns" : [ "month", "sales" ],
+    "rows" : 24,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T3-007",
+    "sqlSha256" : "dedf010cc1fc3c4de84221027eed74e30e1d387fd8cb4f1e69713d53c74b5a2d",
+    "resultSha256" : "b82af11cd9c4d52d8c9927b0bc56364d9bb5921d63c304b42189dafba7e52c51",
+    "columns" : [ "month", "freight" ],
+    "rows" : 24,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T3-008",
+    "sqlSha256" : "b3532d96e01f29b688e66fcdfb878ece7d12a6eda5af3299e969497a50b5340f",
+    "resultSha256" : "5039754dee467d2aa44114419721fe48e23cffbf4c95e8e10d58de42624a8e1b",
+    "columns" : [ "month", "avg_order_value" ],
+    "rows" : 24,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T3-009",
+    "sqlSha256" : "0093b67e0714cfe01398fda3511f9b94e4958d4424779495402db1b7aa1c789b",
+    "resultSha256" : "40dd6fb3665b745b2fac6afe3641c5c9a4b3aafc87df0da2cd155c6011bcec32",
+    "columns" : [ "month", "cnt" ],
+    "rows" : 10,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T3-010",
+    "sqlSha256" : "545ff0d75046cf9572c6314a02b6a560557bc426e492954d62f5524f0538aca0",
+    "resultSha256" : "bff7109ff696a805673bd7a9509a7f059823b7140cb0653c34abcd1daf9a4a7a",
+    "columns" : [ "month", "cnt", "mom_change" ],
+    "rows" : 25,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T3-011",
+    "sqlSha256" : "163ed7e3da5266c34770b3b3412d1843b715fa4ddf6c1d71728fedccc3314244",
+    "resultSha256" : "555f26c3ef0bf40ce832140805036ae2a0e1f07a1a1c25edebd280f6c1e68fbb",
+    "columns" : [ "month", "cnt", "mom_rate" ],
+    "rows" : 25,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T3-012",
+    "sqlSha256" : "07cd42e5f8393da61ad5899fd7601f4513d0c9d9122b6da96a7ce92544edb071",
+    "resultSha256" : "be387020559d61db36b1b2b4591cdc51254671b0936de1b6f2b525b2106ec04b",
+    "columns" : [ "month", "yoy_change" ],
+    "rows" : 10,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T3-013",
+    "sqlSha256" : "eb78c31f6a27039cc85928d4e196df1dd53597d236bca98f7d98b564b30150bd",
+    "resultSha256" : "303274262e7debf52306c732d46f1cdb739866d1feb171f4c0b2086fd3e05137",
+    "columns" : [ "count" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T3-014",
+    "sqlSha256" : "018eaf6f9f2fc7c80b930c948699164f98ae8b0cd02c5d3ad8094d6ff8efa174",
+    "resultSha256" : "56a84c9c0354d50a11ecc2b1911b71e12760c4d96d3d5801a59f1b894db9f287",
+    "columns" : [ "week_start", "sales" ],
+    "rows" : 8,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T3-015",
+    "sqlSha256" : "fc22a646f0dc66c5522c28b6b9be3b032a202f190f06b35a84f157dfc855ccf1",
+    "resultSha256" : "3f588f09120a2f59fbc4618c515d2eedc42868c0809fe3d4f13b628a485f7c46",
+    "columns" : [ "hr", "cnt" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T3-016",
+    "sqlSha256" : "83ad1aa6c14b46a6bb0315f3e4d1de2ef63cd175974115b7d1b7268fef7554ae",
+    "resultSha256" : "b2fd2c7676743327aadb301ca24752a1d6370ffcc956daa5e4d5a4840f42e12d",
+    "columns" : [ "dow", "cnt" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T3-017",
+    "sqlSha256" : "76191b78220af3088c92306530f980fd142fa2eb652129e98f6646d130a5e5d9",
+    "resultSha256" : "44065f6f9cf1fb24701e42335d55dd07e70b49f9ee3cb354252ab351b5a20d60",
+    "columns" : [ "round" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T3-018",
+    "sqlSha256" : "f207eb66a4e729578cbeca5ccadf28633c91a39ddce3672f54095f01d6bf21aa",
+    "resultSha256" : "ce40a56d378dce90390f7009c0b68e7b7c7ec90faca3a76fbe252ee1306d775b",
+    "columns" : [ "customer_state", "avg_days" ],
+    "rows" : 27,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T3-019",
+    "sqlSha256" : "c466def5a3a8782faa12e6a46e6030143cb69195626de41c52a1e3637e07f550",
+    "resultSha256" : "eeb78c4326ee592b0dc69297ca2acc15ed40e4384e982f8f57d2a0421502d9f1",
+    "columns" : [ "count" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T3-020",
+    "sqlSha256" : "fe853dcec17f26ee1a2f35f343a3f11eea617e3b0c3d76a973ace045965b60d7",
+    "resultSha256" : "f55729685360c811b67fda4654823faee2e265be7b77c4c13a259fb11332a841",
+    "columns" : [ "late_rate" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T3-021",
+    "sqlSha256" : "e1bb6e1ed66018177b10cb6da25e32f287db699ecbd925b358ae2cc7361298ae",
+    "resultSha256" : "fa8d65c00b90dc12913bcc7a1469702ac5f855d61f6459ab9fc4790a6dc802d7",
+    "columns" : [ "month", "cnt" ],
+    "rows" : 24,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T3-022",
+    "sqlSha256" : "2e3fc3d8e017b5b191e6c45f918719b7c7031c09dcf2e7f64f818fb75bde4717",
+    "resultSha256" : "2df897a4b40c9d7b428a79f25414ecfd6a5f5ef6d233bf445ea83c1c94e42158",
+    "columns" : [ "month", "total" ],
+    "rows" : 24,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T3-023",
+    "sqlSha256" : "8d3bfe65caa9619641b670771d9997181758c662c225190d4bd543ea7e4e127b",
+    "resultSha256" : "c7d2a26142240ac29e495c1beb2b7b6b44299d12c120d7b8ba54174fff496278",
+    "columns" : [ "month", "cnt" ],
+    "rows" : 24,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T3-024",
+    "sqlSha256" : "f691b79713d8be47eb31729194fe688402e4404f604352f5e5157c1684f8e734",
+    "resultSha256" : "8d05c97ff3135507a58c6c744ae2d0f8212627456a906a47aa7d54ced77448ef",
+    "columns" : [ "round" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T3-025",
+    "sqlSha256" : "e74d533b1142e30602882afc697bc9a11d462ef5eef52530e11c59f1bfe8bde5",
+    "resultSha256" : "cfc6c9a80e70116fb727bec3f628e138fcec2b527461f5ee2542c7be15755bd1",
+    "columns" : [ "customer_state", "cnt" ],
+    "rows" : 27,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T3-026",
+    "sqlSha256" : "88a33761c571e50f73822a2c755840039b51cae6c085cf77a1793b072cba14ea",
+    "resultSha256" : "2217434399890a81381e01858ca6eb902df4db9ef1430cdd2796699b51f04c52",
+    "columns" : [ "month", "avg_score" ],
+    "rows" : 23,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T3-027",
+    "sqlSha256" : "519235441111b84aa5225d8784fd99c9595a1d05969b6c48493f8ce5517b3e7c",
+    "resultSha256" : "9af07b1d5e9d0bde33e95692f61f09a5d52cec3109ed09841791279bb971e9a1",
+    "columns" : [ "month", "cnt" ],
+    "rows" : 33,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T3-028",
+    "sqlSha256" : "365eb4d1a277056075476f50368f41a269f092023bd7f7c30523ca6b1306846e",
+    "resultSha256" : "2d87774aa001d1f09f76798a8e8ebb421e20d2d69574e4e28561e08f10f785f8",
+    "columns" : [ "count" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T3-029",
+    "sqlSha256" : "7f43ffc43903c6710363cd0f5bf184489790522d4d451689a945ab241f35546d",
+    "resultSha256" : "c121ff99a917e7fc39962fe3b4c203eb0ac9f6d23345ce0ddd99ae173551ae0f",
+    "columns" : [ "month", "total" ],
+    "rows" : 19,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T3-030",
+    "sqlSha256" : "559e9f1eac5063ad88509f7cfb1bca47720ad69ad900fde6b141dc1ebdebb506",
+    "resultSha256" : "a1695b469483af6287b4f944d1cca588b6c77575a0549fb55f01308336423465",
+    "columns" : [ "quarter", "cnt" ],
+    "rows" : 9,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T4-001",
+    "sqlSha256" : "33952307a409c50cc2520338689db6e16410384405ae69ec9cb533aa5667d873",
+    "resultSha256" : "330f249c61e82c62033b78d89036605ffd189c421a9f827f273a5df07bc38d35",
+    "columns" : [ "customer_unique_id", "cnt" ],
+    "rows" : 10,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T4-002",
+    "sqlSha256" : "8944c64ab45b79c859737305001892cb64532252fe503bed148f7be8e3d59272",
+    "resultSha256" : "708521213b7cad7a7597f594f67cc87e141bbcf8bb2f0e77124dc01b564dca15",
+    "columns" : [ "customer_state", "sales" ],
+    "rows" : 27,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T4-003",
+    "sqlSha256" : "ece56ce357794504f5bcc4e155923cb2f9d9a614a5f190a0233dfeadb358a210",
+    "resultSha256" : "d7c548b79441076203a36a2cc8c79e1988c8cb05e07a9491b7e91b903f748f80",
+    "columns" : [ "product_category_name", "order_cnt" ],
+    "rows" : 73,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T4-004",
+    "sqlSha256" : "c7b65fed046beba73ae35527ac3b0d0dffd4a21c590ff8b1e2e3efcadfe232e5",
+    "resultSha256" : "191a3054dc8c0da8f0647546e7bcb909d74a94d05a0ad38a6be1e6b2fd55f6ec",
+    "columns" : [ "product_category_name_english", "sales" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T4-005",
+    "sqlSha256" : "6e43af15ee9525d921871e343037cee15007afc8e760ba1e6f57e2958948e449",
+    "resultSha256" : "9aa87536e8b26614ab04f1feef1ab89cf32eaad63fc2617fa2a8b3d4ccefbec5",
+    "columns" : [ "seller_id", "order_cnt" ],
+    "rows" : 10,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T4-006",
+    "sqlSha256" : "1987bc8b4f9553e197664c085339dbeabda5c50ceed0ede02375ee5f7f199264",
+    "resultSha256" : "a33c3ed7d4654456359ac8f43e4f4036592ab5ff17c0848f44199f3c82fd68aa",
+    "columns" : [ "seller_state", "sales" ],
+    "rows" : 23,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T4-007",
+    "sqlSha256" : "fb0e2da07169828021347ddc510332f3e0d6d83d8d1888be2d1f9482bee37c80",
+    "resultSha256" : "1e9aad0a08bc40f820d940f324c23d048107135687c93ebb3bb31eef9accced5",
+    "columns" : [ "count" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T4-008",
+    "sqlSha256" : "ce9aaafcc5deffda57417661d75dab8707d980a3c5cf43c207e1e5e691fd0c55",
+    "resultSha256" : "4b3efc5fd002e2b9a09fa8b81a3feeaa7fc5c3cdde63e3b91c5944458bf746f7",
+    "columns" : [ "count" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T4-009",
+    "sqlSha256" : "14ee4a1d204357a09b97eff45996bae9ad16581deb3bd3532426b9bfebd2232f",
+    "resultSha256" : "493773c6ea737e264a6d52dcb1c17148ef1619aefaf784cf460da8f895d5e34a",
+    "columns" : [ "payment_type", "avg_value" ],
+    "rows" : 5,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T4-010",
+    "sqlSha256" : "55483954c22e1c166cdb2525e28e1f47e4f1aee106d830fdd16726e78e204d7d",
+    "resultSha256" : "b723482868f79658c2bfd70c5504be01f8e331b6c3f09c52782d6e2e56bf8ed6",
+    "columns" : [ "order_status", "sales" ],
+    "rows" : 7,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T4-011",
+    "sqlSha256" : "c257abc26b14e2d1e4a02ebb68c7bf4539b9499c9c8c06e993afeebc00cf58b2",
+    "resultSha256" : "eb67d58a3ebed4c00e8e65ea374f8f11185df3eb845766ae163f6345ad33cf12",
+    "columns" : [ "order_status", "avg_score" ],
+    "rows" : 8,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T4-012",
+    "sqlSha256" : "2e531870ad8051971fc04ccb29ac49d18de4b436531f2d4e3c4fa9b3f8b6f066",
+    "resultSha256" : "5ac971ffdf1b80dbe70ed847a803195a9d18095a4d5d29a4fa5002a8fe8a6141",
+    "columns" : [ "customer_state", "avg_score", "cnt" ],
+    "rows" : 10,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T4-013",
+    "sqlSha256" : "8e24399b14a22d02c36409ab90dec0728ad0ffdb9aea758292465534825e7614",
+    "resultSha256" : "e70aea7fdf55b87a7445286342f19cccd44a04dbc524378e73b9bbadeaaf2dfe",
+    "columns" : [ "customer_state", "cnt" ],
+    "rows" : 27,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T4-014",
+    "sqlSha256" : "cfe0993896769bbaf84c1a3d428f116dd8300c56181b89bef6867db2256c124b",
+    "resultSha256" : "320d98655f1e8b92c7197f2ae094bdc38c8ba67383a397f976eaa9152a11d34e",
+    "columns" : [ "payment_type", "avg_score" ],
+    "rows" : 5,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T4-015",
+    "sqlSha256" : "7407c6904991ce6bbe1962052e9ebba97bdf56cda09178f26100b73305afcc75",
+    "resultSha256" : "c00b0bcd64ebf14844308c0ab3ca249f401612965ec51fc402bf383d88dc0a97",
+    "columns" : [ "macro_region", "cnt" ],
+    "rows" : 5,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T4-016",
+    "sqlSha256" : "6d84c8b908a4c39a78495e2855bd44621cf1e79ae4ad5bf6a240c8c3eb69b750",
+    "resultSha256" : "5bd5b74b2978c2ffee96c74661a7ce18fdcb5126f4eeb8f03bb2849e6d012d6c",
+    "columns" : [ "macro_region", "sales" ],
+    "rows" : 5,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T4-017",
+    "sqlSha256" : "a332fb1c0ff256be48dc41853ffb2bfea7bb38ac607e08cbe946c7c4cdb533b4",
+    "resultSha256" : "199f19318f946eb2ac0814d0e9e25142865ac32152610a029c484226ce7c6626",
+    "columns" : [ "level_id", "cnt" ],
+    "rows" : 4,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T4-018",
+    "sqlSha256" : "e3cae59d15cf6b70b7ceb35a9d8ba0ffb53504b4e22e70173fb0c35965ec2cbf",
+    "resultSha256" : "09eeb7e71011910957ce522a809f3ccdd6f6c8d3a6f87f8333b9f979d43022e7",
+    "columns" : [ "level_id", "sales" ],
+    "rows" : 4,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T4-019",
+    "sqlSha256" : "84178251b48c85584716dd0b8790165ed7253d1f424d8cc293bcb5346b043d9a",
+    "resultSha256" : "910c4e8631a3ed64e972a83c88a2a01671ee98a895ce405921f8d9a6128ac334",
+    "columns" : [ "tag_name", "cnt" ],
+    "rows" : 6,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T4-020",
+    "sqlSha256" : "2b2bcdc181d8e01de7a69515d07059d68bfb562e17dc832f200fca040f912917",
+    "resultSha256" : "73525bf8723c2493c52c6fafafc60771bc180a892c3ed723b18b7d8447e40d7b",
+    "columns" : [ "cnt" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T4-021",
+    "sqlSha256" : "6d3e4010a5191014d298793c9528d6fbe9bdaa78d4b2c03f198658db2ae5c83f",
+    "resultSha256" : "69686d59f186bd318def4fcf0809df37a800117b29b7997e49021c4730eb5467",
+    "columns" : [ "campaign_name", "cnt" ],
+    "rows" : 52,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T4-022",
+    "sqlSha256" : "281a1f518e25266faf6a94f4a447593b57776dd2c48737332692467e00fdf5eb",
+    "resultSha256" : "29c0347d826baa5686857d833ad2cbf572af61d3c03d3ebba926ff67cee5e2cc",
+    "columns" : [ "round" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T4-023",
+    "sqlSha256" : "95ba7eb9b13d7aececa861dd7af130fed62fadf6c3055b8656ee4ddfa355415b",
+    "resultSha256" : "514573ac8696a9e432e57217d6199d5b7a82666c26934c9a1b1a06c2943ba770",
+    "columns" : [ "discount_type", "total" ],
+    "rows" : 2,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T4-024",
+    "sqlSha256" : "29398bb7cca7d1c1ea04c0bdbed1d7878b9e31e15800632ca3bd2718b8def838",
+    "resultSha256" : "4f49e8ffbd7b6dfd13fee1828ed05a7600420b89d6f4c50c59a3f56841e23e63",
+    "columns" : [ "warehouse_name", "cnt" ],
+    "rows" : 5,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T4-025",
+    "sqlSha256" : "71fc88614c0dff5c81d8f0f03098e8ae6ab045c68197f54c29d2d29b81e675d4",
+    "resultSha256" : "9a68c4346de3900f2f8c5cf4253e3c7967784aec7aaef8b8091dd5a2e4caa156",
+    "columns" : [ "macro_region", "total_capacity" ],
+    "rows" : 3,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T4-026",
+    "sqlSha256" : "a673df65667f48dd398435374355a6be7e60adc6a030a7882248cd6a0bfa24aa",
+    "resultSha256" : "b23149f4197530b487ebf468bba738d04fc9e3b09810b6f56b236e1b856a68fb",
+    "columns" : [ "carrier", "avg_days" ],
+    "rows" : 4,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T4-027",
+    "sqlSha256" : "57ef87e223b52983822284585bfa6bfa9ceeea1a34947fa512c8a0f4d9545483",
+    "resultSha256" : "0f57252b4d224b8885413820ed357e3f18d102f8c76324ce3f621f90eef66461",
+    "columns" : [ "warehouse_name", "total_qty", "avg_qty" ],
+    "rows" : 5,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T4-028",
+    "sqlSha256" : "d66045f464b1ecd4fff49d6ff12bcb848663ed1b826ffc2e8ef4ef524152664a",
+    "resultSha256" : "26bb9400d802627430c2219eaede2d731096f6ff8ef93b3dd81c914646307b3b",
+    "columns" : [ "category_name", "avg_hours" ],
+    "rows" : 6,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T4-029",
+    "sqlSha256" : "185188bd29a427ef9760844341448d0f1510e0900369b853718eb53640091ab7",
+    "resultSha256" : "ca27fbd1666a39a1f7563dbf3d101bbaa8b0dd61f5ca07944b63c8ecd087fb0b",
+    "columns" : [ "customer_state", "cnt" ],
+    "rows" : 27,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T4-030",
+    "sqlSha256" : "66272a2194e2aee0755ffbbcdada19e3f717313039da8162f14fc6f8993cea04",
+    "resultSha256" : "199dd503fadb86190dbff014103abd5f65a9c91c9197036d5dd6b3b077b7f8e4",
+    "columns" : [ "seller_id", "total" ],
+    "rows" : 10,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T4-031",
+    "sqlSha256" : "5c14620a9069567c2b92795911ba96e78cae7f86afb95eeb76c0c6a328f750e6",
+    "resultSha256" : "f251999ec6ff00c82f6da69ac2ae4528f53a0679bfa4dcfa899bfdf1be9e7053",
+    "columns" : [ "seller_state", "total" ],
+    "rows" : 20,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T4-032",
+    "sqlSha256" : "b79c454ffd439d6886c446067aa2e2f11986fc7f5c8c55fc30cf295d53cc6b07",
+    "resultSha256" : "fa1310434e260eb42a16729b3b694cf40c26bcd50e051e8b8106cbc48b0ef518",
+    "columns" : [ "product_category_name", "cnt" ],
+    "rows" : 67,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T4-033",
+    "sqlSha256" : "02d63910b0d9f584bfb0bf00b89e919f8f4bb1ed4613ea2f0389ca19710b38a0",
+    "resultSha256" : "9121831aeafafd23cd5e4af17b659537e825002006831d7d18fd971a81a76d04",
+    "columns" : [ "reason_code", "total" ],
+    "rows" : 4,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T4-034",
+    "sqlSha256" : "b3bd9b8af71d96a54e830a7270e2f99b1209aa0b345e7085f3785650a80b566a",
+    "resultSha256" : "de6c25c6716186c93f2b0c702881954ff09093aa9b8f9ad2ed589e5fea2318cd",
+    "columns" : [ "refund_rate" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T4-035",
+    "sqlSha256" : "33ce1db18d1841b251e73972273da85f2211c4c8099ca6cdafab0a476602eb5d",
+    "resultSha256" : "3c26edd243c010806230fb1ed2fa19f596c87ee4c5249c473559e6e7308a60e4",
+    "columns" : [ "customer_unique_id", "avg_order_value" ],
+    "rows" : 10,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T4-036",
+    "sqlSha256" : "4c89bb701acb4c61d4f621dc55b4b4732f4f5148a035296c8d0b29410d11965c",
+    "resultSha256" : "555f49ec3a13bbc01c690f130cb76c94cb24950c5e1b686f0a58a3a5ad5b4c75",
+    "columns" : [ "customer_state", "avg_per_customer" ],
+    "rows" : 27,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T4-037",
+    "sqlSha256" : "f223030abe27d12c33464fc178567dd94487cd5b0c7a749957dc52817d4e2c82",
+    "resultSha256" : "c07f6a5de92a0a11782f419bf04159128049d7b3dd6637fd9c8b82dce54e53e2",
+    "columns" : [ "product_id", "product_photos_qty", "sold" ],
+    "rows" : 10,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T4-038",
+    "sqlSha256" : "eb08a803fe5c555cf8d79aca7b3805e1029a20f9ad7c07a2d7054f0cc8bb889b",
+    "resultSha256" : "257d465cd44cf4874c8a17ac9020db5d997a73af24aa8887b5439800a938213b",
+    "columns" : [ "level_id", "cnt" ],
+    "rows" : 4,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T4-039",
+    "sqlSha256" : "cafacbc01586337bb590f2b5dc095cdd84cd6c050e4cf40abec3e42f551514f6",
+    "resultSha256" : "ad4016fbba837e9809a90937b8e4efebe83d173b3bcc6f761e3430744bfec274",
+    "columns" : [ "ctr" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T4-040",
+    "sqlSha256" : "a606ac1d2c47abc40c9e54bec4cf10528691f593ca097c9576cef7917f68eb33",
+    "resultSha256" : "0e30b51c5568e5e45139060ea99711b1d689a8f51d82a23729634200f8a329fd",
+    "columns" : [ "count" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T4-041",
+    "sqlSha256" : "a5d42b0423732fa039cb9342743c8f09e3a11e421dc537fe723ceb078ae342a1",
+    "resultSha256" : "7a8e998e5188af0b8a45561242c83c861b2d176b58e75e19f7ec0915eb92ae7d",
+    "columns" : [ "brand_name", "product_cnt", "sales" ],
+    "rows" : 10,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T4-042",
+    "sqlSha256" : "eae468a075607d4668d0f6d1616c8e122f09c0a927542964356e0b410fbc6679",
+    "resultSha256" : "ef0a6aa8b7284ba98c6b203e1c502eb8fa14a004a04ee1c9bcd96be723d8beb2",
+    "columns" : [ "count" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T4-043",
+    "sqlSha256" : "665f0c10dd251e5cca3fd427b71e70faf8c98c2d2995646e1e7ad50303aac576",
+    "resultSha256" : "ec6220a25a86f7ad3180ec1c01b1f4d895ad643c813106fc74ac77777d9b8763",
+    "columns" : [ "status", "avg_events" ],
+    "rows" : 2,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T4-044",
+    "sqlSha256" : "f60eca224cf70d98090e313174f035eb6528b67177456eea221efe2973f2cb04",
+    "resultSha256" : "24630b576b33c97b39d6cd808fc8b4f496ecc6da9cd6267a50b549a1647e5fde",
+    "columns" : [ "macro_region", "customers", "orders_per_customer" ],
+    "rows" : 5,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T4-045",
+    "sqlSha256" : "a52f63f63eb862c9f7169385b4d0490f2e2691b6859281e11d9b1bf36925521c",
+    "resultSha256" : "dd00ddfa62bf7379a57339470dc7d2c6a42105208efd22967acd601aaafafa0c",
+    "columns" : [ "product_category_name", "product_cnt", "avg_weight" ],
+    "rows" : 10,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T5-001",
+    "sqlSha256" : "93d7843fe4fd9d5db66d22c81b75090f762a1b7e9623a142c22d4e91729bdb67",
+    "resultSha256" : "a4e95f4da47832d87944651726ef287549d72d882b8ce6cc5d888edc5ce149c5",
+    "columns" : [ "macro_region", "level_name", "gmv" ],
+    "rows" : 20,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T5-002",
+    "sqlSha256" : "fe11547b8784f21f7b8f0c4dfd55108dca67dcdf982f2580705c4a7fe4bce339",
+    "resultSha256" : "2932ff25801881333ebe23252ff4e6b5414e107a52d4a762c9cb197aed3cfd1e",
+    "columns" : [ "level_name", "sales" ],
+    "rows" : 4,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T5-003",
+    "sqlSha256" : "14a86ec3361efc8eee8eb24f1d296065ab4c45ea4fc0420ded2c2288126a5366",
+    "resultSha256" : "7961007655b36792eb4b90c9f76f9a5515a4914dad7cde884d4703d018e4a828",
+    "columns" : [ "product_category_name_english", "refund_amt" ],
+    "rows" : 15,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T5-004",
+    "sqlSha256" : "7538535e31d1ec05043defbba2852737436a8369f12335a2798cda06626ddcda",
+    "resultSha256" : "b973fd69d8020c4ff90dd0be2568ecfa5f2696f2e8a38ff6f9f75556c0f8e97c",
+    "columns" : [ "region_name", "shipments", "orders" ],
+    "rows" : 5,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T5-005",
+    "sqlSha256" : "08ee27202fb3e19bc30fe68ddc504f45fa530c11013bc4fe42cca4f44506f530",
+    "resultSha256" : "36b23cffcef69544c9bd4399c058b312dcdcf2cb992f33cdff66fe0b39d39f3e",
+    "columns" : [ "campaign_name", "used_orders", "gmv" ],
+    "rows" : 10,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T5-006",
+    "sqlSha256" : "1bad4592dcbe8f1376375c5801bc7ab1fca6ad2ae98c8819423ee09889501d40",
+    "resultSha256" : "530b42112dab042449d4dc99a27592f7815b67f071fcfd58ff1464a31c194844",
+    "columns" : [ "customer_state", "level_name", "tickets" ],
+    "rows" : 20,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T5-007",
+    "sqlSha256" : "3c6b5f34fc42f0e58b837d1ffc081356093b87e4fc218f4f3232bfabbee10e57",
+    "resultSha256" : "0ee45b94000f4c52e52f38d02ddaf201ed15a371cfd173e2cfb012c1212b2b5c",
+    "columns" : [ "keyword", "product_category_name_english", "clicks" ],
+    "rows" : 20,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T5-008",
+    "sqlSha256" : "f76a19fec84b129e7ec0023a526caaa31a5cfad6ca06dd0bc20d2867139dae71",
+    "resultSha256" : "c4739daf7fa2df27e15e93b4a03967921b3bfc16d0c64487fd5853a4c6c08e6e",
+    "columns" : [ "referrer_level", "invitee_level", "referrals", "reward" ],
+    "rows" : 13,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T5-009",
+    "sqlSha256" : "78790eaad985cfb3fba3dc293867f1d7ea1ec191f34955e152692e6fa88444e1",
+    "resultSha256" : "d9756bdf50b36228fb8495d79660f2b904cab09afff5501daeff4840fc8e4d47",
+    "columns" : [ "warehouse_name", "region_name", "brand_name", "low_stock_items" ],
+    "rows" : 20,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T5-010",
+    "sqlSha256" : "36c390610e41712660166ae7078685c04be4a650f607b428e4dd4e0a09c94a44",
+    "resultSha256" : "d3e1032677e85a2820c6d93507f8749823a9475d1a28af3ddd1a3fce850c687b",
+    "columns" : [ "seller_id", "category_cnt", "commission" ],
+    "rows" : 20,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T5-011",
+    "sqlSha256" : "14ab337c797523140ed84025cd2f7dd8468cca1f035065af6de13f5b4689fddb",
+    "resultSha256" : "ac1eea564b94634a02c51123bed6bd5ba1940f181a1870f55cb0a5943e530817",
+    "columns" : [ "brand_name", "sales" ],
+    "rows" : 10,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T5-012",
+    "sqlSha256" : "65d0d59e5921e16c686ceb5016d54829e8437bdadf0c66f3de4bf731cc0da7e4",
+    "resultSha256" : "09248f29e00579a02cd521ffaf67de7488c6fb5baafa4fcfda3b122cdd9fbde8",
+    "columns" : [ "tag_name", "members", "avg_item_price" ],
+    "rows" : 6,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T5-013",
+    "sqlSha256" : "8d1f12e0784f3e43ab7285a3a718b23b624af64adeb30a925d84ef0a5aa40992",
+    "resultSha256" : "c52d9fa1a37d0233e7250739081600ab2a37ae775670d4218a0196f0cffc6686",
+    "columns" : [ "campaign_name", "orders", "gmv" ],
+    "rows" : 10,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T5-014",
+    "sqlSha256" : "04b38bf8698568ec95336dfe577167d5b344b04061e7b06cbe237aaf4c798507",
+    "resultSha256" : "79364281dfcd3d5a0a4c373bc847e0b969d926173e1058e6abcbaba7e2152b20",
+    "columns" : [ "current_level", "snapshot_level", "member_cnt" ],
+    "rows" : 3,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T5-015",
+    "sqlSha256" : "f6fc9039183a88f1aaa8717cf0e69e151a8c2594fc8716ef3653554fa4fb708a",
+    "resultSha256" : "658a21729e0aa1fb4bf70288c5854a431f087f273e11f39c0b945cee792fa0d3",
+    "columns" : [ "event_code", "customer_state", "shipments" ],
+    "rows" : 20,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T5-016",
+    "sqlSha256" : "c58546ff46d73f638fb568fc870cdd3bbb4c235243942b2ea58e5f2109ada7a6",
+    "resultSha256" : "b6b5fd76bfd1138b2d3871be84375ff2699e1d5ebf35416ec8f079a5e90c7f42",
+    "columns" : [ "product_category_name_english", "reason_code", "refunds", "amt" ],
+    "rows" : 20,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T5-017",
+    "sqlSha256" : "39f4488297808a91de984a1030e182e9a5a23335023502809187164bcf27a691",
+    "resultSha256" : "9a4eccd79d73fec1773a048d254a4ae70f8ae58cd1fcb3d6a6b19e7f6808b618",
+    "columns" : [ "category_name", "priority", "tickets", "messages" ],
+    "rows" : 24,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T5-018",
+    "sqlSha256" : "9d70b3eaf4618559a0d23327e851b6668ba7bc14bc0936b6f90414e5a2382e93",
+    "resultSha256" : "6c6ffde841baec5badc39a2605b2613d3305f878e01fd753a9bec5528d40858f",
+    "columns" : [ "addr_state", "customer_state", "orders" ],
+    "rows" : 20,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T5-019",
+    "sqlSha256" : "6b2f88c48c48d7bc1a3cfb56cec29f1e8e4f97ba14a73a3e533f8bd1f4bea280",
+    "resultSha256" : "5680c1c4aad7672bcfb1d84620efd202c5eeb87f0c27ce095e269279185d265e",
+    "columns" : [ "product_category_name", "avg_price_change", "orders" ],
+    "rows" : 20,
+    "truncated" : false,
+    "suspicious" : true,
+    "rule" : "NEGATIVE_METRIC_VALUE",
+    "reason" : "统计金额、数量或价格时出现了负数（-9.93）。请检查计算表达式是否写反或数据筛选有误。"
+  }, {
+    "id" : "T5-020",
+    "sqlSha256" : "e17aad5e690703b2200fd3791c535e00b8fb1a951b47a57714dd6bb509a1329f",
+    "resultSha256" : "04d88d41323f6a16d19c77284f02af504a8da2da57d7d90717cb6fb4308d53f3",
+    "columns" : [ "macro_region", "movement_type", "movements", "qty" ],
+    "rows" : 12,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T6-001",
+    "sqlSha256" : "8bfbf0e1f2fb3bfa0191cf3d7630d54c18c9fadb1cc481684054caed02007c4a",
+    "resultSha256" : "0cec145e0d1d1bcc922c841be133b0321f7db72e894e587b4baeb7659d194497",
+    "columns" : [ "gmv_with_freight", "sales_without_freight" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T6-002",
+    "sqlSha256" : "7c887282a07e2f0d1d4b1189655bfa8b8818d89c26d88c7efe789ec6f245c2c2",
+    "resultSha256" : "cab3f760b88db3823dcac41e6c3ebef72111d4cb7455ea00cb8e8c7bbce04f4e",
+    "columns" : [ "valid_orders", "buyers", "aov" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T6-003",
+    "sqlSha256" : "0466797cdf5690c9e57b4d1107806bcf9b1d0d1ae95d311b68cfc87a7415322d",
+    "resultSha256" : "bab0116524191b7814a4f8d3ca99451b32c80d44a092f44423e3bbfe76739da8",
+    "columns" : [ "repeat_rate_pct" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T6-004",
+    "sqlSha256" : "8d29dc5cce7b86e4061b7d47f906558b2b13f836e64aff28c002181ac3f49716",
+    "resultSha256" : "0fd1cd6ad132663344527c32934ea0c9b31c07638916d39b6aaa48d3b4ff05bd",
+    "columns" : [ "cohort_month", "retention_pct" ],
+    "rows" : 6,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T6-005",
+    "sqlSha256" : "2f665e9f06172a98bbe883ea2963a7f89dcac88319e7c64f2223c95588d3289f",
+    "resultSha256" : "ffd8baa5ffc813c2c0058a11c56cd87dc0357c36b7a5ec0bfa7c2961157d4d54",
+    "columns" : [ "penetration_pct" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T6-006",
+    "sqlSha256" : "c205aa6ba6c0a329da80905b20de1d5270d4a15df121f0a70778383165b67001",
+    "resultSha256" : "fc35f2307fb3a8c217d333145132b90e94245421a93d71a2afa0dfc5187c2c5f",
+    "columns" : [ "on_time_pct" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T6-007",
+    "sqlSha256" : "aa259e1945cd837753ef729f08981a0020ce2e70577984d85edf2ac7ec0e7319",
+    "resultSha256" : "ac001c771496a9e7b37caa4841b8f7b08c37002d1cdfb5628ca32d4386324477",
+    "columns" : [ "refund_rate_pct" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T6-008",
+    "sqlSha256" : "32e44dd4f1de426e2ff7142b285b280cfa1c896e34a45f783daafbb2271994a2",
+    "resultSha256" : "a654592d9395db510f0c52cf1ef9575ed7e90db839cc4998171ffcca410800d7",
+    "columns" : [ "sell_through_pct" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T6-009",
+    "sqlSha256" : "a1908bbf7f4d1027197c51fa34e2ecccc4ece5e2a033bea119c1c08fc5b18d4d",
+    "resultSha256" : "e0b27a016cc4a513ce775755ca612f36f86a8f2e285d55dad0a4137953249451",
+    "columns" : [ "customer_state", "low_pct" ],
+    "rows" : 10,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T6-010",
+    "sqlSha256" : "c0110e9b4c2b1baae0c75ecb8830b46b17816519290425fb988030ccea96690f",
+    "resultSha256" : "5095e6042782318b60a32513177f58a64e847be870a515093a0bd2a6c48d8552",
+    "columns" : [ "ctr_pct" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T6-011",
+    "sqlSha256" : "ed6bba5824a246dd22ed9aa254d44d58e561d78d66acf896284138776a54476d",
+    "resultSha256" : "ca2279ccd84630a1cdd8df6222d31c14c613cf3552301e06076480cde62f9e46",
+    "columns" : [ "macro_region", "freight_pct" ],
+    "rows" : 5,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T6-012",
+    "sqlSha256" : "642e1acebc17f56cb7128d7d5f027b33294735f6b1ef030fd7126412a70057f3",
+    "resultSha256" : "ec38dd63c4256c4d2002c57afa1d2541fbd505755594a3a4ff38b1f3dc4d9f9b",
+    "columns" : [ "month", "mau" ],
+    "rows" : 9,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T6-013",
+    "sqlSha256" : "682574573d43204ec7ccf6219b05f2a1c6ed091eb2921af422384378a73ce8b1",
+    "resultSha256" : "cfd88777a5f600bf621e03ec5f1ee5e9ee603e239a0e35846ba8c36859e142b0",
+    "columns" : [ "gmv", "discount", "discount_pct" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T6-014",
+    "sqlSha256" : "0ef2071cb5a0b0715e4734da85f8539baceae926a2a3a30f51a6a132e3d3bb88",
+    "resultSha256" : "882724ff76bc51b686bc8e20e8f443e48d810bed0421aa69527489b1919d6e33",
+    "columns" : [ "level_name", "users", "orders_per_user", "gmv_per_user" ],
+    "rows" : 4,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T6-015",
+    "sqlSha256" : "5884db44da5d2df65581a7c381e4324bf6b83fcc92e8c7d9ecbedf0189c5b6d3",
+    "resultSha256" : "1e63846f037a67282829b9bd26a62935909820036b105eb8a7134ad049680726",
+    "columns" : [ "category_name", "sla_pct" ],
+    "rows" : 6,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T6-016",
+    "sqlSha256" : "298969b5f97dce0b7e8eb08029e9270f36b1173436f32153eeb2bd242ddb4c6e",
+    "resultSha256" : "c42112dfdbc119cf0c7814848b76adb623103e23de4df12b4c8c62c7a9f6fd85",
+    "columns" : [ "brand_name", "product_cnt", "sold_products", "sales", "sell_through_pct" ],
+    "rows" : 10,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T6-017",
+    "sqlSha256" : "f8d0e0eaa5a6e1932c1c4631eb699c383a5cbecd22649427fdfb5059703b1253",
+    "resultSha256" : "d75e034f0e986ee57a61bae2e91aacbe0b51507f4889cbbd884dff932585cfe9",
+    "columns" : [ "conversion_pct", "reward_per_converted" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T6-018",
+    "sqlSha256" : "457f7372c0799fbaa8ae504f84c5d09b80f2beaa192487172beebf0cb2d6cc02",
+    "resultSha256" : "e11874647e387ed5708497b8a7edd44ab0a296eed5435fc0a61fe4ecf1ae1df5",
+    "columns" : [ "user_type", "repeat_rate_pct" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T6-019",
+    "sqlSha256" : "baa7c99b87ebb657958cd8c6ead83e1bbe6d47784c299351be3ee199af1f5e83",
+    "resultSha256" : "cd59537680dc02e688e0bdd44a987e12804335d864582a81b9674cdbb0881e49",
+    "columns" : [ "customer_state", "avg_days" ],
+    "rows" : 10,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T6-020",
+    "sqlSha256" : "4b8c48753f20e738ebe643ec7d5cada393a14fdbeed2ed5c70f257b81711ea31",
+    "resultSha256" : "31f1657219a309647b693759680bc5a7f8a08e933a2a077f087fc7a656e716a7",
+    "columns" : [ "platform_rate", "min_seller_rate", "avg_seller_rate", "max_seller_rate" ],
+    "rows" : 1,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T6-021",
+    "sqlSha256" : "fe541b88f5b66350cfee35938872a8076ee101cb52a87a4fb50b77e1c7f057b8",
+    "resultSha256" : "0b434414b8bfb2d0cc9b6b826a9351be9c511b774a06d0e9c59026d0318e927b",
+    "columns" : [ "quintile", "gmv_pct" ],
+    "rows" : 5,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T6-022",
+    "sqlSha256" : "36852c938176805fc54a2805c86c3f33fa5f3e67fa0593bf2598d1d300a8d33a",
+    "resultSha256" : "e7f995854a18702ad04c795498a32d9a470527799555d07a6b961acfd57535fa",
+    "columns" : [ "mo", "gmv_2017", "gmv_2018", "yoy_pct" ],
+    "rows" : 9,
+    "truncated" : false,
+    "suspicious" : true,
+    "rule" : "NEGATIVE_METRIC_VALUE",
+    "reason" : "统计金额、数量或价格时出现了负数（-99.98）。请检查计算表达式是否写反或数据筛选有误。"
+  }, {
+    "id" : "T6-023",
+    "sqlSha256" : "ace716b607afcb18e3eb4be013c489be5e6b8fc404ba77bac69ee078313a8531",
+    "resultSha256" : "1dfab45be951dd058c11d2c3c7b7dde3d4fccfad579b31b3b62c6a203b2b2fed",
+    "columns" : [ "warehouse_name", "stock_qty", "out_qty_90d", "turnover_days" ],
+    "rows" : 5,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T6-024",
+    "sqlSha256" : "393a57cad06fc6bcd8ee088d1cfd8c6181f4efb4aa13ad715b0978ac605406a8",
+    "resultSha256" : "d1c0e624b1c5b92b5b6ac288b57f99fb4b21ec4e89490b05e96802ef1ef7f624",
+    "columns" : [ "reason_code", "avg_score", "low_score_pct" ],
+    "rows" : 4,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  }, {
+    "id" : "T6-025",
+    "sqlSha256" : "cec941fead36ba6f7cfc280fa0dce46b732ad2f59d801cbd48085288ead5fd21",
+    "resultSha256" : "37c7edf8f7ecb1c925011f47da64bf4bb751edee1162b0f4e85c2f56775838df",
+    "columns" : [ "month", "new_customer_gmv", "returning_gmv" ],
+    "rows" : 9,
+    "truncated" : false,
+    "suspicious" : false,
+    "rule" : null,
+    "reason" : null
+  } ],
+  "checkerAvgMs" : 0.070453,
+  "checkerP95Ms" : 0.1863,
+  "modelCallCount" : 0,
+  "modelTokens" : 0,
+  "estimatedModelCostYuan" : 0
+}

@@ -1,5 +1,13 @@
 # 评估报告索引
 
+## 2026-11-16 结果校验列边界专项
+
+- [验收汇总](result-checker-20261116/summary.json)：相同输入，30 个边界契约匹配从 13 到 30，200 条 Gold 报警从 2 到 0。
+- [旧实现](result-checker-20261116/before.json)、[修复后实现](result-checker-20261116/after.json)：逐题结果指纹与逐列分类依据。
+- [测试计数](result-checker-20261116/tests.json)：349/349，失败、错误、跳过均为 0。
+
+未调用模型，不能换算为 Text2SQL 准确率提升。列名是弱证据，单位与任意别名仍有边界，见 [专项文档](../docs/RESULT_CHECKER_20261116.md)。
+
 ## 2026-11-16 上下文确定性专项
 
 - [修复前复现](prompt-audit-before/summary.json)：3 个独立进程，后两次与第一次分别有 9/100、7/100 提示词不同；全量 Schema 指纹相同。
