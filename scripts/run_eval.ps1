@@ -8,6 +8,7 @@ param(
   [ValidateRange(1, 2)][int]$MaxAttempts = 2,
   [ValidateRange(1, 65535)][int]$Port = 18080,
   [ValidateRange(1, 131072)][int]$MaxTokens = 8192,
+  [string]$OutputDir = 'reports',
   [switch]$Preview
 )
 
@@ -32,6 +33,7 @@ $mavenArgs = @(
   '--spring.profiles.active=local', "--server.port=$Port",
   '--agent.eval.enabled=true', "--agent.eval.split=$Split", "--agent.eval.limit=$Limit",
   "--agent.eval.dry-run=$($DryRun.IsPresent.ToString().ToLowerInvariant())",
+  "--agent.eval.out-dir=$OutputDir",
   '--agent.eval.exit-after-run=true', '--agent.eval.repeat=1',
   '--agent.eval.self-correction-enabled=false', '--agent.eval.self-correction-max-attempts=1',
   '--agent.llm.model=deepseek-flash', '--agent.llm.temperature=0.0', "--agent.llm.max-tokens=$MaxTokens",
@@ -45,6 +47,8 @@ $mavenArgs = @(
   "--agent.result-checker.enabled=$($ResultChecker.IsPresent.ToString().ToLowerInvariant())",
   '--agent.cache.enabled=false', '--agent.routing.enabled=false',
   '--agent.tool-use.enabled=false', '--agent.conversation.enabled=false'
+  '--agent.observability.enabled=true', '--agent.observability.include-content=false',
+  "--agent.observability.dir=$OutputDir/llm-calls"
 ) -join ' '
 if ($Preview) {
   Write-Output $mavenArgs

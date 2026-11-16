@@ -180,6 +180,7 @@ public class LlmSqlGenerator {
         try {
             response = targetModel.call(new Prompt(messages, options));
         } catch (Exception e) {
+            com.text2sql.agent.observability.EvaluationTrace.call(null, "CALL_FAILED", promptSha256);
             throw new GenerationException(GenerationException.Reason.CALL_FAILED,
                     "LLM 调用失败：" + e.getMessage(), e);
         }
@@ -252,6 +253,7 @@ public class LlmSqlGenerator {
         try {
             response = targetModel.call(new Prompt(messages, options));
         } catch (Exception e) {
+            com.text2sql.agent.observability.EvaluationTrace.call(null, "CALL_FAILED_CORRECTION", promptSha256);
             throw new GenerationException(GenerationException.Reason.CALL_FAILED,
                     "LLM 自纠错调用失败：" + e.getMessage(), e);
         }

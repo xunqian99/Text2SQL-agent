@@ -9,6 +9,7 @@ import com.text2sql.agent.generation.GeneratedSql;
 import com.text2sql.agent.generation.GenerationException;
 import com.text2sql.agent.generation.LlmSqlGenerator;
 import com.text2sql.agent.observability.LlmCallRecord;
+import com.text2sql.agent.observability.EvaluationTrace;
 import com.text2sql.agent.retrieval.SchemaContext;
 import com.text2sql.agent.retrieval.SchemaProvider;
 import com.text2sql.agent.validation.SqlValidator;
@@ -93,7 +94,14 @@ class OrchestratorSelfCorrectionTest {
         when(executor.execute("SELECT order_id FROM orders LIMIT 10"))
                 .thenReturn(new QueryResult(List.of("order_id"), List.of(List.of("1")), false, 1));
 
-        AgentResponse response = orchestrator().ask("有多少订单？");
+        AgentResponse response;
+        try (var trace = EvaluationTrace.open()) {
+            response = orchestrator().ask("有多少订单？");
+            assertThat(trace.attempts()).extracting(a -> a.response().sql())
+                    .containsExactly("SELECT bad FROM orders", "SELECT order_id FROM orders LIMIT 10");
+            assertThat(trace.trigger()).isEqualTo("EXECUTION_FAILED");
+            assertThat(trace.selectedAttempt()).isEqualTo(2);
+        }
 
         assertThat(response.success()).isTrue();
         assertThat(response.sql()).isEqualTo("SELECT order_id FROM orders LIMIT 10");
@@ -119,7 +127,14 @@ class OrchestratorSelfCorrectionTest {
         when(executor.execute("SELECT order_id FROM orders LIMIT 10"))
                 .thenReturn(new QueryResult(List.of("order_id"), List.of(List.of("1")), false, 1));
 
-        AgentResponse response = orchestrator().ask("有多少订单？");
+        AgentResponse response;
+        try (var trace = EvaluationTrace.open()) {
+            response = orchestrator().ask("有多少订单？");
+            assertThat(trace.attempts()).extracting(a -> a.response().status())
+                    .containsExactly(AgentResponse.Status.GENERATION_FAILED, AgentResponse.Status.SUCCESS);
+            assertThat(trace.trigger()).isEqualTo("GENERATION_UNPARSEABLE");
+            assertThat(trace.selectedAttempt()).isEqualTo(2);
+        }
 
         assertThat(response.success()).isTrue();
         assertThat(response.llmCall().promptTokens()).isEqualTo(300);
@@ -143,7 +158,12 @@ class OrchestratorSelfCorrectionTest {
         when(executor.execute(anyString()))
                 .thenThrow(new SqlExecutionException("boom", null));
 
-        AgentResponse response = orchestrator().ask("有多少订单？");
+        AgentResponse response;
+        try (var trace = EvaluationTrace.open()) {
+            response = orchestrator().ask("有多少订单？");
+            assertThat(trace.attempts()).hasSize(2);
+            assertThat(trace.selectedAttempt()).isEqualTo(1);
+        }
 
         assertThat(response.status()).isEqualTo(AgentResponse.Status.EXECUTION_FAILED);
         assertThat(response.sql()).as("必须是首次那条 SQL").isEqualTo("SELECT first_sql FROM orders");
@@ -440,7 +460,13 @@ class OrchestratorSelfCorrectionTest {
         when(executor.execute(firstSql)).thenReturn(emptyResult());
         when(executor.execute(secondSql)).thenReturn(emptyResult());
 
-        AgentResponse response = orchestrator().ask("加州有多少订单？");
+        AgentResponse response;
+        try (var trace = EvaluationTrace.open()) {
+            response = orchestrator().ask("加州有多少订单？");
+            assertThat(trace.trigger()).isEqualTo("EMPTY_RESULT");
+            assertThat(trace.attempts()).extracting(a -> a.response().sql()).containsExactly(firstSql, secondSql);
+            assertThat(trace.selectedAttempt()).isEqualTo(1);
+        }
 
         assertThat(response.sql())
                 .as("两次都被判可疑时，应保留首次——第二次没有证据更好")
@@ -564,5 +590,22 @@ class OrchestratorSelfCorrectionTest {
         var feedback = ArgumentCaptor.forClass(String.class);
         verify(generator).generateCorrection(anyString(), any(), anyString(), feedback.capture(), any());
         assertThat(feedback.getValue()).contains("NEGATIVE_METRIC_VALUE", "gmv", "OUTPUT_LABEL/NON_NEGATIVE_LABEL", "不要改动增长率列或时间范围");
+    }
+
+    @Test
+    void tracesBothFailedGenerationsAndTheActualFinalFailureSelection() {
+        properties.getSelfCorrection().setEnabled(true);
+        properties.getSelfCorrection().setMaxAttempts(2);
+        when(generator.generate(anyString(), any()))
+                .thenThrow(new GenerationException(GenerationException.Reason.UNPARSEABLE, "empty", call(10, 20, 1)))
+                .thenThrow(new GenerationException(GenerationException.Reason.OUTPUT_TRUNCATED, "length", call(30, 40, 2)));
+        try (var trace = EvaluationTrace.open()) {
+            var response = orchestrator().ask("多少订单？");
+            assertThat(response.status()).isEqualTo(AgentResponse.Status.GENERATION_FAILED);
+            assertThat(trace.attempts()).extracting(a -> a.response().message())
+                    .containsExactly("UNPARSEABLE", "OUTPUT_TRUNCATED");
+            assertThat(trace.selectedAttempt()).isEqualTo(2);
+            assertThat(response.llmCall().promptTokens()).isEqualTo(40);
+        }
     }
 }

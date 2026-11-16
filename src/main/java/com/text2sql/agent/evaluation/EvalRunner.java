@@ -8,6 +8,7 @@ import com.text2sql.agent.execution.SqlExecutionException;
 import com.text2sql.agent.execution.SqlExecutor;
 import com.text2sql.agent.generation.PromptTemplate;
 import com.text2sql.agent.observability.LlmCallRecord;
+import com.text2sql.agent.observability.EvaluationTrace;
 import com.text2sql.agent.orchestrator.AgentResponse;
 import com.text2sql.agent.orchestrator.Text2SqlOrchestrator;
 import org.slf4j.Logger;
@@ -135,6 +136,7 @@ public class EvalRunner implements ApplicationRunner {
 
         List<EvalReport.Failure> failures = new ArrayList<>();
         List<ItemOutcome> outcomes = new ArrayList<>();
+        List<EvaluationEvidence> evidence = new ArrayList<>();
         int schemaTableCount = 0;
 
         for (int i = 0; i < items.size(); i++) {
@@ -146,7 +148,7 @@ public class EvalRunner implements ApplicationRunner {
             // 至少能拿到 199 条的有效结论，并且失败列表里能直接看到是哪条数据坏了。
             ItemOutcome outcome;
             try {
-                outcome = evaluateOne(item, dryRun);
+                outcome = evaluateOne(item, dryRun, evidence);
             } catch (Exception e) {
                 log.warn("评估条目 {} 处理异常，记为内部错误并继续：{}", item.id(), e.toString());
                 outcome = ItemOutcome.internalError(item, e.toString());
@@ -214,7 +216,7 @@ public class EvalRunner implements ApplicationRunner {
                 effectiveConfig());
 
         return new EvalReport(meta, aggregate(outcomes), byLayer, byTableCount, failures, retrieval,
-                aggregateCorrection(outcomes));
+                aggregateCorrection(outcomes), evidence);
     }
 
     private Map<String, Object> effectiveConfig() {
@@ -422,7 +424,7 @@ public class EvalRunner implements ApplicationRunner {
      * 快照就和事实分叉了，而分叉会表现为「准确率莫名其妙地掉」，排查成本极高。
      * 当场执行多花几十毫秒，换来「期望值永远等于当前库的真实答案」。
      */
-    private ItemOutcome evaluateOne(EvalItem item, boolean dryRun) {
+    private ItemOutcome evaluateOne(EvalItem item, boolean dryRun, List<EvaluationEvidence> evidence) {
         List<List<String>> expected;
         QueryResult gold;
         boolean ordered = ResultNormalizer.orderMatters(item.goldSql());
@@ -436,9 +438,16 @@ public class EvalRunner implements ApplicationRunner {
             return ItemOutcome.goldBroken(item, e.getMessage());
         }
 
-        AgentResponse firstResponse = dryRun
-                ? orchestrator.askWithFixedSql(item.question(), item.goldSql(), null)
-                : orchestrator.ask(item.question());
+        AgentResponse firstResponse;
+        EvaluationTrace trace = EvaluationTrace.open();
+        long started = System.nanoTime();
+        try (trace) {
+            firstResponse = dryRun
+                    ? orchestrator.askWithFixedSql(item.question(), item.goldSql(), null)
+                    : orchestrator.ask(item.question());
+        }
+        long wallLatencyMs = (System.nanoTime() - started) / 1_000_000;
+        evidence.add(EvaluationEvidence.grade(item, gold, firstResponse, trace, wallLatencyMs));
 
         List<List<String>> actual = actual(firstResponse, ordered);
         boolean correct = firstResponse.success() && ResultNormalizer.equivalent(

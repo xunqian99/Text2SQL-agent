@@ -95,6 +95,7 @@ public class LlmCallLog implements AutoCloseable {
      */
     public void record(LlmCallRecord record, String status, String prompt, String response,
                        String promptSha256) {
+        EvaluationTrace.call(record, status, promptSha256);
         if (!enabled() || record == null) {
             return;
         }

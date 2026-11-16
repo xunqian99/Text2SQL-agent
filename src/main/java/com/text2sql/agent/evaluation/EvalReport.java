@@ -29,7 +29,8 @@ public record EvalReport(
         Map<String, Overall> byTableCount,
         List<Failure> failures,
         Retrieval retrieval,
-        Correction correction) {
+        Correction correction,
+        List<EvaluationEvidence> itemEvidence) {
 
     /**
      * 运行元信息。这些字段的共同点是：**改了它们，数字就不可比**。

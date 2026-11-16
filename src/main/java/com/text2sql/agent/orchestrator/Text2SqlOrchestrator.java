@@ -7,6 +7,7 @@ import com.text2sql.agent.generation.GeneratedSql;
 import com.text2sql.agent.generation.GenerationException;
 import com.text2sql.agent.generation.LlmSqlGenerator;
 import com.text2sql.agent.observability.LlmCallRecord;
+import com.text2sql.agent.observability.EvaluationTrace;
 import com.text2sql.agent.retrieval.SchemaContext;
 import com.text2sql.agent.retrieval.SchemaProvider;
 import com.text2sql.agent.validation.CheckResult;
@@ -249,9 +250,11 @@ public class Text2SqlOrchestrator {
                         : generator.generate(generationQuestion, schema);
             }
         } catch (GenerationException e) {
+            EvaluationTrace.generationFailure(question, e);
             if (properties.getSelfCorrection().isEnabled() && properties.getSelfCorrection().getMaxAttempts() > 1
                     && e.getReason() != GenerationException.Reason.NOT_CONFIGURED) {
                 generationRetried = true;
+                EvaluationTrace.trigger("GENERATION_" + e.getReason().name());
                 log.warn("首次生成异常（{}：{}），尝试重试一次生成", e.getReason(), e.getMessage());
                 try {
                     generated = (apiKey != null && !apiKey.isBlank())
@@ -259,6 +262,8 @@ public class Text2SqlOrchestrator {
                             : generator.generate(generationQuestion, schema);
                     retryGenerationCall = e.getCallRecord();
                 } catch (GenerationException e2) {
+                    EvaluationTrace.generationFailure(question, e2);
+                    EvaluationTrace.select(2);
                     long generationMs = elapsedMs(generationStarted);
                     AgentResponse.Status status = e2.getReason() == GenerationException.Reason.NOT_CONFIGURED
                             ? AgentResponse.Status.NOT_CONFIGURED
@@ -300,6 +305,8 @@ public class Text2SqlOrchestrator {
         AgentResponse first = validateAndExecute(question, generated.sql(),
                 LlmCallRecord.combine(rewriteCall, LlmCallRecord.combine(retryGenerationCall, generated.call())),
                 schema, tableCount, retrievedTables, ddlChars, retrievalMs, generationMs, totalStarted);
+        EvaluationTrace.attempt("INITIAL_SQL", first);
+        if (generationRetried) EvaluationTrace.select(2);
         AgentResponse result = generationRetried ? first : retryIfFailed(generationQuestion, first, apiKey);
 
         if (cacheKey != null && result.success()) {
@@ -473,6 +480,7 @@ public class Text2SqlOrchestrator {
         if (!shouldRetry) {
             return first;
         }
+        EvaluationTrace.trigger(firstSuspicion == null ? first.status().name() : firstSuspicion);
 
         // 阶段 6：路由开启时换强模型重试。两个开关的作用不同——
         // 自纠错是「同一个模型看错误信息再试」，路由是「换一个更强的模型」。
@@ -483,6 +491,7 @@ public class Text2SqlOrchestrator {
         AgentResponse second = (apiKey != null && !apiKey.isBlank())
                 ? askWithCorrection(question, first.sql(), feedback, model, apiKey)
                 : askWithCorrection(question, first.sql(), feedback, model);
+        EvaluationTrace.attempt("CORRECTION_SQL", second);
         if (second.success()) {
             // 择优而非覆盖：首次是「成功但可疑」时，第二次也必须通过同一套校验才配替换。
             // 否则会出现「首次正确、被规则误判 → 重试 → 第二次也能跑但答错 → 采用第二次」，
@@ -497,6 +506,7 @@ public class Text2SqlOrchestrator {
                 }
             }
             log.info("重试成功，采用第二次结果");
+            EvaluationTrace.select(2);
             return AgentResponse.combineAttempts(first, second);
         }
         log.warn("重试仍未成功（{}），保留首次结果", second.status());
