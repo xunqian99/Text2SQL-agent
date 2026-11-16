@@ -1,8 +1,16 @@
 # 本机受控演示与验收步骤
 
-适用范围：Windows PowerShell、Java21、Maven3.9、Docker Desktop、单用户PostgreSQL问数。本说明是运行路径，**不是全部步骤已经在干净环境通过的声明**。P95优化暂缓，阶段3原目标与阶段4欠项见[执行决定](STAGE3_DEFERRAL_20261116.md)。
+适用范围：Windows PowerShell、Java21、Maven3.9、Docker Desktop、单用户PostgreSQL问数。[新数据库复现](CLEAN_DEMO_ACCEPTANCE_20261116.md)已在同一主机完成初始化、Gold200/200和真实问数1/1；未验证全新操作系统或空依赖缓存，也不是全部验收通过。P95优化暂缓，阶段3原目标与阶段4欠项见[执行决定](STAGE3_DEFERRAL_20261116.md)。
 
 ## 1. 数据库准备
+
+**验证复现时优先使用隔离入口**，它拒绝已有同名容器/卷，使用全新卷和127.0.0.1端口，不重建当前数据库：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/prepare_clean_demo.ps1 -RunId my-clean-run -DatabasePort 15432 -OutputDir reports/my-clean-run
+```
+
+完成后按[隔离配置与验收命令](CLEAN_DEMO_ACCEPTANCE_20261116.md)将应用指向15432，再运行Gold自检和真实问数。新建数据库不能仅靠启动成功验收。下列Compose/rebuild步骤保留为原单库安装方式，已有库不要执行重建。
 
 先准备`data/raw/olist/`内的Olist原始CSV（不随仓库分发），然后在项目根目录执行：
 
@@ -86,7 +94,7 @@ $result | ConvertTo-Json -Depth 8
 ## 6. 剩余验收证据
 
 - 20条冻结代表题连续HTTP执行：接口成功与业务正确分别计数；保存平均/P95、全部调用账目、会话隔离与未知用量。
-- 新隔离环境完成CSV初始化、启动、Gold200/200与一条真实问数；当前库跑通不能替代干净环境复现。
+- 新容器/数据卷的CSV初始化、启动、Gold200/200与真实问数1/1已完成；证据见[复现结果](CLEAN_DEMO_ACCEPTANCE_20261116.md)。同一主机验收不替代全新电脑/空依赖缓存验证。
 - 数据库只读角色无法修改业务数据，现有SQL对抗测试通过。
 - 远程模式仍须补单用户鉴权、所有会话接口保护、限流、费用上限与权限收敛；当前不宣称通过这些门禁。
 - 阶段3原P95、独立盲测及完整结果语义契约仍为欠项。
