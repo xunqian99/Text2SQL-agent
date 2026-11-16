@@ -54,6 +54,8 @@ WHERE o.order_status NOT IN ('canceled', 'unavailable');
 
 ### 4. 验收路径与已测数字
 
+生产修复提交 `66b37c2`；Gold自检实测也运行在该提交。工作区DIRTY来自用户演示文件和新增证据，不冒称全仓干净。
+
 原始证据目录：`reports/member-penetration-fix-20261116/`。
 
 | 检查 | 修复前 | 修复后 | 能证明什么 |
@@ -64,6 +66,7 @@ WHERE o.order_status NOT IN ('canceled', 'unavailable');
 | 两种Provider×4种问法的实际消息注入 | — | 8/8 | 修正的完整渲染定义进入实际用户消息 |
 | 关闭指标注入 | — | 2/2 | 两种Provider关闭后均无指标文本 |
 | 真实库独立计数、表达式、推荐SQL三方比对 | — | 三方均100.00% | 当前数据上结果一致；单独不足以证明非会员分母 |
+| 原200题Gold自检 | — | 200/200，模型调用0 | 校验/执行兼容；不是模型准确率，逐题题意/Gold SQL/结果指纹与历史200/200一致 |
 | 原显式指令实验历史证据审计 | — | 通过 | 历史69/100、64/100及失败判定仍保留 |
 
 `MemberPenetrationContractTest` 使用只读VALUES CTE遮蔽同名真实表，无建表、插入或业务数据改写。每个场景分别执行**生产表达式**和**生产queryPattern**，Java以订单ID集合计算独立期望值，覆盖同人多客户ID、多订单、取消/不可用订单、无会员、全会员、仅非会员、空订单、无有效订单、重复会员记录、NULL身份、缺失客户、1/6舍入和NULL订单状态（部分边界合并在同一场景）。
@@ -81,6 +84,7 @@ mvn -q test-compile dependency:build-classpath '-Dmdep.outputFile=target/member-
 $probeCp = 'target/test-classes;target/classes;' + (Get-Content target/member-probe-classpath.txt -Raw).Trim()
 # 输出路径必须不存在，禁止覆盖历史证据
 java -cp $probeCp com.text2sql.agent.retrieval.MemberMetricInjectionProbe target/member-metric-injection-new.json
+& scripts/run_eval.ps1 -Split all -DryRun -OutputDir reports/member-gold-new -Port 18089
 python scripts/summarize_prompt_directive.py reports/prompt-directive-screen-20261116 --evidence-only
 ```
 
