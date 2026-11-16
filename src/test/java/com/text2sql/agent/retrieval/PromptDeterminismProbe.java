@@ -32,9 +32,11 @@ public final class PromptDeterminismProbe {
     private static final ObjectMapper JSON = new ObjectMapper();
 
     public static void main(String[] args) throws Exception {
-        if (args.length != 1) throw new IllegalArgumentException("Expected output JSON path");
+        if (args.length < 1 || args.length > 2) throw new IllegalArgumentException("Expected output JSON path and optional dev/eval split");
+        String split = args.length == 2 ? args[1] : "eval";
+        if (!List.of("dev", "eval").contains(split)) throw new IllegalArgumentException("Expected dev or eval split");
         var props = new AgentProperties();
-        props.getEval().setSplit("eval");
+        props.getEval().setSplit(split);
         props.getRetrieval().setEnabled(true);
         props.getRetrieval().setColumnPruningEnabled(true);
         props.getRetrieval().setJoinHintsEnabled(true);
@@ -60,7 +62,7 @@ public final class PromptDeterminismProbe {
                 new ExampleSelector(examples), new ValueRetriever(glossary), new ColumnPruner(glossary));
         var loader = new EvalItemLoader(props);
         List<EvalItem> items = loader.load();
-        if (items.size() != 100) throw new IllegalStateException("Expected frozen 100-item eval split");
+        if (items.size() != 100) throw new IllegalStateException("Expected frozen 100-item split");
         var template = new PromptTemplate();
         List<Map<String, Object>> baseline = new ArrayList<>();
         for (EvalItem item : items) baseline.add(capture(item, provider, retriever, template));
@@ -78,6 +80,9 @@ public final class PromptDeterminismProbe {
         times.sort(Double::compareTo);
         Map<String, Object> report = new LinkedHashMap<>();
         report.put("format", "prompt-audit-v1");
+        report.put("componentMeasurementsVersion", "prompt-components-v1");
+        report.put("componentLengthUnit", "java-utf16-code-units");
+        report.put("split", split);
         report.put("promptHashVersion", PromptFingerprint.VERSION);
         report.put("datasetSha256", loader.datasetSha256(props.getEval().getDir()));
         report.put("sampleIdsSha256", EvalItemLoader.sampleIdsSha256(items));
@@ -113,6 +118,24 @@ public final class PromptDeterminismProbe {
         snapshot.put("promptSha256", PromptFingerprint.messagesSha256(List.of(
                 new SystemMessage(system), new UserMessage(user))));
         snapshot.put("promptChars", system.length() + user.length());
+        // Disjoint measurements of actual rendered content, not token estimates.
+        Map<String, Integer> components = new LinkedHashMap<>();
+        components.put("system", system.length());
+        components.put("ddlAndJoinHints", context.ddlText().length());
+        components.put("dataProfile", context.dataProfile() == null || context.dataProfile().isBlank() ? 0 : context.dataProfile().length());
+        components.put("metrics", context.hasMetrics() ? context.metricsText().length() : 0);
+        components.put("valueHints", context.hasValueHints() ? context.valueHints().length() : 0);
+        components.put("exampleContents", context.hasExamples() ? context.examples().stream()
+                .mapToInt(e -> e.question().strip().length() + e.sql().strip().length()).sum() : 0);
+        components.put("question", item.question().strip().length());
+        int framing = system.length() + user.length() - components.values().stream().mapToInt(Integer::intValue).sum();
+        if (framing < 0) throw new IllegalStateException("Overlapping prompt components");
+        components.put("framingAndInstructions", framing);
+        snapshot.put("componentChars", components);
+        int reasoningStart = system.indexOf("思考与推理步骤");
+        int reasoningEnd = system.indexOf("硬性规则", Math.max(reasoningStart, 0));
+        snapshot.put("systemReasoningDirectiveChars", reasoningStart >= 0 && reasoningEnd >= reasoningStart
+                ? reasoningEnd - reasoningStart : 0);
         snapshot.put("ddlSha256", hash(context.ddlText()));
         snapshot.put("metricsSha256", hash(context.metricsText()));
         snapshot.put("valueHintsSha256", hash(context.valueHints()));

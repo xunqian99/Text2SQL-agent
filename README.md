@@ -1,5 +1,7 @@
 # Text2SQL Agent
 
+最新离线诊断：[提示词组成与验收](docs/PROMPT_COMPOSITION_20261116.md)：原dev100＋eval100，600次本地重复比较无漂移、194/194条真实首答指纹对齐；系统消息占文本约55%，显式四步推理指令仅占约5%。模型调用0次、费用0元；文本单位不是Token，不宣称加速或准确率提升，阶段3仍未通过。
+
 > 中文业务问题 → 只读 PostgreSQL SQL → 结构化结果。基于 Olist 37 表电商数仓，面向“可评估、可解释、可归因”的 Text2SQL Agent。
 
 ![CI](https://github.com/xunqian99/Text2SQL-agent/actions/workflows/ci.yml/badge.svg)
