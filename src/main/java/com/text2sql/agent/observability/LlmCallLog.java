@@ -97,9 +97,10 @@ public class LlmCallLog implements AutoCloseable {
                        String promptSha256) {
         var budget = com.text2sql.agent.budget.RequestBudget.current();
         boolean usageKnown = record != null && record.totalTokens() > 0;
-        if (budget != null && !budget.observe(record)) status = "LATE_" + status;
         if (!usageKnown) status += "_UNKNOWN_USAGE";
-        EvaluationTrace.call(usageKnown ? record : null, status, promptSha256);
+        if (budget != null) {
+            if (!budget.recordCall(record, status, promptSha256)) status = "LATE_" + status;
+        } else EvaluationTrace.call(usageKnown ? record : null, status, promptSha256);
         if (!enabled() || record == null) {
             return;
         }

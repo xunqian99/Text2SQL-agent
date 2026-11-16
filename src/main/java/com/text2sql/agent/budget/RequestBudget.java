@@ -96,6 +96,13 @@ public final class RequestBudget {
         return true;
     }
 
+    /** Finish and response capture must see either both ledger/evidence updates or neither. */
+    public synchronized boolean recordCall(LlmCallRecord record, String status, String hash) {
+        if (!observe(record)) return false;
+        EvaluationTrace.call(record != null && record.totalTokens() > 0 ? record : null, status, hash);
+        return true;
+    }
+
     public static boolean allowRetry() {
         RequestBudget budget = current();
         if (budget == null) return true;
