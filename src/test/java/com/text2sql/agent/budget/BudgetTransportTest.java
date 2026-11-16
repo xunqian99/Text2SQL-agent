@@ -61,6 +61,8 @@ class BudgetTransportTest {
                 assertThat(disconnected.await(2, TimeUnit.SECONDS)).as("cancel must close the actual response body").isTrue();
                 assertThat(requests).hasValue(1);
                 assertThat(result.budget().unknownUsageCalls()).isEqualTo(1);
+                assertThat(result.timings().generationMs()).isGreaterThanOrEqualTo(800);
+                assertThat(result.timings().generationMs()).isEqualTo(result.budget().stageMs().get("MODEL"));
                 assertThat(trace.calls()).hasSize(1);
             } finally { server.stop(0); }
         }

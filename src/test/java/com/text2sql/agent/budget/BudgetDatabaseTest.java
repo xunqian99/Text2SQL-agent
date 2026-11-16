@@ -39,6 +39,9 @@ class BudgetDatabaseTest {
             return RequestBudgetTest.answer();
         });
         assertThat(result.status()).isEqualTo(com.text2sql.agent.orchestrator.AgentResponse.Status.REQUEST_TIMEOUT);
+        assertThat(result.timings().executionMs()).isGreaterThanOrEqualTo(300);
+        assertThat(result.timings().executionMs()).isEqualTo(result.budget().stageMs().get("EXECUTION"));
+        assertThat(result.timings().generationMs()).isZero();
         assertThat(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started)).isLessThan(1500);
         // Check the actual server, not just a mock Statement.cancel invocation.
         int active = 1;

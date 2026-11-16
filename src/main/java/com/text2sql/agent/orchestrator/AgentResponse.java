@@ -70,10 +70,9 @@ public record AgentResponse(
     }
 
     public AgentResponse withBudget(com.text2sql.agent.budget.RequestBudget.Snapshot value) {
-        // A successful checkpoint may precede a timed-out correction. Total still covers the whole request.
-        Timings measured = value == null ? timings : new Timings(
-                timings == null ? 0 : timings.retrievalMs(), timings == null ? 0 : timings.generationMs(),
-                timings == null ? 0 : timings.validationMs(), timings == null ? 0 : timings.executionMs(), value.elapsedMs());
+        // The shared budget includes completed stages and interrupted work after the selected answer.
+        // Without a budget, keep the legacy attempt-local timings unchanged.
+        Timings measured = value == null ? timings : value.responseTimings();
         return new AgentResponse(question, status, sql, message, violations, columns, rows, truncated, rewritten,
                 llmCall, schemaTableCount, retrievedTables, schemaDdlChars, measured, sessionId, rewrittenQuestion, schemaReused, value);
     }
@@ -185,10 +184,13 @@ public record AgentResponse(
     /**
      * 分阶段耗时。
      *
+     * <p>预算开启时以 budget.timingsVersion 标识口径，四段之外的编排/工具时间及毫秒舍入
+     * 保留在 budget.otherMs，详细来源在 budget.stageMs；不能把剩余时间都归给模型。
+     *
      * @param retrievalMs  检索层耗时（阶段 1 是缓存命中，接近 0）
-     * @param generationMs LLM 调用耗时，通常是绝对大头
-     * @param validationMs 校验耗时，纯 CPU 计算，应该远小于 1ms
-     * @param executionMs  数据库执行耗时
+     * @param generationMs 预算开启时为改写、生成准备及模型阶段的互斥区间之和；含被中断等待
+     * @param validationMs 预算开启时包含 SQL 校验与结果检查
+     * @param executionMs  预算开启时包含 EXPLAIN 与 SQL 执行
      * @param totalMs      端到端总耗时
      */
     public record Timings(long retrievalMs, long generationMs, long validationMs, long executionMs, long totalMs) {

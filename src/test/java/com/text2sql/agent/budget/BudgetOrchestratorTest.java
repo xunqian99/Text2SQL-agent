@@ -75,7 +75,7 @@ class BudgetOrchestratorTest {
         var exited = new CountDownLatch(1);
         var schema = new SchemaContext(List.of(new SchemaContext.Table("orders", null,
                 List.of(new SchemaContext.Column("order_id", "text", false, null)))), List.of(), "", "orders");
-        when(schemas.provide(anyString())).thenReturn(schema);
+        when(schemas.provide(anyString())).thenAnswer(i -> { Thread.sleep(30); return schema; });
         when(validator.validate(anyString(), any())).thenAnswer(i -> ValidationResult.ok(i.getArgument(0)));
         when(model.call(any(Prompt.class))).thenReturn(sqlResponse());
         when(executor.execute(anyString())).thenAnswer(i -> {
@@ -97,6 +97,9 @@ class BudgetOrchestratorTest {
             assertThat(result.budget().unknownUsageCalls()).isZero();
             assertThat(result.llmCall().totalTokens()).isEqualTo(15);
             assertThat(result.retrievedTables()).containsExactly("orders");
+            assertThat(result.timings().retrievalMs()).isGreaterThanOrEqualTo(20);
+            assertThat(result.timings().executionMs()).isGreaterThanOrEqualTo(150);
+            assertThat(result.timings().executionMs()).isEqualTo(result.budget().stageMs().get("EXECUTION"));
             assertThat(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started)).isLessThan(1500);
             assertThat(exited.await(1, TimeUnit.SECONDS)).isTrue();
             verify(model, times(1)).call(any(Prompt.class));

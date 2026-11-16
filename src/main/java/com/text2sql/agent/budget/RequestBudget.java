@@ -14,6 +14,7 @@ import java.util.UUID;
 
 /** One monotonic deadline and one model-call ledger, shared by every nested stage. */
 public final class RequestBudget {
+    public static final String TIMINGS_VERSION = "request-budget-exclusive-v1";
     private static final ThreadLocal<RequestBudget> CURRENT = new ThreadLocal<>();
     private final String id = UUID.randomUUID().toString();
     private final long started = System.nanoTime();
@@ -148,12 +149,18 @@ public final class RequestBudget {
         Map<String, Long> timings = new LinkedHashMap<>(stageNanos);
         timings.merge(stage, now - stageStarted, Long::sum);
         timings.replaceAll((key, nanos) -> nanos / 1_000_000);
+        long elapsed = (now - started) / 1_000_000;
+        AgentResponse.Timings projected = responseTimings(timings, elapsed);
+        long other = elapsed - projected.retrievalMs() - projected.generationMs()
+                - projected.validationMs() - projected.executionMs();
         return new Snapshot(id, budgetMs, maxCalls, calls, Math.max(0, calls - knownCalls),
-                (now - started) / 1_000_000, termination, stage, retrySkipped, Map.copyOf(timings), cancellationRejected);
+                elapsed, termination, stage, retrySkipped, Map.copyOf(timings), cancellationRejected,
+                TIMINGS_VERSION, other, (now - stageStarted) / 1_000_000);
     }
 
     synchronized AgentResponse stopped(String question, String sessionId, String reason) {
         AgentResponse first = checkpoint;
+        Snapshot measured = snapshot(reason);
         String message = switch (reason) {
             case "DEADLINE_EXCEEDED" -> "请求已超过时间上限，请缩小查询范围后重试。";
             case "MODEL_CALL_LIMIT" -> "本次问题已用完模型调用次数，请简化问题后重试。";
@@ -164,11 +171,11 @@ public final class RequestBudget {
                 first == null ? null : first.sql(), message, usage,
                 schema == null ? 0 : schema.tables().size(), schema == null ? List.of() : schema.tableNames(),
                 schema == null || schema.ddlText() == null ? 0 : schema.ddlText().length(),
-                new AgentResponse.Timings(0, 0, 0, 0, (System.nanoTime() - started) / 1_000_000));
+                measured.responseTimings()).withBudget(measured);
         EvaluationTrace.stop(stopped, first != null && first.success());
         AgentResponse selected = first != null && first.success() ? first.withUsage(usage) : stopped;
         return selected.withConversation(sessionId, selected.rewrittenQuestion(), selected.schemaReused())
-                .withBudget(snapshot(reason));
+                .withBudget(measured);
     }
 
     public String id() { return id; }
@@ -179,7 +186,30 @@ public final class RequestBudget {
 
     public record Snapshot(String requestId, long timeoutMs, int maxModelCalls, int modelCalls,
                            int unknownUsageCalls, long elapsedMs, String termination, String stage,
-                           String retrySkippedReason, Map<String, Long> stageMs, int cancellationRejected) { }
+                           String retrySkippedReason, Map<String, Long> stageMs, int cancellationRejected,
+                           String timingsVersion, long otherMs, long currentStageMs) {
+        // stageMs accumulates repeated visits; currentStageMs identifies only the terminal visit.
+        // A non-COMPLETE termination marks that visit as interrupted, not a completed operation.
+        /** Request clock is authoritative even when a successful first answer survives a retry timeout. */
+        public AgentResponse.Timings responseTimings() {
+            return RequestBudget.responseTimings(stageMs, elapsedMs);
+        }
+    }
+
+    // Stage intervals are exclusive and measured on one monotonic clock. Never add attempt timers:
+    // an unfinished stage has no returned attempt, and a checkpoint may overlap a later correction.
+    private static AgentResponse.Timings responseTimings(Map<String, Long> stages, long elapsed) {
+        return new AgentResponse.Timings(stages.getOrDefault("RETRIEVAL", 0L),
+                sumStages(stages, "REWRITE", "GENERATION", "MODEL"),
+                sumStages(stages, "VALIDATION", "RESULT_CHECK"),
+                sumStages(stages, "EXPLAIN", "EXECUTION"), elapsed);
+    }
+
+    private static long sumStages(Map<String, Long> stages, String... names) {
+        long total = 0;
+        for (String name : names) total += stages.getOrDefault(name, 0L);
+        return total;
+    }
 
     public static final class Exceeded extends RuntimeException {
         private final String reason;

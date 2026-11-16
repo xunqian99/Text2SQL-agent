@@ -1,0 +1,316 @@
+{
+  "format" : "budget-timings-acceptance-v1",
+  "provenance" : "Synthetic blocking model/SQL fixtures through actual Text2SqlOrchestrator and LlmSqlGenerator",
+  "providerCalls" : 0,
+  "providerCostYuan" : 0,
+  "scenarios" : [ {
+    "name" : "normal",
+    "wallLatencyMs" : 140,
+    "mockTransportCalls" : 1,
+    "calls" : [ {
+      "number" : 1,
+      "status" : "OK",
+      "promptSha256" : "e1ab39dab8993c311e30c24f18a3cc4a80a89de291f5a66a87fb6e9d6933aa97",
+      "usage" : {
+        "model" : "deepseek-chat",
+        "promptTokens" : 10,
+        "completionTokens" : 5,
+        "totalTokens" : 15,
+        "promptChars" : 2850,
+        "latencyMs" : 30,
+        "costYuan" : 0.0,
+        "cacheHitTokens" : 0,
+        "cacheMissTokens" : 10
+      }
+    } ],
+    "selectedAttempt" : 1,
+    "attemptStages" : [ "INITIAL_SQL" ],
+    "response" : {
+      "status" : "SUCCESS",
+      "sql" : "SELECT order_id FROM orders LIMIT 10",
+      "message" : null,
+      "violations" : [ ],
+      "columns" : [ "order_id" ],
+      "rows" : [ [ "fixture-order" ] ],
+      "truncated" : false,
+      "rewritten" : false,
+      "rowCount" : 1,
+      "schemaTableCount" : 1,
+      "retrievedTables" : [ "orders" ],
+      "schemaDdlChars" : 6,
+      "llm" : {
+        "model" : "deepseek-chat",
+        "promptTokens" : 10,
+        "completionTokens" : 5,
+        "totalTokens" : 15,
+        "latencyMs" : 30,
+        "costYuan" : 0.0
+      },
+      "timings" : {
+        "retrievalMs" : 47,
+        "generationMs" : 55,
+        "validationMs" : 0,
+        "executionMs" : 18,
+        "totalMs" : 131
+      },
+      "sessionId" : null,
+      "rewrittenQuestion" : null,
+      "schemaReused" : false,
+      "budget" : {
+        "requestId" : "f8513202-b039-44ca-a5e2-f41df464f4a1",
+        "timeoutMs" : 2000,
+        "maxModelCalls" : 2,
+        "modelCalls" : 1,
+        "unknownUsageCalls" : 0,
+        "elapsedMs" : 131,
+        "termination" : "COMPLETE",
+        "stage" : "CACHE_WRITE",
+        "retrySkippedReason" : null,
+        "stageMs" : {
+          "VALIDATION" : 0,
+          "GENERATION" : 19,
+          "CACHE_WRITE" : 0,
+          "RETRIEVAL" : 47,
+          "CLARIFICATION" : 0,
+          "ADMISSION" : 7,
+          "EXECUTION" : 18,
+          "SESSION" : 0,
+          "RESULT_CHECK" : 0,
+          "CACHE" : 0,
+          "MODEL" : 36
+        },
+        "cancellationRejected" : 0,
+        "timingsVersion" : "request-budget-exclusive-v1",
+        "otherMs" : 11,
+        "currentStageMs" : 0
+      }
+    }
+  }, {
+    "name" : "execution-timeout",
+    "wallLatencyMs" : 505,
+    "mockTransportCalls" : 1,
+    "calls" : [ {
+      "number" : 1,
+      "status" : "OK",
+      "promptSha256" : "e1ab39dab8993c311e30c24f18a3cc4a80a89de291f5a66a87fb6e9d6933aa97",
+      "usage" : {
+        "model" : "deepseek-chat",
+        "promptTokens" : 10,
+        "completionTokens" : 5,
+        "totalTokens" : 15,
+        "promptChars" : 2850,
+        "latencyMs" : 29,
+        "costYuan" : 0.0,
+        "cacheHitTokens" : 0,
+        "cacheMissTokens" : 10
+      }
+    } ],
+    "selectedAttempt" : 1,
+    "attemptStages" : [ "REQUEST_STOP" ],
+    "response" : {
+      "status" : "REQUEST_TIMEOUT",
+      "sql" : null,
+      "message" : "请求已超过时间上限，请缩小查询范围后重试。",
+      "violations" : [ ],
+      "columns" : [ ],
+      "rows" : [ ],
+      "truncated" : false,
+      "rewritten" : false,
+      "rowCount" : 0,
+      "schemaTableCount" : 1,
+      "retrievedTables" : [ "orders" ],
+      "schemaDdlChars" : 6,
+      "llm" : {
+        "model" : "deepseek-chat",
+        "promptTokens" : 10,
+        "completionTokens" : 5,
+        "totalTokens" : 15,
+        "latencyMs" : 29,
+        "costYuan" : 0.0
+      },
+      "timings" : {
+        "retrievalMs" : 39,
+        "generationMs" : 32,
+        "validationMs" : 0,
+        "executionMs" : 433,
+        "totalMs" : 504
+      },
+      "sessionId" : null,
+      "rewrittenQuestion" : null,
+      "schemaReused" : false,
+      "budget" : {
+        "requestId" : "736ec017-5e01-4585-ae16-25cb4ea78ea5",
+        "timeoutMs" : 500,
+        "maxModelCalls" : 2,
+        "modelCalls" : 1,
+        "unknownUsageCalls" : 0,
+        "elapsedMs" : 504,
+        "termination" : "DEADLINE_EXCEEDED",
+        "stage" : "EXECUTION",
+        "retrySkippedReason" : null,
+        "stageMs" : {
+          "EXECUTION" : 433,
+          "GENERATION" : 2,
+          "CACHE" : 0,
+          "RETRIEVAL" : 39,
+          "SESSION" : 0,
+          "VALIDATION" : 0,
+          "MODEL" : 30,
+          "ADMISSION" : 0,
+          "CLARIFICATION" : 0
+        },
+        "cancellationRejected" : 0,
+        "timingsVersion" : "request-budget-exclusive-v1",
+        "otherMs" : 0,
+        "currentStageMs" : 433
+      }
+    }
+  }, {
+    "name" : "correction-timeout",
+    "wallLatencyMs" : 608,
+    "mockTransportCalls" : 2,
+    "calls" : [ {
+      "number" : 1,
+      "status" : "OK",
+      "promptSha256" : "e1ab39dab8993c311e30c24f18a3cc4a80a89de291f5a66a87fb6e9d6933aa97",
+      "usage" : {
+        "model" : "deepseek-chat",
+        "promptTokens" : 10,
+        "completionTokens" : 5,
+        "totalTokens" : 15,
+        "promptChars" : 2850,
+        "latencyMs" : 29,
+        "costYuan" : 0.0,
+        "cacheHitTokens" : 0,
+        "cacheMissTokens" : 10
+      }
+    }, {
+      "number" : 2,
+      "status" : "CALL_FAILED_CORRECTION",
+      "promptSha256" : "362d0f37cee8fa7bc97afcd25bc0c308a0a24288c09821dbe130ce0e1ac7947f",
+      "usage" : null
+    } ],
+    "selectedAttempt" : 1,
+    "attemptStages" : [ "INITIAL_SQL", "REQUEST_STOP" ],
+    "response" : {
+      "status" : "SUCCESS",
+      "sql" : "SELECT order_id FROM orders LIMIT 10",
+      "message" : null,
+      "violations" : [ ],
+      "columns" : [ "order_id" ],
+      "rows" : [ [ "fixture-order" ] ],
+      "truncated" : false,
+      "rewritten" : false,
+      "rowCount" : 1,
+      "schemaTableCount" : 1,
+      "retrievedTables" : [ "orders" ],
+      "schemaDdlChars" : 6,
+      "llm" : {
+        "model" : "deepseek-chat",
+        "promptTokens" : 10,
+        "completionTokens" : 5,
+        "totalTokens" : 15,
+        "latencyMs" : 29,
+        "costYuan" : 0.0
+      },
+      "timings" : {
+        "retrievalMs" : 79,
+        "generationMs" : 510,
+        "validationMs" : 1,
+        "executionMs" : 15,
+        "totalMs" : 608
+      },
+      "sessionId" : null,
+      "rewrittenQuestion" : null,
+      "schemaReused" : false,
+      "budget" : {
+        "requestId" : "b803eaeb-9cc8-40a2-b152-9ed85e3686e9",
+        "timeoutMs" : 600,
+        "maxModelCalls" : 2,
+        "modelCalls" : 2,
+        "unknownUsageCalls" : 1,
+        "elapsedMs" : 608,
+        "termination" : "DEADLINE_EXCEEDED",
+        "stage" : "MODEL",
+        "retrySkippedReason" : null,
+        "stageMs" : {
+          "CLARIFICATION" : 0,
+          "RESULT_CHECK" : 1,
+          "EXECUTION" : 15,
+          "MODEL" : 506,
+          "CACHE" : 0,
+          "SESSION" : 0,
+          "ADMISSION" : 0,
+          "RETRIEVAL" : 79,
+          "VALIDATION" : 0,
+          "GENERATION" : 4
+        },
+        "cancellationRejected" : 0,
+        "timingsVersion" : "request-budget-exclusive-v1",
+        "otherMs" : 3,
+        "currentStageMs" : 475
+      }
+    }
+  }, {
+    "name" : "model-timeout-15s",
+    "wallLatencyMs" : 15011,
+    "mockTransportCalls" : 1,
+    "calls" : [ {
+      "number" : 1,
+      "status" : "CALL_FAILED",
+      "promptSha256" : "e1ab39dab8993c311e30c24f18a3cc4a80a89de291f5a66a87fb6e9d6933aa97",
+      "usage" : null
+    } ],
+    "selectedAttempt" : 1,
+    "attemptStages" : [ "REQUEST_STOP" ],
+    "response" : {
+      "status" : "REQUEST_TIMEOUT",
+      "sql" : null,
+      "message" : "请求已超过时间上限，请缩小查询范围后重试。",
+      "violations" : [ ],
+      "columns" : [ ],
+      "rows" : [ ],
+      "truncated" : false,
+      "rewritten" : false,
+      "rowCount" : 0,
+      "schemaTableCount" : 1,
+      "retrievedTables" : [ "orders" ],
+      "schemaDdlChars" : 6,
+      "llm" : null,
+      "timings" : {
+        "retrievalMs" : 37,
+        "generationMs" : 14973,
+        "validationMs" : 0,
+        "executionMs" : 0,
+        "totalMs" : 15011
+      },
+      "sessionId" : null,
+      "rewrittenQuestion" : null,
+      "schemaReused" : false,
+      "budget" : {
+        "requestId" : "cb54f86a-5163-41ec-ade6-1c4846f95ca8",
+        "timeoutMs" : 15000,
+        "maxModelCalls" : 2,
+        "modelCalls" : 1,
+        "unknownUsageCalls" : 1,
+        "elapsedMs" : 15011,
+        "termination" : "DEADLINE_EXCEEDED",
+        "stage" : "MODEL",
+        "retrySkippedReason" : null,
+        "stageMs" : {
+          "SESSION" : 0,
+          "GENERATION" : 0,
+          "MODEL" : 14973,
+          "ADMISSION" : 0,
+          "CACHE" : 0,
+          "CLARIFICATION" : 0,
+          "RETRIEVAL" : 37
+        },
+        "cancellationRejected" : 0,
+        "timingsVersion" : "request-budget-exclusive-v1",
+        "otherMs" : 1,
+        "currentStageMs" : 14973
+      }
+    }
+  } ]
+}

@@ -251,6 +251,7 @@ public class Text2SqlOrchestrator {
             }
         }
 
+        RequestBudget.stage("GENERATION");
         long generationStarted = System.nanoTime();
         GeneratedSql generated;
         LlmCallRecord retryGenerationCall = null;
@@ -533,6 +534,7 @@ public class Text2SqlOrchestrator {
             // 否则会出现「首次正确、被规则误判 → 重试 → 第二次也能跑但答错 → 采用第二次」，
             // 准确率不升反降（这个坑在 ResultChecker 的比率规则上真实发生过）。
             if (firstSuspicion != null) {
+                RequestBudget.stage("RESULT_CHECK");
                 QueryResult qr2 = new QueryResult(second.columns(), second.rows(), second.truncated(), 0L);
                 var secondCheck = resultChecker.check(question, second.sql(), qr2);
                 if (secondCheck.suspicious()) {
@@ -658,6 +660,7 @@ public class Text2SqlOrchestrator {
         List<String> retrievedTables = schema.tableNames();
         int ddlChars = schema.ddlText() == null ? 0 : schema.ddlText().length();
 
+        RequestBudget.stage("GENERATION");
         long generationStarted = System.nanoTime();
         GeneratedSql generated;
         try {
