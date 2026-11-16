@@ -12,6 +12,7 @@ param(
   [ValidateRange(1, 2)][int]$MaxAttempts = 2,
   [ValidateRange(1, 65535)][int]$Port = 18080,
   [ValidateRange(1, 131072)][int]$MaxTokens = 8192,
+  [ValidateSet('provider-default', 'none', 'low', 'high', 'max')][string]$ReasoningEffort = 'provider-default',
   [string]$OutputDir = 'reports',
   [string]$DatasetDir = 'data/eval',
   [string]$SuiteManifest = '',
@@ -50,6 +51,7 @@ $mavenArgs = @(
   '--agent.eval.exit-after-run=true', '--agent.eval.repeat=1',
   '--agent.eval.self-correction-enabled=false', '--agent.eval.self-correction-max-attempts=1',
   '--agent.llm.model=deepseek-flash', '--agent.llm.temperature=0.0', "--agent.llm.max-tokens=$MaxTokens",
+  "--agent.llm.reasoning-effort=$ReasoningEffort",
   '--agent.retrieval.enabled=true', '--agent.retrieval.top-k=8',
   '--agent.retrieval.column-pruning-enabled=true', '--agent.retrieval.join-hints-enabled=true',
   '--agent.retrieval.join-list-enabled=false', '--agent.retrieval.join-plan-enabled=true',
@@ -72,7 +74,7 @@ if ($Preview) {
   exit 0
 }
 
-Write-Host "Running eval: model=deepseek-flash, maxTokens=$MaxTokens, split=$Split, selfCorrection=$SelfCorrection, resultChecker=$ResultChecker"
+Write-Host "Running eval: model=deepseek-flash, maxTokens=$MaxTokens, reasoningEffort=$ReasoningEffort, split=$Split, selfCorrection=$SelfCorrection, resultChecker=$ResultChecker"
 Push-Location $projectRoot
 try {
   mvn spring-boot:run "-Dspring-boot.run.arguments=$mavenArgs"

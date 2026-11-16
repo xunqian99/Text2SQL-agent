@@ -120,7 +120,8 @@ public class LlmCallLog implements AutoCloseable {
                 promptSha256,
                 properties.getObservability().isIncludeContent() ? prompt : null,
                 properties.getObservability().isIncludeContent() ? response : null,
-                budget == null ? null : budget.id(), budget == null ? null : budget.callNumber(), usageKnown);
+                budget == null ? null : budget.id(), budget == null ? null : budget.callNumber(), usageKnown,
+                properties.getLlm().getReasoningEffort());
 
         // 只有「写文件 + 计数」留在锁内：这两步是本地操作，耗时可忽略。
         // 数据库写入移到锁外——它是网络往返，放进锁里会让所有并发请求
@@ -209,6 +210,7 @@ public class LlmCallLog implements AutoCloseable {
             String promptHashVersion,
             String promptSha256,
             String prompt,
-            String response, String requestId, Integer callNumber, boolean usageKnown) {
+            String response, String requestId, Integer callNumber, boolean usageKnown,
+            String configuredReasoningEffort) {
     }
 }

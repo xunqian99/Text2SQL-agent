@@ -74,6 +74,8 @@ agent:
 
   llm:
     provider: openai-compatible
+    # provider-default 不发 reasoning_effort；none 关闭思考须由供应商支持，先评测再启用。
+    reasoning-effort: ${AGENT_LLM_REASONING_EFFORT:provider-default}
     # 默认 DeepSeek，因为它兼容 OpenAI 协议且价格低，适合跑 200 条评估。
     # 换成通义/千帆/智谱/OpenAI 只需要改 base-url、completions-path、model 三行。
     base-url: https://api.deepseek.com

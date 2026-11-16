@@ -43,8 +43,8 @@ import java.util.Map;
  * 这恰恰是「评估器自检」能成立的前提。
  *
  * <p><b>为什么温度设 0</b>：Text2SQL 是确定性任务，不是创作任务。
- * 温度 0 让同样的输入尽量产生同样的输出，评估数字才可复现。代价是
- * 遇到模型「认死理」写错时不会换个写法，这个代价由阶段 5 的自纠错承担。
+ * 温度 0 只在供应商支持的模式下减少采样波动，不能保证确定性；
+ * 例如 DeepSeek 思考模式会忽略温度。必须另记生成模式配置，并重复运行评估。
  */
 @Component
 public class LlmSqlGenerator {
@@ -170,10 +170,7 @@ public class LlmSqlGenerator {
         String promptSha256 = PromptFingerprint.messagesSha256(messages);
         String model = (modelOverride == null || modelOverride.isBlank())
                 ? properties.getLlm().getModel() : modelOverride;
-        OpenAiChatOptions options = OpenAiChatOptions.builder()
-                .model(model)
-                .temperature(properties.getLlm().getTemperature())
-                .maxTokens(properties.getLlm().getMaxTokens())
+        OpenAiChatOptions options = optionsBuilder(model)
                 .build();
 
         long started = System.nanoTime();
@@ -244,10 +241,7 @@ public class LlmSqlGenerator {
         String promptSha256 = PromptFingerprint.messagesSha256(messages);
         String model = (modelOverride == null || modelOverride.isBlank())
                 ? properties.getLlm().getModel() : modelOverride;
-        OpenAiChatOptions options = OpenAiChatOptions.builder()
-                .model(model)
-                .temperature(properties.getLlm().getTemperature())
-                .maxTokens(properties.getLlm().getMaxTokens())
+        OpenAiChatOptions options = optionsBuilder(model)
                 .build();
 
         long started = System.nanoTime();
@@ -298,10 +292,7 @@ public class LlmSqlGenerator {
         String promptSha256 = PromptFingerprint.messagesSha256(messages);
         String model = (modelOverride == null || modelOverride.isBlank())
                 ? properties.getLlm().getModel() : modelOverride;
-        OpenAiChatOptions options = OpenAiChatOptions.builder()
-                .model(model)
-                .temperature(properties.getLlm().getTemperature())
-                .maxTokens(properties.getLlm().getMaxTokens())
+        OpenAiChatOptions options = optionsBuilder(model)
                 .build();
 
         long started = System.nanoTime();
@@ -355,10 +346,7 @@ public class LlmSqlGenerator {
         String model = (modelOverride == null || modelOverride.isBlank())
                 ? properties.getLlm().getModel() : modelOverride;
 
-        var optionsBuilder = OpenAiChatOptions.builder()
-                .model(model)
-                .temperature(properties.getLlm().getTemperature())
-                .maxTokens(properties.getLlm().getMaxTokens())
+        var optionsBuilder = optionsBuilder(model)
                 // 必须关掉框架内部的工具执行循环。
                 //
                 // Spring AI 默认 internalToolExecutionEnabled=true：它会自己执行工具、
@@ -406,6 +394,17 @@ public class LlmSqlGenerator {
      * @param raw      模型输出的文本部分（可能为空，例如只有 tool_calls 时）
      */
     public record AgentTurn(ChatResponse response, LlmCallRecord call, String raw) {}
+
+    /** 四条调用路径共用配置；provider-default 仅用于审计，绝不能发给供应商。 */
+    private OpenAiChatOptions.Builder optionsBuilder(String model) {
+        var options = OpenAiChatOptions.builder()
+                .model(model)
+                .temperature(properties.getLlm().getTemperature())
+                .maxTokens(properties.getLlm().getMaxTokens());
+        String effort = properties.getLlm().getReasoningEffort();
+        if (!"provider-default".equals(effort)) options.reasoningEffort(effort);
+        return options;
+    }
 
     /** 只依据服务端结束原因，不凭 token 数猜测截断；完整回答也可能刚好用满预算。 */
     static void requireComplete(ChatResponse response, LlmCallRecord record) {

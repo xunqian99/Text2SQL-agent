@@ -231,6 +231,7 @@ public class EvalRunner implements ApplicationRunner {
         var retrieval = properties.getRetrieval();
         config.put("maxTokens", llm.getMaxTokens());
         config.put("temperature", llm.getTemperature());
+        config.put("configuredReasoningEffort", llm.getReasoningEffort());
         config.put("inputPricePer1k", llm.getInputPricePer1k());
         config.put("outputPricePer1k", llm.getOutputPricePer1k());
         config.put("cacheHitPricePer1k", llm.getCacheHitPricePer1k());

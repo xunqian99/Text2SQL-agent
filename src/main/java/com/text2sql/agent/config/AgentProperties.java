@@ -242,6 +242,8 @@ public class AgentProperties {
         private String model = "deepseek-chat";
         private Double temperature = 0.0;
         private Integer maxTokens = 1024;
+        /** provider-default 表示不发送参数；其余值须由目标供应商支持，不能由兼容协议推断。 */
+        private String reasoningEffort = "provider-default";
         private int timeoutSeconds = 60;
 
         /** 成本估算单价（元 / 千 token）。阶段 6 会用真实单价替换，这里先留 0 表示不估算。 */
@@ -308,6 +310,19 @@ public class AgentProperties {
 
         public int getTimeoutSeconds() {
             return timeoutSeconds;
+        }
+
+        public String getReasoningEffort() {
+            return reasoningEffort;
+        }
+
+        public void setReasoningEffort(String value) {
+            String normalized = value == null || value.isBlank() ? "provider-default"
+                    : value.strip().toLowerCase(java.util.Locale.ROOT);
+            if (!java.util.Set.of("provider-default", "none", "low", "high", "max").contains(normalized)) {
+                throw new IllegalArgumentException("agent.llm.reasoning-effort must be provider-default, none, low, high or max");
+            }
+            reasoningEffort = normalized;
         }
 
         public void setTimeoutSeconds(int timeoutSeconds) {
