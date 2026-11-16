@@ -1,0 +1,680 @@
+{
+  "format": "available-examples-paired-observations-v1",
+  "codeCommit": "15a2e933bc075d7ed90218edfc6d5a3193043cfc",
+  "derivedFrom": [
+    "summary.json",
+    "prompt-pairs.json",
+    "gold/eval-20261116-214318-dryrun.json",
+    "overlap/eval-20261116-214907.json",
+    "available-tables/eval-20261116-215440.json"
+  ],
+  "distinctQuestions": 100,
+  "requests": 200,
+  "defaultPromptCharsSum": 502136,
+  "candidatePromptCharsSum": 487982,
+  "promptCharsChangePct": -2.818758264693233,
+  "promptCountByCandidateExampleCount": {
+    "2": 96,
+    "0": 4
+  },
+  "promptStrata": [
+    {
+      "promptChanged": false,
+      "count": 41,
+      "defaultCorrect": 33,
+      "candidateCorrect": 34,
+      "lost": [],
+      "gained": [
+        "T3-002"
+      ]
+    },
+    {
+      "promptChanged": true,
+      "count": 59,
+      "defaultCorrect": 36,
+      "candidateCorrect": 34,
+      "lost": [
+        "T1-028",
+        "T4-014",
+        "T4-018",
+        "T5-006",
+        "T5-008"
+      ],
+      "gained": [
+        "T2-030",
+        "T4-001",
+        "T4-036"
+      ]
+    }
+  ],
+  "transitions": [
+    {
+      "direction": "lost",
+      "id": "T1-028",
+      "question": "容量最大的仓库是哪一个？",
+      "promptChanged": true,
+      "defaultExamples": [
+        "T5-004",
+        "T1-002"
+      ],
+      "candidateExamples": [
+        "T1-002",
+        "T2-005"
+      ],
+      "goldSql": "SELECT warehouse_id, warehouse_name, capacity\nFROM warehouses ORDER BY capacity DESC LIMIT 1;\n",
+      "default": {
+        "status": "SUCCESS",
+        "correct": true,
+        "finalSql": "SELECT warehouse_id, warehouse_name, capacity\nFROM warehouses\nORDER BY capacity DESC\nLIMIT 1;",
+        "wallLatencyMs": 763
+      },
+      "candidate": {
+        "status": "SUCCESS",
+        "correct": false,
+        "finalSql": "SELECT warehouse_id, capacity\nFROM warehouses\nORDER BY capacity DESC\nLIMIT 1;",
+        "wallLatencyMs": 1004
+      }
+    },
+    {
+      "direction": "lost",
+      "id": "T4-014",
+      "question": "每种支付方式的评价平均分是多少？",
+      "promptChanged": true,
+      "defaultExamples": [
+        "T4-012",
+        "T6-009"
+      ],
+      "candidateExamples": [
+        "T1-002",
+        "T2-005"
+      ],
+      "goldSql": "SELECT p.payment_type, ROUND(AVG(r.review_score), 2) AS avg_score FROM order_payments p JOIN order_reviews r ON r.order_id = p.order_id GROUP BY 1 ORDER BY avg_score DESC LIMIT 201",
+      "default": {
+        "status": "SUCCESS",
+        "correct": true,
+        "finalSql": "SELECT op.payment_type,\n       ROUND(AVG(r.review_score), 2) AS avg_review_score\nFROM order_payments op\nJOIN orders o ON o.order_id = op.order_id\nJOIN order_reviews r ON r.order_id = o.order_id\nGROUP BY op.payment_type\nORDER BY op.payment_type\nLIMIT 10;",
+        "wallLatencyMs": 7646
+      },
+      "candidate": {
+        "status": "SUCCESS",
+        "correct": false,
+        "finalSql": "SELECT op.payment_type,\n       ROUND(AVG(r.review_score)::numeric, 2) AS avg_review_score\nFROM (\n    SELECT DISTINCT order_id, payment_type\n    FROM order_payments\n) op\nJOIN order_reviews r ON r.order_id = op.order_id\nGROUP BY op.payment_type\nORDER BY op.payment_type\nLIMIT 100;",
+        "wallLatencyMs": 12549
+      }
+    },
+    {
+      "direction": "lost",
+      "id": "T4-018",
+      "question": "每个会员等级的用户消费总额是多少？",
+      "promptChanged": true,
+      "defaultExamples": [
+        "T5-002",
+        "T5-006"
+      ],
+      "candidateExamples": [
+        "T5-002",
+        "T5-008"
+      ],
+      "goldSql": "SELECT m.level_id, ROUND(SUM(oi.price), 2) AS sales FROM orders o JOIN customers c ON c.customer_id = o.customer_id JOIN members m ON m.customer_unique_id = c.customer_unique_id JOIN order_items oi ON oi.order_id = o.order_id GROUP BY 1 ORDER BY 1 LIMIT 201",
+      "default": {
+        "status": "SUCCESS",
+        "correct": true,
+        "finalSql": "SELECT m.level_id, ROUND(SUM(oi.price), 2) AS total_consumption\nFROM customers c\nJOIN orders o ON o.customer_id = c.customer_id\nJOIN order_items oi ON oi.order_id = o.order_id\nJOIN members m ON m.customer_unique_id = c.customer_unique_id\nGROUP BY m.level_id\nORDER BY total_consumption DESC\nLIMIT 100;",
+        "wallLatencyMs": 10189
+      },
+      "candidate": {
+        "status": "REQUEST_TIMEOUT",
+        "correct": false,
+        "finalSql": null,
+        "wallLatencyMs": 15008
+      }
+    },
+    {
+      "direction": "lost",
+      "id": "T5-006",
+      "question": "物流延迟类工单按客户所在州和会员等级分布，列出前 20 组。",
+      "promptChanged": true,
+      "defaultExamples": [
+        "T5-002",
+        "T6-005"
+      ],
+      "candidateExamples": [
+        "T6-005",
+        "T4-001"
+      ],
+      "goldSql": "SELECT c.customer_state, ml.level_name, COUNT(DISTINCT st.ticket_id) AS tickets\nFROM support_tickets st\nJOIN ticket_categories tc ON tc.category_id = st.category_id\nJOIN orders o ON o.order_id = st.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN members m ON m.member_id = st.member_id\nJOIN member_levels ml ON ml.level_id = m.level_id\nWHERE tc.category_name = '物流延迟'\nGROUP BY 1, 2 ORDER BY tickets DESC LIMIT 20;\n",
+      "default": {
+        "status": "SUCCESS",
+        "correct": true,
+        "finalSql": "SELECT c.customer_state, ml.level_name, COUNT(*) AS ticket_count\nFROM support_tickets st\nJOIN ticket_categories tc ON tc.category_id = st.category_id\nJOIN orders o ON o.order_id = st.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN members m ON m.member_id = st.member_id\nJOIN member_levels ml ON ml.level_id = m.level_id\nWHERE tc.category_name = '物流延迟'\nGROUP BY c.customer_state, ml.level_name\nORDER BY ticket_count DESC\nLIMIT 20;",
+        "wallLatencyMs": 7588
+      },
+      "candidate": {
+        "status": "REQUEST_TIMEOUT",
+        "correct": false,
+        "finalSql": null,
+        "wallLatencyMs": 15011
+      }
+    },
+    {
+      "direction": "lost",
+      "id": "T5-008",
+      "question": "按推荐人和被推荐人的会员等级组合统计推荐关系数量和奖励金额。",
+      "promptChanged": true,
+      "defaultExamples": [
+        "T5-006",
+        "T5-002"
+      ],
+      "candidateExamples": [
+        "T1-004",
+        "T1-008"
+      ],
+      "goldSql": "SELECT mlr.level_name AS referrer_level, mli.level_name AS invitee_level, COUNT(*) AS referrals, ROUND(SUM(rf.reward_amount), 2) AS reward FROM referrals rf JOIN members mr ON mr.member_id = rf.referrer_member_id JOIN member_levels mlr ON mlr.level_id = mr.level_id JOIN members mi ON mi.member_id = rf.invitee_member_id JOIN member_levels mli ON mli.level_id = mi.level_id GROUP BY 1, 2 ORDER BY referrals DESC LIMIT 201",
+      "default": {
+        "status": "SUCCESS",
+        "correct": true,
+        "finalSql": "SELECT mlr.level_name AS referrer_level,\n       mli.level_name AS invitee_level,\n       COUNT(*) AS referral_count,\n       ROUND(SUM(r.reward_amount), 2) AS total_reward\nFROM referrals r\nJOIN members mr ON mr.member_id = r.referrer_member_id\nJOIN member_levels mlr ON mlr.level_id = mr.level_id\nJOIN members mi ON mi.member_id = r.invitee_member_id\nJOIN member_levels mli ON mli.level_id = mi.level_id\nGROUP BY mlr.level_name, mli.level_name\nORDER BY referral_count DESC, total_reward DESC\nLIMIT 100;",
+        "wallLatencyMs": 5962
+      },
+      "candidate": {
+        "status": "SUCCESS",
+        "correct": false,
+        "finalSql": "SELECT\n  referrer.level_id AS referrer_level_id,\n  invitee.level_id AS invitee_level_id,\n  COUNT(*) AS referral_count,\n  ROUND(SUM(r.reward_amount), 2) AS total_reward_amount\nFROM referrals r\nJOIN members referrer ON r.referrer_member_id = referrer.member_id\nJOIN members invitee ON r.invitee_member_id = invitee.member_id\nGROUP BY referrer.level_id, invitee.level_id\nORDER BY referrer.level_id, invitee.level_id\nLIMIT 100;",
+        "wallLatencyMs": 6462
+      }
+    },
+    {
+      "direction": "gained",
+      "id": "T2-030",
+      "question": "每个工单分类各有多少个工单？",
+      "promptChanged": true,
+      "defaultExamples": [
+        "T5-006",
+        "T6-005"
+      ],
+      "candidateExamples": [
+        "T6-005",
+        "T4-001"
+      ],
+      "goldSql": "SELECT category_id, COUNT(*) AS cnt FROM support_tickets GROUP BY category_id ORDER BY category_id LIMIT 201",
+      "default": {
+        "status": "SUCCESS",
+        "correct": false,
+        "finalSql": "SELECT tc.category_name, COUNT(*) AS ticket_count\nFROM support_tickets st\nJOIN ticket_categories tc ON tc.category_id = st.category_id\nGROUP BY tc.category_name\nORDER BY ticket_count DESC\nLIMIT 100;",
+        "wallLatencyMs": 2581
+      },
+      "candidate": {
+        "status": "SUCCESS",
+        "correct": true,
+        "finalSql": "SELECT category_id, COUNT(*) AS ticket_count\nFROM support_tickets\nGROUP BY category_id\nORDER BY ticket_count DESC\nLIMIT 100;",
+        "wallLatencyMs": 1613
+      }
+    },
+    {
+      "direction": "gained",
+      "id": "T3-002",
+      "question": "2017 年和 2018 年各有多少笔订单？",
+      "promptChanged": false,
+      "defaultExamples": [
+        "T4-012",
+        "T6-009"
+      ],
+      "candidateExamples": [
+        "T4-012",
+        "T6-009"
+      ],
+      "goldSql": "SELECT EXTRACT(YEAR FROM order_purchase_timestamp)::INT AS yr, COUNT(*) AS cnt FROM orders WHERE EXTRACT(YEAR FROM order_purchase_timestamp) IN (2017, 2018) GROUP BY 1 ORDER BY 1 LIMIT 201",
+      "default": {
+        "status": "SUCCESS",
+        "correct": false,
+        "finalSql": "SELECT COUNT(*) FILTER (WHERE EXTRACT(YEAR FROM order_purchase_timestamp) = 2017) AS orders_2017, COUNT(*) FILTER (WHERE EXTRACT(YEAR FROM order_purchase_timestamp) = 2018) AS orders_2018 FROM orders LIMIT 201",
+        "wallLatencyMs": 1432
+      },
+      "candidate": {
+        "status": "SUCCESS",
+        "correct": true,
+        "finalSql": "SELECT EXTRACT(YEAR FROM order_purchase_timestamp)::int AS year, COUNT(*) AS order_count\nFROM orders\nWHERE order_purchase_timestamp >= '2017-01-01' AND order_purchase_timestamp < '2019-01-01'\nGROUP BY 1\nORDER BY 1\nLIMIT 10;",
+        "wallLatencyMs": 3168
+      }
+    },
+    {
+      "direction": "gained",
+      "id": "T4-001",
+      "question": "每个客户的订单数量是多少？取订单最多的 10 个客户。",
+      "promptChanged": true,
+      "defaultExamples": [
+        "T5-002",
+        "T4-012"
+      ],
+      "candidateExamples": [
+        "T4-012",
+        "T6-005"
+      ],
+      "goldSql": "SELECT c.customer_unique_id, COUNT(*) AS cnt\nFROM orders o JOIN customers c ON c.customer_id = o.customer_id\nGROUP BY 1 ORDER BY cnt DESC LIMIT 10;\n",
+      "default": {
+        "status": "SUCCESS",
+        "correct": false,
+        "finalSql": "SELECT c.customer_id, COUNT(o.order_id) AS order_count\nFROM customers c\nJOIN orders o ON o.customer_id = c.customer_id\nGROUP BY c.customer_id\nORDER BY order_count DESC\nLIMIT 10;",
+        "wallLatencyMs": 4143
+      },
+      "candidate": {
+        "status": "SUCCESS",
+        "correct": true,
+        "finalSql": "SELECT c.customer_unique_id, COUNT(o.order_id) AS order_count\nFROM customers c\nJOIN orders o ON o.customer_id = c.customer_id\nGROUP BY c.customer_unique_id\nORDER BY order_count DESC\nLIMIT 10;",
+        "wallLatencyMs": 6210
+      }
+    },
+    {
+      "direction": "gained",
+      "id": "T4-036",
+      "question": "每个州的客户平均消费了多少？",
+      "promptChanged": true,
+      "defaultExamples": [
+        "T5-002",
+        "T6-005"
+      ],
+      "candidateExamples": [
+        "T6-005",
+        "T3-006"
+      ],
+      "goldSql": "SELECT c.customer_state, ROUND(SUM(oi.price) / COUNT(DISTINCT c.customer_unique_id), 2) AS avg_per_customer FROM orders o JOIN customers c ON c.customer_id = o.customer_id JOIN order_items oi ON oi.order_id = o.order_id GROUP BY 1 ORDER BY avg_per_customer DESC LIMIT 201",
+      "default": {
+        "status": "SUCCESS",
+        "correct": false,
+        "finalSql": "WITH customer_spend AS (\n    SELECT c.customer_unique_id,\n           c.customer_state,\n           SUM(oi.price) AS total_spend\n    FROM customers c\n    JOIN orders o ON o.customer_id = c.customer_id\n    JOIN order_items oi ON oi.order_id = o.order_id\n    WHERE o.order_status NOT IN ('canceled', 'unavailable')\n    GROUP BY c.customer_unique_id, c.customer_state\n)\nSELECT customer_state,\n       ROUND(AVG(total_spend), 2) AS avg_customer_spend\nFROM customer_spend\nGROUP BY customer_state\nORDER BY avg_customer_spend DESC\nLIMIT 100;",
+        "wallLatencyMs": 11052
+      },
+      "candidate": {
+        "status": "SUCCESS",
+        "correct": true,
+        "finalSql": "WITH customer_spend AS (\n  SELECT\n    c.customer_state,\n    c.customer_unique_id,\n    SUM(oi.price) AS total_spend\n  FROM customers c\n  JOIN orders o ON o.customer_id = c.customer_id\n  JOIN order_items oi ON oi.order_id = o.order_id\n  GROUP BY c.customer_state, c.customer_unique_id\n)\nSELECT\n  customer_state,\n  ROUND(AVG(total_spend), 2) AS avg_spend\nFROM customer_spend\nGROUP BY customer_state\nORDER BY customer_state\nLIMIT 100;",
+        "wallLatencyMs": 6779
+      }
+    }
+  ],
+  "slowAtLeast8Seconds": {
+    "overlap": [
+      {
+        "id": "T5-002",
+        "status": "REQUEST_TIMEOUT",
+        "correct": false,
+        "promptChanged": true,
+        "wallLatencyMs": 15007,
+        "timings": {
+          "retrievalMs": 0,
+          "generationMs": 0,
+          "validationMs": 0,
+          "executionMs": 0,
+          "totalMs": 15005
+        },
+        "budgetStage": "MODEL",
+        "termination": "DEADLINE_EXCEEDED"
+      },
+      {
+        "id": "T5-019",
+        "status": "REQUEST_TIMEOUT",
+        "correct": false,
+        "promptChanged": false,
+        "wallLatencyMs": 15003,
+        "timings": {
+          "retrievalMs": 0,
+          "generationMs": 0,
+          "validationMs": 0,
+          "executionMs": 0,
+          "totalMs": 15003
+        },
+        "budgetStage": "MODEL",
+        "termination": "DEADLINE_EXCEEDED"
+      },
+      {
+        "id": "T6-014",
+        "status": "REQUEST_TIMEOUT",
+        "correct": false,
+        "promptChanged": true,
+        "wallLatencyMs": 15001,
+        "timings": {
+          "retrievalMs": 0,
+          "generationMs": 0,
+          "validationMs": 0,
+          "executionMs": 0,
+          "totalMs": 15000
+        },
+        "budgetStage": "MODEL",
+        "termination": "DEADLINE_EXCEEDED"
+      },
+      {
+        "id": "T4-021",
+        "status": "SUCCESS",
+        "correct": false,
+        "promptChanged": true,
+        "wallLatencyMs": 13587,
+        "timings": {
+          "retrievalMs": 1,
+          "generationMs": 13571,
+          "validationMs": 1,
+          "executionMs": 6,
+          "totalMs": 13586
+        },
+        "budgetStage": "CACHE_WRITE",
+        "termination": "COMPLETE"
+      },
+      {
+        "id": "T6-021",
+        "status": "SUCCESS",
+        "correct": false,
+        "promptChanged": true,
+        "wallLatencyMs": 12712,
+        "timings": {
+          "retrievalMs": 1,
+          "generationMs": 12328,
+          "validationMs": 3,
+          "executionMs": 368,
+          "totalMs": 12712
+        },
+        "budgetStage": "CACHE_WRITE",
+        "termination": "COMPLETE"
+      },
+      {
+        "id": "T6-009",
+        "status": "SUCCESS",
+        "correct": true,
+        "promptChanged": true,
+        "wallLatencyMs": 11423,
+        "timings": {
+          "retrievalMs": 1,
+          "generationMs": 11216,
+          "validationMs": 2,
+          "executionMs": 197,
+          "totalMs": 11423
+        },
+        "budgetStage": "CACHE_WRITE",
+        "termination": "COMPLETE"
+      },
+      {
+        "id": "T3-011",
+        "status": "SUCCESS",
+        "correct": false,
+        "promptChanged": false,
+        "wallLatencyMs": 11276,
+        "timings": {
+          "retrievalMs": 1,
+          "generationMs": 11246,
+          "validationMs": 5,
+          "executionMs": 18,
+          "totalMs": 11276
+        },
+        "budgetStage": "CACHE_WRITE",
+        "termination": "COMPLETE"
+      },
+      {
+        "id": "T5-004",
+        "status": "SUCCESS",
+        "correct": true,
+        "promptChanged": false,
+        "wallLatencyMs": 11097,
+        "timings": {
+          "retrievalMs": 1,
+          "generationMs": 10973,
+          "validationMs": 1,
+          "executionMs": 118,
+          "totalMs": 11097
+        },
+        "budgetStage": "CACHE_WRITE",
+        "termination": "COMPLETE"
+      },
+      {
+        "id": "T4-036",
+        "status": "SUCCESS",
+        "correct": false,
+        "promptChanged": true,
+        "wallLatencyMs": 11052,
+        "timings": {
+          "retrievalMs": 1,
+          "generationMs": 10748,
+          "validationMs": 2,
+          "executionMs": 294,
+          "totalMs": 11052
+        },
+        "budgetStage": "CACHE_WRITE",
+        "termination": "COMPLETE"
+      },
+      {
+        "id": "T6-025",
+        "status": "SUCCESS",
+        "correct": false,
+        "promptChanged": true,
+        "wallLatencyMs": 10905,
+        "timings": {
+          "retrievalMs": 4,
+          "generationMs": 10628,
+          "validationMs": 7,
+          "executionMs": 259,
+          "totalMs": 10905
+        },
+        "budgetStage": "CACHE_WRITE",
+        "termination": "COMPLETE"
+      },
+      {
+        "id": "T4-018",
+        "status": "SUCCESS",
+        "correct": true,
+        "promptChanged": true,
+        "wallLatencyMs": 10189,
+        "timings": {
+          "retrievalMs": 1,
+          "generationMs": 9933,
+          "validationMs": 1,
+          "executionMs": 247,
+          "totalMs": 10189
+        },
+        "budgetStage": "CACHE_WRITE",
+        "termination": "COMPLETE"
+      },
+      {
+        "id": "T5-017",
+        "status": "SUCCESS",
+        "correct": false,
+        "promptChanged": true,
+        "wallLatencyMs": 9957,
+        "timings": {
+          "retrievalMs": 1,
+          "generationMs": 9937,
+          "validationMs": 1,
+          "executionMs": 11,
+          "totalMs": 9957
+        },
+        "budgetStage": "CACHE_WRITE",
+        "termination": "COMPLETE"
+      },
+      {
+        "id": "T5-011",
+        "status": "SUCCESS",
+        "correct": true,
+        "promptChanged": false,
+        "wallLatencyMs": 9674,
+        "timings": {
+          "retrievalMs": 1,
+          "generationMs": 9611,
+          "validationMs": 2,
+          "executionMs": 54,
+          "totalMs": 9674
+        },
+        "budgetStage": "CACHE_WRITE",
+        "termination": "COMPLETE"
+      }
+    ],
+    "available-tables": [
+      {
+        "id": "T5-006",
+        "status": "REQUEST_TIMEOUT",
+        "correct": false,
+        "promptChanged": true,
+        "wallLatencyMs": 15011,
+        "timings": {
+          "retrievalMs": 0,
+          "generationMs": 0,
+          "validationMs": 0,
+          "executionMs": 0,
+          "totalMs": 15011
+        },
+        "budgetStage": "MODEL",
+        "termination": "DEADLINE_EXCEEDED"
+      },
+      {
+        "id": "T4-041",
+        "status": "REQUEST_TIMEOUT",
+        "correct": false,
+        "promptChanged": true,
+        "wallLatencyMs": 15009,
+        "timings": {
+          "retrievalMs": 0,
+          "generationMs": 0,
+          "validationMs": 0,
+          "executionMs": 0,
+          "totalMs": 15009
+        },
+        "budgetStage": "MODEL",
+        "termination": "DEADLINE_EXCEEDED"
+      },
+      {
+        "id": "T4-018",
+        "status": "REQUEST_TIMEOUT",
+        "correct": false,
+        "promptChanged": true,
+        "wallLatencyMs": 15008,
+        "timings": {
+          "retrievalMs": 0,
+          "generationMs": 0,
+          "validationMs": 0,
+          "executionMs": 0,
+          "totalMs": 15007
+        },
+        "budgetStage": "MODEL",
+        "termination": "DEADLINE_EXCEEDED"
+      },
+      {
+        "id": "T4-032",
+        "status": "REQUEST_TIMEOUT",
+        "correct": false,
+        "promptChanged": true,
+        "wallLatencyMs": 15008,
+        "timings": {
+          "retrievalMs": 0,
+          "generationMs": 0,
+          "validationMs": 0,
+          "executionMs": 0,
+          "totalMs": 15008
+        },
+        "budgetStage": "MODEL",
+        "termination": "DEADLINE_EXCEEDED"
+      },
+      {
+        "id": "T5-019",
+        "status": "REQUEST_TIMEOUT",
+        "correct": false,
+        "promptChanged": false,
+        "wallLatencyMs": 15003,
+        "timings": {
+          "retrievalMs": 0,
+          "generationMs": 0,
+          "validationMs": 0,
+          "executionMs": 0,
+          "totalMs": 15003
+        },
+        "budgetStage": "MODEL",
+        "termination": "DEADLINE_EXCEEDED"
+      },
+      {
+        "id": "T6-014",
+        "status": "REQUEST_TIMEOUT",
+        "correct": false,
+        "promptChanged": true,
+        "wallLatencyMs": 15002,
+        "timings": {
+          "retrievalMs": 0,
+          "generationMs": 0,
+          "validationMs": 0,
+          "executionMs": 0,
+          "totalMs": 15001
+        },
+        "budgetStage": "MODEL",
+        "termination": "DEADLINE_EXCEEDED"
+      },
+      {
+        "id": "T5-004",
+        "status": "SUCCESS",
+        "correct": true,
+        "promptChanged": false,
+        "wallLatencyMs": 13740,
+        "timings": {
+          "retrievalMs": 1,
+          "generationMs": 13604,
+          "validationMs": 1,
+          "executionMs": 125,
+          "totalMs": 13740
+        },
+        "budgetStage": "CACHE_WRITE",
+        "termination": "COMPLETE"
+      },
+      {
+        "id": "T4-014",
+        "status": "SUCCESS",
+        "correct": false,
+        "promptChanged": true,
+        "wallLatencyMs": 12549,
+        "timings": {
+          "retrievalMs": 0,
+          "generationMs": 12363,
+          "validationMs": 3,
+          "executionMs": 177,
+          "totalMs": 12549
+        },
+        "budgetStage": "CACHE_WRITE",
+        "termination": "COMPLETE"
+      },
+      {
+        "id": "T6-021",
+        "status": "SUCCESS",
+        "correct": false,
+        "promptChanged": true,
+        "wallLatencyMs": 10744,
+        "timings": {
+          "retrievalMs": 1,
+          "generationMs": 10311,
+          "validationMs": 5,
+          "executionMs": 420,
+          "totalMs": 10744
+        },
+        "budgetStage": "CACHE_WRITE",
+        "termination": "COMPLETE"
+      }
+    ]
+  },
+  "zeroExampleOutcomes": [
+    {
+      "id": "T1-039",
+      "defaultCorrect": true,
+      "candidateCorrect": true
+    },
+    {
+      "id": "T2-018",
+      "defaultCorrect": true,
+      "candidateCorrect": true
+    },
+    {
+      "id": "T2-032",
+      "defaultCorrect": true,
+      "candidateCorrect": true
+    },
+    {
+      "id": "T4-021",
+      "defaultCorrect": false,
+      "candidateCorrect": false
+    }
+  ],
+  "limits": [
+    "Descriptive strata chosen by deterministic pre-call input identity, not causal effect estimates.",
+    "generationMs may omit interrupted model waits; timeout stage is recorded separately.",
+    "Question wording and Gold are frozen; output contract differences remain scored as mismatches."
+  ]
+}
