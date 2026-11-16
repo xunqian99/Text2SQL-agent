@@ -110,7 +110,7 @@ class RequestBudgetTest {
 
     @Test void saturatedCancellationQueueIsReportedAndDoesNotBlockTheCaller() throws Exception {
         var release = new CountDownLatch(1);
-        var drained = new CountDownLatch(66);
+        var drained = new CountDownLatch(70);
         try {
             AgentResponse result = RequestBudgetRunner.run("cancel overload", null, config(150), () -> {
                 for (int i = 0; i < 70; i++) RequestBudget.current().onCancel(() -> {
@@ -123,12 +123,16 @@ class RequestBudgetTest {
                 return answer();
             });
             assertThat(result.status()).isEqualTo(AgentResponse.Status.REQUEST_TIMEOUT);
-            assertThat(result.budget().cancellationRejected()).isEqualTo(4);
+            // The 64-slot queue can fill before either existing worker dequeues a task.
+            // Accepting 64..66 and rejecting 6..4 are all valid scheduling outcomes.
+            int rejected = result.budget().cancellationRejected();
+            assertThat(rejected).isBetween(4, 6);
+            for (int i = 0; i < rejected; i++) drained.countDown();
             assertThat(result.budget().elapsedMs()).isLessThan(1000);
         } finally {
             release.countDown();
-            assertThat(drained.await(2, TimeUnit.SECONDS)).isTrue();
         }
+        assertThat(drained.await(2, TimeUnit.SECONDS)).isTrue();
     }
 
     @Test void lateUsageRemainsReconcilableWithoutRewritingTheSealedResponse(@org.junit.jupiter.api.io.TempDir java.nio.file.Path dir) throws Exception {

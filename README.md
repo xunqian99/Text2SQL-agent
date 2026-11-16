@@ -1,5 +1,9 @@
 # Text2SQL Agent
 
+**当前执行状态（2026-11-16）**：按用户决定暂缓阶段3 P95 优化，继续改进方案阶段4的本机受控演示。阶段3总预算、有界调用与计时机制已实现，但原定三轮平均 P95 <8秒仍未通过，完整成本存在未知项；不降低原门槛、不推广已被否决的加速候选。独立盲测、完整语义契约及整体验收仍未完成。下文逐轮记录保留当时状态，当前执行顺序以本段及[阶段调整](docs/STAGE3_DEFERRAL_20261116.md)为准。
+
+**本机运行入口**：[受控演示与验收步骤](docs/LOCAL_DEMO.md)。`scripts/start_local.ps1 -Mode demo` 与 `-Mode baseline` 固定监听本机；`/api/health` 显示实际能力开关和预算，配置就绪不代表供应商调用已验证。[首项交付验收](docs/LOCAL_DEMO_ACCEPTANCE_20261116.md)：Java547/547、Gold200/200、真实HTTP问数1条匹配，估价¥0.0006094。阶段4尚未整体验收。
+
 最新阶段3观测修复：[中断请求分段计时](docs/BUDGET_TIMINGS_FIX_20261116.md)：统一预算开启路径的请求分段时钟，15秒受控模型阻塞记录检索37ms、生成14973ms、总计15011ms；纠错超时保留首答但计入整次等待。Java535/535（新增9项）、Python96/96，真实PostgreSQL取消与本地慢HTTP检查无跳过，外部供应商调用0、费用0。未更新模型准确率或生产P95，阶段3仍未通过。实现`966df68`上补验Gold200/200、模型调用0，默认/候选各100条完整提示词与前轮不变。
 
 最新阶段3开发筛选：[参考示例表依赖过滤结果](docs/AVAILABLE_EXAMPLES_RESULTS_20261116.md)，测量`15a2e93`：原dev100×2策略=200次请求、192次模型调用，默认69/100、候选68/100；P95 11.423→15.002秒（+31.33%），超时3→6、完整费用未确认，候选拒绝、不追加600次。Gold200/200、实际192条首答配对及账目审计通过；沿用实现冻结前Java526/526、离线审计96/96。生产默认不变，阶段3仍未通过。新发现超时请求generationMs记0但budget.stage=MODEL，下一步修复分段耗时归因，不改评测题或Gold。
@@ -23,7 +27,7 @@
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-**历史生成模式确认：默认 91.00% / 关闭思考 87.33%** · **最近 Java 全量 535/535** · **53/53 对抗回归** · **整体项目尚未通过验收**
+**历史生成模式确认：默认 91.00% / 关闭思考 87.33%** · **最近 Java 全量 547/547** · **53/53 对抗回归** · **整体项目尚未通过验收**
 
 题库规模：原基准 **200道（dev100＋eval100）**，另有候选集100道。下文“600次问答”是同一批100道eval题 × 2种配置 × 3轮，不是新增600道题；输出Token筛选另用原100道dev题 × 2种配置，共200次问答。
 
@@ -139,10 +143,10 @@ cp src/main/resources/application-local.example.yml src/main/resources/applicati
 
 ```powershell
 $env:AGENT_LLM_API_KEY = "sk-xxxxxxxx"
-mvn spring-boot:run "-Dspring-boot.run.arguments=--spring.profiles.active=local"
+powershell -ExecutionPolicy Bypass -File scripts/start_local.ps1 -Mode demo
 ```
 
-Key 只认环境变量 `AGENT_LLM_API_KEY` 或 `application-local.yml` 的 `api-key`。没配 Key 也能启动，但 `/api/ask` 会返回 `503 NOT_CONFIGURED`。
+推荐只通过环境变量 `AGENT_LLM_API_KEY` 配置 Key。启动脚本也会读取当前用户永久环境变量，不把 Key 放进命令行或打印出来。没配 Key 可启动；无请求自带 Key 时 `/api/ask` 返回 `503 NOT_CONFIGURED`。本机基线使用 `-Mode baseline`，离线 Gold 自检使用下面的 `-DryRun`，真实评测沿用 `run_eval.ps1`；这些配置的成绩不能混用。健康接口不会付费验证 Key 有效性。
 
 ### 4. API
 
@@ -166,7 +170,7 @@ Invoke-RestMethod -Method Post -Uri http://localhost:8080/api/ask `
 ### 5. 测试与评估
 
 ```bash
-mvn test   # 当前：422 项全部通过（含 53 条对抗测试）
+mvn test   # 实际通过数以本次运行末尾 Tests run 为准；含 53 条对抗回归
 ```
 
 ```powershell
@@ -203,7 +207,7 @@ DRY_RUN=true bash scripts/run_eval.sh all
 ```
 src/main/java        # 接入 / 编排 / 检索 / 生成 / 校验 / 执行 / 缓存 / 会话
 src/main/resources   # 配置、glossary / metrics / few-shot、前端
-src/test/java        # 当前：422 项全部通过
+src/test/java        # 单元、集成、对抗回归；通过数见最近验收报告
 data/schema          # DDL + 只读/读写角色
 data/eval            # 200 条评估集
 docs/                # ROADMAP / EVALUATION / FAILURE_ATTRIBUTION ...

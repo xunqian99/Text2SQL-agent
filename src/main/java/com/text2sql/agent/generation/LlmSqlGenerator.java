@@ -103,6 +103,11 @@ public class LlmSqlGenerator {
         return chatModel != null || !dynamicChatModels.isEmpty();
     }
 
+    /** A previous BYOK request must not make the server-wide readiness look configured. */
+    public boolean isGloballyConfigured() {
+        return chatModel != null;
+    }
+
     public boolean isConfigured(String apiKeyOverride) {
         return resolveChatModel(apiKeyOverride) != null;
     }
