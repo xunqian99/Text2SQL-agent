@@ -8,7 +8,7 @@ from summarize_holdout import dataset_hash, ids_hash, is_dev, read
 from summarize_request_budget import audit_run
 from summarize_output_budget import decision
 
-ORDER = ['gold', 'provider-default', 'reasoning-none']
+PROTOCOL_MODES = {'generation-mode-screen-v1': 'none', 'low-reasoning-screen-v1': 'low'}
 
 
 def summarize(root, verify_workspace=True):
@@ -19,10 +19,14 @@ def summarize(root, verify_workspace=True):
         if not condition:
             errors.append(message)
     require(manifest['state'] == 'COMPLETE', 'screen incomplete')
-    require(manifest['format'] == 'generation-mode-screen-v1', 'unexpected protocol')
+    require(manifest['format'] in PROTOCOL_MODES, 'unexpected protocol')
+    candidate_mode = PROTOCOL_MODES.get(manifest['format'], 'none')
+    require(manifest.get('candidateReasoningEffort', 'none') == candidate_mode, 'protocol/candidate mode differs')
+    candidate_name = f'reasoning-{candidate_mode}'
+    order = ['gold', 'provider-default', candidate_name]
     require(not manifest['dryRunOnly'], 'Gold-only cannot establish screening results')
     require(manifest['distinctRealQuestions'] == 100 and manifest['plannedRealRequests'] == 200, 'question/request counts changed')
-    require(manifest['order'] == ORDER and [r['name'] for r in manifest['runs']] == ORDER, 'run order changed')
+    require(manifest['order'] == order and [r['name'] for r in manifest['runs']] == order, 'run order changed')
     if verify_workspace:
         for name, expected in manifest['protectedSha256'].items():
             path = Path(name)
@@ -56,7 +60,7 @@ def summarize(root, verify_workspace=True):
               and not meta['selfCorrectionEnabled'], 'retry configuration changed')
         config = meta['effectiveConfig']
         cap = 8192
-        mode = 'provider-default' if name == 'provider-default' else 'none'
+        mode = 'provider-default' if name == 'provider-default' else candidate_mode
         check(run['configuredReasoningEffort'] == config.get('configuredReasoningEffort') == mode, 'configured mode changed')
         check(config['maxTokens'] == cap, 'output cap changed')
         for key, value in {'requestBudgetEnabled': True, 'requestTimeoutMs': 15000, 'requestMaxModelCalls': 2,
@@ -97,19 +101,20 @@ def summarize(root, verify_workspace=True):
         group['truncatedRequestOutcomes'] = [{'id': i['id'], 'status': i['status'], 'correct': i['correct'], 'calls': len(i['calls']),
                                              'wallLatencyMs': i['wallLatencyMs']}
                                             for i in items if i['id'] in group['truncatedRequests']]
-    if set(reports) != set(ORDER):
+    if set(reports) != set(order):
         return {'passedEvidenceAudit': False, 'errors': errors, 'groups': groups}
     baseline = {i['id']: i for i in reports['provider-default']['itemEvidence']}
     no_prompt = []
-    for item in reports['reasoning-none']['itemEvidence']:
+    for item in reports[candidate_name]['itemEvidence']:
         original = baseline[item['id']]
         if item['calls'] and original['calls']:
             require(item['calls'][0]['promptSha256'] == original['calls'][0]['promptSha256'], f"{item['id']}: first prompt differs")
         else:
             no_prompt.append(item['id'])
-    result = decision(groups['provider-default'], groups['reasoning-none'])
+    result = decision(groups['provider-default'], groups[candidate_name])
     result['candidateForConfirmation'] &= not errors
     return {'format': 'generation-mode-screen-audit-v1', 'codeCommit': manifest['codeCommit'],
+            'candidateReasoningEffort': candidate_mode,
             'passedEvidenceAudit': not errors, 'errors': errors, 'verifiedCurrentWorkspaceBytes': verify_workspace,
             'distinctRealQuestions': 100, 'realRequests': 200, 'groups': groups, 'commonConfig': common_config,
             'noFirstPromptPair': no_prompt, **result,
@@ -125,7 +130,7 @@ if __name__ == '__main__':
     result = summarize(args.directory, verify_workspace=not args.evidence_only)
     if not args.evidence_only:
         (Path(args.directory) / 'summary.json').write_text(json.dumps(result, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-    print(json.dumps({k: result.get(k) for k in ('passedEvidenceAudit', 'errors', 'distinctRealQuestions', 'realRequests',
+    print(json.dumps({k: result.get(k) for k in ('passedEvidenceAudit', 'errors', 'candidateReasoningEffort', 'distinctRealQuestions', 'realRequests',
                                                'screenGates', 'candidateForConfirmation', 'accuracyDeltaPp', 'p95DeltaMs',
                                                'candidateP95Below8Seconds', 'stageAccepted')}, ensure_ascii=False, indent=2))
     raise SystemExit(0 if result['passedEvidenceAudit'] else 1)

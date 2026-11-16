@@ -1,14 +1,22 @@
-param([string]$OutputDir = "reports/generation-mode-$(Get-Date -Format 'yyyyMMdd-HHmmss')", [switch]$DryRunOnly)
+param(
+  [string]$OutputDir = "reports/generation-mode-$(Get-Date -Format 'yyyyMMdd-HHmmss')",
+  [switch]$DryRunOnly,
+  [ValidateSet('none', 'low')][string]$CandidateReasoningEffort = 'none'
+)
 $ErrorActionPreference = 'Stop'
+$CandidateReasoningEffort = $CandidateReasoningEffort.ToLowerInvariant()
 $projectRoot = Split-Path -Parent $PSScriptRoot
 Push-Location $projectRoot
 try {
   if (Test-Path -LiteralPath $OutputDir) { throw 'Output directory exists; never overwrite evidence.' }
   $codeCommit = (& git rev-parse HEAD).Trim()
+  $protocol = if ($CandidateReasoningEffort -eq 'low') { 'docs/LOW_REASONING_PROTOCOL_20261116.md' } else { 'docs/GENERATION_MODE_PROTOCOL_20261116.md' }
+  $format = if ($CandidateReasoningEffort -eq 'low') { 'low-reasoning-screen-v1' } else { 'generation-mode-screen-v1' }
+  $candidateName = "reasoning-$CandidateReasoningEffort"
   $protected = @('src', 'pom.xml', 'data/eval', 'scripts/run_eval.ps1',
     'scripts/run_generation_mode_screen.ps1', 'scripts/summarize_generation_mode.py',
     'scripts/summarize_output_budget.py', 'scripts/summarize_request_budget.py', 'scripts/summarize_holdout.py',
-    'docs/GENERATION_MODE_PROTOCOL_20261116.md')
+    $protocol)
   $hashes = [ordered]@{}
   foreach ($file in @(& git ls-files -- $protected)) {
     $hashes[$file] = (Get-FileHash -LiteralPath $file -Algorithm SHA256).Hash.ToLowerInvariant()
@@ -34,10 +42,10 @@ try {
   $runs = @(@{name='gold'; split='all'; mode='provider-default'; count=200; dry=$true})
   if (-not $DryRunOnly) {
     $runs += @(@{name='provider-default'; split='dev'; mode='provider-default'; count=100; dry=$false},
-      @{name='reasoning-none'; split='dev'; mode='none'; count=100; dry=$false})
+      @{name=$candidateName; split='dev'; mode=$CandidateReasoningEffort; count=100; dry=$false})
   }
   [IO.Directory]::CreateDirectory((Join-Path $projectRoot $OutputDir)) | Out-Null
-  $manifest = [ordered]@{format='generation-mode-screen-v1'; state='RUNNING'; startedAt=(Get-Date -Format o)
+  $manifest = [ordered]@{format=$format; candidateReasoningEffort=$CandidateReasoningEffort; state='RUNNING'; startedAt=(Get-Date -Format o)
     codeCommit=$codeCommit; protectedSha256=$hashes; distinctRealQuestions=$(if ($DryRunOnly) { 0 } else { 100 }); plannedRealRequests=$(if ($DryRunOnly) { 0 } else { 200 })
     dryRunOnly=$DryRunOnly.IsPresent; order=@($runs | ForEach-Object { $_.name }); runs=@()}
   $manifestPath = Join-Path $OutputDir 'manifest.json'
