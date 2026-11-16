@@ -8,9 +8,11 @@
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-**三轮基线均值 92.00% / 完整检查组 90.33%** · **354 项 Java 测试通过** · **53/53 对抗回归** · **四组平均 P95 均 >8s（未达标）**
+**三轮基线均值 92.00% / 完整检查组 90.33%** · **401 项 Java 测试通过** · **53/53 对抗回归** · **四组平均 P95 均 >8s（未达标）**
 
 最新证据：[2026-11-16 四配置 × 三轮评测](docs/ABLATION_RESULTS_20261116.md)，共 1,200 次问答；独立盲测尚未完成。历史 96/100 是 2026-11-09 单轮快照，不能作为当前稳定准确率。
+
+后续 [SQL 提取边界修复](docs/SQL_EXTRACTION_20261116.md)已通过 63/63 边界契约、1,184 条归档 SQL 回放和 200/200 Gold 自检；修复后未重跑真实模型准确率，上述分数仍对应测量代码 `3828e77`。
 
 [快速开始](#快速开始) · [基准结果](#基准结果) · [评测方法](#评测方法) · [已知局限](#已知局限) · [设计文档](#设计文档)
 
@@ -135,7 +137,7 @@ Invoke-RestMethod -Method Post -Uri http://localhost:8080/api/ask `
 ### 5. 测试与评估
 
 ```bash
-mvn test   # 当前：354 项全部通过（含 53 条对抗测试）
+mvn test   # 当前：401 项全部通过（含 53 条对抗测试）
 ```
 
 ```powershell
@@ -172,7 +174,7 @@ DRY_RUN=true bash scripts/run_eval.sh all
 ```
 src/main/java        # 接入 / 编排 / 检索 / 生成 / 校验 / 执行 / 缓存 / 会话
 src/main/resources   # 配置、glossary / metrics / few-shot、前端
-src/test/java        # 当前：354 项全部通过
+src/test/java        # 当前：401 项全部通过
 data/schema          # DDL + 只读/读写角色
 data/eval            # 200 条评估集
 docs/                # ROADMAP / EVALUATION / FAILURE_ATTRIBUTION ...
@@ -200,6 +202,7 @@ docker/              # PostgreSQL 容器
 | [IMPROVEMENT_PLAN.md](docs/IMPROVEMENT_PLAN.md) | 当前短板、分阶段改进方案与可量化验收路径 |
 | [EVALUATION.md](docs/EVALUATION.md) | 消融、指标口径、历史报告、成本公式 |
 | [ABLATION_RESULTS_20261116.md](docs/ABLATION_RESULTS_20261116.md) | 1,200 次真实问答、实际重试收益、延迟缺口与原始证据 |
+| [SQL_EXTRACTION_20261116.md](docs/SQL_EXTRACTION_20261116.md) | SQL 输出包装修复、正文保留、安全边界与离线验收 |
 | [FAILURE_ATTRIBUTION.md](docs/FAILURE_ATTRIBUTION.md) | 三次 15+14+16 条失败分别错在哪一层 |
 | [DEFECT_LOG.md](docs/DEFECT_LOG.md) | 缺陷、安全绕过与修法 |
 | [SECURITY.md](SECURITY.md) | 安全边界与漏洞报告方式 |
