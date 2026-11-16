@@ -1,0 +1,178 @@
+# New frozen holdout candidate; authored without inspecting new model scores.
+# Gold authoring checks may run before freeze; no post-score edits under this version.
+
+- id: T4-H001
+  difficulty: multi_join
+  tags: [holdout_candidate]
+  question: "按会员当前等级名称统计冻结会员数，只看存在等级定义的会员；输出等级名称和人数，按人数降序、名称升序。"
+  gold_sql: |
+    SELECT l.level_name, COUNT(*) AS member_count FROM members m JOIN member_levels l ON l.level_id = m.level_id WHERE m.status = 2 GROUP BY l.level_name ORDER BY member_count DESC, l.level_name;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T4-H002
+  difficulty: multi_join
+  tags: [holdout_candidate]
+  question: "各客服分类中尚未解决的工单有多少张？所有分类都输出，缺失计0；仅输出分类ID、分类名和数量，按分类ID升序。"
+  gold_sql: |
+    SELECT c.category_id, c.category_name, COUNT(t.ticket_id) AS ticket_count FROM ticket_categories c LEFT JOIN support_tickets t ON t.category_id = c.category_id AND t.resolved_at IS NULL GROUP BY c.category_id, c.category_name ORDER BY c.category_id;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T4-H003
+  difficulty: multi_join
+  tags: [holdout_candidate]
+  question: "各仓库有多少条异常发货记录？状态4为异常，所有仓库都输出，缺失计0；输出仓库ID、名称、记录数，按仓库ID升序。"
+  gold_sql: |
+    SELECT w.warehouse_id, w.warehouse_name, COUNT(s.shipment_id) AS shipment_count FROM warehouses w LEFT JOIN shipments s ON s.warehouse_id = w.warehouse_id AND s.status = 4 GROUP BY w.warehouse_id,w.warehouse_name ORDER BY w.warehouse_id;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T4-H004
+  difficulty: multi_join
+  tags: [holdout_candidate]
+  question: "各营销活动的优惠券使用记录总数是多少？输出活动ID、名称和记录数，所有活动都要保留，未使用记0，按活动ID升序。"
+  gold_sql: |
+    SELECT c.campaign_id, c.campaign_name, COUNT(u.usage_id) AS usage_count FROM campaigns c LEFT JOIN coupons p ON p.campaign_id = c.campaign_id LEFT JOIN coupon_usages u ON u.coupon_id = p.coupon_id GROUP BY c.campaign_id,c.campaign_name ORDER BY c.campaign_id;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T4-H005
+  difficulty: multi_join
+  tags: [holdout_candidate]
+  question: "会员中没有任何用户标签映射的有多少人？包含全部会员状态，只输出人数。"
+  gold_sql: |
+    SELECT COUNT(*) AS member_count FROM members m WHERE NOT EXISTS (SELECT 1 FROM user_tag_map t WHERE t.member_id = m.member_id);
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T4-H006
+  difficulty: multi_join
+  tags: [holdout_candidate]
+  question: "按标签名称统计有该标签的冻结会员人数，只保留实际有人的标签；输出标签名称和人数，按人数降序、名称升序，最多10个。"
+  gold_sql: |
+    SELECT t.tag_name, COUNT(DISTINCT m.member_id) AS member_count FROM user_tags t JOIN user_tag_map x ON x.tag_id = t.tag_id JOIN members m ON m.member_id = x.member_id WHERE m.status = 2 GROUP BY t.tag_name ORDER BY member_count DESC,t.tag_name LIMIT 10;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T4-H007
+  difficulty: multi_join
+  tags: [holdout_candidate]
+  question: "按客户所在州统计2018年第二季度的全部状态订单数，输出州代码和订单数，按数量降序、州代码升序，最多10州。"
+  gold_sql: |
+    SELECT c.customer_state, COUNT(*) AS order_count FROM orders o JOIN customers c ON c.customer_id = o.customer_id WHERE o.order_purchase_timestamp >= '2018-04-01' AND o.order_purchase_timestamp < '2018-07-01' GROUP BY c.customer_state ORDER BY order_count DESC,c.customer_state LIMIT 10;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T4-H008
+  difficulty: multi_join
+  tags: [holdout_candidate]
+  question: "所有订单中，客户所在州为SP且已退款状态4的退款单总额是多少？包含全部订单状态，仅输出退款金额合计，不连接订单明细。"
+  gold_sql: |
+    SELECT SUM(r.refund_amount) AS total_refund FROM refunds r JOIN orders o ON o.order_id = r.order_id JOIN customers c ON c.customer_id = o.customer_id WHERE r.status = 4 AND c.customer_state = 'SP';
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T4-H009
+  difficulty: multi_join
+  tags: [holdout_candidate]
+  question: "按卖家所在州统计订单明细的商品金额合计，包含全部订单状态；输出州代码和商品金额，按金额降序、州代码升序，最多8州。"
+  gold_sql: |
+    SELECT s.seller_state, SUM(i.price) AS total_price FROM order_items i JOIN sellers s ON s.seller_id = i.seller_id GROUP BY s.seller_state ORDER BY total_price DESC,s.seller_state LIMIT 8;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T4-H010
+  difficulty: multi_join
+  tags: [holdout_candidate]
+  question: "各当前品牌映射对应的商品有多少个？只统计is_current为真的映射，输出品牌ID、名称和不同商品数，按数量降序、品牌ID升序，最多10个品牌。"
+  gold_sql: |
+    SELECT b.brand_id,b.brand_name,COUNT(DISTINCT m.product_id) AS product_count FROM brands b JOIN product_brand_map m ON m.brand_id=b.brand_id WHERE m.is_current=true GROUP BY b.brand_id,b.brand_name ORDER BY product_count DESC,b.brand_id LIMIT 10;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T4-H011
+  difficulty: multi_join
+  tags: [holdout_candidate]
+  question: "按仓库名称统计库存不足记录数，库存不足指quantity小于safety_stock；输出仓库ID、名称和数量，只保留有不足记录的仓库，按仓库ID升序。"
+  gold_sql: |
+    SELECT w.warehouse_id,w.warehouse_name,COUNT(*) AS shortage_count FROM warehouses w JOIN inventory i ON i.warehouse_id=w.warehouse_id WHERE i.quantity<i.safety_stock GROUP BY w.warehouse_id,w.warehouse_name ORDER BY w.warehouse_id;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T4-H012
+  difficulty: multi_join
+  tags: [holdout_candidate]
+  question: "哪些营销活动没有关联任何商品？只输出活动ID和名称，按活动ID升序，最多20个。"
+  gold_sql: |
+    SELECT c.campaign_id,c.campaign_name FROM campaigns c WHERE NOT EXISTS (SELECT 1 FROM campaign_products p WHERE p.campaign_id=c.campaign_id) ORDER BY c.campaign_id LIMIT 20;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T4-H013
+  difficulty: multi_join
+  tags: [holdout_candidate]
+  question: "按工单分类名称汇总客服消息记录数，只看确实有消息的分类；输出分类名和消息数，按数量降序、分类名升序。"
+  gold_sql: |
+    SELECT c.category_name,COUNT(*) AS message_count FROM ticket_categories c JOIN support_tickets t ON t.category_id=c.category_id JOIN ticket_messages m ON m.ticket_id=t.ticket_id GROUP BY c.category_name ORDER BY message_count DESC,c.category_name;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T4-H014
+  difficulty: multi_join
+  tags: [holdout_candidate]
+  question: "按会员当前等级名称统计搜索记录数，只看正常状态会员且有等级定义；输出等级名称和搜索记录数，按数量降序、等级名升序。"
+  gold_sql: |
+    SELECT l.level_name,COUNT(*) AS search_count FROM search_logs s JOIN members m ON m.member_id=s.member_id JOIN member_levels l ON l.level_id=m.level_id WHERE m.status=1 GROUP BY l.level_name ORDER BY search_count DESC,l.level_name;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T4-H015
+  difficulty: multi_join
+  tags: [holdout_candidate]
+  question: "按仓库所在大区统计发货记录数，仅统计能匹配区域定义的仓库；输出大区和记录数，按记录数降序、大区升序。"
+  gold_sql: |
+    SELECT r.macro_region,COUNT(*) AS shipment_count FROM shipments s JOIN warehouses w ON w.warehouse_id=s.warehouse_id JOIN regions r ON r.region_code=w.region_code GROUP BY r.macro_region ORDER BY shipment_count DESC,r.macro_region;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T4-H016
+  difficulty: multi_join
+  tags: [holdout_candidate]
+  question: "2018年上半年申请的已退款明细中，每个商品累计退货数量是多少？只输出商品ID和数量合计，按数量降序、商品ID升序，前6个。"
+  gold_sql: |
+    SELECT i.product_id,SUM(x.refund_qty) AS total_qty FROM refunds r JOIN refund_items x ON x.refund_id=r.refund_id JOIN order_items i ON i.order_id=x.order_id AND i.order_item_id=x.order_item_id WHERE r.status=4 AND r.requested_at>='2018-01-01' AND r.requested_at<'2018-07-01' GROUP BY i.product_id ORDER BY total_qty DESC,i.product_id LIMIT 6;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T4-H017
+  difficulty: multi_join
+  tags: [holdout_candidate]
+  question: "按卖家所在州汇总已打款结算单净额，只输出州代码和净额合计，按净额降序、州代码升序，最多10州。"
+  gold_sql: |
+    SELECT s.seller_state,SUM(t.net_amount) AS total_net FROM settlements t JOIN sellers s ON s.seller_id=t.seller_id WHERE t.status=3 GROUP BY s.seller_state ORDER BY total_net DESC,s.seller_state LIMIT 10;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T4-H018
+  difficulty: multi_join
+  tags: [holdout_candidate]
+  question: "按商品英文类目名统计商品个数，只统计有翻译的商品；输出英文类目和商品数，按数量降序、英文类目升序，前7类。"
+  gold_sql: |
+    SELECT t.product_category_name_english,COUNT(*) AS product_count FROM products p JOIN product_category_translation t ON t.product_category_name=p.product_category_name GROUP BY t.product_category_name_english ORDER BY product_count DESC,t.product_category_name_english LIMIT 7;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T4-H019
+  difficulty: multi_join
+  tags: [holdout_candidate]
+  question: "有多少个正常会员至少有一笔已使用优惠券记录？只输出不同会员人数，不要求订单有效状态。"
+  gold_sql: |
+    SELECT COUNT(*) AS member_count FROM members m WHERE m.status=1 AND EXISTS (SELECT 1 FROM coupon_usages u WHERE u.member_id=m.member_id);
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T4-H020
+  difficulty: multi_join
+  tags: [holdout_candidate]
+  question: "按订单状态统计收到1星评价的不同订单数，包含全部状态；只输出状态和不同订单数，按状态升序，不输出没有1星评价的状态。"
+  gold_sql: |
+    SELECT o.order_status,COUNT(DISTINCT o.order_id) AS order_count FROM orders o JOIN order_reviews r ON r.order_id=o.order_id WHERE r.review_score=1 GROUP BY o.order_status ORDER BY o.order_status;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T4-H021
+  difficulty: multi_join
+  tags: [holdout_candidate]
+  question: "每个仓库覆盖多少个有库存记录的商品类目？类目不能为空；输出仓库ID和不同类目数，只看有此类库存的仓库，按仓库ID升序。"
+  gold_sql: |
+    SELECT i.warehouse_id,COUNT(DISTINCT p.product_category_name) AS category_count FROM inventory i JOIN products p ON p.product_id=i.product_id WHERE p.product_category_name IS NOT NULL GROUP BY i.warehouse_id ORDER BY i.warehouse_id;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T4-H022
+  difficulty: multi_join
+  tags: [holdout_candidate]
+  question: "列出搜索记录数最多的前6位会员，只输出会员ID、当前积分和搜索次数；包含全部会员状态，次数降序、会员ID升序。"
+  gold_sql: |
+    SELECT m.member_id,m.points,COUNT(*) AS search_count FROM members m JOIN search_logs s ON s.member_id=m.member_id GROUP BY m.member_id,m.points ORDER BY search_count DESC,m.member_id LIMIT 6;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"

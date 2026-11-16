@@ -1,0 +1,162 @@
+# New frozen holdout candidate; authored without inspecting new model scores.
+# Gold authoring checks may run before freeze; no post-score edits under this version.
+
+- id: T1-H001
+  difficulty: single_table_basic
+  tags: [holdout_candidate]
+  question: "统计状态为冻结且积分至少500的会员人数，只输出人数。"
+  gold_sql: |
+    SELECT COUNT(*) AS member_count FROM members WHERE status = 2 AND points >= 500;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T1-H002
+  difficulty: single_table_basic
+  tags: [holdout_candidate]
+  question: "商品中重量在1000到2000克之间（包含两端）的有多少个？只输出商品数。"
+  gold_sql: |
+    SELECT COUNT(*) AS product_count FROM products WHERE product_weight_g BETWEEN 1000 AND 2000;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T1-H003
+  difficulty: single_table_basic
+  tags: [holdout_candidate]
+  question: "只查看全部状态订单中，已支付审核但尚未交给承运人的订单数量，只输出数量。"
+  gold_sql: |
+    SELECT COUNT(*) AS order_count FROM orders WHERE order_approved_at IS NOT NULL AND order_delivered_carrier_date IS NULL;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T1-H004
+  difficulty: single_table_basic
+  tags: [holdout_candidate]
+  question: "支付记录中，使用信用卡且分期数大于6的记录有多少条？只输出记录数，不按订单去重。"
+  gold_sql: |
+    SELECT COUNT(*) AS payment_count FROM order_payments WHERE payment_type = 'credit_card' AND payment_installments > 6;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T1-H005
+  difficulty: single_table_basic
+  tags: [holdout_candidate]
+  question: "评价标题为空或空字符串的评价记录有多少条？只输出记录数。"
+  gold_sql: |
+    SELECT COUNT(*) AS review_count FROM order_reviews WHERE review_comment_title IS NULL OR review_comment_title = '';
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T1-H006
+  difficulty: single_table_basic
+  tags: [holdout_candidate]
+  question: "列出状态正常的会员中积分最高的前7人，只输出会员ID和积分；积分降序，同分按会员ID升序。"
+  gold_sql: |
+    SELECT member_id, points FROM members WHERE status = 1 ORDER BY points DESC NULLS LAST, member_id ASC LIMIT 7;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T1-H007
+  difficulty: single_table_basic
+  tags: [holdout_candidate]
+  question: "列出预算大于10000且状态为已结束的营销活动，只输出活动ID和名称，按活动ID升序，最多20条。"
+  gold_sql: |
+    SELECT campaign_id, campaign_name FROM campaigns WHERE budget > 10000 AND status = 3 ORDER BY campaign_id LIMIT 20;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T1-H008
+  difficulty: single_table_basic
+  tags: [holdout_candidate]
+  question: "满减类型优惠券中，最低订单金额至少100的共有多少张？只输出张数。"
+  gold_sql: |
+    SELECT COUNT(*) AS coupon_count FROM coupons WHERE discount_type = 'fixed' AND min_order_amount >= 100;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T1-H009
+  difficulty: single_table_basic
+  tags: [holdout_candidate]
+  question: "库存记录里库存数量小于安全库存的记录有多少条？只输出记录数，不按商品去重。"
+  gold_sql: |
+    SELECT COUNT(*) AS inventory_count FROM inventory WHERE quantity < safety_stock;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T1-H010
+  difficulty: single_table_basic
+  tags: [holdout_candidate]
+  question: "退款原因是质量问题且状态为已退款的退款单有多少张？只输出退款单数。"
+  gold_sql: |
+    SELECT COUNT(*) AS refund_count FROM refunds WHERE reason_code = 'QUAL' AND status = 4;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T1-H011
+  difficulty: single_table_basic
+  tags: [holdout_candidate]
+  question: "有多少张客服工单优先级为紧急、且还没有解决时间？只输出工单数。"
+  gold_sql: |
+    SELECT COUNT(*) AS ticket_count FROM support_tickets WHERE priority = 4 AND resolved_at IS NULL;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T1-H012
+  difficulty: single_table_basic
+  tags: [holdout_candidate]
+  question: "列出已经打款的结算单中净结算额最高的前8张，只输出结算单ID和净额；净额降序，同额按ID升序。"
+  gold_sql: |
+    SELECT settlement_id, net_amount FROM settlements WHERE status = 3 ORDER BY net_amount DESC NULLS LAST, settlement_id LIMIT 8;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T1-H013
+  difficulty: single_table_basic
+  tags: [holdout_candidate]
+  question: "邀请记录中，有转化时间且奖励金额大于0的记录共有多少条？只输出记录数。"
+  gold_sql: |
+    SELECT COUNT(*) AS referral_count FROM referrals WHERE converted_at IS NOT NULL AND reward_amount > 0;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T1-H014
+  difficulty: single_table_basic
+  tags: [holdout_candidate]
+  question: "搜索结果数量为0、但点击商品ID非空的搜索记录有多少条？只输出记录数。"
+  gold_sql: |
+    SELECT COUNT(*) AS search_count FROM search_logs WHERE result_count = 0 AND clicked_product_id IS NOT NULL;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T1-H015
+  difficulty: single_table_basic
+  tags: [holdout_candidate]
+  question: "商品调价历史中，新价格低于旧价格的记录共有多少条？只输出记录数。"
+  gold_sql: |
+    SELECT COUNT(*) AS price_change_count FROM product_price_history WHERE new_price < old_price;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T1-H016
+  difficulty: single_table_basic
+  tags: [holdout_candidate]
+  question: "统计被标为默认地址且所在州为SP的收货地址记录数，只输出记录数。"
+  gold_sql: |
+    SELECT COUNT(*) AS address_count FROM shipping_addresses WHERE is_default = true AND state = 'SP';
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T1-H017
+  difficulty: single_table_basic
+  tags: [holdout_candidate]
+  question: "有多少条发货记录已签收但签收时间为空？以发货状态3表示已签收，只输出记录数。"
+  gold_sql: |
+    SELECT COUNT(*) AS shipment_count FROM shipments WHERE status = 3 AND delivered_at IS NULL;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T1-H018
+  difficulty: single_table_basic
+  tags: [holdout_candidate]
+  question: "从卖家表列出SP州卖家的不同城市，按城市升序，排除空值，最多15个城市，只输出城市。"
+  gold_sql: |
+    SELECT DISTINCT seller_city FROM sellers WHERE seller_state = 'SP' AND seller_city IS NOT NULL ORDER BY seller_city LIMIT 15;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T1-H019
+  difficulty: single_table_basic
+  tags: [holdout_candidate]
+  question: "会员快照中积分为空的记录有多少条？只输出快照记录数。"
+  gold_sql: |
+    SELECT COUNT(*) AS snapshot_count FROM member_snapshot WHERE points IS NULL;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T1-H020
+  difficulty: single_table_basic
+  tags: [holdout_candidate]
+  question: "订单明细中，运费高于商品单价的明细有多少条？包含全部状态订单对应的明细，只输出明细数。"
+  gold_sql: |
+    SELECT COUNT(*) AS item_count FROM order_items WHERE freight_value > price;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"

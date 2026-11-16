@@ -1,0 +1,98 @@
+# New frozen holdout candidate; authored without inspecting new model scores.
+# Gold authoring checks may run before freeze; no post-score edits under this version.
+
+- id: T6-H001
+  difficulty: business_semantics
+  tags: [holdout_candidate]
+  question: "2018年有效订单的退款订单占比是多少？有效指排除取消及不可用；分子是其中至少有一张已退款状态4退款单的不同订单，分母是当年全部有效订单。百分数保留2位小数，只输出比例，分母0返回NULL。"
+  gold_sql: |
+    SELECT ROUND(100.0*COUNT(*) FILTER (WHERE EXISTS (SELECT 1 FROM refunds r WHERE r.order_id=o.order_id AND r.status=4))/NULLIF(COUNT(*),0),2) AS refund_rate_pct FROM orders o WHERE o.order_status NOT IN ('canceled','unavailable') AND o.order_purchase_timestamp>='2018-01-01' AND o.order_purchase_timestamp<'2019-01-01';
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T6-H002
+  difficulty: business_semantics
+  tags: [holdout_candidate]
+  question: "2018年上半年的复购率是多少？只算有效订单，排除取消及不可用；按自然人统计，在该半年下单两次及以上的人数除以该半年全部下单人数，百分数保留2位小数，只输出比例，分母0返回NULL。"
+  gold_sql: |
+    WITH buyers AS (SELECT c.customer_unique_id,COUNT(*) AS n FROM orders o JOIN customers c ON c.customer_id=o.customer_id WHERE o.order_status NOT IN ('canceled','unavailable') AND o.order_purchase_timestamp>='2018-01-01' AND o.order_purchase_timestamp<'2018-07-01' GROUP BY c.customer_unique_id) SELECT ROUND(100.0*COUNT(*) FILTER (WHERE n>=2)/NULLIF(COUNT(*),0),2) AS repeat_rate_pct FROM buyers;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T6-H003
+  difficulty: business_semantics
+  tags: [holdout_candidate]
+  question: "2018年有效订单的客单价是多少？只排除取消及不可用，分子为这些订单的商品金额加运费，分母包含没有明细的有效订单；保留2位小数，只输出客单价，分母0返回NULL。"
+  gold_sql: |
+    WITH item_totals AS (SELECT order_id,SUM(price+freight_value) AS amount FROM order_items GROUP BY order_id) SELECT ROUND(SUM(COALESCE(i.amount,0))/NULLIF(COUNT(*),0),2) AS aov FROM orders o LEFT JOIN item_totals i ON i.order_id=o.order_id WHERE o.order_status NOT IN ('canceled','unavailable') AND o.order_purchase_timestamp>='2018-01-01' AND o.order_purchase_timestamp<'2019-01-01';
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T6-H004
+  difficulty: business_semantics
+  tags: [holdout_candidate]
+  question: "2018年3月搜索记录的零结果占比是多少？分子是result_count等于0的记录，分母包含result_count为空的全部当月搜索记录。输出百分数保留2位小数，只输出比例，分母0返回NULL。"
+  gold_sql: |
+    SELECT ROUND(100.0*COUNT(*) FILTER (WHERE result_count=0)/NULLIF(COUNT(*),0),2) AS zero_result_pct FROM search_logs WHERE searched_at>='2018-03-01' AND searched_at<'2018-04-01';
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T6-H005
+  difficulty: business_semantics
+  tags: [holdout_candidate]
+  question: "2018年第二季度按期送达率是多少？时间窗口按下单时间，分母是实际送达和预计送达时间都非空的订单，分子为实际送达不晚于预计送达；包含全部订单状态，百分数保留2位小数，只输出比例，分母0返回NULL。"
+  gold_sql: |
+    SELECT ROUND(100.0*COUNT(*) FILTER (WHERE order_delivered_customer_date<=order_estimated_delivery_date)/NULLIF(COUNT(*),0),2) AS on_time_pct FROM orders WHERE order_purchase_timestamp>='2018-04-01' AND order_purchase_timestamp<'2018-07-01' AND order_delivered_customer_date IS NOT NULL AND order_estimated_delivery_date IS NOT NULL;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T6-H006
+  difficulty: business_semantics
+  tags: [holdout_candidate]
+  question: "按仓库ID计算库存不足占比：库存数量低于安全库存的记录数除以该仓库全部库存记录数，数量为空的记录也计分母；输出仓库ID和百分数，保留2位小数，按仓库ID升序。"
+  gold_sql: |
+    SELECT warehouse_id,ROUND(100.0*COUNT(*) FILTER (WHERE quantity<safety_stock)/COUNT(*),2) AS shortage_pct FROM inventory GROUP BY warehouse_id ORDER BY warehouse_id;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T6-H007
+  difficulty: business_semantics
+  tags: [holdout_candidate]
+  question: "2018年上半年已退款金额占退款申请金额的比例是多少？时间窗口按申请时间，分子为状态4的退款金额合计，分母为该半年全部状态退款金额合计；只输出百分数保留2位小数，无已退款时分子记0，分母0返回NULL。"
+  gold_sql: |
+    SELECT ROUND(100.0*COALESCE(SUM(refund_amount) FILTER (WHERE status=4),0)/NULLIF(SUM(refund_amount),0),2) AS refunded_amount_pct FROM refunds WHERE requested_at>='2018-01-01' AND requested_at<'2018-07-01';
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T6-H008
+  difficulty: business_semantics
+  tags: [holdout_candidate]
+  question: "2018年有效订单中，至少使用过优惠券的订单占比是多少？排除取消及不可用；按不同订单去重，分母包含未用券的有效订单，只输出百分数保留2位小数，分母0返回NULL。"
+  gold_sql: |
+    SELECT ROUND(100.0*COUNT(*) FILTER (WHERE EXISTS (SELECT 1 FROM coupon_usages u WHERE u.order_id=o.order_id))/NULLIF(COUNT(*),0),2) AS coupon_order_pct FROM orders o WHERE o.order_status NOT IN ('canceled','unavailable') AND o.order_purchase_timestamp>='2018-01-01' AND o.order_purchase_timestamp<'2019-01-01';
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T6-H009
+  difficulty: business_semantics
+  tags: [holdout_candidate]
+  question: "会员中正常状态且至少有一次已转化邀请的会员占比是多少？分母为全部正常状态会员，分子按邀请人去重；只输出百分数保留2位小数，分母0返回NULL。"
+  gold_sql: |
+    SELECT ROUND(100.0*COUNT(*) FILTER (WHERE EXISTS (SELECT 1 FROM referrals r WHERE r.referrer_member_id=m.member_id AND r.converted_at IS NOT NULL))/NULLIF(COUNT(*),0),2) AS referrer_pct FROM members m WHERE m.status=1;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T6-H010
+  difficulty: business_semantics
+  tags: [holdout_candidate]
+  question: "对2018年上半年创建且已解决的客服工单，SLA达标率是多少？仅保留能匹配分类且SLA小时数非空的工单，解决耗时不超过该分类SLA算达标；输出百分数保留2位小数，只输出比例，分母0返回NULL。"
+  gold_sql: |
+    SELECT ROUND(100.0*COUNT(*) FILTER (WHERE EXTRACT(EPOCH FROM (t.resolved_at-t.created_at))/3600.0<=c.sla_hours)/NULLIF(COUNT(*),0),2) AS sla_pct FROM support_tickets t JOIN ticket_categories c ON c.category_id=t.category_id WHERE t.created_at>='2018-01-01' AND t.created_at<'2018-07-01' AND t.resolved_at IS NOT NULL AND c.sla_hours IS NOT NULL;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T6-H011
+  difficulty: business_semantics
+  tags: [holdout_candidate]
+  question: "2018年有效订单的商品金额，第二季度相对第一季度的环比增长率是多少？不含运费，排除取消及不可用；按下单时间分季，输出百分数保留2位小数，只输出增长率，第一季度金额为0返回NULL，允许负增长。"
+  gold_sql: |
+    WITH totals AS (SELECT COALESCE(SUM(i.price) FILTER (WHERE o.order_purchase_timestamp<'2018-04-01'),0) AS q1,COALESCE(SUM(i.price) FILTER (WHERE o.order_purchase_timestamp>='2018-04-01'),0) AS q2 FROM orders o JOIN order_items i ON i.order_id=o.order_id WHERE o.order_status NOT IN ('canceled','unavailable') AND o.order_purchase_timestamp>='2018-01-01' AND o.order_purchase_timestamp<'2018-07-01') SELECT ROUND(100.0*(q2-q1)/NULLIF(q1,0),2) AS growth_pct FROM totals;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T6-H012
+  difficulty: business_semantics
+  tags: [holdout_candidate]
+  question: "2018年有效订单的支付金额与含运费明细金额的总差额是多少？按下单时间，排除取消及不可用；每个订单先分别汇总所有支付和所有明细，无记录视为0，再累计支付减明细金额，保留2位小数，只输出差额，允许负数。"
+  gold_sql: |
+    WITH p AS (SELECT order_id,SUM(payment_value) AS amount FROM order_payments GROUP BY order_id),i AS (SELECT order_id,SUM(price+freight_value) AS amount FROM order_items GROUP BY order_id) SELECT ROUND(SUM(COALESCE(p.amount,0)-COALESCE(i.amount,0)),2) AS amount_difference FROM orders o LEFT JOIN p ON p.order_id=o.order_id LEFT JOIN i ON i.order_id=o.order_id WHERE o.order_status NOT IN ('canceled','unavailable') AND o.order_purchase_timestamp>='2018-01-01' AND o.order_purchase_timestamp<'2019-01-01';
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"

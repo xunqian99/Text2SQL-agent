@@ -1,0 +1,162 @@
+# New frozen holdout candidate; authored without inspecting new model scores.
+# Gold authoring checks may run before freeze; no post-score edits under this version.
+
+- id: T2-H001
+  difficulty: single_table_agg
+  tags: [holdout_candidate]
+  question: "按会员状态统计会员人数及平均积分，平均积分保留2位小数，只输出状态、人数和平均积分，按状态升序。"
+  gold_sql: |
+    SELECT status, COUNT(*) AS member_count, ROUND(AVG(points), 2) AS avg_points FROM members GROUP BY status ORDER BY status;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T2-H002
+  difficulty: single_table_agg
+  tags: [holdout_candidate]
+  question: "按折扣类型统计优惠券数量和最大折扣值，只输出类型、数量、最大折扣值，类型升序且空值最后。"
+  gold_sql: |
+    SELECT discount_type, COUNT(*) AS coupon_count, MAX(discount_value) AS max_discount FROM coupons GROUP BY discount_type ORDER BY discount_type NULLS LAST;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T2-H003
+  difficulty: single_table_agg
+  tags: [holdout_candidate]
+  question: "每种退款原因的已退款金额总和是多少？仅状态4，输出原因代码和金额合计，金额降序、原因代码升序，最多10类。"
+  gold_sql: |
+    SELECT reason_code, SUM(refund_amount) AS total_refund FROM refunds WHERE status = 4 GROUP BY reason_code ORDER BY total_refund DESC NULLS LAST, reason_code ASC NULLS LAST LIMIT 10;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T2-H004
+  difficulty: single_table_agg
+  tags: [holdout_candidate]
+  question: "库存按仓库汇总，列出库存总量至少500的仓库；只输出仓库ID和库存总量，按总量降序、仓库ID升序，最多10个。"
+  gold_sql: |
+    SELECT warehouse_id, SUM(quantity) AS total_quantity FROM inventory GROUP BY warehouse_id HAVING SUM(quantity) >= 500 ORDER BY total_quantity DESC, warehouse_id LIMIT 10;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T2-H005
+  difficulty: single_table_agg
+  tags: [holdout_candidate]
+  question: "按客服工单优先级统计尚未解决的工单数，只输出优先级和数量，按优先级升序。尚未解决指解决时间为空。"
+  gold_sql: |
+    SELECT priority, COUNT(*) AS ticket_count FROM support_tickets WHERE resolved_at IS NULL GROUP BY priority ORDER BY priority NULLS LAST;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T2-H006
+  difficulty: single_table_agg
+  tags: [holdout_candidate]
+  question: "按支付方式统计支付记录数及支付总金额，只输出方式、记录数、总金额，按支付方式升序，空值最后。"
+  gold_sql: |
+    SELECT payment_type, COUNT(*) AS payment_count, SUM(payment_value) AS total_payment FROM order_payments GROUP BY payment_type ORDER BY payment_type NULLS LAST;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T2-H007
+  difficulty: single_table_agg
+  tags: [holdout_candidate]
+  question: "按卖家所在州统计不同城市数，忽略城市空值；只输出州和城市数，城市数降序、州升序，最多10州。"
+  gold_sql: |
+    SELECT seller_state, COUNT(DISTINCT seller_city) AS city_count FROM sellers GROUP BY seller_state ORDER BY city_count DESC, seller_state ASC NULLS LAST LIMIT 10;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T2-H008
+  difficulty: single_table_agg
+  tags: [holdout_candidate]
+  question: "按商品类目统计平均重量，类目和重量都不能空；平均重量保留2位小数，输出类目和平均重量，按平均重量降序、类目升序，前6类。"
+  gold_sql: |
+    SELECT product_category_name, ROUND(AVG(product_weight_g), 2) AS avg_weight FROM products WHERE product_category_name IS NOT NULL AND product_weight_g IS NOT NULL GROUP BY product_category_name ORDER BY avg_weight DESC, product_category_name LIMIT 6;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T2-H009
+  difficulty: single_table_agg
+  tags: [holdout_candidate]
+  question: "每种发货状态对应多少条发货记录、多少个不同订单？只输出状态、发货记录数和不同订单数，按状态升序。"
+  gold_sql: |
+    SELECT status, COUNT(*) AS shipment_count, COUNT(DISTINCT order_id) AS order_count FROM shipments GROUP BY status ORDER BY status NULLS LAST;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T2-H010
+  difficulty: single_table_agg
+  tags: [holdout_candidate]
+  question: "按营销活动类型统计活动数和预算合计，只保留至少2个活动的类型；输出类型、活动数、预算，类型升序且空值最后。"
+  gold_sql: |
+    SELECT campaign_type, COUNT(*) AS campaign_count, SUM(budget) AS total_budget FROM campaigns GROUP BY campaign_type HAVING COUNT(*) >= 2 ORDER BY campaign_type NULLS LAST;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T2-H011
+  difficulty: single_table_agg
+  tags: [holdout_candidate]
+  question: "按邀请人统计已转化的邀请次数及奖励总额，取奖励总额最高的前5人；输出邀请人ID、次数、奖励总额，同额按邀请人ID升序。"
+  gold_sql: |
+    SELECT referrer_member_id, COUNT(*) AS conversion_count, SUM(reward_amount) AS total_reward FROM referrals WHERE converted_at IS NOT NULL GROUP BY referrer_member_id ORDER BY total_reward DESC NULLS LAST, referrer_member_id LIMIT 5;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T2-H012
+  difficulty: single_table_agg
+  tags: [holdout_candidate]
+  question: "按出入库类型统计库存变动记录数和数量合计，只输出类型、记录数、数量合计，按类型升序，空值最后。"
+  gold_sql: |
+    SELECT movement_type, COUNT(*) AS movement_count, SUM(quantity) AS total_quantity FROM inventory_movements GROUP BY movement_type ORDER BY movement_type NULLS LAST;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T2-H013
+  difficulty: single_table_agg
+  tags: [holdout_candidate]
+  question: "按搜索关键词统计出现次数，只看结果数大于0的记录；输出关键词和次数，次数降序、关键词升序，排除空关键词，取前9个。"
+  gold_sql: |
+    SELECT keyword, COUNT(*) AS search_count FROM search_logs WHERE result_count > 0 AND keyword IS NOT NULL GROUP BY keyword ORDER BY search_count DESC, keyword LIMIT 9;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T2-H014
+  difficulty: single_table_agg
+  tags: [holdout_candidate]
+  question: "按发言人类型统计工单消息数量和有内容的消息数量；有内容指content非空且非空字符串，输出类型、消息数、有内容数，类型升序。"
+  gold_sql: |
+    SELECT sender_type, COUNT(*) AS message_count, COUNT(*) FILTER (WHERE content IS NOT NULL AND content <> '') AS nonempty_count FROM ticket_messages GROUP BY sender_type ORDER BY sender_type NULLS LAST;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T2-H015
+  difficulty: single_table_agg
+  tags: [holdout_candidate]
+  question: "按结算状态汇总佣金和净额，只输出状态、佣金合计、净额合计，按状态升序。"
+  gold_sql: |
+    SELECT status, SUM(commission) AS total_commission, SUM(net_amount) AS total_net FROM settlements GROUP BY status ORDER BY status NULLS LAST;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T2-H016
+  difficulty: single_table_agg
+  tags: [holdout_candidate]
+  question: "列出拥有至少3个品牌映射记录的商品，只输出商品ID和映射记录数；不区分是否当前品牌，按数量降序、商品ID升序，最多10个。"
+  gold_sql: |
+    SELECT product_id, COUNT(*) AS mapping_count FROM product_brand_map GROUP BY product_id HAVING COUNT(*) >= 3 ORDER BY mapping_count DESC, product_id LIMIT 10;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T2-H017
+  difficulty: single_table_agg
+  tags: [holdout_candidate]
+  question: "品牌按来源国家统计品牌数，输出国家和品牌数，品牌数降序、国家升序且空值最后，最多10个国家。"
+  gold_sql: |
+    SELECT country, COUNT(*) AS brand_count FROM brands GROUP BY country ORDER BY brand_count DESC, country ASC NULLS LAST LIMIT 10;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T2-H018
+  difficulty: single_table_agg
+  tags: [holdout_candidate]
+  question: "退款明细按退款数量统计明细记录数和退款金额合计，输出退款数量、记录数和金额，按退款数量升序，空值最后。"
+  gold_sql: |
+    SELECT refund_qty, COUNT(*) AS item_count, SUM(refund_value) AS total_refund FROM refund_items GROUP BY refund_qty ORDER BY refund_qty NULLS LAST;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T2-H019
+  difficulty: single_table_agg
+  tags: [holdout_candidate]
+  question: "仅看2018年下单的全部状态订单，各订单状态最早下单时间是什么？只输出状态和最早下单时间，按状态升序。"
+  gold_sql: |
+    SELECT order_status, MIN(order_purchase_timestamp) AS first_purchase FROM orders WHERE order_purchase_timestamp >= '2018-01-01' AND order_purchase_timestamp < '2019-01-01' GROUP BY order_status ORDER BY order_status;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T2-H020
+  difficulty: single_table_agg
+  tags: [holdout_candidate]
+  question: "订单明细按卖家统计运费合计和明细条数，包含全部状态订单；取运费合计最高的前4名，输出卖家ID、运费和条数，同额按卖家ID升序。"
+  gold_sql: |
+    SELECT seller_id, SUM(freight_value) AS total_freight, COUNT(*) AS item_count FROM order_items GROUP BY seller_id ORDER BY total_freight DESC, seller_id LIMIT 4;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"

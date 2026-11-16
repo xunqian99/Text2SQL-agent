@@ -1,0 +1,82 @@
+# New frozen holdout candidate; authored without inspecting new model scores.
+# Gold authoring checks may run before freeze; no post-score edits under this version.
+
+- id: T5-H001
+  difficulty: multi_join_deep
+  tags: [holdout_candidate]
+  question: "按会员当前等级名称汇总2018年有效订单的商品金额（不含运费），只输出等级名称和金额；有效订单排除取消及不可用，按金额降序、等级名升序。"
+  gold_sql: |
+    SELECT l.level_name,SUM(i.price) AS total_price FROM member_levels l JOIN members m ON m.level_id=l.level_id JOIN customers c ON c.customer_unique_id=m.customer_unique_id JOIN orders o ON o.customer_id=c.customer_id JOIN order_items i ON i.order_id=o.order_id WHERE o.order_status NOT IN ('canceled','unavailable') AND o.order_purchase_timestamp>='2018-01-01' AND o.order_purchase_timestamp<'2019-01-01' GROUP BY l.level_name ORDER BY total_price DESC,l.level_name;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T5-H002
+  difficulty: multi_join_deep
+  tags: [holdout_candidate]
+  question: "按当前品牌统计2018年有效订单的不同订单数和商品金额，不含运费；只计is_current为真的品牌映射，排除取消及不可用，输出品牌ID、名称、订单数和金额，金额降序、品牌ID升序，前5名。"
+  gold_sql: |
+    SELECT b.brand_id,b.brand_name,COUNT(DISTINCT o.order_id) AS order_count,SUM(i.price) AS total_price FROM brands b JOIN product_brand_map x ON x.brand_id=b.brand_id AND x.is_current=true JOIN products p ON p.product_id=x.product_id JOIN order_items i ON i.product_id=p.product_id JOIN orders o ON o.order_id=i.order_id WHERE o.order_status NOT IN ('canceled','unavailable') AND o.order_purchase_timestamp>='2018-01-01' AND o.order_purchase_timestamp<'2019-01-01' GROUP BY b.brand_id,b.brand_name ORDER BY total_price DESC,b.brand_id LIMIT 5;
+  notes: "按当前映射行归属品牌；若商品同时有多个当前品牌，每个品牌分别计入，不跨品牌去重金额。"
+
+- id: T5-H003
+  difficulty: multi_join_deep
+  tags: [holdout_candidate]
+  question: "按优惠券所属活动和使用会员当前等级统计优惠券使用次数，只看正常会员；输出活动ID、活动名称、等级名称、次数，按活动ID及等级名称升序。"
+  gold_sql: |
+    SELECT a.campaign_id,a.campaign_name,l.level_name,COUNT(*) AS usage_count FROM campaigns a JOIN coupons p ON p.campaign_id=a.campaign_id JOIN coupon_usages u ON u.coupon_id=p.coupon_id JOIN members m ON m.member_id=u.member_id JOIN member_levels l ON l.level_id=m.level_id WHERE m.status=1 GROUP BY a.campaign_id,a.campaign_name,l.level_name ORDER BY a.campaign_id,l.level_name;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T5-H004
+  difficulty: multi_join_deep
+  tags: [holdout_candidate]
+  question: "按客户大区和工单分类统计工单数，仅统计能匹配订单、客户、区域及分类的工单；包含全部订单状态，输出大区、分类名、工单数，数量降序、大区和分类名升序，最多12组。"
+  gold_sql: |
+    SELECT r.macro_region,k.category_name,COUNT(*) AS ticket_count FROM support_tickets t JOIN ticket_categories k ON k.category_id=t.category_id JOIN orders o ON o.order_id=t.order_id JOIN customers c ON c.customer_id=o.customer_id JOIN regions r ON r.region_code=c.customer_state GROUP BY r.macro_region,k.category_name ORDER BY ticket_count DESC,r.macro_region,k.category_name LIMIT 12;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T5-H005
+  difficulty: multi_join_deep
+  tags: [holdout_candidate]
+  question: "按当前品牌汇总已退款明细的退款金额，只看退款单状态4及当前品牌映射；输出品牌ID、名称、退款明细金额合计，按金额降序、品牌ID升序，前5名。"
+  gold_sql: |
+    SELECT b.brand_id,b.brand_name,SUM(x.refund_value) AS total_refund FROM refunds r JOIN refund_items x ON x.refund_id=r.refund_id JOIN order_items i ON i.order_id=x.order_id AND i.order_item_id=x.order_item_id JOIN product_brand_map m ON m.product_id=i.product_id AND m.is_current=true JOIN brands b ON b.brand_id=m.brand_id WHERE r.status=4 GROUP BY b.brand_id,b.brand_name ORDER BY total_refund DESC,b.brand_id LIMIT 5;
+  notes: "金额来自refund_items.refund_value，不使用整张退款单金额，避免一对多放大。"
+
+- id: T5-H006
+  difficulty: multi_join_deep
+  tags: [holdout_candidate]
+  question: "按当前品牌和仓库名称统计库存数量合计，仅当前品牌映射，输出品牌ID、品牌名、仓库ID、仓库名、库存合计；按库存降序、品牌ID和仓库ID升序，前10组。"
+  gold_sql: |
+    SELECT b.brand_id,b.brand_name,w.warehouse_id,w.warehouse_name,SUM(i.quantity) AS total_quantity FROM inventory i JOIN warehouses w ON w.warehouse_id=i.warehouse_id JOIN product_brand_map m ON m.product_id=i.product_id AND m.is_current=true JOIN brands b ON b.brand_id=m.brand_id GROUP BY b.brand_id,b.brand_name,w.warehouse_id,w.warehouse_name ORDER BY total_quantity DESC,b.brand_id,w.warehouse_id LIMIT 10;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T5-H007
+  difficulty: multi_join_deep
+  tags: [holdout_candidate]
+  question: "有多少个正常会员至少有一张属于已结束营销活动的优惠券使用记录？只输出不同会员人数，不限制订单状态。"
+  gold_sql: |
+    SELECT COUNT(*) AS member_count FROM members m WHERE m.status=1 AND EXISTS (SELECT 1 FROM coupon_usages u JOIN coupons c ON c.coupon_id=u.coupon_id JOIN campaigns a ON a.campaign_id=c.campaign_id WHERE u.member_id=m.member_id AND a.status=3);
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T5-H008
+  difficulty: multi_join_deep
+  tags: [holdout_candidate]
+  question: "按会员当前等级名称统计拥有1星评价有效订单的不同会员人数；订单排除取消及不可用，只输出等级名称和人数，人数降序、等级名升序。"
+  gold_sql: |
+    SELECT l.level_name,COUNT(DISTINCT m.member_id) AS member_count FROM member_levels l JOIN members m ON m.level_id=l.level_id JOIN customers c ON c.customer_unique_id=m.customer_unique_id JOIN orders o ON o.customer_id=c.customer_id JOIN order_reviews r ON r.order_id=o.order_id WHERE o.order_status NOT IN ('canceled','unavailable') AND r.review_score=1 GROUP BY l.level_name ORDER BY member_count DESC,l.level_name;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T5-H009
+  difficulty: multi_join_deep
+  tags: [holdout_candidate]
+  question: "按卖家所在大区统计2018年有效订单的商品金额合计，不含运费；订单排除取消及不可用，仅有区域映射的卖家，输出大区和金额，金额降序、大区升序。"
+  gold_sql: |
+    SELECT r.macro_region,SUM(i.price) AS total_price FROM regions r JOIN sellers s ON s.seller_state=r.region_code JOIN order_items i ON i.seller_id=s.seller_id JOIN orders o ON o.order_id=i.order_id WHERE o.order_status NOT IN ('canceled','unavailable') AND o.order_purchase_timestamp>='2018-01-01' AND o.order_purchase_timestamp<'2019-01-01' GROUP BY r.macro_region ORDER BY total_price DESC,r.macro_region;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T5-H010
+  difficulty: multi_join_deep
+  tags: [holdout_candidate]
+  question: "按会员当前等级名称汇总2018年申请并已退款的退款单金额，只输出等级名称和金额，按金额降序、等级名升序；包含全部订单状态，不能因关联订单明细而重复累计退款单金额。"
+  gold_sql: |
+    SELECT l.level_name,SUM(r.refund_amount) AS total_refund FROM refunds r JOIN orders o ON o.order_id=r.order_id JOIN customers c ON c.customer_id=o.customer_id JOIN members m ON m.customer_unique_id=c.customer_unique_id JOIN member_levels l ON l.level_id=m.level_id WHERE r.status=4 AND r.requested_at>='2018-01-01' AND r.requested_at<'2019-01-01' GROUP BY l.level_name ORDER BY total_refund DESC,l.level_name;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"

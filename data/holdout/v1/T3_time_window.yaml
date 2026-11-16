@@ -1,0 +1,130 @@
+# New frozen holdout candidate; authored without inspecting new model scores.
+# Gold authoring checks may run before freeze; no post-score edits under this version.
+
+- id: T3-H001
+  difficulty: time_window
+  tags: [holdout_candidate]
+  question: "2018年第二季度，全部状态订单按月分别有多少单？输出月份YYYY-MM和订单数，按月份升序。"
+  gold_sql: |
+    SELECT TO_CHAR(order_purchase_timestamp, 'YYYY-MM') AS month, COUNT(*) AS order_count FROM orders WHERE order_purchase_timestamp >= '2018-04-01' AND order_purchase_timestamp < '2018-07-01' GROUP BY 1 ORDER BY 1;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T3-H002
+  difficulty: time_window
+  tags: [holdout_candidate]
+  question: "2017年12月内有多少笔全部状态订单是在周末下单的？周末为ISO星期6、7，只输出订单数。"
+  gold_sql: |
+    SELECT COUNT(*) AS order_count FROM orders WHERE order_purchase_timestamp >= '2017-12-01' AND order_purchase_timestamp < '2018-01-01' AND EXTRACT(ISODOW FROM order_purchase_timestamp) IN (6,7);
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T3-H003
+  difficulty: time_window
+  tags: [holdout_candidate]
+  question: "2018年1月每天的全部状态订单数，输出日期和订单数，日期升序，最多31天；没有订单的日期不补零。"
+  gold_sql: |
+    SELECT order_purchase_timestamp::date AS day, COUNT(*) AS order_count FROM orders WHERE order_purchase_timestamp >= '2018-01-01' AND order_purchase_timestamp < '2018-02-01' GROUP BY 1 ORDER BY 1 LIMIT 31;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T3-H004
+  difficulty: time_window
+  tags: [holdout_candidate]
+  question: "2017年11月下单且实际送达时间非空的订单，从下单到实际送达的平均天数是多少？按秒除86400，保留2位小数，只输出平均天数。"
+  gold_sql: |
+    SELECT ROUND(AVG(EXTRACT(EPOCH FROM (order_delivered_customer_date - order_purchase_timestamp)) / 86400.0), 2) AS avg_days FROM orders WHERE order_purchase_timestamp >= '2017-11-01' AND order_purchase_timestamp < '2017-12-01' AND order_delivered_customer_date IS NOT NULL;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T3-H005
+  difficulty: time_window
+  tags: [holdout_candidate]
+  question: "2018年1月按解决时间统计客服工单每天解决数量，输出日期和数量，按日期升序，不补零。"
+  gold_sql: |
+    SELECT resolved_at::date AS day, COUNT(*) AS ticket_count FROM support_tickets WHERE resolved_at >= '2018-01-01' AND resolved_at < '2018-02-01' GROUP BY 1 ORDER BY 1;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T3-H006
+  difficulty: time_window
+  tags: [holdout_candidate]
+  question: "2018年上半年按申请月份统计已退款的金额合计，仅退款状态4；输出月份YYYY-MM和金额，按月份升序。"
+  gold_sql: |
+    SELECT TO_CHAR(requested_at, 'YYYY-MM') AS month, SUM(refund_amount) AS total_refund FROM refunds WHERE status = 4 AND requested_at >= '2018-01-01' AND requested_at < '2018-07-01' GROUP BY 1 ORDER BY 1;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T3-H007
+  difficulty: time_window
+  tags: [holdout_candidate]
+  question: "2018年3月按搜索小时统计搜索记录数，输出0到23的整数小时和数量，小时升序，没有记录的小时不补零。"
+  gold_sql: |
+    SELECT EXTRACT(HOUR FROM searched_at)::int AS hour, COUNT(*) AS search_count FROM search_logs WHERE searched_at >= '2018-03-01' AND searched_at < '2018-04-01' GROUP BY 1 ORDER BY 1;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T3-H008
+  difficulty: time_window
+  tags: [holdout_candidate]
+  question: "2017年第四季度注册的会员，按注册月份统计人数，输出月份YYYY-MM和人数，按月份升序。"
+  gold_sql: |
+    SELECT TO_CHAR(register_date, 'YYYY-MM') AS month, COUNT(*) AS member_count FROM members WHERE register_date >= '2017-10-01' AND register_date < '2018-01-01' GROUP BY 1 ORDER BY 1;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T3-H009
+  difficulty: time_window
+  tags: [holdout_candidate]
+  question: "2018年2月的发货记录中，已签收且签收晚于发货至少7个完整24小时的有多少条？只输出记录数，时间窗口按发货时间。"
+  gold_sql: |
+    SELECT COUNT(*) AS shipment_count FROM shipments WHERE shipped_at >= '2018-02-01' AND shipped_at < '2018-03-01' AND delivered_at >= shipped_at + INTERVAL '7 days';
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T3-H010
+  difficulty: time_window
+  tags: [holdout_candidate]
+  question: "2018年上半年每月使用优惠券的不同订单数是多少？按使用时间分月，输出月份YYYY-MM和不同订单数，月份升序。"
+  gold_sql: |
+    SELECT TO_CHAR(used_at, 'YYYY-MM') AS month, COUNT(DISTINCT order_id) AS order_count FROM coupon_usages WHERE used_at >= '2018-01-01' AND used_at < '2018-07-01' GROUP BY 1 ORDER BY 1;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T3-H011
+  difficulty: time_window
+  tags: [holdout_candidate]
+  question: "2018年1月的已解决工单，平均解决耗时为多少小时？起点创建时间，终点解决时间，按秒除3600，保留2位小数，仅输出平均小时；时间窗口按解决时间。"
+  gold_sql: |
+    SELECT ROUND(AVG(EXTRACT(EPOCH FROM (resolved_at - created_at)) / 3600.0), 2) AS avg_hours FROM support_tickets WHERE resolved_at >= '2018-01-01' AND resolved_at < '2018-02-01';
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T3-H012
+  difficulty: time_window
+  tags: [holdout_candidate]
+  question: "2017年和2018年各年度的全部状态订单中，最晚下单时间分别是什么？输出整数年份和最晚时间，按年份升序。"
+  gold_sql: |
+    SELECT EXTRACT(YEAR FROM order_purchase_timestamp)::int AS year, MAX(order_purchase_timestamp) AS last_purchase FROM orders WHERE order_purchase_timestamp >= '2017-01-01' AND order_purchase_timestamp < '2019-01-01' GROUP BY 1 ORDER BY 1;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T3-H013
+  difficulty: time_window
+  tags: [holdout_candidate]
+  question: "按季度统计2018年全部状态订单数，输出1到4的整数季度及订单数，按季度升序；无订单的季度不补零。"
+  gold_sql: |
+    SELECT EXTRACT(QUARTER FROM order_purchase_timestamp)::int AS quarter, COUNT(*) AS order_count FROM orders WHERE order_purchase_timestamp >= '2018-01-01' AND order_purchase_timestamp < '2019-01-01' GROUP BY 1 ORDER BY 1;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T3-H014
+  difficulty: time_window
+  tags: [holdout_candidate]
+  question: "2018年4月内完成转化的邀请记录中，从创建到转化的平均天数是多少？按秒除86400，保留2位小数，仅输出平均天数。"
+  gold_sql: |
+    SELECT ROUND(AVG(EXTRACT(EPOCH FROM (converted_at - created_at)) / 86400.0), 2) AS avg_days FROM referrals WHERE converted_at >= '2018-04-01' AND converted_at < '2018-05-01';
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T3-H015
+  difficulty: time_window
+  tags: [holdout_candidate]
+  question: "2018年3月发生的商品降价次数按日期统计，输出日期和次数，日期升序，不补零，最多31天。"
+  gold_sql: |
+    SELECT changed_at::date AS day, COUNT(*) AS decrease_count FROM product_price_history WHERE new_price < old_price AND changed_at >= '2018-03-01' AND changed_at < '2018-04-01' GROUP BY 1 ORDER BY 1 LIMIT 31;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
+
+- id: T3-H016
+  difficulty: time_window
+  tags: [holdout_candidate]
+  question: "2018年上半年已打款的结算单，按打款月份统计净额合计，输出月份YYYY-MM和净额合计，按月份升序。"
+  gold_sql: |
+    SELECT TO_CHAR(paid_at, 'YYYY-MM') AS month, SUM(net_amount) AS total_net FROM settlements WHERE status = 3 AND paid_at >= '2018-01-01' AND paid_at < '2018-07-01' GROUP BY 1 ORDER BY 1;
+  notes: "题干已指定统计粒度、范围及输出；不得根据模型得分修改本条。"
