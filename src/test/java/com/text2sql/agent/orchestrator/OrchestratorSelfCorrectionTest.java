@@ -522,4 +522,47 @@ class OrchestratorSelfCorrectionTest {
                 .as("要求最小修改，避免把正确的部分一起改坏")
                 .contains("最小修改");
     }
+
+    @Test
+    @DisplayName("GMV 与合法负同比混合输出：保留首答，不制造第二次模型调用")
+    void keepsValidNegativeGrowthWithoutRetrying() {
+        enableSuspiciousRetry();
+        String sql = "SELECT 100 AS gmv, -99.98 AS yoy_pct";
+        when(generator.generate(anyString(), any()))
+                .thenReturn(new GeneratedSql(sql, "raw", call(100, 10, 50)));
+        when(executor.execute(sql)).thenReturn(new QueryResult(List.of("gmv", "yoy_pct"),
+                List.of(List.of("100", "-99.98")), false, 1));
+
+        AgentResponse response = orchestrator().ask("GMV与同比增长率是多少？");
+
+        assertThat(response.success()).isTrue();
+        assertThat(response.sql()).isEqualTo(sql);
+        assertThat(response.llmCall().promptTokens()).isEqualTo(100);
+        verify(generator, never()).generateCorrection(anyString(), any(), anyString(), anyString(), any());
+    }
+
+    @Test
+    @DisplayName("问题包含同比也不豁免负 GMV：纠错反馈定位金额列，第二次合法负同比可通过")
+    void stillRetriesNegativeGmvAndKeepsGrowthOnTheCorrectedAnswer() {
+        enableSuspiciousRetry();
+        String firstSql = "SELECT -100 AS gmv, -30 AS yoy_pct";
+        String secondSql = "SELECT 100 AS gmv, -30 AS yoy_pct";
+        when(generator.generate(anyString(), any()))
+                .thenReturn(new GeneratedSql(firstSql, "raw", call(100, 10, 50)));
+        when(generator.generateCorrection(anyString(), any(), anyString(), anyString(), any()))
+                .thenReturn(new GeneratedSql(secondSql, "raw", call(200, 20, 70)));
+        when(executor.execute(firstSql)).thenReturn(new QueryResult(List.of("gmv", "yoy_pct"),
+                List.of(List.of("-100", "-30")), false, 1));
+        when(executor.execute(secondSql)).thenReturn(new QueryResult(List.of("gmv", "yoy_pct"),
+                List.of(List.of("100", "-30")), false, 1));
+
+        AgentResponse response = orchestrator().ask("GMV与同比增长率是多少？");
+
+        assertThat(response.success()).isTrue();
+        assertThat(response.sql()).isEqualTo(secondSql);
+        assertThat(response.llmCall().promptTokens()).isEqualTo(300);
+        var feedback = ArgumentCaptor.forClass(String.class);
+        verify(generator).generateCorrection(anyString(), any(), anyString(), feedback.capture(), any());
+        assertThat(feedback.getValue()).contains("NEGATIVE_METRIC_VALUE", "gmv", "OUTPUT_LABEL/NON_NEGATIVE_LABEL", "不要改动增长率列或时间范围");
+    }
 }

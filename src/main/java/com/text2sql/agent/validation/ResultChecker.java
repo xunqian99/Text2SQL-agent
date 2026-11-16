@@ -3,20 +3,15 @@ package com.text2sql.agent.validation;
 import com.text2sql.agent.execution.QueryResult;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Locale;
 
 /**
  * 启发式 SQL 结果集校验器（阶段 B）。
  *
- * <p><b>核心目标：为自纠错机制“制造信号”</b>
- *
- * <p>当前系统 91% 的失败属于「静默错误」：SQL 完全合法、通过 AST 校验、
- * 成功在数据库执行，但由于连表条件或过滤条件写偏，产出了荒谬或错误的结果。
- * 在生产环境没有标准答案（gold）可供比对的情况下，自纠错触发率为 0%。
- *
- * <p>本校验器实现一组不需要 gold 答案的轻量业务常识与统计规则，
- * 自动识别“大概率有问题”的异常结果，将静默错误转化为有信号的可自纠错反馈。
+ * <p>执行成功不代表业务语义正确。本组件用不依赖 Gold 的轻量规则提供可疑信号，
+ * 而非正确性证明。列名是弱证据：增长、净额与未知列不能继承整道问题的金额约束。
  */
 @Component
 public class ResultChecker {
@@ -65,58 +60,13 @@ public class ResultChecker {
             }
         }
 
-        // 规则 3：比率/百分比越界异常（Ratio Out of Bounds）
-        // 问题问“率/比/占比”，若返回数值 > 100 或 < 0（除极个别特殊增长率外），通常为分子分母颠倒
-        //
-        // 【只检查「名字像比率」的列，不再扫描所有单元格】
-        // 早先这里对结果集的每一行每一列都做数值判断，后果很严重：
-        // 问「各州订单占比」时结果里同时带一列 order_count（SP 州 4 万单），
-        // 40000 > 100 直接判定越界 —— 正确答案被判可疑，触发一次重试；
-        // 而编排层的策略是「第二次成功就采用第二次」，于是一次错误重试
-        // 反而把原本正确的答案覆盖掉了，准确率不升反降。
-        // 现在改成：先按列名认出比率列，认不出来就不判（宁可少报，不可误报）。
-        if (normQ.contains("率") || normQ.contains("比") || normQ.contains("占比") || normQ.contains("比例")) {
-            // 增长率允许负数或 >100%，因此排除“增长率/环比/同比”
-            boolean isGrowth = normQ.contains("增长") || normQ.contains("环比") || normQ.contains("同比");
-            if (!isGrowth) {
-                List<Integer> ratioColumnIndexes = ratioColumnIndexes(result.columns());
-                if (!ratioColumnIndexes.isEmpty()) {
-                    for (List<String> row : result.rows()) {
-                        for (int columnIndex : ratioColumnIndexes) {
-                            if (columnIndex >= row.size()) {
-                                continue;
-                            }
-                            Double num = parseDouble(row.get(columnIndex));
-                            if (num != null && (num < 0.0 || num > 100.0)) {
-                                return CheckResult.suspicious(
-                                        "RATIO_OUT_OF_BOUNDS",
-                                        "占比/比率列「" + result.columns().get(columnIndex)
-                                                + "」的计算结果（" + num + "）超出了合理的百分比范围 [0, 100]。"
-                                                + "请检查计算公式中的分子与分母是否颠倒。"
-                                );
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // 规则 4：负数异常（Non-Negative Column Negative Value）
-        // 金额、GMV、订单量、客户数等指标绝不应该出现负数
-        if (normQ.contains("金额") || normQ.contains("GMV") || normQ.contains("费用") || normQ.contains("价格")
-                || normQ.contains("数量") || normQ.contains("笔数") || normQ.contains("人数")) {
-            for (List<String> row : result.rows()) {
-                for (String val : row) {
-                    Double num = parseDouble(val);
-                    if (num != null && num < 0.0) {
-                        return CheckResult.suspicious(
-                                "NEGATIVE_METRIC_VALUE",
-                                "统计金额、数量或价格时出现了负数（" + num + "）。请检查计算表达式是否写反或数据筛选有误。"
-                        );
-                    }
-                }
-            }
-        }
+        // Rules 3/4 share column identities and evidence, not question-wide exemptions.
+        // In a mixed GMV + YoY + refund-rate result, each column gets its own policy.
+        List<ResultColumnPolicy> policies = ResultColumnPolicy.classify(result.columns());
+        CheckResult ratioCheck = checkNumericColumns(result, policies, ResultColumnPolicy.Kind.BOUNDED_RATIO);
+        if (ratioCheck.suspicious()) return ratioCheck;
+        CheckResult negativeCheck = checkNumericColumns(result, policies, ResultColumnPolicy.Kind.NON_NEGATIVE);
+        if (negativeCheck.suspicious()) return negativeCheck;
 
         // 规则 5：疑似笛卡尔积（Cartesian Product 行数爆炸）
         // 单表维度的统计（如“每个州/每个类目”），数据库通常只有几十个州或类目，如果无 GROUP BY 或者无正确关联出现几万行，极度可疑
@@ -161,33 +111,38 @@ public class ResultChecker {
         return CheckResult.NORMAL;
     }
 
-    /**
-     * 认出结果集里哪些列是「比率列」。
-     *
-     * <p>判据只看列名，不看值：名字里带 rate / ratio / pct / percent / 占比 / 比例 / 率。
-     * 认不出来就返回空列表，调用方据此跳过整条规则——**不做"猜"**。
-     * 这条规则的定位是"锦上添花"，误报的代价（把正确答案重试掉）远大于漏报。
-     */
-    private static List<Integer> ratioColumnIndexes(List<String> columns) {
-        List<Integer> indexes = new java.util.ArrayList<>();
-        if (columns == null) {
-            return indexes;
-        }
-        for (int i = 0; i < columns.size(); i++) {
-            String name = columns.get(i) == null ? "" : columns.get(i).toLowerCase(Locale.ROOT);
-            if (name.contains("rate") || name.contains("ratio") || name.contains("pct")
-                    || name.contains("percent") || name.contains("占比")
-                    || name.contains("比例") || name.contains("率")) {
-                indexes.add(i);
+    private static CheckResult checkNumericColumns(QueryResult result, List<ResultColumnPolicy> policies,
+                                                   ResultColumnPolicy.Kind kind) {
+        for (int rowIndex = 0; rowIndex < result.rows().size(); rowIndex++) {
+            List<String> row = result.rows().get(rowIndex);
+            if (row == null) continue;
+            for (ResultColumnPolicy policy : policies) {
+                if (policy.kind() != kind || policy.index() >= row.size()) continue;
+                BigDecimal num = parseNumber(row.get(policy.index()));
+                if (num == null) continue;
+                boolean ratioViolation = kind == ResultColumnPolicy.Kind.BOUNDED_RATIO
+                        && (num.signum() < 0 || num.compareTo(BigDecimal.valueOf(100)) > 0);
+                boolean negativeViolation = kind == ResultColumnPolicy.Kind.NON_NEGATIVE && num.signum() < 0;
+                if (!ratioViolation && !negativeViolation) continue;
+                String evidence = "输出列「" + policy.label() + "」（第 " + (policy.index() + 1)
+                        + " 列，依据 " + policy.source() + "/" + policy.rule() + "），第 " + (rowIndex + 1) + " 行";
+                if (ratioViolation) {
+                    return CheckResult.suspicious("RATIO_OUT_OF_BOUNDS", evidence + "的值（" + num
+                            + "）超出当前比例检查范围 [0, 100]。请核对比例单位及分子分母；不要改动其他列的业务口径。");
+                }
+                if (negativeViolation) {
+                    return CheckResult.suspicious("NEGATIVE_METRIC_VALUE", evidence + "的值（" + num
+                            + "）为负数，按列名被识别为非负金额或数量。请核对该列的表达式和列名；不要改动增长率列或时间范围。");
+                }
             }
         }
-        return indexes;
+        return CheckResult.NORMAL;
     }
 
-    private static Double parseDouble(String str) {
+    private static BigDecimal parseNumber(String str) {
         if (str == null || str.isBlank()) return null;
         try {
-            return Double.parseDouble(str.strip());
+            return new BigDecimal(str.strip());
         } catch (NumberFormatException e) {
             return null;
         }
