@@ -33,9 +33,13 @@ public record RetrievalResult(
 
     public RetrievalResult {
         tableNames = List.copyOf(tableNames);
-        scores = java.util.Map.copyOf(scores);
-        evidence = java.util.Map.copyOf(evidence);
-        expandedTables = Set.copyOf(expandedTables);
+        scores = java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(scores));
+        // Map.copyOf does not promise iteration order. Evidence is consumed by planning,
+        // so retain provenance order and copy the nested lists as well.
+        var evidenceCopy = new java.util.LinkedHashMap<String, List<String>>();
+        evidence.forEach((table, reasons) -> evidenceCopy.put(table, List.copyOf(reasons)));
+        evidence = java.util.Collections.unmodifiableMap(evidenceCopy);
+        expandedTables = java.util.Collections.unmodifiableSet(new java.util.LinkedHashSet<>(expandedTables));
     }
 
     /** 给日志用的一行摘要，避免把整个结构打进日志。 */

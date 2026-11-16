@@ -156,7 +156,10 @@ public class ValueRetriever {
 
         // 按别名长度降序排序（如“南马托格罗索”优先于“马托格罗索”）
         list.sort(Comparator.comparingInt((ValueEntry e) -> e.alias().length()).reversed()
-                .thenComparing(ValueEntry::alias));
+                .thenComparing(ValueEntry::alias)
+                .thenComparing(ValueEntry::table)
+                .thenComparing(ValueEntry::column)
+                .thenComparing(ValueEntry::physicalValue));
         return List.copyOf(list);
     }
 

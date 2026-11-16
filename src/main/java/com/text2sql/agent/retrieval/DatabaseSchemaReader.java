@@ -153,7 +153,7 @@ public class DatabaseSchemaReader {
                 JOIN pg_attribute ta ON ta.attrelid = con.confrelid AND ta.attnum = f.attnum
                 WHERE n.nspname = 'public'
                   AND con.contype = 'f'
-                ORDER BY from_table, from_column
+                ORDER BY from_table, from_column, to_table, to_column
                 """;
 
         return jdbcTemplate.query(sql, (rs, i) -> new SchemaContext.ForeignKey(

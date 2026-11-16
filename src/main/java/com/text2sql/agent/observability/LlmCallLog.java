@@ -91,8 +91,10 @@ public class LlmCallLog implements AutoCloseable {
      * @param status    这次调用的结果状态，用于区分「慢且失败」和「慢但成功」
      * @param prompt    完整 prompt；仅在 include-content 打开时写入
      * @param response  模型原始回复；同上
+     * @param promptSha256 包含系统提示词、角色和有序消息内容的指纹；独立于正文日志开关
      */
-    public void record(LlmCallRecord record, String status, String prompt, String response) {
+    public void record(LlmCallRecord record, String status, String prompt, String response,
+                       String promptSha256) {
         if (!enabled() || record == null) {
             return;
         }
@@ -108,6 +110,8 @@ public class LlmCallLog implements AutoCloseable {
                 record.costYuan(),
                 record.cacheHitTokens(),
                 record.cacheMissTokens(),
+                com.text2sql.agent.generation.PromptFingerprint.VERSION,
+                promptSha256,
                 properties.getObservability().isIncludeContent() ? prompt : null,
                 properties.getObservability().isIncludeContent() ? response : null);
 
@@ -195,6 +199,8 @@ public class LlmCallLog implements AutoCloseable {
             double costYuan,
             int cacheHitTokens,
             int cacheMissTokens,
+            String promptHashVersion,
+            String promptSha256,
             String prompt,
             String response) {
     }

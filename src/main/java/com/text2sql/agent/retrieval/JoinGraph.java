@@ -2,7 +2,6 @@ package com.text2sql.agent.retrieval;
 
 import com.text2sql.agent.retrieval.glossary.Glossary;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -115,8 +114,7 @@ public final class JoinGraph {
             fkTablePairs.add(tablePairKey(fk.fromTable(), fk.toTable()));
         }
 
-        // 用 LinkedHashMap 去重并保序：先写外键、再写词典关联，
-        // 于是 edges 天然是「硬事实在前、软知识在后」，渲染出来就是这个顺序。
+        // 先写外键再写词典关联，重复边保留更强来源；输出前按强度和规范键排序。
         Map<String, Edge> byKey = new LinkedHashMap<>();
 
         for (SchemaContext.ForeignKey fk : schema.foreignKeys()) {
@@ -135,7 +133,11 @@ public final class JoinGraph {
             merge(byKey, new Edge(from[0], from[1], to[0], to[1], strength));
         }
 
-        List<Edge> edges = new ArrayList<>(byKey.values());
+        // Equal-strength alternatives must not inherit declaration/Map iteration order.
+        List<Edge> edges = byKey.values().stream()
+                .sorted(java.util.Comparator.comparingDouble(Edge::strength).reversed()
+                        .thenComparing(Edge::key))
+                .toList();
         return new JoinGraph(edges, buildTableAdjacency(edges));
     }
 

@@ -142,8 +142,11 @@ public class LexicalSchemaRetriever {
         Set<String> expanded = new LinkedHashSet<>();
         Map<String, Map<String, Double>> adjacency = joinGraph().tableAdjacency();
         if (config.getRelationHops() > 0) {
+            // There is a seed limit: equal scores must have a stable tie-break BEFORE
+            // truncation, otherwise glossary Map order changes the expanded table set.
             List<String> seeds = directHits.stream()
-                    .sorted(Comparator.comparingDouble((String t) -> scores.getOrDefault(t, 0.0)).reversed())
+                    .sorted(Comparator.comparingDouble((String t) -> scores.getOrDefault(t, 0.0)).reversed()
+                            .thenComparing(Comparator.naturalOrder()))
                     .limit(config.getExpansionSeedLimit())
                     .toList();
             double decay = config.getRelationDecay();
@@ -439,7 +442,8 @@ public class LexicalSchemaRetriever {
 
         return byTerm.values().stream()
                 .map(this::mergeTerms)
-                .sorted(Comparator.comparingInt((MatchTerm t) -> t.term().length()).reversed())
+                .sorted(Comparator.comparingInt((MatchTerm t) -> t.term().length()).reversed()
+                        .thenComparing(MatchTerm::term))
                 .toList();
     }
 
@@ -456,7 +460,7 @@ public class LexicalSchemaRetriever {
                 bestWeight = term.weight();
             }
         }
-        return new MatchTerm(first.term(), bestKind, bestWeight, List.copyOf(tables));
+        return new MatchTerm(first.term(), bestKind, bestWeight, tables.stream().sorted().toList());
     }
 
     private void addTerm(Map<String, List<MatchTerm>> byTerm, String term, MatchTerm entry) {

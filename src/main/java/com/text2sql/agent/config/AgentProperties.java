@@ -501,7 +501,7 @@ public class AgentProperties {
         /** 关系扩展跳数。0 = 不扩展；1 = 只带一跳邻居；2 = 两跳。 */
         private int relationHops = 1;
 
-        /** 每扩展一跳，分数乘以这个系数。衰减是为了让直接命中永远排在扩展项前面。 */
+        /** 关系扩展衰减系数。降低扩展分数；不保证弱直接命中高于强种子的扩展项。 */
         private double relationDecay = 0.4;
 
         /**

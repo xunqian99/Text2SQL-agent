@@ -166,6 +166,7 @@ public class LlmSqlGenerator {
         int promptChars = system.length() + user.length();
 
         List<Message> messages = List.of(new SystemMessage(system), new UserMessage(user));
+        String promptSha256 = PromptFingerprint.messagesSha256(messages);
         String model = (modelOverride == null || modelOverride.isBlank())
                 ? properties.getLlm().getModel() : modelOverride;
         OpenAiChatOptions options = OpenAiChatOptions.builder()
@@ -193,11 +194,11 @@ public class LlmSqlGenerator {
             sql = SqlExtractor.extract(raw);
         } catch (GenerationException e) {
             log.warn("LLM 返回内容无法提取 SQL：{}", record.summary());
-            callLog.record(record, e.getReason().name(), user, raw);
+            callLog.record(record, e.getReason().name(), user, raw, promptSha256);
             throw new GenerationException(e.getReason(), e.getMessage(), record, e);
         }
         log.info("LLM 调用完成：{}", record.summary());
-        callLog.record(record, "OK", user, raw);
+        callLog.record(record, "OK", user, raw, promptSha256);
         return new GeneratedSql(sql, raw, record);
     }
 
@@ -237,6 +238,7 @@ public class LlmSqlGenerator {
         String user = promptTemplate.correctionPrompt(schema, question, previousSql, feedback);
         int promptChars = system.length() + user.length();
         List<Message> messages = List.of(new SystemMessage(system), new UserMessage(user));
+        String promptSha256 = PromptFingerprint.messagesSha256(messages);
         String model = (modelOverride == null || modelOverride.isBlank())
                 ? properties.getLlm().getModel() : modelOverride;
         OpenAiChatOptions options = OpenAiChatOptions.builder()
@@ -262,11 +264,11 @@ public class LlmSqlGenerator {
             sql = SqlExtractor.extract(raw);
         } catch (GenerationException e) {
             log.warn("LLM 自纠错返回内容无法提取 SQL：{}", record.summary());
-            callLog.record(record, e.getReason().name() + "_CORRECTION", user, raw);
+            callLog.record(record, e.getReason().name() + "_CORRECTION", user, raw, promptSha256);
             throw new GenerationException(e.getReason(), e.getMessage(), record, e);
         }
         log.info("LLM 自纠错完成：{}", record.summary());
-        callLog.record(record, "CORRECTION", user, raw);
+        callLog.record(record, "CORRECTION", user, raw, promptSha256);
         return new GeneratedSql(sql, raw, record);
     }
 
@@ -288,6 +290,7 @@ public class LlmSqlGenerator {
         }
 
         int promptChars = messages.stream().mapToInt(m -> m.getText() == null ? 0 : m.getText().length()).sum();
+        String promptSha256 = PromptFingerprint.messagesSha256(messages);
         String model = (modelOverride == null || modelOverride.isBlank())
                 ? properties.getLlm().getModel() : modelOverride;
         OpenAiChatOptions options = OpenAiChatOptions.builder()
@@ -313,11 +316,11 @@ public class LlmSqlGenerator {
             sql = SqlExtractor.extract(raw);
         } catch (GenerationException e) {
             log.warn("LLM [{}] 返回内容无法提取 SQL：{}", logTag, record.summary());
-            callLog.record(record, e.getReason().name() + "_" + logTag, "messages[" + messages.size() + "]", raw);
+            callLog.record(record, e.getReason().name() + "_" + logTag, "messages[" + messages.size() + "]", raw, promptSha256);
             throw new GenerationException(e.getReason(), e.getMessage(), record, e);
         }
         log.info("LLM [{}] 调用完成：{}", logTag, record.summary());
-        callLog.record(record, logTag, "messages[" + messages.size() + "]", raw);
+        callLog.record(record, logTag, "messages[" + messages.size() + "]", raw, promptSha256);
         return new GeneratedSql(sql, raw, record);
     }
 
@@ -341,6 +344,7 @@ public class LlmSqlGenerator {
         }
 
         int promptChars = messages.stream().mapToInt(m -> m.getText() == null ? 0 : m.getText().length()).sum();
+        String promptSha256 = PromptFingerprint.messagesSha256(messages);
         String model = (modelOverride == null || modelOverride.isBlank())
                 ? properties.getLlm().getModel() : modelOverride;
 
@@ -377,11 +381,11 @@ public class LlmSqlGenerator {
             requireComplete(response, record);
         } catch (GenerationException e) {
             callLog.record(record, e.getReason().name() + "_" + logTag,
-                    "messages[" + messages.size() + "]", raw);
+                    "messages[" + messages.size() + "]", raw, promptSha256);
             throw e;
         }
         log.info("LLM [{}] 调用完成：{}", logTag, record.summary());
-        callLog.record(record, logTag, "messages[" + messages.size() + "]", raw);
+        callLog.record(record, logTag, "messages[" + messages.size() + "]", raw, promptSha256);
         return new AgentTurn(response, record, raw);
     }
 

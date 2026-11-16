@@ -32,8 +32,9 @@ import java.util.Set;
  *
      * <p><b>算法：以「最相关的表」为根，做优先队列驱动的生成树</b>
  *
-     * <p>生产入口 {@link #planForTargets} 先从根对每张目标表求外键优先的加权最短路并取并集，
-     * 再交给 {@link #plan} 做 Prim 式生长（每轮从边界上挑一条边），优先级依次是：
+     * <p>生产入口 {@link #planForTargets} 尝试每个目标作为根，用多源 Dijkstra
+     * 逐次把剩余目标接入当前树，选覆盖目标最多、总代价最低的候选（Steiner 树近似，
+     * 不保证全局最优），再交给 {@link #plan} 做 Prim 式生长，优先级依次是：
  *
  * <ul>
      *   <li><b>边强度</b>：优先走外键（1.0）而不是词典关联（0.5）——外键是数据库保证的硬事实；</li>
@@ -236,7 +237,13 @@ public final class JoinPathPlanner {
         if (candidateRank != currentRank) {
             return candidateRank < currentRank;
         }
-        return newTable(candidate, visited).compareTo(newTable(current, visited)) < 0;
+        int tableOrder = newTable(candidate, visited).compareTo(newTable(current, visited));
+        if (tableOrder != 0) return tableOrder < 0;
+        // Same destination: prefer attachment to the more relevant existing parent,
+        // then use the column-level key for genuinely parallel edges.
+        int parentOrder = Integer.compare(rank(connectedTable(candidate, visited), relevance),
+                rank(connectedTable(current, visited), relevance));
+        return parentOrder != 0 ? parentOrder < 0 : candidate.key().compareTo(current.key()) < 0;
     }
 
     /** 表的相关度名次；没出现在排名里的表排到最后。 */
@@ -251,12 +258,17 @@ public final class JoinPathPlanner {
                 : normalize(edge.fromTable());
     }
 
+    private static String connectedTable(JoinGraph.Edge edge, Set<String> visited) {
+        return visited.contains(normalize(edge.fromTable()))
+                ? normalize(edge.fromTable()) : normalize(edge.toTable());
+    }
+
     private static String normalize(String name) {
         return name == null ? "" : name.toLowerCase(Locale.ROOT);
     }
 
     /**
-     * 针对核心业务目标表集合，规划最小连通连接树：以最相关表为根，对每张目标表求外键优先的加权最短路径并取并集，再按边强度→相关度→表名生长排序。
+     * 针对核心业务目标表集合，近似规划低代价连接树；等价选择按检索排名与规范键决胜。
      *
      * <p>解决的核心问题：Top-K 召回可能返回 8~10 张表，如果对全部召回表生成树，
      * 会强制把无关表连进来，导致模型发生「过度 Join」；
@@ -266,19 +278,24 @@ public final class JoinPathPlanner {
      * @param graph        表关系图
      * @param targetTables 核心实体表集合（自然语言/取值/指标直接命中的表）
      * @param rankedTables 召回表的优先级列表
-     * @return 仅覆盖核心实体的最小连接树；若核心表不足 2 张或无法连通，返回空 Plan
+     * @return 核心实体及必要桥接的连接树；不足两张或无边时为空，不连通时可为部分计划
      */
     public static Plan planForTargets(JoinGraph graph, Set<String> targetTables, List<String> rankedTables) {
         if (graph == null || targetTables == null || rankedTables == null || targetTables.size() < 2) {
             return new Plan(null, List.of(), targetTables == null ? 0 : targetTables.size());
         }
 
-        Set<String> normalizedTargets = new LinkedHashSet<>();
-        for (String t : targetTables) {
-            if (t != null && !t.isBlank()) {
-                normalizedTargets.add(normalize(t));
-            }
+        Map<String, Integer> relevance = new LinkedHashMap<>();
+        for (int i = 0; i < rankedTables.size(); i++) {
+            relevance.putIfAbsent(normalize(rankedTables.get(i)), i);
         }
+        // Target sets encode membership, not priority. Recover priority from retrieval;
+        // unknown targets go last with a name tie-break, without changing membership.
+        Set<String> normalizedTargets = new LinkedHashSet<>(targetTables.stream()
+                .filter(t -> t != null && !t.isBlank()).map(JoinPathPlanner::normalize)
+                .sorted(Comparator.comparingInt((String t) -> rank(t, relevance))
+                        .thenComparing(Comparator.naturalOrder()))
+                .toList());
         if (normalizedTargets.size() < 2) {
             return new Plan(null, List.of(), normalizedTargets.size());
         }
@@ -319,7 +336,7 @@ public final class JoinPathPlanner {
         long bestSpannedCount = 0;
 
         for (String root : candidateRoots) {
-            Set<JoinGraph.Edge> edges = buildSteinerTreeForRoot(root, normalizedTargets, adj);
+            Set<JoinGraph.Edge> edges = buildSteinerTreeForRoot(root, normalizedTargets, adj, relevance);
             if (edges.isEmpty()) {
                 continue;
             }
@@ -346,7 +363,8 @@ public final class JoinPathPlanner {
     }
 
     private static Set<JoinGraph.Edge> buildSteinerTreeForRoot(
-            String root, Set<String> normalizedTargets, Map<String, List<JoinGraph.Edge>> adj) {
+            String root, Set<String> normalizedTargets, Map<String, List<JoinGraph.Edge>> adj,
+            Map<String, Integer> relevance) {
         Set<JoinGraph.Edge> selectedEdges = new LinkedHashSet<>();
         Set<String> treeNodes = new LinkedHashSet<>();
         treeNodes.add(root);
@@ -360,7 +378,7 @@ public final class JoinPathPlanner {
             String bestTarget = null;
 
             for (String target : remainingTargets) {
-                List<JoinGraph.Edge> path = findShortestPathToTree(treeNodes, target, adj);
+                List<JoinGraph.Edge> path = findShortestPathToTree(treeNodes, target, adj, relevance);
                 if (path != null && !path.isEmpty()) {
                     double cost = totalCost(path);
                     if (cost < bestCost) {
@@ -396,13 +414,16 @@ public final class JoinPathPlanner {
     }
 
     private static List<JoinGraph.Edge> findShortestPathToTree(
-            Set<String> treeNodes, String target, Map<String, List<JoinGraph.Edge>> adj) {
+            Set<String> treeNodes, String target, Map<String, List<JoinGraph.Edge>> adj,
+            Map<String, Integer> relevance) {
         record NodeDist(String node, double dist) {}
         Map<String, Double> dist = new LinkedHashMap<>();
         Map<String, JoinGraph.Edge> prevEdge = new LinkedHashMap<>();
         Map<String, String> prevNode = new LinkedHashMap<>();
 
-        java.util.PriorityQueue<NodeDist> pq = new java.util.PriorityQueue<>(Comparator.comparingDouble(NodeDist::dist));
+        java.util.PriorityQueue<NodeDist> pq = new java.util.PriorityQueue<>(
+                Comparator.comparingDouble(NodeDist::dist)
+                        .thenComparingInt(n -> rank(n.node(), relevance)).thenComparing(NodeDist::node));
         for (String node : treeNodes) {
             dist.put(node, 0.0);
             pq.add(new NodeDist(node, 0.0));

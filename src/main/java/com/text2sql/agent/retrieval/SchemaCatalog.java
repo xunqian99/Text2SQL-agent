@@ -79,7 +79,7 @@ public class SchemaCatalog {
         for (SchemaContext.Table table : full().tables()) {
             map.put(table.name().toLowerCase(Locale.ROOT), table);
         }
-        return Map.copyOf(map);
+        return java.util.Collections.unmodifiableMap(map);
     }
 
     private SchemaContext load() {
