@@ -1,6 +1,7 @@
 param(
   [ValidateSet('demo', 'baseline')][string]$Mode = 'demo',
   [ValidateRange(1, 65535)][int]$Port = 8080,
+  [string]$CallLogDir = '',
   [switch]$Preview
 )
 
@@ -16,6 +17,10 @@ if (-not $Preview -and [string]::IsNullOrWhiteSpace($env:AGENT_LLM_API_KEY)) {
 
 # Secret stays in the child environment, never in Maven arguments or output.
 $applicationArgs = "--spring.profiles.active=local,$Mode --server.address=127.0.0.1 --server.port=$Port --agent.eval.enabled=false"
+if ($CallLogDir) {
+  if ($CallLogDir -match '[\s"'']') { throw 'CallLogDir must not contain whitespace or quotes.' }
+  $applicationArgs += " --agent.observability.dir=$CallLogDir"
+}
 if ($Preview) {
   Write-Output $applicationArgs
   exit 0
