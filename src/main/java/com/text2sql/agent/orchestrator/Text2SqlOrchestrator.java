@@ -159,25 +159,32 @@ public class Text2SqlOrchestrator {
     }
 
     public AgentResponse ask(String question, String sessionId, String apiKey, boolean endSession) {
+        // Capture this exact session generation before worker admission. A late worker must never
+        // re-create a deleted/reopened session or append its abandoned candidate answer.
+        ConversationSession session = properties.getConversation().isEnabled()
+                && sessionId != null && !sessionId.isBlank() ? sessionStore.getOrCreate(sessionId) : null;
+        var conversation = new ConversationOutcome(session, question);
         return RequestBudgetRunner.run(question, sessionId, properties.getRequestBudget(),
                 () -> {
-                    AgentResponse response = askPipeline(question, sessionId, apiKey);
+                    AgentResponse response = askPipeline(question, sessionId, apiKey, conversation);
+                    RequestBudget.stage("CONVERSATION");
+                    var budget = RequestBudget.current();
+                    response = budget == null ? conversation.finish(response) : budget.completeOutcome(response);
                     if (endSession && sessionId != null) {
                         RequestBudget.checkpoint(response);
                         RequestBudget.stage("SESSION_PERSIST");
                         closeSession(sessionId);
                     }
                     return response;
-                });
+                }, conversation::finish);
     }
 
-    private AgentResponse askPipeline(String question, String sessionId, String apiKey) {
+    private AgentResponse askPipeline(String question, String sessionId, String apiKey, ConversationOutcome conversation) {
         long totalStarted = System.nanoTime();
         RequestBudget.stage("SESSION");
 
-        boolean convEnabled = properties.getConversation().isEnabled()
-                && sessionId != null && !sessionId.isBlank();
-        ConversationSession session = convEnabled ? sessionStore.getOrCreate(sessionId) : null;
+        ConversationSession session = conversation.session;
+        boolean convEnabled = session != null;
 
         String effectiveQuestion = question;
         String rewrittenQuestion = null;
@@ -199,6 +206,7 @@ public class Text2SqlOrchestrator {
                 schemaReused = true;
                 log.info("多轮会话复用上一轮 SchemaContext，涉及表: {}", schema.tableNames());
             }
+            conversation.metadata = new ConversationMetadata(rewrittenQuestion, schemaReused, schema);
         }
 
         // 阶段 5：口径没定就先问，不要猜。
@@ -210,7 +218,6 @@ public class Text2SqlOrchestrator {
                 log.info("问题存在口径歧义，主动反问：{}", prompt.get());
                 AgentResponse clar = AgentResponse.clarification(question, prompt.get());
                 if (convEnabled) {
-                    recordConversationTurn(session, question, rewrittenQuestion, clar);
                     return clar.withConversation(sessionId, rewrittenQuestion, schemaReused);
                 }
                 return clar;
@@ -226,6 +233,7 @@ public class Text2SqlOrchestrator {
 
         int tableCount = schema.tables().size();
         RequestBudget.schema(schema);
+        conversation.metadata = new ConversationMetadata(rewrittenQuestion, schemaReused, schema);
         List<String> retrievedTables = schema.tableNames();
         int ddlChars = schema.ddlText() == null ? 0 : schema.ddlText().length();
 
@@ -242,7 +250,6 @@ public class Text2SqlOrchestrator {
                     EvaluationTrace.attempt("CACHE_SQL", hit);
                     RequestBudget.checkpoint(hit);
                     if (convEnabled) {
-                        recordConversationTurn(session, question, rewrittenQuestion, hit);
                         return hit.withConversation(sessionId, rewrittenQuestion, schemaReused);
                     }
                     return hit;
@@ -303,7 +310,6 @@ public class Text2SqlOrchestrator {
                             tableCount, retrievedTables, ddlChars,
                             timings(retrievalMs, generationMs, 0, 0, elapsedMs(totalStarted)));
                     if (convEnabled) {
-                        recordConversationTurn(session, question, rewrittenQuestion, fail);
                         return fail.withConversation(sessionId, rewrittenQuestion, schemaReused);
                     }
                     return fail;
@@ -319,7 +325,6 @@ public class Text2SqlOrchestrator {
                         tableCount, retrievedTables, ddlChars,
                         timings(retrievalMs, generationMs, 0, 0, elapsedMs(totalStarted)));
                 if (convEnabled) {
-                    recordConversationTurn(session, question, rewrittenQuestion, fail);
                     return fail.withConversation(sessionId, rewrittenQuestion, schemaReused);
                 }
                 return fail;
@@ -344,10 +349,6 @@ public class Text2SqlOrchestrator {
         }
 
         if (convEnabled) {
-            if (result.success()) {
-                session.setLastSchema(schema);
-            }
-            recordConversationTurn(session, question, rewrittenQuestion, result);
             return result.withConversation(sessionId, rewrittenQuestion, schemaReused);
         }
 
@@ -370,9 +371,38 @@ public class Text2SqlOrchestrator {
         return sessionStore;
     }
 
+    private record ConversationMetadata(String rewrittenQuestion, boolean schemaReused, SchemaContext schema) { }
+
+    /** Payload selection owns the only history write; metadata updates alone never mutate a session. */
+    private final class ConversationOutcome {
+        private final ConversationSession session;
+        private final String question;
+        private volatile ConversationMetadata metadata = new ConversationMetadata(null, false, null);
+        private AgentResponse selected;
+
+        private ConversationOutcome(ConversationSession session, String question) {
+            this.session = session;
+            this.question = question;
+        }
+
+        private synchronized AgentResponse finish(AgentResponse response) {
+            if (selected != null) return selected;
+            if (session == null) return selected = response;
+            var snapshot = metadata;
+            selected = response.withConversation(session.sessionId(), snapshot.rewrittenQuestion(), snapshot.schemaReused());
+            // Do not revive deleted sessions or inject an old completion into a new generation.
+            if (sessionStore.get(session.sessionId()).orElse(null) == session && !session.isClosed()) {
+                synchronized (session) {
+                    if (selected.success() && snapshot.schema() != null) session.setLastSchema(snapshot.schema());
+                    recordConversationTurn(session, question, snapshot.rewrittenQuestion(), selected);
+                }
+            }
+            return selected;
+        }
+    }
+
     private void recordConversationTurn(ConversationSession session, String rawQuestion,
                                         String rewrittenQuestion, AgentResponse response) {
-        RequestBudget.stage("CONVERSATION");
         if (session == null) {
             return;
         }

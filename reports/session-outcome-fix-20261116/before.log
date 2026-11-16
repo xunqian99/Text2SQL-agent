@@ -1,0 +1,99 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] --------------------< com.text2sql:text2sql-agent >---------------------
+[INFO] Building text2sql-agent 0.1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ text2sql-agent ---
+[INFO] Copying 5 resources from src\main\resources to target\classes
+[INFO] Copying 5 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.1:compile (default-compile) @ text2sql-agent ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 87 source files with javac [debug parameters release 21] to target\classes
+[INFO] /C:/Users/xunqian/Desktop/agent/src/main/java/com/text2sql/agent/validation/SqlValidator.java: 某些输入文件使用或覆盖了已过时的 API。
+[INFO] /C:/Users/xunqian/Desktop/agent/src/main/java/com/text2sql/agent/validation/SqlValidator.java: 有关详细信息, 请使用 -Xlint:deprecation 重新编译。
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ text2sql-agent ---
+[INFO] skip non existing resourceDirectory C:\Users\xunqian\Desktop\agent\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.14.1:testCompile (default-testCompile) @ text2sql-agent ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 69 source files with javac [debug parameters release 21] to target\test-classes
+[INFO] /C:/Users/xunqian/Desktop/agent/src/test/java/com/text2sql/agent/execution/QueryPlanAnalyzerTest.java: C:\Users\xunqian\Desktop\agent\src\test\java\com\text2sql\agent\execution\QueryPlanAnalyzerTest.java使用了未经检查或不安全的操作。
+[INFO] /C:/Users/xunqian/Desktop/agent/src/test/java/com/text2sql/agent/execution/QueryPlanAnalyzerTest.java: 有关详细信息, 请使用 -Xlint:unchecked 重新编译。
+[INFO] 
+[INFO] --- surefire:3.5.6:test (default-test) @ text2sql-agent ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.text2sql.agent.session.SessionOutcomeFinalizationTest
+Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+WARNING: A Java agent has been loaded dynamically (D:\develop\Maven\apache-maven-3.9.4\mvn_repo\net\bytebuddy\byte-buddy-agent\1.17.8\byte-buddy-agent-1.17.8.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+23:21:33.311 [main] WARN com.text2sql.agent.generation.LlmSqlGenerator -- 未配置全局 agent.llm.api-key，进入 BYOK（用户自带密钥）模式；用户可在前端输入个人 API Key 体验。
+23:21:33.485 [text2sql-request-0] INFO com.text2sql.agent.generation.LlmSqlGenerator -- LLM 调用完成：model=deepseek-chat tokens=15(prompt=10,completion=5,cacheHit=0,cacheMiss=10) latency=0ms cost=0.0000元 promptChars=2842
+23:21:33.488 [text2sql-request-0] INFO com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 启发式结果校验命中异常（规则：fixture）：retry fixture
+23:21:33.488 [text2sql-request-0] INFO com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 触发自纠错重试（首次状态：SUCCESS）
+23:21:34.010 [text2sql-request-0] INFO com.text2sql.agent.generation.LlmSqlGenerator -- LLM 自纠错完成：model=deepseek-chat tokens=15(prompt=10,completion=5,cacheHit=0,cacheMiss=10) latency=512ms cost=0.0000元 promptChars=3364
+23:21:34.035 [main] WARN com.text2sql.agent.generation.LlmSqlGenerator -- 未配置全局 agent.llm.api-key，进入 BYOK（用户自带密钥）模式；用户可在前端输入个人 API Key 体验。
+23:21:34.469 [text2sql-request-0] INFO com.text2sql.agent.generation.LlmSqlGenerator -- LLM 调用完成：model=deepseek-chat tokens=15(prompt=10,completion=5,cacheHit=0,cacheMiss=10) latency=429ms cost=0.0000元 promptChars=2842
+[ERROR] Tests run: 2, Failures: 2, Errors: 0, Skipped: 0, Time elapsed: 2.624 s <<< FAILURE! -- in com.text2sql.agent.session.SessionOutcomeFinalizationTest
+[ERROR] com.text2sql.agent.session.SessionOutcomeFinalizationTest.correctionTimeoutRecordsTheReturnedFirstAnswerRatherThanTheAbandonedCorrection -- Time elapsed: 2.155 s <<< FAILURE!
+java.lang.AssertionError: 
+
+Expected size: 1 but was: 0 in:
+[]
+	at com.text2sql.agent.session.SessionOutcomeFinalizationTest.onlyTurn(SessionOutcomeFinalizationTest.java:94)
+	at com.text2sql.agent.session.SessionOutcomeFinalizationTest.correctionTimeoutRecordsTheReturnedFirstAnswerRatherThanTheAbandonedCorrection(SessionOutcomeFinalizationTest.java:157)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+[ERROR] com.text2sql.agent.session.SessionOutcomeFinalizationTest.httpTimeoutHasHistoryBeforeAnUncooperativeModelReturnsAndLateAnswerCannotAppend -- Time elapsed: 0.439 s <<< FAILURE!
+java.lang.AssertionError: 
+
+Expected size: 1 but was: 0 in:
+[]
+	at com.text2sql.agent.session.SessionOutcomeFinalizationTest.onlyTurn(SessionOutcomeFinalizationTest.java:94)
+	at com.text2sql.agent.session.SessionOutcomeFinalizationTest.httpTimeoutHasHistoryBeforeAnUncooperativeModelReturnsAndLateAnswerCannotAppend(SessionOutcomeFinalizationTest.java:124)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+[INFO] 
+[INFO] Results:
+[INFO] 
+[ERROR] Failures: 
+[ERROR]   SessionOutcomeFinalizationTest.correctionTimeoutRecordsTheReturnedFirstAnswerRatherThanTheAbandonedCorrection:157->onlyTurn:94 
+Expected size: 1 but was: 0 in:
+[]
+[ERROR]   SessionOutcomeFinalizationTest.httpTimeoutHasHistoryBeforeAnUncooperativeModelReturnsAndLateAnswerCannotAppend:124->onlyTurn:94 
+Expected size: 1 but was: 0 in:
+[]
+[INFO] 
+[ERROR] Tests run: 2, Failures: 2, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  11.380 s
+[INFO] Finished at: 2026-11-16T23:21:34+08:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.5.6:test (default-test) on project text2sql-agent: There are test failures.
+[ERROR] 
+[ERROR] See C:\Users\xunqian\Desktop\agent\target\surefire-reports for the individual test results.
+[ERROR] See dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

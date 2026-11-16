@@ -14,6 +14,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 
 /** Bounded workers + real cancellation hooks. A timed-out worker retains its slot until it exits. */
 public final class RequestBudgetRunner {
@@ -27,9 +28,15 @@ public final class RequestBudgetRunner {
 
     public static AgentResponse run(String question, String sessionId, AgentProperties.RequestBudgetConfig config,
                                     Supplier<AgentResponse> action) {
+        return run(question, sessionId, config, action, UnaryOperator.identity());
+    }
+
+    public static AgentResponse run(String question, String sessionId, AgentProperties.RequestBudgetConfig config,
+                                    Supplier<AgentResponse> action, UnaryOperator<AgentResponse> finalizer) {
         // Correction and tool calls reuse the current budget; they never reset its clock.
-        if (!config.isEnabled() || RequestBudget.current() != null) return action.get();
+        if (!config.isEnabled() || RequestBudget.current() != null) return finalizer.apply(action.get());
         RequestBudget budget = new RequestBudget(config);
+        budget.onOutcome(finalizer);
         EvaluationTrace trace = EvaluationTrace.current();
         Future<AgentResponse> task;
         try {
@@ -48,7 +55,7 @@ public final class RequestBudgetRunner {
         try {
             AgentResponse result = task.get(budget.remainingNanos(), TimeUnit.NANOSECONDS);
             budget.finish();
-            return result.withUsage(budget.usage()).withBudget(budget.snapshot("COMPLETE"));
+            return budget.selectOutcome(result).withUsage(budget.usage()).withBudget(budget.snapshot("COMPLETE"));
         } catch (TimeoutException timeout) {
             return stop(task, budget, question, sessionId, "DEADLINE_EXCEEDED");
         } catch (InterruptedException interrupted) {

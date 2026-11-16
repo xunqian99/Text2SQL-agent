@@ -11,6 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.UnaryOperator;
 
 /** One monotonic deadline and one model-call ledger, shared by every nested stage. */
 public final class RequestBudget {
@@ -34,6 +35,8 @@ public final class RequestBudget {
     private String retrySkipped;
     private SchemaContext schema;
     private AgentResponse checkpoint;
+    private UnaryOperator<AgentResponse> outcomeFinalizer = UnaryOperator.identity();
+    private AgentResponse selectedOutcome;
 
     RequestBudget(AgentProperties.RequestBudgetConfig config) {
         budgetMs = config.getTimeoutMs();
@@ -46,6 +49,22 @@ public final class RequestBudget {
     }
 
     public static RequestBudget current() { return CURRENT.get(); }
+
+    /** Install before admitting the worker. Only bounded in-memory work is allowed here. */
+    synchronized void onOutcome(UnaryOperator<AgentResponse> finalizer) {
+        outcomeFinalizer = finalizer == null ? UnaryOperator.identity() : finalizer;
+    }
+
+    /** Seal the payload/history before optional persistence; persistence cannot change the chosen answer. */
+    public synchronized AgentResponse completeOutcome(AgentResponse response) {
+        check();
+        return selectOutcome(response);
+    }
+
+    synchronized AgentResponse selectOutcome(AgentResponse response) {
+        if (selectedOutcome == null) selectedOutcome = outcomeFinalizer.apply(response);
+        return selectedOutcome;
+    }
 
     static AutoCloseable bind(RequestBudget budget) {
         if (CURRENT.get() != null) throw new IllegalStateException("Request budget already bound");
@@ -172,8 +191,10 @@ public final class RequestBudget {
                 schema == null ? 0 : schema.tables().size(), schema == null ? List.of() : schema.tableNames(),
                 schema == null || schema.ddlText() == null ? 0 : schema.ddlText().length(),
                 measured.responseTimings()).withBudget(measured);
-        EvaluationTrace.stop(stopped, first != null && first.success());
-        AgentResponse selected = first != null && first.success() ? first.withUsage(usage) : stopped;
+        AgentResponse selected = selectedOutcome != null ? selectedOutcome
+                : first != null && first.success() ? first : stopped;
+        EvaluationTrace.stop(stopped, selected != stopped);
+        selected = selectOutcome(selected).withUsage(usage);
         return selected.withConversation(sessionId, selected.rewrittenQuestion(), selected.schemaReused())
                 .withBudget(measured);
     }

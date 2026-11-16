@@ -222,16 +222,46 @@ class RequestBudgetTest {
                             return answer();
                         })));
                 assertThat(entered.await(3, TimeUnit.SECONDS)).isTrue();
+                var finalizations = new AtomicInteger();
                 var overflow = RequestBudgetRunner.run("overflow", null, config(1000), () -> {
                     throw new AssertionError("capacity-rejected work must not start");
-                });
+                }, response -> { finalizations.incrementAndGet(); return response; });
                 assertThat(overflow.status()).isEqualTo(AgentResponse.Status.RESOURCE_LIMITED);
                 assertThat(overflow.budget().termination()).isEqualTo("WORKER_CAPACITY");
                 assertThat(overflow.budget().modelCalls()).isZero();
+                assertThat(finalizations).hasValue(1);
             } finally {
                 release.countDown();
                 for (var job : jobs) job.get(3, TimeUnit.SECONDS);
             }
         }
+    }
+
+    @Test void lateWorkerCannotFinalizeAgainAfterTheWaitingThreadRecordedTheTimeout() throws Exception {
+        var release = new CountDownLatch(1);
+        var exited = new CountDownLatch(1);
+        var finalizations = new AtomicInteger();
+        var lateRejected = new java.util.concurrent.atomic.AtomicBoolean();
+        try {
+            var result = RequestBudgetRunner.run("late finalization", "session", config(400), () -> {
+                var budget = RequestBudget.current();
+                while (release.getCount() > 0) {
+                    try { release.await(); } catch (InterruptedException ignored) { }
+                }
+                try {
+                    budget.completeOutcome(answer());
+                } catch (RequestBudget.Exceeded expected) {
+                    lateRejected.set(true);
+                    throw expected;
+                } finally { exited.countDown(); }
+                return answer();
+            }, response -> { finalizations.incrementAndGet(); return response; });
+            assertThat(result.status()).isEqualTo(AgentResponse.Status.REQUEST_TIMEOUT);
+            assertThat(finalizations).hasValue(1);
+            release.countDown();
+            assertThat(exited.await(2, TimeUnit.SECONDS)).isTrue();
+            assertThat(lateRejected).isTrue();
+            assertThat(finalizations).hasValue(1);
+        } finally { release.countDown(); }
     }
 }
