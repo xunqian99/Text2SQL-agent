@@ -1,0 +1,238 @@
+{
+  "index" : 18,
+  "caseId" : "T5-003",
+  "request" : {
+    "sessionId" : "demo20-T5-003",
+    "question" : "用英文类目名统计退款金额，哪些类目退款最多？取前 15。"
+  },
+  "exchange" : {
+    "startedAt" : "2026-11-17T10:04:48.552366100Z",
+    "httpStatus" : 200,
+    "rawBody" : "{\"status\":\"SUCCESS\",\"sql\":\"SELECT pct.product_category_name_english AS category,\\n       ROUND(SUM(ri.refund_value), 2) AS refund_amount\\nFROM refund_items ri\\nJOIN order_items oi ON oi.order_id = ri.order_id AND oi.order_item_id = ri.order_item_id\\nJOIN products p ON p.product_id = oi.product_id\\nJOIN product_category_translation pct ON pct.product_category_name = p.product_category_name\\nWHERE p.product_category_name IS NOT NULL\\n  AND pct.product_category_name_english IS NOT NULL\\nGROUP BY pct.product_category_name_english\\nORDER BY refund_amount DESC\\nLIMIT 15;\",\"message\":null,\"violations\":[],\"columns\":[\"category\",\"refund_amount\"],\"rows\":[[\"watches_gifts\",\"56539.68\"],[\"health_beauty\",\"54300.35\"],[\"bed_bath_table\",\"53219.74\"],[\"sports_leisure\",\"47306.67\"],[\"computers_accessories\",\"41862.15\"],[\"auto\",\"33623.37\"],[\"furniture_decor\",\"30738.44\"],[\"housewares\",\"30548.21\"],[\"cool_stuff\",\"27184.04\"],[\"garden_tools\",\"26248.74\"],[\"toys\",\"23291.44\"],[\"baby\",\"19845.53\"],[\"perfumery\",\"18608.57\"],[\"telephony\",\"15943.45\"],[\"pet_shop\",\"13359.56\"]],\"truncated\":false,\"rewritten\":false,\"rowCount\":15,\"schemaTableCount\":8,\"retrievedTables\":[\"product_category_translation\",\"refunds\",\"products\",\"refund_items\",\"order_items\",\"orders\",\"campaign_products\",\"inventory\"],\"schemaDdlChars\":1618,\"llm\":{\"model\":\"deepseek-flash\",\"promptTokens\":2470,\"completionTokens\":1794,\"totalTokens\":4264,\"latencyMs\":10923,\"costYuan\":0.00788984},\"timings\":{\"retrievalMs\":1,\"generationMs\":10924,\"validationMs\":3,\"executionMs\":94,\"totalMs\":11025},\"sessionId\":\"demo20-T5-003\",\"rewrittenQuestion\":null,\"schemaReused\":false,\"budget\":{\"requestId\":\"e67a37c1-2b1d-4468-bad2-96fb08b3a9cc\",\"timeoutMs\":15000,\"maxModelCalls\":2,\"modelCalls\":1,\"unknownUsageCalls\":0,\"elapsedMs\":11025,\"termination\":\"COMPLETE\",\"stage\":\"CONVERSATION\",\"retrySkippedReason\":null,\"stageMs\":{\"RETRIEVAL\":1,\"CONVERSATION\":0,\"CACHE\":0,\"GENERATION\":0,\"MODEL\":10924,\"EXECUTION\":81,\"SESSION\":0,\"ADMISSION\":0,\"VALIDATION\":3,\"EXPLAIN\":13,\"CLARIFICATION\":0,\"CACHE_WRITE\":0,\"RESULT_CHECK\":0},\"cancellationRejected\":0,\"timingsVersion\":\"request-budget-exclusive-v1\",\"otherMs\":3,\"currentStageMs\":0}}",
+    "body" : {
+      "status" : "SUCCESS",
+      "sql" : "SELECT pct.product_category_name_english AS category,\n       ROUND(SUM(ri.refund_value), 2) AS refund_amount\nFROM refund_items ri\nJOIN order_items oi ON oi.order_id = ri.order_id AND oi.order_item_id = ri.order_item_id\nJOIN products p ON p.product_id = oi.product_id\nJOIN product_category_translation pct ON pct.product_category_name = p.product_category_name\nWHERE p.product_category_name IS NOT NULL\n  AND pct.product_category_name_english IS NOT NULL\nGROUP BY pct.product_category_name_english\nORDER BY refund_amount DESC\nLIMIT 15;",
+      "message" : null,
+      "violations" : [ ],
+      "columns" : [ "category", "refund_amount" ],
+      "rows" : [ [ "watches_gifts", "56539.68" ], [ "health_beauty", "54300.35" ], [ "bed_bath_table", "53219.74" ], [ "sports_leisure", "47306.67" ], [ "computers_accessories", "41862.15" ], [ "auto", "33623.37" ], [ "furniture_decor", "30738.44" ], [ "housewares", "30548.21" ], [ "cool_stuff", "27184.04" ], [ "garden_tools", "26248.74" ], [ "toys", "23291.44" ], [ "baby", "19845.53" ], [ "perfumery", "18608.57" ], [ "telephony", "15943.45" ], [ "pet_shop", "13359.56" ] ],
+      "truncated" : false,
+      "rewritten" : false,
+      "rowCount" : 15,
+      "schemaTableCount" : 8,
+      "retrievedTables" : [ "product_category_translation", "refunds", "products", "refund_items", "order_items", "orders", "campaign_products", "inventory" ],
+      "schemaDdlChars" : 1618,
+      "llm" : {
+        "model" : "deepseek-flash",
+        "promptTokens" : 2470,
+        "completionTokens" : 1794,
+        "totalTokens" : 4264,
+        "latencyMs" : 10923,
+        "costYuan" : 0.00788984
+      },
+      "timings" : {
+        "retrievalMs" : 1,
+        "generationMs" : 10924,
+        "validationMs" : 3,
+        "executionMs" : 94,
+        "totalMs" : 11025
+      },
+      "sessionId" : "demo20-T5-003",
+      "rewrittenQuestion" : null,
+      "schemaReused" : false,
+      "budget" : {
+        "requestId" : "e67a37c1-2b1d-4468-bad2-96fb08b3a9cc",
+        "timeoutMs" : 15000,
+        "maxModelCalls" : 2,
+        "modelCalls" : 1,
+        "unknownUsageCalls" : 0,
+        "elapsedMs" : 11025,
+        "termination" : "COMPLETE",
+        "stage" : "CONVERSATION",
+        "retrySkippedReason" : null,
+        "stageMs" : {
+          "RETRIEVAL" : 1,
+          "CONVERSATION" : 0,
+          "CACHE" : 0,
+          "GENERATION" : 0,
+          "MODEL" : 10924,
+          "EXECUTION" : 81,
+          "SESSION" : 0,
+          "ADMISSION" : 0,
+          "VALIDATION" : 3,
+          "EXPLAIN" : 13,
+          "CLARIFICATION" : 0,
+          "CACHE_WRITE" : 0,
+          "RESULT_CHECK" : 0
+        },
+        "cancellationRejected" : 0,
+        "timingsVersion" : "request-budget-exclusive-v1",
+        "otherMs" : 3,
+        "currentStageMs" : 0
+      }
+    },
+    "httpWallMs" : 11030
+  },
+  "businessCorrect" : true,
+  "healthAfter" : {
+    "startedAt" : "2026-11-17T10:04:59.584171600Z",
+    "httpStatus" : 200,
+    "rawBody" : "{\"status\":\"UP\",\"ready\":true,\"llmConfigured\":true,\"schemaAvailable\":true,\"schemaTableCount\":37,\"readinessScope\":\"global-client-configuration-and-schema-snapshot\",\"providerVerified\":false,\"databaseLiveVerified\":false,\"mode\":\"demo\",\"activeProfiles\":[\"local\",\"demo\"],\"model\":\"deepseek-flash\",\"capabilities\":{\"retrieval\":true,\"columnPruning\":true,\"joinPlan\":true,\"semantic\":true,\"fewshot\":true,\"clarification\":true,\"selfCorrection\":true,\"resultChecker\":true,\"conversation\":true,\"cache\":false,\"persistence\":false,\"toolUse\":false,\"routing\":false,\"explainGuard\":true},\"limits\":{\"requestBudgetEnabled\":true,\"requestTimeoutMs\":15000,\"maxModelCalls\":2,\"maxRows\":200,\"queryTimeoutSeconds\":10}}",
+    "body" : {
+      "status" : "UP",
+      "ready" : true,
+      "llmConfigured" : true,
+      "schemaAvailable" : true,
+      "schemaTableCount" : 37,
+      "readinessScope" : "global-client-configuration-and-schema-snapshot",
+      "providerVerified" : false,
+      "databaseLiveVerified" : false,
+      "mode" : "demo",
+      "activeProfiles" : [ "local", "demo" ],
+      "model" : "deepseek-flash",
+      "capabilities" : {
+        "retrieval" : true,
+        "columnPruning" : true,
+        "joinPlan" : true,
+        "semantic" : true,
+        "fewshot" : true,
+        "clarification" : true,
+        "selfCorrection" : true,
+        "resultChecker" : true,
+        "conversation" : true,
+        "cache" : false,
+        "persistence" : false,
+        "toolUse" : false,
+        "routing" : false,
+        "explainGuard" : true
+      },
+      "limits" : {
+        "requestBudgetEnabled" : true,
+        "requestTimeoutMs" : 15000,
+        "maxModelCalls" : 2,
+        "maxRows" : 200,
+        "queryTimeoutSeconds" : 10
+      }
+    },
+    "httpWallMs" : 3
+  },
+  "sessionsAfter" : {
+    "startedAt" : "2026-11-17T10:04:59.588020Z",
+    "httpStatus" : 200,
+    "rawBody" : "[{\"sessionId\":\"demo20-T5-003\",\"title\":\"用英文类目名统计退款金额，哪些类目退款最多？取前 15。\",\"turnCount\":1,\"status\":\"ACTIVE\",\"createdAt\":\"2026-11-17T10:04:48.555369200Z\",\"lastActiveAt\":\"2026-11-17T10:04:59.580741800Z\"},{\"sessionId\":\"demo20-T5-002\",\"title\":\"每个会员等级对应的商品销售额是多少？\",\"turnCount\":1,\"status\":\"ACTIVE\",\"createdAt\":\"2026-11-17T10:04:33.311257600Z\",\"lastActiveAt\":\"2026-11-17T10:04:48.319778800Z\"},{\"sessionId\":\"demo20-T5-001\",\"title\":\"每个宏观区域下，各会员等级（按等级名称）的商品销售额分别是多少？按销售额从高到低排序。\",\"turnCount\":1,\"status\":\"ACTIVE\",\"createdAt\":\"2026-11-17T10:04:28.346044200Z\",\"lastActiveAt\":\"2026-11-17T10:04:33.056621100Z\"},{\"sessionId\":\"demo20-T4-003\",\"title\":\"每个商品类目的订单数量是多少？\",\"turnCount\":1,\"status\":\"ACTIVE\",\"createdAt\":\"2026-11-17T10:04:23.126942Z\",\"lastActiveAt\":\"2026-11-17T10:04:28.102055900Z\"},{\"sessionId\":\"demo20-T4-002\",\"title\":\"每个州的商品销售额是多少？\",\"turnCount\":1,\"status\":\"ACTIVE\",\"createdAt\":\"2026-11-17T10:04:18.887682600Z\",\"lastActiveAt\":\"2026-11-17T10:04:22.898347400Z\"},{\"sessionId\":\"demo20-T4-001\",\"title\":\"每个客户的订单数量是多少？取订单最多的 10 个客户。\",\"turnCount\":1,\"status\":\"ACTIVE\",\"createdAt\":\"2026-11-17T10:04:17.306991700Z\",\"lastActiveAt\":\"2026-11-17T10:04:18.526500600Z\"},{\"sessionId\":\"demo20-T3-003\",\"title\":\"每个季度有多少笔订单？\",\"turnCount\":1,\"status\":\"ACTIVE\",\"createdAt\":\"2026-11-17T10:04:15.577173900Z\",\"lastActiveAt\":\"2026-11-17T10:04:17.064782600Z\"},{\"sessionId\":\"demo20-T3-002\",\"title\":\"2017 年和 2018 年各有多少笔订单？\",\"turnCount\":1,\"status\":\"ACTIVE\",\"createdAt\":\"2026-11-17T10:04:14.007806700Z\",\"lastActiveAt\":\"2026-11-17T10:04:15.331045400Z\"},{\"sessionId\":\"demo20-T3-001\",\"title\":\"每个月的订单数量是多少？按月份排序。\",\"turnCount\":1,\"status\":\"ACTIVE\",\"createdAt\":\"2026-11-17T10:04:12.548052700Z\",\"lastActiveAt\":\"2026-11-17T10:04:13.756825400Z\"},{\"sessionId\":\"demo20-T2-003\",\"title\":\"订单明细的平均商品价格是多少？\",\"turnCount\":1,\"status\":\"ACTIVE\",\"createdAt\":\"2026-11-17T10:04:11.368896100Z\",\"lastActiveAt\":\"2026-11-17T10:04:12.303337400Z\"},{\"sessionId\":\"demo20-T2-002\",\"title\":\"所有订单的运费总额是多少？\",\"turnCount\":1,\"status\":\"ACTIVE\",\"createdAt\":\"2026-11-17T10:04:10.333708800Z\",\"lastActiveAt\":\"2026-11-17T10:04:11.140848300Z\"},{\"sessionId\":\"demo20-T2-001\",\"title\":\"所有订单明细的商品金额加起来一共是多少？\",\"turnCount\":1,\"status\":\"ACTIVE\",\"createdAt\":\"2026-11-17T10:04:09.007463600Z\",\"lastActiveAt\":\"2026-11-17T10:04:10.104057400Z\"},{\"sessionId\":\"demo20-T1-003\",\"title\":\"已取消的订单有多少笔？\",\"turnCount\":1,\"status\":\"ACTIVE\",\"createdAt\":\"2026-11-17T10:04:07.822139600Z\",\"lastActiveAt\":\"2026-11-17T10:04:08.770004700Z\"},{\"sessionId\":\"demo20-T1-001\",\"title\":\"一共有多少笔订单？\",\"turnCount\":1,\"status\":\"ACTIVE\",\"createdAt\":\"2026-11-17T10:04:06.690900700Z\",\"lastActiveAt\":\"2026-11-17T10:04:07.587005300Z\"},{\"sessionId\":\"demo20-gmv\",\"title\":\"统计 2018 年全站 GMV（含运费），以及不含运费的销售额，两者分别是多少？\",\"turnCount\":2,\"status\":\"ACTIVE\",\"createdAt\":\"2026-11-17T10:04:00.155115500Z\",\"lastActiveAt\":\"2026-11-17T10:04:06.438116Z\"},{\"sessionId\":\"demo20-orders\",\"title\":\"2018 年下单的订单有多少笔？\",\"turnCount\":2,\"status\":\"ACTIVE\",\"createdAt\":\"2026-11-17T10:03:57.304083700Z\",\"lastActiveAt\":\"2026-11-17T10:04:04.192617Z\"}]",
+    "body" : [ {
+      "sessionId" : "demo20-T5-003",
+      "title" : "用英文类目名统计退款金额，哪些类目退款最多？取前 15。",
+      "turnCount" : 1,
+      "status" : "ACTIVE",
+      "createdAt" : "2026-11-17T10:04:48.555369200Z",
+      "lastActiveAt" : "2026-11-17T10:04:59.580741800Z"
+    }, {
+      "sessionId" : "demo20-T5-002",
+      "title" : "每个会员等级对应的商品销售额是多少？",
+      "turnCount" : 1,
+      "status" : "ACTIVE",
+      "createdAt" : "2026-11-17T10:04:33.311257600Z",
+      "lastActiveAt" : "2026-11-17T10:04:48.319778800Z"
+    }, {
+      "sessionId" : "demo20-T5-001",
+      "title" : "每个宏观区域下，各会员等级（按等级名称）的商品销售额分别是多少？按销售额从高到低排序。",
+      "turnCount" : 1,
+      "status" : "ACTIVE",
+      "createdAt" : "2026-11-17T10:04:28.346044200Z",
+      "lastActiveAt" : "2026-11-17T10:04:33.056621100Z"
+    }, {
+      "sessionId" : "demo20-T4-003",
+      "title" : "每个商品类目的订单数量是多少？",
+      "turnCount" : 1,
+      "status" : "ACTIVE",
+      "createdAt" : "2026-11-17T10:04:23.126942Z",
+      "lastActiveAt" : "2026-11-17T10:04:28.102055900Z"
+    }, {
+      "sessionId" : "demo20-T4-002",
+      "title" : "每个州的商品销售额是多少？",
+      "turnCount" : 1,
+      "status" : "ACTIVE",
+      "createdAt" : "2026-11-17T10:04:18.887682600Z",
+      "lastActiveAt" : "2026-11-17T10:04:22.898347400Z"
+    }, {
+      "sessionId" : "demo20-T4-001",
+      "title" : "每个客户的订单数量是多少？取订单最多的 10 个客户。",
+      "turnCount" : 1,
+      "status" : "ACTIVE",
+      "createdAt" : "2026-11-17T10:04:17.306991700Z",
+      "lastActiveAt" : "2026-11-17T10:04:18.526500600Z"
+    }, {
+      "sessionId" : "demo20-T3-003",
+      "title" : "每个季度有多少笔订单？",
+      "turnCount" : 1,
+      "status" : "ACTIVE",
+      "createdAt" : "2026-11-17T10:04:15.577173900Z",
+      "lastActiveAt" : "2026-11-17T10:04:17.064782600Z"
+    }, {
+      "sessionId" : "demo20-T3-002",
+      "title" : "2017 年和 2018 年各有多少笔订单？",
+      "turnCount" : 1,
+      "status" : "ACTIVE",
+      "createdAt" : "2026-11-17T10:04:14.007806700Z",
+      "lastActiveAt" : "2026-11-17T10:04:15.331045400Z"
+    }, {
+      "sessionId" : "demo20-T3-001",
+      "title" : "每个月的订单数量是多少？按月份排序。",
+      "turnCount" : 1,
+      "status" : "ACTIVE",
+      "createdAt" : "2026-11-17T10:04:12.548052700Z",
+      "lastActiveAt" : "2026-11-17T10:04:13.756825400Z"
+    }, {
+      "sessionId" : "demo20-T2-003",
+      "title" : "订单明细的平均商品价格是多少？",
+      "turnCount" : 1,
+      "status" : "ACTIVE",
+      "createdAt" : "2026-11-17T10:04:11.368896100Z",
+      "lastActiveAt" : "2026-11-17T10:04:12.303337400Z"
+    }, {
+      "sessionId" : "demo20-T2-002",
+      "title" : "所有订单的运费总额是多少？",
+      "turnCount" : 1,
+      "status" : "ACTIVE",
+      "createdAt" : "2026-11-17T10:04:10.333708800Z",
+      "lastActiveAt" : "2026-11-17T10:04:11.140848300Z"
+    }, {
+      "sessionId" : "demo20-T2-001",
+      "title" : "所有订单明细的商品金额加起来一共是多少？",
+      "turnCount" : 1,
+      "status" : "ACTIVE",
+      "createdAt" : "2026-11-17T10:04:09.007463600Z",
+      "lastActiveAt" : "2026-11-17T10:04:10.104057400Z"
+    }, {
+      "sessionId" : "demo20-T1-003",
+      "title" : "已取消的订单有多少笔？",
+      "turnCount" : 1,
+      "status" : "ACTIVE",
+      "createdAt" : "2026-11-17T10:04:07.822139600Z",
+      "lastActiveAt" : "2026-11-17T10:04:08.770004700Z"
+    }, {
+      "sessionId" : "demo20-T1-001",
+      "title" : "一共有多少笔订单？",
+      "turnCount" : 1,
+      "status" : "ACTIVE",
+      "createdAt" : "2026-11-17T10:04:06.690900700Z",
+      "lastActiveAt" : "2026-11-17T10:04:07.587005300Z"
+    }, {
+      "sessionId" : "demo20-gmv",
+      "title" : "统计 2018 年全站 GMV（含运费），以及不含运费的销售额，两者分别是多少？",
+      "turnCount" : 2,
+      "status" : "ACTIVE",
+      "createdAt" : "2026-11-17T10:04:00.155115500Z",
+      "lastActiveAt" : "2026-11-17T10:04:06.438116Z"
+    }, {
+      "sessionId" : "demo20-orders",
+      "title" : "2018 年下单的订单有多少笔？",
+      "turnCount" : 2,
+      "status" : "ACTIVE",
+      "createdAt" : "2026-11-17T10:03:57.304083700Z",
+      "lastActiveAt" : "2026-11-17T10:04:04.192617Z"
+    } ],
+    "httpWallMs" : 4
+  }
+}

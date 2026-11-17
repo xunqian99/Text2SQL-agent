@@ -1,0 +1,224 @@
+{
+  "index" : 16,
+  "caseId" : "T5-001",
+  "request" : {
+    "sessionId" : "demo20-T5-001",
+    "question" : "每个宏观区域下，各会员等级（按等级名称）的商品销售额分别是多少？按销售额从高到低排序。"
+  },
+  "exchange" : {
+    "startedAt" : "2026-11-17T10:04:28.343040100Z",
+    "httpStatus" : 200,
+    "rawBody" : "{\"status\":\"SUCCESS\",\"sql\":\"-- 从客户所属州映射到宏观区域，再按会员等级汇总商品销售额\\nSELECT r.macro_region, ml.level_name, ROUND(SUM(oi.price), 2) AS sales\\nFROM orders o\\nJOIN customers c ON c.customer_id = o.customer_id\\nJOIN members m ON m.customer_unique_id = c.customer_unique_id\\nJOIN member_levels ml ON ml.level_id = m.level_id\\nJOIN order_items oi ON oi.order_id = o.order_id\\nJOIN regions r ON r.region_code = c.customer_state\\nGROUP BY r.macro_region, ml.level_name\\nORDER BY sales DESC\\nLIMIT 100;\",\"message\":null,\"violations\":[],\"columns\":[\"macro_region\",\"level_name\",\"sales\"],\"rows\":[[\"Sudeste\",\"青铜会员\",\"4888336.35\"],[\"Sudeste\",\"白银会员\",\"3403102.09\"],[\"Sul\",\"青铜会员\",\"1079497.16\"],[\"Nordeste\",\"青铜会员\",\"864916.36\"],[\"Sul\",\"白银会员\",\"746544.64\"],[\"Sudeste\",\"黄金会员\",\"578888.11\"],[\"Nordeste\",\"白银会员\",\"577095.22\"],[\"Centro-Oeste\",\"青铜会员\",\"495933.93\"],[\"Centro-Oeste\",\"白银会员\",\"311701.70\"],[\"Norte\",\"青铜会员\",\"169525.53\"],[\"Norte\",\"白银会员\",\"138839.72\"],[\"Sul\",\"黄金会员\",\"124136.17\"],[\"Nordeste\",\"黄金会员\",\"100453.63\"],[\"Centro-Oeste\",\"黄金会员\",\"62353.56\"],[\"Norte\",\"黄金会员\",\"25533.74\"],[\"Sudeste\",\"铂金会员\",\"17066.51\"],[\"Sul\",\"铂金会员\",\"3763.15\"],[\"Nordeste\",\"铂金会员\",\"3028.54\"],[\"Centro-Oeste\",\"铂金会员\",\"472.87\"],[\"Norte\",\"铂金会员\",\"454.72\"]],\"truncated\":false,\"rewritten\":false,\"rowCount\":20,\"schemaTableCount\":9,\"retrievedTables\":[\"member_levels\",\"order_items\",\"members\",\"regions\",\"support_tickets\",\"orders\",\"products\",\"sellers\",\"customers\"],\"schemaDdlChars\":1789,\"llm\":{\"model\":\"deepseek-flash\",\"promptTokens\":2390,\"completionTokens\":657,\"totalTokens\":3047,\"latencyMs\":4113,\"costYuan\":0.00288552},\"timings\":{\"retrievalMs\":2,\"generationMs\":4114,\"validationMs\":3,\"executionMs\":589,\"totalMs\":4710},\"sessionId\":\"demo20-T5-001\",\"rewrittenQuestion\":null,\"schemaReused\":false,\"budget\":{\"requestId\":\"74221abd-4c3a-42a0-bde4-c5e0966a2929\",\"timeoutMs\":15000,\"maxModelCalls\":2,\"modelCalls\":1,\"unknownUsageCalls\":0,\"elapsedMs\":4710,\"termination\":\"COMPLETE\",\"stage\":\"CONVERSATION\",\"retrySkippedReason\":null,\"stageMs\":{\"RETRIEVAL\":2,\"CONVERSATION\":0,\"CACHE\":0,\"GENERATION\":0,\"MODEL\":4114,\"EXECUTION\":569,\"SESSION\":0,\"ADMISSION\":0,\"VALIDATION\":3,\"EXPLAIN\":20,\"CLARIFICATION\":0,\"CACHE_WRITE\":0,\"RESULT_CHECK\":0},\"cancellationRejected\":0,\"timingsVersion\":\"request-budget-exclusive-v1\",\"otherMs\":2,\"currentStageMs\":0}}",
+    "body" : {
+      "status" : "SUCCESS",
+      "sql" : "-- 从客户所属州映射到宏观区域，再按会员等级汇总商品销售额\nSELECT r.macro_region, ml.level_name, ROUND(SUM(oi.price), 2) AS sales\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN members m ON m.customer_unique_id = c.customer_unique_id\nJOIN member_levels ml ON ml.level_id = m.level_id\nJOIN order_items oi ON oi.order_id = o.order_id\nJOIN regions r ON r.region_code = c.customer_state\nGROUP BY r.macro_region, ml.level_name\nORDER BY sales DESC\nLIMIT 100;",
+      "message" : null,
+      "violations" : [ ],
+      "columns" : [ "macro_region", "level_name", "sales" ],
+      "rows" : [ [ "Sudeste", "青铜会员", "4888336.35" ], [ "Sudeste", "白银会员", "3403102.09" ], [ "Sul", "青铜会员", "1079497.16" ], [ "Nordeste", "青铜会员", "864916.36" ], [ "Sul", "白银会员", "746544.64" ], [ "Sudeste", "黄金会员", "578888.11" ], [ "Nordeste", "白银会员", "577095.22" ], [ "Centro-Oeste", "青铜会员", "495933.93" ], [ "Centro-Oeste", "白银会员", "311701.70" ], [ "Norte", "青铜会员", "169525.53" ], [ "Norte", "白银会员", "138839.72" ], [ "Sul", "黄金会员", "124136.17" ], [ "Nordeste", "黄金会员", "100453.63" ], [ "Centro-Oeste", "黄金会员", "62353.56" ], [ "Norte", "黄金会员", "25533.74" ], [ "Sudeste", "铂金会员", "17066.51" ], [ "Sul", "铂金会员", "3763.15" ], [ "Nordeste", "铂金会员", "3028.54" ], [ "Centro-Oeste", "铂金会员", "472.87" ], [ "Norte", "铂金会员", "454.72" ] ],
+      "truncated" : false,
+      "rewritten" : false,
+      "rowCount" : 20,
+      "schemaTableCount" : 9,
+      "retrievedTables" : [ "member_levels", "order_items", "members", "regions", "support_tickets", "orders", "products", "sellers", "customers" ],
+      "schemaDdlChars" : 1789,
+      "llm" : {
+        "model" : "deepseek-flash",
+        "promptTokens" : 2390,
+        "completionTokens" : 657,
+        "totalTokens" : 3047,
+        "latencyMs" : 4113,
+        "costYuan" : 0.00288552
+      },
+      "timings" : {
+        "retrievalMs" : 2,
+        "generationMs" : 4114,
+        "validationMs" : 3,
+        "executionMs" : 589,
+        "totalMs" : 4710
+      },
+      "sessionId" : "demo20-T5-001",
+      "rewrittenQuestion" : null,
+      "schemaReused" : false,
+      "budget" : {
+        "requestId" : "74221abd-4c3a-42a0-bde4-c5e0966a2929",
+        "timeoutMs" : 15000,
+        "maxModelCalls" : 2,
+        "modelCalls" : 1,
+        "unknownUsageCalls" : 0,
+        "elapsedMs" : 4710,
+        "termination" : "COMPLETE",
+        "stage" : "CONVERSATION",
+        "retrySkippedReason" : null,
+        "stageMs" : {
+          "RETRIEVAL" : 2,
+          "CONVERSATION" : 0,
+          "CACHE" : 0,
+          "GENERATION" : 0,
+          "MODEL" : 4114,
+          "EXECUTION" : 569,
+          "SESSION" : 0,
+          "ADMISSION" : 0,
+          "VALIDATION" : 3,
+          "EXPLAIN" : 20,
+          "CLARIFICATION" : 0,
+          "CACHE_WRITE" : 0,
+          "RESULT_CHECK" : 0
+        },
+        "cancellationRejected" : 0,
+        "timingsVersion" : "request-budget-exclusive-v1",
+        "otherMs" : 2,
+        "currentStageMs" : 0
+      }
+    },
+    "httpWallMs" : 4715
+  },
+  "businessCorrect" : true,
+  "healthAfter" : {
+    "startedAt" : "2026-11-17T10:04:33.060536900Z",
+    "httpStatus" : 200,
+    "rawBody" : "{\"status\":\"UP\",\"ready\":true,\"llmConfigured\":true,\"schemaAvailable\":true,\"schemaTableCount\":37,\"readinessScope\":\"global-client-configuration-and-schema-snapshot\",\"providerVerified\":false,\"databaseLiveVerified\":false,\"mode\":\"demo\",\"activeProfiles\":[\"local\",\"demo\"],\"model\":\"deepseek-flash\",\"capabilities\":{\"retrieval\":true,\"columnPruning\":true,\"joinPlan\":true,\"semantic\":true,\"fewshot\":true,\"clarification\":true,\"selfCorrection\":true,\"resultChecker\":true,\"conversation\":true,\"cache\":false,\"persistence\":false,\"toolUse\":false,\"routing\":false,\"explainGuard\":true},\"limits\":{\"requestBudgetEnabled\":true,\"requestTimeoutMs\":15000,\"maxModelCalls\":2,\"maxRows\":200,\"queryTimeoutSeconds\":10}}",
+    "body" : {
+      "status" : "UP",
+      "ready" : true,
+      "llmConfigured" : true,
+      "schemaAvailable" : true,
+      "schemaTableCount" : 37,
+      "readinessScope" : "global-client-configuration-and-schema-snapshot",
+      "providerVerified" : false,
+      "databaseLiveVerified" : false,
+      "mode" : "demo",
+      "activeProfiles" : [ "local", "demo" ],
+      "model" : "deepseek-flash",
+      "capabilities" : {
+        "retrieval" : true,
+        "columnPruning" : true,
+        "joinPlan" : true,
+        "semantic" : true,
+        "fewshot" : true,
+        "clarification" : true,
+        "selfCorrection" : true,
+        "resultChecker" : true,
+        "conversation" : true,
+        "cache" : false,
+        "persistence" : false,
+        "toolUse" : false,
+        "routing" : false,
+        "explainGuard" : true
+      },
+      "limits" : {
+        "requestBudgetEnabled" : true,
+        "requestTimeoutMs" : 15000,
+        "maxModelCalls" : 2,
+        "maxRows" : 200,
+        "queryTimeoutSeconds" : 10
+      }
+    },
+    "httpWallMs" : 2
+  },
+  "sessionsAfter" : {
+    "startedAt" : "2026-11-17T10:04:33.063147200Z",
+    "httpStatus" : 200,
+    "rawBody" : "[{\"sessionId\":\"demo20-T5-001\",\"title\":\"每个宏观区域下，各会员等级（按等级名称）的商品销售额分别是多少？按销售额从高到低排序。\",\"turnCount\":1,\"status\":\"ACTIVE\",\"createdAt\":\"2026-11-17T10:04:28.346044200Z\",\"lastActiveAt\":\"2026-11-17T10:04:33.056621100Z\"},{\"sessionId\":\"demo20-T4-003\",\"title\":\"每个商品类目的订单数量是多少？\",\"turnCount\":1,\"status\":\"ACTIVE\",\"createdAt\":\"2026-11-17T10:04:23.126942Z\",\"lastActiveAt\":\"2026-11-17T10:04:28.102055900Z\"},{\"sessionId\":\"demo20-T4-002\",\"title\":\"每个州的商品销售额是多少？\",\"turnCount\":1,\"status\":\"ACTIVE\",\"createdAt\":\"2026-11-17T10:04:18.887682600Z\",\"lastActiveAt\":\"2026-11-17T10:04:22.898347400Z\"},{\"sessionId\":\"demo20-T4-001\",\"title\":\"每个客户的订单数量是多少？取订单最多的 10 个客户。\",\"turnCount\":1,\"status\":\"ACTIVE\",\"createdAt\":\"2026-11-17T10:04:17.306991700Z\",\"lastActiveAt\":\"2026-11-17T10:04:18.526500600Z\"},{\"sessionId\":\"demo20-T3-003\",\"title\":\"每个季度有多少笔订单？\",\"turnCount\":1,\"status\":\"ACTIVE\",\"createdAt\":\"2026-11-17T10:04:15.577173900Z\",\"lastActiveAt\":\"2026-11-17T10:04:17.064782600Z\"},{\"sessionId\":\"demo20-T3-002\",\"title\":\"2017 年和 2018 年各有多少笔订单？\",\"turnCount\":1,\"status\":\"ACTIVE\",\"createdAt\":\"2026-11-17T10:04:14.007806700Z\",\"lastActiveAt\":\"2026-11-17T10:04:15.331045400Z\"},{\"sessionId\":\"demo20-T3-001\",\"title\":\"每个月的订单数量是多少？按月份排序。\",\"turnCount\":1,\"status\":\"ACTIVE\",\"createdAt\":\"2026-11-17T10:04:12.548052700Z\",\"lastActiveAt\":\"2026-11-17T10:04:13.756825400Z\"},{\"sessionId\":\"demo20-T2-003\",\"title\":\"订单明细的平均商品价格是多少？\",\"turnCount\":1,\"status\":\"ACTIVE\",\"createdAt\":\"2026-11-17T10:04:11.368896100Z\",\"lastActiveAt\":\"2026-11-17T10:04:12.303337400Z\"},{\"sessionId\":\"demo20-T2-002\",\"title\":\"所有订单的运费总额是多少？\",\"turnCount\":1,\"status\":\"ACTIVE\",\"createdAt\":\"2026-11-17T10:04:10.333708800Z\",\"lastActiveAt\":\"2026-11-17T10:04:11.140848300Z\"},{\"sessionId\":\"demo20-T2-001\",\"title\":\"所有订单明细的商品金额加起来一共是多少？\",\"turnCount\":1,\"status\":\"ACTIVE\",\"createdAt\":\"2026-11-17T10:04:09.007463600Z\",\"lastActiveAt\":\"2026-11-17T10:04:10.104057400Z\"},{\"sessionId\":\"demo20-T1-003\",\"title\":\"已取消的订单有多少笔？\",\"turnCount\":1,\"status\":\"ACTIVE\",\"createdAt\":\"2026-11-17T10:04:07.822139600Z\",\"lastActiveAt\":\"2026-11-17T10:04:08.770004700Z\"},{\"sessionId\":\"demo20-T1-001\",\"title\":\"一共有多少笔订单？\",\"turnCount\":1,\"status\":\"ACTIVE\",\"createdAt\":\"2026-11-17T10:04:06.690900700Z\",\"lastActiveAt\":\"2026-11-17T10:04:07.587005300Z\"},{\"sessionId\":\"demo20-gmv\",\"title\":\"统计 2018 年全站 GMV（含运费），以及不含运费的销售额，两者分别是多少？\",\"turnCount\":2,\"status\":\"ACTIVE\",\"createdAt\":\"2026-11-17T10:04:00.155115500Z\",\"lastActiveAt\":\"2026-11-17T10:04:06.438116Z\"},{\"sessionId\":\"demo20-orders\",\"title\":\"2018 年下单的订单有多少笔？\",\"turnCount\":2,\"status\":\"ACTIVE\",\"createdAt\":\"2026-11-17T10:03:57.304083700Z\",\"lastActiveAt\":\"2026-11-17T10:04:04.192617Z\"}]",
+    "body" : [ {
+      "sessionId" : "demo20-T5-001",
+      "title" : "每个宏观区域下，各会员等级（按等级名称）的商品销售额分别是多少？按销售额从高到低排序。",
+      "turnCount" : 1,
+      "status" : "ACTIVE",
+      "createdAt" : "2026-11-17T10:04:28.346044200Z",
+      "lastActiveAt" : "2026-11-17T10:04:33.056621100Z"
+    }, {
+      "sessionId" : "demo20-T4-003",
+      "title" : "每个商品类目的订单数量是多少？",
+      "turnCount" : 1,
+      "status" : "ACTIVE",
+      "createdAt" : "2026-11-17T10:04:23.126942Z",
+      "lastActiveAt" : "2026-11-17T10:04:28.102055900Z"
+    }, {
+      "sessionId" : "demo20-T4-002",
+      "title" : "每个州的商品销售额是多少？",
+      "turnCount" : 1,
+      "status" : "ACTIVE",
+      "createdAt" : "2026-11-17T10:04:18.887682600Z",
+      "lastActiveAt" : "2026-11-17T10:04:22.898347400Z"
+    }, {
+      "sessionId" : "demo20-T4-001",
+      "title" : "每个客户的订单数量是多少？取订单最多的 10 个客户。",
+      "turnCount" : 1,
+      "status" : "ACTIVE",
+      "createdAt" : "2026-11-17T10:04:17.306991700Z",
+      "lastActiveAt" : "2026-11-17T10:04:18.526500600Z"
+    }, {
+      "sessionId" : "demo20-T3-003",
+      "title" : "每个季度有多少笔订单？",
+      "turnCount" : 1,
+      "status" : "ACTIVE",
+      "createdAt" : "2026-11-17T10:04:15.577173900Z",
+      "lastActiveAt" : "2026-11-17T10:04:17.064782600Z"
+    }, {
+      "sessionId" : "demo20-T3-002",
+      "title" : "2017 年和 2018 年各有多少笔订单？",
+      "turnCount" : 1,
+      "status" : "ACTIVE",
+      "createdAt" : "2026-11-17T10:04:14.007806700Z",
+      "lastActiveAt" : "2026-11-17T10:04:15.331045400Z"
+    }, {
+      "sessionId" : "demo20-T3-001",
+      "title" : "每个月的订单数量是多少？按月份排序。",
+      "turnCount" : 1,
+      "status" : "ACTIVE",
+      "createdAt" : "2026-11-17T10:04:12.548052700Z",
+      "lastActiveAt" : "2026-11-17T10:04:13.756825400Z"
+    }, {
+      "sessionId" : "demo20-T2-003",
+      "title" : "订单明细的平均商品价格是多少？",
+      "turnCount" : 1,
+      "status" : "ACTIVE",
+      "createdAt" : "2026-11-17T10:04:11.368896100Z",
+      "lastActiveAt" : "2026-11-17T10:04:12.303337400Z"
+    }, {
+      "sessionId" : "demo20-T2-002",
+      "title" : "所有订单的运费总额是多少？",
+      "turnCount" : 1,
+      "status" : "ACTIVE",
+      "createdAt" : "2026-11-17T10:04:10.333708800Z",
+      "lastActiveAt" : "2026-11-17T10:04:11.140848300Z"
+    }, {
+      "sessionId" : "demo20-T2-001",
+      "title" : "所有订单明细的商品金额加起来一共是多少？",
+      "turnCount" : 1,
+      "status" : "ACTIVE",
+      "createdAt" : "2026-11-17T10:04:09.007463600Z",
+      "lastActiveAt" : "2026-11-17T10:04:10.104057400Z"
+    }, {
+      "sessionId" : "demo20-T1-003",
+      "title" : "已取消的订单有多少笔？",
+      "turnCount" : 1,
+      "status" : "ACTIVE",
+      "createdAt" : "2026-11-17T10:04:07.822139600Z",
+      "lastActiveAt" : "2026-11-17T10:04:08.770004700Z"
+    }, {
+      "sessionId" : "demo20-T1-001",
+      "title" : "一共有多少笔订单？",
+      "turnCount" : 1,
+      "status" : "ACTIVE",
+      "createdAt" : "2026-11-17T10:04:06.690900700Z",
+      "lastActiveAt" : "2026-11-17T10:04:07.587005300Z"
+    }, {
+      "sessionId" : "demo20-gmv",
+      "title" : "统计 2018 年全站 GMV（含运费），以及不含运费的销售额，两者分别是多少？",
+      "turnCount" : 2,
+      "status" : "ACTIVE",
+      "createdAt" : "2026-11-17T10:04:00.155115500Z",
+      "lastActiveAt" : "2026-11-17T10:04:06.438116Z"
+    }, {
+      "sessionId" : "demo20-orders",
+      "title" : "2018 年下单的订单有多少笔？",
+      "turnCount" : 2,
+      "status" : "ACTIVE",
+      "createdAt" : "2026-11-17T10:03:57.304083700Z",
+      "lastActiveAt" : "2026-11-17T10:04:04.192617Z"
+    } ],
+    "httpWallMs" : 3
+  }
+}

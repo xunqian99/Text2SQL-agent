@@ -1,0 +1,140 @@
+{
+  "index" : 2,
+  "caseId" : "T6-001",
+  "request" : {
+    "sessionId" : "demo20-gmv",
+    "question" : "统计 2018 年全站 GMV（含运费），以及不含运费的销售额，两者分别是多少？"
+  },
+  "exchange" : {
+    "startedAt" : "2026-11-17T10:04:00.153279700Z",
+    "httpStatus" : 200,
+    "rawBody" : "{\"status\":\"SUCCESS\",\"sql\":\"SELECT ROUND(SUM(oi.price + oi.freight_value), 2) AS gmv_with_freight, ROUND(SUM(oi.price), 2) AS sales_excl_freight FROM orders o JOIN order_items oi ON oi.order_id = o.order_id WHERE o.order_purchase_timestamp >= '2018-01-01' AND o.order_purchase_timestamp < '2019-01-01' AND o.order_status NOT IN ('canceled', 'unavailable') LIMIT 201\",\"message\":null,\"violations\":[],\"columns\":[\"gmv_with_freight\",\"sales_excl_freight\"],\"rows\":[[\"8593303.96\",\"7341182.41\"]],\"truncated\":false,\"rewritten\":true,\"rowCount\":1,\"schemaTableCount\":6,\"retrievedTables\":[\"order_items\",\"orders\",\"products\",\"sellers\",\"refund_items\",\"settlement_items\"],\"schemaDdlChars\":1264,\"llm\":{\"model\":\"deepseek-flash\",\"promptTokens\":2247,\"completionTokens\":234,\"totalTokens\":2481,\"latencyMs\":1452,\"costYuan\":0.0011759600000000002},\"timings\":{\"retrievalMs\":11,\"generationMs\":1453,\"validationMs\":6,\"executionMs\":408,\"totalMs\":1881},\"sessionId\":\"demo20-gmv\",\"rewrittenQuestion\":null,\"schemaReused\":false,\"budget\":{\"requestId\":\"2cdba366-17e4-4231-bda0-f8afe2958273\",\"timeoutMs\":15000,\"maxModelCalls\":2,\"modelCalls\":1,\"unknownUsageCalls\":0,\"elapsedMs\":1881,\"termination\":\"COMPLETE\",\"stage\":\"CONVERSATION\",\"retrySkippedReason\":null,\"stageMs\":{\"RETRIEVAL\":11,\"CONVERSATION\":0,\"CACHE\":0,\"GENERATION\":0,\"MODEL\":1453,\"EXECUTION\":393,\"SESSION\":0,\"ADMISSION\":0,\"VALIDATION\":6,\"EXPLAIN\":15,\"CLARIFICATION\":0,\"CACHE_WRITE\":0,\"RESULT_CHECK\":0},\"cancellationRejected\":0,\"timingsVersion\":\"request-budget-exclusive-v1\",\"otherMs\":3,\"currentStageMs\":0}}",
+    "body" : {
+      "status" : "SUCCESS",
+      "sql" : "SELECT ROUND(SUM(oi.price + oi.freight_value), 2) AS gmv_with_freight, ROUND(SUM(oi.price), 2) AS sales_excl_freight FROM orders o JOIN order_items oi ON oi.order_id = o.order_id WHERE o.order_purchase_timestamp >= '2018-01-01' AND o.order_purchase_timestamp < '2019-01-01' AND o.order_status NOT IN ('canceled', 'unavailable') LIMIT 201",
+      "message" : null,
+      "violations" : [ ],
+      "columns" : [ "gmv_with_freight", "sales_excl_freight" ],
+      "rows" : [ [ "8593303.96", "7341182.41" ] ],
+      "truncated" : false,
+      "rewritten" : true,
+      "rowCount" : 1,
+      "schemaTableCount" : 6,
+      "retrievedTables" : [ "order_items", "orders", "products", "sellers", "refund_items", "settlement_items" ],
+      "schemaDdlChars" : 1264,
+      "llm" : {
+        "model" : "deepseek-flash",
+        "promptTokens" : 2247,
+        "completionTokens" : 234,
+        "totalTokens" : 2481,
+        "latencyMs" : 1452,
+        "costYuan" : 0.0011759600000000002
+      },
+      "timings" : {
+        "retrievalMs" : 11,
+        "generationMs" : 1453,
+        "validationMs" : 6,
+        "executionMs" : 408,
+        "totalMs" : 1881
+      },
+      "sessionId" : "demo20-gmv",
+      "rewrittenQuestion" : null,
+      "schemaReused" : false,
+      "budget" : {
+        "requestId" : "2cdba366-17e4-4231-bda0-f8afe2958273",
+        "timeoutMs" : 15000,
+        "maxModelCalls" : 2,
+        "modelCalls" : 1,
+        "unknownUsageCalls" : 0,
+        "elapsedMs" : 1881,
+        "termination" : "COMPLETE",
+        "stage" : "CONVERSATION",
+        "retrySkippedReason" : null,
+        "stageMs" : {
+          "RETRIEVAL" : 11,
+          "CONVERSATION" : 0,
+          "CACHE" : 0,
+          "GENERATION" : 0,
+          "MODEL" : 1453,
+          "EXECUTION" : 393,
+          "SESSION" : 0,
+          "ADMISSION" : 0,
+          "VALIDATION" : 6,
+          "EXPLAIN" : 15,
+          "CLARIFICATION" : 0,
+          "CACHE_WRITE" : 0,
+          "RESULT_CHECK" : 0
+        },
+        "cancellationRejected" : 0,
+        "timingsVersion" : "request-budget-exclusive-v1",
+        "otherMs" : 3,
+        "currentStageMs" : 0
+      }
+    },
+    "httpWallMs" : 1890
+  },
+  "businessCorrect" : true,
+  "healthAfter" : {
+    "startedAt" : "2026-11-17T10:04:02.044043400Z",
+    "httpStatus" : 200,
+    "rawBody" : "{\"status\":\"UP\",\"ready\":true,\"llmConfigured\":true,\"schemaAvailable\":true,\"schemaTableCount\":37,\"readinessScope\":\"global-client-configuration-and-schema-snapshot\",\"providerVerified\":false,\"databaseLiveVerified\":false,\"mode\":\"demo\",\"activeProfiles\":[\"local\",\"demo\"],\"model\":\"deepseek-flash\",\"capabilities\":{\"retrieval\":true,\"columnPruning\":true,\"joinPlan\":true,\"semantic\":true,\"fewshot\":true,\"clarification\":true,\"selfCorrection\":true,\"resultChecker\":true,\"conversation\":true,\"cache\":false,\"persistence\":false,\"toolUse\":false,\"routing\":false,\"explainGuard\":true},\"limits\":{\"requestBudgetEnabled\":true,\"requestTimeoutMs\":15000,\"maxModelCalls\":2,\"maxRows\":200,\"queryTimeoutSeconds\":10}}",
+    "body" : {
+      "status" : "UP",
+      "ready" : true,
+      "llmConfigured" : true,
+      "schemaAvailable" : true,
+      "schemaTableCount" : 37,
+      "readinessScope" : "global-client-configuration-and-schema-snapshot",
+      "providerVerified" : false,
+      "databaseLiveVerified" : false,
+      "mode" : "demo",
+      "activeProfiles" : [ "local", "demo" ],
+      "model" : "deepseek-flash",
+      "capabilities" : {
+        "retrieval" : true,
+        "columnPruning" : true,
+        "joinPlan" : true,
+        "semantic" : true,
+        "fewshot" : true,
+        "clarification" : true,
+        "selfCorrection" : true,
+        "resultChecker" : true,
+        "conversation" : true,
+        "cache" : false,
+        "persistence" : false,
+        "toolUse" : false,
+        "routing" : false,
+        "explainGuard" : true
+      },
+      "limits" : {
+        "requestBudgetEnabled" : true,
+        "requestTimeoutMs" : 15000,
+        "maxModelCalls" : 2,
+        "maxRows" : 200,
+        "queryTimeoutSeconds" : 10
+      }
+    },
+    "httpWallMs" : 3
+  },
+  "sessionsAfter" : {
+    "startedAt" : "2026-11-17T10:04:02.048142200Z",
+    "httpStatus" : 200,
+    "rawBody" : "[{\"sessionId\":\"demo20-gmv\",\"title\":\"统计 2018 年全站 GMV（含运费），以及不含运费的销售额，两者分别是多少？\",\"turnCount\":1,\"status\":\"ACTIVE\",\"createdAt\":\"2026-11-17T10:04:00.155115500Z\",\"lastActiveAt\":\"2026-11-17T10:04:02.037427Z\"},{\"sessionId\":\"demo20-orders\",\"title\":\"2018 年下单的订单有多少笔？\",\"turnCount\":1,\"status\":\"ACTIVE\",\"createdAt\":\"2026-11-17T10:03:57.304083700Z\",\"lastActiveAt\":\"2026-11-17T10:03:59.850980100Z\"}]",
+    "body" : [ {
+      "sessionId" : "demo20-gmv",
+      "title" : "统计 2018 年全站 GMV（含运费），以及不含运费的销售额，两者分别是多少？",
+      "turnCount" : 1,
+      "status" : "ACTIVE",
+      "createdAt" : "2026-11-17T10:04:00.155115500Z",
+      "lastActiveAt" : "2026-11-17T10:04:02.037427Z"
+    }, {
+      "sessionId" : "demo20-orders",
+      "title" : "2018 年下单的订单有多少笔？",
+      "turnCount" : 1,
+      "status" : "ACTIVE",
+      "createdAt" : "2026-11-17T10:03:57.304083700Z",
+      "lastActiveAt" : "2026-11-17T10:03:59.850980100Z"
+    } ],
+    "httpWallMs" : 2
+  }
+}

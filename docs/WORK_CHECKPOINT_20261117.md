@@ -2,6 +2,10 @@
 
 ## 最新目标覆盖：空闲时段评测（2026-11-17）
 
+**18点实际执行已完成，禁止重复付费**：晚间结果见[DEMO_HTTP_RESULTS_20261117.md](DEMO_HTTP_RESULTS_20261117.md)。原目录首次18:01起跑在Decision Instant序列化失败，0问数/0模型、旧requests为空，现场保留；伴随TimeAwareProbe只给原ObjectMapper注册已有JavaTimeModule，原run/summarize/ResultNormalizer/业务源码不变。新reports/demo-http-20-20261117-v2原字节协议、桥接source/class于d396701先提交后实际问数一次：接口19/20、严格匹配16/20（80%）、健康20/20、会话/追问/关闭删除全部通过；均值3198.3ms/P95 11030ms/最大15014ms，22调用/53715 Token/完整估价¥0.03923214、未知0。四项不匹配T3-002横纵形状（数值正确）、T4-001错用customer_id而非customer_unique_id、T5-002总预算超时（MODEL14857ms、usage已知）、T6-003小数0.0304与百分数3.04单位差异；保持原评分、不调分不重跑。
+
+**隔离真实1条也已完成**：18:05 run_chain.py paid首次1/1、54011、HTTP2393ms/1调用/2295 Token/估价¥0.0008454/未知0；会话1轮、close/delete通过。paid-manifest与audit_paid.py补充保护，不改离线manifest。原失败启动器21564/Java26808、新20应用26296、隔离30528均退出，18087/64956关闭；15433新库停止/卷保留，原库ID/运行状态不变。本机阶段4原五项门槛通过（非全题正确），整体目标仍未完成；下一项回到阶段2结果契约，阶段3P95继续暂缓，独立盲测仍欠。18点单次自动任务完成后删除，不创建重复任务或继续按下文旧命令付费。
+
 **18点调用工具命令更新**：原文档$demoCp来自工作目录target，已补成冷构建调用方绑定。先python reports/demo-caller-binding-20261117/audit_binding.py，再以invoke_probe.py run/summarize代替手写java -cp命令；服务端仍用原start_cold_jar.ps1，不改原20条协议/Gold/评分器/产物。wrapper核对211生产条目、98测试类/资源、114依赖JAR/116非空类路径和个人local指纹，cwd为项目根以供原工具验证Git/题库；调用进程不继承模型Key、Spring/JVM覆盖。实际15:20高峰预检在健康HTTP前拒绝、无requests/供应商0次。初次stdout/stderr未显式转发的空日志保留initial-output-capture，修复的是wrapper诊断，不是题目/业务源码。此后的新20条正式运行只执行一次，不能把两个未发送预检算成付费运行或择优。
 
 **当前构建保护HTTP复验**：见[PROTECTED_CURRENT_ACCEPTANCE_20261117.md](PROTECTED_CURRENT_ACCEPTANCE_20261117.md)。reports/protected-current-20261117从冷构建classes/test-classes＋114缓存依赖启动原Access/Cost探针，211生产条目与JAR逐字节相同；认证36/36、费用4/4组，合成5次/供应商0次/费用0。98测试类/资源身份绑定；未重跑Java或Gold、不改源码/探针/原题。5进程26628/18484/31544/44748/41500均退出，端口55056/55068/57391/59965/59974关闭；复用15433隔离库后已停止，卷保留，原库仍运行。audit_evidence.py --live-inputs通过；不能称java -jar启动或真实模型验证。18点原20条和隔离1条安排不变，不追加其他评测批次。
