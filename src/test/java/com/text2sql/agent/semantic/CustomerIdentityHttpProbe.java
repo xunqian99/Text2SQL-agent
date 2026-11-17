@@ -114,6 +114,11 @@ public final class CustomerIdentityHttpProbe {
     }
 
     static void freezeReferences(Path dir, List<List<String>> inputs, String format, String scope) throws Exception {
+        freezeReferences(dir, inputs, format, scope, Map.of());
+    }
+
+    static void freezeReferences(Path dir, List<List<String>> inputs, String format, String scope,
+                                 Map<String, Object> additionalEvidence) throws Exception {
         clean(); Files.createDirectory(dir);
         var props = new AgentProperties();
         var loader = new EvalItemLoader(props);
@@ -129,11 +134,16 @@ public final class CustomerIdentityHttpProbe {
         }
         var trees = new LinkedHashMap<String, String>();
         for (String path : PROTECTED) trees.put(path, git("rev-parse", "HEAD:" + path));
-        write(dir.resolve("protocol.json"), Map.ofEntries(Map.entry("format", format),
+        var protocol = new LinkedHashMap<String, Object>(Map.ofEntries(Map.entry("format", format),
                 Map.entry("sourceCommit", git("rev-parse", "HEAD")), Map.entry("sourceTrees", trees),
                 Map.entry("runtimeFiles", runtimeFiles()), Map.entry("datasetSha256", loader.datasetSha256("data/eval")),
                 Map.entry("metricDefinitionsSha256", MetricRegistry.definitionSha256()), Map.entry("localConfigSha256", localHash()),
                 Map.entry("cases", cases), Map.entry("scope", scope)));
+        for (var entry : additionalEvidence.entrySet()) {
+            if (protocol.putIfAbsent(entry.getKey(), entry.getValue()) != null)
+                throw new IllegalArgumentException("Additional evidence cannot replace frozen protocol fields");
+        }
+        write(dir.resolve("protocol.json"), protocol);
         System.out.println("Frozen " + cases.size() + " references; modelCalls=0");
     }
 

@@ -19,9 +19,10 @@ public final class DeliveryScopeHttpProbe {
     record Item(String id, List<Match> matches) { }
 
     public static void main(String[] args) throws Exception {
-        if (args.length != 2) throw new IllegalArgumentException("freeze/run/evidence NEW_PATH");
+        if (args.length != 2) throw new IllegalArgumentException("freeze/run/evidence/audit NEW_PATH");
         Path path = Path.of(args[1]).toAbsolutePath().normalize();
         if (args[0].equals("run")) { CustomerIdentityHttpProbe.runFrozen(path); return; }
+        if (args[0].equals("audit")) { audit(path); return; }
         var loader = new EvalItemLoader(new AgentProperties());
         var inputs = loader.load("data/eval", List.of(), 0);
         if (args[0].equals("evidence")) {
@@ -43,6 +44,30 @@ public final class DeliveryScopeHttpProbe {
                         "SELECT s.carrier,ROUND(AVG(EXTRACT(EPOCH FROM (o.order_delivered_customer_date-o.order_purchase_timestamp))/86400.0),2) "
                                 + "FROM shipments s JOIN orders o ON o.order_id=s.order_id WHERE o.order_delivered_customer_date IS NOT NULL GROUP BY s.carrier"),
                 List.of("original-carrier-count-control", counts.question(), counts.goldSql())),
-                "delivery-clock-scope-http-v1", "Exactly four requests once; carrier clock, order clock, explicit override and carrier count; no latency or blind-test claim.");
+                "delivery-clock-scope-http-v2", "Exactly four requests once; numeric matches and three separate AVG clock provenance checks; no latency or blind-test claim.",
+                Map.of("clockRequirements", Map.of(
+                        "original-carrier-clock", new DeliveryClockSqlAudit.Requirement("shipments.delivered_at", "shipments.shipped_at"),
+                        "original-order-clock-control", new DeliveryClockSqlAudit.Requirement("orders.order_delivered_customer_date", "orders.order_purchase_timestamp"),
+                        "explicit-order-clock-by-carrier", new DeliveryClockSqlAudit.Requirement("orders.order_delivered_customer_date", "orders.order_purchase_timestamp")),
+                        "clockAuditScope", "Direct base-table SELECT with exactly one projected AVG containing EPOCH(end-start); aliases resolved to sources; unsupported is not a pass. Numeric comparison separately checks values; no general SQL equivalence or full grain proof."));
+    }
+
+    private static void audit(Path directory) throws Exception {
+        var json = new ObjectMapper();
+        var protocol = json.readTree(directory.resolve("protocol.json").toFile());
+        if (!"delivery-clock-scope-http-v2".equals(protocol.path("format").asText()))
+            throw new IllegalArgumentException("A v2 protocol with preregistered clock requirements is required");
+        var results = new java.util.LinkedHashMap<String, DeliveryClockSqlAudit.Result>();
+        for (var entry : protocol.path("clockRequirements").properties()) {
+            var response = json.readTree(directory.resolve("responses").resolve(entry.getKey() + ".json").toFile());
+            var requirement = json.treeToValue(entry.getValue(), DeliveryClockSqlAudit.Requirement.class);
+            results.put(entry.getKey(), DeliveryClockSqlAudit.inspect(response.path("body").path("sql").asText(), requirement));
+        }
+        long passed = results.values().stream().filter(r -> r.status().equals("PASS")).count();
+        Files.writeString(directory.resolve("clock-audit.json"), json.writerWithDefaultPrettyPrinter().writeValueAsString(
+                Map.of("clockCases", results.size(), "passed", passed, "results", results, "providerCalls", 0)) + "\n",
+                StandardOpenOption.CREATE_NEW);
+        System.out.println("CLOCK_AUDIT " + passed + "/" + results.size());
+        if (results.size() != 3 || passed != results.size()) throw new IllegalStateException("Clock provenance failure retained");
     }
 }
