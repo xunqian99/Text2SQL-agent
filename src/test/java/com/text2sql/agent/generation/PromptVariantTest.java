@@ -20,12 +20,22 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class PromptVariantTest {
-    @Test void defaultRetainsArchivedSystemBytes() throws Exception {
+    @Test void contractVersionChangesOnlyUnitAndComparisonRulesFromArchivedP9() throws Exception {
         var template = new PromptTemplate();
-        assertThat(template.version()).isEqualTo("p9-mdl-alignment-v9");
-        assertThat(HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
-                .digest(template.systemPrompt().getBytes(StandardCharsets.UTF_8))))
-                .isEqualTo("f50464555aceac53dc657613a5887c1a72128ab18ef66a3d41c5413fb2419f0e");
+        assertThat(template.version()).isEqualTo("p10-result-contract-v10");
+        try (var in = getClass().getResourceAsStream("/prompts/p9-system.txt")) {
+            assertThat(in).isNotNull();
+            String archived = new String(in.readAllBytes(), StandardCharsets.UTF_8);
+            assertThat(HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(archived.getBytes(StandardCharsets.UTF_8))))
+                    .isEqualTo("f50464555aceac53dc657613a5887c1a72128ab18ef66a3d41c5413fb2419f0e");
+            String current = template.systemPrompt();
+            assertThat(current.substring(0, current.indexOf("12. 比例"))).isEqualTo(archived.substring(0, archived.indexOf("12. 比例")));
+            assertThat(current.substring(current.indexOf("13. 按时间"), current.indexOf("17. ")))
+                    .isEqualTo(archived.substring(archived.indexOf("13. 按时间"), archived.indexOf("17. ")));
+            assertThat(current.substring(current.indexOf("18. 复杂"))).isEqualTo(archived.substring(archived.indexOf("18. 复杂")));
+            assertThat(current).contains("用户明确指定的单位 > 当前METRIC的默认输出单位", "每个维度值一行", "用户明确要求横表")
+                    .doesNotContain("优先使用 COUNT(*) FILTER", "且未显式提及百分比");
+        }
     }
 
     @Test void candidateChangesOnlyTheArchived259UnitSection() {
@@ -34,12 +44,11 @@ class PromptVariantTest {
         props.getPrompt().setExplicitReasoningEnabled(false);
         var candidate = new PromptTemplate(props);
         String shortened = candidate.systemPrompt();
-        assertThat(shortened.length()).isEqualTo(2536);
         assertThat(full.length() - shortened.length()).isEqualTo(259);
         assertThat(shortened).isEqualTo(full.replace(full.substring(full.indexOf("思考与推理步骤"), full.indexOf("硬性规则")), ""));
         assertThat(shortened.substring(shortened.indexOf("硬性规则")))
                 .isEqualTo(full.substring(full.indexOf("硬性规则")));
-        assertThat(candidate.version()).isEqualTo("p9-mdl-alignment-v9-no-explicit-steps-v1");
+        assertThat(candidate.version()).isEqualTo("p10-result-contract-v10-no-explicit-steps-v1");
         var schema = new SchemaContext(List.of(), List.of(), "画像", "CREATE TABLE orders(order_id text);");
         assertThat(candidate.userPrompt(schema, "订单有多少？")).isEqualTo(new PromptTemplate().userPrompt(schema, "订单有多少？"));
         assertThat(candidate.correctionPrompt(schema, "订单有多少？", "SELECT 0", "请修正"))

@@ -37,8 +37,8 @@ public class PromptTemplate {
      * （比如加一句「优先使用高置信度的表」），那才需要 +1，
      * 并且要重跑阶段 1 的 baseline 才能对比。
      */
-    public static final String VERSION = "p9-mdl-alignment-v9";
-    public static final String NO_EXPLICIT_STEPS_VERSION = "p9-mdl-alignment-v9-no-explicit-steps-v1";
+    public static final String VERSION = "p10-result-contract-v10";
+    public static final String NO_EXPLICIT_STEPS_VERSION = "p10-result-contract-v10-no-explicit-steps-v1";
 
     private final AgentProperties properties;
 
@@ -93,8 +93,9 @@ public class PromptTemplate {
                 11. 不要为了「信息更全」而加列、加分组或加排序。评估比的是结果集，
                    多一列和少一列都算错。
                 12. 比例与精度口径：
-                   - 当问题询问「比例 / 占比 / 比率」且未显式提及百分比（%）时，输出 0~1 的小数比率，用 ROUND(分子::NUMERIC / 分母, 4) 保留四位小数。
-                   - 当问题明确询问「百分比」或带有「%」时，才输出 ROUND(100.0 * 分子 / 分母, 2)。
+                   - 单位优先级：用户明确指定的单位 > 当前METRIC的默认输出单位 > 通用比例默认值；每个指标分别处理，不把某一列的单位应用到其他列。指标名称本身不算显式单位覆盖。
+                   - 用户明确要求百分比/%时输出百分数数值；明确要求0到1/小数比率时输出原始比值。覆盖指标默认单位时同步转换表达式、精度和列别名，参考示例与推荐查询不能覆盖用户要求。
+                   - 对已注册指标，遵循其outputUnit/outputScale（如PERCENT按100倍比值、DECIMAL_RATIO按原始比值），不因题干出现「比例」就改用另一单位；未注册指标的普通比例默认输出小数比率、四位小数，明确百分比时乘100、两位小数。分母为零用NULLIF返回NULL，不伪装成0。
                    - 其余一般金额、单价、平均值，统一用 ROUND(表达式, 2) 保留两位小数。
                    - 【PostgreSQL 严格类型约束】PostgreSQL 的 ROUND(val, n) 仅接受 NUMERIC 类型！若表达式涉及 EXTRACT(EPOCH FROM ...) 或浮点计算/AVG，返回值是 DOUBLE PRECISION，必须显式加 ::NUMERIC 转换（例如 ROUND((AVG(EXTRACT(EPOCH FROM ...)) / 86400.0)::NUMERIC, 2)），绝对禁止对 DOUBLE PRECISION 直接传 2 个参数调用 ROUND。
                 13. 按时间分组与时间字段选择：
@@ -108,8 +109,10 @@ public class PromptTemplate {
                    - 查询订单明细的价格/销售金额时，直接使用 order_items 表及其 price 列；仅在明确提到卖家结算、抽成或对账时才使用 settlements / settlement_items。
                    - 查询承运商配送时长时，直接使用 shipments 表的 (delivered_at - shipped_at)，无需关联轨迹表。
                    - 工单实际处理时长计算用 support_tickets 表的 (resolved_at - created_at)；ticket_categories.sla_hours 仅为时限标准而非实际耗时。
-                17. 多个固定枚举值对比（条件聚合）：
-                   - 当问题同时询问某维度多个固定枚举值的统计量（如“A和B各有多少笔/多少个”）时，优先使用 COUNT(*) FILTER (WHERE 列 = 'A') AS a, COUNT(*) FILTER (WHERE 列 = 'B') AS b 进行横向条件聚合输出。
+                17. 对比结果的列与行契约：
+                   - 同一指标在多个维度值上的对比（如“A和B各有多少笔”），默认输出维度列、指标列，每个维度值一行；时间维度按时间升序。不要擅自把每个年份或类别做成不同列。
+                   - 用户明确要求横表/每个维度值一列时，才使用横向条件聚合；同一时期的多个不同指标仍按题目要求各占一列，不能把GMV与销售额强行变成维度行。
+                   - 已注册指标明确规定输出形状（如同比多列）时遵循该指标的输出约束；用户显式形状要求优先于指标默认形状，不能改动指标的时间范围、分母或单位。
                 18. 复杂多表关联时，可在 SELECT 语句首行添加一行以 -- 开头的单行注释说明思路，之后紧接完整 SQL。
                 """.strip();
         if (properties.getPrompt().isExplicitReasoningEnabled()) return prompt;

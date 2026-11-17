@@ -29,14 +29,20 @@ import java.util.*;
 public final class CustomerIdentityHttpProbe {
     private static final ObjectMapper JSON = new ObjectMapper().findAndRegisterModules();
     private static final List<String> PROTECTED = List.of("src/main/java", "src/main/resources",
-            "src/test/java", "data/eval", "data/holdout", "pom.xml");
+            "src/test/java", "src/test/resources", "data/eval", "data/holdout", "pom.xml");
 
     public static void main(String[] args) throws Exception {
         if (args.length != 2) throw new IllegalArgumentException("freeze/run NEW_DIRECTORY");
         Path dir = Path.of(args[1]).toAbsolutePath().normalize();
         if ("freeze".equals(args[0])) { freeze(dir); return; }
         if (!"run".equals(args[0])) throw new IllegalArgumentException("freeze/run");
+        runFrozen(dir);
+    }
+
+    static void runFrozen(Path dir) throws Exception {
         verify(dir);
+        JsonNode protocol = JSON.readTree(dir.resolve("protocol.json").toFile());
+        int caseCount = protocol.path("cases").size();
         var offPeak = new DeepSeekOffPeakPolicy(Clock.systemUTC());
         offPeak.requireAllowed();
         Files.createDirectory(dir.resolve("responses")); // A failed run is retained, never replayed.
@@ -85,30 +91,37 @@ public final class CustomerIdentityHttpProbe {
             ledger = context.getBean(CostQuota.class).snapshot();
             write(dir.resolve("cost-status.json"), ledger);
         }
-        write(dir.resolve("summary.json"), Map.ofEntries(Map.entry("correct", correct), Map.entry("cases", 4),
+        write(dir.resolve("summary.json"), Map.ofEntries(Map.entry("correct", correct), Map.entry("cases", caseCount),
                 Map.entry("modelCalls", calls), Map.entry("responseUnknownUsageCalls", unknown), Map.entry("outcomes", outcomes),
                 Map.entry("knownConfiguredCostYuan", ledger.get("knownCostYuan")), Map.entry("port", port),
                 Map.entry("pid", ProcessHandle.current().pid()), Map.entry("contextClosed", true),
-                Map.entry("scope", "Known failure plus cross-wording, explicit row-key override and unrelated total; no blind accuracy/P95 claim.")));
-        System.out.println("CUSTOMER_IDENTITY_HTTP matches=" + correct + "/4 calls=" + calls + " unknown=" + unknown);
-        if (correct != 4) throw new IllegalStateException("Mismatch retained; do not rerun to select a better score");
+                Map.entry("scope", protocol.path("scope").asText())));
+        System.out.println("SEMANTIC_HTTP matches=" + correct + "/" + caseCount + " calls=" + calls + " unknown=" + unknown);
+        if (correct != caseCount) throw new IllegalStateException("Mismatch retained; do not rerun to select a better score");
     }
 
     private static void freeze(Path dir) throws Exception {
-        clean(); Files.createDirectory(dir);
         var props = new AgentProperties();
         var loader = new EvalItemLoader(props);
         var original = loader.load("data/eval", List.of(), 0).stream().filter(i -> i.id().equals("T4-001")).findFirst().orElseThrow();
-        var jdbc = new JdbcTemplate(new DriverManagerDataSource(env("TEXT2SQL_TEST_DB_URL", "jdbc:postgresql://localhost:5432/olist"),
-                env("TEXT2SQL_TEST_DB_USER", "text2sql_ro"), env("TEXT2SQL_TEST_DB_PASSWORD", "text2sql_ro")));
-        var executor = new SqlExecutor(jdbc, props);
-        var cases = new ArrayList<Object>();
-        for (var item : List.of(List.of("original-customer-top10", original.question(), original.goldSql()),
+        freezeReferences(dir, List.of(List.of("original-customer-top10", original.question(), original.goldSql()),
                 List.of("distinct-buyers", "有订单的顾客，按真实自然人去重后共多少人？",
                         "SELECT COUNT(DISTINCT c.customer_unique_id) FROM orders o JOIN customers c ON c.customer_id=o.customer_id"),
                 List.of("explicit-row-key", "按 orders.customer_id 分组计数后，返回订单数量和对应的客户关联键数量，按订单数量升序。",
                         "SELECT cnt,COUNT(*) FROM (SELECT customer_id,COUNT(*) AS cnt FROM orders GROUP BY customer_id) t GROUP BY cnt ORDER BY cnt"),
-                List.of("orders-total-control", "一共有多少笔订单？", "SELECT COUNT(*) FROM orders"))) {
+                List.of("orders-total-control", "一共有多少笔订单？", "SELECT COUNT(*) FROM orders")),
+                "customer-identity-http-v1", "Exactly four targeted requests, once; no benchmark/Gold/scoring changes.");
+    }
+
+    static void freezeReferences(Path dir, List<List<String>> inputs, String format, String scope) throws Exception {
+        clean(); Files.createDirectory(dir);
+        var props = new AgentProperties();
+        var loader = new EvalItemLoader(props);
+        var jdbc = new JdbcTemplate(new DriverManagerDataSource(env("TEXT2SQL_TEST_DB_URL", "jdbc:postgresql://localhost:5432/olist"),
+                env("TEXT2SQL_TEST_DB_USER", "text2sql_ro"), env("TEXT2SQL_TEST_DB_PASSWORD", "text2sql_ro")));
+        var executor = new SqlExecutor(jdbc, props);
+        var cases = new ArrayList<Object>();
+        for (var item : inputs) {
             QueryResult result = executor.execute(item.get(2));
             if (result.truncated()) throw new IllegalStateException("Truncated reference");
             cases.add(Map.of("id", item.get(0), "question", item.get(1), "referenceSql", item.get(2),
@@ -116,12 +129,12 @@ public final class CustomerIdentityHttpProbe {
         }
         var trees = new LinkedHashMap<String, String>();
         for (String path : PROTECTED) trees.put(path, git("rev-parse", "HEAD:" + path));
-        write(dir.resolve("protocol.json"), Map.ofEntries(Map.entry("format", "customer-identity-http-v1"),
+        write(dir.resolve("protocol.json"), Map.ofEntries(Map.entry("format", format),
                 Map.entry("sourceCommit", git("rev-parse", "HEAD")), Map.entry("sourceTrees", trees),
                 Map.entry("runtimeFiles", runtimeFiles()), Map.entry("datasetSha256", loader.datasetSha256("data/eval")),
                 Map.entry("metricDefinitionsSha256", MetricRegistry.definitionSha256()), Map.entry("localConfigSha256", localHash()),
-                Map.entry("cases", cases), Map.entry("scope", "Exactly four targeted requests, once; no benchmark/Gold/scoring changes.")));
-        System.out.println("Frozen four references; modelCalls=0");
+                Map.entry("cases", cases), Map.entry("scope", scope)));
+        System.out.println("Frozen " + cases.size() + " references; modelCalls=0");
     }
 
     private static void verify(Path dir) throws Exception {

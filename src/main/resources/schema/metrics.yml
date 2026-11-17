@@ -89,10 +89,12 @@ metrics:
     outputRule: 只输出题目要求的客单价列；不要额外输出 GMV、订单数或其他中间量。
 
   - name: repeat_rate
+    outputUnit: PERCENT
+    outputScale: 2
     aliases: [复购率, 回购率, 重复购买率]
     description: 复购率 = 下单 2 次及以上的用户 / 全部下单用户
     expression: |
-      COUNT(*) FILTER (WHERE order_cnt >= 2) * 100.0 / COUNT(*)
+      ROUND(COUNT(*) FILTER (WHERE order_cnt >= 2) * 100.0 / NULLIF(COUNT(*), 0), 2)
     tables: [orders, customers]
     filter: "o.order_status NOT IN ('canceled', 'unavailable')"
     notes: |
@@ -101,6 +103,8 @@ metrics:
       先按人聚合出订单数，再判断 >= 2。
 
   - name: on_time_rate
+    outputUnit: PERCENT
+    outputScale: 2
     aliases: [准时率, 准时送达率, 按时送达率]
     description: 准时率 = 实际送达不晚于预计送达的订单 / 已送达订单
     expression: |
@@ -113,6 +117,8 @@ metrics:
       不是全部订单。未送达的订单无法判断是否准时，计入分母会拉低准时率。
 
   - name: refund_rate
+    outputUnit: PERCENT
+    outputScale: 2
     aliases: [退款率, 退货率]
     description: 退款率 = 退款订单数 / 有效订单数
     expression: "ROUND(100.0 * COUNT(DISTINCT r.order_id) / COUNT(DISTINCT o.order_id), 2)"
@@ -121,6 +127,8 @@ metrics:
     notes: 分母用有效订单，与 valid_order 口径一致。
 
   - name: sell_through_rate
+    outputUnit: PERCENT
+    outputScale: 2
     aliases: [动销率, 动销商品率, 售罄率]
     description: 动销率 = 有销量的商品数 / 全部商品数
     expression: "ROUND(100.0 * COUNT(DISTINCT oi.product_id) / (SELECT COUNT(*) FROM products), 2)"
@@ -144,6 +152,8 @@ metrics:
       FROM sold CROSS JOIN allp;
 
   - name: member_penetration
+    outputUnit: PERCENT
+    outputScale: 2
     aliases: [会员渗透率, 会员订单占比, 会员占比]
     description: 会员渗透率 = 会员贡献的有效订单 / 全部有效订单
     expression: "ROUND(100.0 * COUNT(DISTINCT o.order_id) FILTER (WHERE m.member_id IS NOT NULL) / NULLIF(COUNT(DISTINCT o.order_id), 0), 2)"
@@ -166,6 +176,8 @@ metrics:
       WHERE o.order_status NOT IN ('canceled', 'unavailable');
 
   - name: low_score_rate
+    outputUnit: PERCENT
+    outputScale: 2
     aliases: [低分率, 差评率, 低分占比, 低分订单, 低分评价, 差评占比]
     description: 低分率 = 评分 <= 2 的评价 / 全部评价
     expression: "ROUND(100.0 * COUNT(*) FILTER (WHERE r.review_score <= 2) / COUNT(*), 2)"
@@ -180,6 +192,8 @@ metrics:
       所以这一条**不设默认 filter**，由题目限定范围决定。
 
   - name: ctr
+    outputUnit: PERCENT
+    outputScale: 2
     aliases: [搜索转化率, 点击率, 搜索点击率]
     description: 搜索转化率 = 有点击的搜索记录 / 全部搜索记录
     expression: "ROUND(100.0 * COUNT(*) FILTER (WHERE clicked_product_id IS NOT NULL) / COUNT(*), 2)"
@@ -187,6 +201,8 @@ metrics:
     notes: 分母是搜索记录数，不是用户数。
 
   - name: freight_ratio
+    outputUnit: PERCENT
+    outputScale: 2
     aliases: [运费占比, 运费比例, 运费占GMV]
     description: 运费占比 = 运费 / GMV
     expression: "ROUND(100.0 * SUM(oi.freight_value) / SUM(oi.price + oi.freight_value), 2)"
@@ -219,6 +235,8 @@ metrics:
       去重单位是 customer_unique_id（人级），不是 customer_id。
 
   - name: sla_rate
+    outputUnit: PERCENT
+    outputScale: 2
     aliases: [SLA达成率, SLA 达成率, SLA达标率, SLA 达标率, 工单达成率, SLA]
     description: SLA 达成率 = 解决时长不超过类目 SLA 的工单 / 全部工单
     expression: |
@@ -230,6 +248,8 @@ metrics:
     notes: 分母是**全部工单**（含未解决的）。未解决的工单算未达成。
 
   - name: discount_rate
+    outputUnit: PERCENT
+    outputScale: 2
     aliases: [折扣率, 优惠率, 用券折扣]
     description: 折扣率 = 优惠金额 / GMV
     expression: "ROUND(100.0 * SUM(cu.discount_amount) / SUM(oi.price + oi.freight_value), 2)"
@@ -248,6 +268,8 @@ metrics:
       WHERE o.order_status NOT IN ('canceled', 'unavailable');
 
   - name: commission_rate
+    outputUnit: DECIMAL_RATIO
+    outputScale: 4
     aliases: [佣金率, 平台抽成, 佣金比例]
     description: 佣金率 = 佣金 / 结算毛额
     expression: "SUM(si.commission_amount) / SUM(si.gross_amount)"
@@ -257,6 +279,8 @@ metrics:
       那样大卖家和小卖家权重相同，会失真）。要卖家级分布时单独按卖家聚合。
 
   - name: conversion_rate
+    outputUnit: PERCENT
+    outputScale: 2
     aliases: [转化率, 推荐转化率, 活动转化率]
     description: 转化率 = 已转化的推荐 / 全部推荐
     expression: "ROUND(100.0 * COUNT(*) FILTER (WHERE converted_at IS NOT NULL) / COUNT(*), 2)"
@@ -275,6 +299,8 @@ metrics:
       gold 是 20.01，模型给 6.78。
 
   - name: retention_rate
+    outputUnit: PERCENT
+    outputScale: 2
 
     aliases: [留存率, 次月留存, 用户留存]
     description: 留存率 = 首单后再次下单的用户 / 同期首单用户
@@ -344,6 +370,8 @@ metrics:
          未送达的订单没有签收时间，参与计算会得到 NULL 或错误值。
 
   - name: yoy_growth
+    outputUnit: PERCENT
+    outputScale: 2
     aliases: [同比增长, 同比增长率, YoY]
     description: 同比增长率 = (本期 - 同期) / 同期
     expression: "ROUND(100.0 * (m18.gmv - m17.gmv) / m17.gmv, 2)"

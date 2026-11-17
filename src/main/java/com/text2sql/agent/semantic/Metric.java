@@ -40,11 +40,25 @@ public record Metric(
         List<String> tables,
         String notes,
         String outputRule,
-        String queryPattern) {
+        String queryPattern,
+        OutputUnit outputUnit,
+        Integer outputScale) {
+
+    /** Unit belongs to this metric, never to every column in the question. */
+    public enum OutputUnit { PERCENT, DECIMAL_RATIO }
+
+    public Metric(String name, List<String> aliases, String description, String expression,
+                  String filter, List<String> tables, String notes, String outputRule, String queryPattern) {
+        this(name, aliases, description, expression, filter, tables, notes, outputRule, queryPattern, null, null);
+    }
 
     public Metric {
         aliases = aliases == null ? List.of() : List.copyOf(aliases);
         tables = tables == null ? List.of() : List.copyOf(tables);
+        if ((outputUnit == null) != (outputScale == null)
+                || (outputScale != null && (outputScale < 0 || outputScale > 8))) {
+            throw new IllegalArgumentException("Metric output unit and scale must be defined together, scale 0..8");
+        }
     }
 
     /**
@@ -63,6 +77,13 @@ public record Metric(
         StringBuilder sb = new StringBuilder();
         sb.append("METRIC ").append(name).append("  -- ").append(description).append('\n');
         sb.append("  表达式: ").append(expression.strip()).append('\n');
+        if (outputUnit != null) {
+            sb.append("  默认输出单位: ").append(outputUnit).append("；保留 ").append(outputScale).append(" 位小数。\n");
+            sb.append(outputUnit == OutputUnit.PERCENT
+                    ? "    百分数按100倍比值输出纯数值，例如比值0.25输出25，不附加%字符；增长率可为负或超过100。\n"
+                    : "    小数比率按原始比值输出纯数值，例如比值0.25输出0.25，不额外乘100。\n");
+            sb.append("    此单位仅约束该指标，不影响同一结果的金额/数量/维度列；用户明确指定单位时覆盖默认值并同步转换表达式、精度和列别名，示例结构不能覆盖用户要求。\n");
+        }
         // 过滤条件必须单独成行，而不是揉进表达式片段。
         //
         // 【这条是实测踩出来的】第一版把过滤条件省了，结果 T6 层 12 条全错：
