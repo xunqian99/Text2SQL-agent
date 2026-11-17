@@ -1,0 +1,67 @@
+{
+  "wallMs" : 5565,
+  "body" : {
+    "status" : "SUCCESS",
+    "sql" : "-- 按商品类目统计去重订单数，保留 product_category_name 为 NULL 的类目分组\nSELECT p.product_category_name, COUNT(DISTINCT oi.order_id) AS order_count\nFROM order_items oi\nJOIN orders o ON o.order_id = oi.order_id\nLEFT JOIN products p ON p.product_id = oi.product_id\nGROUP BY p.product_category_name\nLIMIT 100;",
+    "message" : null,
+    "violations" : [ ],
+    "columns" : [ "product_category_name", "order_count" ],
+    "rows" : [ [ "agro_industria_e_comercio", "182" ], [ "alimentos", "450" ], [ "alimentos_bebidas", "227" ], [ "artes", "202" ], [ "artes_e_artesanato", "23" ], [ "artigos_de_festas", "39" ], [ "artigos_de_natal", "128" ], [ "audio", "350" ], [ "automotivo", "3897" ], [ "bebes", "2885" ], [ "bebidas", "297" ], [ "beleza_saude", "8836" ], [ "brinquedos", "3886" ], [ "cama_mesa_banho", "9417" ], [ "casa_conforto", "397" ], [ "casa_conforto_2", "24" ], [ "casa_construcao", "490" ], [ "cds_dvds_musicais", "12" ], [ "cine_foto", "65" ], [ "climatizacao", "253" ], [ "consoles_games", "1062" ], [ "construcao_ferramentas_construcao", "748" ], [ "construcao_ferramentas_ferramentas", "97" ], [ "construcao_ferramentas_iluminacao", "244" ], [ "construcao_ferramentas_jardim", "194" ], [ "construcao_ferramentas_seguranca", "167" ], [ "cool_stuff", "3632" ], [ "dvds_blu_ray", "59" ], [ "eletrodomesticos", "764" ], [ "eletrodomesticos_2", "234" ], [ "eletronicos", "2550" ], [ "eletroportateis", "630" ], [ "esporte_lazer", "7720" ], [ "fashion_bolsas_e_acessorios", "1864" ], [ "fashion_calcados", "240" ], [ "fashion_esporte", "27" ], [ "fashion_roupa_feminina", "39" ], [ "fashion_roupa_infanto_juvenil", "8" ], [ "fashion_roupa_masculina", "112" ], [ "fashion_underwear_e_moda_praia", "121" ], [ "ferramentas_jardim", "3518" ], [ "flores", "29" ], [ "fraldas_higiene", "27" ], [ "industria_comercio_e_negocios", "235" ], [ "informatica_acessorios", "6689" ], [ "instrumentos_musicais", "628" ], [ "la_cuisine", "13" ], [ "livros_importados", "53" ], [ "livros_interesse_geral", "512" ], [ "livros_tecnicos", "260" ], [ "malas_acessorios", "1034" ], [ "market_place", "280" ], [ "moveis_colchao_e_estofado", "38" ], [ "moveis_cozinha_area_de_servico_jantar_e_jardim", "248" ], [ "moveis_decoracao", "6449" ], [ "moveis_escritorio", "1273" ], [ "moveis_quarto", "95" ], [ "moveis_sala", "422" ], [ "musica", "38" ], [ "papelaria", "2311" ], [ "pc_gamer", "8" ], [ "pcs", "181" ], [ "perfumaria", "3162" ], [ "pet_shop", "1710" ], [ "portateis_casa_forno_e_cafe", "75" ], [ "portateis_cozinha_e_preparadores_de_alimentos", "14" ], [ "relogios_presentes", "5624" ], [ "seguros_e_servicos", "2" ], [ "sinalizacao_e_seguranca", "140" ], [ "tablets_impressao_imagem", "79" ], [ "telefonia", "4199" ], [ "telefonia_fixa", "217" ], [ "utilidades_domesticas", "5884" ], [ null, "1451" ] ],
+    "truncated" : false,
+    "rewritten" : false,
+    "rowCount" : 74,
+    "schemaTableCount" : 8,
+    "retrievedTables" : [ "orders", "products", "product_category_translation", "customers", "order_items", "order_payments", "order_reviews", "campaign_products" ],
+    "schemaDdlChars" : 1582,
+    "llm" : {
+      "model" : "deepseek-flash",
+      "promptTokens" : 2456,
+      "completionTokens" : 815,
+      "totalTokens" : 3271,
+      "latencyMs" : 5213,
+      "costYuan" : 0.00433616
+    },
+    "timings" : {
+      "retrievalMs" : 5,
+      "generationMs" : 5215,
+      "validationMs" : 3,
+      "executionMs" : 334,
+      "totalMs" : 5559
+    },
+    "sessionId" : "category-include-null-category-orders",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "68b4aa9a-7706-434e-96da-0312513ade91",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 1,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 5559,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "CACHE" : 0,
+        "CONVERSATION" : 0,
+        "RETRIEVAL" : 5,
+        "RESULT_CHECK" : 0,
+        "CACHE_WRITE" : 0,
+        "CLARIFICATION" : 0,
+        "EXPLAIN" : 38,
+        "VALIDATION" : 3,
+        "ADMISSION" : 0,
+        "SESSION" : 0,
+        "EXECUTION" : 296,
+        "MODEL" : 5207,
+        "GENERATION" : 8
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 2,
+      "currentStageMs" : 0
+    }
+  },
+  "id" : "include-null-category-orders",
+  "httpStatus" : 200
+}
