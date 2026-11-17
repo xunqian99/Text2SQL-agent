@@ -112,6 +112,18 @@ public class ValueRetriever {
         return sb.toString().stripTrailing();
     }
 
+    /** Preserve legacy value matches; attach a separately identified per-request layout only when unambiguous. */
+    public String renderValueHints(String question, List<ValueMatch> matches, List<SchemaContext.Table> tables) {
+        String hints = renderValueHints(matches);
+        String contract = countComparisonContract(question, tables).render();
+        if (contract.isEmpty()) return hints;
+        return (hints == null ? "" : hints) + contract;
+    }
+
+    public com.text2sql.agent.semantic.CountComparisonContract countComparisonContract(String question, List<SchemaContext.Table> tables) {
+        return com.text2sql.agent.semantic.CountComparisonContract.resolve(question, entries(), tables);
+    }
+
     /**
      * 获取或惰性初始化全部实体枚举倒排项。
      */

@@ -36,6 +36,6 @@ public final class CountComparisonHttpProbe {
                         "SELECT DATE_TRUNC('year',order_purchase_timestamp),COUNT(*) FROM orders WHERE order_purchase_timestamp>='2017-01-01' "
                                 + "AND order_purchase_timestamp<'2019-01-01' GROUP BY 1 ORDER BY 1"),
                 List.of("monthly-label-control", months.question(), months.goldSql())),
-                "named-count-comparison-http-v2", "Exactly ten requests once: retain all eight v1 references and add explicit year-start timestamps plus monthly label control; presentation contract, not blind accuracy/P95.");
+                "named-count-comparison-http-v3", "Exactly ten unchanged v2 references once; metadata-backed per-request named count contract with explicit/time/group controls; not blind accuracy/P95.");
     }
 }

@@ -126,7 +126,7 @@ public class HybridSchemaProvider implements SchemaProvider {
             }
             if (valueRetriever != null) {
                 var matches = valueRetriever.findMatches(question, Set.copyOf(full.tableNames()));
-                res = res.withValueHints(valueRetriever.renderValueHints(matches));
+                res = res.withValueHints(valueRetriever.renderValueHints(question, matches, res.tables()));
             }
             return res;
         }
@@ -218,8 +218,8 @@ public class HybridSchemaProvider implements SchemaProvider {
                     properties.getFewshot().isRequireAvailableTables());
             sub = sub.withExamples(examples);
         }
-        if (!valueMatches.isEmpty()) {
-            String hints = valueRetriever.renderValueHints(valueMatches);
+        if (valueRetriever != null) {
+            String hints = valueRetriever.renderValueHints(question, valueMatches, sub.tables());
             sub = sub.withValueHints(hints);
             log.info("注入实体与枚举值取值对齐提示：{} 条", valueMatches.size());
         }

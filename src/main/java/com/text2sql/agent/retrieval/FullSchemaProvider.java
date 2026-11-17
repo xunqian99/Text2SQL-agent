@@ -91,7 +91,7 @@ public class FullSchemaProvider implements SchemaProvider {
         }
         if (valueRetriever != null) {
             var matches = valueRetriever.findMatches(question, Set.copyOf(full.tableNames()));
-            resultContext = resultContext.withValueHints(valueRetriever.renderValueHints(matches));
+            resultContext = resultContext.withValueHints(valueRetriever.renderValueHints(question, matches, resultContext.tables()));
         }
         return resultContext;
     }

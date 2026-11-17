@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class PromptVariantTest {
     @Test void contractVersionChangesOnlyUnitTimeAndComparisonRulesFromArchivedP9() throws Exception {
         var template = new PromptTemplate();
-        assertThat(template.version()).isEqualTo("p12-result-contract-v12");
+        assertThat(template.version()).isEqualTo("p13-result-contract-v13");
         try (var in = getClass().getResourceAsStream("/prompts/p9-system.txt")) {
             assertThat(in).isNotNull();
             String archived = new String(in.readAllBytes(), StandardCharsets.UTF_8);
@@ -74,7 +74,7 @@ class PromptVariantTest {
         assertThat(shortened).isEqualTo(full.replace(full.substring(full.indexOf("思考与推理步骤"), full.indexOf("硬性规则")), ""));
         assertThat(shortened.substring(shortened.indexOf("硬性规则")))
                 .isEqualTo(full.substring(full.indexOf("硬性规则")));
-        assertThat(candidate.version()).isEqualTo("p12-result-contract-v12-no-explicit-steps-v1");
+        assertThat(candidate.version()).isEqualTo("p13-result-contract-v13-no-explicit-steps-v1");
         var schema = new SchemaContext(List.of(), List.of(), "画像", "CREATE TABLE orders(order_id text);");
         assertThat(candidate.userPrompt(schema, "订单有多少？")).isEqualTo(new PromptTemplate().userPrompt(schema, "订单有多少？"));
         assertThat(candidate.correctionPrompt(schema, "订单有多少？", "SELECT 0", "请修正"))

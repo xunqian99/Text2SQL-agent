@@ -37,8 +37,8 @@ public class PromptTemplate {
      * （比如加一句「优先使用高置信度的表」），那才需要 +1，
      * 并且要重跑阶段 1 的 baseline 才能对比。
      */
-    public static final String VERSION = "p12-result-contract-v12";
-    public static final String NO_EXPLICIT_STEPS_VERSION = "p12-result-contract-v12-no-explicit-steps-v1";
+    public static final String VERSION = "p13-result-contract-v13";
+    public static final String NO_EXPLICIT_STEPS_VERSION = "p13-result-contract-v13-no-explicit-steps-v1";
 
     private final AgentProperties properties;
 
