@@ -45,6 +45,7 @@ if (-not (Test-Path src/main/resources/application-local.yml)) {
 | 用途 | 命令 | 行为与边界 |
 |---|---|---|
 | 完整本机演示 | `powershell -File scripts/start_local.ps1 -Mode demo` | 检索、Join规划、语义、示例、澄清、纠错、结果检查、多轮开启；查询缓存/持久化/工具循环/升级路由关闭 |
+| 受保护本机演示 | `powershell -File scripts/start_local.ps1 -Mode protected` | 在demo后加载protected；页面与所有接口需要独立应用凭据，API共享速率与并发限制；金额配额尚未实现，详见[入口保护](ACCESS_CONTROL_20261117.md) |
 | 全Schema参照 | `powershell -File scripts/start_local.ps1 -Mode baseline` | 关闭上述增强，保留AST、EXPLAIN和只读执行；真实问数仍需模型，不是离线推理 |
 | 离线Gold自检 | `powershell -File scripts/run_eval.ps1 -Split all -DryRun` | 不调用模型，执行原200题Gold；不能当作模型准确率 |
 | 真实评测 | `powershell -File scripts/run_eval.ps1 -Split eval` | 使用原评测脚本的显式配置，默认关闭会话/查询缓存/纠错/结果检查；与demo分开记账 |
@@ -70,7 +71,7 @@ $health | ConvertTo-Json -Depth 6
 
 核对`mode=demo`、`capabilities`及`limits`。`ready=true`仅指全局模型客户端已配置且Schema快照非空；`providerVerified=false`、`databaseLiveVerified=false`说明这不是付费供应商探针，也不是数据库实时心跳。Schema来自可缓存目录。无全局Key时`ready=false`但进程可正常运行；过去某个BYOK请求留下的客户端不能把全局状态变成就绪。Schema读取失败或为空返回503、`SCHEMA_UNAVAILABLE`，不回显异常细节、JDBC地址或凭据。
 
-当前HTTP只监听`127.0.0.1`，不支持其他机器直连。**没有单用户访问认证、限流或总费用配额**；同机进程仍能访问，代理/隧道也可能重新暴露服务，不应开启公网转发。`X-Api-Key`和请求中的`apiKey`是供应商BYOK凭据，不是应用登录令牌。
+当前HTTP只监听`127.0.0.1`，不支持其他机器直连。普通demo/baseline**没有认证或限流**；protected模式已增加单用户认证、接口速率和并发限制，但总费用配额仍未实现。同机进程仍可访问网络入口，代理/隧道也可能重新暴露服务，不应开启公网转发。`X-Api-Key`和请求中的`apiKey`是供应商BYOK凭据，不是应用登录令牌。
 
 ## 5. 自检与一条真实问数
 
