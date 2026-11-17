@@ -150,6 +150,7 @@ public final class AccessHttpAcceptanceProbe {
         return (ServletWebServerApplicationContext) app.run("--spring.profiles.active=local,demo,protected",
                 "--server.port=0", "--server.address=127.0.0.1", "--agent.eval.enabled=false",
                 "--agent.access.max-concurrent=1", "--agent.access.burst=" + burst, "--agent.access.requests-per-minute=" + rate,
+                "--agent.cost-quota.enabled=false", // This frozen probe isolates authentication; cost has its own acceptance.
                 "--agent.llm.api-key=", "--agent.llm.base-url=http://127.0.0.1:1",
                 "--agent.llm.input-price-per-1k=0", "--agent.llm.output-price-per-1k=0",
                 "--agent.llm.cache-hit-price-per-1k=0", "--agent.observability.enabled=false");

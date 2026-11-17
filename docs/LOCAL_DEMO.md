@@ -45,7 +45,7 @@ if (-not (Test-Path src/main/resources/application-local.yml)) {
 | 用途 | 命令 | 行为与边界 |
 |---|---|---|
 | 完整本机演示 | `powershell -File scripts/start_local.ps1 -Mode demo` | 检索、Join规划、语义、示例、澄清、纠错、结果检查、多轮开启；查询缓存/持久化/工具循环/升级路由关闭 |
-| 受保护本机演示 | `powershell -File scripts/start_local.ps1 -Mode protected` | 在demo后加载protected；页面与所有接口需要独立应用凭据，API共享速率与并发限制；金额配额尚未实现，详见[入口保护](ACCESS_CONTROL_20261117.md) |
+| 受保护本机演示 | `powershell -File scripts/start_local.ps1 -Mode protected` | 在demo后加载protected；独立应用凭据、API共享速率/并发限制、持久化费用预留（默认1元/每次0.10元），详见[入口保护](ACCESS_CONTROL_20261117.md)及[费用边界](COST_QUOTA_20261117.md) |
 | 全Schema参照 | `powershell -File scripts/start_local.ps1 -Mode baseline` | 关闭上述增强，保留AST、EXPLAIN和只读执行；真实问数仍需模型，不是离线推理 |
 | 离线Gold自检 | `powershell -File scripts/run_eval.ps1 -Split all -DryRun` | 不调用模型，执行原200题Gold；不能当作模型准确率 |
 | 真实评测 | `powershell -File scripts/run_eval.ps1 -Split eval` | 使用原评测脚本的显式配置，默认关闭会话/查询缓存/纠错/结果检查；与demo分开记账 |
@@ -71,7 +71,7 @@ $health | ConvertTo-Json -Depth 6
 
 核对`mode=demo`、`capabilities`及`limits`。`ready=true`仅指全局模型客户端已配置且Schema快照非空；`providerVerified=false`、`databaseLiveVerified=false`说明这不是付费供应商探针，也不是数据库实时心跳。Schema来自可缓存目录。无全局Key时`ready=false`但进程可正常运行；过去某个BYOK请求留下的客户端不能把全局状态变成就绪。Schema读取失败或为空返回503、`SCHEMA_UNAVAILABLE`，不回显异常细节、JDBC地址或凭据。
 
-当前HTTP只监听`127.0.0.1`，不支持其他机器直连。普通demo/baseline**没有认证或限流**；protected模式已增加单用户认证、接口速率和并发限制，但总费用配额仍未实现。同机进程仍可访问网络入口，代理/隧道也可能重新暴露服务，不应开启公网转发。`X-Api-Key`和请求中的`apiKey`是供应商BYOK凭据，不是应用登录令牌。
+当前HTTP只监听`127.0.0.1`，不支持其他机器直连。普通demo/baseline**默认没有认证、限流或金额配额**；protected模式已增加单用户认证、接口速率/并发限制和持久化配置估价配额，详见[费用验收](COST_QUOTA_20261117.md)。这不是供应商账单硬封顶。同机进程仍可访问网络入口，代理/隧道也可能重新暴露服务，不应开启公网转发。`X-Api-Key`和请求中的`apiKey`是供应商BYOK凭据，不是应用登录令牌；protected费用模式拒绝BYOK/其他模型覆盖，使用全局模型凭据与匹配价格身份。
 
 ## 5. 自检与一条真实问数
 
@@ -97,7 +97,7 @@ $result | ConvertTo-Json -Depth 8
 - 20条冻结代表题连续HTTP执行：接口成功与业务正确分别计数；保存平均/P95、全部调用账目、会话隔离与未知用量。
 - 新容器/数据卷的CSV初始化、启动、Gold200/200与真实问数1/1已完成；证据见[复现结果](CLEAN_DEMO_ACCEPTANCE_20261116.md)。同一主机验收不替代全新电脑/空依赖缓存验证。
 - 数据库只读角色无法修改业务数据，现有SQL对抗测试通过。
-- 远程模式仍须补单用户鉴权、所有会话接口保护、限流、费用上限与权限收敛；当前不宣称通过这些门禁。
+- 本机protected已完成单用户鉴权、会话接口保护、限流及持久化费用预留；远程TLS、代理边界、数据库网络权限和实际部署仍未验收，本地金额门禁也不等于供应商账单封顶。
 - 阶段3原P95、独立盲测及完整结果语义契约仍为欠项。
 
 ## 7. 技术与设计导读

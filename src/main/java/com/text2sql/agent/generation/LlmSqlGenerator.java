@@ -54,6 +54,7 @@ public class LlmSqlGenerator {
     private final AgentProperties properties;
     private final PromptTemplate promptTemplate;
     private final com.text2sql.agent.observability.LlmCallLog callLog;
+    private final com.text2sql.agent.cost.CostQuota costQuota;
 
     /** 未配置 Key 时为 null。这是刻意的：把「配置缺失」变成一个可检查的状态，而不是异常。 */
     private final ChatModel chatModel;
@@ -81,9 +82,16 @@ public class LlmSqlGenerator {
 
     public LlmSqlGenerator(AgentProperties properties, PromptTemplate promptTemplate,
                            com.text2sql.agent.observability.LlmCallLog callLog) {
+        this(properties, promptTemplate, callLog, com.text2sql.agent.cost.CostQuota.disabled());
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public LlmSqlGenerator(AgentProperties properties, PromptTemplate promptTemplate,
+                           com.text2sql.agent.observability.LlmCallLog callLog, com.text2sql.agent.cost.CostQuota costQuota) {
         this.properties = properties;
         this.promptTemplate = promptTemplate;
         this.callLog = callLog;
+        this.costQuota = costQuota;
         this.chatModel = buildChatModel(properties, properties.getLlm().getApiKey());
         if (this.chatModel == null) {
             log.warn("未配置全局 agent.llm.api-key，进入 BYOK（用户自带密钥）模式；用户可在前端输入个人 API Key 体验。");
@@ -113,6 +121,9 @@ public class LlmSqlGenerator {
     }
 
     public ChatModel resolveChatModel(String apiKeyOverride) {
+        if (costQuota.enabled() && StringUtils.hasText(apiKeyOverride)) {
+            throw new RequestBudget.Exceeded("BYOK_DISABLED_BY_COST_QUOTA");
+        }
         if (!StringUtils.hasText(apiKeyOverride)) {
             return this.chatModel;
         }
@@ -186,7 +197,7 @@ public class LlmSqlGenerator {
             if (e instanceof RequestBudget.Exceeded expired) throw expired;
             com.text2sql.agent.observability.EvaluationTrace.call(null, "CALL_FAILED", promptSha256);
             throw new GenerationException(GenerationException.Reason.CALL_FAILED,
-                    "LLM 调用失败：" + e.getMessage(), e);
+                    "模型服务调用失败，请核对服务配置或稍后重试。", e);
         }
         long latencyMs = (System.nanoTime() - started) / 1_000_000;
 
@@ -257,7 +268,7 @@ public class LlmSqlGenerator {
             if (e instanceof RequestBudget.Exceeded expired) throw expired;
             com.text2sql.agent.observability.EvaluationTrace.call(null, "CALL_FAILED_CORRECTION", promptSha256);
             throw new GenerationException(GenerationException.Reason.CALL_FAILED,
-                    "LLM 自纠错调用失败：" + e.getMessage(), e);
+                    "模型纠错调用失败，请核对服务配置或稍后重试。", e);
         }
         long latencyMs = (System.nanoTime() - started) / 1_000_000;
         String raw = extractText(response);
@@ -308,7 +319,7 @@ public class LlmSqlGenerator {
             if (e instanceof RequestBudget.Exceeded expired) throw expired;
             com.text2sql.agent.observability.EvaluationTrace.call(null, "CALL_FAILED_" + logTag, promptSha256);
             throw new GenerationException(GenerationException.Reason.CALL_FAILED,
-                    "LLM 调用失败：" + e.getMessage(), e);
+                    "模型服务调用失败，请核对服务配置或稍后重试。", e);
         }
         long latencyMs = (System.nanoTime() - started) / 1_000_000;
         String raw = extractText(response);
@@ -373,7 +384,7 @@ public class LlmSqlGenerator {
             if (e instanceof RequestBudget.Exceeded expired) throw expired;
             com.text2sql.agent.observability.EvaluationTrace.call(null, "CALL_FAILED_" + logTag, promptSha256);
             throw new GenerationException(GenerationException.Reason.CALL_FAILED,
-                    "LLM 调用失败：" + e.getMessage(), e);
+                    "模型服务调用失败，请核对服务配置或稍后重试。", e);
         }
         long latencyMs = (System.nanoTime() - started) / 1_000_000;
 
@@ -402,6 +413,9 @@ public class LlmSqlGenerator {
 
     /** 四条调用路径共用配置；provider-default 仅用于审计，绝不能发给供应商。 */
     private OpenAiChatOptions.Builder optionsBuilder(String model) {
+        if (costQuota.enabled() && !properties.getLlm().getModel().equals(model)) {
+            throw new RequestBudget.Exceeded("MODEL_DISABLED_BY_COST_QUOTA");
+        }
         var options = OpenAiChatOptions.builder()
                 .model(model)
                 .temperature(properties.getLlm().getTemperature())
@@ -480,10 +494,20 @@ public class LlmSqlGenerator {
      * 整个评估运行器挂在那里，而评估要跑 200 次。给一个明确的 60 秒上限，
      * 失败就记一次失败，继续下一条。
      */
-    private static ChatResponse invoke(ChatModel model, Prompt prompt, String hash) {
+    private ChatResponse invoke(ChatModel model, Prompt prompt, String hash) {
         RequestBudget budget = RequestBudget.current();
-        if (budget != null) budget.startModelCall(hash);
-        return model.call(prompt);
+        try (var lease = costQuota.reserve(budget == null ? java.util.UUID.randomUUID().toString() : budget.id(),
+                budget == null ? 1 : budget.callNumber() + 1, hash)) {
+            try {
+                if (budget != null) budget.startModelCall(hash);
+            } catch (RuntimeException rejectedBeforeTransport) {
+                lease.cancelUnsent();
+                throw rejectedBeforeTransport;
+            }
+            ChatResponse response = model.call(prompt);
+            lease.complete(response);
+            return response;
+        }
     }
 
     private static ChatModel buildChatModel(AgentProperties properties, String apiKey) {

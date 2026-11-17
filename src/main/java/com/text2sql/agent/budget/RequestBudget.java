@@ -183,6 +183,9 @@ public final class RequestBudget {
         String message = switch (reason) {
             case "DEADLINE_EXCEEDED" -> "请求已超过时间上限，请缩小查询范围后重试。";
             case "MODEL_CALL_LIMIT" -> "本次问题已用完模型调用次数，请简化问题后重试。";
+            case "COST_QUOTA_EXHAUSTED" -> "演示模型额度不足，已停止新的模型调用。";
+            case "COST_LEDGER_UNAVAILABLE" -> "费用账目不可用，已停止新的模型调用。";
+            case "BYOK_DISABLED_BY_COST_QUOTA", "MODEL_DISABLED_BY_COST_QUOTA" -> "受控费用模式仅允许配置的全局模型与凭据。";
             default -> "服务繁忙或请求已中断，请稍后重试。";
         };
         AgentResponse stopped = AgentResponse.failed(question,
