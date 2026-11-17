@@ -14,6 +14,10 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Locale;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * 歧义检测：问题里的词在不同口径下都说得通时，先问清楚再生成 SQL。
@@ -52,6 +56,7 @@ public class AmbiguityDetector {
     private final ObjectMapper yamlObjectMapper = new ObjectMapper(new YAMLFactory());
 
     private volatile List<Ambiguity> ambiguities = List.of();
+    private volatile List<CompiledRule> rules = List.of();
 
     @PostConstruct
     void load() {
@@ -62,8 +67,22 @@ public class AmbiguityDetector {
         }
         try (InputStream in = resource.getInputStream()) {
             AmbiguityFile file = yamlObjectMapper.readValue(in, AmbiguityFile.class);
-            this.ambiguities = file == null || file.ambiguities() == null
+            List<Ambiguity> loaded = file == null || file.ambiguities() == null
                     ? List.of() : List.copyOf(file.ambiguities());
+            var compiled = new ArrayList<CompiledRule>();
+            for (var ambiguity : loaded) {
+                var groups = new LinkedHashMap<String, List<Pattern>>();
+                for (var group : ambiguity.requiredEvidence()) {
+                    if (group.name() == null || group.name().isBlank() || group.patterns().isEmpty()
+                            || group.patterns().stream().anyMatch(p -> p == null || p.isBlank()) || groups.containsKey(group.name()))
+                        throw new IllegalArgumentException("Incomplete or duplicate clarification evidence group");
+                    groups.put(group.name(), group.patterns().stream().map(Pattern::compile).toList());
+                }
+                compiled.add(new CompiledRule(ambiguity, Map.copyOf(groups),
+                        ambiguity.unresolvedPatterns().stream().map(Pattern::compile).toList()));
+            }
+            this.ambiguities = loaded;
+            this.rules = List.copyOf(compiled);
             log.info("歧义词表已加载：{} 条", this.ambiguities.size());
         } catch (IOException e) {
             throw new UncheckedIOException("歧义词表解析失败：" + RESOURCE, e);
@@ -77,39 +96,55 @@ public class AmbiguityDetector {
     /**
      * 找出需要反问的问题。
      *
-     * <p>命中条件：问题包含 {@code term}，且不包含该条目的任何 {@code hints}。
-     * 也就是说，用户只要补上限定词，就不再触发放问——这是「问一次就够」的落地。
+     * <p>旧规则按term与hints判定；显式证据规则支持别名、必需证据组和不确定/否定拦截。
+     * 组间AND、组内OR；否定或疑问证据优先。所有来源可通过decisionsFor检查。
      *
      * @return 需要向用户确认的问题；没有歧义时返回空
      */
     public java.util.Optional<String> clarificationFor(String question) {
-        if (question == null || question.isBlank()) {
-            return java.util.Optional.empty();
-        }
-        String text = normalize(question);
-        for (Ambiguity ambiguity : ambiguities) {
-            if (ambiguity.term() == null || ambiguity.term().isBlank()) {
-                continue;
-            }
-            if (!text.contains(normalize(ambiguity.term()))) {
-                continue;
-            }
-            boolean disambiguated = ambiguity.hints().stream()
-                    .filter(h -> h != null && !h.isBlank())
-                    .anyMatch(h -> text.contains(normalize(h)));
-            if (!disambiguated) {
-                String prompt = ambiguity.question() == null || ambiguity.question().isBlank()
-                        ? "问题中的「" + ambiguity.term() + "」存在多种口径，请确认具体指哪一种。"
-                        : ambiguity.question();
-                return java.util.Optional.of(prompt);
-            }
-        }
-        return java.util.Optional.empty();
+        return decisionsFor(question).stream().filter(Decision::needsClarification).map(Decision::question).findFirst();
     }
 
-    /** 与指标匹配同一套归一化：小写 + 去空白。用户在词中间加空格不该影响判定。 */
+    /** Explicit evidence stays inspectable; merely mentioning a field is not proof of its value. */
+    public List<Decision> decisionsFor(String question) {
+        if (question == null || question.isBlank()) return List.of();
+        String text = normalize(question);
+        var decisions = new ArrayList<Decision>();
+        for (var rule : rules) {
+            var ambiguity = rule.definition();
+            var terms = new ArrayList<String>(); terms.add(ambiguity.term()); terms.addAll(ambiguity.aliases());
+            String matchedTerm = terms.stream().filter(t -> t != null && !t.isBlank())
+                    .filter(t -> text.contains(normalize(t))).findFirst().orElse(null);
+            if (matchedTerm == null) continue;
+            var evidence = new ArrayList<Evidence>(); var missing = new ArrayList<String>();
+            if (rule.groups().isEmpty()) {
+                for (var hint : ambiguity.hints()) if (hint != null && !hint.isBlank() && text.contains(normalize(hint)))
+                    evidence.add(new Evidence("legacy-hint", "hint", normalize(hint)));
+                if (evidence.isEmpty()) missing.add("legacy-hint");
+            } else {
+                // AND across required groups, OR across patterns within each group. No score threshold.
+                for (var group : ambiguity.requiredEvidence()) {
+                    int found = evidence.size();
+                    for (var pattern : rule.groups().get(group.name())) {
+                        var match = pattern.matcher(text);
+                        if (match.find()) evidence.add(new Evidence("required-pattern", group.name(), match.group()));
+                    }
+                    if (found == evidence.size()) missing.add(group.name());
+                }
+            }
+            var blockers = new ArrayList<String>();
+            for (var pattern : rule.unresolved()) { var match = pattern.matcher(text); if (match.find()) blockers.add(match.group()); }
+            String prompt = ambiguity.question() == null || ambiguity.question().isBlank()
+                    ? "问题中的「" + ambiguity.term() + "」存在多种口径，请确认具体指哪一种。" : ambiguity.question();
+            decisions.add(new Decision(ambiguity.term(), matchedTerm, List.copyOf(evidence), List.copyOf(missing),
+                    List.copyOf(blockers), !missing.isEmpty() || !blockers.isEmpty(), prompt));
+        }
+        return List.copyOf(decisions);
+    }
+
+    /** NFKC兼容全角数字，小写并去空白；只用于判定，不改写交给模型的问题原文。 */
     private static String normalize(String value) {
-        return value.toLowerCase(Locale.ROOT).replaceAll("\\s+", "");
+        return java.text.Normalizer.normalize(value, java.text.Normalizer.Form.NFKC).toLowerCase(Locale.ROOT).replaceAll("\\s+", "");
     }
 
     /**
@@ -120,11 +155,26 @@ public class AmbiguityDetector {
      * @param question 反问时对用户说的话，要给出选项而不是只说「请说清楚」
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record Ambiguity(String term, List<String> hints, String question) {
+    public record Ambiguity(String term, List<String> hints, String question, List<String> aliases,
+                            List<EvidenceGroup> requiredEvidence, List<String> unresolvedPatterns) {
+        public Ambiguity(String term, List<String> hints, String question) {
+            this(term, hints, question, List.of(), List.of(), List.of());
+        }
         public Ambiguity {
             hints = hints == null ? List.of() : List.copyOf(hints);
+            aliases = aliases == null ? List.of() : List.copyOf(aliases);
+            requiredEvidence = requiredEvidence == null ? List.of() : List.copyOf(requiredEvidence);
+            unresolvedPatterns = unresolvedPatterns == null ? List.of() : List.copyOf(unresolvedPatterns);
         }
     }
+
+    public record EvidenceGroup(String name, List<String> patterns) {
+        public EvidenceGroup { patterns = patterns == null ? List.of() : List.copyOf(patterns); }
+    }
+    public record Evidence(String source, String group, String matchedText) { }
+    public record Decision(String term, String matchedTerm, List<Evidence> evidence, List<String> missingGroups,
+                           List<String> unresolvedEvidence, boolean needsClarification, String question) { }
+    private record CompiledRule(Ambiguity definition, Map<String, List<Pattern>> groups, List<Pattern> unresolved) { }
 
     /** YAML 根结构。 */
     @JsonIgnoreProperties(ignoreUnknown = true)

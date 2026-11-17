@@ -75,8 +75,8 @@ class AmbiguityDetectorTest {
 
         for (AmbiguityDetector.Ambiguity a : detector.all()) {
             assertThat(a.term()).as("term 不能为空").isNotBlank();
-            // hints 为空会让该词永远触发反问，等于坏规则
-            assertThat(a.hints()).as("%s 缺 hints", a.term()).isNotEmpty();
+            assertThat(!a.hints().isEmpty() || !a.requiredEvidence().isEmpty())
+                    .as("%s 缺少旧限定词或显式证据组", a.term()).isTrue();
             assertThat(a.question()).as("%s 缺反问文案", a.term()).isNotBlank();
         }
     }
