@@ -1,0 +1,90 @@
+{
+  "readOnly": true,
+  "providerCalls": 0,
+  "scope": "Read-only replay of all three original SQL statements on the current unchanged database; not new model requests or a regrade",
+  "reference": {
+    "sql": "SELECT\n  COUNT(*) FILTER (WHERE order_status = 'delivered') AS delivered,\n  COUNT(*) FILTER (WHERE order_status = 'canceled')  AS canceled\nFROM orders;\n",
+    "columns": [
+      "delivered",
+      "canceled"
+    ],
+    "rows": [
+      [
+        "96478",
+        "625"
+      ]
+    ]
+  },
+  "expectedNamedCounts": {
+    "delivered": "96478",
+    "canceled": "625"
+  },
+  "rounds": [
+    {
+      "round": "r1",
+      "actual": {
+        "sql": "SELECT order_status, COUNT(*) AS order_count\nFROM orders\nWHERE order_status IN ('delivered', 'canceled')\nGROUP BY order_status\nORDER BY order_status\nLIMIT 10;",
+        "columns": [
+          "order_status",
+          "order_count"
+        ],
+        "rows": [
+          [
+            "canceled",
+            "625"
+          ],
+          [
+            "delivered",
+            "96478"
+          ]
+        ]
+      },
+      "namedCountsMatch": true,
+      "shapeMatches": false
+    },
+    {
+      "round": "r2",
+      "actual": {
+        "sql": "SELECT order_status, COUNT(*) AS order_count\nFROM orders\nWHERE order_status IN ('delivered', 'canceled')\nGROUP BY order_status\nLIMIT 10;",
+        "columns": [
+          "order_status",
+          "order_count"
+        ],
+        "rows": [
+          [
+            "canceled",
+            "625"
+          ],
+          [
+            "delivered",
+            "96478"
+          ]
+        ]
+      },
+      "namedCountsMatch": true,
+      "shapeMatches": false
+    },
+    {
+      "round": "r3",
+      "actual": {
+        "sql": "SELECT order_status, COUNT(*) AS order_count FROM orders WHERE order_status IN ('delivered', 'canceled') GROUP BY order_status ORDER BY order_status LIMIT 201",
+        "columns": [
+          "order_status",
+          "order_count"
+        ],
+        "rows": [
+          [
+            "canceled",
+            "625"
+          ],
+          [
+            "delivered",
+            "96478"
+          ]
+        ]
+      },
+      "namedCountsMatch": true,
+      "shapeMatches": false
+    }
+  ]
+}

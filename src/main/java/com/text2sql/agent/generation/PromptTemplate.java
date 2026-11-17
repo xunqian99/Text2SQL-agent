@@ -37,8 +37,8 @@ public class PromptTemplate {
      * （比如加一句「优先使用高置信度的表」），那才需要 +1，
      * 并且要重跑阶段 1 的 baseline 才能对比。
      */
-    public static final String VERSION = "p10-result-contract-v10";
-    public static final String NO_EXPLICIT_STEPS_VERSION = "p10-result-contract-v10-no-explicit-steps-v1";
+    public static final String VERSION = "p11-result-contract-v11";
+    public static final String NO_EXPLICIT_STEPS_VERSION = "p11-result-contract-v11-no-explicit-steps-v1";
 
     private final AgentProperties properties;
 
@@ -110,9 +110,10 @@ public class PromptTemplate {
                    - 查询承运商配送时长时，直接使用 shipments 表的 (delivered_at - shipped_at)，无需关联轨迹表。
                    - 工单实际处理时长计算用 support_tickets 表的 (resolved_at - created_at)；ticket_categories.sla_hours 仅为时限标准而非实际耗时。
                 17. 对比结果的列与行契约：
-                   - 同一指标在多个维度值上的对比（如“A和B各有多少笔”），默认输出维度列、指标列，每个维度值一行；时间维度按时间升序。不要擅自把每个年份或类别做成不同列。
-                   - 用户明确要求横表/每个维度值一列时，才使用横向条件聚合；同一时期的多个不同指标仍按题目要求各占一列，不能把GMV与销售额强行变成维度行。
-                   - 已注册指标明确规定输出形状（如同比多列）时遵循该指标的输出约束；用户显式形状要求优先于指标默认形状，不能改动指标的时间范围、分母或单位。
+                   - 用户明确要求横表/纵表、指定列或每个条件一行时，以该要求为准；其次遵循已注册METRIC的输出形状，最后才使用以下默认约定。形状选择不能改动时间范围、事实粒度、过滤、分母或单位。
+                   - 按时间比较同一指标，或明确要求按维度分组/每种/分布时，输出维度列、指标列，每个维度值一行；时间维度按时间升序。不要因为列举了年份就自动转成多列。
+                   - 未要求分组、只点名多个非时间业务子集的记录计数时，将它们作为多个具名计数指标，一行内按题目点名顺序各占一列；用条件聚合分别计数，不额外投影状态/类型列。某子集无记录计为0，空输入也返回一行各计数为0；不要因一组为空丢掉该计数。
+                   - 多个不同指标按题目顺序各占一列；若同时要求每州/每月等分组，则每组一行、组内各指标一列。不要把GMV与销售额强行变成维度行，也不要把复购率等非计数指标套用具名子集计数规则。
                 18. 复杂多表关联时，可在 SELECT 语句首行添加一行以 -- 开头的单行注释说明思路，之后紧接完整 SQL。
                 """.strip();
         if (properties.getPrompt().isExplicitReasoningEnabled()) return prompt;

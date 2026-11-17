@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class PromptVariantTest {
     @Test void contractVersionChangesOnlyUnitAndComparisonRulesFromArchivedP9() throws Exception {
         var template = new PromptTemplate();
-        assertThat(template.version()).isEqualTo("p10-result-contract-v10");
+        assertThat(template.version()).isEqualTo("p11-result-contract-v11");
         try (var in = getClass().getResourceAsStream("/prompts/p9-system.txt")) {
             assertThat(in).isNotNull();
             String archived = new String(in.readAllBytes(), StandardCharsets.UTF_8);
@@ -38,6 +38,18 @@ class PromptVariantTest {
         }
     }
 
+    @Test void countComparisonVersionChangesOnlyRule17FromArchivedP10() throws Exception {
+        try (var in = getClass().getResourceAsStream("/prompts/p10-system.txt")) {
+            assertThat(in).isNotNull();
+            String before = new String(in.readAllBytes(), StandardCharsets.UTF_8);
+            assertThat(HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(before.getBytes(StandardCharsets.UTF_8))))
+                    .isEqualTo("1e166d2c5a9aff16bfd7ba02199236e1d5627cfd19c38d4e7efdcae1aa4b21c8");
+            String after = new PromptTemplate().systemPrompt();
+            assertThat(after.substring(0, after.indexOf("17. 对比"))).isEqualTo(before.substring(0, before.indexOf("17. 对比")));
+            assertThat(after.substring(after.indexOf("18. 复杂"))).isEqualTo(before.substring(before.indexOf("18. 复杂")));
+        }
+    }
+
     @Test void candidateChangesOnlyTheArchived259UnitSection() {
         String full = new PromptTemplate().systemPrompt();
         var props = new AgentProperties();
@@ -48,7 +60,7 @@ class PromptVariantTest {
         assertThat(shortened).isEqualTo(full.replace(full.substring(full.indexOf("思考与推理步骤"), full.indexOf("硬性规则")), ""));
         assertThat(shortened.substring(shortened.indexOf("硬性规则")))
                 .isEqualTo(full.substring(full.indexOf("硬性规则")));
-        assertThat(candidate.version()).isEqualTo("p10-result-contract-v10-no-explicit-steps-v1");
+        assertThat(candidate.version()).isEqualTo("p11-result-contract-v11-no-explicit-steps-v1");
         var schema = new SchemaContext(List.of(), List.of(), "画像", "CREATE TABLE orders(order_id text);");
         assertThat(candidate.userPrompt(schema, "订单有多少？")).isEqualTo(new PromptTemplate().userPrompt(schema, "订单有多少？"));
         assertThat(candidate.correctionPrompt(schema, "订单有多少？", "SELECT 0", "请修正"))
