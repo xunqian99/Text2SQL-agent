@@ -1,0 +1,67 @@
+{
+  "body" : {
+    "status" : "SUCCESS",
+    "sql" : "SELECT c.customer_state,\n       ROUND((AVG(EXTRACT(EPOCH FROM (o.order_delivered_customer_date - o.order_purchase_timestamp)) / 86400.0))::numeric, 2) AS avg_delivery_days\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nWHERE o.order_delivered_customer_date IS NOT NULL\nGROUP BY c.customer_state\nORDER BY avg_delivery_days DESC\nLIMIT 100;",
+    "message" : null,
+    "violations" : [ ],
+    "columns" : [ "customer_state", "avg_delivery_days" ],
+    "rows" : [ [ "RR", "29.39" ], [ "AP", "27.19" ], [ "AM", "26.43" ], [ "AL", "24.54" ], [ "PA", "23.77" ], [ "MA", "21.57" ], [ "SE", "21.52" ], [ "CE", "21.27" ], [ "AC", "21.04" ], [ "PB", "20.43" ], [ "PI", "19.46" ], [ "RO", "19.37" ], [ "BA", "19.34" ], [ "RN", "19.28" ], [ "PE", "18.45" ], [ "MT", "18.06" ], [ "TO", "17.66" ], [ "ES", "15.79" ], [ "MS", "15.62" ], [ "GO", "15.61" ], [ "RJ", "15.31" ], [ "RS", "15.30" ], [ "SC", "14.96" ], [ "DF", "12.97" ], [ "MG", "12.01" ], [ "PR", "11.99" ], [ "SP", "8.76" ] ],
+    "truncated" : false,
+    "rewritten" : false,
+    "rowCount" : 27,
+    "schemaTableCount" : 8,
+    "retrievedTables" : [ "shipments", "customers", "geolocation", "shipping_addresses", "warehouses", "orders", "shipment_tracking", "members" ],
+    "schemaDdlChars" : 1772,
+    "llm" : {
+      "model" : "deepseek-flash",
+      "promptTokens" : 2701,
+      "completionTokens" : 407,
+      "totalTokens" : 3108,
+      "latencyMs" : 2009,
+      "costYuan" : 0.0018202
+    },
+    "timings" : {
+      "retrievalMs" : 10,
+      "generationMs" : 2012,
+      "validationMs" : 9,
+      "executionMs" : 85,
+      "totalMs" : 2120
+    },
+    "sessionId" : "identity-original-order-clock-control",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "4842fcab-176d-494a-9e43-d35974d2577d",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 1,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 2120,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "EXPLAIN" : 4,
+        "VALIDATION" : 9,
+        "ADMISSION" : 0,
+        "SESSION" : 0,
+        "EXECUTION" : 81,
+        "MODEL" : 1974,
+        "GENERATION" : 38,
+        "CACHE" : 0,
+        "CONVERSATION" : 0,
+        "RETRIEVAL" : 10,
+        "RESULT_CHECK" : 0,
+        "CACHE_WRITE" : 0,
+        "CLARIFICATION" : 0
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 4,
+      "currentStageMs" : 0
+    }
+  },
+  "id" : "original-order-clock-control",
+  "httpStatus" : 200,
+  "wallMs" : 2126
+}

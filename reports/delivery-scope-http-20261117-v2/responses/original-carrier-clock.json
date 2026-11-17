@@ -1,0 +1,67 @@
+{
+  "body" : {
+    "status" : "SUCCESS",
+    "sql" : "SELECT s.carrier,\n       ROUND((AVG(EXTRACT(EPOCH FROM (s.delivered_at - s.shipped_at)) / 86400.0))::numeric, 2) AS avg_delivery_days\nFROM shipments s\nWHERE s.delivered_at IS NOT NULL\n  AND s.shipped_at IS NOT NULL\nGROUP BY s.carrier\nORDER BY avg_delivery_days DESC\nLIMIT 100;",
+    "message" : null,
+    "violations" : [ ],
+    "columns" : [ "carrier", "avg_delivery_days" ],
+    "rows" : [ [ "Loggi", "9.36" ], [ "Jadlog", "9.34" ], [ "Correios", "9.32" ], [ "Total Express", "9.27" ] ],
+    "truncated" : false,
+    "rewritten" : false,
+    "rowCount" : 4,
+    "schemaTableCount" : 4,
+    "retrievedTables" : [ "shipments", "warehouses", "orders", "shipment_tracking" ],
+    "schemaDdlChars" : 907,
+    "llm" : {
+      "model" : "deepseek-flash",
+      "promptTokens" : 2428,
+      "completionTokens" : 115,
+      "totalTokens" : 2543,
+      "latencyMs" : 1492,
+      "costYuan" : 7.5552E-4
+    },
+    "timings" : {
+      "retrievalMs" : 82,
+      "generationMs" : 1502,
+      "validationMs" : 10,
+      "executionMs" : 83,
+      "totalMs" : 1687
+    },
+    "sessionId" : "identity-original-carrier-clock",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "5aaa6bf2-0672-490a-8468-8a67b47d43aa",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 1,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 1687,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "EXPLAIN" : 28,
+        "VALIDATION" : 8,
+        "ADMISSION" : 2,
+        "SESSION" : 0,
+        "EXECUTION" : 55,
+        "MODEL" : 1485,
+        "GENERATION" : 17,
+        "CACHE" : 0,
+        "CONVERSATION" : 3,
+        "RETRIEVAL" : 82,
+        "RESULT_CHECK" : 2,
+        "CACHE_WRITE" : 0,
+        "CLARIFICATION" : 1
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 10,
+      "currentStageMs" : 3
+    }
+  },
+  "id" : "original-carrier-clock",
+  "httpStatus" : 200,
+  "wallMs" : 1899
+}

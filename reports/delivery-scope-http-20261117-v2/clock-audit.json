@@ -1,0 +1,33 @@
+{
+  "passed" : 3,
+  "results" : {
+    "original-order-clock-control" : {
+      "status" : "PASS",
+      "reason" : "AVG clock matches required sources",
+      "tableAliases" : {
+        "o" : "orders",
+        "c" : "customers"
+      },
+      "avgColumns" : [ "orders.order_delivered_customer_date", "orders.order_purchase_timestamp" ]
+    },
+    "explicit-order-clock-by-carrier" : {
+      "status" : "PASS",
+      "reason" : "AVG clock matches required sources",
+      "tableAliases" : {
+        "s" : "shipments",
+        "o" : "orders"
+      },
+      "avgColumns" : [ "orders.order_delivered_customer_date", "orders.order_purchase_timestamp" ]
+    },
+    "original-carrier-clock" : {
+      "status" : "PASS",
+      "reason" : "AVG clock matches required sources",
+      "tableAliases" : {
+        "s" : "shipments"
+      },
+      "avgColumns" : [ "shipments.delivered_at", "shipments.shipped_at" ]
+    }
+  },
+  "clockCases" : 3,
+  "providerCalls" : 0
+}

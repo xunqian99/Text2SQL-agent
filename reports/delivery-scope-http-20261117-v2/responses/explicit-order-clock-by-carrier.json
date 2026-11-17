@@ -1,0 +1,67 @@
+{
+  "body" : {
+    "status" : "SUCCESS",
+    "sql" : "SELECT s.carrier, ROUND((AVG(EXTRACT(EPOCH FROM (o.order_delivered_customer_date - o.order_purchase_timestamp)) / 86400.0))::numeric, 2) AS avg_delivery_days\nFROM shipments s\nJOIN orders o ON o.order_id = s.order_id\nWHERE o.order_delivered_customer_date IS NOT NULL\nGROUP BY s.carrier\nORDER BY s.carrier\nLIMIT 100;",
+    "message" : null,
+    "violations" : [ ],
+    "columns" : [ "carrier", "avg_delivery_days" ],
+    "rows" : [ [ "Correios", "12.54" ], [ "Jadlog", "12.57" ], [ "Loggi", "12.59" ], [ "Total Express", "12.48" ] ],
+    "truncated" : false,
+    "rewritten" : false,
+    "rowCount" : 4,
+    "schemaTableCount" : 8,
+    "retrievedTables" : [ "orders", "shipments", "customers", "order_items", "order_payments", "order_reviews", "warehouses", "coupon_usages" ],
+    "schemaDdlChars" : 1713,
+    "llm" : {
+      "model" : "deepseek-flash",
+      "promptTokens" : 2611,
+      "completionTokens" : 399,
+      "totalTokens" : 3010,
+      "latencyMs" : 2251,
+      "costYuan" : 0.0023254
+    },
+    "timings" : {
+      "retrievalMs" : 4,
+      "generationMs" : 2252,
+      "validationMs" : 3,
+      "executionMs" : 83,
+      "totalMs" : 2345
+    },
+    "sessionId" : "identity-explicit-order-clock-by-carrier",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "ea0b9109-76f1-4c11-9b81-67b1d0d1b74c",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 1,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 2345,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "EXPLAIN" : 4,
+        "VALIDATION" : 3,
+        "ADMISSION" : 0,
+        "SESSION" : 0,
+        "EXECUTION" : 79,
+        "MODEL" : 2215,
+        "GENERATION" : 37,
+        "CACHE" : 0,
+        "CONVERSATION" : 0,
+        "RETRIEVAL" : 4,
+        "RESULT_CHECK" : 0,
+        "CACHE_WRITE" : 0,
+        "CLARIFICATION" : 0
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 3,
+      "currentStageMs" : 0
+    }
+  },
+  "id" : "explicit-order-clock-by-carrier",
+  "httpStatus" : 200,
+  "wallMs" : 2348
+}
