@@ -21,16 +21,18 @@
 ```powershell
 python reports/offpeak-policy-20261117/audit_evidence.py
 python reports/demo-http-20-20261117/audit_protocol.py
-$demoCp = 'target/test-classes;target/classes;' + (Get-Content target/demo-http-classpath.txt -Raw).Trim()
+python reports/demo-caller-binding-20261117/audit_binding.py
 # 仅在空闲时段，独立终端启动：
 powershell -NoProfile -ExecutionPolicy Bypass -File reports/demo-http-20-20261117/start_cold_jar.ps1
 # 另开终端，以同一classpath运行一次：
-java -cp $demoCp com.text2sql.agent.acceptance.DemoHttpAcceptanceProbe run reports/demo-http-20-20261117 http://127.0.0.1:18087
+python reports/demo-caller-binding-20261117/invoke_probe.py run
 # 停止该独立应用并等日志关闭后：
-java -cp $demoCp com.text2sql.agent.acceptance.DemoHttpAcceptanceProbe summarize reports/demo-http-20-20261117
+python reports/demo-caller-binding-20261117/invoke_probe.py summarize
 ```
 
 每条调用方时间判定保存于window-checks，应用再次约束其中的生成/改写/纠错。若中途拒绝或产生未知用量，保留全部记录，禁止清空requests重新跑择优；仍以原20条分母报告未完成状态。未发送的高峰起跑预检未创建requests，可在18:00以同一冻结协议进行首次真实运行。
+
+**调用工具补充绑定**：原说明从工作目录target取调用方类路径，仅服务端绑定冷构建包，存在旧编译产物混入风险。现在由reports/demo-caller-binding-20261117/invoke_probe.py核对冷构建的211个生产条目、98个测试类/资源、114个依赖JAR后调用原DemoHttpAcceptanceProbe，移除类路径空项且不使用工作目录target。原协议/Gold/评分器/启动器未变。wrapper仅向本机固定18087发HTTP，不继承模型Key或Spring/JVM覆盖。真实时钟15:20预检在健康HTTP前因PEAK_HOURS拒绝，正式requests仍不存在、供应商0次。初次隐藏Java子进程未转发stdout/stderr产生空诊断日志，原wrapper/绑定/日志单列保留；明确转发后取得拒绝证据，没有付费重跑。该补充只绑定测量工具，不改变模型请求或答案判定。
 
 启动器在创建应用进程前核对JAR/自身/协议/个人配置SHA和保护源码身份，缺失或不符即停止，不自行换包或重建替代；API Key只通过子进程环境继承。预览命令加-Preview，不读取Key、不启动应用。首轮预览发现PowerShell5.1默认ANSI读取UTF-8中文协议失败，已改为明确-Encoding UTF8，旧启动器/计划与原因保留于initial-*和launcher-preview-adjustment.json；不属于模型失败或付费重跑。之后预览通过，后续实际demo健康检查仍由20条工具起跑门禁核对。
 

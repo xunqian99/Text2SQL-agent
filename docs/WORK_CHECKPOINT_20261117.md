@@ -2,6 +2,8 @@
 
 ## 最新目标覆盖：空闲时段评测（2026-11-17）
 
+**18点调用工具命令更新**：原文档$demoCp来自工作目录target，已补成冷构建调用方绑定。先python reports/demo-caller-binding-20261117/audit_binding.py，再以invoke_probe.py run/summarize代替手写java -cp命令；服务端仍用原start_cold_jar.ps1，不改原20条协议/Gold/评分器/产物。wrapper核对211生产条目、98测试类/资源、114依赖JAR/116非空类路径和个人local指纹，cwd为项目根以供原工具验证Git/题库；调用进程不继承模型Key、Spring/JVM覆盖。实际15:20高峰预检在健康HTTP前拒绝、无requests/供应商0次。初次stdout/stderr未显式转发的空日志保留initial-output-capture，修复的是wrapper诊断，不是题目/业务源码。此后的新20条正式运行只执行一次，不能把两个未发送预检算成付费运行或择优。
+
 **当前构建保护HTTP复验**：见[PROTECTED_CURRENT_ACCEPTANCE_20261117.md](PROTECTED_CURRENT_ACCEPTANCE_20261117.md)。reports/protected-current-20261117从冷构建classes/test-classes＋114缓存依赖启动原Access/Cost探针，211生产条目与JAR逐字节相同；认证36/36、费用4/4组，合成5次/供应商0次/费用0。98测试类/资源身份绑定；未重跑Java或Gold、不改源码/探针/原题。5进程26628/18484/31544/44748/41500均退出，端口55056/55068/57391/59965/59974关闭；复用15433隔离库后已停止，卷保留，原库仍运行。audit_evidence.py --live-inputs通过；不能称java -jar启动或真实模型验证。18点原20条和隔离1条安排不变，不追加其他评测批次。
 
 **同机隔离整链路补验**：见[ISOLATED_CHAIN_ACCEPTANCE_20261117.md](ISOLATED_CHAIN_ACCEPTANCE_20261117.md)。保留冷构建JAR/源码/缓存，公开模板另复制到Temp独立配置，新建text2sql-clean-chain-20261117及独立卷、15433本机端口。6脚本成功、37业务＋4持久化表/2,616,948行、两账号业务表可写0和4实际拒绝；新包demo无Key健康200/问数503，5个带ApplicationName的ro连接；Gold200/200、进程35,666ms、供应商0次。Java39596/30400退出、端口53407关闭，新库已停止并保留卷，原库仍运行。39制品离线manifest审计通过。首次Python→PS5.1继承PS7模块路径导致Get-FileHash失败，在创建资源前退出，initial-attempt保留；只改验收runner的子进程模块路径，不改源代码/用户环境。run_chain.py、协议、配置、JAR均已绑定，真实1条尚未执行。
