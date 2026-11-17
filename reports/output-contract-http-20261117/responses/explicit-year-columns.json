@@ -1,0 +1,67 @@
+{
+  "body" : {
+    "status" : "SUCCESS",
+    "sql" : "SELECT COUNT(*) FILTER (WHERE EXTRACT(YEAR FROM order_purchase_timestamp) = 2017) AS orders_2017, COUNT(*) FILTER (WHERE EXTRACT(YEAR FROM order_purchase_timestamp) = 2018) AS orders_2018 FROM orders LIMIT 201",
+    "message" : null,
+    "violations" : [ ],
+    "columns" : [ "orders_2017", "orders_2018" ],
+    "rows" : [ [ "45101", "54011" ] ],
+    "truncated" : false,
+    "rewritten" : true,
+    "rowCount" : 1,
+    "schemaTableCount" : 8,
+    "retrievedTables" : [ "orders", "customers", "order_items", "order_payments", "order_reviews", "coupon_usages", "refund_items", "refunds" ],
+    "schemaDdlChars" : 1573,
+    "llm" : {
+      "model" : "deepseek-flash",
+      "promptTokens" : 2344,
+      "completionTokens" : 362,
+      "totalTokens" : 2706,
+      "latencyMs" : 2065,
+      "costYuan" : 0.00165952
+    },
+    "timings" : {
+      "retrievalMs" : 5,
+      "generationMs" : 2067,
+      "validationMs" : 8,
+      "executionMs" : 24,
+      "totalMs" : 2107
+    },
+    "sessionId" : "identity-explicit-year-columns",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "ebf71e4e-9452-40a7-a55b-d2aa7a172c4f",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 1,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 2107,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "EXPLAIN" : 3,
+        "VALIDATION" : 8,
+        "ADMISSION" : 0,
+        "SESSION" : 0,
+        "EXECUTION" : 21,
+        "MODEL" : 2060,
+        "GENERATION" : 7,
+        "CACHE" : 0,
+        "CONVERSATION" : 0,
+        "RETRIEVAL" : 5,
+        "RESULT_CHECK" : 0,
+        "CACHE_WRITE" : 0,
+        "CLARIFICATION" : 0
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 3,
+      "currentStageMs" : 0
+    }
+  },
+  "id" : "explicit-year-columns",
+  "httpStatus" : 200,
+  "wallMs" : 2111
+}

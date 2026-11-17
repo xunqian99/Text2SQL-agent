@@ -1,0 +1,67 @@
+{
+  "body" : {
+    "status" : "SUCCESS",
+    "sql" : "SELECT ROUND(COUNT(*) FILTER (WHERE order_cnt >= 2)::numeric / NULLIF(COUNT(*), 0), 4) AS repeat_rate FROM (SELECT c.customer_unique_id, COUNT(*) AS order_cnt FROM customers c JOIN orders o ON o.customer_id = c.customer_id WHERE o.order_status NOT IN ('canceled', 'unavailable') AND c.customer_unique_id IS NOT NULL GROUP BY c.customer_unique_id) t LIMIT 201",
+    "message" : null,
+    "violations" : [ ],
+    "columns" : [ "repeat_rate" ],
+    "rows" : [ [ "0.0304" ] ],
+    "truncated" : false,
+    "rewritten" : true,
+    "rowCount" : 1,
+    "schemaTableCount" : 8,
+    "retrievedTables" : [ "customers", "orders", "order_items", "order_payments", "order_reviews", "coupon_usages", "members", "refund_items" ],
+    "schemaDdlChars" : 1245,
+    "llm" : {
+      "model" : "deepseek-flash",
+      "promptTokens" : 2901,
+      "completionTokens" : 483,
+      "totalTokens" : 3384,
+      "latencyMs" : 2586,
+      "costYuan" : 0.00219876
+    },
+    "timings" : {
+      "retrievalMs" : 2,
+      "generationMs" : 2587,
+      "validationMs" : 4,
+      "executionMs" : 82,
+      "totalMs" : 2679
+    },
+    "sessionId" : "identity-explicit-repeat-decimal",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "5474b6de-0f63-425b-8a9a-45a85849f708",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 1,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 2679,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "EXPLAIN" : 2,
+        "VALIDATION" : 4,
+        "ADMISSION" : 0,
+        "SESSION" : 0,
+        "EXECUTION" : 80,
+        "MODEL" : 2575,
+        "GENERATION" : 12,
+        "CACHE" : 0,
+        "CONVERSATION" : 0,
+        "RETRIEVAL" : 2,
+        "RESULT_CHECK" : 0,
+        "CACHE_WRITE" : 0,
+        "CLARIFICATION" : 0
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 4,
+      "currentStageMs" : 0
+    }
+  },
+  "id" : "explicit-repeat-decimal",
+  "httpStatus" : 200,
+  "wallMs" : 2683
+}

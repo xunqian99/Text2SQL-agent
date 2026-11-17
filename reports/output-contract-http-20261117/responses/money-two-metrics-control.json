@@ -1,0 +1,67 @@
+{
+  "body" : {
+    "status" : "SUCCESS",
+    "sql" : "SELECT ROUND(SUM(oi.price + oi.freight_value), 2) AS gmv_with_freight, ROUND(SUM(oi.price), 2) AS sales_excl_freight FROM orders o JOIN order_items oi ON oi.order_id = o.order_id WHERE o.order_purchase_timestamp >= '2018-01-01' AND o.order_purchase_timestamp < '2019-01-01' AND o.order_status NOT IN ('canceled', 'unavailable') LIMIT 201",
+    "message" : null,
+    "violations" : [ ],
+    "columns" : [ "gmv_with_freight", "sales_excl_freight" ],
+    "rows" : [ [ "8593303.96", "7341182.41" ] ],
+    "truncated" : false,
+    "rewritten" : true,
+    "rowCount" : 1,
+    "schemaTableCount" : 6,
+    "retrievedTables" : [ "order_items", "orders", "products", "sellers", "refund_items", "settlement_items" ],
+    "schemaDdlChars" : 1264,
+    "llm" : {
+      "model" : "deepseek-flash",
+      "promptTokens" : 2409,
+      "completionTokens" : 382,
+      "totalTokens" : 2791,
+      "latencyMs" : 2057,
+      "costYuan" : 0.00255716
+    },
+    "timings" : {
+      "retrievalMs" : 2,
+      "generationMs" : 2057,
+      "validationMs" : 2,
+      "executionMs" : 50,
+      "totalMs" : 2116
+    },
+    "sessionId" : "identity-money-two-metrics-control",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "a41d42f5-c2a9-431d-91f9-163ea80d5475",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 1,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 2116,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "EXPLAIN" : 3,
+        "VALIDATION" : 2,
+        "ADMISSION" : 0,
+        "SESSION" : 0,
+        "EXECUTION" : 47,
+        "MODEL" : 2051,
+        "GENERATION" : 6,
+        "CACHE" : 0,
+        "CONVERSATION" : 0,
+        "RETRIEVAL" : 2,
+        "RESULT_CHECK" : 0,
+        "CACHE_WRITE" : 0,
+        "CLARIFICATION" : 0
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 5,
+      "currentStageMs" : 0
+    }
+  },
+  "id" : "money-two-metrics-control",
+  "httpStatus" : 200,
+  "wallMs" : 2120
+}
