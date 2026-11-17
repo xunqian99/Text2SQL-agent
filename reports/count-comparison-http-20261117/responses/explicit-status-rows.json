@@ -1,0 +1,67 @@
+{
+  "httpStatus" : 200,
+  "id" : "explicit-status-rows",
+  "body" : {
+    "status" : "SUCCESS",
+    "sql" : "SELECT order_status, COUNT(*) AS order_count FROM orders WHERE order_status IN ('delivered', 'canceled') GROUP BY order_status ORDER BY order_status ASC LIMIT 201",
+    "message" : null,
+    "violations" : [ ],
+    "columns" : [ "order_status", "order_count" ],
+    "rows" : [ [ "canceled", "625" ], [ "delivered", "96478" ] ],
+    "truncated" : false,
+    "rewritten" : true,
+    "rowCount" : 2,
+    "schemaTableCount" : 8,
+    "retrievedTables" : [ "orders", "customers", "order_items", "order_payments", "order_reviews", "coupon_usages", "refund_items", "refunds" ],
+    "schemaDdlChars" : 1346,
+    "llm" : {
+      "model" : "deepseek-flash",
+      "promptTokens" : 2504,
+      "completionTokens" : 75,
+      "totalTokens" : 2579,
+      "latencyMs" : 1373,
+      "costYuan" : 0.00117328
+    },
+    "timings" : {
+      "retrievalMs" : 3,
+      "generationMs" : 1375,
+      "validationMs" : 6,
+      "executionMs" : 9,
+      "totalMs" : 1397
+    },
+    "sessionId" : "identity-explicit-status-rows",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "a04fa2c4-2f09-4ce9-9214-5873f9179d43",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 1,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 1397,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "GENERATION" : 7,
+        "MODEL" : 1368,
+        "EXECUTION" : 6,
+        "SESSION" : 0,
+        "ADMISSION" : 0,
+        "VALIDATION" : 6,
+        "EXPLAIN" : 3,
+        "CLARIFICATION" : 0,
+        "CACHE_WRITE" : 0,
+        "RESULT_CHECK" : 0,
+        "RETRIEVAL" : 3,
+        "CONVERSATION" : 0,
+        "CACHE" : 0
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 4,
+      "currentStageMs" : 0
+    }
+  },
+  "wallMs" : 1403
+}
