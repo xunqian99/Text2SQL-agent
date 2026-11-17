@@ -15,6 +15,8 @@ public class GenerationException extends RuntimeException {
     public enum Reason {
         /** 没配 API Key，压根没调用。属于环境问题，不计入模型错误。 */
         NOT_CONFIGURED,
+        /** Local pricing-window policy refused the request before transport. */
+        OFF_PEAK_REQUIRED,
         /** 调用失败（网络、超时、限流、鉴权）。属于基础设施问题。 */
         CALL_FAILED,
         /** 调用成功但返回内容里提不出合法 SQL。属于模型质量问题。 */

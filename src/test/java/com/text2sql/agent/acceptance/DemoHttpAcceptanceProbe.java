@@ -104,6 +104,9 @@ public final class DemoHttpAcceptanceProbe {
         protocol.put("latency", "HTTP wall clock, nearest-rank P95=sorted[ceil(.95*N)-1]; failures included");
         protocol.put("comparison", "unchanged ResultNormalizer; successful non-truncated response vs frozen Gold; aliases not graded");
         protocol.put("unknownUsage", "any unknown or unmatched call prevents complete-cost claim");
+        protocol.put("offPeakPolicy", Map.of("version", com.text2sql.agent.budget.DeepSeekOffPeakPolicy.VERSION,
+                "source", com.text2sql.agent.budget.DeepSeekOffPeakPolicy.SOURCE, "zone", "Asia/Shanghai",
+                "guardSeconds", 120, "holidays", "unverified weekday holidays conservatively treated as peak"));
         protocol.put("pricesYuanPer1k", Map.of("cacheHit", 0.00002, "cacheMiss", 0.001, "output", 0.004));
         protocol.put("cases", cases);
         Files.createDirectories(dir);
@@ -140,6 +143,8 @@ public final class DemoHttpAcceptanceProbe {
 
     private void run(Path dir) throws Exception {
         JsonNode protocol = verifyProtocol(dir);
+        var offPeak = new com.text2sql.agent.budget.DeepSeekOffPeakPolicy(java.time.Clock.systemUTC());
+        offPeak.requireAllowed();
         require(!Files.exists(dir.resolve("requests")), "Run already started; never replay paid calls into this archive");
         var initial = exchange("GET", "/api/health", null);
         JsonNode health = initial.path("body");
@@ -158,9 +163,13 @@ public final class DemoHttpAcceptanceProbe {
         writeNew(dir.resolve("sessions-before.json"), sessions);
         writeNew(dir.resolve("run-start.json"), Map.of("at", Instant.now().toString(), "commit", git("rev-parse", "HEAD"), "baseUrl", base.toString()));
         Files.createDirectory(dir.resolve("requests"));
+        Files.createDirectory(dir.resolve("window-checks"));
         int index = 0;
         for (JsonNode raw : protocol.path("cases")) {
             verifyProtocol(dir);
+            var decision = offPeak.evaluate(Duration.ofMinutes(2));
+            writeNew(dir.resolve("window-checks/%02d.json".formatted(index + 1)), decision);
+            if (!decision.allowed()) throw new com.text2sql.agent.budget.DeepSeekOffPeakPolicy.Rejected(decision);
             Scenario item = JSON.treeToValue(raw, Scenario.class);
             var response = exchange("POST", "/api/ask", Map.of("question", item.question(), "sessionId", item.sessionId()));
             JsonNode body = response.path("body");

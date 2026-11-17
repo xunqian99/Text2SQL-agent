@@ -115,6 +115,11 @@ public class EvalRunner implements ApplicationRunner {
         List<EvalItem> items = loader.load();
         suiteIdentity = EvalSuiteGuard.verify(properties, loader, items, exampleLoader.getExamples());
         boolean dryRun = properties.getEval().isDryRun();
+        if (!dryRun && com.text2sql.agent.budget.DeepSeekOffPeakPolicy.appliesTo(
+                java.net.URI.create(properties.getLlm().getBaseUrl()), properties.getLlm().getModel())) {
+            new com.text2sql.agent.budget.DeepSeekOffPeakPolicy(java.time.Clock.systemUTC())
+                    .requireAllowed(com.text2sql.agent.budget.DeepSeekOffPeakPolicy.horizon(properties.getLlm().getTimeoutSeconds()));
+        }
 
         if (!dryRun && properties.getLlm().getApiKey().isBlank()) {
             throw new IllegalStateException("真实评测缺少 agent.llm.api-key，已在模型调用前终止；请配置环境变量或使用 dry-run");

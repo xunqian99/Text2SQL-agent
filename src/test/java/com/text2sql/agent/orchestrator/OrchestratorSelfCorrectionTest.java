@@ -77,6 +77,20 @@ class OrchestratorSelfCorrectionTest {
     }
 
     @Test
+    void peakPricingRefusalCannotTriggerSelfCorrection() {
+        properties.getSelfCorrection().setEnabled(true);
+        properties.getSelfCorrection().setMaxAttempts(2);
+        when(generator.isConfigured()).thenReturn(true);
+        when(generator.generate(anyString(), any(SchemaContext.class))).thenThrow(new GenerationException(
+                GenerationException.Reason.OFF_PEAK_REQUIRED, "DeepSeek high-price window; unsent"));
+        var response = orchestrator().ask("count orders");
+        assertThat(response.status()).isEqualTo(AgentResponse.Status.GENERATION_FAILED);
+        assertThat(response.message()).contains("unsent");
+        verify(generator, times(1)).generate(anyString(), any(SchemaContext.class));
+        verify(executor, never()).execute(anyString());
+    }
+
+    @Test
     void metricDefinitionChangeCannotReuseAnOldCachedSql() {
         properties.getCache().setEnabled(true);
         properties.getSemantic().setEnabled(true);

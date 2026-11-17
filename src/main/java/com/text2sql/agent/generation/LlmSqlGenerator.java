@@ -55,6 +55,8 @@ public class LlmSqlGenerator {
     private final PromptTemplate promptTemplate;
     private final com.text2sql.agent.observability.LlmCallLog callLog;
     private final com.text2sql.agent.cost.CostQuota costQuota;
+    private final com.text2sql.agent.budget.DeepSeekOffPeakPolicy offPeak =
+            new com.text2sql.agent.budget.DeepSeekOffPeakPolicy(java.time.Clock.systemUTC());
 
     /** 未配置 Key 时为 null。这是刻意的：把「配置缺失」变成一个可检查的状态，而不是异常。 */
     private final ChatModel chatModel;
@@ -195,6 +197,7 @@ public class LlmSqlGenerator {
             response = invoke(targetModel, new Prompt(messages, options), promptSha256);
         } catch (Exception e) {
             if (e instanceof RequestBudget.Exceeded expired) throw expired;
+            if (e instanceof com.text2sql.agent.budget.DeepSeekOffPeakPolicy.Rejected rejected) throw rejected;
             com.text2sql.agent.observability.EvaluationTrace.call(null, "CALL_FAILED", promptSha256);
             throw new GenerationException(GenerationException.Reason.CALL_FAILED,
                     "模型服务调用失败，请核对服务配置或稍后重试。", e);
@@ -266,6 +269,7 @@ public class LlmSqlGenerator {
             response = invoke(targetModel, new Prompt(messages, options), promptSha256);
         } catch (Exception e) {
             if (e instanceof RequestBudget.Exceeded expired) throw expired;
+            if (e instanceof com.text2sql.agent.budget.DeepSeekOffPeakPolicy.Rejected rejected) throw rejected;
             com.text2sql.agent.observability.EvaluationTrace.call(null, "CALL_FAILED_CORRECTION", promptSha256);
             throw new GenerationException(GenerationException.Reason.CALL_FAILED,
                     "模型纠错调用失败，请核对服务配置或稍后重试。", e);
@@ -317,6 +321,7 @@ public class LlmSqlGenerator {
             response = invoke(targetModel, new Prompt(messages, options), promptSha256);
         } catch (Exception e) {
             if (e instanceof RequestBudget.Exceeded expired) throw expired;
+            if (e instanceof com.text2sql.agent.budget.DeepSeekOffPeakPolicy.Rejected rejected) throw rejected;
             com.text2sql.agent.observability.EvaluationTrace.call(null, "CALL_FAILED_" + logTag, promptSha256);
             throw new GenerationException(GenerationException.Reason.CALL_FAILED,
                     "模型服务调用失败，请核对服务配置或稍后重试。", e);
@@ -382,6 +387,7 @@ public class LlmSqlGenerator {
             response = invoke(targetModel, new Prompt(messages, optionsBuilder.build()), promptSha256);
         } catch (Exception e) {
             if (e instanceof RequestBudget.Exceeded expired) throw expired;
+            if (e instanceof com.text2sql.agent.budget.DeepSeekOffPeakPolicy.Rejected rejected) throw rejected;
             com.text2sql.agent.observability.EvaluationTrace.call(null, "CALL_FAILED_" + logTag, promptSha256);
             throw new GenerationException(GenerationException.Reason.CALL_FAILED,
                     "模型服务调用失败，请核对服务配置或稍后重试。", e);
@@ -495,18 +501,29 @@ public class LlmSqlGenerator {
      * 失败就记一次失败，继续下一条。
      */
     private ChatResponse invoke(ChatModel model, Prompt prompt, String hash) {
+        boolean guarded = model instanceof OpenAiChatModel
+                && com.text2sql.agent.budget.DeepSeekOffPeakPolicy.appliesTo(
+                java.net.URI.create(properties.getLlm().getBaseUrl()), prompt.getOptions().getModel());
+        var horizon = com.text2sql.agent.budget.DeepSeekOffPeakPolicy.horizon(properties.getLlm().getTimeoutSeconds());
+        if (guarded) offPeak.requireAllowed(horizon);
         RequestBudget budget = RequestBudget.current();
         try (var lease = costQuota.reserve(budget == null ? java.util.UUID.randomUUID().toString() : budget.id(),
                 budget == null ? 1 : budget.callNumber() + 1, hash)) {
             try {
+                if (guarded) offPeak.requireAllowed(horizon);
                 if (budget != null) budget.startModelCall(hash);
             } catch (RuntimeException rejectedBeforeTransport) {
                 lease.cancelUnsent();
                 throw rejectedBeforeTransport;
             }
-            ChatResponse response = model.call(prompt);
-            lease.complete(response);
-            return response;
+            try {
+                ChatResponse response = model.call(prompt);
+                lease.complete(response);
+                return response;
+            } catch (com.text2sql.agent.budget.DeepSeekOffPeakPolicy.Rejected unsent) {
+                lease.cancelUnsent();
+                throw unsent;
+            }
         }
     }
 
@@ -514,7 +531,9 @@ public class LlmSqlGenerator {
         if (!StringUtils.hasText(apiKey)) {
             return null;
         }
-        var requestFactory = new BudgetHttpRequestFactory(properties.getLlm().getTimeoutSeconds());
+        var requestFactory = new BudgetHttpRequestFactory(properties.getLlm().getTimeoutSeconds(),
+                com.text2sql.agent.budget.DeepSeekOffPeakPolicy.appliesTo(
+                        java.net.URI.create(properties.getLlm().getBaseUrl()), properties.getLlm().getModel()));
 
         OpenAiApi api = OpenAiApi.builder()
                 .baseUrl(properties.getLlm().getBaseUrl())

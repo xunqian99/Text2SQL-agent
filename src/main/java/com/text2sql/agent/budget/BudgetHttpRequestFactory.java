@@ -20,25 +20,47 @@ import java.time.Duration;
 public final class BudgetHttpRequestFactory implements ClientHttpRequestFactory {
     private static final HttpClient CLIENT = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
     private final int timeoutSeconds;
+    private final DeepSeekOffPeakPolicy offPeak;
+    private final boolean forceOffPeak;
+    private final ClientHttpRequestFactory testDelegate;
 
-    public BudgetHttpRequestFactory(int timeoutSeconds) { this.timeoutSeconds = timeoutSeconds; }
+    public BudgetHttpRequestFactory(int timeoutSeconds) { this(timeoutSeconds, false); }
+
+    public BudgetHttpRequestFactory(int timeoutSeconds, boolean forceOffPeak) {
+        this(timeoutSeconds, forceOffPeak, java.time.Clock.systemUTC(), null);
+    }
+
+    BudgetHttpRequestFactory(int timeoutSeconds, boolean forceOffPeak, java.time.Clock clock,
+                             ClientHttpRequestFactory testDelegate) {
+        this.timeoutSeconds = timeoutSeconds;
+        this.forceOffPeak = forceOffPeak;
+        this.offPeak = new DeepSeekOffPeakPolicy(clock);
+        this.testDelegate = testDelegate;
+    }
 
     @Override public ClientHttpRequest createRequest(URI uri, HttpMethod method) throws IOException {
+        boolean guarded = forceOffPeak || DeepSeekOffPeakPolicy.appliesTo(uri, null);
+        if (guarded) offPeak.requireAllowed(DeepSeekOffPeakPolicy.horizon(timeoutSeconds));
         RequestBudget budget = RequestBudget.current();
         JdkClientHttpRequestFactory factory = new JdkClientHttpRequestFactory(CLIENT);
         factory.setReadTimeout(Duration.ofMillis(budget == null ? timeoutSeconds * 1000L
                 : Math.min(timeoutSeconds * 1000L, budget.remainingMillis())));
-        return new Request(factory.createRequest(uri, method), budget);
+        return new Request((testDelegate == null ? factory : testDelegate).createRequest(uri, method), budget,
+                guarded ? offPeak : null, DeepSeekOffPeakPolicy.horizon(timeoutSeconds));
     }
 
     private static final class Request extends HttpRequestWrapper implements ClientHttpRequest {
         private final ClientHttpRequest delegate;
         private final RequestBudget budget;
-        private Request(ClientHttpRequest delegate, RequestBudget budget) {
+        private final DeepSeekOffPeakPolicy offPeak;
+        private final Duration horizon;
+        private Request(ClientHttpRequest delegate, RequestBudget budget, DeepSeekOffPeakPolicy offPeak, Duration horizon) {
             super(delegate); this.delegate = delegate; this.budget = budget;
+            this.offPeak = offPeak; this.horizon = horizon;
         }
         @Override public OutputStream getBody() throws IOException { return delegate.getBody(); }
         @Override public ClientHttpResponse execute() throws IOException {
+            if (offPeak != null) offPeak.requireAllowed(horizon);
             if (budget != null) budget.check();
             ClientHttpResponse response = delegate.execute();
             if (budget == null) return response;

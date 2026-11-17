@@ -287,7 +287,8 @@ public class Text2SqlOrchestrator {
         } catch (GenerationException e) {
             EvaluationTrace.generationFailure(question, e);
             if (properties.getSelfCorrection().isEnabled() && properties.getSelfCorrection().getMaxAttempts() > 1
-                    && e.getReason() != GenerationException.Reason.NOT_CONFIGURED && RequestBudget.allowRetry()) {
+                    && e.getReason() != GenerationException.Reason.NOT_CONFIGURED
+                    && e.getReason() != GenerationException.Reason.OFF_PEAK_REQUIRED && RequestBudget.allowRetry()) {
                 generationRetried = true;
                 EvaluationTrace.trigger("GENERATION_" + e.getReason().name());
                 log.warn("首次生成异常（{}：{}），尝试重试一次生成", e.getReason(), e.getMessage());
