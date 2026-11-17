@@ -1,0 +1,67 @@
+{
+  "id" : "reversed-named-counts",
+  "httpStatus" : 200,
+  "wallMs" : 661,
+  "body" : {
+    "status" : "SUCCESS",
+    "sql" : "SELECT COUNT(*) FILTER (WHERE o.order_status = 'canceled') AS canceled_orders, COUNT(*) FILTER (WHERE o.order_status = 'delivered') AS delivered_orders FROM orders o LIMIT 201",
+    "message" : null,
+    "violations" : [ ],
+    "columns" : [ "canceled_orders", "delivered_orders" ],
+    "rows" : [ [ "625", "96478" ] ],
+    "truncated" : false,
+    "rewritten" : true,
+    "rowCount" : 1,
+    "schemaTableCount" : 9,
+    "retrievedTables" : [ "orders", "customers", "order_items", "order_payments", "order_reviews", "campaigns", "coupon_usages", "refund_items", "coupons" ],
+    "schemaDdlChars" : 1552,
+    "llm" : {
+      "model" : "deepseek-flash",
+      "promptTokens" : 2815,
+      "completionTokens" : 52,
+      "totalTokens" : 2867,
+      "latencyMs" : 629,
+      "costYuan" : 7.6508E-4
+    },
+    "timings" : {
+      "retrievalMs" : 6,
+      "generationMs" : 631,
+      "validationMs" : 3,
+      "executionMs" : 12,
+      "totalMs" : 654
+    },
+    "sessionId" : "identity-reversed-named-counts",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "48f47311-78db-4fd6-be42-f8670881e1ea",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 1,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 654,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "EXPLAIN" : 5,
+        "VALIDATION" : 3,
+        "ADMISSION" : 0,
+        "SESSION" : 0,
+        "EXECUTION" : 7,
+        "MODEL" : 622,
+        "GENERATION" : 9,
+        "CACHE" : 0,
+        "CONVERSATION" : 0,
+        "RETRIEVAL" : 6,
+        "RESULT_CHECK" : 0,
+        "CACHE_WRITE" : 0,
+        "CLARIFICATION" : 0
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 2,
+      "currentStageMs" : 0
+    }
+  }
+}

@@ -1,0 +1,67 @@
+{
+  "id" : "money-two-metrics-control",
+  "httpStatus" : 200,
+  "wallMs" : 2649,
+  "body" : {
+    "status" : "SUCCESS",
+    "sql" : "SELECT ROUND(SUM(oi.price + oi.freight_value), 2) AS gmv_with_freight, ROUND(SUM(oi.price), 2) AS sales_without_freight FROM orders o JOIN order_items oi ON oi.order_id = o.order_id WHERE o.order_status NOT IN ('canceled', 'unavailable') AND o.order_purchase_timestamp >= '2018-01-01' AND o.order_purchase_timestamp < '2019-01-01' LIMIT 201",
+    "message" : null,
+    "violations" : [ ],
+    "columns" : [ "gmv_with_freight", "sales_without_freight" ],
+    "rows" : [ [ "8593303.96", "7341182.41" ] ],
+    "truncated" : false,
+    "rewritten" : true,
+    "rowCount" : 1,
+    "schemaTableCount" : 6,
+    "retrievedTables" : [ "order_items", "orders", "products", "sellers", "refund_items", "settlement_items" ],
+    "schemaDdlChars" : 1264,
+    "llm" : {
+      "model" : "deepseek-flash",
+      "promptTokens" : 2584,
+      "completionTokens" : 393,
+      "totalTokens" : 2977,
+      "latencyMs" : 2564,
+      "costYuan" : 0.00177264
+    },
+    "timings" : {
+      "retrievalMs" : 3,
+      "generationMs" : 2565,
+      "validationMs" : 3,
+      "executionMs" : 70,
+      "totalMs" : 2645
+    },
+    "sessionId" : "identity-money-two-metrics-control",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "32641528-e495-4aa6-990f-8d2738f592e7",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 1,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 2645,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "EXPLAIN" : 4,
+        "VALIDATION" : 3,
+        "ADMISSION" : 0,
+        "SESSION" : 0,
+        "EXECUTION" : 66,
+        "MODEL" : 2557,
+        "GENERATION" : 8,
+        "CACHE" : 0,
+        "CONVERSATION" : 0,
+        "RETRIEVAL" : 3,
+        "RESULT_CHECK" : 0,
+        "CACHE_WRITE" : 0,
+        "CLARIFICATION" : 0
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 4,
+      "currentStageMs" : 0
+    }
+  }
+}

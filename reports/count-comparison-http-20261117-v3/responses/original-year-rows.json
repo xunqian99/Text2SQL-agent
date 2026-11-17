@@ -1,0 +1,67 @@
+{
+  "id" : "original-year-rows",
+  "httpStatus" : 200,
+  "wallMs" : 1095,
+  "body" : {
+    "status" : "SUCCESS",
+    "sql" : "SELECT EXTRACT(YEAR FROM order_purchase_timestamp)::int AS year, COUNT(*) AS order_cnt FROM orders WHERE order_purchase_timestamp >= '2017-01-01' AND order_purchase_timestamp < '2019-01-01' GROUP BY 1 ORDER BY 1 LIMIT 201",
+    "message" : null,
+    "violations" : [ ],
+    "columns" : [ "year", "order_cnt" ],
+    "rows" : [ [ "2017", "45101" ], [ "2018", "54011" ] ],
+    "truncated" : false,
+    "rewritten" : true,
+    "rowCount" : 2,
+    "schemaTableCount" : 8,
+    "retrievedTables" : [ "orders", "customers", "order_items", "order_payments", "order_reviews", "coupon_usages", "refund_items", "refunds" ],
+    "schemaDdlChars" : 1573,
+    "llm" : {
+      "model" : "deepseek-flash",
+      "promptTokens" : 2495,
+      "completionTokens" : 109,
+      "totalTokens" : 2604,
+      "latencyMs" : 1035,
+      "costYuan" : 6.7308E-4
+    },
+    "timings" : {
+      "retrievalMs" : 4,
+      "generationMs" : 1036,
+      "validationMs" : 6,
+      "executionMs" : 39,
+      "totalMs" : 1090
+    },
+    "sessionId" : "identity-original-year-rows",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "45d23beb-26a6-4374-9703-5f3c41a25db0",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 1,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 1090,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "EXPLAIN" : 5,
+        "VALIDATION" : 6,
+        "ADMISSION" : 0,
+        "SESSION" : 0,
+        "EXECUTION" : 34,
+        "MODEL" : 1029,
+        "GENERATION" : 7,
+        "CACHE" : 0,
+        "CONVERSATION" : 0,
+        "RETRIEVAL" : 4,
+        "RESULT_CHECK" : 0,
+        "CACHE_WRITE" : 0,
+        "CLARIFICATION" : 0
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 5,
+      "currentStageMs" : 0
+    }
+  }
+}

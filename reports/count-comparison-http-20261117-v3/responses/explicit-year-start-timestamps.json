@@ -1,0 +1,67 @@
+{
+  "id" : "explicit-year-start-timestamps",
+  "httpStatus" : 200,
+  "wallMs" : 2284,
+  "body" : {
+    "status" : "SUCCESS",
+    "sql" : "SELECT DATE_TRUNC('year', o.order_purchase_timestamp) AS year_start,\n       COUNT(*) AS order_cnt\nFROM orders o\nWHERE o.order_purchase_timestamp >= '2017-01-01' AND o.order_purchase_timestamp < '2019-01-01'\nGROUP BY 1\nORDER BY 1\nLIMIT 10;",
+    "message" : null,
+    "violations" : [ ],
+    "columns" : [ "year_start", "order_cnt" ],
+    "rows" : [ [ "2017-01-01 00:00:00.0", "45101" ], [ "2018-01-01 00:00:00.0", "54011" ] ],
+    "truncated" : false,
+    "rewritten" : false,
+    "rowCount" : 2,
+    "schemaTableCount" : 8,
+    "retrievedTables" : [ "orders", "customers", "order_items", "order_payments", "order_reviews", "coupon_usages", "refund_items", "refunds" ],
+    "schemaDdlChars" : 1573,
+    "llm" : {
+      "model" : "deepseek-flash",
+      "promptTokens" : 2522,
+      "completionTokens" : 286,
+      "totalTokens" : 2808,
+      "latencyMs" : 2232,
+      "costYuan" : 0.00140808
+    },
+    "timings" : {
+      "retrievalMs" : 1,
+      "generationMs" : 2233,
+      "validationMs" : 10,
+      "executionMs" : 31,
+      "totalMs" : 2279
+    },
+    "sessionId" : "identity-explicit-year-start-timestamps",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "f86f0981-ed13-4969-b121-db8b6ab06848",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 1,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 2279,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "EXPLAIN" : 5,
+        "VALIDATION" : 10,
+        "ADMISSION" : 0,
+        "SESSION" : 0,
+        "EXECUTION" : 26,
+        "MODEL" : 2225,
+        "GENERATION" : 8,
+        "CACHE" : 0,
+        "CONVERSATION" : 0,
+        "RETRIEVAL" : 1,
+        "RESULT_CHECK" : 0,
+        "CACHE_WRITE" : 0,
+        "CLARIFICATION" : 0
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 4,
+      "currentStageMs" : 0
+    }
+  }
+}
