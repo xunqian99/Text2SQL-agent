@@ -120,6 +120,9 @@ public class HybridSchemaProvider implements SchemaProvider {
         if (result.fellBack()) {
             log.info("检索未命中任何词典词，回退全量 schema（{} 张表）", full.tables().size());
             SchemaContext res = full;
+            if (properties.getSemantic().isEnabled() && metricRegistry != null) {
+                res = res.withMetrics(metricRegistry.appendDimensionPolicies(question, res.tables(), res.metricsText()));
+            }
             if (valueRetriever != null) {
                 var matches = valueRetriever.findMatches(question, Set.copyOf(full.tableNames()));
                 res = res.withValueHints(valueRetriever.renderValueHints(matches));
@@ -206,6 +209,9 @@ public class HybridSchemaProvider implements SchemaProvider {
         }
 
         SchemaContext sub = full.subset(tablesForContext, names, ddl).withMetrics(metricsFor(question, names));
+        if (properties.getSemantic().isEnabled() && metricRegistry != null) {
+            sub = sub.withMetrics(metricRegistry.appendDimensionPolicies(question, tablesForContext, sub.metricsText()));
+        }
         if (properties.getFewshot().isEnabled() && fewshotSelector != null) {
             var examples = fewshotSelector.select(question, names, properties.getFewshot().getMaxExamples(),
                     properties.getFewshot().isRequireAvailableTables());

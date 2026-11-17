@@ -369,3 +369,16 @@ metrics:
       JOIN monthly m17 ON m17.mo = m18.mo AND m17.yr = 2017
       WHERE m18.yr = 2018
       ORDER BY m18.mo;
+
+# 维度口径属于业务定义，与上述指标使用同一快照和SHA-256；不是全局SQL改写规则。
+dimensionPolicies:
+  - name: product_category_nulls_v1
+    table: products
+    column: product_category_name
+    aliases: [商品类目, 商品分类, 商品品类, 类目, 品类]
+    defaultFilter: products.product_category_name IS NOT NULL
+    notes: >-
+      该口径只处理SQL NULL，不自动排除空字符串、未翻译的类目或文字值“未知”。
+      多个商品可属于同一订单：统计每类目的订单数时按订单去重，一个订单跨多个类目可分别计入各组，
+      不能把各类目的订单数相加当成全站去重订单数。显示英文类目时，翻译缺失与原始类目NULL是两件事，
+      用户要求保留未知时不能用内连接翻译表把这类记录提前丢掉。

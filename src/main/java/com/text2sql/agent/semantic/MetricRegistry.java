@@ -63,17 +63,51 @@ public class MetricRegistry {
     private final ObjectMapper yamlObjectMapper = new ObjectMapper(new YAMLFactory());
 
     private volatile List<Metric> metrics = List.of();
+    private volatile List<DimensionPolicy> dimensionPolicies = List.of();
 
     @PostConstruct
     void load() {
-        List<Metric> loaded = readResource();
+        MetricsFile file = readResource();
+        List<Metric> loaded = file == null || file.metrics() == null ? List.of() : file.metrics();
         List<Metric> validated = validate(loaded);
         this.metrics = List.copyOf(validated);
-        log.info("指标注册表已加载：{} 条", this.metrics.size());
+        var policies = file == null || file.dimensionPolicies() == null ? List.<DimensionPolicy>of() : file.dimensionPolicies();
+        var names = new LinkedHashSet<String>();
+        for (var policy : policies) {
+            if (policy.name() == null || policy.name().isBlank() || !names.add(policy.name())
+                    || policy.table() == null || policy.column() == null || policy.aliases().isEmpty()
+                    || policy.defaultFilter() == null || policy.defaultFilter().isBlank()
+                    || policy.notes() == null || policy.notes().isBlank()) {
+                throw new IllegalArgumentException("Incomplete or duplicate dimension policy");
+            }
+        }
+        this.dimensionPolicies = List.copyOf(policies);
+        log.info("指标注册表已加载：{} 条，维度口径：{} 条", this.metrics.size(), this.dimensionPolicies.size());
     }
 
     public List<Metric> all() {
         return metrics;
+    }
+
+    public List<DimensionPolicy> dimensionPolicies() { return dimensionPolicies; }
+
+    /** Keep the exact table/column provenance after pruning; policies cannot introduce absent columns. */
+    public String appendDimensionPolicies(String question,
+            List<com.text2sql.agent.retrieval.SchemaContext.Table> actualTables, String metricsText) {
+        if (question == null || question.isBlank()) return metricsText;
+        String text = normalizeForMatch(question);
+        StringBuilder result = new StringBuilder(metricsText == null ? "" : metricsText);
+        for (var policy : dimensionPolicies) {
+            boolean mentioned = policy.aliases().stream().filter(a -> a != null && !a.isBlank())
+                    .anyMatch(a -> text.contains(normalizeForMatch(a)));
+            boolean available = actualTables.stream().anyMatch(t -> t.name().equalsIgnoreCase(policy.table())
+                    && t.columns().stream().anyMatch(c -> c.name().equalsIgnoreCase(policy.column())));
+            if (mentioned && available) {
+                if (!result.isEmpty()) result.append("\n\n");
+                result.append(policy.render());
+            }
+        }
+        return result.toString();
     }
 
     /** Identity of the exact startup resource bytes parsed below; changing the file requires restart. */
@@ -169,12 +203,11 @@ public class MetricRegistry {
         return tables.stream().map(t -> t.toLowerCase(Locale.ROOT)).toList();
     }
 
-    private List<Metric> readResource() {
+    private MetricsFile readResource() {
         byte[] bytes = SourceSnapshot.VALUE.bytes();
-        if (bytes == null) return List.of();
+        if (bytes == null) return null;
         try {
-            MetricsFile file = yamlObjectMapper.readValue(bytes, MetricsFile.class);
-            return file == null || file.metrics() == null ? List.of() : file.metrics();
+            return yamlObjectMapper.readValue(bytes, MetricsFile.class);
         } catch (IOException e) {
             throw new UncheckedIOException("指标注册表解析失败：" + RESOURCE, e);
         }
@@ -222,6 +255,6 @@ public class MetricRegistry {
 
     /** YAML 根结构。 */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    private record MetricsFile(List<Metric> metrics) {
+    private record MetricsFile(List<Metric> metrics, List<DimensionPolicy> dimensionPolicies) {
     }
 }
