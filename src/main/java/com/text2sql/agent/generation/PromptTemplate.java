@@ -37,8 +37,8 @@ public class PromptTemplate {
      * （比如加一句「优先使用高置信度的表」），那才需要 +1，
      * 并且要重跑阶段 1 的 baseline 才能对比。
      */
-    public static final String VERSION = "p11-result-contract-v11";
-    public static final String NO_EXPLICIT_STEPS_VERSION = "p11-result-contract-v11-no-explicit-steps-v1";
+    public static final String VERSION = "p12-result-contract-v12";
+    public static final String NO_EXPLICIT_STEPS_VERSION = "p12-result-contract-v12-no-explicit-steps-v1";
 
     private final AgentProperties properties;
 
@@ -99,6 +99,7 @@ public class PromptTemplate {
                    - 其余一般金额、单价、平均值，统一用 ROUND(表达式, 2) 保留两位小数。
                    - 【PostgreSQL 严格类型约束】PostgreSQL 的 ROUND(val, n) 仅接受 NUMERIC 类型！若表达式涉及 EXTRACT(EPOCH FROM ...) 或浮点计算/AVG，返回值是 DOUBLE PRECISION，必须显式加 ::NUMERIC 转换（例如 ROUND((AVG(EXTRACT(EPOCH FROM ...)) / 86400.0)::NUMERIC, 2)），绝对禁止对 DOUBLE PRECISION 直接传 2 个参数调用 ROUND。
                 13. 按时间分组与时间字段选择：
+                   - 按年比较或年度分组时，默认用 EXTRACT(YEAR FROM 时间列)::int 输出整数年份（如2017），不要用年初时间戳代替年份标签；用户明确要求年初日期/时间戳时才用 DATE_TRUNC('year', 时间列) 并按要求转换类型。
                    - 用 DATE_TRUNC('month'|'week'|'day', 时间列) 作为分组列，不要用 to_char 把时间转成 'YYYY-MM' 这类字符串。
                    - 问题涉及各月/每个月/每周等周期统计时，若表内有自身的业务时间字段（如 refunds.requested_at, support_tickets.created_at, members.register_date, settlements.period_start），优先使用本表对应业务时间，不要无故关联 orders 表。
                 14. 时间窗口过滤用 >= 起点 AND < 终点（左闭右开），不要用 BETWEEN：

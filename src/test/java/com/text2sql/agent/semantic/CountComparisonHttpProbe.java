@@ -18,7 +18,7 @@ public final class CountComparisonHttpProbe {
         var items = new EvalItemLoader(new AgentProperties()).load("data/eval", List.of(), 0).stream()
                 .collect(Collectors.toMap(i -> i.id(), Function.identity()));
         var status = items.get("T2-013"); var payment = items.get("T2-014"); var years = items.get("T3-002");
-        var distribution = items.get("T2-005"); var money = items.get("T6-001");
+        var distribution = items.get("T2-005"); var money = items.get("T6-001"); var months = items.get("T3-001");
         CustomerIdentityHttpProbe.freezeReferences(directory, List.of(
                 List.of("original-status-counts", status.question(), status.goldSql()),
                 List.of("reversed-named-counts", "分别统计已取消订单数和已送达订单数，按此顺序返回两个计数。",
@@ -31,7 +31,11 @@ public final class CountComparisonHttpProbe {
                 List.of("explicit-status-rows", status.question() + "请用纵表，只返回状态、订单数两列，每个状态一行，按状态升序。",
                         "SELECT order_status,COUNT(*) FROM orders WHERE order_status IN ('delivered','canceled') GROUP BY order_status ORDER BY order_status"),
                 List.of("all-status-groups-control", distribution.question(), distribution.goldSql()),
-                List.of("money-two-metrics-control", money.question(), money.goldSql())),
-                "named-count-comparison-http-v1", "Exactly eight requests once: original named counts, reversed order, second entity, time/group/explicit layout controls and independent metrics; default presentation convention, not unique linguistic truth or blind accuracy.");
+                List.of("money-two-metrics-control", money.question(), money.goldSql()),
+                List.of("explicit-year-start-timestamps", years.question() + "请用纵表，第一列明确返回年初时间戳，不要整数年份；第二列为订单数，按时间升序。",
+                        "SELECT DATE_TRUNC('year',order_purchase_timestamp),COUNT(*) FROM orders WHERE order_purchase_timestamp>='2017-01-01' "
+                                + "AND order_purchase_timestamp<'2019-01-01' GROUP BY 1 ORDER BY 1"),
+                List.of("monthly-label-control", months.question(), months.goldSql())),
+                "named-count-comparison-http-v2", "Exactly ten requests once: retain all eight v1 references and add explicit year-start timestamps plus monthly label control; presentation contract, not blind accuracy/P95.");
     }
 }

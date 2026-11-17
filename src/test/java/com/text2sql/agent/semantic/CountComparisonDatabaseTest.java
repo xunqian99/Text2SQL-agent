@@ -55,6 +55,33 @@ class CountComparisonDatabaseTest {
                 .containsExactly(List.of("1", "2"));
     }
 
+    @Test void annualIntegerLabelAndExplicitYearStartHaveDifferentJdbcTypes() throws Exception {
+        try (var connection = DriverManager.getConnection(MemberPenetrationContractTest.url(),
+                MemberPenetrationContractTest.user(), MemberPenetrationContractTest.password())) {
+            connection.setReadOnly(true);
+            try (var statement = connection.createStatement()) {
+                statement.setQueryTimeout(5);
+                try (var result = statement.executeQuery("SELECT EXTRACT(YEAR FROM ts)::int,DATE_TRUNC('year',ts) "
+                        + "FROM (VALUES (TIMESTAMP '2017-12-31 23:59:59.999999'),(TIMESTAMP '2018-01-01')) facts(ts) ORDER BY ts")) {
+                    assertThat(result.getMetaData().getColumnType(1)).isEqualTo(java.sql.Types.INTEGER);
+                    assertThat(result.getMetaData().getColumnType(2)).isEqualTo(java.sql.Types.TIMESTAMP);
+                    assertThat(result.next()).isTrue();
+                    assertThat(result.getString(1)).isEqualTo("2017");
+                    assertThat(result.getTimestamp(2).toLocalDateTime()).isEqualTo(java.time.LocalDateTime.of(2017,1,1,0,0));
+                    assertThat(result.next()).isTrue();
+                    assertThat(result.getString(1)).isEqualTo("2018");
+                    assertThat(result.next()).isFalse();
+                }
+            }
+        }
+    }
+
+    @Test void monthlyLabelsKeepCalendarYearInsteadOfMergingBothJanuaries() throws Exception {
+        assertThat(rows("WITH facts(ts) AS (VALUES (TIMESTAMP '2017-01-02'),(TIMESTAMP '2018-01-02')) "
+                + "SELECT DATE_TRUNC('month',ts)::date,COUNT(*) FROM facts GROUP BY 1 ORDER BY 1"))
+                .containsExactly(List.of("2017-01-01", "1"), List.of("2018-01-01", "1"));
+    }
+
     static List<List<String>> rows(String sql) throws Exception {
         try (var connection = DriverManager.getConnection(MemberPenetrationContractTest.url(),
                 MemberPenetrationContractTest.user(), MemberPenetrationContractTest.password())) {
