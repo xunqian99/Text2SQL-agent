@@ -1,14 +1,23 @@
-param([string]$OutputDir = 'reports/stage2-regression-20261117')
+param(
+  [string]$OutputDir = 'reports/stage2-regression-20261117',
+  [ValidateSet('p10-result-contract-v10','p15-entity-coverage-v15')]
+  [string]$PromptVersion = 'p10-result-contract-v10',
+  [string]$ProtocolPath = 'docs/STAGE2_REGRESSION_PROTOCOL_20261117.md'
+)
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 Push-Location $projectRoot
 try {
   if (Test-Path -LiteralPath $OutputDir) { throw 'Output directory exists; never overwrite or replay.' }
+  if (-not (Test-Path -LiteralPath $ProtocolPath -PathType Leaf) -or
+      -not (Get-Content -LiteralPath $ProtocolPath -Raw).Contains($PromptVersion)) {
+    throw 'Protocol must exist and declare the expected prompt version before evaluation.'
+  }
   $codeCommit = (& git rev-parse HEAD).Trim()
   $protected = @('src','pom.xml','data/eval','data/holdout','scripts/run_eval.ps1',
     'scripts/run_stage2_regression.ps1','scripts/summarize_stage2_regression.py',
     'scripts/summarize_request_budget.py','scripts/summarize_holdout.py',
-    'docs/STAGE2_REGRESSION_PROTOCOL_20261117.md',
+    'docs/STAGE2_REGRESSION_PROTOCOL_20261117.md',$ProtocolPath,
     'reports/generation-mode-matrix-20261116','reports/ablation-20261116/summary.json',
     'reports/customer-identity-http-20261117','reports/output-contract-http-20261117')
   $hashes = [ordered]@{}
@@ -48,6 +57,7 @@ try {
   $manifestPath = Join-Path $OutputDir 'manifest.json'
   $manifest = [ordered]@{format='stage2-regression-v1';state='RUNNING';startedAt=(Get-Date -Format o)
     codeCommit=$codeCommit;protectedSha256=$hashes;runtimeSha256=$runtime
+    expectedPromptVersion=$PromptVersion;protocolPath=$ProtocolPath
     referenceAccuracyPercent=91;minimumMeanAccuracyPercent=89;historicalComparison=$true
     distinctRealQuestions=100;plannedRealRequests=300;order=@('gold','r1','r2','r3');runs=@()}
   function Save-Manifest { $manifest | ConvertTo-Json -Depth 16 | Set-Content -LiteralPath $manifestPath -Encoding utf8 }
@@ -77,6 +87,7 @@ try {
     if ($reports.Count -ne 1) { throw 'Missing or duplicate report.' }
     $report = Get-Content -LiteralPath $reports[0].FullName -Raw | ConvertFrom-Json
     if ($report.meta.gitCommit -cne $codeCommit -or $report.overall.total -ne $count) { throw 'Code or denominator differs.' }
+    if ($report.meta.promptVersion -cne $PromptVersion) { throw 'Runtime prompt differs from preregistered candidate.' }
     if ($name -eq 'gold' -and ($report.overall.correct -ne 200 -or @($report.itemEvidence | Where-Object {$_.calls.Count -gt 0}).Count -gt 0)) {
       throw 'Gold preflight failed or called model.'
     }

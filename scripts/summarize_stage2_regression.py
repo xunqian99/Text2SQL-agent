@@ -25,6 +25,12 @@ def summarize(directory, live=False):
     require(manifest['order'] == [r['name'] for r in manifest['runs']] == ['gold', 'r1', 'r2', 'r3'], 'run order differs')
     require(manifest['referenceAccuracyPercent'] == 91 and manifest['minimumMeanAccuracyPercent'] == 89, 'threshold changed')
     require(manifest['distinctRealQuestions'] == 100 and manifest['plannedRealRequests'] == 300, 'denominator changed')
+    expected_prompt = manifest.get('expectedPromptVersion', 'p10-result-contract-v10')
+    require(expected_prompt in ('p10-result-contract-v10', 'p15-entity-coverage-v15'), 'unregistered prompt')
+    protocol_path = manifest.get('protocolPath', 'docs/STAGE2_REGRESSION_PROTOCOL_20261117.md')
+    require(protocol_path in manifest['protectedSha256'], 'protocol not frozen')
+    protocol = subprocess.check_output(['git', 'show', manifest['codeCommit'] + ':' + protocol_path]).decode('utf-8')
+    require(expected_prompt in protocol, 'protocol does not declare candidate')
     for name, sha in manifest['protectedSha256'].items():
         if name.endswith('application-local.yml'):
             if live:
@@ -62,7 +68,7 @@ def summarize(directory, live=False):
         meta, items = report['meta'], report['itemEvidence']
         require(meta['gitCommit'] == manifest['codeCommit'], name + ': code changed')
         require(meta['datasetSha256'] == dataset_hash('data/eval'), name + ': dataset changed')
-        require(meta['promptVersion'] == 'p10-result-contract-v10', name + ': prompt changed')
+        require(meta['promptVersion'] == expected_prompt, name + ': prompt changed')
         require(entry['total'] == report['overall']['total'] and entry['correct'] == report['overall']['correct'], name + ': counts differ')
         if name == 'gold':
             require(meta['dryRun'] and meta['split'] == 'all' and len(items) == 200 and report['overall']['correct'] == 200,
