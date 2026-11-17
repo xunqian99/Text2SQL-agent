@@ -1,0 +1,189 @@
+{
+  "reviewRows": 99224,
+  "reviewedOrders": 98673,
+  "lowReviewRows": 14575,
+  "lowReviewedOrders": 14533,
+  "maxReviewsPerOrder": 3,
+  "ordersWithMultipleReviews": 547,
+  "perState": [
+    {
+      "state": "AC",
+      "review_records": 13,
+      "orders": 13
+    },
+    {
+      "state": "AL",
+      "review_records": 99,
+      "orders": 98
+    },
+    {
+      "state": "AM",
+      "review_records": 22,
+      "orders": 21
+    },
+    {
+      "state": "AP",
+      "review_records": 5,
+      "orders": 5
+    },
+    {
+      "state": "BA",
+      "review_records": 634,
+      "orders": 633
+    },
+    {
+      "state": "CE",
+      "review_records": 264,
+      "orders": 263
+    },
+    {
+      "state": "DF",
+      "review_records": 323,
+      "orders": 323
+    },
+    {
+      "state": "ES",
+      "review_records": 300,
+      "orders": 300
+    },
+    {
+      "state": "GO",
+      "review_records": 300,
+      "orders": 300
+    },
+    {
+      "state": "MA",
+      "review_records": 162,
+      "orders": 162
+    },
+    {
+      "state": "MG",
+      "review_records": 1546,
+      "orders": 1542
+    },
+    {
+      "state": "MS",
+      "review_records": 104,
+      "orders": 104
+    },
+    {
+      "state": "MT",
+      "review_records": 124,
+      "orders": 124
+    },
+    {
+      "state": "PA",
+      "review_records": 190,
+      "orders": 190
+    },
+    {
+      "state": "PB",
+      "review_records": 88,
+      "orders": 88
+    },
+    {
+      "state": "PE",
+      "review_records": 274,
+      "orders": 274
+    },
+    {
+      "state": "PI",
+      "review_records": 90,
+      "orders": 90
+    },
+    {
+      "state": "PR",
+      "review_records": 629,
+      "orders": 627
+    },
+    {
+      "state": "RJ",
+      "review_records": 2647,
+      "orders": 2634
+    },
+    {
+      "state": "RN",
+      "review_records": 68,
+      "orders": 68
+    },
+    {
+      "state": "RO",
+      "review_records": 39,
+      "orders": 39
+    },
+    {
+      "state": "RR",
+      "review_records": 11,
+      "orders": 11
+    },
+    {
+      "state": "RS",
+      "review_records": 732,
+      "orders": 730
+    },
+    {
+      "state": "SC",
+      "review_records": 532,
+      "orders": 529
+    },
+    {
+      "state": "SE",
+      "review_records": 76,
+      "orders": 76
+    },
+    {
+      "state": "SP",
+      "review_records": 5265,
+      "orders": 5251
+    },
+    {
+      "state": "TO",
+      "review_records": 38,
+      "orders": 38
+    }
+  ],
+  "indexes": [
+    "CREATE INDEX idx_reviews_order ON public.order_reviews USING btree (order_id)",
+    "CREATE UNIQUE INDEX order_reviews_pkey ON public.order_reviews USING btree (review_id, order_id)"
+  ],
+  "examples": [
+    {
+      "order_id": "03c939fd7fd3b38f8485a0f95798f1f6",
+      "review_count": 3,
+      "scores": [
+        3,
+        3,
+        4
+      ]
+    },
+    {
+      "order_id": "8e17072ec97ce29f0e1f111e598b0c85",
+      "review_count": 3,
+      "scores": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "order_id": "c88b1d1b157a9999ce368f218a407141",
+      "review_count": 3,
+      "scores": [
+        3,
+        5,
+        5
+      ]
+    },
+    {
+      "order_id": "df56136b8031ecd28e200bb18e6ddb2e",
+      "review_count": 3,
+      "scores": [
+        5,
+        5,
+        5
+      ]
+    }
+  ],
+  "checkedAtUtc": "2026-11-17T15:14:38.524869+00:00",
+  "readOnlySql": "WITH per_order AS (SELECT order_id,COUNT(*) AS cnt FROM order_reviews GROUP BY order_id), per_state AS (\n SELECT c.customer_state AS state,COUNT(*) AS review_records,COUNT(DISTINCT o.order_id) AS orders\n FROM order_reviews r JOIN orders o ON o.order_id=r.order_id JOIN customers c ON c.customer_id=o.customer_id\n WHERE r.review_score<=2 GROUP BY 1)\nSELECT json_build_object('reviewRows',(SELECT COUNT(*) FROM order_reviews),'reviewedOrders',(SELECT COUNT(DISTINCT order_id) FROM order_reviews),\n 'lowReviewRows',(SELECT COUNT(*) FROM order_reviews WHERE review_score<=2),'lowReviewedOrders',(SELECT COUNT(DISTINCT order_id) FROM order_reviews WHERE review_score<=2),\n 'maxReviewsPerOrder',(SELECT MAX(cnt) FROM per_order),'ordersWithMultipleReviews',(SELECT COUNT(*) FROM per_order WHERE cnt>1),\n 'perState',(SELECT json_agg(row_to_json(s) ORDER BY state) FROM per_state s),\n 'indexes',(SELECT json_agg(indexdef ORDER BY indexname) FROM pg_indexes WHERE schemaname='public' AND tablename='order_reviews'),\n 'examples',(SELECT json_agg(row_to_json(e)) FROM (SELECT order_id,COUNT(*) AS review_count,array_agg(review_score ORDER BY review_score) AS scores\n FROM order_reviews GROUP BY order_id HAVING COUNT(*)>1 ORDER BY COUNT(*) DESC,order_id LIMIT 4)e))"
+}

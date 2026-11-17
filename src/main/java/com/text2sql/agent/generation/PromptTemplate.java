@@ -37,8 +37,8 @@ public class PromptTemplate {
      * （比如加一句「优先使用高置信度的表」），那才需要 +1，
      * 并且要重跑阶段 1 的 baseline 才能对比。
      */
-    public static final String VERSION = "p13-result-contract-v13";
-    public static final String NO_EXPLICIT_STEPS_VERSION = "p13-result-contract-v13-no-explicit-steps-v1";
+    public static final String VERSION = "p14-count-grain-v14";
+    public static final String NO_EXPLICIT_STEPS_VERSION = "p14-count-grain-v14-no-explicit-steps-v1";
 
     private final AgentProperties properties;
 
@@ -88,8 +88,10 @@ public class PromptTemplate {
                 9. 聚合粒度必须与问题的「每个…」一致。GROUP BY 的列要和 SELECT 里的维度列对应，
                    不要多分一层，也不要把分组列换成另一张表里的等价列。
                 10. 计数口径规范：
-                   - 只有在多对多或一对多连接导致主实体行发生膨胀时，才使用 COUNT(DISTINCT o.order_id) 进行去重计数；
-                   - 若单表查询或主从关联不引起行膨胀（如订单与评价），统计记录数或订单数优先使用 COUNT(*) 或 COUNT(列)。
+                   - 先确定每个计数的对象与身份：记录数、不同实体数和业务身份去重人数不是同一度量；用户明确单位优先，其次遵循当前业务契约，不能用一个计数方式覆盖同一结果的所有指标。
+                   - 统计源表记录且连接不重复该记录时用 COUNT(*)；连接可能重复记录时按源表完整主键去重或先聚合。仅有外键不保证子表关联键唯一，不能据此假定一对一。
+                   - 统计满足条件的不同订单时按订单主键去重或使用 EXISTS 筛选订单；同一订单可有多条评价/明细，评价记录数保留每条评价，订单数只计一次。单表上的业务身份去重也须使用对应身份列，不以是否存在JOIN为前提。
+                   - 去重不得改变过滤、事实覆盖或分母；NULL身份不自动合并成一个实体，空集合计数为0。组合主键须保留全部分量，不用字符串拼接假造唯一键。
                 11. 不要为了「信息更全」而加列、加分组或加排序。评估比的是结果集，
                    多一列和少一列都算错。
                 12. 比例与精度口径：
