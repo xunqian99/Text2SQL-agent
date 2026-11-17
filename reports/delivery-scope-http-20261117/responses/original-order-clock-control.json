@@ -1,0 +1,67 @@
+{
+  "wallMs" : 2003,
+  "httpStatus" : 200,
+  "id" : "original-order-clock-control",
+  "body" : {
+    "status" : "SUCCESS",
+    "sql" : "SELECT c.customer_state,\n       ROUND((AVG(EXTRACT(EPOCH FROM (o.order_delivered_customer_date - o.order_purchase_timestamp)) / 86400.0))::numeric, 2) AS avg_delivery_days\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nWHERE o.order_delivered_customer_date IS NOT NULL\nGROUP BY c.customer_state\nORDER BY c.customer_state\nLIMIT 100;",
+    "message" : null,
+    "violations" : [ ],
+    "columns" : [ "customer_state", "avg_delivery_days" ],
+    "rows" : [ [ "AC", "21.04" ], [ "AL", "24.54" ], [ "AM", "26.43" ], [ "AP", "27.19" ], [ "BA", "19.34" ], [ "CE", "21.27" ], [ "DF", "12.97" ], [ "ES", "15.79" ], [ "GO", "15.61" ], [ "MA", "21.57" ], [ "MG", "12.01" ], [ "MS", "15.62" ], [ "MT", "18.06" ], [ "PA", "23.77" ], [ "PB", "20.43" ], [ "PE", "18.45" ], [ "PI", "19.46" ], [ "PR", "11.99" ], [ "RJ", "15.31" ], [ "RN", "19.28" ], [ "RO", "19.37" ], [ "RR", "29.39" ], [ "RS", "15.30" ], [ "SC", "14.96" ], [ "SE", "21.52" ], [ "SP", "8.76" ], [ "TO", "17.66" ] ],
+    "truncated" : false,
+    "rewritten" : false,
+    "rowCount" : 27,
+    "schemaTableCount" : 8,
+    "retrievedTables" : [ "shipments", "customers", "geolocation", "shipping_addresses", "warehouses", "orders", "shipment_tracking", "members" ],
+    "schemaDdlChars" : 1772,
+    "llm" : {
+      "model" : "deepseek-flash",
+      "promptTokens" : 2701,
+      "completionTokens" : 233,
+      "totalTokens" : 2934,
+      "latencyMs" : 1859,
+      "costYuan" : 0.0011242000000000001
+    },
+    "timings" : {
+      "retrievalMs" : 10,
+      "generationMs" : 1865,
+      "validationMs" : 3,
+      "executionMs" : 114,
+      "totalMs" : 1996
+    },
+    "sessionId" : "identity-original-order-clock-control",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "5eb17fec-6d07-4014-8b70-1255dcc0ebdc",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 1,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 1996,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "CLARIFICATION" : 0,
+        "CACHE_WRITE" : 0,
+        "RESULT_CHECK" : 0,
+        "RETRIEVAL" : 10,
+        "CONVERSATION" : 0,
+        "CACHE" : 0,
+        "GENERATION" : 7,
+        "MODEL" : 1858,
+        "EXECUTION" : 110,
+        "SESSION" : 0,
+        "ADMISSION" : 0,
+        "VALIDATION" : 3,
+        "EXPLAIN" : 4
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 4,
+      "currentStageMs" : 0
+    }
+  }
+}

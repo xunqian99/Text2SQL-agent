@@ -1,0 +1,67 @@
+{
+  "wallMs" : 9495,
+  "httpStatus" : 200,
+  "id" : "explicit-order-clock-by-carrier",
+  "body" : {
+    "status" : "SUCCESS",
+    "sql" : "SELECT s.carrier,\n       ROUND(AVG(EXTRACT(EPOCH FROM (s.delivered_at - o.order_purchase_timestamp)) / 86400.0)::numeric, 2) AS avg_delivery_days\nFROM shipments s\nJOIN orders o ON o.order_id = s.order_id\nWHERE s.delivered_at IS NOT NULL\nGROUP BY s.carrier\nORDER BY s.carrier\nLIMIT 100;",
+    "message" : null,
+    "violations" : [ ],
+    "columns" : [ "carrier", "avg_delivery_days" ],
+    "rows" : [ [ "Correios", "12.54" ], [ "Jadlog", "12.57" ], [ "Loggi", "12.59" ], [ "Total Express", "12.48" ] ],
+    "truncated" : false,
+    "rewritten" : false,
+    "rowCount" : 4,
+    "schemaTableCount" : 8,
+    "retrievedTables" : [ "orders", "shipments", "customers", "order_items", "order_payments", "order_reviews", "warehouses", "coupon_usages" ],
+    "schemaDdlChars" : 1713,
+    "llm" : {
+      "model" : "deepseek-flash",
+      "promptTokens" : 2384,
+      "completionTokens" : 1324,
+      "totalTokens" : 3708,
+      "latencyMs" : 9384,
+      "costYuan" : 0.006174720000000001
+    },
+    "timings" : {
+      "retrievalMs" : 5,
+      "generationMs" : 9385,
+      "validationMs" : 3,
+      "executionMs" : 94,
+      "totalMs" : 9490
+    },
+    "sessionId" : "identity-explicit-order-clock-by-carrier",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "7829b9e3-e504-4268-a899-3729df0940ae",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 1,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 9490,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "CLARIFICATION" : 0,
+        "CACHE_WRITE" : 0,
+        "RESULT_CHECK" : 0,
+        "RETRIEVAL" : 5,
+        "CONVERSATION" : 0,
+        "CACHE" : 0,
+        "GENERATION" : 6,
+        "MODEL" : 9379,
+        "EXECUTION" : 90,
+        "SESSION" : 0,
+        "ADMISSION" : 0,
+        "VALIDATION" : 3,
+        "EXPLAIN" : 4
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 3,
+      "currentStageMs" : 0
+    }
+  }
+}
