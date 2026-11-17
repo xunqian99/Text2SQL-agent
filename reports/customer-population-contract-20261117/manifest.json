@@ -1,0 +1,611 @@
+{
+  "format": "customer-population-scope-offline-v1",
+  "baselineCommit": "efd06a9",
+  "sourceBlobs": {
+    "data/eval/T1_single_table_basic.yaml": "57266ec98acb5a8ce55b7dfcf5a23fd4fd86bbb2",
+    "data/eval/T2_single_table_agg.yaml": "94a936470f44fbc5902ff6f2ecd7bf203e061869",
+    "data/eval/T3_time_window.yaml": "ba097130550a22076dbb23328811ea896b8f0bfb",
+    "data/eval/T4_multi_join.yaml": "676bed7cb2a2c6a5340d7e96bd94ecb1a3db3d16",
+    "data/eval/T5_multi_join_deep.yaml": "aa41a21fb744130111518f312e666229507d6111",
+    "data/eval/T6_business_semantics.yaml": "6c3080122e56c63c4028b207c0739d073ecad0c0",
+    "data/eval/gold_results.json": "193f0bdaf661964216b151313841083fcb856714",
+    "data/holdout/v1/README.md": "f810943328512167976227e351188234b1f8669a",
+    "data/holdout/v1/T1_single_table_basic.yaml": "6230aeef5177ced22d40f4864ee4761661e87732",
+    "data/holdout/v1/T2_single_table_agg.yaml": "6e3e55db12afcda154a488190f72d401f664f7d5",
+    "data/holdout/v1/T3_time_window.yaml": "6e173bee53b51a5282c21fe9a9f4e267e80f4bfa",
+    "data/holdout/v1/T4_multi_join.yaml": "9e3c6a0c41203d01d4c7fbb8ab9dc1070882abd0",
+    "data/holdout/v1/T5_multi_join_deep.yaml": "b3eb2f43e5d5e40d06691f0012058814a555f3c4",
+    "data/holdout/v1/T6_business_semantics.yaml": "f686666e8d45958b2139ac9fa0306dd81789e620",
+    "data/holdout/v1/manifest.json": "82802907308f91f03acd490aeb0c12751aa25199",
+    "pom.xml": "eb4e33c5ed4cf28fd85ea9fd4953658b96ccf276",
+    "src/main/java/com/ecommerce/platform/common/ApiResponse.java": "e18f2c6ab4503f2e0da39176ed9601a4ebb60526",
+    "src/main/java/com/ecommerce/platform/common/DatabaseProbe.java": "292b9f75944061e0d34f7b9a60356a3e395cf8f2",
+    "src/main/java/com/ecommerce/platform/common/PageResult.java": "f26a21290ba91f2477e8898e3249cf7c8e4ca87d",
+    "src/main/java/com/ecommerce/platform/dashboard/DashboardController.java": "1d19d9a0c8ca470b5f844eface9f77706d19426e",
+    "src/main/java/com/ecommerce/platform/metric/MetricDictionaryController.java": "173488003fed57d3d4775f31c486f10597997e36",
+    "src/main/java/com/ecommerce/platform/order/OrderController.java": "2db25b9faac005db133418041b217896a863921c",
+    "src/main/java/com/ecommerce/platform/order/OrderRepository.java": "055d8036a1ba3d69eb7fa32d068a56c254859951",
+    "src/main/java/com/ecommerce/platform/order/OrderService.java": "3dbbc0b55943e59a4fd1575b36babff78144d771",
+    "src/main/java/com/ecommerce/platform/order/OrderSummary.java": "513b89ccc258ef85812fedb78eba9289dda6a753",
+    "src/main/java/com/ecommerce/platform/product/Product.java": "5af94d18f0246fd310bc6efc25acc6f499e4b19f",
+    "src/main/java/com/ecommerce/platform/product/ProductController.java": "08a666569f6c4d99178c49dc1ccaa3d890b62181",
+    "src/main/java/com/ecommerce/platform/product/ProductRepository.java": "fef26d8a93fb168d6329520ecc153fb4d51c3699",
+    "src/main/java/com/ecommerce/platform/product/ProductService.java": "269ca0b844a18ec1100d159c23f01a29dd1cca13",
+    "src/main/java/com/ecommerce/platform/system/SystemController.java": "fb51589083ffbbc4e7d776f832adece812616282",
+    "src/main/java/com/text2sql/agent/Text2SqlAgentApplication.java": "b94182477fe8ef9cda73c75c260225a64ea40341",
+    "src/main/java/com/text2sql/agent/access/AccessConfiguration.java": "19160f8b00e075b39cbd58f2494d5612d9cf2539",
+    "src/main/java/com/text2sql/agent/access/AccessProperties.java": "932b9c99bf6cec428e8804d8c21a4f9848810b45",
+    "src/main/java/com/text2sql/agent/access/AccessStatusController.java": "1feec36b20513ef5a8b31f734aa35db838e279ef",
+    "src/main/java/com/text2sql/agent/access/ApiAdmissionGate.java": "409c5f5c23a89c6cb79ea501eac6392fdae4de7d",
+    "src/main/java/com/text2sql/agent/access/SingleUserAccessFilter.java": "4df689be05a2c80146931c7f09c0241e29773d02",
+    "src/main/java/com/text2sql/agent/api/ApiExceptionHandler.java": "e767057c738aed136b167b8b1457dc9c625cb132",
+    "src/main/java/com/text2sql/agent/api/AskController.java": "075c93cdf4590bc13eaf18e3e75f42b6daa19692",
+    "src/main/java/com/text2sql/agent/api/HealthController.java": "1d696d96e37d3f9645d6732c77c22f4950a370c8",
+    "src/main/java/com/text2sql/agent/budget/BudgetHttpRequestFactory.java": "47908cb878c9b3afc2bd0037e3abfc260667eadf",
+    "src/main/java/com/text2sql/agent/budget/BudgetJdbcGuard.java": "46db6b672f041e160bc55dd6744956524aa2ec02",
+    "src/main/java/com/text2sql/agent/budget/DeepSeekOffPeakPolicy.java": "537ea70bb0a11539a6a2c2020756ebd15e456b24",
+    "src/main/java/com/text2sql/agent/budget/RequestBudget.java": "27f97e5508a79b4ff5dca64ac59ac4866f45b34e",
+    "src/main/java/com/text2sql/agent/budget/RequestBudgetRunner.java": "72e81e34e0b5e164ce800969f71a9faea5f07547",
+    "src/main/java/com/text2sql/agent/cache/SemanticCache.java": "dfb4f41528e300137b95dde0ad9861821686346e",
+    "src/main/java/com/text2sql/agent/clarification/AmbiguityDetector.java": "0032455adf0b9826851fc3e2b9f14e6ebc852039",
+    "src/main/java/com/text2sql/agent/config/AgentProperties.java": "03c1e2d8e5d44e4dc2487bc159e221346ae8bec7",
+    "src/main/java/com/text2sql/agent/config/AppConfig.java": "9a74815e94f3c5204895ba9f2fd6cb6a72bb4bcf",
+    "src/main/java/com/text2sql/agent/cost/CostQuota.java": "e1e92755bd709032d1e04c84fc330d675082514e",
+    "src/main/java/com/text2sql/agent/cost/CostQuotaConfiguration.java": "2af2a59d7b97eff92eafa309cbe0f9f81cdb22db",
+    "src/main/java/com/text2sql/agent/cost/CostQuotaProperties.java": "b0261408078f966aa1da556f417bf6ad8f36a7cf",
+    "src/main/java/com/text2sql/agent/cost/CostStatusController.java": "a689c467ad883625e32d004d6a89f0667d9731c0",
+    "src/main/java/com/text2sql/agent/evaluation/EvalItem.java": "a0f525334f3464c1b02b08a4d85f56c85bd0110b",
+    "src/main/java/com/text2sql/agent/evaluation/EvalItemLoader.java": "b63a5c252ef9a100b228cff200543fa5fa83c4c1",
+    "src/main/java/com/text2sql/agent/evaluation/EvalReport.java": "d48a2f743ca571e0818118767a19fe792b80e4e3",
+    "src/main/java/com/text2sql/agent/evaluation/EvalRunner.java": "7d1d5099113ced9e941e405451ed33c051eab244",
+    "src/main/java/com/text2sql/agent/evaluation/EvalSuiteGuard.java": "b7affe66264bf9481decfba48e6be11f0360680a",
+    "src/main/java/com/text2sql/agent/evaluation/EvaluationEvidence.java": "e2ec4cbe6045bf89d6925988290827b9c4b6817b",
+    "src/main/java/com/text2sql/agent/evaluation/TableRecall.java": "15975e20b55eb1376b8ba05324c657fcb39a87c9",
+    "src/main/java/com/text2sql/agent/execution/QueryPlanAnalyzer.java": "8af26c69101d8634be16cd795b792fe273578ac4",
+    "src/main/java/com/text2sql/agent/execution/QueryResult.java": "22e1b560883fcea418c773cf6b5e5eb16da3aa35",
+    "src/main/java/com/text2sql/agent/execution/ResultNormalizer.java": "73708ffe0e03e79f07d89700357133dd138bae8a",
+    "src/main/java/com/text2sql/agent/execution/SqlExecutionException.java": "f557751716e755682cf5f05eb6c63bd6b905d7e3",
+    "src/main/java/com/text2sql/agent/execution/SqlExecutor.java": "c3f82484a5fc8a554f2790f1a8ec41bfb7696c94",
+    "src/main/java/com/text2sql/agent/fewshot/Example.java": "c928d456830c506288b934d104ed9ad5919ccaf5",
+    "src/main/java/com/text2sql/agent/fewshot/ExampleLoader.java": "626778db10b4a1f02cdbf301ee77d0d8d82083a8",
+    "src/main/java/com/text2sql/agent/fewshot/ExampleSelector.java": "06c73d9b1ad1142d12effba573a5e225c7475524",
+    "src/main/java/com/text2sql/agent/generation/GeneratedSql.java": "bef72b2158db102eaf8b25586e70dd4e639cee80",
+    "src/main/java/com/text2sql/agent/generation/GenerationException.java": "0b65c6995972998315961e2756d2f0c223871bcf",
+    "src/main/java/com/text2sql/agent/generation/LlmSqlGenerator.java": "5e7d06e87ef3037273d5f57c6f82a705f68f3644",
+    "src/main/java/com/text2sql/agent/generation/PromptFingerprint.java": "cd73cf7363ba2c20884116b33f5b969dd94b3aa8",
+    "src/main/java/com/text2sql/agent/generation/PromptTemplate.java": "06cf56238d3afb86c3096a742cd1eae8de6873b0",
+    "src/main/java/com/text2sql/agent/generation/SqlExtractor.java": "6280c5df9f0c5018f01ef8aadc6450062fc412bb",
+    "src/main/java/com/text2sql/agent/observability/EvaluationTrace.java": "c471ea7b5a3f27815e3b95f25ab21fd620f50eac",
+    "src/main/java/com/text2sql/agent/observability/LlmCallLog.java": "bb680c514ffe19ff9c9cd55b1ec15bd21d5fe6f1",
+    "src/main/java/com/text2sql/agent/observability/LlmCallRecord.java": "c777291a07d35d6057bbf610db127ac3efe80c0f",
+    "src/main/java/com/text2sql/agent/orchestrator/AgentResponse.java": "5a67daed2b9207d9c1286d28b81fe741b497d4dc",
+    "src/main/java/com/text2sql/agent/orchestrator/Text2SqlOrchestrator.java": "4d4692ff108b23ec1f1014e30f920775e61164cd",
+    "src/main/java/com/text2sql/agent/persistence/PersistenceSupport.java": "2a345d96dacbbd8c16f2dc48bcf88ebd9e886bb8",
+    "src/main/java/com/text2sql/agent/retrieval/ColumnPruner.java": "8c4876c1c1665f4fbaa3776fb37f78d653f824d7",
+    "src/main/java/com/text2sql/agent/retrieval/DatabaseSchemaReader.java": "a20c8c3a2802a8798316a21eeefffbd5a9fa5efc",
+    "src/main/java/com/text2sql/agent/retrieval/FullSchemaProvider.java": "c882de92beac2106783cdc0f15ff92874e879ec8",
+    "src/main/java/com/text2sql/agent/retrieval/HybridSchemaProvider.java": "e81cbb601788fb8b579714bbbbfdd033be1caa63",
+    "src/main/java/com/text2sql/agent/retrieval/JoinGraph.java": "f42b23a1e2dfaeb5bed56840015bc43d8388d8a9",
+    "src/main/java/com/text2sql/agent/retrieval/JoinPathPlanner.java": "c0fdd0d0e70792452e459c78a2c8fdb2b8bf86e7",
+    "src/main/java/com/text2sql/agent/retrieval/LexicalSchemaRetriever.java": "3941203975ec32d40328cea8e0a5c88663ef58a4",
+    "src/main/java/com/text2sql/agent/retrieval/RetrievalResult.java": "4dd536c99753ed3ca4a21fabdb8fd12880f08730",
+    "src/main/java/com/text2sql/agent/retrieval/SchemaCatalog.java": "731e1b6316a3ca1a5764cd0b166b5656180ae184",
+    "src/main/java/com/text2sql/agent/retrieval/SchemaContext.java": "ee4a1e2d39341e4a85ce226732eebfccff362ddf",
+    "src/main/java/com/text2sql/agent/retrieval/SchemaDdlRenderer.java": "7337ff308709bcd201c6f323b578d1222a80927d",
+    "src/main/java/com/text2sql/agent/retrieval/SchemaProvider.java": "1ad44359b1fad00e2c74f102d76ad5f81d79970e",
+    "src/main/java/com/text2sql/agent/retrieval/ValueRetriever.java": "37aab1909b3b0b7042b298043077f0db3a611c29",
+    "src/main/java/com/text2sql/agent/retrieval/glossary/Glossary.java": "d6fef4a4de6860492065b17765e2d2ea9858e63a",
+    "src/main/java/com/text2sql/agent/retrieval/glossary/GlossaryLoader.java": "b863f3add39d8dbf9c4164baed48db38cd8947fe",
+    "src/main/java/com/text2sql/agent/semantic/CountComparisonContract.java": "f436a23d7383bd545033b744a1d3749c2909fddc",
+    "src/main/java/com/text2sql/agent/semantic/DimensionPolicy.java": "571bb4afd9edd8ce2be24a20d2f21436432b780b",
+    "src/main/java/com/text2sql/agent/semantic/EntityPolicy.java": "4d5d9c758819130b18037723766f71db18d84885",
+    "src/main/java/com/text2sql/agent/semantic/Metric.java": "d5cf5a4557157a842af1fcc05119156574926127",
+    "src/main/java/com/text2sql/agent/semantic/MetricRegistry.java": "f12bdbc088336f4dcae7a8124f3327dbf936b8b9",
+    "src/main/java/com/text2sql/agent/session/ConversationSession.java": "525f63e4b70bad83a83c6188442619fa0f7bc850",
+    "src/main/java/com/text2sql/agent/session/ConversationTurn.java": "2891d4a9be36bde8f4a27e261e17b576856d7afe",
+    "src/main/java/com/text2sql/agent/session/QuestionRewriter.java": "e528c2d31261961ffae70384b760b45fe9c61f9c",
+    "src/main/java/com/text2sql/agent/session/SessionContextCompressor.java": "eec9edbbe4613d44e53fc09974d76e1d6e39988e",
+    "src/main/java/com/text2sql/agent/session/SessionContextSummary.java": "bf1ce1709bee0cab2f704dbb2fac9fc63eda0b55",
+    "src/main/java/com/text2sql/agent/session/SessionStore.java": "65099dc4f98553606199833de9e4bbacbdb40a28",
+    "src/main/java/com/text2sql/agent/tool/AgentLoop.java": "34ca0b71cb54efec4e9849254b8606e97657d9ed",
+    "src/main/java/com/text2sql/agent/tool/AgentToolFunctions.java": "1d50b53f556b9a3a1dc354e1c6d6203e5f6595ad",
+    "src/main/java/com/text2sql/agent/tool/ToolCall.java": "b05e38d4a07c8f473e4be1912b1d987d3882643f",
+    "src/main/java/com/text2sql/agent/tool/ToolExecutor.java": "03a2b6c6a64c8887eced190f44ee2e01691f8369",
+    "src/main/java/com/text2sql/agent/tool/ToolResult.java": "681234b47f9a580aca50be1980a2a806cb5749cd",
+    "src/main/java/com/text2sql/agent/tool/ToolType.java": "a8591026ae6cd428a40d85d9f0f3089ec4e750b3",
+    "src/main/java/com/text2sql/agent/validation/CheckResult.java": "6f6184d1d5a3f7b0bd87bfdfe41cb207f2384f84",
+    "src/main/java/com/text2sql/agent/validation/ResultChecker.java": "cab36e15ad6e49c4f514f8d91f60c1c0d4caee93",
+    "src/main/java/com/text2sql/agent/validation/ResultColumnPolicy.java": "f4d69f578dbac0fcee31a007eb478b853741a68c",
+    "src/main/java/com/text2sql/agent/validation/SqlValidator.java": "fe6b75c6feb0f2b15ecce9917622fae650880533",
+    "src/main/java/com/text2sql/agent/validation/ValidationResult.java": "911908c36c0dd56c7c436144a2aa9533258aff94",
+    "src/main/resources/application-baseline.yml": "bfdf60b95bb53baac44156bdd1be1ac4906f83ff",
+    "src/main/resources/application-demo.yml": "7e48b18eb9fe1d81fd312390340d95067c31ccfb",
+    "src/main/resources/application-local.example.yml": "f2287eda691a2a206085f70a444356068f56ad22",
+    "src/main/resources/application-protected.yml": "09d399486dfb4200e13095f40257141abd34510f",
+    "src/main/resources/application.yml": "8b4789f1e3258a9ab8e8992593cc69a754ef1475",
+    "src/main/resources/fewshot/examples.yml": "28c6588d6a29db5ebcbb35ca617c1faf5ce1e84b",
+    "src/main/resources/schema/ambiguities.yml": "d17fdd51f9009291cd5f1ec30c7cc3b5e69b3b30",
+    "src/main/resources/schema/glossary.yml": "0df96d1f26f63c5fbee87521a5ddeb7817bf7c3a",
+    "src/main/resources/schema/metrics.yml": "ab4be0910756935ea164890ddf5e309340bc3d5d",
+    "src/main/resources/static/index.html": "cdb46bfecc0536ce2b4e747e94afd13ee3a4092e",
+    "src/test/java/com/ecommerce/platform/PlatformControllersTest.java": "b978ba75c3736cf4514f2b52b0d2726bfbf901c5",
+    "src/test/java/com/ecommerce/platform/order/OrderServiceTest.java": "b3b4f9f94cd969000b3492b6d2b69a85d4d694fb",
+    "src/test/java/com/ecommerce/platform/product/ProductServiceTest.java": "b1bd285d0db1349939c3f3cc48ed89798ff8a4b8",
+    "src/test/java/com/text2sql/agent/acceptance/DemoHttpAcceptanceProbe.java": "7dec0d003bfed1bd6238e5dfaee782571294897e",
+    "src/test/java/com/text2sql/agent/acceptance/DemoHttpAcceptanceProbeTest.java": "e0c801ed1040379d0aca047ce14d6b30ce5ecc1a",
+    "src/test/java/com/text2sql/agent/access/AccessHttpAcceptanceProbe.java": "29cb39dfa08496dc2036ac1819b10d92364b8073",
+    "src/test/java/com/text2sql/agent/access/ApiAdmissionGateTest.java": "540f574106b1352123c90965650b76398090d498",
+    "src/test/java/com/text2sql/agent/access/SingleUserAccessFilterTest.java": "10999d575fdd70f1738298fdd112da9d1acc3467",
+    "src/test/java/com/text2sql/agent/api/HealthControllerTest.java": "01e798f592c08a249c94484f2160bc551f34f102",
+    "src/test/java/com/text2sql/agent/budget/BudgetDatabaseTest.java": "b38d216bb13d171939b92f49014c4d46150f8c0e",
+    "src/test/java/com/text2sql/agent/budget/BudgetOrchestratorTest.java": "8f0a45888c424f0eeeaabececeb7d56cf18a0363",
+    "src/test/java/com/text2sql/agent/budget/BudgetTimingsAcceptanceProbe.java": "4c660be199df2b6a1109800c39dd2ac58712ec48",
+    "src/test/java/com/text2sql/agent/budget/BudgetTimingsTest.java": "d2cd3443d48a67b98c026b947fce24abe7e5c297",
+    "src/test/java/com/text2sql/agent/budget/BudgetTransportTest.java": "8fdcec29f9de83204f3fc5e284e8832e7235627d",
+    "src/test/java/com/text2sql/agent/budget/DeepSeekOffPeakPolicyTest.java": "a356e98fe9e8c12a6fff04a3a4b0a0ab3262bd18",
+    "src/test/java/com/text2sql/agent/budget/RequestBudgetTest.java": "6d2a73e912db7bf43ea42e662d82f7e8e910f2d0",
+    "src/test/java/com/text2sql/agent/cache/SemanticCacheTest.java": "eaa6c32da1cbc37e90a11bfac33b947678164eb5",
+    "src/test/java/com/text2sql/agent/clarification/AmbiguityDetectorTest.java": "413f31d1826ea36e114e870b1c28d7764aceb89c",
+    "src/test/java/com/text2sql/agent/clarification/ClarificationHttpAcceptanceProbe.java": "d70936d9f16aab17ebb12acc87d75dc3e3252386",
+    "src/test/java/com/text2sql/agent/clarification/ClarificationScopeProbe.java": "c07e40ffeda2ed26b1cca222146b0ab042618628",
+    "src/test/java/com/text2sql/agent/clarification/RepurchaseClarificationTest.java": "159a3f27cfafae859bec128dd955c1e127d0d142",
+    "src/test/java/com/text2sql/agent/config/RunProfilesTest.java": "30bfb4a01a1634891629ad0d93d94c7ee743a0c8",
+    "src/test/java/com/text2sql/agent/cost/CostHttpAcceptanceProbe.java": "870a29c729c3baca8140753f4b59e31e3866a59b",
+    "src/test/java/com/text2sql/agent/cost/CostQuotaGenerationTest.java": "5de9f0ccb6c9a3a00d5da7389a4d7d9b3ab171cc",
+    "src/test/java/com/text2sql/agent/cost/CostQuotaTest.java": "5a13cc1dfeb796b7e9b40913bddfe5d10a0aa3f8",
+    "src/test/java/com/text2sql/agent/evaluation/EvalItemLoaderFingerprintTest.java": "4f23fcc191892c23e8f969b518c02889e8046fd5",
+    "src/test/java/com/text2sql/agent/evaluation/EvalSuiteGuardTest.java": "884b8fe69648847a4eb00a4be14af5d191cbc4f9",
+    "src/test/java/com/text2sql/agent/evaluation/EvaluationEvidenceTest.java": "2a88b6accef7b797616159f3b5a593163a93dc3b",
+    "src/test/java/com/text2sql/agent/evaluation/FreezeEvalSuite.java": "00cdbf579033bf78b5cd5c312cf539e19beee449",
+    "src/test/java/com/text2sql/agent/evaluation/PromptVariantReportTest.java": "d71de18a59c221ad8ab589c078e0472c5a1e3808",
+    "src/test/java/com/text2sql/agent/evaluation/TableRecallTest.java": "0ec7a73bca1f37169a0cfbf9b57ebf618c06a883",
+    "src/test/java/com/text2sql/agent/execution/QueryPlanAnalyzerTest.java": "3036109aaefb9afae6a7414d74928b96e012f3bf",
+    "src/test/java/com/text2sql/agent/execution/ResultNormalizerTest.java": "2e26f44375e592d45b9c4e330f348d69e2f02d49",
+    "src/test/java/com/text2sql/agent/execution/SqlExecutorIntegrationTest.java": "4f926dcf52acbf1f9b6249f58fee1c8d3d88e153",
+    "src/test/java/com/text2sql/agent/fewshot/AvailableExampleTablesTest.java": "c50da3656f10071572070e8be42be81a2eeea2cc",
+    "src/test/java/com/text2sql/agent/fewshot/ExampleSelectorTest.java": "ffdedc7a79361ff36f8886ef7fff6fdd908b445b",
+    "src/test/java/com/text2sql/agent/generation/DeepSeekOffPeakGenerationTest.java": "514c8fc36c8a28aa48db76d398d9c76202e3a11e",
+    "src/test/java/com/text2sql/agent/generation/LlmCompletionTest.java": "5a7b6396edde7ff6d256a547b5eeeaa06a1198b5",
+    "src/test/java/com/text2sql/agent/generation/LlmGenerationModeTest.java": "7855e7d790d3c27e7c4f03c517b55c83816c24fd",
+    "src/test/java/com/text2sql/agent/generation/LlmSqlGeneratorLoggingTest.java": "5f6dfa89c935f9316f0f96e27c7d7b3072a011b7",
+    "src/test/java/com/text2sql/agent/generation/PromptFingerprintTest.java": "4d6b3e22c68a9979f9e97e4bd42b273aeffd4bca",
+    "src/test/java/com/text2sql/agent/generation/PromptVariantTest.java": "875087b58a035269b2893b722504b8c703badae8",
+    "src/test/java/com/text2sql/agent/generation/SqlExtractorAcceptanceProbe.java": "7664582769d59849b23a5f613b7bbd23c792bf1f",
+    "src/test/java/com/text2sql/agent/generation/SqlExtractorTest.java": "7387a9d06483f9325052dabeb4847e60b5184043",
+    "src/test/java/com/text2sql/agent/observability/EvaluationTraceTest.java": "7ffb6a48ea16d42eb1b5d3ccd350b4da709fbdc1",
+    "src/test/java/com/text2sql/agent/observability/LlmCallLogTest.java": "3945e7cb24597be2ee65c8000819155c278ea75a",
+    "src/test/java/com/text2sql/agent/observability/LlmCallRecordTest.java": "3198f95fd4f38001a49d8582db74dc29e9b76260",
+    "src/test/java/com/text2sql/agent/orchestrator/OrchestratorSelfCorrectionTest.java": "bcdc13701367ebf44bcb85b2901ed5c0c8b1fb5d",
+    "src/test/java/com/text2sql/agent/orchestrator/SqlExtractionPipelineTest.java": "eb9effdd9f3cfb584b31474324cebf602f98fcbd",
+    "src/test/java/com/text2sql/agent/retrieval/AvailableExamplesPairProbe.java": "1216e06ef5791962be7c9f8a35628cfe778974f8",
+    "src/test/java/com/text2sql/agent/retrieval/ColumnPrunerIntegrationTest.java": "c2a5abe13acef4c91cb775e819875394ae2037a1",
+    "src/test/java/com/text2sql/agent/retrieval/ColumnPrunerTest.java": "f6b14f69028d45b47a634f52225dd49b22486cb8",
+    "src/test/java/com/text2sql/agent/retrieval/ContextLeafFeasibilityProbe.java": "e5131faaf1168e8c14b7c2cf4b9804106896b460",
+    "src/test/java/com/text2sql/agent/retrieval/DatabaseSchemaReaderIntegrationTest.java": "0ec4db5930dbd1719669ca92c6fa533f34271f40",
+    "src/test/java/com/text2sql/agent/retrieval/GlossaryRelationsIntegrityTest.java": "bf2cc7e4986b946486d74fdb80809d8a468f8802",
+    "src/test/java/com/text2sql/agent/retrieval/JoinGraphTest.java": "aa750a3a1bf30854758dfd7434d712c3824e1895",
+    "src/test/java/com/text2sql/agent/retrieval/JoinPathPlannerTest.java": "aa8995d9c93ddd696d750a807b92d191ef725524",
+    "src/test/java/com/text2sql/agent/retrieval/JoinRenderingIntegrationTest.java": "dedba4a4fe0c1fe9ed1c7d998fdb2b315e07a7be",
+    "src/test/java/com/text2sql/agent/retrieval/LexicalSchemaRetrieverTest.java": "e807e0bad4d476f5e816f0c7b9495e429537fae3",
+    "src/test/java/com/text2sql/agent/retrieval/MemberMetricInjectionProbe.java": "ed895ebb9430afe9f5011fc87d726144727dc642",
+    "src/test/java/com/text2sql/agent/retrieval/PromptDeterminismProbe.java": "6909a468c53ac5a03d86ffd7cad00e3d31f4273d",
+    "src/test/java/com/text2sql/agent/retrieval/PromptDirectivePairProbe.java": "107d4f2f0cee50060cff412c4812d81391d34069",
+    "src/test/java/com/text2sql/agent/retrieval/RetrievalDeterminismTest.java": "3042dca415bb4d5737cf86da891f2c575c963a7a",
+    "src/test/java/com/text2sql/agent/retrieval/SchemaDdlRendererTest.java": "24adbcf6989f3d8bd954baecbf1fd4a496c26f4d",
+    "src/test/java/com/text2sql/agent/retrieval/ValueRetrieverTest.java": "4195c29593432735e45f096155b03f71330a3eed",
+    "src/test/java/com/text2sql/agent/semantic/CategoryNullContractTest.java": "c72fbf3e8eb3a15e706603652602168be4072bb6",
+    "src/test/java/com/text2sql/agent/semantic/CategoryPolicyHttpProbe.java": "15c076ada8b595c05e8324a27873edd2de7e03ef",
+    "src/test/java/com/text2sql/agent/semantic/CountComparisonContractTest.java": "70fc7108fa1169918ec361b1068701f9a4d8687f",
+    "src/test/java/com/text2sql/agent/semantic/CountComparisonDatabaseTest.java": "89ae23b03b0a4c21905d5cc47fc1aede881728ac",
+    "src/test/java/com/text2sql/agent/semantic/CountComparisonHttpProbe.java": "9fa6af30e6e080788440d043e7ec71b84d2ac2c4",
+    "src/test/java/com/text2sql/agent/semantic/CountContractEvidenceProbe.java": "a8886dbb62c00d2973f98d3403affb195f565186",
+    "src/test/java/com/text2sql/agent/semantic/CustomerIdentityContractTest.java": "2d90c9a5b7e87883a7ad32e92f98936a01568602",
+    "src/test/java/com/text2sql/agent/semantic/CustomerIdentityHttpProbe.java": "af1e31d961ecbb1a7f3c93c0d3d3d796bdd77f34",
+    "src/test/java/com/text2sql/agent/semantic/CustomerPopulationDatabaseTest.java": "0be224154cfbcf1b93de2827a8392b6c503f5681",
+    "src/test/java/com/text2sql/agent/semantic/CustomerPopulationHttpProbe.java": "9b97d06007ab1cc88299c02bdc856fbf584c3025",
+    "src/test/java/com/text2sql/agent/semantic/DeliveryClockDatabaseTest.java": "ca9789887a879213ac8b546709779e0775e70167",
+    "src/test/java/com/text2sql/agent/semantic/DeliveryClockSqlAudit.java": "668c450b89dcdd4fa72c6ef7621be26d632b8bc6",
+    "src/test/java/com/text2sql/agent/semantic/DeliveryClockSqlAuditTest.java": "7219f6a26956b6f118390258097cf2ece7a69430",
+    "src/test/java/com/text2sql/agent/semantic/DeliveryMetricScopeTest.java": "14649538aa90648b3ba8666cc514aeb79cb0a5ce",
+    "src/test/java/com/text2sql/agent/semantic/DeliveryScopeHttpProbe.java": "ec41308ad08cbe0ee8b8b16619c10472bf36cbbd",
+    "src/test/java/com/text2sql/agent/semantic/DimensionPolicyTest.java": "3168888724a76fd0e57df4007c70bc78f7767b63",
+    "src/test/java/com/text2sql/agent/semantic/EntityPolicyTest.java": "17a4fd26740410e544a5edfe0bbbcd96705f4e17",
+    "src/test/java/com/text2sql/agent/semantic/MemberPenetrationContractTest.java": "d64bf61d50533644320d210c4cfb591e3e2688c1",
+    "src/test/java/com/text2sql/agent/semantic/MetricRegistryTest.java": "603ac8b13ae85e28957f6eccc3e8fdb95267b16f",
+    "src/test/java/com/text2sql/agent/semantic/MetricUnitContractTest.java": "529d8122666c4843b588aac754ef990ef4c8aba4",
+    "src/test/java/com/text2sql/agent/semantic/OutputContractHttpProbe.java": "6a9fb9dc653faaec825c881ab2345d33b9f13c9a",
+    "src/test/java/com/text2sql/agent/semantic/RepeatUnitDatabaseContractTest.java": "0879a425ad68b32a81f20b4e153b32665625adbd",
+    "src/test/java/com/text2sql/agent/session/MultiTurnOrchestratorTest.java": "ed5853ebf93ae62c21b26661f882c525d19a33f8",
+    "src/test/java/com/text2sql/agent/session/QuestionRewriterTest.java": "21b80ec550422a0d01099fd5ced713f5cb3123c5",
+    "src/test/java/com/text2sql/agent/session/SessionContextCompressorTest.java": "076538965439685f938bfdb46f694f28d762d08c",
+    "src/test/java/com/text2sql/agent/session/SessionOutcomeAcceptanceProbe.java": "5a8c7f016baa86f0e60020051bf3f60ea9557683",
+    "src/test/java/com/text2sql/agent/session/SessionOutcomeFinalizationTest.java": "da995027f1a44efb30a78000d27eb3b44dbe4a74",
+    "src/test/java/com/text2sql/agent/session/SessionStoreDatabaseTest.java": "b6b4ff33a616903f4dedda79a6133fc444c2beda",
+    "src/test/java/com/text2sql/agent/session/SessionStoreTest.java": "b287b6d266acfae443b0d126da753a8c5056454f",
+    "src/test/java/com/text2sql/agent/tool/AgentLoopTest.java": "cb1ef053da1765526c649adfb6b19b1651f6c9ad",
+    "src/test/java/com/text2sql/agent/tool/ToolExecutorTest.java": "4a27d34846cd97bf9f5c09a99a81c051d8943250",
+    "src/test/java/com/text2sql/agent/validation/AdversarialSqlTest.java": "c1fccce0e9460ed146bd11ae6bac9125ac505426",
+    "src/test/java/com/text2sql/agent/validation/ResultCheckerAcceptanceProbe.java": "7ece06acb15c974cbda51f0ae89617c9b82e6622",
+    "src/test/java/com/text2sql/agent/validation/ResultCheckerBoundaryTest.java": "6d412c3695b9a50e660028fe51eeda977a60a153",
+    "src/test/java/com/text2sql/agent/validation/ResultCheckerTest.java": "ea08ccdd398cad5f7c92a7db567d8263dec57a8f",
+    "src/test/java/com/text2sql/agent/validation/SqlValidatorTest.java": "26dd994032152cdb4e2f9eab91ec9f6517cf0ec2",
+    "src/test/resources/contracts/metrics-before-result-contract.yml": "dcbebd3160bdf4108378cff50aaa9b8d1184be8c",
+    "src/test/resources/prompts/p10-system.txt": "6a7928cede6184e3d5fa3bcd7671893451ee391d",
+    "src/test/resources/prompts/p11-system.txt": "5f38b35bcc2e679d61ebb105db81850af0e01278",
+    "src/test/resources/prompts/p9-system.txt": "1873ade163c2f6449664c6ad71b27a167b9ba063"
+  },
+  "artifacts": [
+    {
+      "path": "after-dev.json",
+      "sha256": "f893684ab86bed223dc88de48addf63c135060a05601b1adece23f0f49a97a49"
+    },
+    {
+      "path": "after-eval.json",
+      "sha256": "499c8faa133ad77e39b311e20dc838be9bcd7db96dced96285c36efa1983a526"
+    },
+    {
+      "path": "audit_evidence.py",
+      "sha256": "8faea5c5a35fc2d0e07dd5a07d5405491c8fa92068bf5b591eaa63708c498f92"
+    },
+    {
+      "path": "credential-scan.json",
+      "sha256": "4c3f32c328d66e587f4b0b5d491f699c8fe1644a6eea12a9b42b7911a3daf431"
+    },
+    {
+      "path": "gold/eval-20261117-230333-dryrun.json",
+      "sha256": "e3583647492f02dd7c4981b2db8b5f95661c2fcff07b3a58d412829d1d74ec55"
+    },
+    {
+      "path": "gold.exit",
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+    },
+    {
+      "path": "gold.log",
+      "sha256": "c2a695826d00e005346272ff8455a88aed8e14f463ce3c7f0133b0c45fb39925"
+    },
+    {
+      "path": "java-tests.exit",
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+    },
+    {
+      "path": "java-tests.json",
+      "sha256": "1280bf51be80d49e5ce7d06d221869e0d7f8ea1ffc0fa3d0fbab6d53cf455f84"
+    },
+    {
+      "path": "java-tests.log",
+      "sha256": "bec50bf177add8f7e0eba16a650675eb93a715351218a24389a0636ef10fc988"
+    },
+    {
+      "path": "prompt-comparison.json",
+      "sha256": "f03d18c0ca63ef48b718563d6b6e68d6398498b4cd603c516fc9b1827060a5bd"
+    },
+    {
+      "path": "prompt-dev.exit",
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+    },
+    {
+      "path": "prompt-dev.log",
+      "sha256": "7830f738eb503f4c7d0cb743b3ad30922a07fdc27c2f3d86ace40bba96e1535e"
+    },
+    {
+      "path": "prompt-eval.exit",
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+    },
+    {
+      "path": "prompt-eval.log",
+      "sha256": "984a369613a596aa5335b7be3d880f343d47cdabdee4725572966e67c1f26079"
+    },
+    {
+      "path": "surefire/TEST-com.ecommerce.platform.order.OrderServiceTest.xml",
+      "sha256": "6b03c52e763471ea2009b1beb55d5e0540788347a0d1b7d29f0a8b96a44e6cdc"
+    },
+    {
+      "path": "surefire/TEST-com.ecommerce.platform.PlatformControllersTest.xml",
+      "sha256": "942993ba13a81cdee401f9da1a2a6983013353db0cfed28c11602066fd10e928"
+    },
+    {
+      "path": "surefire/TEST-com.ecommerce.platform.product.ProductServiceTest.xml",
+      "sha256": "9aa3ff5a12e948173d5f443277a6b433b3778d26470f25a2b24eacf92d697396"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.acceptance.DemoHttpAcceptanceProbeTest.xml",
+      "sha256": "3ff06c7fc0a1a9623ae578ad5eb5a1135f4c9c22b1fa15d01507435e34e53532"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.access.ApiAdmissionGateTest.xml",
+      "sha256": "6067b1149c68c955957b5824fa8af8668cc9032b1032444f3a0ee194da841438"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.access.SingleUserAccessFilterTest.xml",
+      "sha256": "aa9a60dd2d3089eeab5e562c8c7d10597d427ebdc3e767823c1d24b7c6081831"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.api.HealthControllerTest.xml",
+      "sha256": "ef753b40c5eacd998594dfae0f5919e9eb035fd2fd9e658f837e62118f9e521b"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.budget.BudgetDatabaseTest.xml",
+      "sha256": "d517dac9d01d9179bef40f4605e80ac4bff468764b51d76bf4b37cd9baa9d30d"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.budget.BudgetOrchestratorTest.xml",
+      "sha256": "6f32dd5624aefe07f7577cf9a9f65773ef8787f0f3dbaffb4a989058a9b1729a"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.budget.BudgetTimingsTest.xml",
+      "sha256": "45985cbad90d4706ebd27070e549a3b0ececec9e6cb9fd93d1ef9482a023a940"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.budget.BudgetTransportTest.xml",
+      "sha256": "08f5c4256fc7ace36e59c22f99f092739ea6b8e718c6470aecf884ae675e367e"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.budget.DeepSeekOffPeakPolicyTest.xml",
+      "sha256": "3e61fd6b6ff5653a1b4e9b54a2e75cc04ec3badc5f5907e7d1b529b3c9573e8d"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.budget.RequestBudgetTest.xml",
+      "sha256": "9ce7a3a6d6bd753bd9209da8b533bfa04426b62f91327aed5f2f45915b830132"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.cache.SemanticCacheTest.xml",
+      "sha256": "812978bc79eb4ee0e012678c1e530e0a86e21068251b93ba6ddf908dadbfdb8f"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.clarification.AmbiguityDetectorTest.xml",
+      "sha256": "0c10ec3cbe51745ade8398f4704d1a708d507a31d35847b4a406b7a2f887cbb4"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.clarification.RepurchaseClarificationTest.xml",
+      "sha256": "e290e077004b3a47fcce55fff50fc211f7a7b43f92a81c1a73d94c1c7cfaa52d"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.config.RunProfilesTest.xml",
+      "sha256": "2c9e01b877660152542e45607565410897ce968452ff0ca84d0de63deff4f00f"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.cost.CostQuotaGenerationTest.xml",
+      "sha256": "b32f00f241a178c3c2fb2a0611f1e625c9243e21fbfc39999380e858a37e932c"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.cost.CostQuotaTest.xml",
+      "sha256": "c5f4873f64b9d5244fc64bcb9ada490b8be136af28340398f572d367a12bc67c"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.evaluation.EvalItemLoaderFingerprintTest.xml",
+      "sha256": "17c768f6c5ab29949504efe23c6dffbfacff4bff49412e78272b6fb29ed9809b"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.evaluation.EvalSuiteGuardTest.xml",
+      "sha256": "5011b405bacc1f031ea75f681bc4b96e647823dcb17d1c7ea0d99f6484bf6446"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.evaluation.EvaluationEvidenceTest.xml",
+      "sha256": "4b30fa3bc689e54efc8a9e0e4933c89c9f632f6c454c5d3c8e39425c9f379d85"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.evaluation.PromptVariantReportTest.xml",
+      "sha256": "6eef7c6b097a3fb409c9f76fd9b13b4f4ef0a183ed3e33bfb23b7bf1e89c1646"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.evaluation.TableRecallTest.xml",
+      "sha256": "54616885a8887f733c3726a065c6d3b5dcfb7d62421545400418f7fa6d059d06"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.execution.QueryPlanAnalyzerTest.xml",
+      "sha256": "ad949fded8fed4d4272772af66a3c9d58352d9dd72652003e2f64bb7dd6447c5"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.execution.ResultNormalizerTest.xml",
+      "sha256": "4c00d336ec123987a89abc8e1d996f9caf4e0be1bfc1eee616f24f507caeeea9"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.execution.SqlExecutorIntegrationTest.xml",
+      "sha256": "b255288cce875f2b7a88f0e959822062bdea70a39a78e0734fd28c9198dfec25"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.fewshot.AvailableExampleTablesTest.xml",
+      "sha256": "e2b73c14329fe54334f6a72ced744b4e54b13085aaa87bf85358039e658cb141"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.fewshot.ExampleSelectorTest.xml",
+      "sha256": "4342b30e635e8dd04a9e245bac05ca0d0c920b90817519a7492bb4020b20cf05"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.generation.DeepSeekOffPeakGenerationTest.xml",
+      "sha256": "e9fd3acd9cdc0bc6d4f61bcce0605beccf96afa33827d290b02cb545b228914f"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.generation.LlmCompletionTest.xml",
+      "sha256": "b0638d390c6ecf99f58d7e5992c2439294966bf7390ac900416359c420587764"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.generation.LlmGenerationModeTest.xml",
+      "sha256": "34f9ee9f350afc63f435b497ee9687fe79aa4f2403973965be859aec4b0f2c3d"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.generation.LlmSqlGeneratorLoggingTest.xml",
+      "sha256": "3b66a4e2a3c421f4e312775f63d696d8fe795d6722674b50258780cc1fce036c"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.generation.PromptFingerprintTest.xml",
+      "sha256": "a2842c4a81af87ec9c12fe0cd780723719f7948e3f648976e6701f315f202884"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.generation.PromptVariantTest.xml",
+      "sha256": "98edb2d94c00eb399c8fd4610d97d11210ca6ebde805474cd260e474e2eb5eac"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.generation.SqlExtractorTest.xml",
+      "sha256": "16c85dbf94ca01933e8c7c186cf19bb12bed39a5fdfd92d30fd4756c90e9abf1"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.observability.EvaluationTraceTest.xml",
+      "sha256": "005da3ce3999af1574e7760a46ce03a1ed5762755e547b9143a923f6b8779199"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.observability.LlmCallLogTest.xml",
+      "sha256": "69268034c07b5b7d22b3c23d77b7114b826865fdabe4a9bf4521ff5d801e8e5c"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.observability.LlmCallRecordTest.xml",
+      "sha256": "35d506cfba162cf76499ca42dd3a40a3f3baa462efbb34a098513c59f6d102a8"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.orchestrator.OrchestratorSelfCorrectionTest.xml",
+      "sha256": "67aa3b9a4aa3fa2d5a7928f49a9c23ae3a56078aa2f0b2f9c06c82971e825dfd"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.orchestrator.SqlExtractionPipelineTest.xml",
+      "sha256": "4565c013dc8e971e65e88377afe78c91ac1767612a336d027a030ee90eb55953"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.retrieval.ColumnPrunerIntegrationTest.xml",
+      "sha256": "f92380e314825a8abba760e700efb645a2503b367b655edce33a156fbf833703"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.retrieval.ColumnPrunerTest.xml",
+      "sha256": "6615dd2fae4da8208023eaf54fc90313bdf4f0e119bebd0f939d2534554dd986"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.retrieval.DatabaseSchemaReaderIntegrationTest.xml",
+      "sha256": "94f759652e030a45821609d92d8a6ebc31e1b79dd7b529cf3dead8cfb13ff3b4"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.retrieval.GlossaryRelationsIntegrityTest.xml",
+      "sha256": "9c798c25bf88a640794d62d4837f59db0c057715754b1bc0ee42dbf83c698d31"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.retrieval.JoinGraphTest.xml",
+      "sha256": "1a6fb7ccd909afb7dbb2684cdbad7d7eb8ea22433c7663f876c74daa5ba894c8"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.retrieval.JoinPathPlannerTest.xml",
+      "sha256": "6826a3f73f1f40fe0dbcf67670205d6d9aef0ce4a4316dd7649324fa4a37dc12"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.retrieval.JoinRenderingIntegrationTest.xml",
+      "sha256": "32b986c9322cc75f2b4ee0298d9f29110a9eb2f2f71f9dc453802815e384bbcc"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.retrieval.LexicalSchemaRetrieverTest.xml",
+      "sha256": "64f5d1b28a2e9378d30b0d103bebd978c5e487f8349eb64631d0ee01a28dfe68"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.retrieval.RetrievalDeterminismTest.xml",
+      "sha256": "5ce282f44c9fa0c7b2d1f00b249c5cf5b42083dca19676ae346b56cd09fc7f0a"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.retrieval.SchemaDdlRendererTest.xml",
+      "sha256": "da453b6862ec7a55dc0e9cd95c00b245b6d70eb7a226b375afd9a1cd7f6e8830"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.retrieval.ValueRetrieverTest.xml",
+      "sha256": "c204e838eda1ac9e55cf38e46d3a77ac9f4754cc2cfdc02ed8a23b2dc6e00c0a"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.semantic.CategoryNullContractTest.xml",
+      "sha256": "2f739a156b6165b54860b09b2cbaa662a7bc32fe726b802c3bb34b90265fe2bb"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.semantic.CountComparisonContractTest.xml",
+      "sha256": "1dc707c33474a38ad1d68b4cdcd4f458b2e6a904edac5da1073e9ccfb0139347"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.semantic.CountComparisonDatabaseTest.xml",
+      "sha256": "b2758ff8e3767d2a38d9eff023fe1cbf5a844f937e8fe8247d476ace26ee8d6c"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.semantic.CustomerIdentityContractTest.xml",
+      "sha256": "0f285788beccdb88c1b52c657933e038c70345b1568f9378ff6b6506d97c8766"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.semantic.CustomerPopulationDatabaseTest.xml",
+      "sha256": "51600e78d4e3b87ece5cdfb5c8c7cd596156ee39e1047fcd19d8428b2aeef3cf"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.semantic.DeliveryClockDatabaseTest.xml",
+      "sha256": "062e2fd392f563ec8e429a675a5baeaf4a5c63a8d258d1f649cfdbc900472df7"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.semantic.DeliveryClockSqlAuditTest.xml",
+      "sha256": "1fef82bede7e8599fd910cb6bea59ae4e90e631109301e0a03b93eaf1c500a0e"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.semantic.DeliveryMetricScopeTest.xml",
+      "sha256": "f9594887252a00c20ddff968c6c50b6fa58242608a4603bd5aa8ba7805558c17"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.semantic.DimensionPolicyTest.xml",
+      "sha256": "80154afca442a341853251b253746306e18bca0a6161cbf78b4b845f66db2914"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.semantic.EntityPolicyTest.xml",
+      "sha256": "48cd3903ce4e2241c29769fa7cf137c64a9b590a767517d092af5354524d41ce"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.semantic.MemberPenetrationContractTest.xml",
+      "sha256": "99f349698bcf4e02dd22adfef6322303dae3c3a89975811e4f8aabfe645bd0a5"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.semantic.MetricRegistryTest.xml",
+      "sha256": "0018cb0b18ed13cef83fb9e91fe4e57aeb189814418984576daa71152573364f"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.semantic.MetricUnitContractTest.xml",
+      "sha256": "db626fb0368cd0d7bce9c352ff31c4da059de5ef3743f3a7596055d07fd948a8"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.semantic.RepeatUnitDatabaseContractTest.xml",
+      "sha256": "4cba84db7774e8c8c66e44c7ded821749c859c6f9a2f81441a8399a3b6fe965e"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.session.MultiTurnOrchestratorTest.xml",
+      "sha256": "10f08dca9287dd5b076619d5a1f7d9a622e86502731fd809c51afcbd5128f97f"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.session.QuestionRewriterTest.xml",
+      "sha256": "02f6f0a9d7688f666b0564553dd63fcfb94d4886ac9d31e01fd6340ef33b37eb"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.session.SessionContextCompressorTest.xml",
+      "sha256": "6c92c6f49187de3d41ff2dd622e799be83febc8a2937cd9432811b9807ef2c13"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.session.SessionOutcomeFinalizationTest.xml",
+      "sha256": "56aa2899221e63eb0d1bd499909dfa086e3f38a3888c212cea5f257a9a69c1c2"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.session.SessionStoreDatabaseTest.xml",
+      "sha256": "b2a0d54011a643f90a01e92c7a665888f16cafc8cbcf115440e8eee87880f935"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.session.SessionStoreTest.xml",
+      "sha256": "b91e286da465f0dc4e737f3bcbdbeaeffcb6def50b585740396e48ecf88f2968"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.tool.AgentLoopTest.xml",
+      "sha256": "d404b96eed276417ab589f0dd5f6faba88fd0cc9be8f5e7ba76bd048f1e3ca79"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.tool.ToolExecutorTest.xml",
+      "sha256": "9373b5c2d0b11e1e81f2a7b862644dcc4bf992592487a05b661e6d68eb24cad7"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.validation.AdversarialSqlTest.xml",
+      "sha256": "a12ffd1d6c23ff86011bb216ea10dc58967a30b445ff1c8f7e0fa86732d9eaf9"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.validation.ResultCheckerBoundaryTest.xml",
+      "sha256": "dd4ee8d508920d4cc506cc6b544f025975b1f963038cfbe631a77af6e3f7dc49"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.validation.ResultCheckerTest.xml",
+      "sha256": "4329acc893ac1d713ae7eda8697bf25995658883e2f2c4b11a7af5341dd9427e"
+    },
+    {
+      "path": "surefire/TEST-com.text2sql.agent.validation.SqlValidatorTest.xml",
+      "sha256": "f4f8ddab774eb5e399bd32ddfbe54f7d7bf234e4d31ef731daf21d6d4de530f7"
+    }
+  ]
+}

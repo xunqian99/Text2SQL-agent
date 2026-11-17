@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 class EntityPolicyTest {
@@ -21,15 +22,44 @@ class EntityPolicyTest {
             new SchemaContext.Column("customer_id", "text", false, "", true),
             new SchemaContext.Column("customer_unique_id", "text", true, "")));
 
+    @Test void populationScopeIsExplicitAndSeparateFromEntityActivityAndUserOverrides() {
+        var policy = DimensionPolicyTest.registry().entityPolicies().getFirst();
+        assertThat(policy.populationCountUnit()).isEqualTo(EntityPolicy.PopulationCountUnit.ROW_KEY);
+        assertThat(policy.render()).contains("populationCountUnit=ROW_KEY", "默认统计存储记录", "列名应体现记录单位",
+                "明确问自然人、人数", "按业务实体身份分组", "分别计算", "不覆盖已注册指标的分子分母", "不授权改变过滤或JOIN覆盖");
+        var entityDefault = new EntityPolicy("other", "accounts", "row_id", "person_id",
+                EntityPolicy.PopulationCountUnit.ENTITY_IDENTITY, List.of("账户"), "sample");
+        assertThat(entityDefault.render()).contains("COUNT(DISTINCT accounts.person_id)")
+                .doesNotContain("默认统计存储记录", "customers.");
+        assertThatThrownBy(() -> new EntityPolicy("other", "accounts", "row_id", "person_id",
+                null, List.of("账户"), "sample")).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test void archivedEntityKeysAliasesAndOtherPoliciesStayIntact() throws Exception {
+        var mapper = new com.fasterxml.jackson.databind.ObjectMapper(new com.fasterxml.jackson.dataformat.yaml.YAMLFactory());
+        var before = mapper.readTree(getClass().getResourceAsStream("/contracts/metrics-before-result-contract.yml"));
+        var after = mapper.readTree(getClass().getResourceAsStream("/schema/metrics.yml"));
+        assertThat(after.path("dimensionPolicies")).isEqualTo(before.path("dimensionPolicies"));
+        var oldPolicy = (com.fasterxml.jackson.databind.node.ObjectNode) before.path("entityPolicies").get(0);
+        var newPolicy = (com.fasterxml.jackson.databind.node.ObjectNode) after.path("entityPolicies").get(0);
+        assertThat(after.path("entityPolicies").size()).isEqualTo(1);
+        assertThat(newPolicy.path("name").asText()).isEqualTo("customer_identity_v2");
+        assertThat(newPolicy.path("populationCountUnit").asText()).isEqualTo("ROW_KEY");
+        assertThat(newPolicy.path("notes").asText()).contains("产品默认", "每州内独立去重", "不能把各州人数相加");
+        oldPolicy.remove(List.of("name", "notes"));
+        newPolicy.remove(List.of("name", "notes", "populationCountUnit"));
+        assertThat(newPolicy).isEqualTo(oldPolicy);
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {"每个客户的订单数", "顾客的消费次数", "买家总人数", "用户复购次数",
             "同一自然人的订单", "按 CUSTOMER_ID 分组", "customer_unique_id对应几个customer_id"})
     void declaresBothIdentitiesWithoutOverridingExplicitKeys(String question) {
         var registry = DimensionPolicyTest.registry();
         String text = registry.appendPolicies(question, List.of(CUSTOMERS), "existing metric");
-        assertThat(text).startsWith("existing metric\n\nENTITY_POLICY customer_identity_v1")
+        assertThat(text).startsWith("existing metric\n\nENTITY_POLICY customer_identity_v2")
                 .contains("customers.customer_id", "customers.customer_unique_id", "用户明确指定", "不擅自改成实体级统计")
-                .containsOnlyOnce("ENTITY_POLICY customer_identity_v1");
+                .containsOnlyOnce("ENTITY_POLICY customer_identity_v2");
         assertThat(registry.all()).hasSize(25);
         assertThat(registry.entityPolicies()).hasSize(1);
     }
@@ -56,7 +86,7 @@ class EntityPolicyTest {
         var upper = new SchemaContext.Table("CUSTOMERS", "", CUSTOMERS.columns().stream()
                 .map(c -> new SchemaContext.Column(c.name().toUpperCase(java.util.Locale.ROOT), "text", false, "")).toList());
         assertThat(DimensionPolicyTest.registry().appendPolicies("客户", List.of(upper), ""))
-                .contains("ENTITY_POLICY customer_identity_v1");
+                .contains("ENTITY_POLICY customer_identity_v2");
     }
 
     @ParameterizedTest @ValueSource(booleans = {false, true})
@@ -75,7 +105,7 @@ class EntityPolicyTest {
             String question = "每个客户的订单数量";
             var context = provider.provide(question);
             assertThat(new PromptTemplate(props).userPrompt(context, question))
-                    .contains("ENTITY_POLICY customer_identity_v1", "customers.customer_unique_id");
+                    .contains("ENTITY_POLICY customer_identity_v2", "customers.customer_unique_id");
             assertThat(context.tables()).isEqualTo(full.tables());
             props.getSemantic().setEnabled(false);
             assertThat(provider.provide(question).metricsText()).isBlank();

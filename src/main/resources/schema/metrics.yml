@@ -430,14 +430,18 @@ dimensionPolicies:
 
 # 身份/粒度口径只解释当前上下文中实际存在的列，不参与表召回或SQL改写。
 entityPolicies:
-  - name: customer_identity_v1
+  - name: customer_identity_v2
     table: customers
     rowKey: customer_id
     identityColumn: customer_unique_id
+    populationCountUnit: ROW_KEY
     aliases: [客户, 顾客, 买家, 消费者, 用户, 自然人, customer_id, customer_unique_id]
     notes: >-
-      本项目客户/用户/买家默认表示自然人；同一自然人可以对应多个客户关联键，
-      每客户订单数、复购、下单人数都必须识别跨关联键的同一个人。
+      本项目区分客户档案记录的规模与自然人行为：裸客户数/按属性分布默认数客户记录，
+      这是产品默认，不宣称“客户”一词只有这一种解释；明确自然人/人数/去重要求可覆盖默认。
+      同一自然人可以对应多个客户关联键，每客户订单数、复购、下单人数必须识别跨关联键的同一个人。
+      同一人可有不同州的客户记录；按州记录数按每条记录的州归属，按州人数则每州内独立去重，
+      同一人可参与多个州，不能把各州人数相加当全站去重人数，也不猜测“最新州”或唯一归属。
       客户关联键仍用于连接订单，不能直接用它代表每个真实客户。
       人数和按人分组时不把SQL NULL身份合并成一个人；默认只统计已知身份，
       用户明确要求未知身份分组时可单列未知组，但不能把它称为一个真实客户。

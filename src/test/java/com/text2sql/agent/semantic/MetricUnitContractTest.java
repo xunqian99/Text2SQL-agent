@@ -34,10 +34,13 @@ class MetricUnitContractTest {
         assertThat(metric("gmv_with_freight").outputUnit()).isNull();
     }
 
-    @Test void archivedDefinitionsStayUnchangedExceptDocumentedUnitRepeatAndDeliveryScopeAdditions() throws Exception {
+    @Test void archivedDefinitionsStayUnchangedExceptDocumentedUnitRepeatDeliveryAndEntityScopeAdditions() throws Exception {
         var mapper = new ObjectMapper(new YAMLFactory());
         var before = mapper.readTree(getClass().getResourceAsStream("/contracts/metrics-before-result-contract.yml"));
         var after = mapper.readTree(getClass().getResourceAsStream("/schema/metrics.yml"));
+        // Customer population scope is checked independently in EntityPolicyTest; historical snapshot stays intact.
+        ((com.fasterxml.jackson.databind.node.ObjectNode) before).remove("entityPolicies");
+        ((com.fasterxml.jackson.databind.node.ObjectNode) after).remove("entityPolicies");
         int unitCount = 0;
         var metricEntries = (com.fasterxml.jackson.databind.node.ArrayNode) after.path("metrics");
         for (int i = metricEntries.size() - 1; i >= 0; i--) {
