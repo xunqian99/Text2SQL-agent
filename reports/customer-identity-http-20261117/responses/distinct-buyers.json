@@ -1,0 +1,67 @@
+{
+  "body" : {
+    "status" : "SUCCESS",
+    "sql" : "SELECT COUNT(DISTINCT c.customer_unique_id) AS customer_count\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nWHERE c.customer_unique_id IS NOT NULL;",
+    "message" : null,
+    "violations" : [ ],
+    "columns" : [ "customer_count" ],
+    "rows" : [ [ "96096" ] ],
+    "truncated" : false,
+    "rewritten" : false,
+    "rowCount" : 1,
+    "schemaTableCount" : 8,
+    "retrievedTables" : [ "customers", "members", "orders", "member_levels", "order_items", "order_payments", "order_reviews", "regions" ],
+    "schemaDdlChars" : 1377,
+    "llm" : {
+      "model" : "deepseek-flash",
+      "promptTokens" : 2539,
+      "completionTokens" : 46,
+      "totalTokens" : 2585,
+      "latencyMs" : 864,
+      "costYuan" : 0.00109228
+    },
+    "timings" : {
+      "retrievalMs" : 6,
+      "generationMs" : 865,
+      "validationMs" : 2,
+      "executionMs" : 73,
+      "totalMs" : 949
+    },
+    "sessionId" : "identity-distinct-buyers",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "55ac26e0-6a06-438c-b2e2-fb2adf940d25",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 1,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 949,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "RESULT_CHECK" : 0,
+        "CACHE_WRITE" : 0,
+        "CLARIFICATION" : 0,
+        "EXPLAIN" : 3,
+        "VALIDATION" : 2,
+        "ADMISSION" : 0,
+        "SESSION" : 0,
+        "EXECUTION" : 70,
+        "MODEL" : 855,
+        "GENERATION" : 10,
+        "CACHE" : 0,
+        "CONVERSATION" : 0,
+        "RETRIEVAL" : 6
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 3,
+      "currentStageMs" : 0
+    }
+  },
+  "id" : "distinct-buyers",
+  "httpStatus" : 200,
+  "wallMs" : 955
+}

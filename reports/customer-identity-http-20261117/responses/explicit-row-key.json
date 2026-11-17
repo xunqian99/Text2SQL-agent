@@ -1,0 +1,67 @@
+{
+  "body" : {
+    "status" : "SUCCESS",
+    "sql" : "SELECT order_cnt, COUNT(*) AS customer_cnt\nFROM (\n  SELECT customer_id, COUNT(*) AS order_cnt\n  FROM orders\n  GROUP BY customer_id\n) t\nGROUP BY order_cnt\nORDER BY order_cnt ASC\nLIMIT 100;",
+    "message" : null,
+    "violations" : [ ],
+    "columns" : [ "order_cnt", "customer_cnt" ],
+    "rows" : [ [ "1", "99441" ] ],
+    "truncated" : false,
+    "rewritten" : false,
+    "rowCount" : 1,
+    "schemaTableCount" : 8,
+    "retrievedTables" : [ "orders", "order_items", "order_payments", "order_reviews", "customers", "coupon_usages", "refund_items", "refunds" ],
+    "schemaDdlChars" : 1354,
+    "llm" : {
+      "model" : "deepseek-flash",
+      "promptTokens" : 2520,
+      "completionTokens" : 366,
+      "totalTokens" : 2886,
+      "latencyMs" : 2172,
+      "costYuan" : 0.0027296
+    },
+    "timings" : {
+      "retrievalMs" : 4,
+      "generationMs" : 2174,
+      "validationMs" : 3,
+      "executionMs" : 34,
+      "totalMs" : 2218
+    },
+    "sessionId" : "identity-explicit-row-key",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "3484ce51-88b0-43d6-9a17-360192956dca",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 1,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 2218,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "RESULT_CHECK" : 0,
+        "CACHE_WRITE" : 0,
+        "CLARIFICATION" : 0,
+        "EXPLAIN" : 4,
+        "VALIDATION" : 3,
+        "ADMISSION" : 0,
+        "SESSION" : 0,
+        "EXECUTION" : 30,
+        "MODEL" : 2166,
+        "GENERATION" : 8,
+        "CACHE" : 0,
+        "CONVERSATION" : 0,
+        "RETRIEVAL" : 4
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 3,
+      "currentStageMs" : 0
+    }
+  },
+  "id" : "explicit-row-key",
+  "httpStatus" : 200,
+  "wallMs" : 2223
+}
