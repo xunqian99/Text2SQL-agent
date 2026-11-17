@@ -29,6 +29,8 @@ import java.util.List;
  * @param notes       口径说明：为什么这么定义、边界在哪
  * @param outputRule 输出列、单位、舍入和排序要求
  * @param queryPattern 复杂指标的推荐查询结构；简单指标为空
+ * @param requiredContextAny 别名命中后至少还须命中一个上下文词；空列表不限制
+ * @param excludedContextAny 任一词命中即排除该指标，优先于requiredContextAny
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record Metric(
@@ -42,23 +44,42 @@ public record Metric(
         String outputRule,
         String queryPattern,
         OutputUnit outputUnit,
-        Integer outputScale) {
+        Integer outputScale,
+        List<String> requiredContextAny,
+        List<String> excludedContextAny) {
 
     /** Unit belongs to this metric, never to every column in the question. */
     public enum OutputUnit { PERCENT, DECIMAL_RATIO }
 
     public Metric(String name, List<String> aliases, String description, String expression,
                   String filter, List<String> tables, String notes, String outputRule, String queryPattern) {
-        this(name, aliases, description, expression, filter, tables, notes, outputRule, queryPattern, null, null);
+        this(name, aliases, description, expression, filter, tables, notes, outputRule, queryPattern, null, null, null, null);
+    }
+
+    public Metric(String name, List<String> aliases, String description, String expression,
+                  String filter, List<String> tables, String notes, String outputRule, String queryPattern,
+                  OutputUnit outputUnit, Integer outputScale) {
+        this(name, aliases, description, expression, filter, tables, notes, outputRule, queryPattern,
+                outputUnit, outputScale, null, null);
     }
 
     public Metric {
         aliases = aliases == null ? List.of() : List.copyOf(aliases);
         tables = tables == null ? List.of() : List.copyOf(tables);
+        requiredContextAny = checkedContext(requiredContextAny);
+        excludedContextAny = checkedContext(excludedContextAny);
         if ((outputUnit == null) != (outputScale == null)
                 || (outputScale != null && (outputScale < 0 || outputScale > 8))) {
             throw new IllegalArgumentException("Metric output unit and scale must be defined together, scale 0..8");
         }
+    }
+
+    private static List<String> checkedContext(List<String> values) {
+        if (values == null) return List.of();
+        if (values.stream().anyMatch(v -> v == null || v.isBlank())) {
+            throw new IllegalArgumentException("Metric context terms must not be blank");
+        }
+        return List.copyOf(values);
     }
 
     /**

@@ -30,7 +30,7 @@ import java.util.Set;
  * <p>对应 ROADMAP 阶段 4 第 1、2 条（指标配置文件格式、注册高频指标）。
  *
  * <p>先把话说准：这里的「检索指标」是**关键词子串匹配**（{@code contains}），
- * 不是语义理解。命中后只做两件事——按依赖表过滤、把人工预写的口径文本
+ * 不是语义理解。别名命中后检查指标上下文、依赖表，再把人工预写的口径文本
  * 交给 prompt；不生成 SQL、不改写 SQL。
  *
  * <p><b>为什么检索方式与 glossary 不同</b>
@@ -43,7 +43,7 @@ import java.util.Set;
  * 只召回了 {@code orders} 没召回 {@code customers}，那把复购率的定义注入进去
  * 反而有害——模型会照抄一个引用不存在表的表达式。
  *
- * <p>所以这里的流程是：先按别名命中 → 再按依赖表可用性过滤。这比「只做字符串
+ * <p>所以这里的流程是：别名命中 → 上下文适用/排除 → 依赖表可用性过滤。这比「只做字符串
  * 匹配」多了一层保护，也是「指标和 schema 必须一致」这条约束的落地。
  */
 @Component
@@ -177,6 +177,18 @@ public class MetricRegistry {
      * <p>命中判定用 {@code contains} 而不是最大匹配，理由见类注释。
      */
     public List<Metric> findMentioned(String question) {
+        return matchEvidence(question).stream().filter(e -> e.decision() == MatchDecision.MATCHED)
+                .map(MetricMatch::metric).toList();
+    }
+
+    public enum MatchDecision { MATCHED, REQUIRED_CONTEXT_MISSING, EXCLUDED_CONTEXT }
+
+    /** Configured terms that matched normalized input; original question is never rewritten. */
+    public record MetricMatch(Metric metric, String alias, String requiredContextTerm,
+                              String excludedContextTerm, MatchDecision decision) { }
+
+    /** Alias candidates retain their identity and rejection reason; no scoring or Top-K competition. */
+    public List<MetricMatch> matchEvidence(String question) {
         if (question == null || question.isBlank()) {
             return List.of();
         }
@@ -190,16 +202,24 @@ public class MetricRegistry {
         // 去空白只用于**匹配**，不改变交给模型的问题原文。中文没有词间必需空格，
         // 去掉空白不会把两个不同的词粘成一个，误命中风险可以接受。
         String text = normalizeForMatch(question);
-        List<Metric> hits = new ArrayList<>();
+        List<MetricMatch> hits = new ArrayList<>();
         for (Metric metric : metrics) {
-            boolean aliasHit = metric.aliases().stream()
-                    .filter(alias -> alias != null && !alias.isBlank())
-                    .anyMatch(alias -> text.contains(normalizeForMatch(alias)));
-            if (aliasHit) {
-                hits.add(metric);
+            String alias = firstHit(metric.aliases(), text);
+            if (alias != null) {
+                String required = firstHit(metric.requiredContextAny(), text);
+                String excluded = firstHit(metric.excludedContextAny(), text);
+                MatchDecision decision = excluded != null ? MatchDecision.EXCLUDED_CONTEXT
+                        : !metric.requiredContextAny().isEmpty() && required == null
+                        ? MatchDecision.REQUIRED_CONTEXT_MISSING : MatchDecision.MATCHED;
+                hits.add(new MetricMatch(metric, alias, required, excluded, decision));
             }
         }
         return List.copyOf(hits);
+    }
+
+    private static String firstHit(List<String> terms, String text) {
+        return terms.stream().filter(t -> t != null && !t.isBlank())
+                .filter(t -> text.contains(normalizeForMatch(t))).findFirst().orElse(null);
     }
 
     /** 匹配用的归一化：小写 + 去掉全部空白。只影响命中判定，不改变原始文本。 */

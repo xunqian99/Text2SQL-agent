@@ -121,7 +121,8 @@ public class HybridSchemaProvider implements SchemaProvider {
             log.info("检索未命中任何词典词，回退全量 schema（{} 张表）", full.tables().size());
             SchemaContext res = full;
             if (properties.getSemantic().isEnabled() && metricRegistry != null) {
-                res = res.withMetrics(metricRegistry.appendPolicies(question, res.tables(), res.metricsText()));
+                res = res.withMetrics(metricRegistry.appendPolicies(question, res.tables(),
+                        metricsFor(question, Set.copyOf(res.tableNames()))));
             }
             if (valueRetriever != null) {
                 var matches = valueRetriever.findMatches(question, Set.copyOf(full.tableNames()));

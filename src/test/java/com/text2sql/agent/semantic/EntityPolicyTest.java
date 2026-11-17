@@ -30,7 +30,7 @@ class EntityPolicyTest {
         assertThat(text).startsWith("existing metric\n\nENTITY_POLICY customer_identity_v1")
                 .contains("customers.customer_id", "customers.customer_unique_id", "用户明确指定", "不擅自改成实体级统计")
                 .containsOnlyOnce("ENTITY_POLICY customer_identity_v1");
-        assertThat(registry.all()).hasSize(24);
+        assertThat(registry.all()).hasSize(25);
         assertThat(registry.entityPolicies()).hasSize(1);
     }
 

@@ -359,6 +359,7 @@ metrics:
 
   - name: delivery_days
     aliases: [配送时长, 配送天数, 送达时长, 平均配送, 物流时长]
+    excludedContextAny: [承运商, 承运公司, 物流商, shipments, shipped_at, 发货到送达, 发货至送达, 发货到签收, 发货至签收]
     description: 平均配送时长 = 下单到签收的天数（保留小数）
     expression: "ROUND((AVG(EXTRACT(EPOCH FROM (o.order_delivered_customer_date - o.order_purchase_timestamp)) / 86400.0))::numeric, 2)"
     tables: [orders]
@@ -368,6 +369,21 @@ metrics:
          跨月的时长会被截断（比如 40 天会算成 9 天）。
       2. 只统计已送达订单（order_delivered_customer_date IS NOT NULL），
          未送达的订单没有签收时间，参与计算会得到 NULL 或错误值。
+
+  - name: shipment_delivery_days
+    aliases: [配送时长, 配送天数, 送达时长, 平均配送, 物流时长, 发货到送达, 发货至送达, 发货到签收, 发货至签收, shipped_at]
+    requiredContextAny: [承运商, 承运公司, 物流商, shipments, shipped_at, 发货到送达, 发货至送达, 发货到签收, 发货至签收]
+    excludedContextAny: [下单到签收, 下单至签收, 下单到送达, 下单至送达, order_purchase_timestamp, order_delivered_customer_date]
+    description: 承运商配送时长 = 发货到送达的天数
+    expression: "ROUND((AVG(EXTRACT(EPOCH FROM (s.delivered_at - s.shipped_at)) / 86400.0))::numeric, 2)"
+    filter: "s.delivered_at IS NOT NULL AND s.shipped_at IS NOT NULL"
+    tables: [shipments]
+    notes: |
+      事实粒度是shipments运输记录，承运商维度使用shipments.carrier。
+      起点shipped_at、终点delivered_at；不使用订单下单/签收时间代替，不为取时间额外关联orders。
+      未发货或未送达的记录不参与平均，空集合返回NULL，不当成0天。
+      用EPOCH/86400.0保留跨月和不足一天的时长，不能用EXTRACT(DAY)。
+      只输出题目要求的维度和平均天数，不额外输出记录数或起止时间。
 
   - name: yoy_growth
     outputUnit: PERCENT

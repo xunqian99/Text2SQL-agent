@@ -34,13 +34,20 @@ class MetricUnitContractTest {
         assertThat(metric("gmv_with_freight").outputUnit()).isNull();
     }
 
-    @Test void noExpressionsFiltersAliasesOrRecommendedPatternsChangeExceptRepeatRoundingAndZeroDenominator() throws Exception {
+    @Test void archivedDefinitionsStayUnchangedExceptDocumentedUnitRepeatAndDeliveryScopeAdditions() throws Exception {
         var mapper = new ObjectMapper(new YAMLFactory());
         var before = mapper.readTree(getClass().getResourceAsStream("/contracts/metrics-before-result-contract.yml"));
         var after = mapper.readTree(getClass().getResourceAsStream("/schema/metrics.yml"));
         int unitCount = 0;
+        var metricEntries = (com.fasterxml.jackson.databind.node.ArrayNode) after.path("metrics");
+        for (int i = metricEntries.size() - 1; i >= 0; i--) {
+            if (metricEntries.get(i).path("name").asText().equals("shipment_delivery_days")) {
+                metricEntries.remove(i); // Its independent scope/numeric contract is covered by DeliveryMetricScopeTest.
+            }
+        }
         for (var entry : after.path("metrics")) {
             var node = (com.fasterxml.jackson.databind.node.ObjectNode) entry;
+            if (node.path("name").asText().equals("delivery_days")) node.remove("excludedContextAny");
             if (node.has("outputUnit")) { unitCount++; node.remove("outputUnit"); node.remove("outputScale"); }
             if (node.path("name").asText().equals("repeat_rate")) {
                 assertThat(node.path("expression").asText()).contains("ROUND(", "NULLIF(COUNT(*), 0), 2)");
