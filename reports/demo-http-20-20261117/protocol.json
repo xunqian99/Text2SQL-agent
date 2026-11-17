@@ -1,0 +1,291 @@
+{
+  "format" : "local-demo-http-20-v1",
+  "frozenAt" : "2026-11-17T06:02:21.521147600Z",
+  "sourceCommit" : "9d6285a419dbf78f19d4d288625c1438a6fad9e9",
+  "sourceObjects" : {
+    "src" : "7ab85271e61fbf174e17adbc9719bf20379119f1",
+    "pom.xml" : "eb4e33c5ed4cf28fd85ea9fd4953658b96ccf276",
+    "data/eval" : "b407453b89da68aa1f0160d6d5ea24bb4638511f",
+    "scripts/start_local.ps1" : "3a6a0f90a1f09ac5c9c8a6997bbbad265f876598"
+  },
+  "datasetSha256" : "c3f290e0fa0be1bd7432ddd2e5a319883e4d9d8cfbc9b58e856b4a807f2f2d19",
+  "localConfigSha256" : "c57be0a402875153223b9730c0de7040692a57c36682b502cd50f96d45843914",
+  "selection" : "first 3 IDs per layer (18 originals) plus two interleaved year follow-ups; not independent blind testing",
+  "denominator" : 20,
+  "latency" : "HTTP wall clock, nearest-rank P95=sorted[ceil(.95*N)-1]; failures included",
+  "comparison" : "unchanged ResultNormalizer; successful non-truncated response vs frozen Gold; aliases not graded",
+  "unknownUsage" : "any unknown or unmatched call prevents complete-cost claim",
+  "offPeakPolicy" : {
+    "version" : "deepseek-off-peak-weekday-conservative-v1",
+    "zone" : "Asia/Shanghai",
+    "guardSeconds" : 120,
+    "source" : "https://api-docs.deepseek.com/zh-cn/quick_start/pricing/",
+    "holidays" : "unverified weekday holidays conservatively treated as peak"
+  },
+  "pricesYuanPer1k" : {
+    "cacheMiss" : 0.001,
+    "cacheHit" : 2.0E-5,
+    "output" : 0.004
+  },
+  "cases" : [ {
+    "id" : "T1-002",
+    "sourceId" : "T1-002",
+    "sessionId" : "demo20-orders",
+    "question" : "2018 年下单的订单有多少笔？",
+    "goldSql" : "SELECT COUNT(*) FROM orders\nWHERE order_purchase_timestamp >= '2018-01-01'\n  AND order_purchase_timestamp < '2019-01-01';\n",
+    "followUp" : false,
+    "expected" : {
+      "columns" : [ "count" ],
+      "rows" : [ [ "54011" ] ],
+      "truncated" : false,
+      "elapsedMs" : 296
+    }
+  }, {
+    "id" : "T6-001",
+    "sourceId" : "T6-001",
+    "sessionId" : "demo20-gmv",
+    "question" : "统计 2018 年全站 GMV（含运费），以及不含运费的销售额，两者分别是多少？",
+    "goldSql" : "SELECT ROUND(SUM(oi.price + oi.freight_value), 2) AS gmv_with_freight,\n       ROUND(SUM(oi.price), 2) AS sales_without_freight\nFROM orders o\nJOIN order_items oi ON oi.order_id = o.order_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable')\n  AND o.order_purchase_timestamp >= DATE '2018-01-01'\n  AND o.order_purchase_timestamp < DATE '2019-01-01';\n",
+    "followUp" : false,
+    "expected" : {
+      "columns" : [ "gmv_with_freight", "sales_without_freight" ],
+      "rows" : [ [ "8593303.96", "7341182.41" ] ],
+      "truncated" : false,
+      "elapsedMs" : 150
+    }
+  }, {
+    "id" : "FOLLOWUP-T1-002",
+    "sourceId" : "T1-002",
+    "sessionId" : "demo20-orders",
+    "question" : "那2017年的呢？",
+    "goldSql" : "SELECT COUNT(*) FROM orders\nWHERE order_purchase_timestamp >= '2017-01-01'\n  AND order_purchase_timestamp < '2018-01-01';\n",
+    "followUp" : true,
+    "expected" : {
+      "columns" : [ "count" ],
+      "rows" : [ [ "45101" ] ],
+      "truncated" : false,
+      "elapsedMs" : 51
+    }
+  }, {
+    "id" : "FOLLOWUP-T6-001",
+    "sourceId" : "T6-001",
+    "sessionId" : "demo20-gmv",
+    "question" : "那2017年的呢？",
+    "goldSql" : "SELECT ROUND(SUM(oi.price + oi.freight_value), 2) AS gmv_with_freight,\n       ROUND(SUM(oi.price), 2) AS sales_without_freight\nFROM orders o\nJOIN order_items oi ON oi.order_id = o.order_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable')\n  AND o.order_purchase_timestamp >= DATE '2017-01-01'\n  AND o.order_purchase_timestamp < DATE '2018-01-01';\n",
+    "followUp" : true,
+    "expected" : {
+      "columns" : [ "gmv_with_freight", "sales_without_freight" ],
+      "rows" : [ [ "7090569.24", "6108492.27" ] ],
+      "truncated" : false,
+      "elapsedMs" : 74
+    }
+  }, {
+    "id" : "T1-001",
+    "sourceId" : "T1-001",
+    "sessionId" : "demo20-T1-001",
+    "question" : "一共有多少笔订单？",
+    "goldSql" : "SELECT COUNT(*) FROM orders;\n",
+    "followUp" : false,
+    "expected" : {
+      "columns" : [ "count" ],
+      "rows" : [ [ "99441" ] ],
+      "truncated" : false,
+      "elapsedMs" : 21
+    }
+  }, {
+    "id" : "T1-003",
+    "sourceId" : "T1-003",
+    "sessionId" : "demo20-T1-003",
+    "question" : "已取消的订单有多少笔？",
+    "goldSql" : "SELECT COUNT(*) FROM orders WHERE order_status = 'canceled';\n",
+    "followUp" : false,
+    "expected" : {
+      "columns" : [ "count" ],
+      "rows" : [ [ "625" ] ],
+      "truncated" : false,
+      "elapsedMs" : 13
+    }
+  }, {
+    "id" : "T2-001",
+    "sourceId" : "T2-001",
+    "sessionId" : "demo20-T2-001",
+    "question" : "所有订单明细的商品金额加起来一共是多少？",
+    "goldSql" : "SELECT SUM(price) FROM order_items;\n",
+    "followUp" : false,
+    "expected" : {
+      "columns" : [ "sum" ],
+      "rows" : [ [ "13591643.70" ] ],
+      "truncated" : false,
+      "elapsedMs" : 23
+    }
+  }, {
+    "id" : "T2-002",
+    "sourceId" : "T2-002",
+    "sessionId" : "demo20-T2-002",
+    "question" : "所有订单的运费总额是多少？",
+    "goldSql" : "SELECT SUM(freight_value) FROM order_items;\n",
+    "followUp" : false,
+    "expected" : {
+      "columns" : [ "sum" ],
+      "rows" : [ [ "2251909.54" ] ],
+      "truncated" : false,
+      "elapsedMs" : 27
+    }
+  }, {
+    "id" : "T2-003",
+    "sourceId" : "T2-003",
+    "sessionId" : "demo20-T2-003",
+    "question" : "订单明细的平均商品价格是多少？",
+    "goldSql" : "SELECT ROUND(AVG(price), 2) FROM order_items;\n",
+    "followUp" : false,
+    "expected" : {
+      "columns" : [ "round" ],
+      "rows" : [ [ "120.65" ] ],
+      "truncated" : false,
+      "elapsedMs" : 33
+    }
+  }, {
+    "id" : "T3-001",
+    "sourceId" : "T3-001",
+    "sessionId" : "demo20-T3-001",
+    "question" : "每个月的订单数量是多少？按月份排序。",
+    "goldSql" : "SELECT DATE_TRUNC('month', order_purchase_timestamp) AS month,\n       COUNT(*) AS cnt\nFROM orders GROUP BY 1 ORDER BY 1;\n",
+    "followUp" : false,
+    "expected" : {
+      "columns" : [ "month", "cnt" ],
+      "rows" : [ [ "2016-09-01 00:00:00.0", "4" ], [ "2016-10-01 00:00:00.0", "324" ], [ "2016-12-01 00:00:00.0", "1" ], [ "2017-01-01 00:00:00.0", "800" ], [ "2017-02-01 00:00:00.0", "1780" ], [ "2017-03-01 00:00:00.0", "2682" ], [ "2017-04-01 00:00:00.0", "2404" ], [ "2017-05-01 00:00:00.0", "3700" ], [ "2017-06-01 00:00:00.0", "3245" ], [ "2017-07-01 00:00:00.0", "4026" ], [ "2017-08-01 00:00:00.0", "4331" ], [ "2017-09-01 00:00:00.0", "4285" ], [ "2017-10-01 00:00:00.0", "4631" ], [ "2017-11-01 00:00:00.0", "7544" ], [ "2017-12-01 00:00:00.0", "5673" ], [ "2018-01-01 00:00:00.0", "7269" ], [ "2018-02-01 00:00:00.0", "6728" ], [ "2018-03-01 00:00:00.0", "7211" ], [ "2018-04-01 00:00:00.0", "6939" ], [ "2018-05-01 00:00:00.0", "6873" ], [ "2018-06-01 00:00:00.0", "6167" ], [ "2018-07-01 00:00:00.0", "6292" ], [ "2018-08-01 00:00:00.0", "6512" ], [ "2018-09-01 00:00:00.0", "16" ], [ "2018-10-01 00:00:00.0", "4" ] ],
+      "truncated" : false,
+      "elapsedMs" : 37
+    }
+  }, {
+    "id" : "T3-002",
+    "sourceId" : "T3-002",
+    "sessionId" : "demo20-T3-002",
+    "question" : "2017 年和 2018 年各有多少笔订单？",
+    "goldSql" : "SELECT EXTRACT(YEAR FROM order_purchase_timestamp)::INT AS yr, COUNT(*) AS cnt\nFROM orders\nWHERE EXTRACT(YEAR FROM order_purchase_timestamp) IN (2017, 2018)\nGROUP BY 1 ORDER BY 1;\n",
+    "followUp" : false,
+    "expected" : {
+      "columns" : [ "yr", "cnt" ],
+      "rows" : [ [ "2017", "45101" ], [ "2018", "54011" ] ],
+      "truncated" : false,
+      "elapsedMs" : 43
+    }
+  }, {
+    "id" : "T3-003",
+    "sourceId" : "T3-003",
+    "sessionId" : "demo20-T3-003",
+    "question" : "每个季度有多少笔订单？",
+    "goldSql" : "SELECT DATE_TRUNC('quarter', order_purchase_timestamp) AS quarter, COUNT(*) AS cnt\nFROM orders GROUP BY 1 ORDER BY 1;\n",
+    "followUp" : false,
+    "expected" : {
+      "columns" : [ "quarter", "cnt" ],
+      "rows" : [ [ "2016-07-01 00:00:00.0", "4" ], [ "2016-10-01 00:00:00.0", "325" ], [ "2017-01-01 00:00:00.0", "5262" ], [ "2017-04-01 00:00:00.0", "9349" ], [ "2017-07-01 00:00:00.0", "12642" ], [ "2017-10-01 00:00:00.0", "17848" ], [ "2018-01-01 00:00:00.0", "21208" ], [ "2018-04-01 00:00:00.0", "19979" ], [ "2018-07-01 00:00:00.0", "12820" ], [ "2018-10-01 00:00:00.0", "4" ] ],
+      "truncated" : false,
+      "elapsedMs" : 33
+    }
+  }, {
+    "id" : "T4-001",
+    "sourceId" : "T4-001",
+    "sessionId" : "demo20-T4-001",
+    "question" : "每个客户的订单数量是多少？取订单最多的 10 个客户。",
+    "goldSql" : "SELECT c.customer_unique_id, COUNT(*) AS cnt\nFROM orders o JOIN customers c ON c.customer_id = o.customer_id\nGROUP BY 1 ORDER BY cnt DESC LIMIT 10;\n",
+    "followUp" : false,
+    "expected" : {
+      "columns" : [ "customer_unique_id", "cnt" ],
+      "rows" : [ [ "8d50f5eadf50201ccdcedfb9e2ac8455", "17" ], [ "3e43e6105506432c953e165fb2acf44c", "9" ], [ "ca77025e7201e3b30c44b472ff346268", "7" ], [ "1b6c7548a2a1f9037c1fd3ddfed95f33", "7" ], [ "6469f99c1f9dfae7733b25662e7f1782", "7" ], [ "63cfc61cee11cbe306bff5857d00bfe4", "6" ], [ "12f5d6e1cbf93dafd9dcc19095df0b3d", "6" ], [ "f0e310a6839dce9de1638e0fe5ab282a", "6" ], [ "de34b16117594161a6a89c50b289d35a", "6" ], [ "dc813062e0fc23409cd255f7f53c7074", "6" ] ],
+      "truncated" : false,
+      "elapsedMs" : 172
+    }
+  }, {
+    "id" : "T4-002",
+    "sourceId" : "T4-002",
+    "sessionId" : "demo20-T4-002",
+    "question" : "每个州的商品销售额是多少？",
+    "goldSql" : "SELECT c.customer_state, ROUND(SUM(oi.price), 2) AS sales\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY sales DESC;\n",
+    "followUp" : false,
+    "expected" : {
+      "columns" : [ "customer_state", "sales" ],
+      "rows" : [ [ "SP", "5202955.05" ], [ "RJ", "1824092.67" ], [ "MG", "1585308.03" ], [ "RS", "750304.02" ], [ "PR", "683083.76" ], [ "SC", "520553.34" ], [ "BA", "511349.99" ], [ "DF", "302603.94" ], [ "GO", "294591.95" ], [ "ES", "275037.31" ], [ "PE", "262788.03" ], [ "CE", "227254.71" ], [ "PA", "178947.81" ], [ "MT", "156453.53" ], [ "MA", "119648.22" ], [ "MS", "116812.64" ], [ "PB", "115268.08" ], [ "PI", "86914.08" ], [ "RN", "83034.98" ], [ "AL", "80314.81" ], [ "SE", "58920.85" ], [ "TO", "49621.74" ], [ "RO", "46140.64" ], [ "AM", "22356.84" ], [ "AC", "15982.95" ], [ "AP", "13474.30" ], [ "RR", "7829.43" ] ],
+      "truncated" : false,
+      "elapsedMs" : 187
+    }
+  }, {
+    "id" : "T4-003",
+    "sourceId" : "T4-003",
+    "sessionId" : "demo20-T4-003",
+    "question" : "每个商品类目的订单数量是多少？",
+    "goldSql" : "SELECT p.product_category_name, COUNT(DISTINCT oi.order_id) AS order_cnt\nFROM order_items oi JOIN products p ON p.product_id = oi.product_id\nWHERE p.product_category_name IS NOT NULL\nGROUP BY 1 ORDER BY order_cnt DESC;\n",
+    "followUp" : false,
+    "expected" : {
+      "columns" : [ "product_category_name", "order_cnt" ],
+      "rows" : [ [ "cama_mesa_banho", "9417" ], [ "beleza_saude", "8836" ], [ "esporte_lazer", "7720" ], [ "informatica_acessorios", "6689" ], [ "moveis_decoracao", "6449" ], [ "utilidades_domesticas", "5884" ], [ "relogios_presentes", "5624" ], [ "telefonia", "4199" ], [ "automotivo", "3897" ], [ "brinquedos", "3886" ], [ "cool_stuff", "3632" ], [ "ferramentas_jardim", "3518" ], [ "perfumaria", "3162" ], [ "bebes", "2885" ], [ "eletronicos", "2550" ], [ "papelaria", "2311" ], [ "fashion_bolsas_e_acessorios", "1864" ], [ "pet_shop", "1710" ], [ "moveis_escritorio", "1273" ], [ "consoles_games", "1062" ], [ "malas_acessorios", "1034" ], [ "eletrodomesticos", "764" ], [ "construcao_ferramentas_construcao", "748" ], [ "eletroportateis", "630" ], [ "instrumentos_musicais", "628" ], [ "livros_interesse_geral", "512" ], [ "casa_construcao", "490" ], [ "alimentos", "450" ], [ "moveis_sala", "422" ], [ "casa_conforto", "397" ], [ "audio", "350" ], [ "bebidas", "297" ], [ "market_place", "280" ], [ "livros_tecnicos", "260" ], [ "climatizacao", "253" ], [ "moveis_cozinha_area_de_servico_jantar_e_jardim", "248" ], [ "construcao_ferramentas_iluminacao", "244" ], [ "fashion_calcados", "240" ], [ "industria_comercio_e_negocios", "235" ], [ "eletrodomesticos_2", "234" ], [ "alimentos_bebidas", "227" ], [ "telefonia_fixa", "217" ], [ "artes", "202" ], [ "construcao_ferramentas_jardim", "194" ], [ "agro_industria_e_comercio", "182" ], [ "pcs", "181" ], [ "construcao_ferramentas_seguranca", "167" ], [ "sinalizacao_e_seguranca", "140" ], [ "artigos_de_natal", "128" ], [ "fashion_underwear_e_moda_praia", "121" ], [ "fashion_roupa_masculina", "112" ], [ "construcao_ferramentas_ferramentas", "97" ], [ "moveis_quarto", "95" ], [ "tablets_impressao_imagem", "79" ], [ "portateis_casa_forno_e_cafe", "75" ], [ "cine_foto", "65" ], [ "dvds_blu_ray", "59" ], [ "livros_importados", "53" ], [ "fashion_roupa_feminina", "39" ], [ "artigos_de_festas", "39" ], [ "moveis_colchao_e_estofado", "38" ], [ "musica", "38" ], [ "flores", "29" ], [ "fraldas_higiene", "27" ], [ "fashion_esporte", "27" ], [ "casa_conforto_2", "24" ], [ "artes_e_artesanato", "23" ], [ "portateis_cozinha_e_preparadores_de_alimentos", "14" ], [ "la_cuisine", "13" ], [ "cds_dvds_musicais", "12" ], [ "pc_gamer", "8" ], [ "fashion_roupa_infanto_juvenil", "8" ], [ "seguros_e_servicos", "2" ] ],
+      "truncated" : false,
+      "elapsedMs" : 175
+    }
+  }, {
+    "id" : "T5-001",
+    "sourceId" : "T5-001",
+    "sessionId" : "demo20-T5-001",
+    "question" : "每个宏观区域下，各会员等级（按等级名称）的商品销售额分别是多少？按销售额从高到低排序。",
+    "goldSql" : "SELECT r.macro_region, ml.level_name, ROUND(SUM(oi.price), 2) AS gmv\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN regions r ON r.region_code = c.customer_state\nJOIN members m ON m.customer_unique_id = c.customer_unique_id\nJOIN member_levels ml ON ml.level_id = m.level_id\nJOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1, 2 ORDER BY gmv DESC;\n",
+    "followUp" : false,
+    "expected" : {
+      "columns" : [ "macro_region", "level_name", "gmv" ],
+      "rows" : [ [ "Sudeste", "青铜会员", "4888336.35" ], [ "Sudeste", "白银会员", "3403102.09" ], [ "Sul", "青铜会员", "1079497.16" ], [ "Nordeste", "青铜会员", "864916.36" ], [ "Sul", "白银会员", "746544.64" ], [ "Sudeste", "黄金会员", "578888.11" ], [ "Nordeste", "白银会员", "577095.22" ], [ "Centro-Oeste", "青铜会员", "495933.93" ], [ "Centro-Oeste", "白银会员", "311701.70" ], [ "Norte", "青铜会员", "169525.53" ], [ "Norte", "白银会员", "138839.72" ], [ "Sul", "黄金会员", "124136.17" ], [ "Nordeste", "黄金会员", "100453.63" ], [ "Centro-Oeste", "黄金会员", "62353.56" ], [ "Norte", "黄金会员", "25533.74" ], [ "Sudeste", "铂金会员", "17066.51" ], [ "Sul", "铂金会员", "3763.15" ], [ "Nordeste", "铂金会员", "3028.54" ], [ "Centro-Oeste", "铂金会员", "472.87" ], [ "Norte", "铂金会员", "454.72" ] ],
+      "truncated" : false,
+      "elapsedMs" : 324
+    }
+  }, {
+    "id" : "T5-002",
+    "sourceId" : "T5-002",
+    "sessionId" : "demo20-T5-002",
+    "question" : "每个会员等级对应的商品销售额是多少？",
+    "goldSql" : "SELECT ml.level_name, ROUND(SUM(oi.price), 2) AS sales\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN members m ON m.customer_unique_id = c.customer_unique_id\nJOIN member_levels ml ON ml.level_id = m.level_id\nJOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY sales DESC;\n",
+    "followUp" : false,
+    "expected" : {
+      "columns" : [ "level_name", "sales" ],
+      "rows" : [ [ "青铜会员", "7498209.33" ], [ "白银会员", "5177283.37" ], [ "黄金会员", "891365.21" ], [ "铂金会员", "24785.79" ] ],
+      "truncated" : false,
+      "elapsedMs" : 299
+    }
+  }, {
+    "id" : "T5-003",
+    "sourceId" : "T5-003",
+    "sessionId" : "demo20-T5-003",
+    "question" : "用英文类目名统计退款金额，哪些类目退款最多？取前 15。",
+    "goldSql" : "SELECT t.product_category_name_english, ROUND(SUM(ri.refund_value), 2) AS refund_amt\nFROM refunds r\nJOIN refund_items ri ON ri.refund_id = r.refund_id\nJOIN order_items oi ON oi.order_id = ri.order_id AND oi.order_item_id = ri.order_item_id\nJOIN products p ON p.product_id = oi.product_id\nJOIN product_category_translation t ON t.product_category_name = p.product_category_name\nGROUP BY 1 ORDER BY refund_amt DESC LIMIT 15;\n",
+    "followUp" : false,
+    "expected" : {
+      "columns" : [ "product_category_name_english", "refund_amt" ],
+      "rows" : [ [ "watches_gifts", "56539.68" ], [ "health_beauty", "54300.35" ], [ "bed_bath_table", "53219.74" ], [ "sports_leisure", "47306.67" ], [ "computers_accessories", "41862.15" ], [ "auto", "33623.37" ], [ "furniture_decor", "30738.44" ], [ "housewares", "30548.21" ], [ "cool_stuff", "27184.04" ], [ "garden_tools", "26248.74" ], [ "toys", "23291.44" ], [ "baby", "19845.53" ], [ "perfumery", "18608.57" ], [ "telephony", "15943.45" ], [ "pet_shop", "13359.56" ] ],
+      "truncated" : false,
+      "elapsedMs" : 58
+    }
+  }, {
+    "id" : "T6-002",
+    "sourceId" : "T6-002",
+    "sessionId" : "demo20-T6-002",
+    "question" : "有效订单（排除已取消和不可用）的订单数、下单人数、客单价分别是多少？",
+    "goldSql" : "SELECT COUNT(DISTINCT o.order_id) AS valid_orders,\n       COUNT(DISTINCT c.customer_unique_id) AS buyers,\n       ROUND(SUM(oi.price + oi.freight_value) / COUNT(DISTINCT o.order_id), 2) AS aov\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN order_items oi ON oi.order_id = o.order_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable');\n",
+    "followUp" : false,
+    "expected" : {
+      "columns" : [ "valid_orders", "buyers", "aov" ],
+      "rows" : [ [ "98199", "94983", "160.24" ] ],
+      "truncated" : false,
+      "elapsedMs" : 258
+    }
+  }, {
+    "id" : "T6-003",
+    "sourceId" : "T6-003",
+    "sessionId" : "demo20-T6-003",
+    "question" : "复购率是多少？（下单 2 次及以上的用户占全部下单用户的比例）",
+    "goldSql" : "WITH per_user AS (\n  SELECT c.customer_unique_id, COUNT(DISTINCT o.order_id) AS order_cnt\n  FROM orders o\n  JOIN customers c ON c.customer_id = o.customer_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n  GROUP BY 1\n)\nSELECT ROUND(100.0 * COUNT(*) FILTER (WHERE order_cnt >= 2) / COUNT(*), 2) AS repeat_rate_pct\nFROM per_user;\n",
+    "followUp" : false,
+    "expected" : {
+      "columns" : [ "repeat_rate_pct" ],
+      "rows" : [ [ "3.04" ] ],
+      "truncated" : false,
+      "elapsedMs" : 158
+    }
+  } ]
+}
