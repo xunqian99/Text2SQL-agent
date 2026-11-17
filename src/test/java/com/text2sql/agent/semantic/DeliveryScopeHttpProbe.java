@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 
 /** Freeze four references before one paid run; evidence mode is entirely offline. */
 public final class DeliveryScopeHttpProbe {
-    record Match(String metric, String alias, String requiredContextTerm, String excludedContextTerm,
+    record Match(String metric, String alias, String requiredContextTerm, String excludedContextTerm, String preferredContextTerm,
                  MetricRegistry.MatchDecision decision) { }
     record Item(String id, List<Match> matches) { }
 
@@ -27,7 +27,7 @@ public final class DeliveryScopeHttpProbe {
         if (args[0].equals("evidence")) {
             var registry = new MetricRegistry(); registry.load();
             var evidence = inputs.stream().map(i -> new Item(i.id(), registry.matchEvidence(i.question()).stream()
-                    .map(e -> new Match(e.metric().name(), e.alias(), e.requiredContextTerm(), e.excludedContextTerm(), e.decision())).toList())).toList();
+                    .map(e -> new Match(e.metric().name(), e.alias(), e.requiredContextTerm(), e.excludedContextTerm(), e.preferredContextTerm(), e.decision())).toList())).toList();
             Files.writeString(path, new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(Map.of(
                     "datasetSha256", loader.datasetSha256("data/eval"), "metricDefinitionsSha256", MetricRegistry.definitionSha256(),
                     "items", evidence, "providerCalls", 0)) + "\n", StandardOpenOption.CREATE_NEW);

@@ -185,7 +185,7 @@ public class MetricRegistry {
 
     /** Configured terms that matched normalized input; original question is never rewritten. */
     public record MetricMatch(Metric metric, String alias, String requiredContextTerm,
-                              String excludedContextTerm, MatchDecision decision) { }
+                              String excludedContextTerm, String preferredContextTerm, MatchDecision decision) { }
 
     /** Alias candidates retain their identity and rejection reason; no scoring or Top-K competition. */
     public List<MetricMatch> matchEvidence(String question) {
@@ -208,10 +208,13 @@ public class MetricRegistry {
             if (alias != null) {
                 String required = firstHit(metric.requiredContextAny(), text);
                 String excluded = firstHit(metric.excludedContextAny(), text);
-                MatchDecision decision = excluded != null ? MatchDecision.EXCLUDED_CONTEXT
+                String preferred = firstHit(metric.preferredContextAny(), text);
+                // Explicit interval overrides only a default exclusion, never the required context.
+                // Retain both pieces of evidence instead of erasing the excluded dimension term.
+                MatchDecision decision = excluded != null && preferred == null ? MatchDecision.EXCLUDED_CONTEXT
                         : !metric.requiredContextAny().isEmpty() && required == null
                         ? MatchDecision.REQUIRED_CONTEXT_MISSING : MatchDecision.MATCHED;
-                hits.add(new MetricMatch(metric, alias, required, excluded, decision));
+                hits.add(new MetricMatch(metric, alias, required, excluded, preferred, decision));
             }
         }
         return List.copyOf(hits);

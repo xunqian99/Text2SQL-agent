@@ -41,6 +41,27 @@ class DeliveryClockDatabaseTest {
                 .isEqualByComparingTo("20.00");
     }
 
+    @Test void differentEndpointsExposeMixedClockEvenWhenProductionValuesCoincide() throws Exception {
+        String source = "(VALUES (TIMESTAMP '2018-01-01',TIMESTAMP '2018-01-21')) "
+                + "AS o(order_purchase_timestamp,order_delivered_customer_date) CROSS JOIN "
+                + "(VALUES (TIMESTAMP '2018-01-11')) AS s(delivered_at)";
+        String correct = MetricUnitContractTest.metric("delivery_days").expression();
+        String mixed = correct.replace("o.order_delivered_customer_date", "s.delivered_at");
+        try (var connection = DriverManager.getConnection(MemberPenetrationContractTest.url(),
+                MemberPenetrationContractTest.user(), MemberPenetrationContractTest.password())) {
+            connection.setReadOnly(true);
+            try (var statement = connection.createStatement()) {
+                statement.setQueryTimeout(5);
+                try (var result = statement.executeQuery("SELECT " + correct + "," + mixed + " FROM " + source)) {
+                    assertThat(result.next()).isTrue();
+                    assertThat(result.getBigDecimal(1)).isEqualByComparingTo("20.00");
+                    assertThat(result.getBigDecimal(2)).isEqualByComparingTo("10.00");
+                    assertThat(result.next()).isFalse();
+                }
+            }
+        }
+    }
+
     private static java.math.BigDecimal value(String source) throws Exception {
         var metric = MetricUnitContractTest.metric("shipment_delivery_days");
         try (var connection = DriverManager.getConnection(MemberPenetrationContractTest.url(),

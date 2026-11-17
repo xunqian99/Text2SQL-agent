@@ -45,9 +45,17 @@ class DeliveryMetricScopeTest {
             "承运商配送时长按 order_delivered_customer_date 减 order_purchase_timestamp 计算"})
     void explicitOrderIntervalPreventsContradictingCarrierDefault(String question) {
         var registry = DimensionPolicyTest.registry();
-        // When both contexts occur, omit both incompatible defaults; the original explicit question stays intact.
         assertThat(registry.findMentioned(question)).extracting(Metric::name)
-                .doesNotContain("shipment_delivery_days", "delivery_days");
+                .contains("delivery_days").doesNotContain("shipment_delivery_days");
+        var order = registry.matchEvidence(question).stream().filter(e -> e.metric().name().equals("delivery_days"))
+                .findFirst().orElseThrow();
+        assertThat(order.decision()).isEqualTo(MetricRegistry.MatchDecision.MATCHED);
+        assertThat(order.excludedContextTerm()).isEqualTo("承运商");
+        assertThat(order.preferredContextTerm()).isNotBlank();
+        assertThat(registry.findApplicable(question, Set.of("orders", "shipments"))).extracting(Metric::name)
+                .contains("delivery_days").doesNotContain("shipment_delivery_days");
+        assertThat(registry.findApplicable(question, Set.of("shipments"))).extracting(Metric::name)
+                .doesNotContain("delivery_days", "shipment_delivery_days");
         assertThat(registry.matchEvidence(question)).filteredOn(e -> e.metric().name().equals("shipment_delivery_days"))
                 .allSatisfy(e -> {
                     assertThat(e.decision()).isEqualTo(MetricRegistry.MatchDecision.EXCLUDED_CONTEXT);
@@ -69,6 +77,47 @@ class DeliveryMetricScopeTest {
         var metric = new Metric("legacy", List.of("legacy"), "", "1", null, List.of(), "", null, null);
         assertThat(metric.requiredContextAny()).isEmpty();
         assertThat(metric.excludedContextAny()).isEmpty();
+        assertThat(metric.preferredContextAny()).isEmpty();
+    }
+
+    @ParameterizedTest @ValueSource(strings = {"下单到签收", "下单至签收", "下单到送达", "下单至送达",
+            "ORDER_DELIVERED_CUSTOMER_DATE - ORDER_PURCHASE_TIMESTAMP"})
+    void explicitIntervalsRetainOnlyOrderClockWithoutChangingItsExpression(String interval) {
+        var registry = DimensionPolicyTest.registry();
+        var applicable = registry.findApplicable("按承运商看配送时长，使用" + interval, Set.of("orders", "shipments"));
+        assertThat(applicable).extracting(Metric::name).containsExactly("delivery_days");
+        assertThat(applicable.getFirst().render())
+                .contains("o.order_delivered_customer_date - o.order_purchase_timestamp").doesNotContain("s.delivered_at");
+    }
+
+    @Test void aSingleOrderFieldIsNotAnExplicitIntervalAndCannotOverrideExclusion() {
+        var registry = DimensionPolicyTest.registry();
+        var match = registry.matchEvidence("按承运商看配送时长，展示 order_purchase_timestamp").stream()
+                .filter(e -> e.metric().name().equals("delivery_days")).findFirst().orElseThrow();
+        assertThat(match.preferredContextTerm()).isNull();
+        assertThat(match.decision()).isEqualTo(MetricRegistry.MatchDecision.EXCLUDED_CONTEXT);
+        assertThat(registry.findMentioned("承运商下单到签收"))
+                .extracting(Metric::name).doesNotContain("delivery_days"); // Alias remains necessary.
+    }
+
+    @Test void explicitPreferenceDoesNotBypassRequiredContextAndIsValidatedAndImmutable() {
+        var registry = DimensionPolicyTest.registry();
+        var preferred = new java.util.ArrayList<>(List.of("explicit interval"));
+        var metric = new Metric("sample", List.of("duration"), "", "1", null, List.of(), "", null, null,
+                null, null, List.of("required"), List.of("excluded"), preferred);
+        preferred.clear();
+        assertThat(metric.preferredContextAny()).containsExactly("explicit interval");
+        org.springframework.test.util.ReflectionTestUtils.setField(registry, "metrics", List.of(metric));
+        var match = registry.matchEvidence("duration excluded explicit interval").getFirst();
+        assertThat(match.excludedContextTerm()).isEqualTo("excluded");
+        assertThat(match.preferredContextTerm()).isEqualTo("explicit interval");
+        assertThat(match.decision()).isEqualTo(MetricRegistry.MatchDecision.REQUIRED_CONTEXT_MISSING);
+        assertThat(registry.findMentioned("duration required excluded explicit interval")).containsExactly(metric);
+        assertThatThrownBy(() -> new Metric("sample", List.of("duration"), "", "1", null, List.of(), "", null, null,
+                null, null, List.of(), List.of(), List.of(" "))).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new Metric("sample", List.of("duration"), "", "1", null, List.of(), "", null, null,
+                null, null, List.of(), List.of(), java.util.Arrays.asList((String) null)))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test void invalidScopeTermsCannotSilentlyCreateGlobalMatches() {

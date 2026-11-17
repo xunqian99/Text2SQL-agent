@@ -47,7 +47,10 @@ class MetricUnitContractTest {
         }
         for (var entry : after.path("metrics")) {
             var node = (com.fasterxml.jackson.databind.node.ObjectNode) entry;
-            if (node.path("name").asText().equals("delivery_days")) node.remove("excludedContextAny");
+            if (node.path("name").asText().equals("delivery_days")) {
+                node.remove("excludedContextAny");
+                node.remove("preferredContextAny");
+            }
             if (node.has("outputUnit")) { unitCount++; node.remove("outputUnit"); node.remove("outputScale"); }
             if (node.path("name").asText().equals("repeat_rate")) {
                 assertThat(node.path("expression").asText()).contains("ROUND(", "NULLIF(COUNT(*), 0), 2)");

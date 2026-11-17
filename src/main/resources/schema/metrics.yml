@@ -360,6 +360,7 @@ metrics:
   - name: delivery_days
     aliases: [配送时长, 配送天数, 送达时长, 平均配送, 物流时长]
     excludedContextAny: [承运商, 承运公司, 物流商, shipments, shipped_at, 发货到送达, 发货至送达, 发货到签收, 发货至签收]
+    preferredContextAny: [下单到签收, 下单至签收, 下单到送达, 下单至送达, order_delivered_customer_date减order_purchase_timestamp, order_delivered_customer_date-order_purchase_timestamp]
     description: 平均配送时长 = 下单到签收的天数（保留小数）
     expression: "ROUND((AVG(EXTRACT(EPOCH FROM (o.order_delivered_customer_date - o.order_purchase_timestamp)) / 86400.0))::numeric, 2)"
     tables: [orders]

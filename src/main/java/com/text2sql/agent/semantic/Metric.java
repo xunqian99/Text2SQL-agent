@@ -30,7 +30,8 @@ import java.util.List;
  * @param outputRule 输出列、单位、舍入和排序要求
  * @param queryPattern 复杂指标的推荐查询结构；简单指标为空
  * @param requiredContextAny 别名命中后至少还须命中一个上下文词；空列表不限制
- * @param excludedContextAny 任一词命中即排除该指标，优先于requiredContextAny
+ * @param excludedContextAny 任一词命中即排除该指标，除非显式区间命中preferredContextAny
+ * @param preferredContextAny 显式区间覆盖一般上下文排除；不绕过别名、required或依赖表检查
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record Metric(
@@ -46,21 +47,30 @@ public record Metric(
         OutputUnit outputUnit,
         Integer outputScale,
         List<String> requiredContextAny,
-        List<String> excludedContextAny) {
+        List<String> excludedContextAny,
+        List<String> preferredContextAny) {
 
     /** Unit belongs to this metric, never to every column in the question. */
     public enum OutputUnit { PERCENT, DECIMAL_RATIO }
 
     public Metric(String name, List<String> aliases, String description, String expression,
                   String filter, List<String> tables, String notes, String outputRule, String queryPattern) {
-        this(name, aliases, description, expression, filter, tables, notes, outputRule, queryPattern, null, null, null, null);
+        this(name, aliases, description, expression, filter, tables, notes, outputRule, queryPattern, null, null, null, null, null);
     }
 
     public Metric(String name, List<String> aliases, String description, String expression,
                   String filter, List<String> tables, String notes, String outputRule, String queryPattern,
                   OutputUnit outputUnit, Integer outputScale) {
         this(name, aliases, description, expression, filter, tables, notes, outputRule, queryPattern,
-                outputUnit, outputScale, null, null);
+                outputUnit, outputScale, null, null, null);
+    }
+
+    public Metric(String name, List<String> aliases, String description, String expression,
+                  String filter, List<String> tables, String notes, String outputRule, String queryPattern,
+                  OutputUnit outputUnit, Integer outputScale,
+                  List<String> requiredContextAny, List<String> excludedContextAny) {
+        this(name, aliases, description, expression, filter, tables, notes, outputRule, queryPattern,
+                outputUnit, outputScale, requiredContextAny, excludedContextAny, null);
     }
 
     public Metric {
@@ -68,6 +78,7 @@ public record Metric(
         tables = tables == null ? List.of() : List.copyOf(tables);
         requiredContextAny = checkedContext(requiredContextAny);
         excludedContextAny = checkedContext(excludedContextAny);
+        preferredContextAny = checkedContext(preferredContextAny);
         if ((outputUnit == null) != (outputScale == null)
                 || (outputScale != null && (outputScale < 0 || outputScale > 8))) {
             throw new IllegalArgumentException("Metric output unit and scale must be defined together, scale 0..8");
