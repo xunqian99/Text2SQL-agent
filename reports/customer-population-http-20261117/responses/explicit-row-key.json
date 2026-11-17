@@ -1,0 +1,67 @@
+{
+  "body" : {
+    "status" : "SUCCESS",
+    "sql" : "SELECT order_count, COUNT(customer_id) AS customer_key_count\nFROM (\n    SELECT customer_id, COUNT(*) AS order_count\n    FROM orders\n    GROUP BY customer_id\n) t\nGROUP BY order_count\nORDER BY order_count ASC\nLIMIT 1000;",
+    "message" : null,
+    "violations" : [ ],
+    "columns" : [ "order_count", "customer_key_count" ],
+    "rows" : [ [ "1", "99441" ] ],
+    "truncated" : false,
+    "rewritten" : false,
+    "rowCount" : 1,
+    "schemaTableCount" : 8,
+    "retrievedTables" : [ "orders", "order_items", "order_payments", "order_reviews", "customers", "coupon_usages", "refund_items", "refunds" ],
+    "schemaDdlChars" : 1354,
+    "llm" : {
+      "model" : "deepseek-flash",
+      "promptTokens" : 3103,
+      "completionTokens" : 2065,
+      "totalTokens" : 5168,
+      "latencyMs" : 11467,
+      "costYuan" : 0.00973228
+    },
+    "timings" : {
+      "retrievalMs" : 7,
+      "generationMs" : 11469,
+      "validationMs" : 3,
+      "executionMs" : 32,
+      "totalMs" : 11514
+    },
+    "sessionId" : "identity-explicit-row-key",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "15814b19-70af-4043-8670-daa843a45347",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 1,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 11514,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "SESSION" : 0,
+        "ADMISSION" : 0,
+        "VALIDATION" : 3,
+        "EXPLAIN" : 3,
+        "CLARIFICATION" : 0,
+        "CACHE_WRITE" : 0,
+        "RESULT_CHECK" : 0,
+        "RETRIEVAL" : 7,
+        "CONVERSATION" : 0,
+        "CACHE" : 0,
+        "GENERATION" : 14,
+        "MODEL" : 11455,
+        "EXECUTION" : 29
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 3,
+      "currentStageMs" : 0
+    }
+  },
+  "wallMs" : 11519,
+  "httpStatus" : 200,
+  "id" : "explicit-row-key"
+}

@@ -1,0 +1,67 @@
+{
+  "body" : {
+    "status" : "SUCCESS",
+    "sql" : "SELECT customer_state, COUNT(DISTINCT customer_unique_id) AS people_count\nFROM customers\nWHERE customer_unique_id IS NOT NULL\nGROUP BY customer_state\nORDER BY people_count DESC\nLIMIT 5;",
+    "message" : null,
+    "violations" : [ ],
+    "columns" : [ "customer_state", "people_count" ],
+    "rows" : [ [ "SP", "40302" ], [ "RJ", "12384" ], [ "MG", "11259" ], [ "RS", "5277" ], [ "PR", "4882" ] ],
+    "truncated" : false,
+    "rewritten" : false,
+    "rowCount" : 5,
+    "schemaTableCount" : 8,
+    "retrievedTables" : [ "customers", "orders", "geolocation", "members", "shipping_addresses", "regions", "member_levels", "coupon_usages" ],
+    "schemaDdlChars" : 1364,
+    "llm" : {
+      "model" : "deepseek-flash",
+      "promptTokens" : 3145,
+      "completionTokens" : 214,
+      "totalTokens" : 3359,
+      "latencyMs" : 2129,
+      "costYuan" : 0.0023702799999999998
+    },
+    "timings" : {
+      "retrievalMs" : 3,
+      "generationMs" : 2130,
+      "validationMs" : 9,
+      "executionMs" : 125,
+      "totalMs" : 2270
+    },
+    "sessionId" : "identity-explicit-state-person-ranking",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "1cb7fc72-7121-4142-b27b-05a647a630b5",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 1,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 2270,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "SESSION" : 0,
+        "ADMISSION" : 0,
+        "VALIDATION" : 9,
+        "EXPLAIN" : 4,
+        "CLARIFICATION" : 0,
+        "CACHE_WRITE" : 0,
+        "RESULT_CHECK" : 0,
+        "RETRIEVAL" : 3,
+        "CONVERSATION" : 0,
+        "CACHE" : 0,
+        "GENERATION" : 7,
+        "MODEL" : 2123,
+        "EXECUTION" : 121
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 3,
+      "currentStageMs" : 0
+    }
+  },
+  "wallMs" : 2276,
+  "httpStatus" : 200,
+  "id" : "explicit-state-person-ranking"
+}
