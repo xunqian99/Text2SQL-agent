@@ -64,6 +64,7 @@ public class MetricRegistry {
 
     private volatile List<Metric> metrics = List.of();
     private volatile List<DimensionPolicy> dimensionPolicies = List.of();
+    private volatile List<EntityPolicy> entityPolicies = List.of();
 
     @PostConstruct
     void load() {
@@ -82,7 +83,13 @@ public class MetricRegistry {
             }
         }
         this.dimensionPolicies = List.copyOf(policies);
-        log.info("指标注册表已加载：{} 条，维度口径：{} 条", this.metrics.size(), this.dimensionPolicies.size());
+        var entities = file == null || file.entityPolicies() == null ? List.<EntityPolicy>of() : file.entityPolicies();
+        for (var policy : entities) {
+            if (!names.add(policy.name())) throw new IllegalArgumentException("Duplicate business policy name");
+        }
+        this.entityPolicies = List.copyOf(entities);
+        log.info("指标注册表已加载：{} 条，维度口径：{} 条，实体口径：{} 条",
+                this.metrics.size(), this.dimensionPolicies.size(), this.entityPolicies.size());
     }
 
     public List<Metric> all() {
@@ -90,6 +97,28 @@ public class MetricRegistry {
     }
 
     public List<DimensionPolicy> dimensionPolicies() { return dimensionPolicies; }
+
+    public List<EntityPolicy> entityPolicies() { return entityPolicies; }
+
+    /** Policies only describe columns still present after pruning; they never add tables or columns. */
+    public String appendPolicies(String question,
+            List<com.text2sql.agent.retrieval.SchemaContext.Table> actualTables, String metricsText) {
+        String dimensionText = appendDimensionPolicies(question, actualTables, metricsText);
+        if (question == null || question.isBlank()) return dimensionText;
+        String text = normalizeForMatch(question);
+        StringBuilder result = new StringBuilder(dimensionText == null ? "" : dimensionText);
+        for (var policy : entityPolicies) {
+            boolean mentioned = policy.aliases().stream().anyMatch(a -> text.contains(normalizeForMatch(a)));
+            boolean available = actualTables.stream().anyMatch(t -> t.name().equalsIgnoreCase(policy.table())
+                    && t.columns().stream().anyMatch(c -> c.name().equalsIgnoreCase(policy.rowKey()))
+                    && t.columns().stream().anyMatch(c -> c.name().equalsIgnoreCase(policy.identityColumn())));
+            if (mentioned && available) {
+                if (!result.isEmpty()) result.append("\n\n");
+                result.append(policy.render());
+            }
+        }
+        return result.toString();
+    }
 
     /** Keep the exact table/column provenance after pruning; policies cannot introduce absent columns. */
     public String appendDimensionPolicies(String question,
@@ -255,6 +284,7 @@ public class MetricRegistry {
 
     /** YAML 根结构。 */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    private record MetricsFile(List<Metric> metrics, List<DimensionPolicy> dimensionPolicies) {
+    private record MetricsFile(List<Metric> metrics, List<DimensionPolicy> dimensionPolicies,
+                               List<EntityPolicy> entityPolicies) {
     }
 }

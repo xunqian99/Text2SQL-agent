@@ -81,7 +81,7 @@ public class FullSchemaProvider implements SchemaProvider {
                 }
                 resultContext = resultContext.withMetrics(sb.toString().stripTrailing());
             }
-            resultContext = resultContext.withMetrics(metricRegistry.appendDimensionPolicies(
+            resultContext = resultContext.withMetrics(metricRegistry.appendPolicies(
                     question, resultContext.tables(), resultContext.metricsText()));
         }
         if (properties.getFewshot().isEnabled() && fewshotSelector != null) {

@@ -2,6 +2,8 @@
 
 ## 最新目标覆盖：空闲时段评测（2026-11-17）
 
+**20点恢复：阶段2客户身份专项**：工作目录新增EntityPolicy与customer_identity_v1，只在实际customers两身份列存在且别名命中后追加，所有Schema路径接入，不改变检索评分或列保留。Docker关闭造成首次本地回归跳过14项、after连接失败及Gold进程16228之前的39736被停止；现场保留。Docker遗留run目录原样备份后恢复，原库46d25808e1a4未重建。数据库在线重跑Java729/729/0跳过、Gold200/200，200题检索/列/DDL/示例/来源不变，25题只增身份政策。见[CUSTOMER_IDENTITY_CONTRACT_20261117.md](CUSTOMER_IDENTITY_CONTRACT_20261117.md)。下一步先提交实现与离线证据，再用CustomerIdentityHttpProbe冻结4条真实定点协议并提交后只运行一次；不要把旧20条重跑。源代码和实际runtimeFiles均冻结，保留失败，空闲门禁继续开启。输出形状、单位契约及阶段2三轮正式回归尚欠。
+
 **收尾已确认**：真实验收与证据已提交`28655b2`。单次接续任务`text2sql`已删除，返回`deleteStatus: deleted`；不得重新创建或重放付费请求。提交后再次运行20条、隔离付费补验、当前构建入口保护三份只读审计，全部PASS，本次复核模型调用0、费用0。路线图首页与NULL报告的后续状态同步至晚间结果；业务源码、原始证据、题目、Gold、评分器均不变。未提交演示稿改动继续保留。下方早期准备命令仅为历史记录，不再执行。
 
 **18点实际执行已完成，禁止重复付费**：晚间结果见[DEMO_HTTP_RESULTS_20261117.md](DEMO_HTTP_RESULTS_20261117.md)。原目录首次18:01起跑在Decision Instant序列化失败，0问数/0模型、旧requests为空，现场保留；伴随TimeAwareProbe只给原ObjectMapper注册已有JavaTimeModule，原run/summarize/ResultNormalizer/业务源码不变。新reports/demo-http-20-20261117-v2原字节协议、桥接source/class于d396701先提交后实际问数一次：接口19/20、严格匹配16/20（80%）、健康20/20、会话/追问/关闭删除全部通过；均值3198.3ms/P95 11030ms/最大15014ms，22调用/53715 Token/完整估价¥0.03923214、未知0。四项不匹配T3-002横纵形状（数值正确）、T4-001错用customer_id而非customer_unique_id、T5-002总预算超时（MODEL14857ms、usage已知）、T6-003小数0.0304与百分数3.04单位差异；保持原评分、不调分不重跑。
