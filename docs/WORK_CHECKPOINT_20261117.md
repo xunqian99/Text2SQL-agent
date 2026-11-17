@@ -2,6 +2,10 @@
 
 ## 最新目标覆盖：空闲时段评测（2026-11-17）
 
+**同机隔离整链路补验**：见[ISOLATED_CHAIN_ACCEPTANCE_20261117.md](ISOLATED_CHAIN_ACCEPTANCE_20261117.md)。保留冷构建JAR/源码/缓存，公开模板另复制到Temp独立配置，新建text2sql-clean-chain-20261117及独立卷、15433本机端口。6脚本成功、37业务＋4持久化表/2,616,948行、两账号业务表可写0和4实际拒绝；新包demo无Key健康200/问数503，5个带ApplicationName的ro连接；Gold200/200、进程35,666ms、供应商0次。Java39596/30400退出、端口53407关闭，新库已停止并保留卷，原库仍运行。39制品离线manifest审计通过。首次Python→PS5.1继承PS7模块路径导致Get-FileHash失败，在创建资源前退出，initial-attempt保留；只改验收runner的子进程模块路径，不改源代码/用户环境。run_chain.py、协议、配置、JAR均已绑定，真实1条尚未执行。
+
+**18点新增的必要收尾**：先按既有原20条协议完整运行一次，再单独补同机隔离链路的首次1条真实问数（不是扩展题库或21题合并计分）。先python reports/isolated-chain-20261117/audit_evidence.py --live-inputs；核对database-binding.json的容器ID后只启动text2sql-clean-chain-20261117，用环境继承现有Key运行python reports/isolated-chain-20261117/run_chain.py paid。入口与应用均检查空闲时间；冻结问题2018订单数、Gold54,011、15秒/最多2调用。随后运行该目录audit_evidence.py --live-inputs --paid、核对费用/未知/会话与进程退出，另存付费manifest和文档。只停新容器，卷保留，原库不动。失败留存不覆盖、不重跑择优；不要改runner导致冻结SHA失效。未来 paid-window-check.json/paid-ask.json现在均不存在。
+
 **阶段4矩阵补充**：当前状态统一见[STAGE4_ACCEPTANCE_MATRIX_20261117.md](STAGE4_ACCEPTANCE_MATRIX_20261117.md)。本轮重新执行10份只读证据审计全部退出0，记录于reports/stage4-status-20261117/audit-results.json；没有重新跑Java、Gold、应用或模型，费用0。已修正改进方案中鉴权/限流的过期状态，原五条门槛和历史成绩未变。新20条仍未启动；同机新库与空缓存是两份分层证明，尚不合并宣称同一次干净环境整链路通过。18点执行仍按既有冻结协议，不改题/评分/预算，不新开延迟实验。
 
 用户已将目标重新设为active，最新约束为“阶段3 P95暂缓，不在DeepSeek高峰收费时段调用用户API跑评测，仅空闲时段运行”。下文“18:00前不推进项目/整段停工”是旧安排：现在本地代码、测试、文档可继续，真实评测须符合[空闲时段门禁](OFFPEAK_EVALUATION_20261117.md)。14:00/18:00既有heartbeat已更新为费用边界/空闲接续，没有新建重复任务。

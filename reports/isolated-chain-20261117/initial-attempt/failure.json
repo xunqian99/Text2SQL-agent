@@ -1,0 +1,21 @@
+{
+  "prepareExitCode": 1,
+  "modelCalls": 0,
+  "databaseContainerCreated": false,
+  "databaseVolumeCreated": false,
+  "cause": "PowerShell 7 module paths inherited through Python hide Windows PowerShell 5.1 Get-FileHash; setting child-only builtin PSModulePath restores command discovery",
+  "diagnosis": [
+    {
+      "environment": "inherited",
+      "exitCode": 1,
+      "stdout": "5.1.22621.6060\r\nC:\\Users\\xunqian\\Documents\\PowerShell\\Modules;C:\\Program Files\\PowerShell\\Modules;c:\\users\\xunqian\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\Modules;C:\\Users\\xunqian\\Documents\\WindowsPowerShell\\Modules;C:\\Program Files\\WindowsPowerShell\\Modules;C:\\WINDOWS\\system32\\WindowsPowerShell\\v1.0\\Modules\r\n",
+      "stderr": "Get-Command : The term 'Get-FileHash' is not recognized as the name of a cmdlet, function, script file, or operable pro\r\ngram. Check the spelling of the name, or if a path was included, verify that the path is correct and try again.\r\nAt line:1 char:59\r\n+ ...  $env:PSModulePath; (Get-Command Get-FileHash -ErrorAction Stop).Name\r\n+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n    + CategoryInfo          : ObjectNotFound: (Get-FileHash:String) [Get-Command], CommandNotFoundException\r\n    + FullyQualifiedErrorId : CommandNotFoundException,Microsoft.PowerShell.Commands.GetCommandCommand\r\n \r\n"
+    },
+    {
+      "environment": "builtin-windows-modules",
+      "exitCode": 0,
+      "stdout": "5.1.22621.6060\r\nC:\\Program Files\\WindowsPowerShell\\Modules;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\Modules\r\nGet-FileHash\r\n",
+      "stderr": ""
+    }
+  ]
+}
