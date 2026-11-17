@@ -1,0 +1,837 @@
+18:18:33.430 [main] INFO com.text2sql.agent.semantic.MetricRegistry -- 指标注册表已加载：24 条，维度口径：1 条
+18:18:33.714 [main] INFO com.text2sql.agent.fewshot.ExampleLoader -- Few-shot 示例库加载完成：35 条示例
+18:18:33.932 [main] INFO com.text2sql.agent.retrieval.glossary.GlossaryLoader -- 语义词典已加载：37 张表有中文描述 / 36 条约定关联（无效条目 0 条）
+18:18:34.033 [main] INFO com.text2sql.agent.retrieval.ValueRetriever -- ValueRetriever 枚举与实体倒排索引初始化完成，共收录 296 个映射项
+18:18:34.065 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1346 字符（全量 7401 字符）
+18:18:34.145 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 orders，覆盖目标表 [campaigns, orders]
+18:18:34.148 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 9 张表：[orders, campaigns, customers, order_items, order_payments, order_reviews, campaign_products, coupon_usages, products] | DDL 1610 字符（全量 7401 字符）
+18:18:34.149 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：2 条
+18:18:34.156 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 6 张表：[order_items, orders, products, sellers, refund_items, settlement_items] | DDL 994 字符（全量 7401 字符）
+18:18:34.166 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 4 张表：[sellers, order_items, regions, settlements] | DDL 606 字符（全量 7401 字符）
+18:18:34.173 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 customers，覆盖目标表 [customers, geolocation, shipping_addresses, regions]
+18:18:34.174 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 6 张表：[customers, orders, geolocation, shipping_addresses, members, regions] | DDL 1109 字符（全量 7401 字符）
+18:18:34.174 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：3 条
+18:18:34.179 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1346 字符（全量 7401 字符）
+18:18:34.183 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 order_items，覆盖目标表 [order_items, support_tickets]
+18:18:34.183 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[order_items, orders, products, sellers, support_tickets, refund_items, settlement_items, ticket_categories] | DDL 1573 字符（全量 7401 字符）
+18:18:34.186 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.190 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 2 张表：[order_reviews, orders] | DDL 363 字符（全量 7401 字符）
+18:18:34.193 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 2 张表：[order_payments, orders] | DDL 364 字符（全量 7401 字符）
+18:18:34.199 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 6 张表：[order_items, orders, products, sellers, refund_items, settlement_items] | DDL 1002 字符（全量 7401 字符）
+18:18:34.204 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 sellers，覆盖目标表 [customers, geolocation, shipping_addresses, sellers, regions]
+18:18:34.204 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[sellers, customers, geolocation, shipping_addresses, order_items, orders, regions, settlements] | DDL 1451 字符（全量 7401 字符）
+18:18:34.204 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：4 条
+18:18:34.211 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 products，覆盖目标表 [product_category_translation, products]
+18:18:34.211 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[products, product_category_translation, order_items, campaign_products, inventory, inventory_movements, product_brand_map, product_price_history] | DDL 1212 字符（全量 7401 字符）
+18:18:34.222 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 members，覆盖目标表 [orders, members, search_logs, support_tickets]
+18:18:34.222 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[members, orders, search_logs, support_tickets, member_levels, coupon_usages, customers, member_snapshot] | DDL 1329 字符（全量 7401 字符）
+18:18:34.224 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.232 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 shipments，覆盖目标表 [shipments, warehouses]
+18:18:34.232 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 7 张表：[shipments, warehouses, inventory, inventory_movements, orders, regions, shipment_tracking] | DDL 1137 字符（全量 7401 字符）
+18:18:34.235 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 3 张表：[refunds, orders, refund_items] | DDL 470 字符（全量 7401 字符）
+18:18:34.238 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 3 张表：[refunds, orders, refund_items] | DDL 470 字符（全量 7401 字符）
+18:18:34.238 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.240 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 coupons，覆盖目标表 [coupons, coupon_usages]
+18:18:34.240 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 5 张表：[coupons, coupon_usages, campaigns, members, orders] | DDL 1026 字符（全量 7401 字符）
+18:18:34.240 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.243 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 products，覆盖目标表 [support_tickets, products]
+18:18:34.243 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 9 张表：[products, support_tickets, order_items, ticket_categories, campaign_products, inventory, inventory_movements, members, search_logs] | DDL 1423 字符（全量 7401 字符）
+18:18:34.247 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 3 张表：[inventory_movements, products, warehouses] | DDL 440 字符（全量 7401 字符）
+18:18:34.247 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.250 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 regions，覆盖目标表 [customers, geolocation, shipping_addresses, regions, warehouses]
+18:18:34.250 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[regions, warehouses, customers, geolocation, shipping_addresses, shipments, inventory, inventory_movements] | DDL 1419 字符（全量 7401 字符）
+18:18:34.253 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 order_items，覆盖目标表 [orders, order_items]
+18:18:34.253 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[order_items, orders, customers, order_payments, order_reviews, products, sellers, coupon_usages] | DDL 1449 字符（全量 7401 字符）
+18:18:34.256 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 order_items，覆盖目标表 [orders, order_items]
+18:18:34.256 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[order_items, orders, customers, order_payments, order_reviews, products, sellers, coupon_usages] | DDL 1449 字符（全量 7401 字符）
+18:18:34.256 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 2 张表：[order_payments, orders] | DDL 364 字符（全量 7401 字符）
+18:18:34.262 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 customers，覆盖目标表 [customers, geolocation, shipping_addresses]
+18:18:34.262 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 6 张表：[customers, orders, geolocation, shipping_addresses, members, regions] | DDL 1059 字符（全量 7401 字符）
+18:18:34.265 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 sellers，覆盖目标表 [sellers, products, order_items, support_tickets]
+18:18:34.267 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[sellers, order_items, products, support_tickets, orders, regions, settlements, campaign_products] | DDL 1683 字符（全量 7401 字符）
+18:18:34.267 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.271 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 orders，覆盖目标表 [orders, campaigns]
+18:18:34.271 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 9 张表：[orders, customers, order_items, order_payments, order_reviews, campaigns, coupon_usages, refund_items, coupons] | DDL 1552 字符（全量 7401 字符）
+18:18:34.271 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：3 条
+18:18:34.274 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 members，覆盖目标表 [member_levels, members, member_snapshot]
+18:18:34.274 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[members, member_levels, member_snapshot, coupon_usages, customers, referrals, search_logs, support_tickets] | DDL 1277 字符（全量 7401 字符）
+18:18:34.276 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 regions，覆盖目标表 [regions, warehouses, customers, geolocation, shipping_addresses]
+18:18:34.276 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[regions, warehouses, customers, geolocation, shipping_addresses, shipments, inventory, inventory_movements] | DDL 1419 字符（全量 7401 字符）
+18:18:34.281 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 3 张表：[campaigns, campaign_products, coupons] | DDL 443 字符（全量 7401 字符）
+18:18:34.295 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 coupons，覆盖目标表 [coupons, coupon_usages]
+18:18:34.295 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 5 张表：[coupons, coupon_usages, campaigns, members, orders] | DDL 1026 字符（全量 7401 字符）
+18:18:34.295 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.298 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 3 张表：[refunds, orders, refund_items] | DDL 435 字符（全量 7401 字符）
+18:18:34.300 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 inventory，覆盖目标表 [shipments, warehouses, inventory]
+18:18:34.300 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[inventory, shipments, warehouses, inventory_movements, orders, products, regions, shipment_tracking] | DDL 1364 字符（全量 7401 字符）
+18:18:34.305 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 inventory，覆盖目标表 [shipments, warehouses, inventory]
+18:18:34.305 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[inventory, shipments, warehouses, inventory_movements, orders, products, regions, shipment_tracking] | DDL 1480 字符（全量 7401 字符）
+18:18:34.308 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 4 张表：[shipments, warehouses, orders, shipment_tracking] | DDL 611 字符（全量 7401 字符）
+18:18:34.312 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 5 张表：[support_tickets, ticket_categories, members, orders, ticket_messages] | DDL 942 字符（全量 7401 字符）
+18:18:34.316 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 settlements，覆盖目标表 [order_payments, sellers, settlements]
+18:18:34.316 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 7 张表：[settlements, order_payments, sellers, order_items, orders, settlement_items, regions] | DDL 1423 字符（全量 7401 字符）
+18:18:34.320 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 3 张表：[search_logs, members, products] | DDL 409 字符（全量 7401 字符）
+18:18:34.322 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 orders，覆盖目标表 [orders, customers, geolocation, shipping_addresses]
+18:18:34.322 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, customers, geolocation, shipping_addresses, order_items, order_payments, order_reviews, coupon_usages] | DDL 1362 字符（全量 7401 字符）
+18:18:34.325 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 2 张表：[order_reviews, orders] | DDL 363 字符（全量 7401 字符）
+18:18:34.328 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 2 张表：[order_payments, orders] | DDL 388 字符（全量 7401 字符）
+18:18:34.331 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 orders，覆盖目标表 [orders, settlements]
+18:18:34.331 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 9 张表：[orders, settlements, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, settlement_items] | DDL 1972 字符（全量 7401 字符）
+18:18:34.333 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1346 字符（全量 7401 字符）
+18:18:34.337 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1573 字符（全量 7401 字符）
+18:18:34.340 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 6 张表：[order_items, orders, products, sellers, refund_items, settlement_items] | DDL 1404 字符（全量 7401 字符）
+18:18:34.343 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1573 字符（全量 7401 字符）
+18:18:34.346 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1573 字符（全量 7401 字符）
+18:18:34.350 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1573 字符（全量 7401 字符）
+18:18:34.355 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 6 张表：[order_items, orders, products, sellers, refund_items, settlement_items] | DDL 1206 字符（全量 7401 字符）
+18:18:34.357 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 orders，覆盖目标表 [support_tickets, orders]
+18:18:34.357 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, support_tickets, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items] | DDL 1590 字符（全量 7401 字符）
+18:18:34.359 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.367 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 shipments，覆盖目标表 [customers, geolocation, shipping_addresses, shipments, orders]
+18:18:34.367 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[shipments, customers, geolocation, shipping_addresses, warehouses, orders, shipment_tracking, members] | DDL 1772 字符（全量 7401 字符）
+18:18:34.367 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[delivery_days]
+18:18:34.370 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 3 张表：[refunds, orders, refund_items] | DDL 683 字符（全量 7401 字符）
+18:18:34.374 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 5 张表：[support_tickets, ticket_categories, members, orders, ticket_messages] | DDL 1183 字符（全量 7401 字符）
+18:18:34.378 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 orders，覆盖目标表 [customers, geolocation, shipping_addresses, orders]
+18:18:34.378 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, customers, geolocation, shipping_addresses, order_items, order_payments, order_reviews, coupon_usages] | DDL 1636 字符（全量 7401 字符）
+18:18:34.381 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[members, member_levels, coupon_usages, customers, member_snapshot, referrals, search_logs, support_tickets] | DDL 1390 字符（全量 7401 字符）
+18:18:34.384 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 3 张表：[settlements, sellers, settlement_items] | DDL 576 字符（全量 7401 字符）
+18:18:34.386 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1346 字符（全量 7401 字符）
+18:18:34.386 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[valid_order]
+18:18:34.389 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 order_items，覆盖目标表 [customers, geolocation, shipping_addresses, order_items]
+18:18:34.389 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[order_items, customers, geolocation, shipping_addresses, orders, products, sellers, refund_items] | DDL 1458 字符（全量 7401 字符）
+18:18:34.393 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 product_category_translation，覆盖目标表 [product_category_translation, products, order_items, support_tickets]
+18:18:34.394 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[product_category_translation, order_items, products, support_tickets, orders, sellers, campaign_products, inventory] | DDL 1507 字符（全量 7401 字符）
+18:18:34.394 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.396 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 sellers，覆盖目标表 [sellers, customers, geolocation, shipping_addresses, order_items]
+18:18:34.396 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[sellers, customers, geolocation, order_items, shipping_addresses, orders, regions, settlements] | DDL 1493 字符（全量 7401 字符）
+18:18:34.401 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 members，覆盖目标表 [members, search_logs, support_tickets, user_tag_map]
+18:18:34.401 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[members, search_logs, support_tickets, user_tag_map, member_levels, ticket_categories, coupon_usages, customers] | DDL 1236 字符（全量 7401 字符）
+18:18:34.402 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 order_reviews，覆盖目标表 [orders, order_reviews]
+18:18:34.404 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[order_reviews, orders, customers, order_items, order_payments, coupon_usages, refund_items, refunds] | DDL 1270 字符（全量 7401 字符）
+18:18:34.409 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 orders，覆盖目标表 [orders, customers, geolocation, shipping_addresses]
+18:18:34.409 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, customers, geolocation, shipping_addresses, order_items, order_payments, order_reviews, coupon_usages] | DDL 1362 字符（全量 7401 字符）
+18:18:34.413 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 orders，覆盖目标表 [regions, warehouses, orders]
+18:18:34.413 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, regions, warehouses, customers, order_items, order_payments, order_reviews, shipments] | DDL 1400 字符（全量 7401 字符）
+18:18:34.416 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 member_levels，覆盖目标表 [member_levels, members, orders]
+18:18:34.416 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[member_levels, members, orders, customers, order_items, order_payments, order_reviews, coupon_usages] | DDL 1428 字符（全量 7401 字符）
+18:18:34.420 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 members，覆盖目标表 [user_tags, members, search_logs, support_tickets]
+18:18:34.420 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 9 张表：[members, search_logs, support_tickets, user_tags, member_levels, ticket_categories, coupon_usages, customers, user_tag_map] | DDL 1401 字符（全量 7401 字符）
+18:18:34.423 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：5 条主干边，起点 members，覆盖目标表 [user_tags, user_tag_map, members, search_logs, support_tickets, orders]
+18:18:34.423 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[members, orders, search_logs, support_tickets, user_tag_map, user_tags, customers, member_levels] | DDL 1425 字符（全量 7401 字符）
+18:18:34.423 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：2 条
+18:18:34.424 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 coupon_usages，覆盖目标表 [coupon_usages, coupons]
+18:18:34.424 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 5 张表：[coupon_usages, coupons, campaigns, members, orders] | DDL 1052 字符（全量 7401 字符）
+18:18:34.426 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 shipments，覆盖目标表 [shipments, warehouses]
+18:18:34.426 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 7 张表：[shipments, warehouses, inventory, inventory_movements, orders, regions, shipment_tracking] | DDL 1137 字符（全量 7401 字符）
+18:18:34.426 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 shipments，覆盖目标表 [shipments, orders]
+18:18:34.429 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 4 张表：[shipments, warehouses, orders, shipment_tracking] | DDL 987 字符（全量 7401 字符）
+18:18:34.430 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[delivery_days]
+18:18:34.430 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 support_tickets，覆盖目标表 [support_tickets, ticket_categories]
+18:18:34.430 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 5 张表：[support_tickets, ticket_categories, members, orders, ticket_messages] | DDL 1420 字符（全量 7401 字符）
+18:18:34.433 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：5 条主干边，起点 settlements，覆盖目标表 [customers, geolocation, shipping_addresses, sellers, settlements]
+18:18:34.433 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[settlements, sellers, customers, geolocation, shipping_addresses, order_items, settlement_items, orders] | DDL 1669 字符（全量 7401 字符）
+18:18:34.437 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 refunds，覆盖目标表 [refunds, refund_items]
+18:18:34.437 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 4 张表：[refunds, refund_items, orders, order_items] | DDL 785 字符（全量 7401 字符）
+18:18:34.441 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 order_items，覆盖目标表 [order_items, support_tickets, customers, orders]
+18:18:34.441 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[order_items, customers, orders, products, sellers, support_tickets, order_payments, order_reviews] | DDL 1660 字符（全量 7401 字符）
+18:18:34.441 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[aov]
+18:18:34.441 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.444 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 order_items，覆盖目标表 [products, order_items]
+18:18:34.444 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[order_items, products, orders, sellers, campaign_products, inventory, inventory_movements, product_brand_map] | DDL 1370 字符（全量 7401 字符）
+18:18:34.447 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 3 张表：[search_logs, members, products] | DDL 409 字符（全量 7401 字符）
+18:18:34.450 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 inventory，覆盖目标表 [products, shipments, warehouses, inventory]
+18:18:34.450 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[inventory, products, shipments, warehouses, order_items, campaign_products, inventory_movements, orders] | DDL 1364 字符（全量 7401 字符）
+18:18:34.450 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 products，覆盖目标表 [product_price_history, products, order_items]
+18:18:34.453 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[products, order_items, product_price_history, campaign_products, inventory, inventory_movements, orders, product_brand_map] | DDL 1406 字符（全量 7401 字符）
+18:18:34.454 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 customers，覆盖目标表 [regions, warehouses, customers]
+18:18:34.454 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[customers, regions, warehouses, orders, shipments, inventory, inventory_movements, members] | DDL 1358 字符（全量 7401 字符）
+18:18:34.457 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：6 条主干边，起点 member_levels，覆盖目标表 [regions, member_levels, members, order_items, support_tickets]
+18:18:34.457 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[member_levels, order_items, members, regions, support_tickets, orders, products, sellers] | DDL 1789 字符（全量 7401 字符）
+18:18:34.459 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：2 条
+18:18:34.461 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 product_category_translation，覆盖目标表 [product_category_translation, refund_items, refunds, products]
+18:18:34.461 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[product_category_translation, refunds, products, refund_items, order_items, orders, campaign_products, inventory] | DDL 1618 字符（全量 7401 字符）
+18:18:34.464 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 campaigns，覆盖目标表 [coupon_usages, coupons, campaigns, orders, order_items]
+18:18:34.464 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 7 张表：[campaigns, coupon_usages, coupons, order_items, orders, campaign_products, members] | DDL 1412 字符（全量 7401 字符）
+18:18:34.464 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[valid_order]
+18:18:34.467 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 products，覆盖目标表 [products, search_logs, support_tickets, product_category_translation]
+18:18:34.468 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 9 张表：[products, search_logs, product_category_translation, order_items, support_tickets, campaign_products, inventory, inventory_movements, members] | DDL 1604 字符（全量 7401 字符）
+18:18:34.468 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.471 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：8 条主干边，起点 inventory，覆盖目标表 [inventory, support_tickets, products, shipments, warehouses, regions, brands]
+18:18:34.471 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 10 张表：[inventory, brands, products, regions, shipments, warehouses, support_tickets, order_items, product_brand_map, orders] | DDL 2120 字符（全量 7401 字符）
+18:18:34.471 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.471 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：5 条主干边，起点 settlements，覆盖目标表 [sellers, settlement_items, product_category_translation, settlements]
+18:18:34.474 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 7 张表：[settlements, product_category_translation, sellers, settlement_items, order_items, products, regions] | DDL 1731 字符（全量 7401 字符）
+18:18:34.475 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：7 条主干边，起点 members，覆盖目标表 [user_tags, members, search_logs, support_tickets, orders, products, order_items]
+18:18:34.475 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 9 张表：[members, search_logs, support_tickets, order_items, orders, products, user_tags, member_levels, user_tag_map] | DDL 2051 字符（全量 7401 字符）
+18:18:34.480 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 members，覆盖目标表 [members, member_snapshot, search_logs, support_tickets, member_levels]
+18:18:34.480 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[members, member_levels, member_snapshot, search_logs, support_tickets, coupon_usages, customers, referrals] | DDL 1462 字符（全量 7401 字符）
+18:18:34.482 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 refunds，覆盖目标表 [product_category_translation, refunds, refund_items]
+18:18:34.482 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 6 张表：[refunds, product_category_translation, refund_items, orders, order_items, products] | DDL 1509 字符（全量 7401 字符）
+18:18:34.485 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 customers，覆盖目标表 [shipping_addresses, customers, geolocation, orders]
+18:18:34.485 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 6 张表：[customers, shipping_addresses, geolocation, orders, members, regions] | DDL 1099 字符（全量 7401 字符）
+18:18:34.485 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：5 条主干边，起点 orders，覆盖目标表 [orders, campaigns, order_items, customers]
+18:18:34.485 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 9 张表：[orders, customers, order_payments, order_reviews, campaigns, order_items, coupon_usages, refund_items, coupons] | DDL 1659 字符（全量 7401 字符）
+18:18:34.485 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[aov, unique_buyers, valid_order]
+18:18:34.485 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：3 条
+18:18:34.489 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 customers，覆盖目标表 [customers, orders]
+18:18:34.489 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[customers, orders, order_items, order_payments, order_reviews, coupon_usages, members, refund_items] | DDL 1534 字符（全量 7401 字符）
+18:18:34.490 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[retention_rate]
+18:18:34.492 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1606 字符（全量 7401 字符）
+18:18:34.492 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[on_time_rate]
+18:18:34.492 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.495 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 products，覆盖目标表 [products, order_items, orders]
+18:18:34.495 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[products, order_items, campaign_products, inventory, inventory_movements, product_brand_map, product_category_translation, product_price_history] | DDL 1377 字符（全量 7401 字符）
+18:18:34.496 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[sell_through_rate]
+18:18:34.496 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 order_items，覆盖目标表 [order_items, regions, orders]
+18:18:34.499 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[order_items, regions, orders, products, sellers, refund_items, settlement_items, customers] | DDL 1438 字符（全量 7401 字符）
+18:18:34.499 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[freight_ratio, gmv_with_freight]
+18:18:34.501 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：5 条主干边，起点 coupon_usages，覆盖目标表 [coupon_usages, coupons, order_items, orders, member_levels]
+18:18:34.502 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[coupon_usages, coupons, member_levels, order_items, orders, campaigns, members, member_snapshot] | DDL 1675 字符（全量 7401 字符）
+18:18:34.503 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[discount_rate, gmv_with_freight]
+18:18:34.503 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.506 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：5 条主干边，起点 support_tickets，覆盖目标表 [support_tickets, product_category_translation, products, ticket_categories]
+18:18:34.506 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[support_tickets, product_category_translation, products, ticket_categories, members, order_items, orders, ticket_messages] | DDL 1999 字符（全量 7401 字符）
+18:18:34.506 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[sla_rate]
+18:18:34.510 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 campaigns，覆盖目标表 [referrals, campaigns]
+18:18:34.510 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 6 张表：[campaigns, referrals, campaign_products, coupons, members, coupon_usages] | DDL 1144 字符（全量 7401 字符）
+18:18:34.510 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[conversion_rate, reward_per_converted]
+18:18:34.513 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 shipments，覆盖目标表 [customers, geolocation, shipping_addresses, shipments, orders]
+18:18:34.513 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[shipments, customers, geolocation, orders, shipping_addresses, warehouses, shipment_tracking, members] | DDL 1772 字符（全量 7401 字符）
+18:18:34.513 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[delivery_days]
+18:18:34.517 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 settlement_items，覆盖目标表 [settlement_items, sellers, support_tickets, settlements]
+18:18:34.517 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[settlement_items, sellers, support_tickets, order_items, orders, settlements, ticket_categories, members] | DDL 1798 字符（全量 7401 字符）
+18:18:34.519 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[commission_rate]
+18:18:34.519 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：2 条
+18:18:34.520 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 order_items，覆盖目标表 [order_items, orders]
+18:18:34.520 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 6 张表：[order_items, orders, products, sellers, refund_items, settlement_items] | DDL 1264 字符（全量 7401 字符）
+18:18:34.522 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[gmv_with_freight, yoy_growth]
+18:18:34.527 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 order_reviews，覆盖目标表 [refunds, customers, order_reviews, support_tickets]
+18:18:34.527 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[order_reviews, refunds, customers, orders, support_tickets, refund_items, members, regions] | DDL 1659 字符（全量 7401 字符）
+18:18:34.527 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[low_score_rate]
+18:18:34.527 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.529 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1346 字符（全量 7401 字符）
+18:18:34.531 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 orders，覆盖目标表 [campaigns, orders]
+18:18:34.534 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 9 张表：[orders, campaigns, customers, order_items, order_payments, order_reviews, campaign_products, coupon_usages, products] | DDL 1610 字符（全量 7401 字符）
+18:18:34.534 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：2 条
+18:18:34.534 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 6 张表：[order_items, orders, products, sellers, refund_items, settlement_items] | DDL 994 字符（全量 7401 字符）
+18:18:34.538 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 4 张表：[sellers, order_items, regions, settlements] | DDL 606 字符（全量 7401 字符）
+18:18:34.540 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 customers，覆盖目标表 [customers, geolocation, shipping_addresses, regions]
+18:18:34.543 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 6 张表：[customers, orders, geolocation, shipping_addresses, members, regions] | DDL 1109 字符（全量 7401 字符）
+18:18:34.543 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：3 条
+18:18:34.545 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1346 字符（全量 7401 字符）
+18:18:34.549 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 order_items，覆盖目标表 [order_items, support_tickets]
+18:18:34.550 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[order_items, orders, products, sellers, support_tickets, refund_items, settlement_items, ticket_categories] | DDL 1573 字符（全量 7401 字符）
+18:18:34.552 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.555 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 2 张表：[order_reviews, orders] | DDL 363 字符（全量 7401 字符）
+18:18:34.555 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 2 张表：[order_payments, orders] | DDL 364 字符（全量 7401 字符）
+18:18:34.560 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 6 张表：[order_items, orders, products, sellers, refund_items, settlement_items] | DDL 1002 字符（全量 7401 字符）
+18:18:34.562 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 sellers，覆盖目标表 [customers, geolocation, shipping_addresses, sellers, regions]
+18:18:34.562 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[sellers, customers, geolocation, shipping_addresses, order_items, orders, regions, settlements] | DDL 1451 字符（全量 7401 字符）
+18:18:34.565 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：4 条
+18:18:34.566 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 products，覆盖目标表 [product_category_translation, products]
+18:18:34.566 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[products, product_category_translation, order_items, campaign_products, inventory, inventory_movements, product_brand_map, product_price_history] | DDL 1212 字符（全量 7401 字符）
+18:18:34.571 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 members，覆盖目标表 [orders, members, search_logs, support_tickets]
+18:18:34.571 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[members, orders, search_logs, support_tickets, member_levels, coupon_usages, customers, member_snapshot] | DDL 1329 字符（全量 7401 字符）
+18:18:34.572 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.575 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 shipments，覆盖目标表 [shipments, warehouses]
+18:18:34.575 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 7 张表：[shipments, warehouses, inventory, inventory_movements, orders, regions, shipment_tracking] | DDL 1137 字符（全量 7401 字符）
+18:18:34.575 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 3 张表：[refunds, orders, refund_items] | DDL 470 字符（全量 7401 字符）
+18:18:34.579 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 3 张表：[refunds, orders, refund_items] | DDL 470 字符（全量 7401 字符）
+18:18:34.580 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.582 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 coupons，覆盖目标表 [coupons, coupon_usages]
+18:18:34.582 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 5 张表：[coupons, coupon_usages, campaigns, members, orders] | DDL 1026 字符（全量 7401 字符）
+18:18:34.582 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.585 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 products，覆盖目标表 [support_tickets, products]
+18:18:34.586 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 9 张表：[products, support_tickets, order_items, ticket_categories, campaign_products, inventory, inventory_movements, members, search_logs] | DDL 1423 字符（全量 7401 字符）
+18:18:34.590 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 3 张表：[inventory_movements, products, warehouses] | DDL 440 字符（全量 7401 字符）
+18:18:34.590 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.593 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 regions，覆盖目标表 [customers, geolocation, shipping_addresses, regions, warehouses]
+18:18:34.593 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[regions, warehouses, customers, geolocation, shipping_addresses, shipments, inventory, inventory_movements] | DDL 1419 字符（全量 7401 字符）
+18:18:34.596 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 order_items，覆盖目标表 [orders, order_items]
+18:18:34.596 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[order_items, orders, customers, order_payments, order_reviews, products, sellers, coupon_usages] | DDL 1449 字符（全量 7401 字符）
+18:18:34.598 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 order_items，覆盖目标表 [orders, order_items]
+18:18:34.598 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[order_items, orders, customers, order_payments, order_reviews, products, sellers, coupon_usages] | DDL 1449 字符（全量 7401 字符）
+18:18:34.600 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 2 张表：[order_payments, orders] | DDL 364 字符（全量 7401 字符）
+18:18:34.604 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 customers，覆盖目标表 [customers, geolocation, shipping_addresses]
+18:18:34.604 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 6 张表：[customers, orders, geolocation, shipping_addresses, members, regions] | DDL 1059 字符（全量 7401 字符）
+18:18:34.608 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 sellers，覆盖目标表 [sellers, products, order_items, support_tickets]
+18:18:34.609 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[sellers, order_items, products, support_tickets, orders, regions, settlements, campaign_products] | DDL 1683 字符（全量 7401 字符）
+18:18:34.609 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.612 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 orders，覆盖目标表 [orders, campaigns]
+18:18:34.612 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 9 张表：[orders, customers, order_items, order_payments, order_reviews, campaigns, coupon_usages, refund_items, coupons] | DDL 1552 字符（全量 7401 字符）
+18:18:34.614 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：3 条
+18:18:34.617 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 members，覆盖目标表 [member_levels, members, member_snapshot]
+18:18:34.617 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[members, member_levels, member_snapshot, coupon_usages, customers, referrals, search_logs, support_tickets] | DDL 1277 字符（全量 7401 字符）
+18:18:34.619 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 regions，覆盖目标表 [regions, warehouses, customers, geolocation, shipping_addresses]
+18:18:34.619 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[regions, warehouses, customers, geolocation, shipping_addresses, shipments, inventory, inventory_movements] | DDL 1419 字符（全量 7401 字符）
+18:18:34.621 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 3 张表：[campaigns, campaign_products, coupons] | DDL 443 字符（全量 7401 字符）
+18:18:34.625 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 coupons，覆盖目标表 [coupons, coupon_usages]
+18:18:34.625 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 5 张表：[coupons, coupon_usages, campaigns, members, orders] | DDL 1026 字符（全量 7401 字符）
+18:18:34.625 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.625 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 3 张表：[refunds, orders, refund_items] | DDL 435 字符（全量 7401 字符）
+18:18:34.627 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 inventory，覆盖目标表 [shipments, warehouses, inventory]
+18:18:34.627 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[inventory, shipments, warehouses, inventory_movements, orders, products, regions, shipment_tracking] | DDL 1364 字符（全量 7401 字符）
+18:18:34.629 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 inventory，覆盖目标表 [shipments, warehouses, inventory]
+18:18:34.629 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[inventory, shipments, warehouses, inventory_movements, orders, products, regions, shipment_tracking] | DDL 1480 字符（全量 7401 字符）
+18:18:34.631 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 4 张表：[shipments, warehouses, orders, shipment_tracking] | DDL 611 字符（全量 7401 字符）
+18:18:34.631 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 5 张表：[support_tickets, ticket_categories, members, orders, ticket_messages] | DDL 942 字符（全量 7401 字符）
+18:18:34.635 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 settlements，覆盖目标表 [order_payments, sellers, settlements]
+18:18:34.635 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 7 张表：[settlements, order_payments, sellers, order_items, orders, settlement_items, regions] | DDL 1423 字符（全量 7401 字符）
+18:18:34.635 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 3 张表：[search_logs, members, products] | DDL 409 字符（全量 7401 字符）
+18:18:34.638 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 orders，覆盖目标表 [orders, customers, geolocation, shipping_addresses]
+18:18:34.638 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, customers, geolocation, shipping_addresses, order_items, order_payments, order_reviews, coupon_usages] | DDL 1362 字符（全量 7401 字符）
+18:18:34.639 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 2 张表：[order_reviews, orders] | DDL 363 字符（全量 7401 字符）
+18:18:34.640 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 2 张表：[order_payments, orders] | DDL 388 字符（全量 7401 字符）
+18:18:34.642 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 orders，覆盖目标表 [orders, settlements]
+18:18:34.642 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 9 张表：[orders, settlements, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, settlement_items] | DDL 1972 字符（全量 7401 字符）
+18:18:34.642 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1346 字符（全量 7401 字符）
+18:18:34.645 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1573 字符（全量 7401 字符）
+18:18:34.645 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 6 张表：[order_items, orders, products, sellers, refund_items, settlement_items] | DDL 1404 字符（全量 7401 字符）
+18:18:34.645 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1573 字符（全量 7401 字符）
+18:18:34.648 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1573 字符（全量 7401 字符）
+18:18:34.649 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1573 字符（全量 7401 字符）
+18:18:34.651 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 6 张表：[order_items, orders, products, sellers, refund_items, settlement_items] | DDL 1206 字符（全量 7401 字符）
+18:18:34.651 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 orders，覆盖目标表 [support_tickets, orders]
+18:18:34.651 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, support_tickets, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items] | DDL 1590 字符（全量 7401 字符）
+18:18:34.651 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.654 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 shipments，覆盖目标表 [customers, geolocation, shipping_addresses, shipments, orders]
+18:18:34.654 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[shipments, customers, geolocation, shipping_addresses, warehouses, orders, shipment_tracking, members] | DDL 1772 字符（全量 7401 字符）
+18:18:34.654 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[delivery_days]
+18:18:34.656 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 3 张表：[refunds, orders, refund_items] | DDL 683 字符（全量 7401 字符）
+18:18:34.656 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 5 张表：[support_tickets, ticket_categories, members, orders, ticket_messages] | DDL 1183 字符（全量 7401 字符）
+18:18:34.659 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 orders，覆盖目标表 [customers, geolocation, shipping_addresses, orders]
+18:18:34.659 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, customers, geolocation, shipping_addresses, order_items, order_payments, order_reviews, coupon_usages] | DDL 1636 字符（全量 7401 字符）
+18:18:34.660 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[members, member_levels, coupon_usages, customers, member_snapshot, referrals, search_logs, support_tickets] | DDL 1390 字符（全量 7401 字符）
+18:18:34.660 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 3 张表：[settlements, sellers, settlement_items] | DDL 576 字符（全量 7401 字符）
+18:18:34.663 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1346 字符（全量 7401 字符）
+18:18:34.663 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[valid_order]
+18:18:34.663 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 order_items，覆盖目标表 [customers, geolocation, shipping_addresses, order_items]
+18:18:34.663 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[order_items, customers, geolocation, shipping_addresses, orders, products, sellers, refund_items] | DDL 1458 字符（全量 7401 字符）
+18:18:34.663 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 product_category_translation，覆盖目标表 [product_category_translation, products, order_items, support_tickets]
+18:18:34.663 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[product_category_translation, order_items, products, support_tickets, orders, sellers, campaign_products, inventory] | DDL 1507 字符（全量 7401 字符）
+18:18:34.666 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.666 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 sellers，覆盖目标表 [sellers, customers, geolocation, shipping_addresses, order_items]
+18:18:34.666 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[sellers, customers, geolocation, order_items, shipping_addresses, orders, regions, settlements] | DDL 1493 字符（全量 7401 字符）
+18:18:34.666 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 members，覆盖目标表 [members, search_logs, support_tickets, user_tag_map]
+18:18:34.666 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[members, search_logs, support_tickets, user_tag_map, member_levels, ticket_categories, coupon_usages, customers] | DDL 1236 字符（全量 7401 字符）
+18:18:34.670 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 order_reviews，覆盖目标表 [orders, order_reviews]
+18:18:34.670 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[order_reviews, orders, customers, order_items, order_payments, coupon_usages, refund_items, refunds] | DDL 1270 字符（全量 7401 字符）
+18:18:34.670 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 orders，覆盖目标表 [orders, customers, geolocation, shipping_addresses]
+18:18:34.670 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, customers, geolocation, shipping_addresses, order_items, order_payments, order_reviews, coupon_usages] | DDL 1362 字符（全量 7401 字符）
+18:18:34.673 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 orders，覆盖目标表 [regions, warehouses, orders]
+18:18:34.673 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, regions, warehouses, customers, order_items, order_payments, order_reviews, shipments] | DDL 1400 字符（全量 7401 字符）
+18:18:34.675 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 member_levels，覆盖目标表 [member_levels, members, orders]
+18:18:34.675 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[member_levels, members, orders, customers, order_items, order_payments, order_reviews, coupon_usages] | DDL 1428 字符（全量 7401 字符）
+18:18:34.676 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 members，覆盖目标表 [user_tags, members, search_logs, support_tickets]
+18:18:34.677 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 9 张表：[members, search_logs, support_tickets, user_tags, member_levels, ticket_categories, coupon_usages, customers, user_tag_map] | DDL 1401 字符（全量 7401 字符）
+18:18:34.679 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：5 条主干边，起点 members，覆盖目标表 [user_tags, user_tag_map, members, search_logs, support_tickets, orders]
+18:18:34.679 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[members, orders, search_logs, support_tickets, user_tag_map, user_tags, customers, member_levels] | DDL 1425 字符（全量 7401 字符）
+18:18:34.679 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：2 条
+18:18:34.681 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 coupon_usages，覆盖目标表 [coupon_usages, coupons]
+18:18:34.681 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 5 张表：[coupon_usages, coupons, campaigns, members, orders] | DDL 1052 字符（全量 7401 字符）
+18:18:34.682 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 shipments，覆盖目标表 [shipments, warehouses]
+18:18:34.682 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 7 张表：[shipments, warehouses, inventory, inventory_movements, orders, regions, shipment_tracking] | DDL 1137 字符（全量 7401 字符）
+18:18:34.683 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 shipments，覆盖目标表 [shipments, orders]
+18:18:34.683 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 4 张表：[shipments, warehouses, orders, shipment_tracking] | DDL 987 字符（全量 7401 字符）
+18:18:34.683 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[delivery_days]
+18:18:34.683 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 support_tickets，覆盖目标表 [support_tickets, ticket_categories]
+18:18:34.683 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 5 张表：[support_tickets, ticket_categories, members, orders, ticket_messages] | DDL 1420 字符（全量 7401 字符）
+18:18:34.686 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：5 条主干边，起点 settlements，覆盖目标表 [customers, geolocation, shipping_addresses, sellers, settlements]
+18:18:34.686 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[settlements, sellers, customers, geolocation, shipping_addresses, order_items, settlement_items, orders] | DDL 1669 字符（全量 7401 字符）
+18:18:34.686 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 refunds，覆盖目标表 [refunds, refund_items]
+18:18:34.686 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 4 张表：[refunds, refund_items, orders, order_items] | DDL 785 字符（全量 7401 字符）
+18:18:34.686 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 order_items，覆盖目标表 [order_items, support_tickets, customers, orders]
+18:18:34.686 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[order_items, customers, orders, products, sellers, support_tickets, order_payments, order_reviews] | DDL 1660 字符（全量 7401 字符）
+18:18:34.686 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[aov]
+18:18:34.686 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.690 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 order_items，覆盖目标表 [products, order_items]
+18:18:34.690 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[order_items, products, orders, sellers, campaign_products, inventory, inventory_movements, product_brand_map] | DDL 1370 字符（全量 7401 字符）
+18:18:34.690 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 3 张表：[search_logs, members, products] | DDL 409 字符（全量 7401 字符）
+18:18:34.693 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 inventory，覆盖目标表 [products, shipments, warehouses, inventory]
+18:18:34.693 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[inventory, products, shipments, warehouses, order_items, campaign_products, inventory_movements, orders] | DDL 1364 字符（全量 7401 字符）
+18:18:34.693 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 products，覆盖目标表 [product_price_history, products, order_items]
+18:18:34.693 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[products, order_items, product_price_history, campaign_products, inventory, inventory_movements, orders, product_brand_map] | DDL 1406 字符（全量 7401 字符）
+18:18:34.696 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 customers，覆盖目标表 [regions, warehouses, customers]
+18:18:34.696 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[customers, regions, warehouses, orders, shipments, inventory, inventory_movements, members] | DDL 1358 字符（全量 7401 字符）
+18:18:34.697 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：6 条主干边，起点 member_levels，覆盖目标表 [regions, member_levels, members, order_items, support_tickets]
+18:18:34.699 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[member_levels, order_items, members, regions, support_tickets, orders, products, sellers] | DDL 1789 字符（全量 7401 字符）
+18:18:34.699 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：2 条
+18:18:34.701 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 product_category_translation，覆盖目标表 [product_category_translation, refund_items, refunds, products]
+18:18:34.701 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[product_category_translation, refunds, products, refund_items, order_items, orders, campaign_products, inventory] | DDL 1618 字符（全量 7401 字符）
+18:18:34.704 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 campaigns，覆盖目标表 [coupon_usages, coupons, campaigns, orders, order_items]
+18:18:34.704 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 7 张表：[campaigns, coupon_usages, coupons, order_items, orders, campaign_products, members] | DDL 1412 字符（全量 7401 字符）
+18:18:34.704 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[valid_order]
+18:18:34.704 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 products，覆盖目标表 [products, search_logs, support_tickets, product_category_translation]
+18:18:34.704 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 9 张表：[products, search_logs, product_category_translation, order_items, support_tickets, campaign_products, inventory, inventory_movements, members] | DDL 1604 字符（全量 7401 字符）
+18:18:34.704 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.707 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：8 条主干边，起点 inventory，覆盖目标表 [inventory, support_tickets, products, shipments, warehouses, regions, brands]
+18:18:34.707 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 10 张表：[inventory, brands, products, regions, shipments, warehouses, support_tickets, order_items, product_brand_map, orders] | DDL 2120 字符（全量 7401 字符）
+18:18:34.707 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.711 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：5 条主干边，起点 settlements，覆盖目标表 [sellers, settlement_items, product_category_translation, settlements]
+18:18:34.711 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 7 张表：[settlements, product_category_translation, sellers, settlement_items, order_items, products, regions] | DDL 1731 字符（全量 7401 字符）
+18:18:34.714 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：7 条主干边，起点 members，覆盖目标表 [user_tags, members, search_logs, support_tickets, orders, products, order_items]
+18:18:34.714 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 9 张表：[members, search_logs, support_tickets, order_items, orders, products, user_tags, member_levels, user_tag_map] | DDL 2051 字符（全量 7401 字符）
+18:18:34.717 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 members，覆盖目标表 [members, member_snapshot, search_logs, support_tickets, member_levels]
+18:18:34.717 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[members, member_levels, member_snapshot, search_logs, support_tickets, coupon_usages, customers, referrals] | DDL 1462 字符（全量 7401 字符）
+18:18:34.721 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 refunds，覆盖目标表 [product_category_translation, refunds, refund_items]
+18:18:34.721 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 6 张表：[refunds, product_category_translation, refund_items, orders, order_items, products] | DDL 1509 字符（全量 7401 字符）
+18:18:34.723 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 customers，覆盖目标表 [shipping_addresses, customers, geolocation, orders]
+18:18:34.723 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 6 张表：[customers, shipping_addresses, geolocation, orders, members, regions] | DDL 1099 字符（全量 7401 字符）
+18:18:34.725 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：5 条主干边，起点 orders，覆盖目标表 [orders, campaigns, order_items, customers]
+18:18:34.725 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 9 张表：[orders, customers, order_payments, order_reviews, campaigns, order_items, coupon_usages, refund_items, coupons] | DDL 1659 字符（全量 7401 字符）
+18:18:34.725 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[aov, unique_buyers, valid_order]
+18:18:34.725 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：3 条
+18:18:34.728 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 customers，覆盖目标表 [customers, orders]
+18:18:34.728 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[customers, orders, order_items, order_payments, order_reviews, coupon_usages, members, refund_items] | DDL 1534 字符（全量 7401 字符）
+18:18:34.728 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[retention_rate]
+18:18:34.730 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1606 字符（全量 7401 字符）
+18:18:34.730 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[on_time_rate]
+18:18:34.730 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.732 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 products，覆盖目标表 [products, order_items, orders]
+18:18:34.732 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[products, order_items, campaign_products, inventory, inventory_movements, product_brand_map, product_category_translation, product_price_history] | DDL 1377 字符（全量 7401 字符）
+18:18:34.732 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[sell_through_rate]
+18:18:34.735 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 order_items，覆盖目标表 [order_items, regions, orders]
+18:18:34.735 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[order_items, regions, orders, products, sellers, refund_items, settlement_items, customers] | DDL 1438 字符（全量 7401 字符）
+18:18:34.735 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[freight_ratio, gmv_with_freight]
+18:18:34.738 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：5 条主干边，起点 coupon_usages，覆盖目标表 [coupon_usages, coupons, order_items, orders, member_levels]
+18:18:34.738 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[coupon_usages, coupons, member_levels, order_items, orders, campaigns, members, member_snapshot] | DDL 1675 字符（全量 7401 字符）
+18:18:34.739 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[discount_rate, gmv_with_freight]
+18:18:34.739 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.741 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：5 条主干边，起点 support_tickets，覆盖目标表 [support_tickets, product_category_translation, products, ticket_categories]
+18:18:34.741 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[support_tickets, product_category_translation, products, ticket_categories, members, order_items, orders, ticket_messages] | DDL 1999 字符（全量 7401 字符）
+18:18:34.741 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[sla_rate]
+18:18:34.741 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 campaigns，覆盖目标表 [referrals, campaigns]
+18:18:34.741 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 6 张表：[campaigns, referrals, campaign_products, coupons, members, coupon_usages] | DDL 1144 字符（全量 7401 字符）
+18:18:34.741 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[conversion_rate, reward_per_converted]
+18:18:34.744 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 shipments，覆盖目标表 [customers, geolocation, shipping_addresses, shipments, orders]
+18:18:34.744 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[shipments, customers, geolocation, orders, shipping_addresses, warehouses, shipment_tracking, members] | DDL 1772 字符（全量 7401 字符）
+18:18:34.744 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[delivery_days]
+18:18:34.746 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 settlement_items，覆盖目标表 [settlement_items, sellers, support_tickets, settlements]
+18:18:34.746 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[settlement_items, sellers, support_tickets, order_items, orders, settlements, ticket_categories, members] | DDL 1798 字符（全量 7401 字符）
+18:18:34.746 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[commission_rate]
+18:18:34.746 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：2 条
+18:18:34.750 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 order_items，覆盖目标表 [order_items, orders]
+18:18:34.750 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 6 张表：[order_items, orders, products, sellers, refund_items, settlement_items] | DDL 1264 字符（全量 7401 字符）
+18:18:34.750 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[gmv_with_freight, yoy_growth]
+18:18:34.753 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 order_reviews，覆盖目标表 [refunds, customers, order_reviews, support_tickets]
+18:18:34.753 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[order_reviews, refunds, customers, orders, support_tickets, refund_items, members, regions] | DDL 1659 字符（全量 7401 字符）
+18:18:34.753 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[low_score_rate]
+18:18:34.753 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.756 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1346 字符（全量 7401 字符）
+18:18:34.756 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 orders，覆盖目标表 [campaigns, orders]
+18:18:34.756 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 9 张表：[orders, campaigns, customers, order_items, order_payments, order_reviews, campaign_products, coupon_usages, products] | DDL 1610 字符（全量 7401 字符）
+18:18:34.759 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：2 条
+18:18:34.761 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 6 张表：[order_items, orders, products, sellers, refund_items, settlement_items] | DDL 994 字符（全量 7401 字符）
+18:18:34.763 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 4 张表：[sellers, order_items, regions, settlements] | DDL 606 字符（全量 7401 字符）
+18:18:34.763 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 customers，覆盖目标表 [customers, geolocation, shipping_addresses, regions]
+18:18:34.763 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 6 张表：[customers, orders, geolocation, shipping_addresses, members, regions] | DDL 1109 字符（全量 7401 字符）
+18:18:34.766 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：3 条
+18:18:34.767 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1346 字符（全量 7401 字符）
+18:18:34.770 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 order_items，覆盖目标表 [order_items, support_tickets]
+18:18:34.770 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[order_items, orders, products, sellers, support_tickets, refund_items, settlement_items, ticket_categories] | DDL 1573 字符（全量 7401 字符）
+18:18:34.770 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.772 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 2 张表：[order_reviews, orders] | DDL 363 字符（全量 7401 字符）
+18:18:34.774 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 2 张表：[order_payments, orders] | DDL 364 字符（全量 7401 字符）
+18:18:34.777 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 6 张表：[order_items, orders, products, sellers, refund_items, settlement_items] | DDL 1002 字符（全量 7401 字符）
+18:18:34.779 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 sellers，覆盖目标表 [customers, geolocation, shipping_addresses, sellers, regions]
+18:18:34.779 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[sellers, customers, geolocation, shipping_addresses, order_items, orders, regions, settlements] | DDL 1451 字符（全量 7401 字符）
+18:18:34.779 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：4 条
+18:18:34.781 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 products，覆盖目标表 [product_category_translation, products]
+18:18:34.781 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[products, product_category_translation, order_items, campaign_products, inventory, inventory_movements, product_brand_map, product_price_history] | DDL 1212 字符（全量 7401 字符）
+18:18:34.784 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 members，覆盖目标表 [orders, members, search_logs, support_tickets]
+18:18:34.784 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[members, orders, search_logs, support_tickets, member_levels, coupon_usages, customers, member_snapshot] | DDL 1329 字符（全量 7401 字符）
+18:18:34.787 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.788 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 shipments，覆盖目标表 [shipments, warehouses]
+18:18:34.788 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 7 张表：[shipments, warehouses, inventory, inventory_movements, orders, regions, shipment_tracking] | DDL 1137 字符（全量 7401 字符）
+18:18:34.790 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 3 张表：[refunds, orders, refund_items] | DDL 470 字符（全量 7401 字符）
+18:18:34.795 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 3 张表：[refunds, orders, refund_items] | DDL 470 字符（全量 7401 字符）
+18:18:34.795 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.797 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 coupons，覆盖目标表 [coupons, coupon_usages]
+18:18:34.798 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 5 张表：[coupons, coupon_usages, campaigns, members, orders] | DDL 1026 字符（全量 7401 字符）
+18:18:34.798 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.801 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 products，覆盖目标表 [support_tickets, products]
+18:18:34.801 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 9 张表：[products, support_tickets, order_items, ticket_categories, campaign_products, inventory, inventory_movements, members, search_logs] | DDL 1423 字符（全量 7401 字符）
+18:18:34.802 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 3 张表：[inventory_movements, products, warehouses] | DDL 440 字符（全量 7401 字符）
+18:18:34.802 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.804 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 regions，覆盖目标表 [customers, geolocation, shipping_addresses, regions, warehouses]
+18:18:34.804 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[regions, warehouses, customers, geolocation, shipping_addresses, shipments, inventory, inventory_movements] | DDL 1419 字符（全量 7401 字符）
+18:18:34.804 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 order_items，覆盖目标表 [orders, order_items]
+18:18:34.804 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[order_items, orders, customers, order_payments, order_reviews, products, sellers, coupon_usages] | DDL 1449 字符（全量 7401 字符）
+18:18:34.809 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 order_items，覆盖目标表 [orders, order_items]
+18:18:34.809 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[order_items, orders, customers, order_payments, order_reviews, products, sellers, coupon_usages] | DDL 1449 字符（全量 7401 字符）
+18:18:34.811 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 2 张表：[order_payments, orders] | DDL 364 字符（全量 7401 字符）
+18:18:34.814 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 customers，覆盖目标表 [customers, geolocation, shipping_addresses]
+18:18:34.814 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 6 张表：[customers, orders, geolocation, shipping_addresses, members, regions] | DDL 1059 字符（全量 7401 字符）
+18:18:34.816 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 sellers，覆盖目标表 [sellers, products, order_items, support_tickets]
+18:18:34.816 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[sellers, order_items, products, support_tickets, orders, regions, settlements, campaign_products] | DDL 1683 字符（全量 7401 字符）
+18:18:34.816 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.818 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 orders，覆盖目标表 [orders, campaigns]
+18:18:34.818 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 9 张表：[orders, customers, order_items, order_payments, order_reviews, campaigns, coupon_usages, refund_items, coupons] | DDL 1552 字符（全量 7401 字符）
+18:18:34.819 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：3 条
+18:18:34.820 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 members，覆盖目标表 [member_levels, members, member_snapshot]
+18:18:34.821 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[members, member_levels, member_snapshot, coupon_usages, customers, referrals, search_logs, support_tickets] | DDL 1277 字符（全量 7401 字符）
+18:18:34.823 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 regions，覆盖目标表 [regions, warehouses, customers, geolocation, shipping_addresses]
+18:18:34.823 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[regions, warehouses, customers, geolocation, shipping_addresses, shipments, inventory, inventory_movements] | DDL 1419 字符（全量 7401 字符）
+18:18:34.823 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 3 张表：[campaigns, campaign_products, coupons] | DDL 443 字符（全量 7401 字符）
+18:18:34.826 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 coupons，覆盖目标表 [coupons, coupon_usages]
+18:18:34.826 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 5 张表：[coupons, coupon_usages, campaigns, members, orders] | DDL 1026 字符（全量 7401 字符）
+18:18:34.826 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.829 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 3 张表：[refunds, orders, refund_items] | DDL 435 字符（全量 7401 字符）
+18:18:34.830 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 inventory，覆盖目标表 [shipments, warehouses, inventory]
+18:18:34.830 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[inventory, shipments, warehouses, inventory_movements, orders, products, regions, shipment_tracking] | DDL 1364 字符（全量 7401 字符）
+18:18:34.832 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 inventory，覆盖目标表 [shipments, warehouses, inventory]
+18:18:34.832 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[inventory, shipments, warehouses, inventory_movements, orders, products, regions, shipment_tracking] | DDL 1480 字符（全量 7401 字符）
+18:18:34.835 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 4 张表：[shipments, warehouses, orders, shipment_tracking] | DDL 611 字符（全量 7401 字符）
+18:18:34.836 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 5 张表：[support_tickets, ticket_categories, members, orders, ticket_messages] | DDL 942 字符（全量 7401 字符）
+18:18:34.839 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 settlements，覆盖目标表 [order_payments, sellers, settlements]
+18:18:34.840 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 7 张表：[settlements, order_payments, sellers, order_items, orders, settlement_items, regions] | DDL 1423 字符（全量 7401 字符）
+18:18:34.840 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 3 张表：[search_logs, members, products] | DDL 409 字符（全量 7401 字符）
+18:18:34.843 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 orders，覆盖目标表 [orders, customers, geolocation, shipping_addresses]
+18:18:34.843 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, customers, geolocation, shipping_addresses, order_items, order_payments, order_reviews, coupon_usages] | DDL 1362 字符（全量 7401 字符）
+18:18:34.846 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 2 张表：[order_reviews, orders] | DDL 363 字符（全量 7401 字符）
+18:18:34.846 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 2 张表：[order_payments, orders] | DDL 388 字符（全量 7401 字符）
+18:18:34.850 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 orders，覆盖目标表 [orders, settlements]
+18:18:34.850 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 9 张表：[orders, settlements, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, settlement_items] | DDL 1972 字符（全量 7401 字符）
+18:18:34.851 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1346 字符（全量 7401 字符）
+18:18:34.853 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1573 字符（全量 7401 字符）
+18:18:34.853 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 6 张表：[order_items, orders, products, sellers, refund_items, settlement_items] | DDL 1404 字符（全量 7401 字符）
+18:18:34.855 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1573 字符（全量 7401 字符）
+18:18:34.857 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1573 字符（全量 7401 字符）
+18:18:34.857 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1573 字符（全量 7401 字符）
+18:18:34.860 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 6 张表：[order_items, orders, products, sellers, refund_items, settlement_items] | DDL 1206 字符（全量 7401 字符）
+18:18:34.860 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 orders，覆盖目标表 [support_tickets, orders]
+18:18:34.860 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, support_tickets, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items] | DDL 1590 字符（全量 7401 字符）
+18:18:34.860 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.864 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 shipments，覆盖目标表 [customers, geolocation, shipping_addresses, shipments, orders]
+18:18:34.864 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[shipments, customers, geolocation, shipping_addresses, warehouses, orders, shipment_tracking, members] | DDL 1772 字符（全量 7401 字符）
+18:18:34.864 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[delivery_days]
+18:18:34.864 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 3 张表：[refunds, orders, refund_items] | DDL 683 字符（全量 7401 字符）
+18:18:34.864 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 5 张表：[support_tickets, ticket_categories, members, orders, ticket_messages] | DDL 1183 字符（全量 7401 字符）
+18:18:34.867 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 orders，覆盖目标表 [customers, geolocation, shipping_addresses, orders]
+18:18:34.867 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, customers, geolocation, shipping_addresses, order_items, order_payments, order_reviews, coupon_usages] | DDL 1636 字符（全量 7401 字符）
+18:18:34.870 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[members, member_levels, coupon_usages, customers, member_snapshot, referrals, search_logs, support_tickets] | DDL 1390 字符（全量 7401 字符）
+18:18:34.872 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 3 张表：[settlements, sellers, settlement_items] | DDL 576 字符（全量 7401 字符）
+18:18:34.874 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1346 字符（全量 7401 字符）
+18:18:34.874 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[valid_order]
+18:18:34.879 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 order_items，覆盖目标表 [customers, geolocation, shipping_addresses, order_items]
+18:18:34.879 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[order_items, customers, geolocation, shipping_addresses, orders, products, sellers, refund_items] | DDL 1458 字符（全量 7401 字符）
+18:18:34.882 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 product_category_translation，覆盖目标表 [product_category_translation, products, order_items, support_tickets]
+18:18:34.882 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[product_category_translation, order_items, products, support_tickets, orders, sellers, campaign_products, inventory] | DDL 1507 字符（全量 7401 字符）
+18:18:34.882 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.886 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 sellers，覆盖目标表 [sellers, customers, geolocation, shipping_addresses, order_items]
+18:18:34.886 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[sellers, customers, geolocation, order_items, shipping_addresses, orders, regions, settlements] | DDL 1493 字符（全量 7401 字符）
+18:18:34.886 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 members，覆盖目标表 [members, search_logs, support_tickets, user_tag_map]
+18:18:34.886 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[members, search_logs, support_tickets, user_tag_map, member_levels, ticket_categories, coupon_usages, customers] | DDL 1236 字符（全量 7401 字符）
+18:18:34.890 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 order_reviews，覆盖目标表 [orders, order_reviews]
+18:18:34.890 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[order_reviews, orders, customers, order_items, order_payments, coupon_usages, refund_items, refunds] | DDL 1270 字符（全量 7401 字符）
+18:18:34.892 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 orders，覆盖目标表 [orders, customers, geolocation, shipping_addresses]
+18:18:34.892 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, customers, geolocation, shipping_addresses, order_items, order_payments, order_reviews, coupon_usages] | DDL 1362 字符（全量 7401 字符）
+18:18:34.895 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 orders，覆盖目标表 [regions, warehouses, orders]
+18:18:34.895 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, regions, warehouses, customers, order_items, order_payments, order_reviews, shipments] | DDL 1400 字符（全量 7401 字符）
+18:18:34.895 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 member_levels，覆盖目标表 [member_levels, members, orders]
+18:18:34.895 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[member_levels, members, orders, customers, order_items, order_payments, order_reviews, coupon_usages] | DDL 1428 字符（全量 7401 字符）
+18:18:34.898 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 members，覆盖目标表 [user_tags, members, search_logs, support_tickets]
+18:18:34.898 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 9 张表：[members, search_logs, support_tickets, user_tags, member_levels, ticket_categories, coupon_usages, customers, user_tag_map] | DDL 1401 字符（全量 7401 字符）
+18:18:34.901 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：5 条主干边，起点 members，覆盖目标表 [user_tags, user_tag_map, members, search_logs, support_tickets, orders]
+18:18:34.901 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[members, orders, search_logs, support_tickets, user_tag_map, user_tags, customers, member_levels] | DDL 1425 字符（全量 7401 字符）
+18:18:34.901 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：2 条
+18:18:34.901 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 coupon_usages，覆盖目标表 [coupon_usages, coupons]
+18:18:34.901 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 5 张表：[coupon_usages, coupons, campaigns, members, orders] | DDL 1052 字符（全量 7401 字符）
+18:18:34.904 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 shipments，覆盖目标表 [shipments, warehouses]
+18:18:34.904 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 7 张表：[shipments, warehouses, inventory, inventory_movements, orders, regions, shipment_tracking] | DDL 1137 字符（全量 7401 字符）
+18:18:34.906 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 shipments，覆盖目标表 [shipments, orders]
+18:18:34.906 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 4 张表：[shipments, warehouses, orders, shipment_tracking] | DDL 987 字符（全量 7401 字符）
+18:18:34.907 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[delivery_days]
+18:18:34.907 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 support_tickets，覆盖目标表 [support_tickets, ticket_categories]
+18:18:34.907 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 5 张表：[support_tickets, ticket_categories, members, orders, ticket_messages] | DDL 1420 字符（全量 7401 字符）
+18:18:34.910 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：5 条主干边，起点 settlements，覆盖目标表 [customers, geolocation, shipping_addresses, sellers, settlements]
+18:18:34.910 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[settlements, sellers, customers, geolocation, shipping_addresses, order_items, settlement_items, orders] | DDL 1669 字符（全量 7401 字符）
+18:18:34.911 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 refunds，覆盖目标表 [refunds, refund_items]
+18:18:34.911 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 4 张表：[refunds, refund_items, orders, order_items] | DDL 785 字符（全量 7401 字符）
+18:18:34.913 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 order_items，覆盖目标表 [order_items, support_tickets, customers, orders]
+18:18:34.913 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[order_items, customers, orders, products, sellers, support_tickets, order_payments, order_reviews] | DDL 1660 字符（全量 7401 字符）
+18:18:34.913 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[aov]
+18:18:34.913 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.915 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 order_items，覆盖目标表 [products, order_items]
+18:18:34.915 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[order_items, products, orders, sellers, campaign_products, inventory, inventory_movements, product_brand_map] | DDL 1370 字符（全量 7401 字符）
+18:18:34.915 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 3 张表：[search_logs, members, products] | DDL 409 字符（全量 7401 字符）
+18:18:34.915 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 inventory，覆盖目标表 [products, shipments, warehouses, inventory]
+18:18:34.915 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[inventory, products, shipments, warehouses, order_items, campaign_products, inventory_movements, orders] | DDL 1364 字符（全量 7401 字符）
+18:18:34.920 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 products，覆盖目标表 [product_price_history, products, order_items]
+18:18:34.920 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[products, order_items, product_price_history, campaign_products, inventory, inventory_movements, orders, product_brand_map] | DDL 1406 字符（全量 7401 字符）
+18:18:34.922 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 customers，覆盖目标表 [regions, warehouses, customers]
+18:18:34.922 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[customers, regions, warehouses, orders, shipments, inventory, inventory_movements, members] | DDL 1358 字符（全量 7401 字符）
+18:18:34.924 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：6 条主干边，起点 member_levels，覆盖目标表 [regions, member_levels, members, order_items, support_tickets]
+18:18:34.924 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[member_levels, order_items, members, regions, support_tickets, orders, products, sellers] | DDL 1789 字符（全量 7401 字符）
+18:18:34.924 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：2 条
+18:18:34.926 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 product_category_translation，覆盖目标表 [product_category_translation, refund_items, refunds, products]
+18:18:34.926 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[product_category_translation, refunds, products, refund_items, order_items, orders, campaign_products, inventory] | DDL 1618 字符（全量 7401 字符）
+18:18:34.927 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 campaigns，覆盖目标表 [coupon_usages, coupons, campaigns, orders, order_items]
+18:18:34.929 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 7 张表：[campaigns, coupon_usages, coupons, order_items, orders, campaign_products, members] | DDL 1412 字符（全量 7401 字符）
+18:18:34.929 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[valid_order]
+18:18:34.930 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 products，覆盖目标表 [products, search_logs, support_tickets, product_category_translation]
+18:18:34.931 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 9 张表：[products, search_logs, product_category_translation, order_items, support_tickets, campaign_products, inventory, inventory_movements, members] | DDL 1604 字符（全量 7401 字符）
+18:18:34.931 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.933 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：8 条主干边，起点 inventory，覆盖目标表 [inventory, support_tickets, products, shipments, warehouses, regions, brands]
+18:18:34.934 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 10 张表：[inventory, brands, products, regions, shipments, warehouses, support_tickets, order_items, product_brand_map, orders] | DDL 2120 字符（全量 7401 字符）
+18:18:34.934 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.934 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：5 条主干边，起点 settlements，覆盖目标表 [sellers, settlement_items, product_category_translation, settlements]
+18:18:34.934 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 7 张表：[settlements, product_category_translation, sellers, settlement_items, order_items, products, regions] | DDL 1731 字符（全量 7401 字符）
+18:18:34.937 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：7 条主干边，起点 members，覆盖目标表 [user_tags, members, search_logs, support_tickets, orders, products, order_items]
+18:18:34.937 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 9 张表：[members, search_logs, support_tickets, order_items, orders, products, user_tags, member_levels, user_tag_map] | DDL 2051 字符（全量 7401 字符）
+18:18:34.939 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 members，覆盖目标表 [members, member_snapshot, search_logs, support_tickets, member_levels]
+18:18:34.939 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[members, member_levels, member_snapshot, search_logs, support_tickets, coupon_usages, customers, referrals] | DDL 1462 字符（全量 7401 字符）
+18:18:34.941 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 refunds，覆盖目标表 [product_category_translation, refunds, refund_items]
+18:18:34.941 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 6 张表：[refunds, product_category_translation, refund_items, orders, order_items, products] | DDL 1509 字符（全量 7401 字符）
+18:18:34.944 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 customers，覆盖目标表 [shipping_addresses, customers, geolocation, orders]
+18:18:34.944 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 6 张表：[customers, shipping_addresses, geolocation, orders, members, regions] | DDL 1099 字符（全量 7401 字符）
+18:18:34.944 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：5 条主干边，起点 orders，覆盖目标表 [orders, campaigns, order_items, customers]
+18:18:34.944 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 9 张表：[orders, customers, order_payments, order_reviews, campaigns, order_items, coupon_usages, refund_items, coupons] | DDL 1659 字符（全量 7401 字符）
+18:18:34.944 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[aov, unique_buyers, valid_order]
+18:18:34.944 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：3 条
+18:18:34.948 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 customers，覆盖目标表 [customers, orders]
+18:18:34.949 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[customers, orders, order_items, order_payments, order_reviews, coupon_usages, members, refund_items] | DDL 1534 字符（全量 7401 字符）
+18:18:34.949 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[retention_rate]
+18:18:34.951 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1606 字符（全量 7401 字符）
+18:18:34.951 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[on_time_rate]
+18:18:34.951 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.954 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 products，覆盖目标表 [products, order_items, orders]
+18:18:34.954 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[products, order_items, campaign_products, inventory, inventory_movements, product_brand_map, product_category_translation, product_price_history] | DDL 1377 字符（全量 7401 字符）
+18:18:34.954 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[sell_through_rate]
+18:18:34.959 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 order_items，覆盖目标表 [order_items, regions, orders]
+18:18:34.960 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[order_items, regions, orders, products, sellers, refund_items, settlement_items, customers] | DDL 1438 字符（全量 7401 字符）
+18:18:34.960 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[freight_ratio, gmv_with_freight]
+18:18:34.961 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：5 条主干边，起点 coupon_usages，覆盖目标表 [coupon_usages, coupons, order_items, orders, member_levels]
+18:18:34.961 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[coupon_usages, coupons, member_levels, order_items, orders, campaigns, members, member_snapshot] | DDL 1675 字符（全量 7401 字符）
+18:18:34.961 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[discount_rate, gmv_with_freight]
+18:18:34.961 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.961 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：5 条主干边，起点 support_tickets，覆盖目标表 [support_tickets, product_category_translation, products, ticket_categories]
+18:18:34.961 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[support_tickets, product_category_translation, products, ticket_categories, members, order_items, orders, ticket_messages] | DDL 1999 字符（全量 7401 字符）
+18:18:34.961 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[sla_rate]
+18:18:34.964 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 campaigns，覆盖目标表 [referrals, campaigns]
+18:18:34.964 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 6 张表：[campaigns, referrals, campaign_products, coupons, members, coupon_usages] | DDL 1144 字符（全量 7401 字符）
+18:18:34.964 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[conversion_rate, reward_per_converted]
+18:18:34.964 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 shipments，覆盖目标表 [customers, geolocation, shipping_addresses, shipments, orders]
+18:18:34.964 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[shipments, customers, geolocation, orders, shipping_addresses, warehouses, shipment_tracking, members] | DDL 1772 字符（全量 7401 字符）
+18:18:34.964 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[delivery_days]
+18:18:34.968 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 settlement_items，覆盖目标表 [settlement_items, sellers, support_tickets, settlements]
+18:18:34.968 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[settlement_items, sellers, support_tickets, order_items, orders, settlements, ticket_categories, members] | DDL 1798 字符（全量 7401 字符）
+18:18:34.969 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[commission_rate]
+18:18:34.969 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：2 条
+18:18:34.970 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 order_items，覆盖目标表 [order_items, orders]
+18:18:34.971 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 6 张表：[order_items, orders, products, sellers, refund_items, settlement_items] | DDL 1264 字符（全量 7401 字符）
+18:18:34.971 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[gmv_with_freight, yoy_growth]
+18:18:34.971 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 order_reviews，覆盖目标表 [refunds, customers, order_reviews, support_tickets]
+18:18:34.971 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[order_reviews, refunds, customers, orders, support_tickets, refund_items, members, regions] | DDL 1659 字符（全量 7401 字符）
+18:18:34.971 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[low_score_rate]
+18:18:34.973 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.973 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1346 字符（全量 7401 字符）
+18:18:34.976 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 orders，覆盖目标表 [campaigns, orders]
+18:18:34.976 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 9 张表：[orders, campaigns, customers, order_items, order_payments, order_reviews, campaign_products, coupon_usages, products] | DDL 1610 字符（全量 7401 字符）
+18:18:34.976 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：2 条
+18:18:34.976 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 6 张表：[order_items, orders, products, sellers, refund_items, settlement_items] | DDL 994 字符（全量 7401 字符）
+18:18:34.976 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 4 张表：[sellers, order_items, regions, settlements] | DDL 606 字符（全量 7401 字符）
+18:18:34.979 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 customers，覆盖目标表 [customers, geolocation, shipping_addresses, regions]
+18:18:34.979 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 6 张表：[customers, orders, geolocation, shipping_addresses, members, regions] | DDL 1109 字符（全量 7401 字符）
+18:18:34.979 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：3 条
+18:18:34.979 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1346 字符（全量 7401 字符）
+18:18:34.980 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 order_items，覆盖目标表 [order_items, support_tickets]
+18:18:34.980 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[order_items, orders, products, sellers, support_tickets, refund_items, settlement_items, ticket_categories] | DDL 1573 字符（全量 7401 字符）
+18:18:34.980 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.980 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 2 张表：[order_reviews, orders] | DDL 363 字符（全量 7401 字符）
+18:18:34.982 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 2 张表：[order_payments, orders] | DDL 364 字符（全量 7401 字符）
+18:18:34.985 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 6 张表：[order_items, orders, products, sellers, refund_items, settlement_items] | DDL 1002 字符（全量 7401 字符）
+18:18:34.985 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 sellers，覆盖目标表 [customers, geolocation, shipping_addresses, sellers, regions]
+18:18:34.985 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[sellers, customers, geolocation, shipping_addresses, order_items, orders, regions, settlements] | DDL 1451 字符（全量 7401 字符）
+18:18:34.985 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：4 条
+18:18:34.987 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 products，覆盖目标表 [product_category_translation, products]
+18:18:34.987 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[products, product_category_translation, order_items, campaign_products, inventory, inventory_movements, product_brand_map, product_price_history] | DDL 1212 字符（全量 7401 字符）
+18:18:34.990 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 members，覆盖目标表 [orders, members, search_logs, support_tickets]
+18:18:34.990 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[members, orders, search_logs, support_tickets, member_levels, coupon_usages, customers, member_snapshot] | DDL 1329 字符（全量 7401 字符）
+18:18:34.990 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.990 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 shipments，覆盖目标表 [shipments, warehouses]
+18:18:34.990 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 7 张表：[shipments, warehouses, inventory, inventory_movements, orders, regions, shipment_tracking] | DDL 1137 字符（全量 7401 字符）
+18:18:34.990 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 3 张表：[refunds, orders, refund_items] | DDL 470 字符（全量 7401 字符）
+18:18:34.993 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 3 张表：[refunds, orders, refund_items] | DDL 470 字符（全量 7401 字符）
+18:18:34.993 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.993 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 coupons，覆盖目标表 [coupons, coupon_usages]
+18:18:34.993 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 5 张表：[coupons, coupon_usages, campaigns, members, orders] | DDL 1026 字符（全量 7401 字符）
+18:18:34.993 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.996 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 products，覆盖目标表 [support_tickets, products]
+18:18:34.996 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 9 张表：[products, support_tickets, order_items, ticket_categories, campaign_products, inventory, inventory_movements, members, search_logs] | DDL 1423 字符（全量 7401 字符）
+18:18:34.996 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 3 张表：[inventory_movements, products, warehouses] | DDL 440 字符（全量 7401 字符）
+18:18:34.996 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:34.999 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 regions，覆盖目标表 [customers, geolocation, shipping_addresses, regions, warehouses]
+18:18:34.999 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[regions, warehouses, customers, geolocation, shipping_addresses, shipments, inventory, inventory_movements] | DDL 1419 字符（全量 7401 字符）
+18:18:35.000 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 order_items，覆盖目标表 [orders, order_items]
+18:18:35.000 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[order_items, orders, customers, order_payments, order_reviews, products, sellers, coupon_usages] | DDL 1449 字符（全量 7401 字符）
+18:18:35.001 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 order_items，覆盖目标表 [orders, order_items]
+18:18:35.001 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[order_items, orders, customers, order_payments, order_reviews, products, sellers, coupon_usages] | DDL 1449 字符（全量 7401 字符）
+18:18:35.003 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 2 张表：[order_payments, orders] | DDL 364 字符（全量 7401 字符）
+18:18:35.004 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 customers，覆盖目标表 [customers, geolocation, shipping_addresses]
+18:18:35.004 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 6 张表：[customers, orders, geolocation, shipping_addresses, members, regions] | DDL 1059 字符（全量 7401 字符）
+18:18:35.005 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 sellers，覆盖目标表 [sellers, products, order_items, support_tickets]
+18:18:35.005 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[sellers, order_items, products, support_tickets, orders, regions, settlements, campaign_products] | DDL 1683 字符（全量 7401 字符）
+18:18:35.005 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:35.005 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 orders，覆盖目标表 [orders, campaigns]
+18:18:35.005 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 9 张表：[orders, customers, order_items, order_payments, order_reviews, campaigns, coupon_usages, refund_items, coupons] | DDL 1552 字符（全量 7401 字符）
+18:18:35.005 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：3 条
+18:18:35.008 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 members，覆盖目标表 [member_levels, members, member_snapshot]
+18:18:35.008 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[members, member_levels, member_snapshot, coupon_usages, customers, referrals, search_logs, support_tickets] | DDL 1277 字符（全量 7401 字符）
+18:18:35.010 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 regions，覆盖目标表 [regions, warehouses, customers, geolocation, shipping_addresses]
+18:18:35.010 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[regions, warehouses, customers, geolocation, shipping_addresses, shipments, inventory, inventory_movements] | DDL 1419 字符（全量 7401 字符）
+18:18:35.011 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 3 张表：[campaigns, campaign_products, coupons] | DDL 443 字符（全量 7401 字符）
+18:18:35.013 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 coupons，覆盖目标表 [coupons, coupon_usages]
+18:18:35.013 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 5 张表：[coupons, coupon_usages, campaigns, members, orders] | DDL 1026 字符（全量 7401 字符）
+18:18:35.013 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:35.013 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 3 张表：[refunds, orders, refund_items] | DDL 435 字符（全量 7401 字符）
+18:18:35.013 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 inventory，覆盖目标表 [shipments, warehouses, inventory]
+18:18:35.013 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[inventory, shipments, warehouses, inventory_movements, orders, products, regions, shipment_tracking] | DDL 1364 字符（全量 7401 字符）
+18:18:35.016 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 inventory，覆盖目标表 [shipments, warehouses, inventory]
+18:18:35.016 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[inventory, shipments, warehouses, inventory_movements, orders, products, regions, shipment_tracking] | DDL 1480 字符（全量 7401 字符）
+18:18:35.017 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 4 张表：[shipments, warehouses, orders, shipment_tracking] | DDL 611 字符（全量 7401 字符）
+18:18:35.017 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 5 张表：[support_tickets, ticket_categories, members, orders, ticket_messages] | DDL 942 字符（全量 7401 字符）
+18:18:35.019 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 settlements，覆盖目标表 [order_payments, sellers, settlements]
+18:18:35.019 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 7 张表：[settlements, order_payments, sellers, order_items, orders, settlement_items, regions] | DDL 1423 字符（全量 7401 字符）
+18:18:35.020 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 3 张表：[search_logs, members, products] | DDL 409 字符（全量 7401 字符）
+18:18:35.021 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 orders，覆盖目标表 [orders, customers, geolocation, shipping_addresses]
+18:18:35.021 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, customers, geolocation, shipping_addresses, order_items, order_payments, order_reviews, coupon_usages] | DDL 1362 字符（全量 7401 字符）
+18:18:35.023 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 2 张表：[order_reviews, orders] | DDL 363 字符（全量 7401 字符）
+18:18:35.024 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 2 张表：[order_payments, orders] | DDL 388 字符（全量 7401 字符）
+18:18:35.024 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 orders，覆盖目标表 [orders, settlements]
+18:18:35.024 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 9 张表：[orders, settlements, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, settlement_items] | DDL 1972 字符（全量 7401 字符）
+18:18:35.027 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1346 字符（全量 7401 字符）
+18:18:35.027 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1573 字符（全量 7401 字符）
+18:18:35.027 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 6 张表：[order_items, orders, products, sellers, refund_items, settlement_items] | DDL 1404 字符（全量 7401 字符）
+18:18:35.029 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1573 字符（全量 7401 字符）
+18:18:35.031 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1573 字符（全量 7401 字符）
+18:18:35.031 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1573 字符（全量 7401 字符）
+18:18:35.031 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 6 张表：[order_items, orders, products, sellers, refund_items, settlement_items] | DDL 1206 字符（全量 7401 字符）
+18:18:35.034 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 orders，覆盖目标表 [support_tickets, orders]
+18:18:35.034 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, support_tickets, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items] | DDL 1590 字符（全量 7401 字符）
+18:18:35.034 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:35.034 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 shipments，覆盖目标表 [customers, geolocation, shipping_addresses, shipments, orders]
+18:18:35.034 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[shipments, customers, geolocation, shipping_addresses, warehouses, orders, shipment_tracking, members] | DDL 1772 字符（全量 7401 字符）
+18:18:35.034 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[delivery_days]
+18:18:35.034 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 3 张表：[refunds, orders, refund_items] | DDL 683 字符（全量 7401 字符）
+18:18:35.037 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 5 张表：[support_tickets, ticket_categories, members, orders, ticket_messages] | DDL 1183 字符（全量 7401 字符）
+18:18:35.038 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 orders，覆盖目标表 [customers, geolocation, shipping_addresses, orders]
+18:18:35.038 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, customers, geolocation, shipping_addresses, order_items, order_payments, order_reviews, coupon_usages] | DDL 1636 字符（全量 7401 字符）
+18:18:35.040 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[members, member_levels, coupon_usages, customers, member_snapshot, referrals, search_logs, support_tickets] | DDL 1390 字符（全量 7401 字符）
+18:18:35.041 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 3 张表：[settlements, sellers, settlement_items] | DDL 576 字符（全量 7401 字符）
+18:18:35.041 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1346 字符（全量 7401 字符）
+18:18:35.041 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[valid_order]
+18:18:35.043 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 order_items，覆盖目标表 [customers, geolocation, shipping_addresses, order_items]
+18:18:35.043 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[order_items, customers, geolocation, shipping_addresses, orders, products, sellers, refund_items] | DDL 1458 字符（全量 7401 字符）
+18:18:35.045 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 product_category_translation，覆盖目标表 [product_category_translation, products, order_items, support_tickets]
+18:18:35.045 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[product_category_translation, order_items, products, support_tickets, orders, sellers, campaign_products, inventory] | DDL 1507 字符（全量 7401 字符）
+18:18:35.045 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:35.045 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 sellers，覆盖目标表 [sellers, customers, geolocation, shipping_addresses, order_items]
+18:18:35.045 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[sellers, customers, geolocation, order_items, shipping_addresses, orders, regions, settlements] | DDL 1493 字符（全量 7401 字符）
+18:18:35.047 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 members，覆盖目标表 [members, search_logs, support_tickets, user_tag_map]
+18:18:35.047 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[members, search_logs, support_tickets, user_tag_map, member_levels, ticket_categories, coupon_usages, customers] | DDL 1236 字符（全量 7401 字符）
+18:18:35.049 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 order_reviews，覆盖目标表 [orders, order_reviews]
+18:18:35.049 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[order_reviews, orders, customers, order_items, order_payments, coupon_usages, refund_items, refunds] | DDL 1270 字符（全量 7401 字符）
+18:18:35.050 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 orders，覆盖目标表 [orders, customers, geolocation, shipping_addresses]
+18:18:35.050 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, customers, geolocation, shipping_addresses, order_items, order_payments, order_reviews, coupon_usages] | DDL 1362 字符（全量 7401 字符）
+18:18:35.052 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 orders，覆盖目标表 [regions, warehouses, orders]
+18:18:35.052 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, regions, warehouses, customers, order_items, order_payments, order_reviews, shipments] | DDL 1400 字符（全量 7401 字符）
+18:18:35.052 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 member_levels，覆盖目标表 [member_levels, members, orders]
+18:18:35.052 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[member_levels, members, orders, customers, order_items, order_payments, order_reviews, coupon_usages] | DDL 1428 字符（全量 7401 字符）
+18:18:35.054 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 members，覆盖目标表 [user_tags, members, search_logs, support_tickets]
+18:18:35.054 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 9 张表：[members, search_logs, support_tickets, user_tags, member_levels, ticket_categories, coupon_usages, customers, user_tag_map] | DDL 1401 字符（全量 7401 字符）
+18:18:35.054 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：5 条主干边，起点 members，覆盖目标表 [user_tags, user_tag_map, members, search_logs, support_tickets, orders]
+18:18:35.054 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[members, orders, search_logs, support_tickets, user_tag_map, user_tags, customers, member_levels] | DDL 1425 字符（全量 7401 字符）
+18:18:35.057 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：2 条
+18:18:35.059 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 coupon_usages，覆盖目标表 [coupon_usages, coupons]
+18:18:35.059 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 5 张表：[coupon_usages, coupons, campaigns, members, orders] | DDL 1052 字符（全量 7401 字符）
+18:18:35.059 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 shipments，覆盖目标表 [shipments, warehouses]
+18:18:35.060 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 7 张表：[shipments, warehouses, inventory, inventory_movements, orders, regions, shipment_tracking] | DDL 1137 字符（全量 7401 字符）
+18:18:35.061 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 shipments，覆盖目标表 [shipments, orders]
+18:18:35.061 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 4 张表：[shipments, warehouses, orders, shipment_tracking] | DDL 987 字符（全量 7401 字符）
+18:18:35.061 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[delivery_days]
+18:18:35.061 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 support_tickets，覆盖目标表 [support_tickets, ticket_categories]
+18:18:35.061 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 5 张表：[support_tickets, ticket_categories, members, orders, ticket_messages] | DDL 1420 字符（全量 7401 字符）
+18:18:35.061 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：5 条主干边，起点 settlements，覆盖目标表 [customers, geolocation, shipping_addresses, sellers, settlements]
+18:18:35.061 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[settlements, sellers, customers, geolocation, shipping_addresses, order_items, settlement_items, orders] | DDL 1669 字符（全量 7401 字符）
+18:18:35.064 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 refunds，覆盖目标表 [refunds, refund_items]
+18:18:35.064 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 4 张表：[refunds, refund_items, orders, order_items] | DDL 785 字符（全量 7401 字符）
+18:18:35.066 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 order_items，覆盖目标表 [order_items, support_tickets, customers, orders]
+18:18:35.066 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[order_items, customers, orders, products, sellers, support_tickets, order_payments, order_reviews] | DDL 1660 字符（全量 7401 字符）
+18:18:35.066 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[aov]
+18:18:35.066 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:35.066 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 order_items，覆盖目标表 [products, order_items]
+18:18:35.066 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[order_items, products, orders, sellers, campaign_products, inventory, inventory_movements, product_brand_map] | DDL 1370 字符（全量 7401 字符）
+18:18:35.066 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 3 张表：[search_logs, members, products] | DDL 409 字符（全量 7401 字符）
+18:18:35.069 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 inventory，覆盖目标表 [products, shipments, warehouses, inventory]
+18:18:35.069 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[inventory, products, shipments, warehouses, order_items, campaign_products, inventory_movements, orders] | DDL 1364 字符（全量 7401 字符）
+18:18:35.070 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 products，覆盖目标表 [product_price_history, products, order_items]
+18:18:35.070 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[products, order_items, product_price_history, campaign_products, inventory, inventory_movements, orders, product_brand_map] | DDL 1406 字符（全量 7401 字符）
+18:18:35.072 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 customers，覆盖目标表 [regions, warehouses, customers]
+18:18:35.072 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[customers, regions, warehouses, orders, shipments, inventory, inventory_movements, members] | DDL 1358 字符（全量 7401 字符）
+18:18:35.073 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：6 条主干边，起点 member_levels，覆盖目标表 [regions, member_levels, members, order_items, support_tickets]
+18:18:35.073 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[member_levels, order_items, members, regions, support_tickets, orders, products, sellers] | DDL 1789 字符（全量 7401 字符）
+18:18:35.073 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：2 条
+18:18:35.075 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 product_category_translation，覆盖目标表 [product_category_translation, refund_items, refunds, products]
+18:18:35.075 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[product_category_translation, refunds, products, refund_items, order_items, orders, campaign_products, inventory] | DDL 1618 字符（全量 7401 字符）
+18:18:35.075 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 campaigns，覆盖目标表 [coupon_usages, coupons, campaigns, orders, order_items]
+18:18:35.075 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 7 张表：[campaigns, coupon_usages, coupons, order_items, orders, campaign_products, members] | DDL 1412 字符（全量 7401 字符）
+18:18:35.075 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[valid_order]
+18:18:35.078 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 products，覆盖目标表 [products, search_logs, support_tickets, product_category_translation]
+18:18:35.079 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 9 张表：[products, search_logs, product_category_translation, order_items, support_tickets, campaign_products, inventory, inventory_movements, members] | DDL 1604 字符（全量 7401 字符）
+18:18:35.079 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:35.081 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：8 条主干边，起点 inventory，覆盖目标表 [inventory, support_tickets, products, shipments, warehouses, regions, brands]
+18:18:35.083 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 10 张表：[inventory, brands, products, regions, shipments, warehouses, support_tickets, order_items, product_brand_map, orders] | DDL 2120 字符（全量 7401 字符）
+18:18:35.083 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:35.083 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：5 条主干边，起点 settlements，覆盖目标表 [sellers, settlement_items, product_category_translation, settlements]
+18:18:35.083 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 7 张表：[settlements, product_category_translation, sellers, settlement_items, order_items, products, regions] | DDL 1731 字符（全量 7401 字符）
+18:18:35.090 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：7 条主干边，起点 members，覆盖目标表 [user_tags, members, search_logs, support_tickets, orders, products, order_items]
+18:18:35.090 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 9 张表：[members, search_logs, support_tickets, order_items, orders, products, user_tags, member_levels, user_tag_map] | DDL 2051 字符（全量 7401 字符）
+18:18:35.096 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 members，覆盖目标表 [members, member_snapshot, search_logs, support_tickets, member_levels]
+18:18:35.096 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[members, member_levels, member_snapshot, search_logs, support_tickets, coupon_usages, customers, referrals] | DDL 1462 字符（全量 7401 字符）
+18:18:35.096 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 refunds，覆盖目标表 [product_category_translation, refunds, refund_items]
+18:18:35.096 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 6 张表：[refunds, product_category_translation, refund_items, orders, order_items, products] | DDL 1509 字符（全量 7401 字符）
+18:18:35.101 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 customers，覆盖目标表 [shipping_addresses, customers, geolocation, orders]
+18:18:35.101 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 6 张表：[customers, shipping_addresses, geolocation, orders, members, regions] | DDL 1099 字符（全量 7401 字符）
+18:18:35.104 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：5 条主干边，起点 orders，覆盖目标表 [orders, campaigns, order_items, customers]
+18:18:35.104 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 9 张表：[orders, customers, order_payments, order_reviews, campaigns, order_items, coupon_usages, refund_items, coupons] | DDL 1659 字符（全量 7401 字符）
+18:18:35.104 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[aov, unique_buyers, valid_order]
+18:18:35.104 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：3 条
+18:18:35.108 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 customers，覆盖目标表 [customers, orders]
+18:18:35.108 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[customers, orders, order_items, order_payments, order_reviews, coupon_usages, members, refund_items] | DDL 1534 字符（全量 7401 字符）
+18:18:35.108 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[retention_rate]
+18:18:35.110 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1606 字符（全量 7401 字符）
+18:18:35.110 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[on_time_rate]
+18:18:35.110 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:35.113 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：2 条主干边，起点 products，覆盖目标表 [products, order_items, orders]
+18:18:35.113 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[products, order_items, campaign_products, inventory, inventory_movements, product_brand_map, product_category_translation, product_price_history] | DDL 1377 字符（全量 7401 字符）
+18:18:35.113 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[sell_through_rate]
+18:18:35.114 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 order_items，覆盖目标表 [order_items, regions, orders]
+18:18:35.114 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[order_items, regions, orders, products, sellers, refund_items, settlement_items, customers] | DDL 1438 字符（全量 7401 字符）
+18:18:35.114 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[freight_ratio, gmv_with_freight]
+18:18:35.117 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：5 条主干边，起点 coupon_usages，覆盖目标表 [coupon_usages, coupons, order_items, orders, member_levels]
+18:18:35.117 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[coupon_usages, coupons, member_levels, order_items, orders, campaigns, members, member_snapshot] | DDL 1675 字符（全量 7401 字符）
+18:18:35.117 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[discount_rate, gmv_with_freight]
+18:18:35.117 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+18:18:35.120 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：5 条主干边，起点 support_tickets，覆盖目标表 [support_tickets, product_category_translation, products, ticket_categories]
+18:18:35.120 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[support_tickets, product_category_translation, products, ticket_categories, members, order_items, orders, ticket_messages] | DDL 1999 字符（全量 7401 字符）
+18:18:35.121 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[sla_rate]
+18:18:35.121 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 campaigns，覆盖目标表 [referrals, campaigns]
+18:18:35.121 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 6 张表：[campaigns, referrals, campaign_products, coupons, members, coupon_usages] | DDL 1144 字符（全量 7401 字符）
+18:18:35.121 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[conversion_rate, reward_per_converted]
+18:18:35.121 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：3 条主干边，起点 shipments，覆盖目标表 [customers, geolocation, shipping_addresses, shipments, orders]
+18:18:35.121 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[shipments, customers, geolocation, orders, shipping_addresses, warehouses, shipment_tracking, members] | DDL 1772 字符（全量 7401 字符）
+18:18:35.121 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[delivery_days]
+18:18:35.124 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 settlement_items，覆盖目标表 [settlement_items, sellers, support_tickets, settlements]
+18:18:35.124 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[settlement_items, sellers, support_tickets, order_items, orders, settlements, ticket_categories, members] | DDL 1798 字符（全量 7401 字符）
+18:18:35.124 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[commission_rate]
+18:18:35.124 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：2 条
+18:18:35.127 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：1 条主干边，起点 order_items，覆盖目标表 [order_items, orders]
+18:18:35.127 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 6 张表：[order_items, orders, products, sellers, refund_items, settlement_items] | DDL 1264 字符（全量 7401 字符）
+18:18:35.127 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[gmv_with_freight, yoy_growth]
+18:18:35.130 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 多表 Join 拓扑约束提示已生效：4 条主干边，起点 order_reviews，覆盖目标表 [refunds, customers, order_reviews, support_tickets]
+18:18:35.130 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 检索完成：选中 8 张表：[order_reviews, refunds, customers, orders, support_tickets, refund_items, members, regions] | DDL 1659 字符（全量 7401 字符）
+18:18:35.130 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入业务指标：[low_score_rate]
+18:18:35.130 [main] INFO com.text2sql.agent.retrieval.HybridSchemaProvider -- 注入实体与枚举值取值对齐提示：1 条
+PROMPT_AUDIT items=100 comparisons=300 mismatches=0 output=reports\customer-identity-contract-20261117\before-eval.json
