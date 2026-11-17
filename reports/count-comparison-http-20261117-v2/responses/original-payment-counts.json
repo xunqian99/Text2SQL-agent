@@ -1,0 +1,67 @@
+{
+  "httpStatus" : 200,
+  "id" : "original-payment-counts",
+  "body" : {
+    "status" : "SUCCESS",
+    "sql" : "SELECT payment_type, COUNT(*) AS cnt\nFROM order_payments\nWHERE payment_type IN ('credit_card', 'boleto')\nGROUP BY payment_type\nORDER BY cnt DESC\nLIMIT 10;",
+    "message" : null,
+    "violations" : [ ],
+    "columns" : [ "payment_type", "cnt" ],
+    "rows" : [ [ "credit_card", "76795" ], [ "boleto", "19784" ] ],
+    "truncated" : false,
+    "rewritten" : false,
+    "rowCount" : 2,
+    "schemaTableCount" : 2,
+    "retrievedTables" : [ "order_payments", "orders" ],
+    "schemaDdlChars" : 364,
+    "llm" : {
+      "model" : "deepseek-flash",
+      "promptTokens" : 2143,
+      "completionTokens" : 339,
+      "totalTokens" : 2482,
+      "latencyMs" : 2251,
+      "costYuan" : 0.00199372
+    },
+    "timings" : {
+      "retrievalMs" : 2,
+      "generationMs" : 2252,
+      "validationMs" : 4,
+      "executionMs" : 25,
+      "totalMs" : 2288
+    },
+    "sessionId" : "identity-original-payment-counts",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "e42f164c-a4f3-46ab-8877-d03606e9fed8",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 1,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 2288,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "GENERATION" : 6,
+        "MODEL" : 2246,
+        "EXECUTION" : 21,
+        "SESSION" : 0,
+        "ADMISSION" : 0,
+        "VALIDATION" : 4,
+        "EXPLAIN" : 4,
+        "CLARIFICATION" : 0,
+        "CACHE_WRITE" : 0,
+        "RESULT_CHECK" : 0,
+        "RETRIEVAL" : 2,
+        "CONVERSATION" : 0,
+        "CACHE" : 0
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 5,
+      "currentStageMs" : 0
+    }
+  },
+  "wallMs" : 2292
+}

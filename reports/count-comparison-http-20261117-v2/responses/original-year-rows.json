@@ -1,0 +1,67 @@
+{
+  "httpStatus" : 200,
+  "id" : "original-year-rows",
+  "body" : {
+    "status" : "SUCCESS",
+    "sql" : "SELECT EXTRACT(YEAR FROM order_purchase_timestamp)::int AS year,\n       COUNT(*) AS order_count\nFROM orders\nWHERE order_purchase_timestamp >= '2017-01-01'\n  AND order_purchase_timestamp < '2019-01-01'\nGROUP BY 1\nORDER BY 1\nLIMIT 10;",
+    "message" : null,
+    "violations" : [ ],
+    "columns" : [ "year", "order_count" ],
+    "rows" : [ [ "2017", "45101" ], [ "2018", "54011" ] ],
+    "truncated" : false,
+    "rewritten" : false,
+    "rowCount" : 2,
+    "schemaTableCount" : 8,
+    "retrievedTables" : [ "orders", "customers", "order_items", "order_payments", "order_reviews", "coupon_usages", "refund_items", "refunds" ],
+    "schemaDdlChars" : 1573,
+    "llm" : {
+      "model" : "deepseek-flash",
+      "promptTokens" : 2495,
+      "completionTokens" : 235,
+      "totalTokens" : 2730,
+      "latencyMs" : 1713,
+      "costYuan" : 0.00180428
+    },
+    "timings" : {
+      "retrievalMs" : 6,
+      "generationMs" : 1715,
+      "validationMs" : 2,
+      "executionMs" : 32,
+      "totalMs" : 1758
+    },
+    "sessionId" : "identity-original-year-rows",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "56a933bc-6600-462c-92d4-ce748de2fa22",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 1,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 1758,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "GENERATION" : 8,
+        "MODEL" : 1707,
+        "EXECUTION" : 27,
+        "SESSION" : 0,
+        "ADMISSION" : 0,
+        "VALIDATION" : 2,
+        "EXPLAIN" : 5,
+        "CLARIFICATION" : 0,
+        "CACHE_WRITE" : 0,
+        "RESULT_CHECK" : 0,
+        "RETRIEVAL" : 6,
+        "CONVERSATION" : 0,
+        "CACHE" : 0
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 3,
+      "currentStageMs" : 0
+    }
+  },
+  "wallMs" : 1766
+}

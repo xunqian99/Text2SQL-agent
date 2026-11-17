@@ -1,0 +1,67 @@
+{
+  "httpStatus" : 200,
+  "id" : "all-status-groups-control",
+  "body" : {
+    "status" : "SUCCESS",
+    "sql" : "SELECT order_status, COUNT(*) AS cnt\nFROM orders\nGROUP BY order_status\nORDER BY cnt DESC\nLIMIT 100;",
+    "message" : null,
+    "violations" : [ ],
+    "columns" : [ "order_status", "cnt" ],
+    "rows" : [ [ "delivered", "96478" ], [ "shipped", "1107" ], [ "canceled", "625" ], [ "unavailable", "609" ], [ "invoiced", "314" ], [ "processing", "301" ], [ "created", "5" ], [ "approved", "2" ] ],
+    "truncated" : false,
+    "rewritten" : false,
+    "rowCount" : 8,
+    "schemaTableCount" : 8,
+    "retrievedTables" : [ "orders", "customers", "order_items", "order_payments", "order_reviews", "coupon_usages", "refund_items", "refunds" ],
+    "schemaDdlChars" : 1307,
+    "llm" : {
+      "model" : "deepseek-flash",
+      "promptTokens" : 2466,
+      "completionTokens" : 48,
+      "totalTokens" : 2514,
+      "latencyMs" : 1229,
+      "costYuan" : 0.0010272800000000002
+    },
+    "timings" : {
+      "retrievalMs" : 2,
+      "generationMs" : 1230,
+      "validationMs" : 3,
+      "executionMs" : 12,
+      "totalMs" : 1250
+    },
+    "sessionId" : "identity-all-status-groups-control",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "160c122c-6ee6-4bad-b7f2-13049f854706",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 1,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 1250,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "GENERATION" : 7,
+        "MODEL" : 1223,
+        "EXECUTION" : 8,
+        "SESSION" : 0,
+        "ADMISSION" : 0,
+        "VALIDATION" : 3,
+        "EXPLAIN" : 4,
+        "CLARIFICATION" : 0,
+        "CACHE_WRITE" : 0,
+        "RESULT_CHECK" : 0,
+        "RETRIEVAL" : 2,
+        "CONVERSATION" : 0,
+        "CACHE" : 0
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 3,
+      "currentStageMs" : 0
+    }
+  },
+  "wallMs" : 1261
+}

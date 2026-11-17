@@ -1,0 +1,67 @@
+{
+  "httpStatus" : 200,
+  "id" : "explicit-year-columns",
+  "body" : {
+    "status" : "SUCCESS",
+    "sql" : "SELECT COUNT(*) FILTER (WHERE EXTRACT(YEAR FROM order_purchase_timestamp) = 2017) AS orders_2017, COUNT(*) FILTER (WHERE EXTRACT(YEAR FROM order_purchase_timestamp) = 2018) AS orders_2018 FROM orders LIMIT 201",
+    "message" : null,
+    "violations" : [ ],
+    "columns" : [ "orders_2017", "orders_2018" ],
+    "rows" : [ [ "45101", "54011" ] ],
+    "truncated" : false,
+    "rewritten" : true,
+    "rowCount" : 1,
+    "schemaTableCount" : 8,
+    "retrievedTables" : [ "orders", "customers", "order_items", "order_payments", "order_reviews", "coupon_usages", "refund_items", "refunds" ],
+    "schemaDdlChars" : 1573,
+    "llm" : {
+      "model" : "deepseek-flash",
+      "promptTokens" : 2519,
+      "completionTokens" : 193,
+      "totalTokens" : 2712,
+      "latencyMs" : 1708,
+      "costYuan" : 0.00103308
+    },
+    "timings" : {
+      "retrievalMs" : 4,
+      "generationMs" : 1710,
+      "validationMs" : 4,
+      "executionMs" : 21,
+      "totalMs" : 1742
+    },
+    "sessionId" : "identity-explicit-year-columns",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "c00b3f4d-6197-4c90-ae70-b86278182eb2",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 1,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 1742,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "GENERATION" : 8,
+        "MODEL" : 1702,
+        "EXECUTION" : 17,
+        "SESSION" : 0,
+        "ADMISSION" : 0,
+        "VALIDATION" : 4,
+        "EXPLAIN" : 4,
+        "CLARIFICATION" : 0,
+        "CACHE_WRITE" : 0,
+        "RESULT_CHECK" : 0,
+        "RETRIEVAL" : 4,
+        "CONVERSATION" : 0,
+        "CACHE" : 0
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 3,
+      "currentStageMs" : 0
+    }
+  },
+  "wallMs" : 1747
+}
