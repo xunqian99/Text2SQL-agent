@@ -1,0 +1,36 @@
+# 2026-11-17完整20条HTTP复验：已冻结，待空闲运行
+
+阶段3 P95继续暂缓。本轮是阶段4功能复验，沿用[原20条协议](DEMO_HTTP_PROTOCOL_20261116.md)的选择、模型策略、15秒总预算、最多2次调用、会话隔离与结果评分，不重选题，不增加题库，不以提高分数为理由改Gold。
+
+## 已完成的离线准备
+
+- 门禁实现提交：`8c4e669`；原始诊断字节属性：`9d6285a`。
+- 20条协议冻结提交：`7697cd8`；协议sourceCommit为`9d6285a`，src/pom/题库/启动脚本受保护对象全部记录。
+- 路径：`reports/demo-http-20-20261117/protocol.json`、`protocol.sha256`。
+- 只读数据库执行20条Gold成功，未截断；与历史20条的ID、顺序、会话ID、问题、SQL、列、行值和截断标志20/20相同，原题库SHA相同。重新执行产生的elapsedMs不是答案内容，不参与评分；未修改冻结文件来消除耗时差异。
+- 本轮冻结协议增加空闲时段政策版本、官方来源、Asia/Shanghai、120秒边界余量和节假日保守策略。
+- 2026-11-17北京时间14:03后，使用实际时钟运行起跑预检，目标仅为127.0.0.1:1，工具在健康接口前抛出PEAK_HOURS，非零退出。没有requests目录、没有健康/问数HTTP、供应商调用0。保存peak-preflight.json/log，不能把它当完整20条失败或成功。
+
+完整Java710/710是门禁代码回归数字，不是这20条的新准确率。历史17/20=85%、HTTP P95 10.083秒、未知用量1及费用下界保持原样。新的真实20条尚未执行，不提前填写结果。
+
+## 运行与验收路径
+
+先核对[官方规则与本地约束](OFFPEAK_EVALUATION_20261117.md)。北京时间18:00后，以新编译进程运行；不得用旧进程或关闭门禁。不改变当前冻结的受保护代码、题库或个人local配置。下面命令中的健康检查不调用模型，Key只通过现有环境注入，不放进参数或日志。
+
+```powershell
+python reports/offpeak-policy-20261117/audit_evidence.py
+python reports/demo-http-20-20261117/audit_protocol.py
+$demoCp = 'target/test-classes;target/classes;' + (Get-Content target/demo-http-classpath.txt -Raw).Trim()
+# 仅在空闲时段，独立终端启动：
+powershell -File scripts/start_local.ps1 -Mode demo -Port 18087 -CallLogDir reports/demo-http-20-20261117/llm-calls
+# 另开终端，以同一classpath运行一次：
+java -cp $demoCp com.text2sql.agent.acceptance.DemoHttpAcceptanceProbe run reports/demo-http-20-20261117 http://127.0.0.1:18087
+# 停止该独立应用并等日志关闭后：
+java -cp $demoCp com.text2sql.agent.acceptance.DemoHttpAcceptanceProbe summarize reports/demo-http-20-20261117
+```
+
+每条调用方时间判定保存于window-checks，应用再次约束其中的生成/改写/纠错。若中途拒绝或产生未知用量，保留全部记录，禁止清空requests重新跑择优；仍以原20条分母报告未完成状态。未发送的高峰起跑预检未创建requests，可在18:00以同一冻结协议进行首次真实运行。
+
+只在本机demo入口做此轮功能复验；不能宣称protected完整20条验收。认证、费用配额组合证据另见既有报告。本轮新增时间门禁不更改原结果规范化或业务SQL判断，影响范围是付费调用的准入及本轮时间证据。
+
+下一步交付必须包括：完整20条业务/接口分别计数；全部请求HTTP墙钟平均与nearest-rank P95（含失败）；模型逐次费用/Token/未知；会话累计轮数、交错追问隔离、关闭与删除；完整日志、失败保留、凭据扫描与Git提交。不能把定点3/3、澄清替身8/8替代完整结果。
