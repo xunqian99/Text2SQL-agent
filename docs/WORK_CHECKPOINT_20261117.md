@@ -2,6 +2,8 @@
 
 ## 最新目标覆盖：空闲时段评测（2026-11-17）
 
+**当前构建保护HTTP复验**：见[PROTECTED_CURRENT_ACCEPTANCE_20261117.md](PROTECTED_CURRENT_ACCEPTANCE_20261117.md)。reports/protected-current-20261117从冷构建classes/test-classes＋114缓存依赖启动原Access/Cost探针，211生产条目与JAR逐字节相同；认证36/36、费用4/4组，合成5次/供应商0次/费用0。98测试类/资源身份绑定；未重跑Java或Gold、不改源码/探针/原题。5进程26628/18484/31544/44748/41500均退出，端口55056/55068/57391/59965/59974关闭；复用15433隔离库后已停止，卷保留，原库仍运行。audit_evidence.py --live-inputs通过；不能称java -jar启动或真实模型验证。18点原20条和隔离1条安排不变，不追加其他评测批次。
+
 **同机隔离整链路补验**：见[ISOLATED_CHAIN_ACCEPTANCE_20261117.md](ISOLATED_CHAIN_ACCEPTANCE_20261117.md)。保留冷构建JAR/源码/缓存，公开模板另复制到Temp独立配置，新建text2sql-clean-chain-20261117及独立卷、15433本机端口。6脚本成功、37业务＋4持久化表/2,616,948行、两账号业务表可写0和4实际拒绝；新包demo无Key健康200/问数503，5个带ApplicationName的ro连接；Gold200/200、进程35,666ms、供应商0次。Java39596/30400退出、端口53407关闭，新库已停止并保留卷，原库仍运行。39制品离线manifest审计通过。首次Python→PS5.1继承PS7模块路径导致Get-FileHash失败，在创建资源前退出，initial-attempt保留；只改验收runner的子进程模块路径，不改源代码/用户环境。run_chain.py、协议、配置、JAR均已绑定，真实1条尚未执行。
 
 **18点新增的必要收尾**：先按既有原20条协议完整运行一次，再单独补同机隔离链路的首次1条真实问数（不是扩展题库或21题合并计分）。先python reports/isolated-chain-20261117/audit_evidence.py --live-inputs；核对database-binding.json的容器ID后只启动text2sql-clean-chain-20261117，用环境继承现有Key运行python reports/isolated-chain-20261117/run_chain.py paid。入口与应用均检查空闲时间；冻结问题2018订单数、Gold54,011、15秒/最多2调用。随后运行该目录audit_evidence.py --live-inputs --paid、核对费用/未知/会话与进程退出，另存付费manifest和文档。只停新容器，卷保留，原库不动。失败留存不覆盖、不重跑择优；不要改runner导致冻结SHA失效。未来 paid-window-check.json/paid-ask.json现在均不存在。
