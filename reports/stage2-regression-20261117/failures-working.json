@@ -1,0 +1,426 @@
+{
+  "provisional": true,
+  "scope": "Read-only diagnosis; no input/scorer/production changes during frozen runs",
+  "failures": [
+    {
+      "round": "r1",
+      "id": "T1-009",
+      "status": "SUCCESS",
+      "sql": "SELECT COUNT(DISTINCT customer_unique_id) AS customer_count\nFROM customers\nWHERE customer_state = 'SP'\n  AND customer_unique_id IS NOT NULL;",
+      "timings": {
+        "retrievalMs": 5,
+        "generationMs": 1362,
+        "validationMs": 1,
+        "executionMs": 28,
+        "totalMs": 1399
+      },
+      "retryTrigger": "NONE"
+    },
+    {
+      "round": "r1",
+      "id": "T2-008",
+      "status": "SUCCESS",
+      "sql": "SELECT customer_state, COUNT(DISTINCT customer_unique_id) AS customer_count\nFROM customers\nWHERE customer_unique_id IS NOT NULL\nGROUP BY customer_state\nORDER BY customer_count DESC\nLIMIT 5;",
+      "timings": {
+        "retrievalMs": 1,
+        "generationMs": 2485,
+        "validationMs": 2,
+        "executionMs": 95,
+        "totalMs": 2585
+      },
+      "retryTrigger": "NONE"
+    },
+    {
+      "round": "r1",
+      "id": "T2-013",
+      "status": "SUCCESS",
+      "sql": "SELECT order_status, COUNT(*) AS order_count\nFROM orders\nWHERE order_status IN ('delivered', 'canceled')\nGROUP BY order_status\nORDER BY order_status\nLIMIT 10;",
+      "timings": {
+        "retrievalMs": 1,
+        "generationMs": 1337,
+        "validationMs": 1,
+        "executionMs": 8,
+        "totalMs": 1350
+      },
+      "retryTrigger": "NONE"
+    },
+    {
+      "round": "r1",
+      "id": "T2-019",
+      "status": "SUCCESS",
+      "sql": "SELECT campaign_name, ROUND(SUM(budget), 2) AS total_budget\nFROM campaigns\nGROUP BY campaign_name\nLIMIT 100;",
+      "timings": {
+        "retrievalMs": 1,
+        "generationMs": 2261,
+        "validationMs": 1,
+        "executionMs": 4,
+        "totalMs": 2270
+      },
+      "retryTrigger": "NONE"
+    },
+    {
+      "round": "r1",
+      "id": "T2-037",
+      "status": "SUCCESS",
+      "sql": "SELECT c.customer_state\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY c.customer_state\nHAVING COUNT(*) > 5000\nLIMIT 100;",
+      "timings": {
+        "retrievalMs": 1,
+        "generationMs": 8949,
+        "validationMs": 2,
+        "executionMs": 58,
+        "totalMs": 9013
+      },
+      "retryTrigger": "NONE"
+    },
+    {
+      "round": "r1",
+      "id": "T3-012",
+      "status": "REQUEST_TIMEOUT",
+      "sql": null,
+      "timings": {
+        "retrievalMs": 1,
+        "generationMs": 15008,
+        "validationMs": 0,
+        "executionMs": 0,
+        "totalMs": 15010
+      },
+      "retryTrigger": "NONE"
+    },
+    {
+      "round": "r1",
+      "id": "T4-004",
+      "status": "NEEDS_CLARIFICATION",
+      "sql": null,
+      "timings": {
+        "retrievalMs": 0,
+        "generationMs": 0,
+        "validationMs": 0,
+        "executionMs": 0,
+        "totalMs": 0
+      },
+      "retryTrigger": "NONE"
+    },
+    {
+      "round": "r1",
+      "id": "T4-006",
+      "status": "NEEDS_CLARIFICATION",
+      "sql": null,
+      "timings": {
+        "retrievalMs": 0,
+        "generationMs": 0,
+        "validationMs": 0,
+        "executionMs": 0,
+        "totalMs": 0
+      },
+      "retryTrigger": "NONE"
+    },
+    {
+      "round": "r1",
+      "id": "T4-013",
+      "status": "SUCCESS",
+      "sql": "-- 差评订单按客户所在州计数：order_reviews 关联 orders 再关联 customers\nSELECT c.customer_state, COUNT(DISTINCT o.order_id) AS bad_review_orders\nFROM order_reviews r\nJOIN orders o ON o.order_id = r.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nWHERE r.review_score <= 2\nGROUP BY c.customer_state\nORDER BY bad_review_orders DESC\nLIMIT 30;",
+      "timings": {
+        "retrievalMs": 1,
+        "generationMs": 2153,
+        "validationMs": 7,
+        "executionMs": 36,
+        "totalMs": 2199
+      },
+      "retryTrigger": "NONE"
+    },
+    {
+      "round": "r1",
+      "id": "T4-028",
+      "status": "SUCCESS",
+      "sql": "SELECT category_id,\n       ROUND((AVG(EXTRACT(EPOCH FROM (resolved_at - created_at)) / 3600.0))::numeric, 2) AS avg_hours\nFROM support_tickets\nWHERE resolved_at IS NOT NULL\nGROUP BY category_id\nORDER BY category_id\nLIMIT 100;",
+      "timings": {
+        "retrievalMs": 1,
+        "generationMs": 2997,
+        "validationMs": 27,
+        "executionMs": 5,
+        "totalMs": 3032
+      },
+      "retryTrigger": "NONE"
+    },
+    {
+      "round": "r1",
+      "id": "T5-001",
+      "status": "SUCCESS",
+      "sql": "SELECT r.macro_region, ml.level_name, ROUND(SUM(oi.price), 2) AS sales\nFROM orders o\nJOIN order_items oi ON oi.order_id = o.order_id\nJOIN sellers s ON s.seller_id = oi.seller_id\nJOIN regions r ON r.region_code = s.seller_state\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN members m ON m.customer_unique_id = c.customer_unique_id\nJOIN member_levels ml ON ml.level_id = m.level_id\nGROUP BY r.macro_region, ml.level_name\nORDER BY sales DESC\nLIMIT 100;",
+      "timings": {
+        "retrievalMs": 1,
+        "generationMs": 12315,
+        "validationMs": 6,
+        "executionMs": 206,
+        "totalMs": 12530
+      },
+      "retryTrigger": "NONE"
+    },
+    {
+      "round": "r1",
+      "id": "T5-003",
+      "status": "REQUEST_TIMEOUT",
+      "sql": null,
+      "timings": {
+        "retrievalMs": 2,
+        "generationMs": 15005,
+        "validationMs": 0,
+        "executionMs": 0,
+        "totalMs": 15008
+      },
+      "retryTrigger": "NONE"
+    },
+    {
+      "round": "r1",
+      "id": "T5-010",
+      "status": "REQUEST_TIMEOUT",
+      "sql": null,
+      "timings": {
+        "retrievalMs": 1,
+        "generationMs": 15004,
+        "validationMs": 0,
+        "executionMs": 0,
+        "totalMs": 15005
+      },
+      "retryTrigger": "NONE"
+    },
+    {
+      "round": "r1",
+      "id": "T5-012",
+      "status": "REQUEST_TIMEOUT",
+      "sql": null,
+      "timings": {
+        "retrievalMs": 1,
+        "generationMs": 15004,
+        "validationMs": 0,
+        "executionMs": 0,
+        "totalMs": 15007
+      },
+      "retryTrigger": "NONE"
+    },
+    {
+      "round": "r1",
+      "id": "T5-016",
+      "status": "REQUEST_TIMEOUT",
+      "sql": null,
+      "timings": {
+        "retrievalMs": 1,
+        "generationMs": 14998,
+        "validationMs": 0,
+        "executionMs": 0,
+        "totalMs": 15000
+      },
+      "retryTrigger": "NONE"
+    },
+    {
+      "round": "r1",
+      "id": "T6-006",
+      "status": "SUCCESS",
+      "sql": "SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE order_delivered_customer_date <= order_estimated_delivery_date) / COUNT(*), 2) AS on_time_rate FROM orders WHERE order_status = 'delivered' LIMIT 201",
+      "timings": {
+        "retrievalMs": 1,
+        "generationMs": 1525,
+        "validationMs": 7,
+        "executionMs": 12,
+        "totalMs": 1548
+      },
+      "retryTrigger": "NONE"
+    },
+    {
+      "round": "r2",
+      "id": "T1-009",
+      "status": "SUCCESS",
+      "sql": "SELECT COUNT(DISTINCT customer_unique_id) AS customer_count\nFROM customers\nWHERE customer_state = 'SP';",
+      "timings": {
+        "retrievalMs": 5,
+        "generationMs": 1408,
+        "validationMs": 5,
+        "executionMs": 17,
+        "totalMs": 1437
+      },
+      "retryTrigger": "NONE"
+    },
+    {
+      "round": "r2",
+      "id": "T2-008",
+      "status": "SUCCESS",
+      "sql": "SELECT customer_state, COUNT(DISTINCT customer_unique_id) AS customer_count\nFROM customers\nWHERE customer_unique_id IS NOT NULL\nGROUP BY customer_state\nORDER BY customer_count DESC\nLIMIT 5;",
+      "timings": {
+        "retrievalMs": 1,
+        "generationMs": 1985,
+        "validationMs": 2,
+        "executionMs": 75,
+        "totalMs": 2066
+      },
+      "retryTrigger": "NONE"
+    },
+    {
+      "round": "r2",
+      "id": "T2-013",
+      "status": "SUCCESS",
+      "sql": "SELECT order_status, COUNT(*) AS order_count\nFROM orders\nWHERE order_status IN ('delivered', 'canceled')\nGROUP BY order_status\nLIMIT 10;",
+      "timings": {
+        "retrievalMs": 1,
+        "generationMs": 1295,
+        "validationMs": 1,
+        "executionMs": 7,
+        "totalMs": 1307
+      },
+      "retryTrigger": "NONE"
+    },
+    {
+      "round": "r2",
+      "id": "T3-012",
+      "status": "SUCCESS",
+      "sql": "WITH monthly AS (SELECT EXTRACT(MONTH FROM order_purchase_timestamp)::int AS month, COUNT(*) FILTER (WHERE EXTRACT(YEAR FROM order_purchase_timestamp) = 2017) AS orders_2017, COUNT(*) FILTER (WHERE EXTRACT(YEAR FROM order_purchase_timestamp) = 2018) AS orders_2018 FROM orders WHERE order_purchase_timestamp >= '2017-01-01' AND order_purchase_timestamp < '2019-01-01' GROUP BY 1) SELECT MONTH, orders_2017, orders_2018, ROUND(100.0 * (orders_2018 - orders_2017) / NULLIF(orders_2017, 0), 2) AS yoy_growth_pct FROM monthly WHERE orders_2018 > 0 ORDER BY MONTH LIMIT 201",
+      "timings": {
+        "retrievalMs": 1,
+        "generationMs": 12381,
+        "validationMs": 3,
+        "executionMs": 42,
+        "totalMs": 12428
+      },
+      "retryTrigger": "NONE"
+    },
+    {
+      "round": "r2",
+      "id": "T4-004",
+      "status": "NEEDS_CLARIFICATION",
+      "sql": null,
+      "timings": {
+        "retrievalMs": 0,
+        "generationMs": 0,
+        "validationMs": 0,
+        "executionMs": 0,
+        "totalMs": 0
+      },
+      "retryTrigger": "NONE"
+    },
+    {
+      "round": "r2",
+      "id": "T4-006",
+      "status": "NEEDS_CLARIFICATION",
+      "sql": null,
+      "timings": {
+        "retrievalMs": 0,
+        "generationMs": 0,
+        "validationMs": 0,
+        "executionMs": 0,
+        "totalMs": 0
+      },
+      "retryTrigger": "NONE"
+    },
+    {
+      "round": "r2",
+      "id": "T4-013",
+      "status": "SUCCESS",
+      "sql": "SELECT c.customer_state, COUNT(DISTINCT o.order_id) AS bad_review_order_count\nFROM order_reviews r\nJOIN orders o ON o.order_id = r.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nWHERE r.review_score IN (1, 2)\nGROUP BY c.customer_state\nORDER BY c.customer_state\nLIMIT 100;",
+      "timings": {
+        "retrievalMs": 1,
+        "generationMs": 6755,
+        "validationMs": 10,
+        "executionMs": 44,
+        "totalMs": 6813
+      },
+      "retryTrigger": "NONE"
+    },
+    {
+      "round": "r2",
+      "id": "T4-026",
+      "status": "SUCCESS",
+      "sql": "SELECT s.carrier,\n       ROUND((AVG(EXTRACT(EPOCH FROM (o.order_delivered_customer_date - o.order_purchase_timestamp)) / 86400.0))::numeric, 2) AS avg_delivery_days\nFROM shipments s\nJOIN orders o ON o.order_id = s.order_id\nWHERE o.order_delivered_customer_date IS NOT NULL\nGROUP BY s.carrier\nORDER BY avg_delivery_days DESC\nLIMIT 100;",
+      "timings": {
+        "retrievalMs": 0,
+        "generationMs": 4365,
+        "validationMs": 8,
+        "executionMs": 71,
+        "totalMs": 4446
+      },
+      "retryTrigger": "NONE"
+    },
+    {
+      "round": "r2",
+      "id": "T4-028",
+      "status": "SUCCESS",
+      "sql": "SELECT st.category_id,\n       ROUND(AVG(EXTRACT(EPOCH FROM (st.resolved_at - st.created_at)) / 3600.0)::numeric, 2) AS avg_processing_hours\nFROM support_tickets st\nWHERE st.resolved_at IS NOT NULL\nGROUP BY st.category_id\nORDER BY st.category_id\nLIMIT 100;",
+      "timings": {
+        "retrievalMs": 0,
+        "generationMs": 4388,
+        "validationMs": 1,
+        "executionMs": 4,
+        "totalMs": 4395
+      },
+      "retryTrigger": "NONE"
+    },
+    {
+      "round": "r2",
+      "id": "T5-003",
+      "status": "REQUEST_TIMEOUT",
+      "sql": null,
+      "timings": {
+        "retrievalMs": 1,
+        "generationMs": 15000,
+        "validationMs": 0,
+        "executionMs": 0,
+        "totalMs": 15002
+      },
+      "retryTrigger": "NONE"
+    },
+    {
+      "round": "r2",
+      "id": "T5-010",
+      "status": "SUCCESS",
+      "sql": "SELECT s.seller_id,\n       COUNT(DISTINCT pct.product_category_name_english) AS category_cnt,\n       ROUND(SUM(si.commission_amount), 2) AS total_commission\nFROM settlements s\nJOIN settlement_items si ON s.settlement_id = si.settlement_id\nLEFT JOIN order_items oi ON oi.order_id = si.order_id AND oi.order_item_id = si.order_item_id\nLEFT JOIN products p ON p.product_id = oi.product_id\nLEFT JOIN product_category_translation pct ON pct.product_category_name = p.product_category_name\nGROUP BY s.seller_id\nORDER BY total_commission DESC\nLIMIT 20;",
+      "timings": {
+        "retrievalMs": 1,
+        "generationMs": 11756,
+        "validationMs": 4,
+        "executionMs": 69,
+        "totalMs": 11832
+      },
+      "retryTrigger": "NONE"
+    },
+    {
+      "round": "r2",
+      "id": "T5-012",
+      "status": "REQUEST_TIMEOUT",
+      "sql": null,
+      "timings": {
+        "retrievalMs": 1,
+        "generationMs": 15005,
+        "validationMs": 0,
+        "executionMs": 0,
+        "totalMs": 15007
+      },
+      "retryTrigger": "NONE"
+    },
+    {
+      "round": "r2",
+      "id": "T5-016",
+      "status": "REQUEST_TIMEOUT",
+      "sql": null,
+      "timings": {
+        "retrievalMs": 1,
+        "generationMs": 15006,
+        "validationMs": 0,
+        "executionMs": 0,
+        "totalMs": 15007
+      },
+      "retryTrigger": "NONE"
+    },
+    {
+      "round": "r2",
+      "id": "T6-002",
+      "status": "SUCCESS",
+      "sql": "SELECT (SELECT COUNT(*) FROM orders o WHERE o.order_status NOT IN ('canceled', 'unavailable')) AS order_count, (SELECT COUNT(DISTINCT c.customer_unique_id) FROM orders o JOIN customers c ON c.customer_id = o.customer_id WHERE o.order_status NOT IN ('canceled', 'unavailable')) AS unique_buyers, (SELECT ROUND(SUM(oi.price + oi.freight_value) / COUNT(DISTINCT o.order_id), 2) FROM orders o JOIN order_items oi ON oi.order_id = o.order_id WHERE o.order_status NOT IN ('canceled', 'unavailable')) AS aov LIMIT 201",
+      "timings": {
+        "retrievalMs": 1,
+        "generationMs": 3578,
+        "validationMs": 23,
+        "executionMs": 152,
+        "totalMs": 3756
+      },
+      "retryTrigger": "NONE"
+    }
+  ]
+}

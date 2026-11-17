@@ -1,0 +1,27 @@
+--- frozen-original-auditor
++++ archive-auditor
+@@ -8,6 +8,8 @@
+ from pathlib import Path
+ import subprocess
+ 
++import sys
++sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'scripts'))
+ from summarize_holdout import read, dataset_hash, ids_hash, is_dev
+ from summarize_request_budget import audit_run
+ 
+@@ -34,7 +36,14 @@
+         # PowerShell scripts have CRLF working bytes; compare Git's checkout conversion.
+         indexed = subprocess.check_output(['git', 'cat-file', '--filters', '--path=' + name,
+                                            manifest['codeCommit'] + ':' + name])
+-        require(hashlib.sha256(indexed).hexdigest() == sha, 'protected commit bytes differ: ' + name)
++        if hashlib.sha256(indexed).hexdigest() != sha:
++            archived = folder / 'source-bytes' / name
++            require(archived.is_file(), 'missing original byte witness: ' + name)
++            if archived.is_file():
++                raw = archived.read_bytes()
++                require(hashlib.sha256(raw).hexdigest() == sha, 'original byte witness changed: ' + name)
++                require(raw.replace(b'\r\n', b'\n') == indexed.replace(b'\r\n', b'\n'),
++                        'difference beyond CRLF/LF: ' + name)
+         if live:
+             require(hashlib.sha256(Path(name).read_bytes()).hexdigest() == sha, 'working file changed: ' + name)
+     if live:
