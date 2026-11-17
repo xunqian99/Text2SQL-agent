@@ -211,9 +211,8 @@ class MetricRegistryTest {
     void metricsWithoutFilterStayClean() {
         MetricRegistry registry = loaded();
 
-        // 这两条的 gold 里没有 order_status 过滤：
-        // T6-006 准时率的分母已经是「已送达订单」，再叠一层反而错。
-        // T6-017 推荐转化率算的是全部推荐记录，与订单状态无关。
+        // 准时率已在表达式内部按签收时间过滤分母，不添加公共有效订单过滤。
+        // 推荐转化率算全部推荐记录，与订单状态无关。
         for (String name : List.of("on_time_rate", "conversion_rate")) {
             Metric metric = registry.all().stream()
                     .filter(m -> m.name().equals(name)).findFirst().orElseThrow();

@@ -110,11 +110,16 @@ metrics:
     expression: |
       ROUND(100.0 * COUNT(*) FILTER (
         WHERE o.order_delivered_customer_date <= o.order_estimated_delivery_date
-      ) / COUNT(*), 2)
+      ) / NULLIF(COUNT(*) FILTER (
+        WHERE o.order_delivered_customer_date IS NOT NULL
+      ), 0), 2)
     tables: [orders]
     notes: |
       分母是**已送达订单**（order_delivered_customer_date IS NOT NULL），
       不是全部订单。未送达的订单无法判断是否准时，计入分母会拉低准时率。
+      分子与分母过滤均已写入表达式，不以order_status='delivered'替代签收时间非空。
+      预计送达时间缺失的已签收订单仍在分母，不能确认准时则不进入分子；分母为0返回NULL。
+      与商品等一对多明细共同统计时，先保留一行一订单，不能让明细数量给订单加权。
 
   - name: refund_rate
     outputUnit: PERCENT

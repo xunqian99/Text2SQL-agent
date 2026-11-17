@@ -34,7 +34,7 @@ class MetricUnitContractTest {
         assertThat(metric("gmv_with_freight").outputUnit()).isNull();
     }
 
-    @Test void archivedDefinitionsStayUnchangedExceptDocumentedUnitRepeatDeliveryAndEntityScopeAdditions() throws Exception {
+    @Test void archivedDefinitionsStayUnchangedExceptDocumentedUnitRepeatDeliveryOnTimeAndEntityScopeAdditions() throws Exception {
         var mapper = new ObjectMapper(new YAMLFactory());
         var before = mapper.readTree(getClass().getResourceAsStream("/contracts/metrics-before-result-contract.yml"));
         var after = mapper.readTree(getClass().getResourceAsStream("/schema/metrics.yml"));
@@ -60,6 +60,17 @@ class MetricUnitContractTest {
                 var original = java.util.stream.StreamSupport.stream(before.path("metrics").spliterator(), false)
                         .filter(n -> n.path("name").asText().equals("repeat_rate")).findFirst().orElseThrow();
                 node.set("expression", original.path("expression"));
+            }
+            if (node.path("name").asText().equals("on_time_rate")) {
+                // Executed against status/time disagreement and empty inputs in EntityCoverageDatabaseTest.
+                assertThat(node.path("expression").asText())
+                        .contains("NULLIF(COUNT(*) FILTER (", "WHERE o.order_delivered_customer_date IS NOT NULL")
+                        .doesNotContain("order_status");
+                assertThat(node.path("notes").asText()).contains("分母为0返回NULL", "一行一订单");
+                var original = java.util.stream.StreamSupport.stream(before.path("metrics").spliterator(), false)
+                        .filter(n -> n.path("name").asText().equals("on_time_rate")).findFirst().orElseThrow();
+                node.set("expression", original.path("expression"));
+                node.set("notes", original.path("notes"));
             }
         }
         assertThat(unitCount).isEqualTo(14);
