@@ -10,6 +10,10 @@
 
 **14点后准备状态**：门禁实现`8c4e669`、诊断原字节属性`9d6285a`；新20条已冻结提交`7697cd8`，详见[新协议与接续命令](DEMO_HTTP_PROTOCOL_20261117.md)。只读Gold20/20，与旧协议问题/SQL/标准列和值相同（仅执行elapsedMs变化，不参与评分）。实际高峰起跑预检已拒绝于健康HTTP之前，无requests目录、供应商0次；这不是一次付费重跑。运行前先执行新目录audit_protocol.py以及offpeak-policy目录audit_evidence.py；18:00后才发首次真实请求。
 
+**空缓存离线补验**：见[COLD_BUILD_ACCEPTANCE_20261117.md](COLD_BUILD_ACCEPTANCE_20261117.md)。从9d6285a导出268文件、独立缓存起始0；185JAR/347POM校验、79内嵌运行库来源通过。首轮PowerShell5.1 NativeCommandError使包装脚本退出1、原Maven退出码未知；保留初始XML710/710及现场，核查原Java进程不存在后，同缓存-o verify退出0、Java710/710。新JAR无Key实际HTTP8/8（进程20408/端口64747已退出）、Gold200/200且进程35268正常退出；供应商0次。源副本与缓存保留在protocol.json指定的Temp根，勿在18点前删除。
+
+**18点启动更新**：新20条artifact-plan.json与start_cold_jar.ps1绑定该新包SHA和原协议，不再通过Maven启动旧target。先运行三个离线审计（含clean-cache目录audit_evidence.py），核对官方时段后按新20条文档启动本机local,demo；个人local文件通过其原目录加载，原SHA未变，Key仅环境注入。启动器-Preview已通过且未启动应用。保留初次UTF-8读取预览失败，不改题/Gold/评分器/原protocol。实际20条仍未开始，不把新包无Key8/8或Gold200/200当模型成绩。
+
 ## 时间与执行决定
 
 用户目标：按阶段计划继续，阶段3 P95暂缓，今天北京时间14:00停止、18:00继续。午前工作收尾于13:45左右，已提交当前三个可独立审查的阶段4改动；不再开启新修改或模型请求。14:00停止与18:00接续的线程heartbeat均已建立，本次保存时仍ACTIVE。

@@ -9,6 +9,7 @@
 - 路径：`reports/demo-http-20-20261117/protocol.json`、`protocol.sha256`。
 - 只读数据库执行20条Gold成功，未截断；与历史20条的ID、顺序、会话ID、问题、SQL、列、行值和截断标志20/20相同，原题库SHA相同。重新执行产生的elapsedMs不是答案内容，不参与评分；未修改冻结文件来消除耗时差异。
 - 本轮冻结协议增加空闲时段政策版本、官方来源、Asia/Shanghai、120秒边界余量和节假日保守策略。
+- 后续补充artifact-plan.json绑定[空缓存构建](COLD_BUILD_ACCEPTANCE_20261117.md)取得的可执行JAR SHA、启动器SHA与原protocol SHA；启动器只预览验证，未启动付费问数。复用原local,demo配置及其冻结SHA，通过额外配置目录加载，不把个人配置写入JAR。原协议/题目/Gold/评分器未修改。
 - 2026-11-17北京时间14:03后，使用实际时钟运行起跑预检，目标仅为127.0.0.1:1，工具在健康接口前抛出PEAK_HOURS，非零退出。没有requests目录、没有健康/问数HTTP、供应商调用0。保存peak-preflight.json/log，不能把它当完整20条失败或成功。
 
 完整Java710/710是门禁代码回归数字，不是这20条的新准确率。历史17/20=85%、HTTP P95 10.083秒、未知用量1及费用下界保持原样。新的真实20条尚未执行，不提前填写结果。
@@ -22,7 +23,7 @@ python reports/offpeak-policy-20261117/audit_evidence.py
 python reports/demo-http-20-20261117/audit_protocol.py
 $demoCp = 'target/test-classes;target/classes;' + (Get-Content target/demo-http-classpath.txt -Raw).Trim()
 # 仅在空闲时段，独立终端启动：
-powershell -File scripts/start_local.ps1 -Mode demo -Port 18087 -CallLogDir reports/demo-http-20-20261117/llm-calls
+powershell -NoProfile -ExecutionPolicy Bypass -File reports/demo-http-20-20261117/start_cold_jar.ps1
 # 另开终端，以同一classpath运行一次：
 java -cp $demoCp com.text2sql.agent.acceptance.DemoHttpAcceptanceProbe run reports/demo-http-20-20261117 http://127.0.0.1:18087
 # 停止该独立应用并等日志关闭后：
@@ -30,6 +31,8 @@ java -cp $demoCp com.text2sql.agent.acceptance.DemoHttpAcceptanceProbe summarize
 ```
 
 每条调用方时间判定保存于window-checks，应用再次约束其中的生成/改写/纠错。若中途拒绝或产生未知用量，保留全部记录，禁止清空requests重新跑择优；仍以原20条分母报告未完成状态。未发送的高峰起跑预检未创建requests，可在18:00以同一冻结协议进行首次真实运行。
+
+启动器在创建应用进程前核对JAR/自身/协议/个人配置SHA和保护源码身份，缺失或不符即停止，不自行换包或重建替代；API Key只通过子进程环境继承。预览命令加-Preview，不读取Key、不启动应用。首轮预览发现PowerShell5.1默认ANSI读取UTF-8中文协议失败，已改为明确-Encoding UTF8，旧启动器/计划与原因保留于initial-*和launcher-preview-adjustment.json；不属于模型失败或付费重跑。之后预览通过，后续实际demo健康检查仍由20条工具起跑门禁核对。
 
 只在本机demo入口做此轮功能复验；不能宣称protected完整20条验收。认证、费用配额组合证据另见既有报告。本轮新增时间门禁不更改原结果规范化或业务SQL判断，影响范围是付费调用的准入及本轮时间证据。
 
