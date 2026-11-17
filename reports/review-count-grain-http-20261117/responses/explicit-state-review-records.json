@@ -1,0 +1,67 @@
+{
+  "body" : {
+    "status" : "SUCCESS",
+    "sql" : "SELECT c.customer_state AS state, COUNT(*) AS review_count\nFROM order_reviews r\nJOIN orders o ON o.order_id = r.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nWHERE r.review_score IN (1, 2)\nGROUP BY c.customer_state\nORDER BY review_count DESC\nLIMIT 100;",
+    "message" : null,
+    "violations" : [ ],
+    "columns" : [ "state", "review_count" ],
+    "rows" : [ [ "SP", "5265" ], [ "RJ", "2647" ], [ "MG", "1546" ], [ "RS", "732" ], [ "BA", "634" ], [ "PR", "629" ], [ "SC", "532" ], [ "DF", "323" ], [ "ES", "300" ], [ "GO", "300" ], [ "PE", "274" ], [ "CE", "264" ], [ "PA", "190" ], [ "MA", "162" ], [ "MT", "124" ], [ "MS", "104" ], [ "AL", "99" ], [ "PI", "90" ], [ "PB", "88" ], [ "SE", "76" ], [ "RN", "68" ], [ "RO", "39" ], [ "TO", "38" ], [ "AM", "22" ], [ "AC", "13" ], [ "RR", "11" ], [ "AP", "5" ] ],
+    "truncated" : false,
+    "rewritten" : false,
+    "rowCount" : 27,
+    "schemaTableCount" : 8,
+    "retrievedTables" : [ "order_reviews", "customers", "orders", "geolocation", "shipping_addresses", "support_tickets", "order_items", "order_payments" ],
+    "schemaDdlChars" : 1560,
+    "llm" : {
+      "model" : "deepseek-flash",
+      "promptTokens" : 3629,
+      "completionTokens" : 385,
+      "totalTokens" : 4014,
+      "latencyMs" : 2342,
+      "costYuan" : 0.0034128400000000003
+    },
+    "timings" : {
+      "retrievalMs" : 16,
+      "generationMs" : 2344,
+      "validationMs" : 5,
+      "executionMs" : 56,
+      "totalMs" : 2425
+    },
+    "sessionId" : "identity-explicit-state-review-records",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "e83cbe0e-8e9c-4d89-8ba1-21f2c99fdbef",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 1,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 2425,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "CACHE" : 0,
+        "CONVERSATION" : 0,
+        "RETRIEVAL" : 16,
+        "RESULT_CHECK" : 0,
+        "CACHE_WRITE" : 0,
+        "CLARIFICATION" : 0,
+        "EXPLAIN" : 6,
+        "VALIDATION" : 5,
+        "ADMISSION" : 0,
+        "SESSION" : 0,
+        "EXECUTION" : 50,
+        "MODEL" : 2334,
+        "GENERATION" : 10
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 4,
+      "currentStageMs" : 0
+    }
+  },
+  "id" : "explicit-state-review-records",
+  "httpStatus" : 200,
+  "wallMs" : 2431
+}

@@ -1,0 +1,67 @@
+{
+  "body" : {
+    "status" : "SUCCESS",
+    "sql" : "-- 每条订单只计一次：按订单去重统计存在1-2分评价的订单，按客户州分组\nSELECT c.customer_state,\n       COUNT(DISTINCT o.order_id) AS order_cnt\nFROM orders o\nJOIN order_reviews r ON r.order_id = o.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nWHERE r.review_score IN (1, 2)\nGROUP BY c.customer_state\nORDER BY order_cnt DESC\nLIMIT 100;",
+    "message" : null,
+    "violations" : [ ],
+    "columns" : [ "customer_state", "order_cnt" ],
+    "rows" : [ [ "SP", "5251" ], [ "RJ", "2634" ], [ "MG", "1542" ], [ "RS", "730" ], [ "BA", "633" ], [ "PR", "627" ], [ "SC", "529" ], [ "DF", "323" ], [ "ES", "300" ], [ "GO", "300" ], [ "PE", "274" ], [ "CE", "263" ], [ "PA", "190" ], [ "MA", "162" ], [ "MT", "124" ], [ "MS", "104" ], [ "AL", "98" ], [ "PI", "90" ], [ "PB", "88" ], [ "SE", "76" ], [ "RN", "68" ], [ "RO", "39" ], [ "TO", "38" ], [ "AM", "21" ], [ "AC", "13" ], [ "RR", "11" ], [ "AP", "5" ] ],
+    "truncated" : false,
+    "rewritten" : false,
+    "rowCount" : 27,
+    "schemaTableCount" : 8,
+    "retrievedTables" : [ "orders", "order_items", "order_payments", "customers", "order_reviews", "coupon_usages", "refund_items", "refunds" ],
+    "schemaDdlChars" : 1461,
+    "llm" : {
+      "model" : "deepseek-flash",
+      "promptTokens" : 3287,
+      "completionTokens" : 174,
+      "totalTokens" : 3461,
+      "latencyMs" : 1733,
+      "costYuan" : 0.0022268400000000003
+    },
+    "timings" : {
+      "retrievalMs" : 6,
+      "generationMs" : 1735,
+      "validationMs" : 2,
+      "executionMs" : 81,
+      "totalMs" : 1825
+    },
+    "sessionId" : "identity-explicit-state-distinct-orders",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "3fbdedea-5ba5-4840-aad1-068816895a76",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 1,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 1825,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "CACHE" : 0,
+        "CONVERSATION" : 0,
+        "RETRIEVAL" : 6,
+        "RESULT_CHECK" : 0,
+        "CACHE_WRITE" : 0,
+        "CLARIFICATION" : 0,
+        "EXPLAIN" : 4,
+        "VALIDATION" : 2,
+        "ADMISSION" : 0,
+        "SESSION" : 0,
+        "EXECUTION" : 77,
+        "MODEL" : 1713,
+        "GENERATION" : 22
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 1,
+      "currentStageMs" : 0
+    }
+  },
+  "id" : "explicit-state-distinct-orders",
+  "httpStatus" : 200,
+  "wallMs" : 1831
+}

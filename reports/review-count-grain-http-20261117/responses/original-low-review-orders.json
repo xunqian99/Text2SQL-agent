@@ -1,0 +1,67 @@
+{
+  "body" : {
+    "status" : "SUCCESS",
+    "sql" : "SELECT c.customer_state, COUNT(DISTINCT o.order_id) AS order_count\nFROM order_reviews r\nJOIN orders o ON o.order_id = r.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nWHERE r.review_score IN (1, 2)\nGROUP BY c.customer_state\nORDER BY order_count DESC\nLIMIT 100;",
+    "message" : null,
+    "violations" : [ ],
+    "columns" : [ "customer_state", "order_count" ],
+    "rows" : [ [ "SP", "5251" ], [ "RJ", "2634" ], [ "MG", "1542" ], [ "RS", "730" ], [ "BA", "633" ], [ "PR", "627" ], [ "SC", "529" ], [ "DF", "323" ], [ "ES", "300" ], [ "GO", "300" ], [ "PE", "274" ], [ "CE", "263" ], [ "PA", "190" ], [ "MA", "162" ], [ "MT", "124" ], [ "MS", "104" ], [ "AL", "98" ], [ "PI", "90" ], [ "PB", "88" ], [ "SE", "76" ], [ "RN", "68" ], [ "RO", "39" ], [ "TO", "38" ], [ "AM", "21" ], [ "AC", "13" ], [ "RR", "11" ], [ "AP", "5" ] ],
+    "truncated" : false,
+    "rewritten" : false,
+    "rowCount" : 27,
+    "schemaTableCount" : 8,
+    "retrievedTables" : [ "orders", "customers", "geolocation", "shipping_addresses", "order_items", "order_payments", "order_reviews", "coupon_usages" ],
+    "schemaDdlChars" : 1362,
+    "llm" : {
+      "model" : "deepseek-flash",
+      "promptTokens" : 2620,
+      "completionTokens" : 841,
+      "totalTokens" : 3461,
+      "latencyMs" : 5422,
+      "costYuan" : 0.005482239999999999
+    },
+    "timings" : {
+      "retrievalMs" : 95,
+      "generationMs" : 5432,
+      "validationMs" : 6,
+      "executionMs" : 79,
+      "totalMs" : 5623
+    },
+    "sessionId" : "identity-original-low-review-orders",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "d6b1c1ee-afc1-4e10-a9c9-098226ddf393",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 1,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 5623,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "CACHE" : 0,
+        "CONVERSATION" : 1,
+        "RETRIEVAL" : 95,
+        "RESULT_CHECK" : 1,
+        "CACHE_WRITE" : 0,
+        "CLARIFICATION" : 1,
+        "EXPLAIN" : 25,
+        "VALIDATION" : 5,
+        "ADMISSION" : 3,
+        "SESSION" : 0,
+        "EXECUTION" : 54,
+        "MODEL" : 5412,
+        "GENERATION" : 20
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 11,
+      "currentStageMs" : 1
+    }
+  },
+  "id" : "original-low-review-orders",
+  "httpStatus" : 200,
+  "wallMs" : 5840
+}

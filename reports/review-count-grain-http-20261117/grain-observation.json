@@ -1,0 +1,10 @@
+{
+  "scope": "Preregistered diagnostic; original strict score unchanged",
+  "originalMatchesOriginalGold": false,
+  "originalMatchesOrderDiagnostic": true,
+  "explicitAndControlMatches": 7,
+  "explicitAndControlCases": 7,
+  "originalSql": "SELECT c.customer_state, COUNT(DISTINCT o.order_id) AS order_count\nFROM order_reviews r\nJOIN orders o ON o.order_id = r.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nWHERE r.review_score IN (1, 2)\nGROUP BY c.customer_state\nORDER BY order_count DESC\nLIMIT 100;",
+  "stateRecordsTotal": 14575,
+  "stateOrdersTotal": 14533
+}
