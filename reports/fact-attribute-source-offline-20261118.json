@@ -1,0 +1,123 @@
+{
+  "format": "fact-attribute-source-offline-v1",
+  "baselineCodeCommit": "3079ab8",
+  "candidateDescription": "Customer entity policy resource distinguishes fact-linked attribute records from natural-person identity. Advisory only; no SQL rewrite.",
+  "javaTests": 991,
+  "failures": 0,
+  "errors": 0,
+  "skips": 0,
+  "newDatabaseCounterexamples": 8,
+  "originalQuestionBankSize": 200,
+  "changedMetricMessages": {
+    "dev": [
+      "T1-004",
+      "T1-008",
+      "T1-019",
+      "T4-001",
+      "T4-018",
+      "T4-036",
+      "T4-038",
+      "T5-006",
+      "T5-015",
+      "T6-003",
+      "T6-005",
+      "T6-009",
+      "T6-012",
+      "T6-014",
+      "T6-021"
+    ],
+    "eval": [
+      "T1-009",
+      "T2-008",
+      "T4-019",
+      "T4-020",
+      "T4-035",
+      "T4-044",
+      "T5-012",
+      "T5-018",
+      "T6-004",
+      "T6-024"
+    ]
+  },
+  "unchangedFullMessages": 175,
+  "allOtherContextComponentsUnchanged": true,
+  "beforePromptChars": 1321922,
+  "afterPromptChars": 1327572,
+  "promptCharDelta": 5650,
+  "captures": {
+    "dev": {
+      "mismatches": 0,
+      "comparisons": 300,
+      "captureSha256": "2c089342e88a4549d0facac788228f63067a9cdbdb717bb1e46a3f071067d4f7"
+    },
+    "eval": {
+      "mismatches": 0,
+      "comparisons": 300,
+      "captureSha256": "c0342f5d1c4ba99989faef4e19dfa64fadde2514e96d38376d14e05232afe558"
+    }
+  },
+  "originalEvalHoldoutBytesUnchanged": true,
+  "productionReadonlyEvidence": {
+    "customerFactPaths": {
+      "ticketCount": 803,
+      "personJoinRows": 858,
+      "ticketsWithMultipleCustomerRecords": 47,
+      "ticketsAssignedAdditionalStates": 0,
+      "trackingGroups": 81,
+      "trackingGroupCountDifferencesWithItems": 3,
+      "trackingRowsMissingItems": 3,
+      "tracking20thCount": 3324,
+      "trackingGroupsAt20thCount": 3
+    },
+    "trackingReferenceCoverage": {
+      "groupDifferences": [
+        {
+          "event_code": "ARRIVED",
+          "customer_state": "RS",
+          "no_items_count": 5381,
+          "with_items_count": 5380
+        },
+        {
+          "event_code": "IN_TRANSIT",
+          "customer_state": "RS",
+          "no_items_count": 5381,
+          "with_items_count": 5380
+        },
+        {
+          "event_code": "OUT_FOR_DELIVERY",
+          "customer_state": "RS",
+          "no_items_count": 5381,
+          "with_items_count": 5380
+        }
+      ],
+      "top20SetDifferences": 6
+    },
+    "ticketSourceCoverage": {
+      "memberLinkedTickets": 803,
+      "ticketsWithoutOrder": 0,
+      "groupsWithDifferentCounts": 0
+    }
+  },
+  "modelCalls": 0,
+  "modelCostYuan": 0,
+  "newModelAccuracyMeasured": false,
+  "latestFormalAccuracyPercent": 85.33333333333333,
+  "formalMinimumPercent": 89,
+  "stageAccepted": false,
+  "stage3Deferred": true,
+  "metricResourceSha256": "3fb89a07f2892c084fa3eae9ea6b3ed9f140deeda1b23cb8f247e36b2c4d0947",
+  "priorMetricResourceSha256": "a8ea4ed731751ec82cebdb07a605c08fcf8c2813bd1353dbb772da33733fe434",
+  "cacheInvalidation": "Existing cacheSignature includes exact startup metric resource SHA; the new policy resource cannot reuse the prior definition signature.",
+  "engineeringVerification": {
+    "firstRenderCandidateFullTests": 991,
+    "finalResourceCandidateFullTests": 991,
+    "repeatReason": "The render-only placement left the persistent SQL cache signature unchanged; move policy to the existing resource and verify final shared configuration.",
+    "finalLogSha256": "ae95fb2be257f8874e1b3d1c33289757bf7af9cd2d73c6c4d1b6445a39b34f6e"
+  },
+  "limits": [
+    "Model compliance not measured; deterministic SQL examples do not enforce generated SQL.",
+    "In current production data, member-to-person shortcut changes row counts but not deduplicated state/level group counts; original T5-006 also differs in ID/name projection.",
+    "Tracking reference has hidden item-existence filtering and a tie boundary; original input/Gold/scoring remain unchanged."
+  ],
+  "javaSuites": 89
+}

@@ -27,6 +27,9 @@ class EntityPolicyTest {
         assertThat(policy.populationCountUnit()).isEqualTo(EntityPolicy.PopulationCountUnit.ROW_KEY);
         assertThat(policy.render()).contains("populationCountUnit=ROW_KEY", "默认统计存储记录", "列名应体现记录单位",
                 "明确问自然人、人数", "按业务实体身份分组", "分别计算", "不覆盖已注册指标的分子分母", "不授权改变过滤或JOIN覆盖");
+        assertThat(policy.render()).contains("沿该事实的关联键定位customers.customer_id对应记录",
+                "customers.customer_unique_id用于身份去重", "COUNT(DISTINCT 事实主键)只能消除同组重复",
+                "不能修复错误属性分组或金额放大", "用户明确要求跨记录属性分布");
         var entityDefault = new EntityPolicy("other", "accounts", "row_id", "person_id",
                 EntityPolicy.PopulationCountUnit.ENTITY_IDENTITY, List.of("账户"), "sample");
         assertThat(entityDefault.render()).contains("COUNT(DISTINCT accounts.person_id)")
