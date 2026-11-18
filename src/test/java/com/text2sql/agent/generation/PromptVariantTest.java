@@ -36,7 +36,7 @@ class PromptVariantTest {
 
     @Test void archivedP14PreservesUnaffectedRulesFromP9() throws Exception {
         var template = new PromptTemplate();
-        assertThat(template.version()).isEqualTo("p15-entity-coverage-v15");
+        assertThat(template.version()).isEqualTo("p17-time-dimension-v17");
         try (var in = getClass().getResourceAsStream("/prompts/p9-system.txt")) {
             assertThat(in).isNotNull();
             String archived = new String(in.readAllBytes(), StandardCharsets.UTF_8);
@@ -91,7 +91,7 @@ class PromptVariantTest {
         assertThat(shortened).isEqualTo(full.replace(full.substring(full.indexOf("思考与推理步骤"), full.indexOf("硬性规则")), ""));
         assertThat(shortened.substring(shortened.indexOf("硬性规则")))
                 .isEqualTo(full.substring(full.indexOf("硬性规则")));
-        assertThat(candidate.version()).isEqualTo("p15-entity-coverage-v15-no-explicit-steps-v1");
+        assertThat(candidate.version()).isEqualTo("p17-time-dimension-v17-no-explicit-steps-v1");
         var schema = new SchemaContext(List.of(), List.of(), "画像", "CREATE TABLE orders(order_id text);");
         assertThat(candidate.userPrompt(schema, "订单有多少？")).isEqualTo(new PromptTemplate().userPrompt(schema, "订单有多少？"));
         assertThat(candidate.correctionPrompt(schema, "订单有多少？", "SELECT 0", "请修正"))
@@ -146,9 +146,19 @@ class PromptVariantTest {
         assertThat(after.length()).isLessThan(before.length());
     }
 
-    @Test void rejectedP16DoesNotRemainTheDefaultTemplate() throws Exception {
-        assertThat(new PromptTemplate().systemPrompt()).isEqualTo(frozenP15());
-        assertThat(new PromptTemplate().version()).isEqualTo("p15-entity-coverage-v15");
+    @Test void currentTimeCandidateKeepsP15RulesOutsideRule13AndRejectsP16EntityChanges() throws Exception {
+        String current = new PromptTemplate().systemPrompt(), before = frozenP15();
+        assertThat(withoutTimeRule(current)).isEqualTo(withoutTimeRule(before));
+        assertThat(current).contains("会员数包括无订单会员", "统计标签覆盖会员数及其商品均价时");
+        assertThat(new PromptTemplate().version()).isEqualTo("p17-time-dimension-v17");
+    }
+
+    @Test void timeDimensionDefaultsAreDistinctFromExplicitDisplayOverrides() {
+        String prompt = new PromptTemplate().systemPrompt();
+        String rule = prompt.substring(prompt.indexOf("13. 按时间"), prompt.indexOf("14. 时间窗口"));
+        assertThat(rule).contains("DATE_TRUNC('quarter', 时间列)", "不仅用季度编号合并不同年份",
+                "EXTRACT(DOW FROM 时间列)::int", "周日0、周一1至周六6",
+                "用户明确要求ISO编号", "或中文名称时按要求输出", "用户明确要求年/季度编号或标签时按要求输出");
     }
 
     private static String frozenP15() throws Exception {
@@ -173,6 +183,10 @@ class PromptVariantTest {
 
     private static String withoutEntityRule(String prompt) {
         return prompt.substring(0, prompt.indexOf("9. 聚合")) + prompt.substring(prompt.indexOf("10. 计数"));
+    }
+
+    private static String withoutTimeRule(String prompt) {
+        return prompt.substring(0, prompt.indexOf("13. 按时间")) + prompt.substring(prompt.indexOf("14. 时间窗口"));
     }
 
     private static String withoutCountRule(String prompt) {

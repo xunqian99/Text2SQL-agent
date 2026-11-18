@@ -26,7 +26,7 @@ def summarize(directory, live=False):
     require(manifest['referenceAccuracyPercent'] == 91 and manifest['minimumMeanAccuracyPercent'] == 89, 'threshold changed')
     require(manifest['distinctRealQuestions'] == 100 and manifest['plannedRealRequests'] == 300, 'denominator changed')
     expected_prompt = manifest.get('expectedPromptVersion', 'p10-result-contract-v10')
-    require(expected_prompt in ('p10-result-contract-v10', 'p15-entity-coverage-v15'), 'unregistered prompt')
+    require(expected_prompt in ('p10-result-contract-v10', 'p15-entity-coverage-v15', 'p17-time-dimension-v17'), 'unregistered prompt')
     protocol_path = manifest.get('protocolPath', 'docs/STAGE2_REGRESSION_PROTOCOL_20261117.md')
     require(protocol_path in manifest['protectedSha256'], 'protocol not frozen')
     protocol = subprocess.check_output(['git', 'show', manifest['codeCommit'] + ':' + protocol_path]).decode('utf-8')
