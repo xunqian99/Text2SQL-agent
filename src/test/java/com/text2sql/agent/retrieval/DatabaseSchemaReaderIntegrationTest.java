@@ -8,6 +8,7 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 import java.sql.DriverManager;
 import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -48,6 +49,45 @@ class DatabaseSchemaReaderIntegrationTest {
 
     private static DatabaseSchemaReader reader() {
         return new DatabaseSchemaReader(new JdbcTemplate(new DriverManagerDataSource(URL, USER, PASSWORD)));
+    }
+
+    @Test
+    @EnabledIf("databaseAvailable")
+    void compositeKeysReachBothProvidersAndFinalModelInput() {
+        var props = new com.text2sql.agent.config.AgentProperties();
+        props.getSemantic().setEnabled(false);
+        props.getFewshot().setEnabled(false);
+        props.getRetrieval().setColumnPruningEnabled(true);
+        props.getRetrieval().setColumnPruningMinColumns(1);
+        var catalog = new SchemaCatalog(reader(), props);
+        var full = catalog.full();
+        var reviews = full.tables().stream().filter(t -> t.name().equals("order_reviews")).findFirst().orElseThrow();
+        assertThat(reviews.columns()).filteredOn(SchemaContext.Column::primaryKey)
+                .extracting(SchemaContext.Column::name).containsExactly("review_id", "order_id");
+        var glossary = new com.text2sql.agent.retrieval.glossary.GlossaryLoader(catalog);
+        var pruner = new ColumnPruner(glossary);
+        var retained = pruner.prune(List.of(reviews), "平均评分", Set.of("order_reviews"),
+                List.of(), List.of(), List.of(), 1);
+        assertThat(retained.getFirst().columns()).filteredOn(SchemaContext.Column::primaryKey)
+                .extracting(SchemaContext.Column::name).containsExactly("review_id", "order_id");
+        var fullProvider = new FullSchemaProvider(catalog, null, props);
+        var hybridProvider = new HybridSchemaProvider(catalog, new LexicalSchemaRetriever(glossary, catalog, props),
+                glossary, props, null, null, new ValueRetriever(glossary), pruner);
+        for (SchemaProvider provider : List.of(fullProvider, hybridProvider)) {
+            var context = provider.provide("各退款原因对应的平均评分是多少？");
+            assertThat(new com.text2sql.agent.generation.PromptTemplate(props).userPrompt(context, "平均评分"))
+                    .contains("PRIMARY KEY (review_id, order_id)  -- 组合唯一，单列不保证唯一");
+        }
+    }
+
+    @Test
+    @EnabledIf("databaseAvailable")
+    void aReviewIdAloneReallyLosesDistinctOrderReviews() {
+        var jdbc = new JdbcTemplate(new DriverManagerDataSource(URL, USER, PASSWORD));
+        var counts = jdbc.queryForMap("SELECT COUNT(*) AS records, COUNT(DISTINCT review_id) AS ids, "
+                + "COUNT(DISTINCT (review_id, order_id)) AS tuples FROM order_reviews");
+        assertThat(((Number) counts.get("tuples")).longValue()).isEqualTo(((Number) counts.get("records")).longValue());
+        assertThat(((Number) counts.get("ids")).longValue()).isLessThan(((Number) counts.get("tuples")).longValue());
     }
 
     @Test

@@ -467,7 +467,7 @@ public class Text2SqlOrchestrator {
         var toolUse = properties.getToolUse();
         var guard = properties.getGuard();
         var routing = properties.getRouting();
-        return "%s|%s|r=%b:%d:%b:%b:%b:%b|prune=%b|s=%b|metrics=%s|fs=%b:%d:%s|dp=%b|fk=%b|tu=%b|limit=%s:%d|esc=%s|values=%s"
+        return "%s|%s|r=%b:%d:%b:%b:%b:%b|prune=%b|s=%b|metrics=%s|fs=%b:%d:%s|dp=%b|fk=%b|tu=%b|limit=%s:%d|esc=%s|values=%s|schema=%s"
                 .formatted(
                         properties.getLlm().getModel(),
                         com.text2sql.agent.generation.PromptTemplate.versionFor(properties),
@@ -494,7 +494,8 @@ public class Text2SqlOrchestrator {
                         // 改了它缓存里的旧 SQL 仍然带着旧上限。
                         properties.getDb().getMaxRows(),
                         routing.isEnabled() ? routing.getEscalationModel() : "-",
-                        com.text2sql.agent.retrieval.ValueRetriever.MATCH_POLICY_VERSION);
+                        com.text2sql.agent.retrieval.ValueRetriever.MATCH_POLICY_VERSION,
+                        com.text2sql.agent.retrieval.SchemaDdlRenderer.FORMAT_VERSION);
     }
 
     /**

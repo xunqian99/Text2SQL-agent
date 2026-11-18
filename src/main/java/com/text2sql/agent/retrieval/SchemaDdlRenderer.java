@@ -6,7 +6,7 @@ import java.util.List;
  * 把结构化 schema 渲染成给模型看的文本。
  *
  * <p>格式选择：用「表名 / 列清单」的紧凑写法，而不是原样贴 CREATE TABLE。
- * 原因有两个：一是 CREATE TABLE 里的类型细节、约束名对生成 SQL 没用，
+ * 原因有两个：一是 CREATE TABLE 里的冗长类型细节、约束名对生成 SQL 没用，
  * 白占 token；二是列注释（藏着枚举值口径）在 CREATE TABLE 里不显眼，
  * 单独提出来才容易被模型利用。
  *
@@ -21,15 +21,16 @@ import java.util.List;
  * <p><b>阶段 3 为什么保留两个 render 方法</b>
  *
      * <p>检索路径升级成「列级 join 关系图」（{@link #renderWithJoins}），
-     * 而 baseline 路径**刻意不动**：47% 那个数字是在「只有外键、
- * 表头叫 FOREIGN KEYS」的 prompt 下测出来的。如果连 baseline 一起改，
- * 历史数字作废、阶段 2 与阶段 3 的对照也要全部重跑——而 baseline
- * 本来就不该被优化影响。
+     * 而全量路径继续使用 FOREIGN KEYS 标题。两条路径共享表元数据渲染；
+ * 本次主键元数据补全会同时改变它们的输入，历史数字只属于历史版本，
+ * 不能将旧 baseline 分数当作新渲染格式的实测结果。
  *
  * <p>两个方法共用 {@link #renderTables}，差异只在边那一段，所以
  * 「渲染逻辑只有一份」这条原则没有被破坏：表格部分的格式不可能分叉。
  */
 public final class SchemaDdlRenderer {
+
+    public static final String FORMAT_VERSION = "primary-key-tuple-v1";
 
     private SchemaDdlRenderer() {
     }
@@ -106,15 +107,8 @@ public final class SchemaDdlRenderer {
     /**
      * 阶段 1 形态的渲染：边只有数据库外键，表头是 {@code FOREIGN KEYS}。
      *
-     * <p><b>保留它就是为了让 baseline 保持可复现。</b>baseline 的职责是
-     * 「不做任何优化时能拿到多少」，所以它不该跟着阶段 3 一起变。
-     * 阶段 3 的改进只作用在检索路径上，对照关系因此是干净的：
-     *
-     * <pre>
-     *   baseline(47%)    ── 不变
-     *   阶段2 检索(52%)   ── 只加表选择
-     *   阶段3 检索(待测)   ── 表选择 + 列级 join 关系图
-     * </pre>
+     * <p>两条路径使用相同的真实主键元数据，差异仅在关系提示形式。
+     * 旧基线仍由历史提交复现，不把旧分数归给本格式。
      */
     public static String render(List<SchemaContext.Table> tables, List<SchemaContext.ForeignKey> fks) {
         StringBuilder sb = new StringBuilder();
@@ -143,6 +137,15 @@ public final class SchemaDdlRenderer {
                 if (col.comment() != null && !col.comment().isBlank()) {
                     sb.append("  -- ").append(col.comment().strip());
                 }
+                sb.append('\n');
+            }
+            // The tuple is unique; its individual components need not be.
+            // Do not promote guessed *_id columns or relation edges into database constraints.
+            var keyColumns = table.columns().stream().filter(SchemaContext.Column::primaryKey)
+                    .map(SchemaContext.Column::name).toList();
+            if (!keyColumns.isEmpty()) {
+                sb.append("  PRIMARY KEY (").append(String.join(", ", keyColumns)).append(')');
+                if (keyColumns.size() > 1) sb.append("  -- 组合唯一，单列不保证唯一");
                 sb.append('\n');
             }
             sb.append('\n');

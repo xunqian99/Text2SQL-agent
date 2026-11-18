@@ -16,6 +16,28 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class SchemaDdlRendererTest {
 
+    @Test
+    void rendersCompositeIdentityAsOneTupleInBothPaths() {
+        var reviews = new SchemaContext.Table("reviews", null, List.of(
+                new SchemaContext.Column("review_id", "text", false, null, true),
+                new SchemaContext.Column("order_id", "text", false, null, true),
+                new SchemaContext.Column("score", "integer", false, null, false)));
+        String full = SchemaDdlRenderer.render(List.of(reviews), List.of());
+        String hybrid = SchemaDdlRenderer.renderWithJoins(List.of(reviews), List.of());
+        assertThat(full).isEqualTo(hybrid).contains("PRIMARY KEY (review_id, order_id)", "组合唯一，单列不保证唯一")
+                .doesNotContain("PRIMARY KEY (review_id)", "PRIMARY KEY (order_id)");
+    }
+
+    @Test
+    void rendersRealSingleKeysButNeverGuessesFromAnIdName() {
+        var real = new SchemaContext.Table("real", null, List.of(
+                new SchemaContext.Column("token", "text", false, null, true),
+                new SchemaContext.Column("customer_id", "text", false, null, false)));
+        assertThat(SchemaDdlRenderer.render(List.of(real), List.of()))
+                .contains("PRIMARY KEY (token)").doesNotContain("PRIMARY KEY (customer_id)", "组合唯一");
+        assertThat(SchemaDdlRenderer.render(List.of(orders()), List.of())).doesNotContain("PRIMARY KEY");
+    }
+
     private static SchemaContext.Table orders() {
         return new SchemaContext.Table("orders", null, List.of(
                 new SchemaContext.Column("order_id", "varchar", false, null),
