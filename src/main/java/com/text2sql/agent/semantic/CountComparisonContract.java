@@ -21,6 +21,12 @@ public record CountComparisonContract(Decision decision, List<Binding> bindings)
     public CountComparisonContract { bindings = List.copyOf(bindings); }
 
     public static CountComparisonContract resolve(String question, List<ValueEntry> entries, List<SchemaContext.Table> tables) {
+        return resolve(question, entries, tables, binding -> true);
+    }
+
+    /** Production label bindings must retain accepted occurrence evidence; explicit physical codes stay explicit. */
+    public static CountComparisonContract resolve(String question, List<ValueEntry> entries, List<SchemaContext.Table> tables,
+            java.util.function.Predicate<Binding> acceptedLabel) {
         if (question == null || !COUNT.matcher(question).find() || !ENUMERATION.matcher(question).find())
             return new CountComparisonContract(Decision.NO_COUNT_INTENT, List.of());
         if (EXPLICIT_OR_GROUP.matcher(question).find())
@@ -43,11 +49,13 @@ public record CountComparisonContract(Decision decision, List<Binding> bindings)
                 String pattern = Pattern.quote(term);
                 if (source == Source.PHYSICAL_VALUE) pattern = "(?<![A-Za-z0-9_])" + pattern + "(?![A-Za-z0-9_])";
                 var matcher = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE).matcher(question);
-                if (!matcher.find()) continue;
-                var binding = new Binding(question.substring(matcher.start(), matcher.end()), entry.table(), entry.column(),
-                        entry.physicalValue(), source, matcher.start(), matcher.end());
-                groups.computeIfAbsent(field, ignored -> new TreeMap<>()).merge(entry.physicalValue(), binding,
-                        (a,b) -> order.compare(a,b) <= 0 ? a : b);
+                while (matcher.find()) {
+                    var binding = new Binding(question.substring(matcher.start(), matcher.end()), entry.table(), entry.column(),
+                            entry.physicalValue(), source, matcher.start(), matcher.end());
+                    if (source == Source.GLOSSARY_LABEL && !acceptedLabel.test(binding)) continue;
+                    groups.computeIfAbsent(field, ignored -> new TreeMap<>()).merge(entry.physicalValue(), binding,
+                            (a,b) -> order.compare(a,b) <= 0 ? a : b);
+                }
             }
         }
         var candidates = groups.values().stream().filter(g -> g.size() >= 2).toList();

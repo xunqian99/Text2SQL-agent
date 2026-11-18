@@ -30,6 +30,8 @@ import java.util.*;
 @Component
 public class ValueRetriever {
 
+    public static final String MATCH_POLICY_VERSION = "scoped-enum-v2";
+
     private static final Logger log = LoggerFactory.getLogger(ValueRetriever.class);
 
     private final GlossaryLoader glossaryLoader;
@@ -57,6 +59,13 @@ public class ValueRetriever {
     public record ValueEntry(String alias, String table, String column, String physicalValue) {
     }
 
+    public enum Decision { ACCEPTED, OUTSIDE_TARGET_TABLE, REQUIRED_CONTEXT_MISSING,
+        SHORT_VALUE_CONTEXT_MISSING, INSIDE_LONGER_VALUE }
+
+    /** Rejected candidates remain inspectable; only ACCEPTED evidence reaches hints/pruning/Join targets. */
+    public record ValueEvidence(ValueEntry entry, int start, int end,
+            com.text2sql.agent.semantic.AdjacentContext.Evidence context, Decision decision) { }
+
     /**
      * 在用户问题中扫描实体取值，且仅保留属于本次目标表集合的条目。
      *
@@ -65,36 +74,73 @@ public class ValueRetriever {
      * @return 命中的实体取值列表（按命中词去重）
      */
     public List<ValueMatch> findMatches(String question, Set<String> targetTables) {
+        List<ValueMatch> matches = new ArrayList<>();
+        Set<String> matchedKeys = new HashSet<>();
+        for (ValueEvidence evidence : matchEvidence(question, targetTables)) {
+            if (evidence.decision() != Decision.ACCEPTED) continue;
+            ValueEntry entry = evidence.entry();
+            // Deduplicate aliases of the same physical mapping, not different values of one column.
+            String key = entry.table() + "." + entry.column() + "=" + entry.physicalValue();
+            if (matchedKeys.add(key)) {
+                String cond = String.format("%s = '%s'", entry.column(), entry.physicalValue().replace("'", "''"));
+                matches.add(new ValueMatch(entry.alias(), entry.table(), entry.column(), entry.physicalValue(), cond));
+            }
+        }
+        return List.copyOf(matches);
+    }
+
+    public List<ValueEvidence> matchEvidence(String question, Set<String> targetTables) {
         if (question == null || question.isBlank() || targetTables == null || targetTables.isEmpty()) {
             return List.of();
         }
 
-        String text = question.toLowerCase(Locale.ROOT);
         List<ValueEntry> allEntries = entries();
         Set<String> lowerTargetTables = new HashSet<>();
         for (String t : targetTables) {
             if (t != null) lowerTargetTables.add(t.toLowerCase(Locale.ROOT));
         }
 
-        List<ValueMatch> matches = new ArrayList<>();
-        Set<String> matchedKeys = new HashSet<>();
-
-        // 按词长降序遍历，执行包含检查
+        List<ValueEvidence> evidence = new ArrayList<>();
+        Glossary glossary = glossaryLoader.get();
+        if (glossary == null) glossary = Glossary.empty();
         for (ValueEntry entry : allEntries) {
-            if (!lowerTargetTables.contains(entry.table().toLowerCase(Locale.ROOT))) {
-                continue;
-            }
-            if (text.contains(entry.alias().toLowerCase(Locale.ROOT))) {
-                // 唯一键约束：同一表同一列只取一个最贴切的值匹配
-                String dedupeKey = entry.table() + "." + entry.column() + "=" + entry.physicalValue();
-                if (matchedKeys.add(dedupeKey)) {
-                    String cond = String.format("%s = '%s'", entry.column(), entry.physicalValue());
-                    matches.add(new ValueMatch(entry.alias(), entry.table(), entry.column(), entry.physicalValue(), cond));
+            String alias = entry.alias().toLowerCase(Locale.ROOT);
+            var table = glossary.tables().get(entry.table());
+            var column = table == null ? null : table.columns().get(entry.column());
+            var definition = column == null ? null : column.enumValues().stream()
+                    .filter(v -> entry.alias().equals(v.label()) && entry.physicalValue().equals(v.value()))
+                    .findFirst().orElse(null);
+            var matcher = java.util.regex.Pattern.compile(java.util.regex.Pattern.quote(entry.alias()),
+                    java.util.regex.Pattern.CASE_INSENSITIVE | java.util.regex.Pattern.UNICODE_CASE).matcher(question);
+            while (matcher.find()) {
+                int start = matcher.start(), end = matcher.end();
+                Decision decision = Decision.ACCEPTED;
+                com.text2sql.agent.semantic.AdjacentContext.Evidence context = null;
+                if (!lowerTargetTables.contains(entry.table().toLowerCase(Locale.ROOT))) {
+                    decision = Decision.OUTSIDE_TARGET_TABLE;
+                } else if (definition != null && !definition.requiredAdjacentContextAny().isEmpty()) {
+                    context = com.text2sql.agent.semantic.AdjacentContext.find(question, start, end,
+                            definition.requiredAdjacentContextAny(), List.of());
+                    if (context == null) decision = Decision.REQUIRED_CONTEXT_MISSING;
                 }
+                if (decision == Decision.ACCEPTED && alias.codePointCount(0, alias.length()) == 1) {
+                    int from = start;
+                    if (evidence.stream().anyMatch(e -> e.decision() == Decision.ACCEPTED
+                            && e.start() <= from && e.end() >= end && e.end() - e.start() > end - from)) {
+                        decision = Decision.INSIDE_LONGER_VALUE;
+                    } else {
+                        List<String> cues = new ArrayList<>();
+                        cues.add(entry.column());
+                        if (column != null) cues.addAll(column.aliases());
+                        context = com.text2sql.agent.semantic.AdjacentContext.find(question, start, end, cues,
+                                column == null ? List.of() : column.enumValues().stream().map(Glossary.EnumValue::label).toList());
+                        if (context == null) decision = Decision.SHORT_VALUE_CONTEXT_MISSING;
+                    }
+                }
+                evidence.add(new ValueEvidence(entry, start, end, context, decision));
             }
         }
-
-        return matches;
+        return List.copyOf(evidence);
     }
 
     /**
@@ -121,7 +167,13 @@ public class ValueRetriever {
     }
 
     public com.text2sql.agent.semantic.CountComparisonContract countComparisonContract(String question, List<SchemaContext.Table> tables) {
-        return com.text2sql.agent.semantic.CountComparisonContract.resolve(question, entries(), tables);
+        var accepted = matchEvidence(question, tables.stream().map(SchemaContext.Table::name)
+                .collect(java.util.stream.Collectors.toSet())).stream()
+                .filter(e -> e.decision() == Decision.ACCEPTED).toList();
+        return com.text2sql.agent.semantic.CountComparisonContract.resolve(question, entries(), tables,
+                binding -> accepted.stream().anyMatch(e -> e.start() == binding.start() && e.end() == binding.end()
+                        && e.entry().table().equals(binding.table()) && e.entry().column().equals(binding.column())
+                        && e.entry().physicalValue().equals(binding.value())));
     }
 
     /**

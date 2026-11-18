@@ -204,20 +204,44 @@ public class MetricRegistry {
         String text = normalizeForMatch(question);
         List<MetricMatch> hits = new ArrayList<>();
         for (Metric metric : metrics) {
-            String alias = firstHit(metric.aliases(), text);
-            if (alias != null) {
+            AliasHit aliasHit = aliasHit(metric, text);
+            if (aliasHit != null) {
+                String alias = aliasHit.alias();
                 String required = firstHit(metric.requiredContextAny(), text);
                 String excluded = firstHit(metric.excludedContextAny(), text);
                 String preferred = firstHit(metric.preferredContextAny(), text);
                 // Explicit interval overrides only a default exclusion, never the required context.
                 // Retain both pieces of evidence instead of erasing the excluded dimension term.
-                MatchDecision decision = excluded != null && preferred == null ? MatchDecision.EXCLUDED_CONTEXT
+                if (aliasHit.excludedContext() != null) excluded = aliasHit.excludedContext().term();
+                MatchDecision decision = aliasHit.excludedContext() != null || excluded != null && preferred == null
+                        ? MatchDecision.EXCLUDED_CONTEXT
                         : !metric.requiredContextAny().isEmpty() && required == null
                         ? MatchDecision.REQUIRED_CONTEXT_MISSING : MatchDecision.MATCHED;
                 hits.add(new MetricMatch(metric, alias, required, excluded, preferred, decision));
             }
         }
         return List.copyOf(hits);
+    }
+
+    private record AliasHit(String alias, AdjacentContext.Evidence excludedContext) { }
+
+    /** Evaluate every occurrence: an explicit tag mention must not hide a separate dynamic cohort request. */
+    private static AliasHit aliasHit(Metric metric, String text) {
+        if (metric.excludedAliasContextAny().isEmpty()) {
+            String alias = firstHit(metric.aliases(), text);
+            return alias == null ? null : new AliasHit(alias, null);
+        }
+        AliasHit rejected = null;
+        for (String alias : metric.aliases()) {
+            String term = normalizeForMatch(alias);
+            for (int at = text.indexOf(term); at >= 0; at = text.indexOf(term, at + 1)) {
+                var context = AdjacentContext.find(text, at, at + term.length(),
+                        metric.excludedAliasContextAny(), List.of());
+                if (context == null) return new AliasHit(alias, null);
+                if (rejected == null) rejected = new AliasHit(alias, context);
+            }
+        }
+        return rejected;
     }
 
     private static String firstHit(List<String> terms, String text) {

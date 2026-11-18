@@ -72,7 +72,16 @@ public record Glossary(List<Relation> relations, Map<String, TableEntry> tables)
      * @param label 中文含义，如「待发货」
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record EnumValue(String value, String label) {
+    public record EnumValue(String value, String label, List<String> requiredAdjacentContextAny) {
+        public EnumValue(String value, String label) { this(value, label, List.of()); }
+
+        public EnumValue {
+            requiredAdjacentContextAny = requiredAdjacentContextAny == null
+                    ? List.of() : List.copyOf(requiredAdjacentContextAny);
+            if (requiredAdjacentContextAny.stream().anyMatch(c -> c == null || c.isBlank())) {
+                throw new IllegalArgumentException("Enum context cues must not be blank");
+            }
+        }
     }
 
     /**

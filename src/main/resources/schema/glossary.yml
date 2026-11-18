@@ -280,7 +280,10 @@ tables:
           - { value: "HIGH_VALUE", label: "高价值用户" }
           - { value: "CHURN_RISK", label: "流失风险用户" }
           - { value: "PRICE_SENSITIVE", label: "价格敏感用户" }
-          - { value: "NEW_USER", label: "新客" }
+          # 动态“新客”不等于静态标签；只有附近明确指定标签/编码时才给出该取值映射。
+          - value: "NEW_USER"
+            label: "新客"
+            requiredAdjacentContextAny: [标签, 用户标签, 人群标签, 标签编码, 标签名称, 标记, tag_code, tag_name]
           - { value: "REPEAT_BUYER", label: "复购用户" }
           - { value: "REVIEW_ACTIVE", label: "活跃评价用户" }
       tag_name:

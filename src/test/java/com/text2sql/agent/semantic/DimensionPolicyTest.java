@@ -27,7 +27,7 @@ class DimensionPolicyTest {
         String context = registry.appendDimensionPolicies(question, List.of(PRODUCTS), "existing metric");
         assertThat(context).startsWith("existing metric\n\nDIMENSION_POLICY product_category_nulls_v1");
         assertThat(context).contains("products.product_category_name IS NOT NULL", "用户明确要求", "不附加上述过滤", "不改变未按该维度分组的总数或总额");
-        assertThat(registry.all()).hasSize(26); // Includes the independently checked late-delivery metric.
+        assertThat(registry.all()).hasSize(27); // Includes the independently checked dynamic cohort definition.
     }
 
     @Test void absentTableOrPrunedColumnCannotBeReintroducedByPolicyText() {

@@ -199,10 +199,8 @@ public class ColumnPruner {
                             keepCols.add(colLower);
                             continue;
                         }
-                        if (colEntry.enumValues() != null && colEntry.enumValues().stream()
-                                .anyMatch(e -> e.label() != null && safeQuestion.contains(e.label()))) {
-                            keepCols.add(colLower);
-                        }
+                        // Enum provenance comes from accepted valueMatches in step 2.
+                        // Re-scanning raw labels here would resurrect rejected short/tag values.
                     }
                 }
             }

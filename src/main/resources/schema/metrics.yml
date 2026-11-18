@@ -67,6 +67,53 @@ metrics:
       【关键】统计「下单人数/买家数」时，必须关联 customers 表并按 c.customer_unique_id 去重，
       严禁使用 orders.customer_id（customer_id 是订单级令牌，每笔订单都不一样，去重结果等于订单数）。
 
+  - name: customer_cohort
+    aliases: [新老客, 新客, 老客]
+    excludedAliasContextAny: [标签, 用户标签, 人群标签, 标签编码, 标签名称, 标记, tag_code, tag_name]
+    description: 动态新老客按自然人首次有效下单月分类，不等同静态用户标签
+    tables: [orders, customers]
+    expression: |
+      CASE
+        WHEN c.customer_unique_id IS NULL OR o.order_purchase_timestamp IS NULL
+          OR first_orders.first_order_month IS NULL THEN NULL
+        WHEN DATE_TRUNC('month', o.order_purchase_timestamp) = first_orders.first_order_month THEN 'NEW'
+        WHEN DATE_TRUNC('month', o.order_purchase_timestamp) > first_orders.first_order_month THEN 'RETURNING'
+        ELSE NULL
+      END
+    filter: "o.order_status NOT IN ('canceled', 'unavailable')"
+    notes: |
+      自然人身份为customers.customer_unique_id，订单通过orders.customer_id连接对应客户档案。
+      先在完整历史有效订单中按自然人找最早下单月，再对报告期内订单分类；不能先截断报告期再找首单。
+      同一人首次有效下单月的全部有效订单都属于新客贡献，不是只有第一笔订单；之后月份属于老客。
+      不用user_tags.NEW_USER静态标签代替动态分类；明确要求标签时使用标签语义，不强行套首单月。
+      未知身份、缺下单时间、缺历史首单的订单无法分类，保留NULL类别，不合并为一个真实自然人，也不自动变成老客。
+      本分类不授权从总订单/总金额里删去这些事实；用户要求未知组时单独汇总，按月报告自然受明确日期范围约束。
+      订单金额、商品金额或GMV须按用户要求的事实与口径另行聚合，连接一对多明细时不得放大金额。
+      用户明确指定其他首单范围时，历史首单判定与报告期事实过滤必须同步遵守该范围。
+    queryPattern: |
+      WITH first_orders AS (
+        SELECT c.customer_unique_id,
+               DATE_TRUNC('month', MIN(o.order_purchase_timestamp)) AS first_order_month
+        FROM orders o
+        JOIN customers c ON c.customer_id = o.customer_id
+        WHERE o.order_status NOT IN ('canceled', 'unavailable')
+          AND c.customer_unique_id IS NOT NULL AND o.order_purchase_timestamp IS NOT NULL
+        GROUP BY c.customer_unique_id
+      )
+      SELECT o.order_id, c.customer_unique_id, o.order_purchase_timestamp,
+             CASE
+               WHEN c.customer_unique_id IS NULL OR o.order_purchase_timestamp IS NULL
+                 OR first_orders.first_order_month IS NULL THEN NULL
+               WHEN DATE_TRUNC('month', o.order_purchase_timestamp) = first_orders.first_order_month THEN 'NEW'
+               WHEN DATE_TRUNC('month', o.order_purchase_timestamp) > first_orders.first_order_month THEN 'RETURNING'
+               ELSE NULL
+             END AS customer_cohort
+      FROM orders o
+      LEFT JOIN customers c ON c.customer_id = o.customer_id
+      LEFT JOIN first_orders ON first_orders.customer_unique_id = c.customer_unique_id
+      WHERE o.order_status NOT IN ('canceled', 'unavailable')
+    outputRule: 这是分类定义，不额外规定结果列；按用户要求输出周期和所需指标。新老客分组与明确标签过滤可以同时存在，各自保留含义。
+
   - name: sales_without_freight
     aliases: [不含运费销售额, 净销售额]
     description: 销售额（不含运费）= 商品金额合计

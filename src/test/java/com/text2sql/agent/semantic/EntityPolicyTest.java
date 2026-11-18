@@ -63,7 +63,7 @@ class EntityPolicyTest {
         assertThat(text).startsWith("existing metric\n\nENTITY_POLICY customer_identity_v2")
                 .contains("customers.customer_id", "customers.customer_unique_id", "用户明确指定", "不擅自改成实体级统计")
                 .containsOnlyOnce("ENTITY_POLICY customer_identity_v2");
-        assertThat(registry.all()).hasSize(26); // Includes the independently checked late-delivery metric.
+        assertThat(registry.all()).hasSize(27); // Includes the independently checked dynamic cohort definition.
         assertThat(registry.entityPolicies()).hasSize(1);
     }
 

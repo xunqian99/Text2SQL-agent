@@ -48,7 +48,16 @@ public record Metric(
         Integer outputScale,
         List<String> requiredContextAny,
         List<String> excludedContextAny,
-        List<String> preferredContextAny) {
+        List<String> preferredContextAny,
+        List<String> excludedAliasContextAny) {
+
+    public Metric(String name, List<String> aliases, String description, String expression,
+                  String filter, List<String> tables, String notes, String outputRule, String queryPattern,
+                  OutputUnit outputUnit, Integer outputScale, List<String> requiredContextAny,
+                  List<String> excludedContextAny, List<String> preferredContextAny) {
+        this(name, aliases, description, expression, filter, tables, notes, outputRule, queryPattern,
+                outputUnit, outputScale, requiredContextAny, excludedContextAny, preferredContextAny, null);
+    }
 
     /** Unit belongs to this metric, never to every column in the question. */
     public enum OutputUnit { PERCENT, DECIMAL_RATIO }
@@ -79,6 +88,7 @@ public record Metric(
         requiredContextAny = checkedContext(requiredContextAny);
         excludedContextAny = checkedContext(excludedContextAny);
         preferredContextAny = checkedContext(preferredContextAny);
+        excludedAliasContextAny = checkedContext(excludedAliasContextAny);
         if ((outputUnit == null) != (outputScale == null)
                 || (outputScale != null && (outputScale < 0 || outputScale > 8))) {
             throw new IllegalArgumentException("Metric output unit and scale must be defined together, scale 0..8");

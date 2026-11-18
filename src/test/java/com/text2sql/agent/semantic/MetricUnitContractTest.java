@@ -44,7 +44,7 @@ class MetricUnitContractTest {
         int unitCount = 0;
         var metricEntries = (com.fasterxml.jackson.databind.node.ArrayNode) after.path("metrics");
         for (int i = metricEntries.size() - 1; i >= 0; i--) {
-            if (java.util.Set.of("shipment_delivery_days", "late_delivery_rate")
+            if (java.util.Set.of("shipment_delivery_days", "late_delivery_rate", "customer_cohort")
                     .contains(metricEntries.get(i).path("name").asText())) {
                 metricEntries.remove(i); // Independent scope and database contracts cover these added metrics.
             }
