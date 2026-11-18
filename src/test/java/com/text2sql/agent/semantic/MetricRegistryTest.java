@@ -155,17 +155,17 @@ class MetricRegistryTest {
     @DisplayName("复杂指标会渲染输出约束和查询结构")
     void rendersOutputRuleAndQueryPattern() {
         MetricRegistry registry = loaded();
-        Metric retention = registry.all().stream()
-                .filter(m -> m.name().equals("retention_rate"))
+        Metric membership = registry.all().stream()
+                .filter(m -> m.name().equals("member_penetration"))
                 .findFirst()
                 .orElseThrow();
 
-        String text = retention.render();
+        String text = membership.render();
 
         assertThat(text).contains("输出约束（必须遵守）:")
                 .contains("推荐查询结构")
-                .contains("WITH first_order")
-                .contains("不要展开成 cohort_month × activity_month");
+                .contains("LEFT JOIN members")
+                .contains("COUNT(DISTINCT o.order_id)");
     }
 
     @Test

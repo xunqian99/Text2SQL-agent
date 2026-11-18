@@ -34,7 +34,7 @@ class MetricUnitContractTest {
         assertThat(metric("gmv_with_freight").outputUnit()).isNull();
     }
 
-    @Test void archivedDefinitionsStayUnchangedExceptDocumentedUnitDeliveryEntityAndFreightAliasChanges() throws Exception {
+    @Test void archivedDefinitionsStayUnchangedExceptDocumentedContractAndMetricBoundaryChanges() throws Exception {
         var mapper = new ObjectMapper(new YAMLFactory());
         var before = mapper.readTree(getClass().getResourceAsStream("/contracts/metrics-before-result-contract.yml"));
         var after = mapper.readTree(getClass().getResourceAsStream("/schema/metrics.yml"));
@@ -50,6 +50,31 @@ class MetricUnitContractTest {
         }
         for (var entry : after.path("metrics")) {
             var node = (com.fasterxml.jackson.databind.node.ObjectNode) entry;
+            String name = node.path("name").asText();
+            var originalMetric = java.util.stream.StreamSupport.stream(before.path("metrics").spliterator(), false)
+                    .filter(n -> n.path("name").asText().equals(name)).findFirst().orElseThrow();
+            if (java.util.Set.of("aov", "refund_rate", "sell_through_rate", "low_score_rate", "ctr",
+                    "freight_ratio", "sla_rate", "discount_rate", "commission_rate", "conversion_rate",
+                    "retention_rate", "yoy_growth").contains(name)) {
+                // Executed against empty, zero and positive denominators in MetricDivisionBoundaryTest.
+                assertThat(node.path("expression").asText()).contains("NULLIF(");
+                node.set("expression", originalMetric.path("expression"));
+            }
+            if (java.util.Set.of("retention_rate", "yoy_growth").contains(name)) {
+                assertThat(node.has("queryPattern")).isFalse();
+                assertThat(node.path("notes").asText()).doesNotContain("2017", "2018");
+                for (String field : java.util.List.of("notes", "outputRule", "queryPattern")) {
+                    node.set(field, originalMetric.path(field));
+                }
+            }
+            if (name.equals("yoy_growth")) {
+                assertThat(node.path("aliases").toString()).isEqualTo("[\"同比增长率\",\"YoY\"]");
+                assertThat(node.path("requiredContextAny").toString())
+                        .isEqualTo("[\"GMV\",\"成交总额\",\"商品交易总额\"]");
+                node.set("aliases", originalMetric.path("aliases"));
+                node.set("description", originalMetric.path("description"));
+                node.remove("requiredContextAny");
+            }
             if (node.path("name").asText().equals("gmv_with_freight")) {
                 // FreightMetricScopeTest verifies the behavior; never rewrite the historical snapshot.
                 assertThat(node.path("aliases").toString()).isEqualTo("[\"GMV\",\"成交总额\",\"商品交易总额\"]");
