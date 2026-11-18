@@ -37,7 +37,7 @@ def summarize(directory, live=False):
     require(manifest['referenceAccuracyPercent'] == 91 and manifest['minimumMeanAccuracyPercent'] == 89, 'threshold changed')
     require(manifest['distinctRealQuestions'] == 100 and manifest['plannedRealRequests'] == 300, 'denominator changed')
     expected_prompt = manifest.get('expectedPromptVersion', 'p10-result-contract-v10')
-    require(expected_prompt in ('p10-result-contract-v10', 'p15-entity-coverage-v15', 'p17-time-dimension-v17', 'p18-dimension-display-v18'), 'unregistered prompt')
+    require(expected_prompt in ('p10-result-contract-v10', 'p15-entity-coverage-v15', 'p17-time-dimension-v17', 'p18-dimension-display-v18', 'p19-request-scope-v19'), 'unregistered prompt')
     protocol_path = manifest.get('protocolPath', 'docs/STAGE2_REGRESSION_PROTOCOL_20261117.md')
     require(protocol_path in manifest['protectedSha256'], 'protocol not frozen')
     protocol = subprocess.check_output(['git', 'show', manifest['codeCommit'] + ':' + protocol_path]).decode('utf-8')
@@ -111,7 +111,7 @@ def summarize(directory, live=False):
         require(comparable == common, name + ': round config differs')
         old = baseline_reports[int(name[-1]) - 1]
         candidate_metric_sha = None
-        if expected_prompt == 'p18-dimension-display-v18':
+        if expected_prompt in ('p18-dimension-display-v18', 'p19-request-scope-v19'):
             candidate_metric_sha = manifest['protectedSha256'].get('src/main/resources/schema/metrics.yml', '')
         audit_baseline_config(config, old['meta']['effectiveConfig'], candidate_metric_sha,
                               lambda ok, msg: require(ok, name + ': ' + msg))
