@@ -44,8 +44,9 @@ class MetricUnitContractTest {
         int unitCount = 0;
         var metricEntries = (com.fasterxml.jackson.databind.node.ArrayNode) after.path("metrics");
         for (int i = metricEntries.size() - 1; i >= 0; i--) {
-            if (metricEntries.get(i).path("name").asText().equals("shipment_delivery_days")) {
-                metricEntries.remove(i); // Its independent scope/numeric contract is covered by DeliveryMetricScopeTest.
+            if (java.util.Set.of("shipment_delivery_days", "late_delivery_rate")
+                    .contains(metricEntries.get(i).path("name").asText())) {
+                metricEntries.remove(i); // Independent scope and database contracts cover these added metrics.
             }
         }
         for (var entry : after.path("metrics")) {
@@ -66,6 +67,17 @@ class MetricUnitContractTest {
                 for (String field : java.util.List.of("notes", "outputRule", "queryPattern")) {
                     node.set(field, originalMetric.path(field));
                 }
+            }
+            if (name.equals("discount_rate")) {
+                // MetricFactScopeTest executes the shipped query on unequal child cardinalities and equal amounts.
+                for (String field : java.util.List.of("notes", "queryPattern")) {
+                    node.set(field, originalMetric.path(field));
+                }
+            }
+            if (name.equals("mau")) {
+                // Remove copied review-rate exceptions; activity remains based on valid-order behavior.
+                assertThat(node.path("notes").asText()).doesNotContain("低分率", "退款订单");
+                node.set("notes", originalMetric.path("notes"));
             }
             if (name.equals("yoy_growth")) {
                 assertThat(node.path("aliases").toString()).isEqualTo("[\"同比增长率\",\"YoY\"]");

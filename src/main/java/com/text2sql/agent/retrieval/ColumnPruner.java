@@ -167,7 +167,9 @@ public class ColumnPruner {
             if (metrics != null) {
                 for (Metric m : metrics) {
                     if (m.tables() != null && m.tables().stream().anyMatch(t -> t.equalsIgnoreCase(table.name()))) {
-                        String expr = (m.expression() + " " + (m.filter() != null ? m.filter() : "")).toLowerCase(Locale.ROOT);
+                        // 派生指标的最终表达式可能只剩聚合别名；推荐结构里的物理源列同样必须可见。
+                        String expr = (m.expression() + " " + (m.filter() != null ? m.filter() : "")
+                                + " " + (m.queryPattern() != null ? m.queryPattern() : "")).toLowerCase(Locale.ROOT);
                         for (SchemaContext.Column col : table.columns()) {
                             if (expr.contains(col.name().toLowerCase(Locale.ROOT))) {
                                 keepCols.add(col.name().toLowerCase(Locale.ROOT));

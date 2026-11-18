@@ -123,6 +123,27 @@ metrics:
       预计送达时间缺失的已签收订单仍在分母，不能确认准时则不进入分子；分母为0返回NULL。
       与商品等一对多明细共同统计时，先保留一行一订单，不能让明细数量给订单加权。
 
+  - name: late_delivery_rate
+    outputUnit: DECIMAL_RATIO
+    outputScale: 4
+    aliases: [超时送达, 逾期送达, 延迟送达, 延误送达]
+    requiredContextAny: [比例, 比率, 占比, 率]
+    description: 超时送达比例 = 实际送达晚于预计时间的订单 / 实际送达时间非空的订单
+    expression: |
+      ROUND(COUNT(*) FILTER (
+        WHERE o.order_delivered_customer_date IS NOT NULL
+          AND o.order_delivered_customer_date > o.order_estimated_delivery_date
+      )::numeric / NULLIF(COUNT(*) FILTER (
+        WHERE o.order_delivered_customer_date IS NOT NULL
+      ), 0), 4)
+    tables: [orders]
+    notes: |
+      先保留一行一订单，分子和分母分别按时间条件计数；不能用order_status='delivered'替代实际送达时间非空。
+      不额外排除取消/不可用状态；状态与时间冲突时，按本指标的真实时间事实判断。
+      预计送达时间为空的已送达订单保留在分母，不能确认逾期则不进入分子；分母为0返回NULL。
+      预计时间未知的订单既不能确认准时也不能确认超时，因此不能用1减准时率代替本指标。
+      只问超时订单数量而未问比例时不使用此指标；用户明确限定时间、类目或其他集合时在该集合内计算。
+
   - name: refund_rate
     outputUnit: PERCENT
     outputScale: 2
@@ -235,11 +256,9 @@ metrics:
     tables: [orders, customers]
     filter: "o.order_status NOT IN ('canceled', 'unavailable')"
     notes: |
-      【两种场景，看题目限定范围】全站低分率（如按州统计）要排除取消/不可用订单；
-      而「退款订单的低分率」这类题目已把范围限定在退款集合内，**不要再叠加订单状态过滤**。
-      
       本项目用**下单行为**定义活跃，不用登录行为（库里没有登录表）。
       去重单位是 customer_unique_id（人级），不是 customer_id。
+      月份与其他维度范围来自当前请求；这些限定不自动取消有效订单过滤。
 
   - name: sla_rate
     outputUnit: PERCENT
@@ -259,19 +278,31 @@ metrics:
     outputScale: 2
     aliases: [折扣率, 优惠率, 用券折扣]
     description: 折扣率 = 优惠金额 / GMV
-    expression: "ROUND(100.0 * SUM(cu.discount_amount) / NULLIF(SUM(oi.price + oi.freight_value), 0), 2)"
+    expression: "ROUND(100.0 * SUM(ct.discount_amount) / NULLIF(SUM(ot.order_gmv), 0), 2)"
     tables: [coupon_usages, orders, order_items]
     filter: "o.order_status NOT IN ('canceled', 'unavailable')"
-    notes: 只统计用券订单，分子分母都在同一个订单集合内。
+    notes: |
+      只统计用券且有商品明细的有效订单，分子分母在同一订单集合内。
+      先在coupon_usages按order_id合计每笔订单的discount_amount，再在order_items按order_id合计price+freight_value。
+      ct和ot分别是这两个一行一订单的派生集合；order_gmv是聚合别名，不是原始物理列。
+      两个集合再与orders关联，避免多条用券记录与多条商品明细相互放大。
+      不使用SUM(DISTINCT金额)：不同真实记录可能金额相同，不能误删；空集合或零GMV比例返回NULL。
     outputRule: 依次输出 GMV、优惠金额、折扣率三列；金额保留 2 位小数，折扣率乘 100 保留 2 位小数；不要输出额外中间量。
     queryPattern: |
-      SELECT ROUND(SUM(oi.price + oi.freight_value), 2) AS gmv,
-             ROUND(SUM(cu.discount_amount), 2) AS discount,
-             ROUND(100.0 * SUM(cu.discount_amount) /
-                   NULLIF(SUM(oi.price + oi.freight_value), 0), 2) AS discount_pct
-      FROM coupon_usages cu
-      JOIN orders o ON o.order_id = cu.order_id
-      JOIN order_items oi ON oi.order_id = cu.order_id
+      WITH coupon_totals AS (
+        SELECT order_id, SUM(discount_amount) AS discount_amount
+        FROM coupon_usages GROUP BY order_id
+      ), order_totals AS (
+        SELECT order_id, SUM(price + freight_value) AS order_gmv
+        FROM order_items GROUP BY order_id
+      )
+      SELECT ROUND(SUM(ot.order_gmv), 2) AS gmv,
+             ROUND(SUM(ct.discount_amount), 2) AS discount,
+             ROUND(100.0 * SUM(ct.discount_amount) /
+                   NULLIF(SUM(ot.order_gmv), 0), 2) AS discount_pct
+      FROM coupon_totals ct
+      JOIN orders o ON o.order_id = ct.order_id
+      JOIN order_totals ot ON ot.order_id = ct.order_id
       WHERE o.order_status NOT IN ('canceled', 'unavailable');
 
   - name: commission_rate

@@ -28,7 +28,7 @@ class MetricDivisionBoundaryTest {
                 new Scenario("ctr", "input", "100"),
                 new Scenario("freight_ratio", "input oi", "20"),
                 new Scenario("sla_rate", "input st CROSS JOIN input tc", "100"),
-                new Scenario("discount_rate", "input cu CROSS JOIN input oi", "10"),
+                new Scenario("discount_rate", "input ct CROSS JOIN input ot", "10"),
                 new Scenario("commission_rate", "input si", "0.1"),
                 new Scenario("conversion_rate", "input", "100"),
                 new Scenario("retention_rate", "input", "100"),
@@ -77,6 +77,7 @@ class MetricDivisionBoundaryTest {
                 + "'product-1'::text AS clicked_product_id, TIMESTAMP '2024-02-02' AS resolved_at, "
                 + "TIMESTAMP '2024-02-01' AS created_at, 24 AS sla_hours, 10::numeric AS discount_amount, "
                 + "10::numeric AS commission_amount, " + (zero ? "0" : "100") + "::numeric AS gross_amount, "
+                + (zero ? "0" : "100") + "::numeric AS order_gmv, "
                 + "TIMESTAMP '2024-02-02' AS converted_at, TRUE AS returned, 150::numeric AS current_gmv, "
                 + (zero ? "0" : "100") + "::numeric AS previous_gmv WHERE " + (empty ? "FALSE" : "TRUE")
                 + "), products AS (SELECT product_id FROM input" + (zero ? " WHERE FALSE" : "") + ") ";
