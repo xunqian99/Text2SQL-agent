@@ -37,8 +37,8 @@ public class PromptTemplate {
      * （比如加一句「优先使用高置信度的表」），那才需要 +1，
      * 并且要重跑阶段 1 的 baseline 才能对比。
      */
-    public static final String VERSION = "p15-entity-coverage-v15";
-    public static final String NO_EXPLICIT_STEPS_VERSION = "p15-entity-coverage-v15-no-explicit-steps-v1";
+    public static final String VERSION = "p16-aggregation-scope-v16";
+    public static final String NO_EXPLICIT_STEPS_VERSION = "p16-aggregation-scope-v16-no-explicit-steps-v1";
 
     private final AgentProperties properties;
 
@@ -85,11 +85,10 @@ public class PromptTemplate {
                    【实体寻优规范】问「最...的那一笔/哪一个」特定实体（如“分期数最多的那一笔支付分了多少期”）时，
                    属于单条记录寻优，使用 ORDER BY ... DESC LIMIT 1 并保留实体标识（如 order_id）与指标列，不要写成纯 MAX()。
 
-                9. 聚合粒度必须与问题的「每个…」一致。GROUP BY 的列要和 SELECT 里的维度列对应，
-                   不要多分一层，也不要把分组列换成另一张表里的等价列。
-                   - 「每个活动/卖家/标签」等实体按完整主键区分；名称是展示属性，不保证唯一。可按主键和名称分组，不能仅因同名就合并实体；明确按名称汇总时才合并。不为分组身份额外投影用户未要求的列。
-                   - 预算等实体自带数值不随子表明细累加；先在原事实粒度计算，再关联。SUM(DISTINCT 金额)会误删金额相同的不同事实，不能用来抵消关联放大。
-                   - 同一请求的每个指标分别确定事实全集。统计标签覆盖会员数及其商品均价时，会员数包括无订单会员，均价只统计存在的商品价格；用LEFT JOIN保留会员或分别聚合再合并，避免INNER JOIN缩小会员全集。只有用户明确要求有订单/有商品的会员时才限缩；右表条件放ON或对应聚合内，不能在WHERE中误删左侧记录。没有价格时均价为NULL，不能把空值补0参与平均。
+                9. 聚合粒度必须与问题的「每个…」一致。
+                   - 实体以完整主键区分，同名不代表同一实体；明确按名称汇总时从其要求。内部去重/分组键不等于输出列，投影仍遵循规则8。
+                   - 数值按来源事实粒度聚合，不能随关联明细重复累加，也不能用SUM(DISTINCT 金额)消除关联放大。
+                   - 每个指标按用户要求与其业务契约分别确定覆盖范围，不把某个指标的JOIN/WHERE条件强加给其他指标。只有需要保留未匹配对象时使用LEFT JOIN，并防止右表WHERE条件误删它们；没有明细时均价为NULL，不补0。
                 10. 计数口径规范：
                    - 先确定每个计数的对象与身份：记录数、不同实体数和业务身份去重人数不是同一度量；用户明确单位优先，其次遵循当前业务契约，不能用一个计数方式覆盖同一结果的所有指标。
                    - 统计源表记录且连接不重复该记录时用 COUNT(*)；连接可能重复记录时按源表完整主键去重或先聚合。仅有外键不保证子表关联键唯一，不能据此假定一对一。

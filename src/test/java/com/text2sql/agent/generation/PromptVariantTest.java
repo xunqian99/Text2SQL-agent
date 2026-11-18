@@ -36,7 +36,7 @@ class PromptVariantTest {
 
     @Test void archivedP14PreservesUnaffectedRulesFromP9() throws Exception {
         var template = new PromptTemplate();
-        assertThat(template.version()).isEqualTo("p15-entity-coverage-v15");
+        assertThat(template.version()).isEqualTo("p16-aggregation-scope-v16");
         try (var in = getClass().getResourceAsStream("/prompts/p9-system.txt")) {
             assertThat(in).isNotNull();
             String archived = new String(in.readAllBytes(), StandardCharsets.UTF_8);
@@ -91,7 +91,7 @@ class PromptVariantTest {
         assertThat(shortened).isEqualTo(full.replace(full.substring(full.indexOf("思考与推理步骤"), full.indexOf("硬性规则")), ""));
         assertThat(shortened.substring(shortened.indexOf("硬性规则")))
                 .isEqualTo(full.substring(full.indexOf("硬性规则")));
-        assertThat(candidate.version()).isEqualTo("p15-entity-coverage-v15-no-explicit-steps-v1");
+        assertThat(candidate.version()).isEqualTo("p16-aggregation-scope-v16-no-explicit-steps-v1");
         var schema = new SchemaContext(List.of(), List.of(), "画像", "CREATE TABLE orders(order_id text);");
         assertThat(candidate.userPrompt(schema, "订单有多少？")).isEqualTo(new PromptTemplate().userPrompt(schema, "订单有多少？"));
         assertThat(candidate.correctionPrompt(schema, "订单有多少？", "SELECT 0", "请修正"))
@@ -121,12 +121,32 @@ class PromptVariantTest {
                 .isInstanceOf(org.springframework.boot.context.properties.bind.BindException.class);
     }
 
-    @Test void entityCoverageBatchChangesOnlyRule9FromFrozenP14() throws Exception {
-        String before = frozenP14(), after = new PromptTemplate().systemPrompt();
+    @Test void archivedP15EntityCoverageBatchChangesOnlyRule9FromFrozenP14() throws Exception {
+        String before = frozenP14(), after = frozenP15();
         assertThat(withoutEntityRule(after)).isEqualTo(withoutEntityRule(before));
         assertThat(after).contains("名称是展示属性，不保证唯一", "SUM(DISTINCT 金额)",
                 "会员数包括无订单会员", "只有用户明确要求有订单/有商品的会员时才限缩",
                 "右表条件放ON或对应聚合内", "没有价格时均价为NULL");
+    }
+
+    @Test void aggregationScopeChangesOnlyRule9WithoutSpreadingTheMemberExample() throws Exception {
+        String before = frozenP15(), after = new PromptTemplate().systemPrompt();
+        assertThat(withoutEntityRule(after)).isEqualTo(withoutEntityRule(before));
+        assertThat(after).contains("内部去重/分组键不等于输出列", "投影仍遵循规则8",
+                "不能用SUM(DISTINCT 金额)", "每个指标按用户要求与其业务契约分别确定覆盖范围",
+                "只有需要保留未匹配对象时使用LEFT JOIN", "没有明细时均价为NULL，不补0")
+                .doesNotContain("统计标签覆盖会员数及其商品均价时", "会员数包括无订单会员");
+        assertThat(after.length()).isLessThan(before.length());
+    }
+
+    private static String frozenP15() throws Exception {
+        try (var in = PromptVariantTest.class.getResourceAsStream("/prompts/p15-system.txt")) {
+            assertThat(in).isNotNull();
+            byte[] bytes = in.readAllBytes();
+            assertThat(HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes)))
+                    .isEqualTo("23608183c2f8f3b03e2c6c948aa5963d3a93a24317590102e8f5894ab6893c71");
+            return new String(bytes, StandardCharsets.UTF_8);
+        }
     }
 
     private static String frozenP14() throws Exception {
