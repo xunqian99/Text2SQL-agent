@@ -207,15 +207,7 @@ public class ColumnPruner {
 
             // 4.5 时间/时序语义感知保全：当用户问题包含时间、周期或时长语义时，保全表内的时间戳与日期列
             if (isTemporalQuestion(safeQuestion)) {
-                for (SchemaContext.Column col : table.columns()) {
-                    String colLower = col.name().toLowerCase(Locale.ROOT);
-                    String typeLower = col.type() != null ? col.type().toLowerCase(Locale.ROOT) : "";
-                    if (typeLower.contains("time") || typeLower.contains("date")
-                            || colLower.endsWith("_at") || colLower.endsWith("_date") || colLower.endsWith("_time")
-                            || colLower.contains("timestamp")) {
-                        keepCols.add(colLower);
-                    }
-                }
+                preserveTemporalColumns(table, keepCols);
             }
 
             // 4.6 度量列保全：问题在问「合计 / 金额 / 数量 / 平均 …」时，保留数值列。
@@ -250,6 +242,12 @@ public class ColumnPruner {
                     keepCols.add(col.name().toLowerCase(Locale.ROOT));
                     if (keepCols.size() >= minColumns) break;
                 }
+            }
+
+            // 隐含事件在原有兜底之后补时间列，避免新增列先填满minColumns，
+            // 反而挤掉原本保留的状态等列。这一步只能追加，不能删除原有列。
+            if (FULFILLMENT_EVENT_PATTERN.matcher(safeQuestion).find()) {
+                preserveTemporalColumns(table, keepCols);
             }
 
             // 按照原表列顺序过滤出最终保留的列
@@ -293,6 +291,22 @@ public class ColumnPruner {
 
     private static final java.util.regex.Pattern TEMPORAL_PATTERN = java.util.regex.Pattern.compile(
             "(?i)(月|周|日|天|年|小时|时长|时间|趋势|环比|同比|期间|新增|最近|多久|何时|日期|time|date|hour|day|month|year)");
+
+    // 事件词只要求展示可用时间字段，不推断事件已发生，也不生成WHERE条件。
+    private static final java.util.regex.Pattern FULFILLMENT_EVENT_PATTERN = java.util.regex.Pattern.compile(
+            "送达|签收|收货|发货|到货|到期|过期|逾期");
+
+    private static void preserveTemporalColumns(SchemaContext.Table table, Set<String> keepCols) {
+        for (SchemaContext.Column col : table.columns()) {
+            String colLower = col.name().toLowerCase(Locale.ROOT);
+            String typeLower = col.type() != null ? col.type().toLowerCase(Locale.ROOT) : "";
+            if (typeLower.contains("time") || typeLower.contains("date")
+                    || colLower.endsWith("_at") || colLower.endsWith("_date") || colLower.endsWith("_time")
+                    || colLower.contains("timestamp")) {
+                keepCols.add(colLower);
+            }
+        }
+    }
 
     private boolean isTemporalQuestion(String question) {
         if (question == null || question.isBlank()) {
