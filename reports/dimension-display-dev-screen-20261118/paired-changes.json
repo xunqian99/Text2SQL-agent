@@ -1,0 +1,132 @@
+[
+  {
+    "id": "T1-028",
+    "beforeCorrect": true,
+    "afterCorrect": false,
+    "beforeStatus": "SUCCESS",
+    "afterStatus": "SUCCESS",
+    "beforeSql": "SELECT warehouse_id, warehouse_name, capacity\nFROM warehouses\nORDER BY capacity DESC\nLIMIT 1;",
+    "afterSql": "SELECT warehouse_name\nFROM warehouses\nORDER BY capacity DESC\nLIMIT 1;",
+    "firstPromptUnchanged": false
+  },
+  {
+    "id": "T2-030",
+    "beforeCorrect": true,
+    "afterCorrect": false,
+    "beforeStatus": "SUCCESS",
+    "afterStatus": "SUCCESS",
+    "beforeSql": "SELECT category_id, COUNT(*) AS ticket_count\nFROM support_tickets\nGROUP BY category_id\nORDER BY ticket_count DESC\nLIMIT 100;",
+    "afterSql": "SELECT tc.category_name, COUNT(DISTINCT st.ticket_id) AS ticket_count\nFROM ticket_categories tc\nLEFT JOIN support_tickets st ON st.category_id = tc.category_id\nGROUP BY tc.category_id, tc.category_name\nORDER BY ticket_count DESC\nLIMIT 100;",
+    "firstPromptUnchanged": false
+  },
+  {
+    "id": "T3-011",
+    "beforeCorrect": true,
+    "afterCorrect": false,
+    "beforeStatus": "SUCCESS",
+    "afterStatus": "SUCCESS",
+    "beforeSql": "-- 每月订单量及环比增长率\nWITH monthly AS (\n    SELECT DATE_TRUNC('month', order_purchase_timestamp) AS month,\n           COUNT(*) AS order_cnt\n    FROM orders\n    GROUP BY 1\n)\nSELECT month,\n       order_cnt,\n       ROUND(\n           (order_cnt - LAG(order_cnt) OVER (ORDER BY month))::numeric\n           / NULLIF(LAG(order_cnt) OVER (ORDER BY month), 0),\n           4\n       ) AS mom_growth_rate\nFROM monthly\nORDER BY month\nLIMIT 100;",
+    "afterSql": "WITH monthly_orders AS (\n  SELECT DATE_TRUNC('month', order_purchase_timestamp) AS month,\n         COUNT(*) AS order_count\n  FROM orders\n  GROUP BY 1\n)\nSELECT month,\n       ROUND(\n         (order_count - LAG(order_count) OVER (ORDER BY month))::numeric\n         / NULLIF(LAG(order_count) OVER (ORDER BY month), 0),\n         4\n       ) AS mom_growth_rate\nFROM monthly_orders\nORDER BY month\nLIMIT 100;",
+    "firstPromptUnchanged": false
+  },
+  {
+    "id": "T4-010",
+    "beforeCorrect": false,
+    "afterCorrect": true,
+    "beforeStatus": "SUCCESS",
+    "afterStatus": "SUCCESS",
+    "beforeSql": "SELECT o.order_status, ROUND(COALESCE(SUM(oi.price), 0), 2) AS total_sales\nFROM orders o\nLEFT JOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY o.order_status\nLIMIT 100;",
+    "afterSql": "SELECT o.order_status, ROUND(SUM(oi.price), 2) AS total_sales\nFROM orders o\nJOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY o.order_status\nORDER BY total_sales DESC\nLIMIT 100;",
+    "firstPromptUnchanged": false
+  },
+  {
+    "id": "T4-014",
+    "beforeCorrect": false,
+    "afterCorrect": true,
+    "beforeStatus": "SUCCESS",
+    "afterStatus": "SUCCESS",
+    "beforeSql": "-- 先对 order_payments 按 order_id+payment_type 去重，避免一单多笔支付放大评价记录，再关联评价求平均分\nSELECT op.payment_type,\n       ROUND(AVG(r.review_score), 2) AS avg_score\nFROM (SELECT DISTINCT order_id, payment_type FROM order_payments) op\nJOIN order_reviews r ON r.order_id = op.order_id\nGROUP BY op.payment_type\nORDER BY avg_score DESC\nLIMIT 20;",
+    "afterSql": "SELECT op.payment_type,\n       ROUND(AVG(r.review_score), 2) AS avg_review_score\nFROM order_payments op\nJOIN orders o ON o.order_id = op.order_id\nJOIN order_reviews r ON r.order_id = o.order_id\nGROUP BY op.payment_type\nORDER BY avg_review_score DESC\nLIMIT 10;",
+    "firstPromptUnchanged": false
+  },
+  {
+    "id": "T4-021",
+    "beforeCorrect": false,
+    "afterCorrect": true,
+    "beforeStatus": "SUCCESS",
+    "afterStatus": "SUCCESS",
+    "beforeSql": "SELECT c.campaign_id, COUNT(cu.usage_id) AS usage_count\nFROM campaigns c\nLEFT JOIN coupons cp ON cp.campaign_id = c.campaign_id\nLEFT JOIN coupon_usages cu ON cu.coupon_id = cp.coupon_id\nGROUP BY c.campaign_id\nORDER BY c.campaign_id\nLIMIT 1000;",
+    "afterSql": "SELECT ca.campaign_name, COUNT(cu.usage_id) AS usage_count\nFROM campaigns ca\nLEFT JOIN coupons cp ON cp.campaign_id = ca.campaign_id\nLEFT JOIN coupon_usages cu ON cu.coupon_id = cp.coupon_id\nGROUP BY ca.campaign_id, ca.campaign_name\nORDER BY usage_count DESC\nLIMIT 100;",
+    "firstPromptUnchanged": false
+  },
+  {
+    "id": "T4-027",
+    "beforeCorrect": false,
+    "afterCorrect": true,
+    "beforeStatus": "SUCCESS",
+    "afterStatus": "SUCCESS",
+    "beforeSql": "SELECT warehouse_id, SUM(quantity) AS total_quantity, ROUND(AVG(quantity)::numeric, 2) AS avg_quantity\nFROM inventory\nGROUP BY warehouse_id\nORDER BY warehouse_id\nLIMIT 100;",
+    "afterSql": "SELECT w.warehouse_name,\n       SUM(i.quantity) AS total_quantity,\n       ROUND(AVG(i.quantity)::numeric, 2) AS avg_quantity\nFROM inventory i\nLEFT JOIN warehouses w ON w.warehouse_id = i.warehouse_id\nGROUP BY i.warehouse_id, w.warehouse_name\nORDER BY total_quantity DESC\nLIMIT 100;",
+    "firstPromptUnchanged": false
+  },
+  {
+    "id": "T4-038",
+    "beforeCorrect": true,
+    "afterCorrect": false,
+    "beforeStatus": "SUCCESS",
+    "afterStatus": "SUCCESS",
+    "beforeSql": "SELECT m.level_id, COUNT(DISTINCT m.member_id) AS member_count\nFROM members m\nJOIN user_tag_map utm ON utm.member_id = m.member_id\nJOIN user_tags ut ON ut.tag_id = utm.tag_id\nWHERE ut.tag_code = 'CHURN_RISK'\nGROUP BY m.level_id\nORDER BY m.level_id\nLIMIT 100;",
+    "afterSql": "SELECT ml.level_name,\n       COUNT(DISTINCT CASE WHEN ut.tag_code = 'CHURN_RISK' THEN m.member_id END) AS churn_risk_member_count\nFROM member_levels ml\nLEFT JOIN members m ON m.level_id = ml.level_id\nLEFT JOIN user_tag_map utm ON utm.member_id = m.member_id\nLEFT JOIN user_tags ut ON ut.tag_id = utm.tag_id\nGROUP BY ml.level_id, ml.level_name\nORDER BY ml.level_id\nLIMIT 100;",
+    "firstPromptUnchanged": false
+  },
+  {
+    "id": "T5-002",
+    "beforeCorrect": false,
+    "afterCorrect": true,
+    "beforeStatus": "REQUEST_TIMEOUT",
+    "afterStatus": "SUCCESS",
+    "beforeSql": null,
+    "afterSql": "SELECT ml.level_name, ROUND(COALESCE(SUM(oi.price), 0), 2) AS total_sales\nFROM member_levels ml\nLEFT JOIN members m ON m.level_id = ml.level_id\nLEFT JOIN customers c ON c.customer_unique_id = m.customer_unique_id\nLEFT JOIN orders o ON o.customer_id = c.customer_id\nLEFT JOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY ml.level_id, ml.level_name\nORDER BY total_sales DESC\nLIMIT 100;",
+    "firstPromptUnchanged": false
+  },
+  {
+    "id": "T5-004",
+    "beforeCorrect": false,
+    "afterCorrect": true,
+    "beforeStatus": "REQUEST_TIMEOUT",
+    "afterStatus": "SUCCESS",
+    "beforeSql": null,
+    "afterSql": "SELECT r.region_name,\n       COUNT(*) AS shipment_count,\n       COUNT(DISTINCT s.order_id) AS covered_order_count\nFROM shipments s\nJOIN warehouses w ON w.warehouse_id = s.warehouse_id\nJOIN regions r ON r.region_code = w.region_code\nGROUP BY r.region_code, r.region_name\nORDER BY shipment_count DESC\nLIMIT 100;",
+    "firstPromptUnchanged": false
+  },
+  {
+    "id": "T5-006",
+    "beforeCorrect": false,
+    "afterCorrect": true,
+    "beforeStatus": "SUCCESS",
+    "afterStatus": "SUCCESS",
+    "beforeSql": "SELECT c.customer_state, m.level_id, COUNT(DISTINCT st.ticket_id) AS ticket_count\nFROM support_tickets st\nJOIN ticket_categories tc ON tc.category_id = st.category_id\nJOIN members m ON m.member_id = st.member_id\nJOIN customers c ON c.customer_unique_id = m.customer_unique_id\nWHERE tc.category_name = '物流延迟'\nGROUP BY c.customer_state, m.level_id\nORDER BY ticket_count DESC, c.customer_state, m.level_id\nLIMIT 20;",
+    "afterSql": "SELECT\n  c.customer_state,\n  ml.level_name,\n  COUNT(*) AS ticket_count\nFROM support_tickets st\nJOIN ticket_categories tc\n  ON tc.category_id = st.category_id\nJOIN members m\n  ON m.member_id = st.member_id\nJOIN member_levels ml\n  ON ml.level_id = m.level_id\nJOIN orders o\n  ON o.order_id = st.order_id\nJOIN customers c\n  ON c.customer_id = o.customer_id\nWHERE tc.category_name = '物流延迟'\nGROUP BY\n  c.customer_state,\n  ml.level_id,\n  ml.level_name\nORDER BY ticket_count DESC\nLIMIT 20;",
+    "firstPromptUnchanged": false
+  },
+  {
+    "id": "T5-008",
+    "beforeCorrect": false,
+    "afterCorrect": true,
+    "beforeStatus": "REQUEST_TIMEOUT",
+    "afterStatus": "SUCCESS",
+    "beforeSql": null,
+    "afterSql": "SELECT ref_level.level_name AS referrer_level, inv_level.level_name AS invitee_level, COUNT(*) AS referral_count, ROUND(SUM(r.reward_amount), 2) AS total_reward\nFROM referrals r\nLEFT JOIN members rm ON rm.member_id = r.referrer_member_id\nLEFT JOIN member_levels ref_level ON ref_level.level_id = rm.level_id\nLEFT JOIN members im ON im.member_id = r.invitee_member_id\nLEFT JOIN member_levels inv_level ON inv_level.level_id = im.level_id\nGROUP BY ref_level.level_id, ref_level.level_name, inv_level.level_id, inv_level.level_name\nORDER BY referral_count DESC\nLIMIT 100;",
+    "firstPromptUnchanged": false
+  },
+  {
+    "id": "T6-023",
+    "beforeCorrect": false,
+    "afterCorrect": true,
+    "beforeStatus": "REQUEST_TIMEOUT",
+    "afterStatus": "SUCCESS",
+    "beforeSql": null,
+    "afterSql": "SELECT w.warehouse_name,\n       COALESCE(i.current_stock, 0) AS current_stock,\n       COALESCE(m.outbound_90d, 0) AS outbound_90d,\n       ROUND(90.0 * COALESCE(i.current_stock, 0) / NULLIF(m.outbound_90d, 0), 1) AS inventory_turnover_days\nFROM warehouses w\nLEFT JOIN (\n    SELECT warehouse_id, SUM(quantity) AS current_stock\n    FROM inventory\n    GROUP BY warehouse_id\n) i ON i.warehouse_id = w.warehouse_id\nLEFT JOIN (\n    SELECT warehouse_id, SUM(quantity) AS outbound_90d\n    FROM inventory_movements\n    WHERE movement_type = '2'\n      AND moved_at >= (SELECT MAX(moved_at) FROM inventory_movements) - INTERVAL '90 days'\n      AND moved_at <= (SELECT MAX(moved_at) FROM inventory_movements)\n    GROUP BY warehouse_id\n) m ON m.warehouse_id = w.warehouse_id\nORDER BY w.warehouse_name\nLIMIT 100;",
+    "firstPromptUnchanged": false
+  }
+]

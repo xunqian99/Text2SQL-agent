@@ -1,0 +1,1849 @@
+{
+  "format": "existing-failure-contract-review-v1",
+  "sourceReport": "reports/metric-fact-dev-screen-20261118/eval-20261118-133142.json",
+  "sourceReportSha256": "6a8c4fdc83257326c2b77488aa7479e8ac5ef1fd3ef76093952713523574c5e2",
+  "sourceCodeCommit": "61976cdfd44f8a5d76114d2e5df33c16674157b1",
+  "originalQuestionBankSize": 200,
+  "reviewedExecutionMismatches": 13,
+  "reviewCategoryCounts": {
+    "scope": 7,
+    "output_columns": 2,
+    "display": 3,
+    "cohort_vs_tag": 1
+  },
+  "readOnlySqlExecutions": 26,
+  "externalModelCalls": 0,
+  "externalModelCostYuan": 0,
+  "officialScoresUnchanged": true,
+  "latestDevCorrect": 73,
+  "latestDevTotal": 100,
+  "latestFormalAccuracyPercent": 85.33333333333333,
+  "items": [
+    {
+      "id": "T3-008",
+      "question": "每个月的平均订单金额（按订单明细商品金额计）是多少？",
+      "primaryReviewCategory": "scope",
+      "historicalCorrect": false,
+      "historicalStatus": "SUCCESS",
+      "goldSql": "SELECT DATE_TRUNC('month', o.order_purchase_timestamp) AS month,\n       ROUND(SUM(oi.price) / COUNT(DISTINCT o.order_id), 2) AS avg_order_value\nFROM orders o JOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY 1;\n",
+      "actualSql": "SELECT DATE_TRUNC('month', o.order_purchase_timestamp) AS month,\n       ROUND(SUM(oi.price) / NULLIF(COUNT(DISTINCT o.order_id), 0), 2) AS avg_order_amount\nFROM orders o\nJOIN order_items oi ON oi.order_id = o.order_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable')\nGROUP BY DATE_TRUNC('month', o.order_purchase_timestamp)\nORDER BY month\nLIMIT 1000;",
+      "goldColumns": [
+        "month",
+        "avg_order_value"
+      ],
+      "actualColumns": [
+        "month",
+        "avg_order_amount"
+      ],
+      "goldRows": 24,
+      "actualRows": 24,
+      "goldResult": [
+        {
+          "month": "2016-09-01T00:00:00",
+          "avg_order_value": 89.12
+        },
+        {
+          "month": "2016-10-01T00:00:00",
+          "avg_order_value": 160.74
+        },
+        {
+          "month": "2016-12-01T00:00:00",
+          "avg_order_value": 10.9
+        },
+        {
+          "month": "2017-01-01T00:00:00",
+          "avg_order_value": 152.49
+        },
+        {
+          "month": "2017-02-01T00:00:00",
+          "avg_order_value": 142.7
+        },
+        {
+          "month": "2017-03-01T00:00:00",
+          "avg_order_value": 141.74
+        },
+        {
+          "month": "2017-04-01T00:00:00",
+          "avg_order_value": 150.53
+        },
+        {
+          "month": "2017-05-01T00:00:00",
+          "avg_order_value": 138.27
+        },
+        {
+          "month": "2017-06-01T00:00:00",
+          "avg_order_value": 134.61
+        },
+        {
+          "month": "2017-07-01T00:00:00",
+          "avg_order_value": 125.48
+        },
+        {
+          "month": "2017-08-01T00:00:00",
+          "avg_order_value": 133.7
+        },
+        {
+          "month": "2017-09-01T00:00:00",
+          "avg_order_value": 147.16
+        },
+        {
+          "month": "2017-10-01T00:00:00",
+          "avg_order_value": 145.41
+        },
+        {
+          "month": "2017-11-01T00:00:00",
+          "avg_order_value": 135.59
+        },
+        {
+          "month": "2017-12-01T00:00:00",
+          "avg_order_value": 132.27
+        },
+        {
+          "month": "2018-01-01T00:00:00",
+          "avg_order_value": 131.58
+        },
+        {
+          "month": "2018-02-01T00:00:00",
+          "avg_order_value": 126.11
+        },
+        {
+          "month": "2018-03-01T00:00:00",
+          "avg_order_value": 136.79
+        },
+        {
+          "month": "2018-04-01T00:00:00",
+          "avg_order_value": 143.73
+        },
+        {
+          "month": "2018-05-01T00:00:00",
+          "avg_order_value": 145.41
+        },
+        {
+          "month": "2018-06-01T00:00:00",
+          "avg_order_value": 140.44
+        },
+        {
+          "month": "2018-07-01T00:00:00",
+          "avg_order_value": 142.76
+        },
+        {
+          "month": "2018-08-01T00:00:00",
+          "avg_order_value": 132.47
+        },
+        {
+          "month": "2018-09-01T00:00:00",
+          "avg_order_value": 145.0
+        }
+      ],
+      "actualResult": [
+        {
+          "month": "2016-09-01T00:00:00",
+          "avg_order_amount": 103.93
+        },
+        {
+          "month": "2016-10-01T00:00:00",
+          "avg_order_amount": 153.47
+        },
+        {
+          "month": "2016-12-01T00:00:00",
+          "avg_order_amount": 10.9
+        },
+        {
+          "month": "2017-01-01T00:00:00",
+          "avg_order_amount": 152.6
+        },
+        {
+          "month": "2017-02-01T00:00:00",
+          "avg_order_amount": 142.58
+        },
+        {
+          "month": "2017-03-01T00:00:00",
+          "avg_order_amount": 140.75
+        },
+        {
+          "month": "2017-04-01T00:00:00",
+          "avg_order_amount": 148.86
+        },
+        {
+          "month": "2017-05-01T00:00:00",
+          "avg_order_amount": 138.23
+        },
+        {
+          "month": "2017-06-01T00:00:00",
+          "avg_order_amount": 134.14
+        },
+        {
+          "month": "2017-07-01T00:00:00",
+          "avg_order_amount": 124.76
+        },
+        {
+          "month": "2017-08-01T00:00:00",
+          "avg_order_amount": 133.02
+        },
+        {
+          "month": "2017-09-01T00:00:00",
+          "avg_order_amount": 147.01
+        },
+        {
+          "month": "2017-10-01T00:00:00",
+          "avg_order_amount": 145.19
+        },
+        {
+          "month": "2017-11-01T00:00:00",
+          "avg_order_amount": 135.27
+        },
+        {
+          "month": "2017-12-01T00:00:00",
+          "avg_order_amount": 132.11
+        },
+        {
+          "month": "2018-01-01T00:00:00",
+          "avg_order_amount": 131.55
+        },
+        {
+          "month": "2018-02-01T00:00:00",
+          "avg_order_amount": 126.49
+        },
+        {
+          "month": "2018-03-01T00:00:00",
+          "avg_order_amount": 136.87
+        },
+        {
+          "month": "2018-04-01T00:00:00",
+          "avg_order_amount": 143.6
+        },
+        {
+          "month": "2018-05-01T00:00:00",
+          "avg_order_amount": 145.31
+        },
+        {
+          "month": "2018-06-01T00:00:00",
+          "avg_order_amount": 140.48
+        },
+        {
+          "month": "2018-07-01T00:00:00",
+          "avg_order_amount": 140.87
+        },
+        {
+          "month": "2018-08-01T00:00:00",
+          "avg_order_amount": 132.2
+        },
+        {
+          "month": "2018-09-01T00:00:00",
+          "avg_order_amount": 145.0
+        }
+      ]
+    },
+    {
+      "id": "T3-028",
+      "question": "最近 30 天内有登录记录的会员有多少人？",
+      "primaryReviewCategory": "scope",
+      "historicalCorrect": false,
+      "historicalStatus": "SUCCESS",
+      "goldSql": "SELECT COUNT(*) FROM members\nWHERE last_login_date > (SELECT MAX(last_login_date) FROM members) - 30;\n",
+      "actualSql": "-- 以会员表自身最大登录日期为基准，统计近30天内有登录的去重会员数\nSELECT COUNT(DISTINCT member_id) AS member_count\nFROM members\nWHERE last_login_date >= (SELECT MAX(last_login_date) FROM members) - INTERVAL '30 days';",
+      "goldColumns": [
+        "count"
+      ],
+      "actualColumns": [
+        "member_count"
+      ],
+      "goldRows": 1,
+      "actualRows": 1,
+      "goldResult": [
+        {
+          "count": 4321
+        }
+      ],
+      "actualResult": [
+        {
+          "member_count": 4458
+        }
+      ]
+    },
+    {
+      "id": "T4-010",
+      "question": "每个订单状态的商品销售总额是多少？",
+      "primaryReviewCategory": "scope",
+      "historicalCorrect": false,
+      "historicalStatus": "SUCCESS",
+      "goldSql": "SELECT o.order_status, ROUND(SUM(oi.price), 2) AS sales\nFROM orders o JOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY sales DESC;\n",
+      "actualSql": "SELECT o.order_status, ROUND(COALESCE(SUM(oi.price), 0), 2) AS total_sales\nFROM orders o\nLEFT JOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY o.order_status\nLIMIT 100;",
+      "goldColumns": [
+        "order_status",
+        "sales"
+      ],
+      "actualColumns": [
+        "order_status",
+        "total_sales"
+      ],
+      "goldRows": 7,
+      "actualRows": 8,
+      "goldResult": [
+        {
+          "order_status": "delivered",
+          "sales": 13221498.11
+        },
+        {
+          "order_status": "shipped",
+          "sales": 150727.44
+        },
+        {
+          "order_status": "canceled",
+          "sales": 95235.27
+        },
+        {
+          "order_status": "invoiced",
+          "sales": 61526.37
+        },
+        {
+          "order_status": "processing",
+          "sales": 60439.22
+        },
+        {
+          "order_status": "unavailable",
+          "sales": 2007.69
+        },
+        {
+          "order_status": "approved",
+          "sales": 209.6
+        }
+      ],
+      "actualResult": [
+        {
+          "order_status": "approved",
+          "total_sales": 209.6
+        },
+        {
+          "order_status": "canceled",
+          "total_sales": 95235.27
+        },
+        {
+          "order_status": "created",
+          "total_sales": 0.0
+        },
+        {
+          "order_status": "delivered",
+          "total_sales": 13221498.11
+        },
+        {
+          "order_status": "invoiced",
+          "total_sales": 61526.37
+        },
+        {
+          "order_status": "processing",
+          "total_sales": 60439.22
+        },
+        {
+          "order_status": "shipped",
+          "total_sales": 150727.44
+        },
+        {
+          "order_status": "unavailable",
+          "total_sales": 2007.69
+        }
+      ]
+    },
+    {
+      "id": "T4-012",
+      "question": "每个州的评价平均分是多少？取评价数最多的 10 个州。",
+      "primaryReviewCategory": "output_columns",
+      "historicalCorrect": false,
+      "historicalStatus": "SUCCESS",
+      "goldSql": "SELECT c.customer_state, ROUND(AVG(r.review_score), 2) AS avg_score, COUNT(*) AS cnt\nFROM order_reviews r\nJOIN orders o ON o.order_id = r.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY 1 ORDER BY cnt DESC LIMIT 10;\n",
+      "actualSql": "SELECT c.customer_state,\n       ROUND(AVG(r.review_score), 2) AS avg_review_score\nFROM order_reviews r\nJOIN orders o ON o.order_id = r.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY c.customer_state\nORDER BY COUNT(*) DESC\nLIMIT 10;",
+      "goldColumns": [
+        "customer_state",
+        "avg_score",
+        "cnt"
+      ],
+      "actualColumns": [
+        "customer_state",
+        "avg_review_score"
+      ],
+      "goldRows": 10,
+      "actualRows": 10,
+      "goldResult": [
+        {
+          "customer_state": "SP",
+          "avg_score": 4.17,
+          "cnt": 41690
+        },
+        {
+          "customer_state": "RJ",
+          "avg_score": 3.87,
+          "cnt": 12765
+        },
+        {
+          "customer_state": "MG",
+          "avg_score": 4.14,
+          "cnt": 11625
+        },
+        {
+          "customer_state": "RS",
+          "avg_score": 4.13,
+          "cnt": 5483
+        },
+        {
+          "customer_state": "PR",
+          "avg_score": 4.18,
+          "cnt": 5038
+        },
+        {
+          "customer_state": "SC",
+          "avg_score": 4.07,
+          "cnt": 3623
+        },
+        {
+          "customer_state": "BA",
+          "avg_score": 3.86,
+          "cnt": 3357
+        },
+        {
+          "customer_state": "DF",
+          "avg_score": 4.06,
+          "cnt": 2148
+        },
+        {
+          "customer_state": "GO",
+          "avg_score": 4.04,
+          "cnt": 2024
+        },
+        {
+          "customer_state": "ES",
+          "avg_score": 4.04,
+          "cnt": 2016
+        }
+      ],
+      "actualResult": [
+        {
+          "customer_state": "SP",
+          "avg_review_score": 4.17
+        },
+        {
+          "customer_state": "RJ",
+          "avg_review_score": 3.87
+        },
+        {
+          "customer_state": "MG",
+          "avg_review_score": 4.14
+        },
+        {
+          "customer_state": "RS",
+          "avg_review_score": 4.13
+        },
+        {
+          "customer_state": "PR",
+          "avg_review_score": 4.18
+        },
+        {
+          "customer_state": "SC",
+          "avg_review_score": 4.07
+        },
+        {
+          "customer_state": "BA",
+          "avg_review_score": 3.86
+        },
+        {
+          "customer_state": "DF",
+          "avg_review_score": 4.06
+        },
+        {
+          "customer_state": "GO",
+          "avg_review_score": 4.04
+        },
+        {
+          "customer_state": "ES",
+          "avg_review_score": 4.04
+        }
+      ],
+      "diagnosticAgreementAfterRemovingUnrequestedRankingCount": true
+    },
+    {
+      "id": "T4-014",
+      "question": "每种支付方式的评价平均分是多少？",
+      "primaryReviewCategory": "scope",
+      "historicalCorrect": false,
+      "historicalStatus": "SUCCESS",
+      "goldSql": "SELECT p.payment_type, ROUND(AVG(r.review_score), 2) AS avg_score\nFROM order_payments p\nJOIN order_reviews r ON r.order_id = p.order_id\nGROUP BY 1 ORDER BY avg_score DESC;\n",
+      "actualSql": "-- 先对 order_payments 按 order_id+payment_type 去重，避免一单多笔支付放大评价记录，再关联评价求平均分\nSELECT op.payment_type,\n       ROUND(AVG(r.review_score), 2) AS avg_score\nFROM (SELECT DISTINCT order_id, payment_type FROM order_payments) op\nJOIN order_reviews r ON r.order_id = op.order_id\nGROUP BY op.payment_type\nORDER BY avg_score DESC\nLIMIT 20;",
+      "goldColumns": [
+        "payment_type",
+        "avg_score"
+      ],
+      "actualColumns": [
+        "payment_type",
+        "avg_score"
+      ],
+      "goldRows": 5,
+      "actualRows": 5,
+      "goldResult": [
+        {
+          "payment_type": "debit_card",
+          "avg_score": 4.17
+        },
+        {
+          "payment_type": "boleto",
+          "avg_score": 4.09
+        },
+        {
+          "payment_type": "credit_card",
+          "avg_score": 4.09
+        },
+        {
+          "payment_type": "voucher",
+          "avg_score": 4.0
+        },
+        {
+          "payment_type": "not_defined",
+          "avg_score": 1.67
+        }
+      ],
+      "actualResult": [
+        {
+          "payment_type": "debit_card",
+          "avg_score": 4.17
+        },
+        {
+          "payment_type": "credit_card",
+          "avg_score": 4.09
+        },
+        {
+          "payment_type": "boleto",
+          "avg_score": 4.09
+        },
+        {
+          "payment_type": "voucher",
+          "avg_score": 4.02
+        },
+        {
+          "payment_type": "not_defined",
+          "avg_score": 1.67
+        }
+      ]
+    },
+    {
+      "id": "T4-016",
+      "question": "每个大区的商品销售额是多少？",
+      "primaryReviewCategory": "scope",
+      "historicalCorrect": false,
+      "historicalStatus": "SUCCESS",
+      "goldSql": "SELECT r.macro_region, ROUND(SUM(oi.price), 2) AS sales\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN regions r ON r.region_code = c.customer_state\nJOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY sales DESC;\n",
+      "actualSql": "SELECT r.macro_region, ROUND(SUM(oi.price), 2) AS sales\nFROM order_items oi\nJOIN sellers s ON s.seller_id = oi.seller_id\nJOIN regions r ON r.region_code = s.seller_state\nGROUP BY 1\nORDER BY sales DESC\nLIMIT 100;",
+      "goldColumns": [
+        "macro_region",
+        "sales"
+      ],
+      "actualColumns": [
+        "macro_region",
+        "sales"
+      ],
+      "goldRows": 5,
+      "actualRows": 5,
+      "goldResult": [
+        {
+          "macro_region": "Sudeste",
+          "sales": 8887393.06
+        },
+        {
+          "macro_region": "Sul",
+          "sales": 1953941.12
+        },
+        {
+          "macro_region": "Nordeste",
+          "sales": 1545493.75
+        },
+        {
+          "macro_region": "Centro-Oeste",
+          "sales": 870462.06
+        },
+        {
+          "macro_region": "Norte",
+          "sales": 334353.71
+        }
+      ],
+      "actualResult": [
+        {
+          "macro_region": "Sudeste",
+          "sales": 10656634.78
+        },
+        {
+          "macro_region": "Sul",
+          "sales": 2272872.82
+        },
+        {
+          "macro_region": "Nordeste",
+          "sales": 464920.8
+        },
+        {
+          "macro_region": "Centro-Oeste",
+          "sales": 189771.1
+        },
+        {
+          "macro_region": "Norte",
+          "sales": 7444.2
+        }
+      ]
+    },
+    {
+      "id": "T4-021",
+      "question": "每个活动带来的用券次数是多少？",
+      "primaryReviewCategory": "display",
+      "historicalCorrect": false,
+      "historicalStatus": "SUCCESS",
+      "goldSql": "SELECT c.campaign_name, COUNT(*) AS cnt\nFROM coupon_usages cu\nJOIN coupons cp ON cp.coupon_id = cu.coupon_id\nJOIN campaigns c ON c.campaign_id = cp.campaign_id\nGROUP BY 1 ORDER BY cnt DESC;\n",
+      "actualSql": "SELECT c.campaign_id, COUNT(cu.usage_id) AS usage_count\nFROM campaigns c\nLEFT JOIN coupons cp ON cp.campaign_id = c.campaign_id\nLEFT JOIN coupon_usages cu ON cu.coupon_id = cp.coupon_id\nGROUP BY c.campaign_id\nORDER BY c.campaign_id\nLIMIT 1000;",
+      "goldColumns": [
+        "campaign_name",
+        "cnt"
+      ],
+      "actualColumns": [
+        "campaign_id",
+        "usage_count"
+      ],
+      "goldRows": 52,
+      "actualRows": 52,
+      "goldResult": [
+        {
+          "campaign_name": "活动_27",
+          "cnt": 276
+        },
+        {
+          "campaign_name": "活动_24",
+          "cnt": 273
+        },
+        {
+          "campaign_name": "活动_16",
+          "cnt": 272
+        },
+        {
+          "campaign_name": "活动_37",
+          "cnt": 269
+        },
+        {
+          "campaign_name": "活动_21",
+          "cnt": 269
+        },
+        {
+          "campaign_name": "活动_4",
+          "cnt": 260
+        },
+        {
+          "campaign_name": "活动_23",
+          "cnt": 258
+        },
+        {
+          "campaign_name": "活动_25",
+          "cnt": 256
+        },
+        {
+          "campaign_name": "活动_18",
+          "cnt": 255
+        },
+        {
+          "campaign_name": "活动_3",
+          "cnt": 251
+        },
+        {
+          "campaign_name": "活动_7",
+          "cnt": 249
+        },
+        {
+          "campaign_name": "活动_32",
+          "cnt": 247
+        },
+        {
+          "campaign_name": "活动_12",
+          "cnt": 247
+        },
+        {
+          "campaign_name": "活动_38",
+          "cnt": 246
+        },
+        {
+          "campaign_name": "活动_15",
+          "cnt": 245
+        },
+        {
+          "campaign_name": "活动_8",
+          "cnt": 245
+        },
+        {
+          "campaign_name": "活动_17",
+          "cnt": 245
+        },
+        {
+          "campaign_name": "活动_19",
+          "cnt": 244
+        },
+        {
+          "campaign_name": "活动_5",
+          "cnt": 242
+        },
+        {
+          "campaign_name": "活动_13",
+          "cnt": 240
+        },
+        {
+          "campaign_name": "活动_36",
+          "cnt": 240
+        },
+        {
+          "campaign_name": "活动_44",
+          "cnt": 239
+        },
+        {
+          "campaign_name": "活动_22",
+          "cnt": 238
+        },
+        {
+          "campaign_name": "活动_34",
+          "cnt": 236
+        },
+        {
+          "campaign_name": "活动_26",
+          "cnt": 234
+        },
+        {
+          "campaign_name": "活动_40",
+          "cnt": 232
+        },
+        {
+          "campaign_name": "活动_35",
+          "cnt": 232
+        },
+        {
+          "campaign_name": "活动_33",
+          "cnt": 228
+        },
+        {
+          "campaign_name": "活动_14",
+          "cnt": 228
+        },
+        {
+          "campaign_name": "活动_39",
+          "cnt": 225
+        },
+        {
+          "campaign_name": "活动_10",
+          "cnt": 225
+        },
+        {
+          "campaign_name": "活动_49",
+          "cnt": 225
+        },
+        {
+          "campaign_name": "活动_29",
+          "cnt": 225
+        },
+        {
+          "campaign_name": "活动_6",
+          "cnt": 223
+        },
+        {
+          "campaign_name": "活动_30",
+          "cnt": 222
+        },
+        {
+          "campaign_name": "活动_31",
+          "cnt": 221
+        },
+        {
+          "campaign_name": "活动_20",
+          "cnt": 220
+        },
+        {
+          "campaign_name": "活动_52",
+          "cnt": 219
+        },
+        {
+          "campaign_name": "活动_2",
+          "cnt": 218
+        },
+        {
+          "campaign_name": "活动_28",
+          "cnt": 218
+        },
+        {
+          "campaign_name": "活动_11",
+          "cnt": 213
+        },
+        {
+          "campaign_name": "活动_41",
+          "cnt": 211
+        },
+        {
+          "campaign_name": "活动_9",
+          "cnt": 209
+        },
+        {
+          "campaign_name": "活动_48",
+          "cnt": 208
+        },
+        {
+          "campaign_name": "活动_45",
+          "cnt": 208
+        },
+        {
+          "campaign_name": "活动_46",
+          "cnt": 206
+        },
+        {
+          "campaign_name": "活动_43",
+          "cnt": 205
+        },
+        {
+          "campaign_name": "活动_47",
+          "cnt": 204
+        },
+        {
+          "campaign_name": "活动_51",
+          "cnt": 202
+        },
+        {
+          "campaign_name": "活动_1",
+          "cnt": 191
+        },
+        {
+          "campaign_name": "活动_42",
+          "cnt": 186
+        },
+        {
+          "campaign_name": "活动_50",
+          "cnt": 174
+        }
+      ],
+      "actualResult": [
+        {
+          "campaign_id": 1,
+          "usage_count": 191
+        },
+        {
+          "campaign_id": 2,
+          "usage_count": 218
+        },
+        {
+          "campaign_id": 3,
+          "usage_count": 251
+        },
+        {
+          "campaign_id": 4,
+          "usage_count": 260
+        },
+        {
+          "campaign_id": 5,
+          "usage_count": 242
+        },
+        {
+          "campaign_id": 6,
+          "usage_count": 223
+        },
+        {
+          "campaign_id": 7,
+          "usage_count": 249
+        },
+        {
+          "campaign_id": 8,
+          "usage_count": 245
+        },
+        {
+          "campaign_id": 9,
+          "usage_count": 209
+        },
+        {
+          "campaign_id": 10,
+          "usage_count": 225
+        },
+        {
+          "campaign_id": 11,
+          "usage_count": 213
+        },
+        {
+          "campaign_id": 12,
+          "usage_count": 247
+        },
+        {
+          "campaign_id": 13,
+          "usage_count": 240
+        },
+        {
+          "campaign_id": 14,
+          "usage_count": 228
+        },
+        {
+          "campaign_id": 15,
+          "usage_count": 245
+        },
+        {
+          "campaign_id": 16,
+          "usage_count": 272
+        },
+        {
+          "campaign_id": 17,
+          "usage_count": 245
+        },
+        {
+          "campaign_id": 18,
+          "usage_count": 255
+        },
+        {
+          "campaign_id": 19,
+          "usage_count": 244
+        },
+        {
+          "campaign_id": 20,
+          "usage_count": 220
+        },
+        {
+          "campaign_id": 21,
+          "usage_count": 269
+        },
+        {
+          "campaign_id": 22,
+          "usage_count": 238
+        },
+        {
+          "campaign_id": 23,
+          "usage_count": 258
+        },
+        {
+          "campaign_id": 24,
+          "usage_count": 273
+        },
+        {
+          "campaign_id": 25,
+          "usage_count": 256
+        },
+        {
+          "campaign_id": 26,
+          "usage_count": 234
+        },
+        {
+          "campaign_id": 27,
+          "usage_count": 276
+        },
+        {
+          "campaign_id": 28,
+          "usage_count": 218
+        },
+        {
+          "campaign_id": 29,
+          "usage_count": 225
+        },
+        {
+          "campaign_id": 30,
+          "usage_count": 222
+        },
+        {
+          "campaign_id": 31,
+          "usage_count": 221
+        },
+        {
+          "campaign_id": 32,
+          "usage_count": 247
+        },
+        {
+          "campaign_id": 33,
+          "usage_count": 228
+        },
+        {
+          "campaign_id": 34,
+          "usage_count": 236
+        },
+        {
+          "campaign_id": 35,
+          "usage_count": 232
+        },
+        {
+          "campaign_id": 36,
+          "usage_count": 240
+        },
+        {
+          "campaign_id": 37,
+          "usage_count": 269
+        },
+        {
+          "campaign_id": 38,
+          "usage_count": 246
+        },
+        {
+          "campaign_id": 39,
+          "usage_count": 225
+        },
+        {
+          "campaign_id": 40,
+          "usage_count": 232
+        },
+        {
+          "campaign_id": 41,
+          "usage_count": 211
+        },
+        {
+          "campaign_id": 42,
+          "usage_count": 186
+        },
+        {
+          "campaign_id": 43,
+          "usage_count": 205
+        },
+        {
+          "campaign_id": 44,
+          "usage_count": 239
+        },
+        {
+          "campaign_id": 45,
+          "usage_count": 208
+        },
+        {
+          "campaign_id": 46,
+          "usage_count": 206
+        },
+        {
+          "campaign_id": 47,
+          "usage_count": 204
+        },
+        {
+          "campaign_id": 48,
+          "usage_count": 208
+        },
+        {
+          "campaign_id": 49,
+          "usage_count": 225
+        },
+        {
+          "campaign_id": 50,
+          "usage_count": 174
+        },
+        {
+          "campaign_id": 51,
+          "usage_count": 202
+        },
+        {
+          "campaign_id": 52,
+          "usage_count": 219
+        }
+      ]
+    },
+    {
+      "id": "T4-027",
+      "question": "每个仓库的库存总量和平均库存量分别是多少？",
+      "primaryReviewCategory": "display",
+      "historicalCorrect": false,
+      "historicalStatus": "SUCCESS",
+      "goldSql": "SELECT w.warehouse_name, SUM(i.quantity) AS total_qty, ROUND(AVG(i.quantity), 2) AS avg_qty\nFROM inventory i JOIN warehouses w ON w.warehouse_id = i.warehouse_id\nGROUP BY 1 ORDER BY total_qty DESC;\n",
+      "actualSql": "SELECT warehouse_id, SUM(quantity) AS total_quantity, ROUND(AVG(quantity)::numeric, 2) AS avg_quantity\nFROM inventory\nGROUP BY warehouse_id\nORDER BY warehouse_id\nLIMIT 100;",
+      "goldColumns": [
+        "warehouse_name",
+        "total_qty",
+        "avg_qty"
+      ],
+      "actualColumns": [
+        "warehouse_id",
+        "total_quantity",
+        "avg_quantity"
+      ],
+      "goldRows": 5,
+      "actualRows": 5,
+      "goldResult": [
+        {
+          "warehouse_name": "东北仓",
+          "total_qty": 1256233,
+          "avg_qty": 248.66
+        },
+        {
+          "warehouse_name": "圣保罗中心仓",
+          "total_qty": 1250032,
+          "avg_qty": 252.63
+        },
+        {
+          "warehouse_name": "南部仓",
+          "total_qty": 1224732,
+          "avg_qty": 251.12
+        },
+        {
+          "warehouse_name": "里约分仓",
+          "total_qty": 1219929,
+          "avg_qty": 247.55
+        },
+        {
+          "warehouse_name": "米纳斯仓",
+          "total_qty": 1192808,
+          "avg_qty": 249.8
+        }
+      ],
+      "actualResult": [
+        {
+          "warehouse_id": 1,
+          "total_quantity": 1250032,
+          "avg_quantity": 252.63
+        },
+        {
+          "warehouse_id": 2,
+          "total_quantity": 1219929,
+          "avg_quantity": 247.55
+        },
+        {
+          "warehouse_id": 3,
+          "total_quantity": 1192808,
+          "avg_quantity": 249.8
+        },
+        {
+          "warehouse_id": 4,
+          "total_quantity": 1224732,
+          "avg_quantity": 251.12
+        },
+        {
+          "warehouse_id": 5,
+          "total_quantity": 1256233,
+          "avg_quantity": 248.66
+        }
+      ]
+    },
+    {
+      "id": "T4-043",
+      "question": "每个发货状态的发货单平均有几条物流轨迹记录？",
+      "primaryReviewCategory": "scope",
+      "historicalCorrect": false,
+      "historicalStatus": "SUCCESS",
+      "goldSql": "SELECT s.status, ROUND(AVG(t.cnt), 2) AS avg_events\nFROM shipments s\nJOIN (SELECT shipment_id, COUNT(*) AS cnt FROM shipment_tracking GROUP BY 1) t\n  ON t.shipment_id = s.shipment_id\nGROUP BY 1 ORDER BY 1;\n",
+      "actualSql": "SELECT status,\n       ROUND(AVG(rec_count)::numeric, 2) AS avg_tracking_records\nFROM (\n    SELECT s.shipment_id,\n           s.status,\n           COUNT(st.tracking_id) AS rec_count\n    FROM shipments s\n    LEFT JOIN shipment_tracking st ON st.shipment_id = s.shipment_id\n    GROUP BY s.shipment_id, s.status\n) x\nGROUP BY status\nORDER BY status\nLIMIT 10;",
+      "goldColumns": [
+        "status",
+        "avg_events"
+      ],
+      "actualColumns": [
+        "status",
+        "avg_tracking_records"
+      ],
+      "goldRows": 2,
+      "actualRows": 3,
+      "goldResult": [
+        {
+          "status": 2,
+          "avg_events": 3.0
+        },
+        {
+          "status": 3,
+          "avg_events": 3.0
+        }
+      ],
+      "actualResult": [
+        {
+          "status": 1,
+          "avg_tracking_records": 0.0
+        },
+        {
+          "status": 2,
+          "avg_tracking_records": 3.0
+        },
+        {
+          "status": 3,
+          "avg_tracking_records": 3.0
+        }
+      ]
+    },
+    {
+      "id": "T4-045",
+      "question": "每个类目的平均商品重量是多少？取商品数最多的 10 个类目。",
+      "primaryReviewCategory": "output_columns",
+      "historicalCorrect": false,
+      "historicalStatus": "SUCCESS",
+      "goldSql": "SELECT p.product_category_name,\n       COUNT(*) AS product_cnt,\n       ROUND(AVG(p.product_weight_g), 2) AS avg_weight\nFROM products p\nWHERE p.product_category_name IS NOT NULL AND p.product_weight_g IS NOT NULL\nGROUP BY 1 ORDER BY product_cnt DESC LIMIT 10;\n",
+      "actualSql": "SELECT p.product_category_name,\n       ROUND(AVG(p.product_weight_g)::numeric, 2) AS avg_product_weight\nFROM products p\nWHERE p.product_category_name IS NOT NULL\nGROUP BY p.product_category_name\nORDER BY COUNT(p.product_id) DESC\nLIMIT 10;",
+      "goldColumns": [
+        "product_category_name",
+        "product_cnt",
+        "avg_weight"
+      ],
+      "actualColumns": [
+        "product_category_name",
+        "avg_product_weight"
+      ],
+      "goldRows": 10,
+      "actualRows": 10,
+      "goldResult": [
+        {
+          "product_category_name": "cama_mesa_banho",
+          "product_cnt": 3029,
+          "avg_weight": 2456.41
+        },
+        {
+          "product_category_name": "esporte_lazer",
+          "product_cnt": 2867,
+          "avg_weight": 2024.67
+        },
+        {
+          "product_category_name": "moveis_decoracao",
+          "product_cnt": 2657,
+          "avg_weight": 3008.27
+        },
+        {
+          "product_category_name": "beleza_saude",
+          "product_cnt": 2444,
+          "avg_weight": 1434.79
+        },
+        {
+          "product_category_name": "utilidades_domesticas",
+          "product_cnt": 2335,
+          "avg_weight": 3020.79
+        },
+        {
+          "product_category_name": "automotivo",
+          "product_cnt": 1900,
+          "avg_weight": 2654.65
+        },
+        {
+          "product_category_name": "informatica_acessorios",
+          "product_cnt": 1639,
+          "avg_weight": 898.38
+        },
+        {
+          "product_category_name": "brinquedos",
+          "product_cnt": 1411,
+          "avg_weight": 1869.36
+        },
+        {
+          "product_category_name": "relogios_presentes",
+          "product_cnt": 1329,
+          "avg_weight": 509.29
+        },
+        {
+          "product_category_name": "telefonia",
+          "product_cnt": 1134,
+          "avg_weight": 236.51
+        }
+      ],
+      "actualResult": [
+        {
+          "product_category_name": "cama_mesa_banho",
+          "avg_product_weight": 2456.41
+        },
+        {
+          "product_category_name": "esporte_lazer",
+          "avg_product_weight": 2024.67
+        },
+        {
+          "product_category_name": "moveis_decoracao",
+          "avg_product_weight": 3008.27
+        },
+        {
+          "product_category_name": "beleza_saude",
+          "avg_product_weight": 1434.79
+        },
+        {
+          "product_category_name": "utilidades_domesticas",
+          "avg_product_weight": 3020.79
+        },
+        {
+          "product_category_name": "automotivo",
+          "avg_product_weight": 2654.65
+        },
+        {
+          "product_category_name": "informatica_acessorios",
+          "avg_product_weight": 898.38
+        },
+        {
+          "product_category_name": "brinquedos",
+          "avg_product_weight": 1869.36
+        },
+        {
+          "product_category_name": "relogios_presentes",
+          "avg_product_weight": 509.29
+        },
+        {
+          "product_category_name": "telefonia",
+          "avg_product_weight": 236.51
+        }
+      ],
+      "diagnosticAgreementAfterRemovingUnrequestedRankingCount": true
+    },
+    {
+      "id": "T5-006",
+      "question": "物流延迟类工单按客户所在州和会员等级分布，列出前 20 组。",
+      "primaryReviewCategory": "display",
+      "historicalCorrect": false,
+      "historicalStatus": "SUCCESS",
+      "goldSql": "SELECT c.customer_state, ml.level_name, COUNT(DISTINCT st.ticket_id) AS tickets\nFROM support_tickets st\nJOIN ticket_categories tc ON tc.category_id = st.category_id\nJOIN orders o ON o.order_id = st.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN members m ON m.member_id = st.member_id\nJOIN member_levels ml ON ml.level_id = m.level_id\nWHERE tc.category_name = '物流延迟'\nGROUP BY 1, 2 ORDER BY tickets DESC LIMIT 20;\n",
+      "actualSql": "SELECT c.customer_state, m.level_id, COUNT(DISTINCT st.ticket_id) AS ticket_count\nFROM support_tickets st\nJOIN ticket_categories tc ON tc.category_id = st.category_id\nJOIN members m ON m.member_id = st.member_id\nJOIN customers c ON c.customer_unique_id = m.customer_unique_id\nWHERE tc.category_name = '物流延迟'\nGROUP BY c.customer_state, m.level_id\nORDER BY ticket_count DESC, c.customer_state, m.level_id\nLIMIT 20;",
+      "goldColumns": [
+        "customer_state",
+        "level_name",
+        "tickets"
+      ],
+      "actualColumns": [
+        "customer_state",
+        "level_id",
+        "ticket_count"
+      ],
+      "goldRows": 20,
+      "actualRows": 20,
+      "goldResult": [
+        {
+          "customer_state": "SP",
+          "level_name": "青铜会员",
+          "tickets": 188
+        },
+        {
+          "customer_state": "SP",
+          "level_name": "白银会员",
+          "tickets": 134
+        },
+        {
+          "customer_state": "RJ",
+          "level_name": "青铜会员",
+          "tickets": 54
+        },
+        {
+          "customer_state": "RJ",
+          "level_name": "白银会员",
+          "tickets": 49
+        },
+        {
+          "customer_state": "RS",
+          "level_name": "青铜会员",
+          "tickets": 38
+        },
+        {
+          "customer_state": "MG",
+          "level_name": "青铜会员",
+          "tickets": 36
+        },
+        {
+          "customer_state": "SP",
+          "level_name": "黄金会员",
+          "tickets": 30
+        },
+        {
+          "customer_state": "PR",
+          "level_name": "青铜会员",
+          "tickets": 24
+        },
+        {
+          "customer_state": "MG",
+          "level_name": "白银会员",
+          "tickets": 22
+        },
+        {
+          "customer_state": "BA",
+          "level_name": "青铜会员",
+          "tickets": 15
+        },
+        {
+          "customer_state": "PR",
+          "level_name": "白银会员",
+          "tickets": 15
+        },
+        {
+          "customer_state": "SC",
+          "level_name": "青铜会员",
+          "tickets": 15
+        },
+        {
+          "customer_state": "ES",
+          "level_name": "青铜会员",
+          "tickets": 14
+        },
+        {
+          "customer_state": "DF",
+          "level_name": "青铜会员",
+          "tickets": 11
+        },
+        {
+          "customer_state": "PE",
+          "level_name": "青铜会员",
+          "tickets": 11
+        },
+        {
+          "customer_state": "RS",
+          "level_name": "白银会员",
+          "tickets": 11
+        },
+        {
+          "customer_state": "BA",
+          "level_name": "白银会员",
+          "tickets": 10
+        },
+        {
+          "customer_state": "CE",
+          "level_name": "青铜会员",
+          "tickets": 10
+        },
+        {
+          "customer_state": "GO",
+          "level_name": "青铜会员",
+          "tickets": 10
+        },
+        {
+          "customer_state": "GO",
+          "level_name": "白银会员",
+          "tickets": 9
+        }
+      ],
+      "actualResult": [
+        {
+          "customer_state": "SP",
+          "level_id": 1,
+          "ticket_count": 188
+        },
+        {
+          "customer_state": "SP",
+          "level_id": 2,
+          "ticket_count": 134
+        },
+        {
+          "customer_state": "RJ",
+          "level_id": 1,
+          "ticket_count": 54
+        },
+        {
+          "customer_state": "RJ",
+          "level_id": 2,
+          "ticket_count": 49
+        },
+        {
+          "customer_state": "RS",
+          "level_id": 1,
+          "ticket_count": 38
+        },
+        {
+          "customer_state": "MG",
+          "level_id": 1,
+          "ticket_count": 36
+        },
+        {
+          "customer_state": "SP",
+          "level_id": 3,
+          "ticket_count": 30
+        },
+        {
+          "customer_state": "PR",
+          "level_id": 1,
+          "ticket_count": 24
+        },
+        {
+          "customer_state": "MG",
+          "level_id": 2,
+          "ticket_count": 22
+        },
+        {
+          "customer_state": "BA",
+          "level_id": 1,
+          "ticket_count": 15
+        },
+        {
+          "customer_state": "PR",
+          "level_id": 2,
+          "ticket_count": 15
+        },
+        {
+          "customer_state": "SC",
+          "level_id": 1,
+          "ticket_count": 15
+        },
+        {
+          "customer_state": "ES",
+          "level_id": 1,
+          "ticket_count": 14
+        },
+        {
+          "customer_state": "DF",
+          "level_id": 1,
+          "ticket_count": 11
+        },
+        {
+          "customer_state": "PE",
+          "level_id": 1,
+          "ticket_count": 11
+        },
+        {
+          "customer_state": "RS",
+          "level_id": 2,
+          "ticket_count": 11
+        },
+        {
+          "customer_state": "BA",
+          "level_id": 2,
+          "ticket_count": 10
+        },
+        {
+          "customer_state": "CE",
+          "level_id": 1,
+          "ticket_count": 10
+        },
+        {
+          "customer_state": "GO",
+          "level_id": 1,
+          "ticket_count": 10
+        },
+        {
+          "customer_state": "GO",
+          "level_id": 2,
+          "ticket_count": 9
+        }
+      ]
+    },
+    {
+      "id": "T5-015",
+      "question": "物流轨迹事件类型按客户所在州分布，列出前 20 组（按发货单去重）。",
+      "primaryReviewCategory": "scope",
+      "historicalCorrect": false,
+      "historicalStatus": "SUCCESS",
+      "goldSql": "SELECT st.event_code, c.customer_state, COUNT(DISTINCT s.shipment_id) AS shipments\nFROM shipment_tracking st\nJOIN shipments s ON s.shipment_id = st.shipment_id\nJOIN orders o ON o.order_id = s.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1, 2 ORDER BY shipments DESC LIMIT 20;\n",
+      "actualSql": "SELECT st.event_code, c.customer_state, COUNT(DISTINCT st.shipment_id) AS shipment_count\nFROM shipment_tracking st\nJOIN shipments s ON s.shipment_id = st.shipment_id\nJOIN orders o ON o.order_id = s.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY st.event_code, c.customer_state\nORDER BY shipment_count DESC\nLIMIT 20;",
+      "goldColumns": [
+        "event_code",
+        "customer_state",
+        "shipments"
+      ],
+      "actualColumns": [
+        "event_code",
+        "customer_state",
+        "shipment_count"
+      ],
+      "goldRows": 20,
+      "actualRows": 20,
+      "goldResult": [
+        {
+          "event_code": "OUT_FOR_DELIVERY",
+          "customer_state": "SP",
+          "shipments": 40828
+        },
+        {
+          "event_code": "IN_TRANSIT",
+          "customer_state": "SP",
+          "shipments": 40828
+        },
+        {
+          "event_code": "ARRIVED",
+          "customer_state": "SP",
+          "shipments": 40828
+        },
+        {
+          "event_code": "IN_TRANSIT",
+          "customer_state": "RJ",
+          "shipments": 12639
+        },
+        {
+          "event_code": "OUT_FOR_DELIVERY",
+          "customer_state": "RJ",
+          "shipments": 12639
+        },
+        {
+          "event_code": "ARRIVED",
+          "customer_state": "RJ",
+          "shipments": 12639
+        },
+        {
+          "event_code": "OUT_FOR_DELIVERY",
+          "customer_state": "MG",
+          "shipments": 11425
+        },
+        {
+          "event_code": "ARRIVED",
+          "customer_state": "MG",
+          "shipments": 11425
+        },
+        {
+          "event_code": "IN_TRANSIT",
+          "customer_state": "MG",
+          "shipments": 11425
+        },
+        {
+          "event_code": "ARRIVED",
+          "customer_state": "RS",
+          "shipments": 5380
+        },
+        {
+          "event_code": "OUT_FOR_DELIVERY",
+          "customer_state": "RS",
+          "shipments": 5380
+        },
+        {
+          "event_code": "IN_TRANSIT",
+          "customer_state": "RS",
+          "shipments": 5380
+        },
+        {
+          "event_code": "IN_TRANSIT",
+          "customer_state": "PR",
+          "shipments": 4952
+        },
+        {
+          "event_code": "OUT_FOR_DELIVERY",
+          "customer_state": "PR",
+          "shipments": 4952
+        },
+        {
+          "event_code": "ARRIVED",
+          "customer_state": "PR",
+          "shipments": 4952
+        },
+        {
+          "event_code": "IN_TRANSIT",
+          "customer_state": "SC",
+          "shipments": 3574
+        },
+        {
+          "event_code": "ARRIVED",
+          "customer_state": "SC",
+          "shipments": 3574
+        },
+        {
+          "event_code": "OUT_FOR_DELIVERY",
+          "customer_state": "SC",
+          "shipments": 3574
+        },
+        {
+          "event_code": "ARRIVED",
+          "customer_state": "BA",
+          "shipments": 3324
+        },
+        {
+          "event_code": "IN_TRANSIT",
+          "customer_state": "BA",
+          "shipments": 3324
+        }
+      ],
+      "actualResult": [
+        {
+          "event_code": "OUT_FOR_DELIVERY",
+          "customer_state": "SP",
+          "shipment_count": 40828
+        },
+        {
+          "event_code": "IN_TRANSIT",
+          "customer_state": "SP",
+          "shipment_count": 40828
+        },
+        {
+          "event_code": "ARRIVED",
+          "customer_state": "SP",
+          "shipment_count": 40828
+        },
+        {
+          "event_code": "IN_TRANSIT",
+          "customer_state": "RJ",
+          "shipment_count": 12639
+        },
+        {
+          "event_code": "OUT_FOR_DELIVERY",
+          "customer_state": "RJ",
+          "shipment_count": 12639
+        },
+        {
+          "event_code": "ARRIVED",
+          "customer_state": "RJ",
+          "shipment_count": 12639
+        },
+        {
+          "event_code": "OUT_FOR_DELIVERY",
+          "customer_state": "MG",
+          "shipment_count": 11425
+        },
+        {
+          "event_code": "ARRIVED",
+          "customer_state": "MG",
+          "shipment_count": 11425
+        },
+        {
+          "event_code": "IN_TRANSIT",
+          "customer_state": "MG",
+          "shipment_count": 11425
+        },
+        {
+          "event_code": "ARRIVED",
+          "customer_state": "RS",
+          "shipment_count": 5381
+        },
+        {
+          "event_code": "OUT_FOR_DELIVERY",
+          "customer_state": "RS",
+          "shipment_count": 5381
+        },
+        {
+          "event_code": "IN_TRANSIT",
+          "customer_state": "RS",
+          "shipment_count": 5381
+        },
+        {
+          "event_code": "IN_TRANSIT",
+          "customer_state": "PR",
+          "shipment_count": 4952
+        },
+        {
+          "event_code": "OUT_FOR_DELIVERY",
+          "customer_state": "PR",
+          "shipment_count": 4952
+        },
+        {
+          "event_code": "ARRIVED",
+          "customer_state": "PR",
+          "shipment_count": 4952
+        },
+        {
+          "event_code": "IN_TRANSIT",
+          "customer_state": "SC",
+          "shipment_count": 3574
+        },
+        {
+          "event_code": "ARRIVED",
+          "customer_state": "SC",
+          "shipment_count": 3574
+        },
+        {
+          "event_code": "OUT_FOR_DELIVERY",
+          "customer_state": "SC",
+          "shipment_count": 3574
+        },
+        {
+          "event_code": "ARRIVED",
+          "customer_state": "BA",
+          "shipment_count": 3324
+        },
+        {
+          "event_code": "IN_TRANSIT",
+          "customer_state": "BA",
+          "shipment_count": 3324
+        }
+      ]
+    },
+    {
+      "id": "T6-025",
+      "question": "2018 年每个月的 GMV 中，新客和老客各贡献多少？",
+      "primaryReviewCategory": "cohort_vs_tag",
+      "historicalCorrect": false,
+      "historicalStatus": "SUCCESS",
+      "goldSql": "WITH first_order AS (\n  SELECT c.customer_unique_id, MIN(o.order_purchase_timestamp) AS first_ts\n  FROM orders o\n  JOIN customers c ON c.customer_id = o.customer_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n  GROUP BY 1\n),\nmonthly AS (\n  SELECT DATE_TRUNC('month', o.order_purchase_timestamp)::date AS month,\n         c.customer_unique_id,\n         SUM(oi.price + oi.freight_value) AS gmv\n  FROM orders o\n  JOIN customers c ON c.customer_id = o.customer_id\n  JOIN order_items oi ON oi.order_id = o.order_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n    AND o.order_purchase_timestamp >= DATE '2018-01-01'\n    AND o.order_purchase_timestamp < DATE '2019-01-01'\n  GROUP BY 1, 2\n)\nSELECT m.month,\n       ROUND(SUM(m.gmv) FILTER (WHERE DATE_TRUNC('month', f.first_ts)::date = m.month), 2) AS new_customer_gmv,\n       ROUND(SUM(m.gmv) FILTER (WHERE DATE_TRUNC('month', f.first_ts)::date <> m.month), 2) AS returning_gmv\nFROM monthly m\nJOIN first_order f ON f.customer_unique_id = m.customer_unique_id\nGROUP BY 1 ORDER BY 1;\n",
+      "actualSql": "-- 按会员是否带有 NEW_USER 标签划分新客/老客，汇总 2018 年各月含运费 GMV\nSELECT date_trunc('month', o.order_purchase_timestamp) AS month,\n       round(sum(CASE WHEN nc.customer_unique_id IS NOT NULL THEN oi.price + oi.freight_value ELSE 0 END), 2) AS new_customer_gmv,\n       round(sum(CASE WHEN nc.customer_unique_id IS NULL THEN oi.price + oi.freight_value ELSE 0 END), 2) AS old_customer_gmv\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN order_items oi ON oi.order_id = o.order_id\nLEFT JOIN (\n  SELECT DISTINCT m.customer_unique_id\n  FROM user_tags t\n  JOIN user_tag_map utm ON utm.tag_id = t.tag_id\n  JOIN members m ON m.member_id = utm.member_id\n  WHERE t.tag_code = 'NEW_USER'\n) nc ON nc.customer_unique_id = c.customer_unique_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable')\n  AND o.order_purchase_timestamp >= '2018-01-01'\n  AND o.order_purchase_timestamp < '2019-01-01'\nGROUP BY 1\nORDER BY 1\nLIMIT 12;",
+      "goldColumns": [
+        "month",
+        "new_customer_gmv",
+        "returning_gmv"
+      ],
+      "actualColumns": [
+        "month",
+        "new_customer_gmv",
+        "old_customer_gmv"
+      ],
+      "goldRows": 9,
+      "actualRows": 9,
+      "goldResult": [
+        {
+          "month": "2018-01-01",
+          "new_customer_gmv": 1080695.6,
+          "returning_gmv": 21224.41
+        },
+        {
+          "month": "2018-02-01",
+          "new_customer_gmv": 963261.8,
+          "returning_gmv": 16224.36
+        },
+        {
+          "month": "2018-03-01",
+          "new_customer_gmv": 1132149.77,
+          "returning_gmv": 20507.22
+        },
+        {
+          "month": "2018-04-01",
+          "new_customer_gmv": 1130690.65,
+          "returning_gmv": 25558.24
+        },
+        {
+          "month": "2018-05-01",
+          "new_customer_gmv": 1116802.01,
+          "returning_gmv": 28884.45
+        },
+        {
+          "month": "2018-06-01",
+          "new_customer_gmv": 989904.6,
+          "returning_gmv": 30477.3
+        },
+        {
+          "month": "2018-07-01",
+          "new_customer_gmv": 1015170.06,
+          "returning_gmv": 24613.52
+        },
+        {
+          "month": "2018-08-01",
+          "new_customer_gmv": 973921.23,
+          "returning_gmv": 23052.28
+        },
+        {
+          "month": "2018-09-01",
+          "new_customer_gmv": null,
+          "returning_gmv": 166.46
+        }
+      ],
+      "actualResult": [
+        {
+          "month": "2018-01-01T00:00:00",
+          "new_customer_gmv": 136310.7,
+          "old_customer_gmv": 965609.31
+        },
+        {
+          "month": "2018-02-01T00:00:00",
+          "new_customer_gmv": 113849.15,
+          "old_customer_gmv": 865637.01
+        },
+        {
+          "month": "2018-03-01T00:00:00",
+          "new_customer_gmv": 132186.78,
+          "old_customer_gmv": 1020470.21
+        },
+        {
+          "month": "2018-04-01T00:00:00",
+          "new_customer_gmv": 140896.71,
+          "old_customer_gmv": 1015352.18
+        },
+        {
+          "month": "2018-05-01T00:00:00",
+          "new_customer_gmv": 137883.41,
+          "old_customer_gmv": 1007803.05
+        },
+        {
+          "month": "2018-06-01T00:00:00",
+          "new_customer_gmv": 108132.0,
+          "old_customer_gmv": 912249.9
+        },
+        {
+          "month": "2018-07-01T00:00:00",
+          "new_customer_gmv": 128519.09,
+          "old_customer_gmv": 911264.49
+        },
+        {
+          "month": "2018-08-01T00:00:00",
+          "new_customer_gmv": 123428.36,
+          "old_customer_gmv": 873545.15
+        },
+        {
+          "month": "2018-09-01T00:00:00",
+          "new_customer_gmv": 0.0,
+          "old_customer_gmv": 166.46
+        }
+      ]
+    }
+  ],
+  "limits": [
+    "Diagnostic categories are not regrading and may coexist with secondary defects.",
+    "Column projection comparisons are explanations only; original strict failures remain.",
+    "The frozen p18 candidate and its original inputs remain unchanged."
+  ],
+  "cohortInputReview": {
+    "metricsText": "METRIC gmv_with_freight  -- GMV（含运费）= 商品金额 + 运费\n  表达式: SUM(oi.price + oi.freight_value)\n  过滤条件（默认附加）: o.order_status NOT IN ('canceled', 'unavailable')\n    —— 例外：只有用户明确覆盖此过滤，或当前指标说明明确规定该场景例外时才省略。类目、年份等其他维度限定不能自动取消此过滤；与它共同限定事实集合。\n  GMV 含不含运费是行业里长期有争议的口径。本项目采用**含运费**，\n  理由：运费是客户实际支付的金额，属于成交额。",
+    "tables": [
+      "customers",
+      "order_items",
+      "user_tags",
+      "orders",
+      "support_tickets",
+      "members",
+      "products",
+      "regions",
+      "user_tag_map"
+    ],
+    "valueHints": "- 问题中的「新客」对应真实过滤条件：tag_code = 'NEW_USER'（表 user_tags）\n- 问题中的「中」对应真实过滤条件：priority = '2'（表 support_tickets）",
+    "metricAndValueHintHashesMatchHistoricalPaidInput": true,
+    "glossaryCommentDefinesFirstOrderMonth": true,
+    "commentAbsentFromRenderedMetrics": true
+  }
+}

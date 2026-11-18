@@ -1,0 +1,600 @@
+{
+  "format": "p18-formal-failure-details-v1",
+  "scoresUnchanged": true,
+  "items": [
+    {
+      "round": "r1",
+      "id": "T2-015",
+      "status": "SUCCESS",
+      "question": "每个会员等级的平均积分是多少？",
+      "goldSql": "SELECT level_id, ROUND(AVG(points), 2) AS avg_points\nFROM members GROUP BY level_id ORDER BY level_id;\n",
+      "actualSql": "SELECT ml.level_name,\n       ROUND(AVG(m.points), 2) AS avg_points\nFROM members m\nJOIN member_levels ml ON ml.level_id = m.level_id\nGROUP BY ml.level_id, ml.level_name\nORDER BY ml.level_name\nLIMIT 100;",
+      "goldSqlSha256": "e79de437d9a37a3619f3680b2af1facc61c07e768c003d34e0b0630516a33e17"
+    },
+    {
+      "round": "r1",
+      "id": "T2-019",
+      "status": "SUCCESS",
+      "question": "每个活动的预算总额是多少？",
+      "goldSql": "SELECT campaign_id, budget FROM campaigns ORDER BY budget DESC;\n",
+      "actualSql": "SELECT ca.campaign_name, ROUND(SUM(ca.budget), 2) AS total_budget\nFROM campaigns ca\nGROUP BY ca.campaign_id, ca.campaign_name\nORDER BY ca.campaign_id\nLIMIT 100;",
+      "goldSqlSha256": "b8fc2a724d5cc8592b539b53a0efdddb2007a05ba365c3523acb146a047f575b"
+    },
+    {
+      "round": "r1",
+      "id": "T2-024",
+      "status": "SUCCESS",
+      "question": "每个仓库各有多少条库存记录？",
+      "goldSql": "SELECT warehouse_id, COUNT(*) AS cnt\nFROM inventory GROUP BY warehouse_id ORDER BY warehouse_id;\n",
+      "actualSql": "SELECT w.warehouse_name, COUNT(i.product_id) AS inventory_records\nFROM warehouses w\nLEFT JOIN inventory i ON i.warehouse_id = w.warehouse_id\nGROUP BY w.warehouse_id, w.warehouse_name\nORDER BY inventory_records DESC\nLIMIT 100;",
+      "goldSqlSha256": "07a9cb279c0d8aed3420d5b1b1146b79a894763e74c82e3bd07a475a37c4c4ca"
+    },
+    {
+      "round": "r1",
+      "id": "T2-026",
+      "status": "SUCCESS",
+      "question": "每个仓库的库存总数量是多少？",
+      "goldSql": "SELECT warehouse_id, SUM(quantity) AS total_qty\nFROM inventory GROUP BY warehouse_id ORDER BY warehouse_id;\n",
+      "actualSql": "SELECT w.warehouse_name, SUM(i.quantity) AS total_quantity\nFROM inventory i\nLEFT JOIN warehouses w ON w.warehouse_id = i.warehouse_id\nGROUP BY w.warehouse_id, w.warehouse_name\nORDER BY total_quantity DESC\nLIMIT 100;",
+      "goldSqlSha256": "91483ab7bde35e977242dddc26b3c459ea1a3dcf1163a60dce5b6b7997ce0ffd"
+    },
+    {
+      "round": "r1",
+      "id": "T3-012",
+      "status": "REQUEST_TIMEOUT",
+      "question": "2018 年每个月的订单量相比 2017 年同期增长了多少？",
+      "goldSql": "WITH monthly AS (\n  SELECT EXTRACT(YEAR FROM order_purchase_timestamp)::INT AS yr,\n         EXTRACT(MONTH FROM order_purchase_timestamp)::INT AS mo,\n         COUNT(*) AS cnt\n  FROM orders\n  WHERE EXTRACT(YEAR FROM order_purchase_timestamp) IN (2017, 2018)\n  GROUP BY 1, 2\n)\nSELECT cur.mo AS month,\n       cur.cnt - prev.cnt AS yoy_change\nFROM monthly cur\nJOIN monthly prev ON prev.mo = cur.mo AND prev.yr = 2017\nWHERE cur.yr = 2018\nORDER BY cur.mo;\n",
+      "actualSql": null,
+      "goldSqlSha256": "07cd42e5f8393da61ad5899fd7601f4513d0c9d9122b6da96a7ce92544edb071"
+    },
+    {
+      "round": "r1",
+      "id": "T4-004",
+      "status": "NEEDS_CLARIFICATION",
+      "question": "用英文类目名统计，哪个类目的销售额最高？",
+      "goldSql": "SELECT t.product_category_name_english, ROUND(SUM(oi.price), 2) AS sales\nFROM order_items oi\nJOIN products p ON p.product_id = oi.product_id\nJOIN product_category_translation t ON t.product_category_name = p.product_category_name\nGROUP BY 1 ORDER BY sales DESC LIMIT 1;\n",
+      "actualSql": null,
+      "goldSqlSha256": "c7b65fed046beba73ae35527ac3b0d0dffd4a21c590ff8b1e2e3efcadfe232e5"
+    },
+    {
+      "round": "r1",
+      "id": "T4-006",
+      "status": "NEEDS_CLARIFICATION",
+      "question": "每个卖家所在的州和该州卖家的总销售额是多少？",
+      "goldSql": "SELECT s.seller_state, ROUND(SUM(oi.price), 2) AS sales\nFROM order_items oi JOIN sellers s ON s.seller_id = oi.seller_id\nGROUP BY 1 ORDER BY sales DESC;\n",
+      "actualSql": null,
+      "goldSqlSha256": "1987bc8b4f9553e197664c085339dbeabda5c50ceed0ede02375ee5f7f199264"
+    },
+    {
+      "round": "r1",
+      "id": "T4-013",
+      "status": "SUCCESS",
+      "question": "差评（1 分或 2 分）的订单里，各州分别有多少笔？",
+      "goldSql": "SELECT c.customer_state, COUNT(*) AS cnt\nFROM order_reviews r\nJOIN orders o ON o.order_id = r.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nWHERE r.review_score <= 2\nGROUP BY 1 ORDER BY cnt DESC;\n",
+      "actualSql": "-- 统计差评(1-2分)订单在各州的分布：按订单去重，保留无匹配维表的州\nSELECT c.customer_state, COUNT(DISTINCT r.order_id) AS bad_order_cnt\nFROM order_reviews r\nJOIN orders o ON o.order_id = r.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nWHERE r.review_score IN (1, 2)\nGROUP BY c.customer_state\nORDER BY bad_order_cnt DESC\nLIMIT 100;",
+      "goldSqlSha256": "8e24399b14a22d02c36409ab90dec0728ad0ffdb9aea758292465534825e7614"
+    },
+    {
+      "round": "r1",
+      "id": "T4-017",
+      "status": "SUCCESS",
+      "question": "每个会员等级对应的订单数量是多少？",
+      "goldSql": "SELECT m.level_id, COUNT(*) AS cnt\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN members m ON m.customer_unique_id = c.customer_unique_id\nGROUP BY 1 ORDER BY 1;\n",
+      "actualSql": "SELECT ml.level_name, COUNT(DISTINCT o.order_id) AS order_count\nFROM member_levels ml\nLEFT JOIN members m ON m.level_id = ml.level_id\nLEFT JOIN customers c ON c.customer_unique_id = m.customer_unique_id\nLEFT JOIN orders o ON o.customer_id = c.customer_id\nGROUP BY ml.level_id, ml.level_name\nORDER BY ml.level_id\nLIMIT 100;",
+      "goldSqlSha256": "a332fb1c0ff256be48dc41853ffb2bfea7bb38ac607e08cbe946c7c4cdb533b4"
+    },
+    {
+      "round": "r1",
+      "id": "T5-003",
+      "status": "REQUEST_TIMEOUT",
+      "question": "用英文类目名统计退款金额，哪些类目退款最多？取前 15。",
+      "goldSql": "SELECT t.product_category_name_english, ROUND(SUM(ri.refund_value), 2) AS refund_amt\nFROM refunds r\nJOIN refund_items ri ON ri.refund_id = r.refund_id\nJOIN order_items oi ON oi.order_id = ri.order_id AND oi.order_item_id = ri.order_item_id\nJOIN products p ON p.product_id = oi.product_id\nJOIN product_category_translation t ON t.product_category_name = p.product_category_name\nGROUP BY 1 ORDER BY refund_amt DESC LIMIT 15;\n",
+      "actualSql": null,
+      "goldSqlSha256": "14a86ec3361efc8eee8eb24f1d296065ab4c45ea4fc0420ded2c2288126a5366"
+    },
+    {
+      "round": "r1",
+      "id": "T5-005",
+      "status": "SUCCESS",
+      "question": "每个优惠券活动带来的有效订单数和商品销售额是多少？取前 10。",
+      "goldSql": "SELECT ca.campaign_name, COUNT(DISTINCT cu.order_id) AS used_orders, ROUND(SUM(oi.price), 2) AS gmv\nFROM coupon_usages cu\nJOIN coupons cp ON cp.coupon_id = cu.coupon_id\nJOIN campaigns ca ON ca.campaign_id = cp.campaign_id\nJOIN orders o ON o.order_id = cu.order_id\nJOIN order_items oi ON oi.order_id = cu.order_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable')\nGROUP BY 1 ORDER BY gmv DESC LIMIT 10;\n",
+      "actualSql": "SELECT x.campaign_name,\n       COUNT(*) AS valid_orders,\n       ROUND(SUM(COALESCE(os.sales, 0)), 2) AS sales\nFROM (\n    SELECT DISTINCT ca.campaign_id, ca.campaign_name, cu.order_id\n    FROM campaigns ca\n    JOIN coupons c ON c.campaign_id = ca.campaign_id\n    JOIN coupon_usages cu ON cu.coupon_id = c.coupon_id\n    JOIN orders o ON o.order_id = cu.order_id\n    WHERE o.order_status NOT IN ('canceled', 'unavailable')\n) x\nLEFT JOIN (\n    SELECT order_id, SUM(price) AS sales\n    FROM order_items\n    GROUP BY order_id\n) os ON os.order_id = x.order_id\nGROUP BY x.campaign_id, x.campaign_name\nORDER BY sales DESC\nLIMIT 10;",
+      "goldSqlSha256": "08ee27202fb3e19bc30fe68ddc504f45fa530c11013bc4fe42cca4f44506f530"
+    },
+    {
+      "round": "r1",
+      "id": "T5-007",
+      "status": "REQUEST_TIMEOUT",
+      "question": "有商品点击的搜索记录中，哪些关键词最常点到哪个英文类目的商品？取前 20。",
+      "goldSql": "SELECT sl.keyword, t.product_category_name_english, COUNT(*) AS clicks\nFROM search_logs sl\nJOIN products p ON p.product_id = sl.clicked_product_id\nJOIN product_category_translation t ON t.product_category_name = p.product_category_name\nJOIN members m ON m.member_id = sl.member_id\nJOIN member_levels ml ON ml.level_id = m.level_id\nWHERE sl.clicked_product_id IS NOT NULL\nGROUP BY 1, 2 ORDER BY clicks DESC LIMIT 20;\n",
+      "actualSql": null,
+      "goldSqlSha256": "3c6b5f34fc42f0e58b837d1ffc081356093b87e4fc218f4f3232bfabbee10e57"
+    },
+    {
+      "round": "r1",
+      "id": "T5-010",
+      "status": "REQUEST_TIMEOUT",
+      "question": "每个卖家结算明细覆盖了多少个英文商品类目、佣金合计多少？取佣金前 20。",
+      "goldSql": "SELECT st.seller_id, COUNT(DISTINCT t.product_category_name_english) AS category_cnt,\n       ROUND(SUM(si.commission_amount), 2) AS commission\nFROM settlements st\nJOIN settlement_items si ON si.settlement_id = st.settlement_id\nJOIN order_items oi ON oi.order_id = si.order_id AND oi.order_item_id = si.order_item_id\nJOIN products p ON p.product_id = oi.product_id\nJOIN product_category_translation t ON t.product_category_name = p.product_category_name\nGROUP BY 1 ORDER BY commission DESC LIMIT 20;\n",
+      "actualSql": null,
+      "goldSqlSha256": "36c390610e41712660166ae7078685c04be4a650f607b428e4dd4e0a09c94a44"
+    },
+    {
+      "round": "r1",
+      "id": "T5-012",
+      "status": "REQUEST_TIMEOUT",
+      "question": "每类用户标签覆盖多少会员、这些会员订单的平均商品单价是多少？",
+      "goldSql": "SELECT ut.tag_name, COUNT(DISTINCT m.member_id) AS members, ROUND(AVG(oi.price), 2) AS avg_item_price\nFROM user_tag_map utm\nJOIN user_tags ut ON ut.tag_id = utm.tag_id\nJOIN members m ON m.member_id = utm.member_id\nLEFT JOIN customers c ON c.customer_unique_id = m.customer_unique_id\nLEFT JOIN orders o ON o.customer_id = c.customer_id\nLEFT JOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY members DESC;\n",
+      "actualSql": null,
+      "goldSqlSha256": "65d0d59e5921e16c686ceb5016d54829e8437bdadf0c66f3de4bf731cc0da7e4"
+    },
+    {
+      "round": "r1",
+      "id": "T5-016",
+      "status": "REQUEST_TIMEOUT",
+      "question": "按英文类目和退款原因统计退款笔数与退款金额，列出前 20。",
+      "goldSql": "SELECT t.product_category_name_english, r.reason_code,\n       COUNT(DISTINCT r.refund_id) AS refunds, ROUND(SUM(ri.refund_value), 2) AS amt\nFROM refunds r\nJOIN refund_items ri ON ri.refund_id = r.refund_id\nJOIN order_items oi ON oi.order_id = ri.order_id AND oi.order_item_id = ri.order_item_id\nJOIN products p ON p.product_id = oi.product_id\nJOIN product_category_translation t ON t.product_category_name = p.product_category_name\nGROUP BY 1, 2 ORDER BY amt DESC LIMIT 20;\n",
+      "actualSql": null,
+      "goldSqlSha256": "c58546ff46d73f638fb568fc870cdd3bbb4c235243942b2ea58e5f2109ada7a6"
+    },
+    {
+      "round": "r1",
+      "id": "T6-002",
+      "status": "SUCCESS",
+      "question": "有效订单（排除已取消和不可用）的订单数、下单人数、客单价分别是多少？",
+      "goldSql": "SELECT COUNT(DISTINCT o.order_id) AS valid_orders,\n       COUNT(DISTINCT c.customer_unique_id) AS buyers,\n       ROUND(SUM(oi.price + oi.freight_value) / COUNT(DISTINCT o.order_id), 2) AS aov\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN order_items oi ON oi.order_id = o.order_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable');\n",
+      "actualSql": "SELECT COUNT(DISTINCT o.order_id) AS order_count, COUNT(DISTINCT c.customer_unique_id) AS buyer_count, ROUND(SUM(oi.price + oi.freight_value) / NULLIF(COUNT(DISTINCT o.order_id), 0), 2) AS aov FROM orders o JOIN customers c ON c.customer_id = o.customer_id LEFT JOIN order_items oi ON oi.order_id = o.order_id WHERE o.order_status NOT IN ('canceled', 'unavailable') LIMIT 201",
+      "goldSqlSha256": "7c887282a07e2f0d1d4b1189655bfa8b8818d89c26d88c7efe789ec6f245c2c2"
+    },
+    {
+      "round": "r1",
+      "id": "T6-004",
+      "status": "REQUEST_TIMEOUT",
+      "question": "首单在 2017 年上半年的用户，在 2017 年下半年是否再次下单？按月留存率是多少？",
+      "goldSql": "WITH first_order AS (\n  SELECT c.customer_unique_id, MIN(o.order_purchase_timestamp) AS first_ts\n  FROM orders o\n  JOIN customers c ON c.customer_id = o.customer_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n  GROUP BY 1\n),\ncohort AS (\n  SELECT customer_unique_id, DATE_TRUNC('month', first_ts)::date AS cohort_month\n  FROM first_order\n  WHERE first_ts >= DATE '2017-01-01' AND first_ts < DATE '2017-07-01'\n),\nreturner AS (\n  SELECT DISTINCT co.customer_unique_id, co.cohort_month\n  FROM cohort co\n  JOIN customers c ON c.customer_unique_id = co.customer_unique_id\n  JOIN orders o ON o.customer_id = c.customer_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n    AND o.order_purchase_timestamp >= DATE '2017-07-01'\n    AND o.order_purchase_timestamp < DATE '2018-01-01'\n)\nSELECT co.cohort_month,\n       ROUND(100.0 * COUNT(re.customer_unique_id) / COUNT(*), 2) AS retention_pct\nFROM cohort co\nLEFT JOIN returner re ON re.customer_unique_id = co.customer_unique_id\nGROUP BY 1 ORDER BY 1;\n",
+      "actualSql": null,
+      "goldSqlSha256": "8d29dc5cce7b86e4061b7d47f906558b2b13f836e64aff28c002181ac3f49716"
+    },
+    {
+      "round": "r1",
+      "id": "T6-013",
+      "status": "SUCCESS",
+      "question": "优惠券带来的 GMV 和优惠金额分别是多少？用券订单的折扣率是多少？",
+      "goldSql": "SELECT ROUND(SUM(oi.price + oi.freight_value), 2) AS gmv,\n       ROUND(SUM(cu.discount_amount), 2) AS discount,\n       ROUND(100.0 * SUM(cu.discount_amount) / SUM(oi.price + oi.freight_value), 2) AS discount_pct\nFROM coupon_usages cu\nJOIN orders o ON o.order_id = cu.order_id\nJOIN order_items oi ON oi.order_id = cu.order_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable');\n",
+      "actualSql": "WITH coupon_totals AS (SELECT order_id, SUM(discount_amount) AS discount_amount FROM coupon_usages GROUP BY order_id), order_totals AS (SELECT order_id, SUM(price + freight_value) AS order_gmv FROM order_items GROUP BY order_id) SELECT ROUND(SUM(ot.order_gmv), 2) AS gmv, ROUND(SUM(ct.discount_amount), 2) AS discount_amount, ROUND(100.0 * SUM(ct.discount_amount) / NULLIF(SUM(ot.order_gmv), 0), 2) AS discount_rate FROM coupon_totals ct JOIN orders o ON o.order_id = ct.order_id JOIN order_totals ot ON ot.order_id = ct.order_id WHERE o.order_status NOT IN ('canceled', 'unavailable') LIMIT 201",
+      "goldSqlSha256": "682574573d43204ec7ccf6219b05f2a1c6ed091eb2921af422384378a73ce8b1"
+    },
+    {
+      "round": "r1",
+      "id": "T6-022",
+      "status": "REQUEST_TIMEOUT",
+      "question": "2017 年和 2018 年各月 GMV 分别是多少？并计算 2018 年相对 2017 年同月的同比增长率。",
+      "goldSql": "WITH monthly AS (\n  SELECT EXTRACT(YEAR FROM o.order_purchase_timestamp)::int AS yr,\n         EXTRACT(MONTH FROM o.order_purchase_timestamp)::int AS mo,\n         SUM(oi.price + oi.freight_value) AS gmv\n  FROM orders o\n  JOIN order_items oi ON oi.order_id = o.order_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n  GROUP BY 1, 2\n)\nSELECT m18.mo,\n       ROUND(m17.gmv, 2) AS gmv_2017,\n       ROUND(m18.gmv, 2) AS gmv_2018,\n       ROUND(100.0 * (m18.gmv - m17.gmv) / m17.gmv, 2) AS yoy_pct\nFROM monthly m18\nJOIN monthly m17 ON m17.mo = m18.mo AND m17.yr = 2017\nWHERE m18.yr = 2018\nORDER BY m18.mo;\n",
+      "actualSql": null,
+      "goldSqlSha256": "36852c938176805fc54a2805c86c3f33fa5f3e67fa0593bf2598d1d300a8d33a"
+    },
+    {
+      "round": "r2",
+      "id": "T2-015",
+      "status": "SUCCESS",
+      "question": "每个会员等级的平均积分是多少？",
+      "goldSql": "SELECT level_id, ROUND(AVG(points), 2) AS avg_points\nFROM members GROUP BY level_id ORDER BY level_id;\n",
+      "actualSql": "SELECT ml.level_name, ROUND(AVG(m.points), 2) AS avg_points\nFROM members m\nJOIN member_levels ml ON ml.level_id = m.level_id\nGROUP BY ml.level_id, ml.level_name\nORDER BY avg_points DESC\nLIMIT 100;",
+      "goldSqlSha256": "e79de437d9a37a3619f3680b2af1facc61c07e768c003d34e0b0630516a33e17"
+    },
+    {
+      "round": "r2",
+      "id": "T2-019",
+      "status": "SUCCESS",
+      "question": "每个活动的预算总额是多少？",
+      "goldSql": "SELECT campaign_id, budget FROM campaigns ORDER BY budget DESC;\n",
+      "actualSql": "SELECT campaign_name, SUM(budget) AS total_budget\nFROM campaigns\nGROUP BY campaign_id, campaign_name\nORDER BY total_budget DESC\nLIMIT 10;",
+      "goldSqlSha256": "b8fc2a724d5cc8592b539b53a0efdddb2007a05ba365c3523acb146a047f575b"
+    },
+    {
+      "round": "r2",
+      "id": "T2-022",
+      "status": "SUCCESS",
+      "question": "退款总金额是多少？",
+      "goldSql": "SELECT ROUND(SUM(refund_amount), 2) FROM refunds;\n",
+      "actualSql": "SELECT ROUND(SUM(refund_amount), 2) AS total_refund_amount FROM refunds WHERE status = 4 LIMIT 201",
+      "goldSqlSha256": "b739b66278526255c56c9c3bc00d316a1b570b19d5229718af28a948f259aba7"
+    },
+    {
+      "round": "r2",
+      "id": "T2-024",
+      "status": "SUCCESS",
+      "question": "每个仓库各有多少条库存记录？",
+      "goldSql": "SELECT warehouse_id, COUNT(*) AS cnt\nFROM inventory GROUP BY warehouse_id ORDER BY warehouse_id;\n",
+      "actualSql": "SELECT w.warehouse_name, COUNT(*) AS inventory_records\nFROM inventory i\nLEFT JOIN warehouses w ON w.warehouse_id = i.warehouse_id\nGROUP BY i.warehouse_id, w.warehouse_name\nORDER BY inventory_records DESC\nLIMIT 100;",
+      "goldSqlSha256": "07a9cb279c0d8aed3420d5b1b1146b79a894763e74c82e3bd07a475a37c4c4ca"
+    },
+    {
+      "round": "r2",
+      "id": "T2-026",
+      "status": "SUCCESS",
+      "question": "每个仓库的库存总数量是多少？",
+      "goldSql": "SELECT warehouse_id, SUM(quantity) AS total_qty\nFROM inventory GROUP BY warehouse_id ORDER BY warehouse_id;\n",
+      "actualSql": "SELECT w.warehouse_name, SUM(i.quantity) AS total_quantity\nFROM inventory i\nJOIN warehouses w ON w.warehouse_id = i.warehouse_id\nGROUP BY w.warehouse_id, w.warehouse_name\nORDER BY total_quantity DESC\nLIMIT 100;",
+      "goldSqlSha256": "91483ab7bde35e977242dddc26b3c459ea1a3dcf1163a60dce5b6b7997ce0ffd"
+    },
+    {
+      "round": "r2",
+      "id": "T2-037",
+      "status": "SUCCESS",
+      "question": "订单数超过 5000 的州有哪些？",
+      "goldSql": "SELECT customer_state, COUNT(*) AS cnt\nFROM customers GROUP BY customer_state\nHAVING COUNT(*) > 5000 ORDER BY cnt DESC;\n",
+      "actualSql": "SELECT c.customer_state\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY c.customer_state\nHAVING COUNT(*) > 5000\nORDER BY c.customer_state\nLIMIT 100;",
+      "goldSqlSha256": "50d45eec693bfac72e616345be651619de6db58e8da1e1da9cae6abe5a98405b"
+    },
+    {
+      "round": "r2",
+      "id": "T3-012",
+      "status": "REQUEST_TIMEOUT",
+      "question": "2018 年每个月的订单量相比 2017 年同期增长了多少？",
+      "goldSql": "WITH monthly AS (\n  SELECT EXTRACT(YEAR FROM order_purchase_timestamp)::INT AS yr,\n         EXTRACT(MONTH FROM order_purchase_timestamp)::INT AS mo,\n         COUNT(*) AS cnt\n  FROM orders\n  WHERE EXTRACT(YEAR FROM order_purchase_timestamp) IN (2017, 2018)\n  GROUP BY 1, 2\n)\nSELECT cur.mo AS month,\n       cur.cnt - prev.cnt AS yoy_change\nFROM monthly cur\nJOIN monthly prev ON prev.mo = cur.mo AND prev.yr = 2017\nWHERE cur.yr = 2018\nORDER BY cur.mo;\n",
+      "actualSql": null,
+      "goldSqlSha256": "07cd42e5f8393da61ad5899fd7601f4513d0c9d9122b6da96a7ce92544edb071"
+    },
+    {
+      "round": "r2",
+      "id": "T4-004",
+      "status": "NEEDS_CLARIFICATION",
+      "question": "用英文类目名统计，哪个类目的销售额最高？",
+      "goldSql": "SELECT t.product_category_name_english, ROUND(SUM(oi.price), 2) AS sales\nFROM order_items oi\nJOIN products p ON p.product_id = oi.product_id\nJOIN product_category_translation t ON t.product_category_name = p.product_category_name\nGROUP BY 1 ORDER BY sales DESC LIMIT 1;\n",
+      "actualSql": null,
+      "goldSqlSha256": "c7b65fed046beba73ae35527ac3b0d0dffd4a21c590ff8b1e2e3efcadfe232e5"
+    },
+    {
+      "round": "r2",
+      "id": "T4-006",
+      "status": "NEEDS_CLARIFICATION",
+      "question": "每个卖家所在的州和该州卖家的总销售额是多少？",
+      "goldSql": "SELECT s.seller_state, ROUND(SUM(oi.price), 2) AS sales\nFROM order_items oi JOIN sellers s ON s.seller_id = oi.seller_id\nGROUP BY 1 ORDER BY sales DESC;\n",
+      "actualSql": null,
+      "goldSqlSha256": "1987bc8b4f9553e197664c085339dbeabda5c50ceed0ede02375ee5f7f199264"
+    },
+    {
+      "round": "r2",
+      "id": "T4-013",
+      "status": "SUCCESS",
+      "question": "差评（1 分或 2 分）的订单里，各州分别有多少笔？",
+      "goldSql": "SELECT c.customer_state, COUNT(*) AS cnt\nFROM order_reviews r\nJOIN orders o ON o.order_id = r.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nWHERE r.review_score <= 2\nGROUP BY 1 ORDER BY cnt DESC;\n",
+      "actualSql": "SELECT c.customer_state, COUNT(DISTINCT r.order_id) AS order_count\nFROM order_reviews r\nJOIN orders o ON o.order_id = r.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nWHERE r.review_score IN (1, 2)\nGROUP BY c.customer_state\nORDER BY order_count DESC, c.customer_state\nLIMIT 100;",
+      "goldSqlSha256": "8e24399b14a22d02c36409ab90dec0728ad0ffdb9aea758292465534825e7614"
+    },
+    {
+      "round": "r2",
+      "id": "T4-017",
+      "status": "SUCCESS",
+      "question": "每个会员等级对应的订单数量是多少？",
+      "goldSql": "SELECT m.level_id, COUNT(*) AS cnt\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN members m ON m.customer_unique_id = c.customer_unique_id\nGROUP BY 1 ORDER BY 1;\n",
+      "actualSql": "SELECT ml.level_name, COUNT(DISTINCT o.order_id) AS order_count\nFROM member_levels ml\nLEFT JOIN members m ON m.level_id = ml.level_id\nLEFT JOIN customers c ON c.customer_unique_id = m.customer_unique_id\nLEFT JOIN orders o ON o.customer_id = c.customer_id\nGROUP BY ml.level_id, ml.level_name\nORDER BY order_count DESC\nLIMIT 100;",
+      "goldSqlSha256": "a332fb1c0ff256be48dc41853ffb2bfea7bb38ac607e08cbe946c7c4cdb533b4"
+    },
+    {
+      "round": "r2",
+      "id": "T4-044",
+      "status": "REQUEST_TIMEOUT",
+      "question": "每个大区有多少个客户？平均每人下多少单？",
+      "goldSql": "SELECT r.macro_region,\n       COUNT(DISTINCT c.customer_unique_id) AS customers,\n       ROUND(COUNT(o.order_id)::NUMERIC / COUNT(DISTINCT c.customer_unique_id), 2) AS orders_per_customer\nFROM customers c\nJOIN regions r ON r.region_code = c.customer_state\nLEFT JOIN orders o ON o.customer_id = c.customer_id\nGROUP BY 1 ORDER BY customers DESC;\n",
+      "actualSql": null,
+      "goldSqlSha256": "f60eca224cf70d98090e313174f035eb6528b67177456eea221efe2973f2cb04"
+    },
+    {
+      "round": "r2",
+      "id": "T5-001",
+      "status": "REQUEST_TIMEOUT",
+      "question": "每个宏观区域下，各会员等级（按等级名称）的商品销售额分别是多少？按销售额从高到低排序。",
+      "goldSql": "SELECT r.macro_region, ml.level_name, ROUND(SUM(oi.price), 2) AS gmv\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN regions r ON r.region_code = c.customer_state\nJOIN members m ON m.customer_unique_id = c.customer_unique_id\nJOIN member_levels ml ON ml.level_id = m.level_id\nJOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1, 2 ORDER BY gmv DESC;\n",
+      "actualSql": null,
+      "goldSqlSha256": "93d7843fe4fd9d5db66d22c81b75090f762a1b7e9623a142c22d4e91729bdb67"
+    },
+    {
+      "round": "r2",
+      "id": "T5-003",
+      "status": "REQUEST_TIMEOUT",
+      "question": "用英文类目名统计退款金额，哪些类目退款最多？取前 15。",
+      "goldSql": "SELECT t.product_category_name_english, ROUND(SUM(ri.refund_value), 2) AS refund_amt\nFROM refunds r\nJOIN refund_items ri ON ri.refund_id = r.refund_id\nJOIN order_items oi ON oi.order_id = ri.order_id AND oi.order_item_id = ri.order_item_id\nJOIN products p ON p.product_id = oi.product_id\nJOIN product_category_translation t ON t.product_category_name = p.product_category_name\nGROUP BY 1 ORDER BY refund_amt DESC LIMIT 15;\n",
+      "actualSql": null,
+      "goldSqlSha256": "14a86ec3361efc8eee8eb24f1d296065ab4c45ea4fc0420ded2c2288126a5366"
+    },
+    {
+      "round": "r2",
+      "id": "T5-005",
+      "status": "SUCCESS",
+      "question": "每个优惠券活动带来的有效订单数和商品销售额是多少？取前 10。",
+      "goldSql": "SELECT ca.campaign_name, COUNT(DISTINCT cu.order_id) AS used_orders, ROUND(SUM(oi.price), 2) AS gmv\nFROM coupon_usages cu\nJOIN coupons cp ON cp.coupon_id = cu.coupon_id\nJOIN campaigns ca ON ca.campaign_id = cp.campaign_id\nJOIN orders o ON o.order_id = cu.order_id\nJOIN order_items oi ON oi.order_id = cu.order_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable')\nGROUP BY 1 ORDER BY gmv DESC LIMIT 10;\n",
+      "actualSql": "WITH campaign_orders AS (\n  SELECT DISTINCT c.campaign_id, o.order_id\n  FROM coupons c\n  JOIN coupon_usages cu ON cu.coupon_id = c.coupon_id\n  JOIN orders o ON o.order_id = cu.order_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n)\nSELECT ca.campaign_name,\n       COUNT(DISTINCT co.order_id) AS valid_orders,\n       ROUND(SUM(oi.price), 2) AS sales\nFROM campaign_orders co\nJOIN campaigns ca ON ca.campaign_id = co.campaign_id\nLEFT JOIN order_items oi ON oi.order_id = co.order_id\nGROUP BY ca.campaign_id, ca.campaign_name\nORDER BY sales DESC\nLIMIT 10;",
+      "goldSqlSha256": "08ee27202fb3e19bc30fe68ddc504f45fa530c11013bc4fe42cca4f44506f530"
+    },
+    {
+      "round": "r2",
+      "id": "T5-010",
+      "status": "REQUEST_TIMEOUT",
+      "question": "每个卖家结算明细覆盖了多少个英文商品类目、佣金合计多少？取佣金前 20。",
+      "goldSql": "SELECT st.seller_id, COUNT(DISTINCT t.product_category_name_english) AS category_cnt,\n       ROUND(SUM(si.commission_amount), 2) AS commission\nFROM settlements st\nJOIN settlement_items si ON si.settlement_id = st.settlement_id\nJOIN order_items oi ON oi.order_id = si.order_id AND oi.order_item_id = si.order_item_id\nJOIN products p ON p.product_id = oi.product_id\nJOIN product_category_translation t ON t.product_category_name = p.product_category_name\nGROUP BY 1 ORDER BY commission DESC LIMIT 20;\n",
+      "actualSql": null,
+      "goldSqlSha256": "36c390610e41712660166ae7078685c04be4a650f607b428e4dd4e0a09c94a44"
+    },
+    {
+      "round": "r2",
+      "id": "T5-012",
+      "status": "REQUEST_TIMEOUT",
+      "question": "每类用户标签覆盖多少会员、这些会员订单的平均商品单价是多少？",
+      "goldSql": "SELECT ut.tag_name, COUNT(DISTINCT m.member_id) AS members, ROUND(AVG(oi.price), 2) AS avg_item_price\nFROM user_tag_map utm\nJOIN user_tags ut ON ut.tag_id = utm.tag_id\nJOIN members m ON m.member_id = utm.member_id\nLEFT JOIN customers c ON c.customer_unique_id = m.customer_unique_id\nLEFT JOIN orders o ON o.customer_id = c.customer_id\nLEFT JOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY members DESC;\n",
+      "actualSql": null,
+      "goldSqlSha256": "65d0d59e5921e16c686ceb5016d54829e8437bdadf0c66f3de4bf731cc0da7e4"
+    },
+    {
+      "round": "r2",
+      "id": "T5-016",
+      "status": "REQUEST_TIMEOUT",
+      "question": "按英文类目和退款原因统计退款笔数与退款金额，列出前 20。",
+      "goldSql": "SELECT t.product_category_name_english, r.reason_code,\n       COUNT(DISTINCT r.refund_id) AS refunds, ROUND(SUM(ri.refund_value), 2) AS amt\nFROM refunds r\nJOIN refund_items ri ON ri.refund_id = r.refund_id\nJOIN order_items oi ON oi.order_id = ri.order_id AND oi.order_item_id = ri.order_item_id\nJOIN products p ON p.product_id = oi.product_id\nJOIN product_category_translation t ON t.product_category_name = p.product_category_name\nGROUP BY 1, 2 ORDER BY amt DESC LIMIT 20;\n",
+      "actualSql": null,
+      "goldSqlSha256": "c58546ff46d73f638fb568fc870cdd3bbb4c235243942b2ea58e5f2109ada7a6"
+    },
+    {
+      "round": "r2",
+      "id": "T5-018",
+      "status": "REQUEST_TIMEOUT",
+      "question": "默认收货地址所在州和客户登记州各组合的订单量对比，列出前 20。",
+      "goldSql": "SELECT sa.state AS addr_state, c.customer_state, COUNT(DISTINCT o.order_id) AS orders\nFROM shipping_addresses sa\nJOIN customers c ON c.customer_id = sa.customer_id\nJOIN orders o ON o.customer_id = c.customer_id\nWHERE sa.is_default\nGROUP BY 1, 2 ORDER BY orders DESC LIMIT 20;\n",
+      "actualSql": "SELECT c.customer_state, sa.state AS default_shipping_state, COUNT(DISTINCT o.order_id) AS order_count\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN LATERAL (\n  SELECT s.state\n  FROM shipping_addresses s\n  WHERE s.customer_id = o.customer_id\n    AND s.is_default = true\n  ORDER BY s.address_id\n  LIMIT 1\n) sa ON true\nGROUP BY c.customer_state, sa.state\nORDER BY order_count DESC\nLIMIT 20;",
+      "goldSqlSha256": "9d70b3eaf4618559a0d23327e851b6668ba7bc14bc0936b6f90414e5a2382e93"
+    },
+    {
+      "round": "r2",
+      "id": "T6-002",
+      "status": "SUCCESS",
+      "question": "有效订单（排除已取消和不可用）的订单数、下单人数、客单价分别是多少？",
+      "goldSql": "SELECT COUNT(DISTINCT o.order_id) AS valid_orders,\n       COUNT(DISTINCT c.customer_unique_id) AS buyers,\n       ROUND(SUM(oi.price + oi.freight_value) / COUNT(DISTINCT o.order_id), 2) AS aov\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN order_items oi ON oi.order_id = o.order_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable');\n",
+      "actualSql": "SELECT COUNT(DISTINCT o.order_id) AS valid_order_count, COUNT(DISTINCT c.customer_unique_id) AS unique_buyers, ROUND(SUM(oi.price + oi.freight_value) / NULLIF(COUNT(DISTINCT o.order_id), 0), 2) AS aov FROM orders o JOIN customers c ON c.customer_id = o.customer_id LEFT JOIN order_items oi ON oi.order_id = o.order_id WHERE o.order_status NOT IN ('canceled', 'unavailable') LIMIT 201",
+      "goldSqlSha256": "7c887282a07e2f0d1d4b1189655bfa8b8818d89c26d88c7efe789ec6f245c2c2"
+    },
+    {
+      "round": "r2",
+      "id": "T6-004",
+      "status": "REQUEST_TIMEOUT",
+      "question": "首单在 2017 年上半年的用户，在 2017 年下半年是否再次下单？按月留存率是多少？",
+      "goldSql": "WITH first_order AS (\n  SELECT c.customer_unique_id, MIN(o.order_purchase_timestamp) AS first_ts\n  FROM orders o\n  JOIN customers c ON c.customer_id = o.customer_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n  GROUP BY 1\n),\ncohort AS (\n  SELECT customer_unique_id, DATE_TRUNC('month', first_ts)::date AS cohort_month\n  FROM first_order\n  WHERE first_ts >= DATE '2017-01-01' AND first_ts < DATE '2017-07-01'\n),\nreturner AS (\n  SELECT DISTINCT co.customer_unique_id, co.cohort_month\n  FROM cohort co\n  JOIN customers c ON c.customer_unique_id = co.customer_unique_id\n  JOIN orders o ON o.customer_id = c.customer_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n    AND o.order_purchase_timestamp >= DATE '2017-07-01'\n    AND o.order_purchase_timestamp < DATE '2018-01-01'\n)\nSELECT co.cohort_month,\n       ROUND(100.0 * COUNT(re.customer_unique_id) / COUNT(*), 2) AS retention_pct\nFROM cohort co\nLEFT JOIN returner re ON re.customer_unique_id = co.customer_unique_id\nGROUP BY 1 ORDER BY 1;\n",
+      "actualSql": "WITH first_orders AS (\n    SELECT\n        c.customer_unique_id,\n        MIN(o.order_purchase_timestamp) AS first_purchase_at\n    FROM orders o\n    JOIN customers c ON c.customer_id = o.customer_id\n    WHERE o.order_status NOT IN ('canceled', 'unavailable')\n    GROUP BY c.customer_unique_id\n),\ncohorts AS (\n    SELECT\n        customer_unique_id,\n        first_purchase_at,\n        DATE_TRUNC('month', first_purchase_at) AS cohort_month\n    FROM first_orders\n    WHERE first_purchase_at >= TIMESTAMP '2017-01-01 00:00:00'\n      AND first_purchase_at < TIMESTAMP '2017-07-01 00:00:00'\n),\ncohort_returns AS (\n    SELECT\n        co.customer_unique_id,\n        co.cohort_month,\n        EXISTS (\n            SELECT 1\n            FROM orders o2\n            JOIN customers c2 ON c2.customer_id = o2.customer_id\n            WHERE c2.customer_unique_id = co.customer_unique_id\n              AND o2.order_status NOT IN ('canceled', 'unavailable')\n              AND o2.order_purchase_timestamp >= TIMESTAMP '2017-07-01 00:00:00'\n              AND o2.order_purchase_timestamp < TIMESTAMP '2018-01-01 00:00:00'\n              AND o2.order_purchase_timestamp > co.first_purchase_at\n        ) AS returned\n    FROM cohorts co\n)\nSELECT\n    cohort_month,\n    ROUND(\n        100.0 * COUNT(*) FILTER (WHERE returned) / NULLIF(COUNT(*), 0),\n        2\n    ) AS retention_rate\nFROM cohort_returns\nGROUP BY cohort_month\nORDER BY cohort_month\nLIMIT 100;",
+      "goldSqlSha256": "8d29dc5cce7b86e4061b7d47f906558b2b13f836e64aff28c002181ac3f49716"
+    },
+    {
+      "round": "r2",
+      "id": "T6-013",
+      "status": "SUCCESS",
+      "question": "优惠券带来的 GMV 和优惠金额分别是多少？用券订单的折扣率是多少？",
+      "goldSql": "SELECT ROUND(SUM(oi.price + oi.freight_value), 2) AS gmv,\n       ROUND(SUM(cu.discount_amount), 2) AS discount,\n       ROUND(100.0 * SUM(cu.discount_amount) / SUM(oi.price + oi.freight_value), 2) AS discount_pct\nFROM coupon_usages cu\nJOIN orders o ON o.order_id = cu.order_id\nJOIN order_items oi ON oi.order_id = cu.order_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable');\n",
+      "actualSql": "WITH coupon_totals AS (SELECT order_id, SUM(discount_amount) AS discount_amount FROM coupon_usages GROUP BY order_id), order_totals AS (SELECT order_id, SUM(price + freight_value) AS order_gmv FROM order_items GROUP BY order_id) SELECT ROUND(SUM(ot.order_gmv), 2) AS gmv, ROUND(SUM(ct.discount_amount), 2) AS discount, ROUND(100.0 * SUM(ct.discount_amount) / NULLIF(SUM(ot.order_gmv), 0), 2) AS discount_pct FROM coupon_totals ct JOIN orders o ON o.order_id = ct.order_id JOIN order_totals ot ON ot.order_id = ct.order_id WHERE o.order_status NOT IN ('canceled', 'unavailable') LIMIT 201",
+      "goldSqlSha256": "682574573d43204ec7ccf6219b05f2a1c6ed091eb2921af422384378a73ce8b1"
+    },
+    {
+      "round": "r2",
+      "id": "T6-022",
+      "status": "REQUEST_TIMEOUT",
+      "question": "2017 年和 2018 年各月 GMV 分别是多少？并计算 2018 年相对 2017 年同月的同比增长率。",
+      "goldSql": "WITH monthly AS (\n  SELECT EXTRACT(YEAR FROM o.order_purchase_timestamp)::int AS yr,\n         EXTRACT(MONTH FROM o.order_purchase_timestamp)::int AS mo,\n         SUM(oi.price + oi.freight_value) AS gmv\n  FROM orders o\n  JOIN order_items oi ON oi.order_id = o.order_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n  GROUP BY 1, 2\n)\nSELECT m18.mo,\n       ROUND(m17.gmv, 2) AS gmv_2017,\n       ROUND(m18.gmv, 2) AS gmv_2018,\n       ROUND(100.0 * (m18.gmv - m17.gmv) / m17.gmv, 2) AS yoy_pct\nFROM monthly m18\nJOIN monthly m17 ON m17.mo = m18.mo AND m17.yr = 2017\nWHERE m18.yr = 2018\nORDER BY m18.mo;\n",
+      "actualSql": null,
+      "goldSqlSha256": "36852c938176805fc54a2805c86c3f33fa5f3e67fa0593bf2598d1d300a8d33a"
+    },
+    {
+      "round": "r2",
+      "id": "T6-024",
+      "status": "SUCCESS",
+      "question": "退款原因与客户评分的关系：各退款原因对应的平均评分和低分率是多少？",
+      "goldSql": "SELECT r.reason_code,\n       ROUND(AVG(rev.review_score), 2) AS avg_score,\n       ROUND(100.0 * COUNT(*) FILTER (WHERE rev.review_score <= 2) / COUNT(*), 2) AS low_score_pct\nFROM refunds r\nJOIN orders o ON o.order_id = r.order_id\nJOIN order_reviews rev ON rev.order_id = r.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY 1 ORDER BY low_score_pct DESC;\n",
+      "actualSql": "-- 各退款原因下，按评价记录去重后统计平均评分与低分率\nWITH reason_reviews AS (\n  SELECT DISTINCT r.reason_code, rev.review_id, rev.review_score\n  FROM refunds r\n  JOIN order_reviews rev ON rev.order_id = r.order_id\n)\nSELECT\n  reason_code,\n  ROUND(AVG(review_score), 2) AS avg_score,\n  ROUND(100.0 * COUNT(*) FILTER (WHERE review_score <= 2) / NULLIF(COUNT(*), 0), 2) AS low_score_rate\nFROM reason_reviews\nGROUP BY reason_code\nORDER BY reason_code\nLIMIT 100;",
+      "goldSqlSha256": "393a57cad06fc6bcd8ee088d1cfd8c6181f4efb4aa13ad715b0978ac605406a8"
+    },
+    {
+      "round": "r3",
+      "id": "T2-015",
+      "status": "SUCCESS",
+      "question": "每个会员等级的平均积分是多少？",
+      "goldSql": "SELECT level_id, ROUND(AVG(points), 2) AS avg_points\nFROM members GROUP BY level_id ORDER BY level_id;\n",
+      "actualSql": "SELECT ml.level_name,\n       ROUND(AVG(m.points), 2) AS avg_points\nFROM members m\nJOIN member_levels ml ON ml.level_id = m.level_id\nGROUP BY ml.level_id, ml.level_name\nORDER BY avg_points DESC\nLIMIT 100;",
+      "goldSqlSha256": "e79de437d9a37a3619f3680b2af1facc61c07e768c003d34e0b0630516a33e17"
+    },
+    {
+      "round": "r3",
+      "id": "T2-019",
+      "status": "SUCCESS",
+      "question": "每个活动的预算总额是多少？",
+      "goldSql": "SELECT campaign_id, budget FROM campaigns ORDER BY budget DESC;\n",
+      "actualSql": "SELECT campaign_name, ROUND(SUM(budget), 2) AS total_budget\nFROM campaigns\nGROUP BY campaign_id, campaign_name\nORDER BY total_budget DESC\nLIMIT 100;",
+      "goldSqlSha256": "b8fc2a724d5cc8592b539b53a0efdddb2007a05ba365c3523acb146a047f575b"
+    },
+    {
+      "round": "r3",
+      "id": "T2-024",
+      "status": "SUCCESS",
+      "question": "每个仓库各有多少条库存记录？",
+      "goldSql": "SELECT warehouse_id, COUNT(*) AS cnt\nFROM inventory GROUP BY warehouse_id ORDER BY warehouse_id;\n",
+      "actualSql": "SELECT w.warehouse_name, COUNT(*) AS inventory_records\nFROM inventory i\nJOIN warehouses w ON w.warehouse_id = i.warehouse_id\nGROUP BY w.warehouse_id, w.warehouse_name\nORDER BY inventory_records DESC\nLIMIT 100;",
+      "goldSqlSha256": "07a9cb279c0d8aed3420d5b1b1146b79a894763e74c82e3bd07a475a37c4c4ca"
+    },
+    {
+      "round": "r3",
+      "id": "T2-026",
+      "status": "SUCCESS",
+      "question": "每个仓库的库存总数量是多少？",
+      "goldSql": "SELECT warehouse_id, SUM(quantity) AS total_qty\nFROM inventory GROUP BY warehouse_id ORDER BY warehouse_id;\n",
+      "actualSql": "SELECT w.warehouse_name, SUM(i.quantity) AS total_quantity\nFROM inventory i\nLEFT JOIN warehouses w ON w.warehouse_id = i.warehouse_id\nGROUP BY w.warehouse_id, w.warehouse_name\nORDER BY total_quantity DESC\nLIMIT 100;",
+      "goldSqlSha256": "91483ab7bde35e977242dddc26b3c459ea1a3dcf1163a60dce5b6b7997ce0ffd"
+    },
+    {
+      "round": "r3",
+      "id": "T2-037",
+      "status": "SUCCESS",
+      "question": "订单数超过 5000 的州有哪些？",
+      "goldSql": "SELECT customer_state, COUNT(*) AS cnt\nFROM customers GROUP BY customer_state\nHAVING COUNT(*) > 5000 ORDER BY cnt DESC;\n",
+      "actualSql": "SELECT c.customer_state\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY c.customer_state\nHAVING COUNT(DISTINCT o.order_id) > 5000\nORDER BY COUNT(DISTINCT o.order_id) DESC\nLIMIT 100;",
+      "goldSqlSha256": "50d45eec693bfac72e616345be651619de6db58e8da1e1da9cae6abe5a98405b"
+    },
+    {
+      "round": "r3",
+      "id": "T3-012",
+      "status": "SUCCESS",
+      "question": "2018 年每个月的订单量相比 2017 年同期增长了多少？",
+      "goldSql": "WITH monthly AS (\n  SELECT EXTRACT(YEAR FROM order_purchase_timestamp)::INT AS yr,\n         EXTRACT(MONTH FROM order_purchase_timestamp)::INT AS mo,\n         COUNT(*) AS cnt\n  FROM orders\n  WHERE EXTRACT(YEAR FROM order_purchase_timestamp) IN (2017, 2018)\n  GROUP BY 1, 2\n)\nSELECT cur.mo AS month,\n       cur.cnt - prev.cnt AS yoy_change\nFROM monthly cur\nJOIN monthly prev ON prev.mo = cur.mo AND prev.yr = 2017\nWHERE cur.yr = 2018\nORDER BY cur.mo;\n",
+      "actualSql": "WITH monthly_counts AS (\n  SELECT EXTRACT(MONTH FROM order_purchase_timestamp)::int AS month,\n         COUNT(*) FILTER (WHERE EXTRACT(YEAR FROM order_purchase_timestamp)::int = 2017) AS orders_2017,\n         COUNT(*) FILTER (WHERE EXTRACT(YEAR FROM order_purchase_timestamp)::int = 2018) AS orders_2018\n  FROM orders\n  WHERE order_purchase_timestamp >= '2017-01-01'\n    AND order_purchase_timestamp < '2019-01-01'\n  GROUP BY 1\n)\nSELECT month,\n       orders_2017,\n       orders_2018,\n       orders_2018 - orders_2017 AS growth\nFROM monthly_counts\nWHERE orders_2018 > 0\nORDER BY month\nLIMIT 12;",
+      "goldSqlSha256": "07cd42e5f8393da61ad5899fd7601f4513d0c9d9122b6da96a7ce92544edb071"
+    },
+    {
+      "round": "r3",
+      "id": "T4-004",
+      "status": "NEEDS_CLARIFICATION",
+      "question": "用英文类目名统计，哪个类目的销售额最高？",
+      "goldSql": "SELECT t.product_category_name_english, ROUND(SUM(oi.price), 2) AS sales\nFROM order_items oi\nJOIN products p ON p.product_id = oi.product_id\nJOIN product_category_translation t ON t.product_category_name = p.product_category_name\nGROUP BY 1 ORDER BY sales DESC LIMIT 1;\n",
+      "actualSql": null,
+      "goldSqlSha256": "c7b65fed046beba73ae35527ac3b0d0dffd4a21c590ff8b1e2e3efcadfe232e5"
+    },
+    {
+      "round": "r3",
+      "id": "T4-006",
+      "status": "NEEDS_CLARIFICATION",
+      "question": "每个卖家所在的州和该州卖家的总销售额是多少？",
+      "goldSql": "SELECT s.seller_state, ROUND(SUM(oi.price), 2) AS sales\nFROM order_items oi JOIN sellers s ON s.seller_id = oi.seller_id\nGROUP BY 1 ORDER BY sales DESC;\n",
+      "actualSql": null,
+      "goldSqlSha256": "1987bc8b4f9553e197664c085339dbeabda5c50ceed0ede02375ee5f7f199264"
+    },
+    {
+      "round": "r3",
+      "id": "T4-013",
+      "status": "SUCCESS",
+      "question": "差评（1 分或 2 分）的订单里，各州分别有多少笔？",
+      "goldSql": "SELECT c.customer_state, COUNT(*) AS cnt\nFROM order_reviews r\nJOIN orders o ON o.order_id = r.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nWHERE r.review_score <= 2\nGROUP BY 1 ORDER BY cnt DESC;\n",
+      "actualSql": "SELECT c.customer_state, COUNT(DISTINCT r.order_id) AS order_count\nFROM order_reviews r\nJOIN orders o ON o.order_id = r.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nWHERE r.review_score IN (1, 2)\nGROUP BY c.customer_state\nORDER BY order_count DESC\nLIMIT 100;",
+      "goldSqlSha256": "8e24399b14a22d02c36409ab90dec0728ad0ffdb9aea758292465534825e7614"
+    },
+    {
+      "round": "r3",
+      "id": "T4-017",
+      "status": "SUCCESS",
+      "question": "每个会员等级对应的订单数量是多少？",
+      "goldSql": "SELECT m.level_id, COUNT(*) AS cnt\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN members m ON m.customer_unique_id = c.customer_unique_id\nGROUP BY 1 ORDER BY 1;\n",
+      "actualSql": "SELECT ml.level_name, COUNT(DISTINCT o.order_id) AS order_count\nFROM member_levels ml\nLEFT JOIN members m ON m.level_id = ml.level_id\nLEFT JOIN customers c ON c.customer_unique_id = m.customer_unique_id\nLEFT JOIN orders o ON o.customer_id = c.customer_id\nGROUP BY ml.level_id, ml.level_name\nORDER BY ml.level_name\nLIMIT 100;",
+      "goldSqlSha256": "a332fb1c0ff256be48dc41853ffb2bfea7bb38ac607e08cbe946c7c4cdb533b4"
+    },
+    {
+      "round": "r3",
+      "id": "T4-044",
+      "status": "REQUEST_TIMEOUT",
+      "question": "每个大区有多少个客户？平均每人下多少单？",
+      "goldSql": "SELECT r.macro_region,\n       COUNT(DISTINCT c.customer_unique_id) AS customers,\n       ROUND(COUNT(o.order_id)::NUMERIC / COUNT(DISTINCT c.customer_unique_id), 2) AS orders_per_customer\nFROM customers c\nJOIN regions r ON r.region_code = c.customer_state\nLEFT JOIN orders o ON o.customer_id = c.customer_id\nGROUP BY 1 ORDER BY customers DESC;\n",
+      "actualSql": null,
+      "goldSqlSha256": "f60eca224cf70d98090e313174f035eb6528b67177456eea221efe2973f2cb04"
+    },
+    {
+      "round": "r3",
+      "id": "T5-001",
+      "status": "SUCCESS",
+      "question": "每个宏观区域下，各会员等级（按等级名称）的商品销售额分别是多少？按销售额从高到低排序。",
+      "goldSql": "SELECT r.macro_region, ml.level_name, ROUND(SUM(oi.price), 2) AS gmv\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN regions r ON r.region_code = c.customer_state\nJOIN members m ON m.customer_unique_id = c.customer_unique_id\nJOIN member_levels ml ON ml.level_id = m.level_id\nJOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1, 2 ORDER BY gmv DESC;\n",
+      "actualSql": "SELECT r.macro_region, ml.level_name, ROUND(SUM(oi.price), 2) AS sales\nFROM member_levels ml\nJOIN members m ON m.level_id = ml.level_id\nJOIN customers c ON c.customer_unique_id = m.customer_unique_id\nJOIN orders o ON o.customer_id = c.customer_id\nJOIN order_items oi ON oi.order_id = o.order_id\nJOIN sellers s ON s.seller_id = oi.seller_id\nJOIN regions r ON r.region_code = s.seller_state\nGROUP BY 1, 2\nORDER BY sales DESC\nLIMIT 100;",
+      "goldSqlSha256": "93d7843fe4fd9d5db66d22c81b75090f762a1b7e9623a142c22d4e91729bdb67"
+    },
+    {
+      "round": "r3",
+      "id": "T5-003",
+      "status": "REQUEST_TIMEOUT",
+      "question": "用英文类目名统计退款金额，哪些类目退款最多？取前 15。",
+      "goldSql": "SELECT t.product_category_name_english, ROUND(SUM(ri.refund_value), 2) AS refund_amt\nFROM refunds r\nJOIN refund_items ri ON ri.refund_id = r.refund_id\nJOIN order_items oi ON oi.order_id = ri.order_id AND oi.order_item_id = ri.order_item_id\nJOIN products p ON p.product_id = oi.product_id\nJOIN product_category_translation t ON t.product_category_name = p.product_category_name\nGROUP BY 1 ORDER BY refund_amt DESC LIMIT 15;\n",
+      "actualSql": null,
+      "goldSqlSha256": "14a86ec3361efc8eee8eb24f1d296065ab4c45ea4fc0420ded2c2288126a5366"
+    },
+    {
+      "round": "r3",
+      "id": "T5-007",
+      "status": "REQUEST_TIMEOUT",
+      "question": "有商品点击的搜索记录中，哪些关键词最常点到哪个英文类目的商品？取前 20。",
+      "goldSql": "SELECT sl.keyword, t.product_category_name_english, COUNT(*) AS clicks\nFROM search_logs sl\nJOIN products p ON p.product_id = sl.clicked_product_id\nJOIN product_category_translation t ON t.product_category_name = p.product_category_name\nJOIN members m ON m.member_id = sl.member_id\nJOIN member_levels ml ON ml.level_id = m.level_id\nWHERE sl.clicked_product_id IS NOT NULL\nGROUP BY 1, 2 ORDER BY clicks DESC LIMIT 20;\n",
+      "actualSql": null,
+      "goldSqlSha256": "3c6b5f34fc42f0e58b837d1ffc081356093b87e4fc218f4f3232bfabbee10e57"
+    },
+    {
+      "round": "r3",
+      "id": "T5-009",
+      "status": "SUCCESS",
+      "question": "库存低于安全库存的商品，按仓库、区域、品牌统计数量，列出前 20。",
+      "goldSql": "SELECT w.warehouse_name, r.region_name, b.brand_name, COUNT(*) AS low_stock_items\nFROM inventory i\nJOIN warehouses w ON w.warehouse_id = i.warehouse_id\nJOIN regions r ON r.region_code = w.region_code\nJOIN product_brand_map pbm ON pbm.product_id = i.product_id AND pbm.is_current\nJOIN brands b ON b.brand_id = pbm.brand_id\nWHERE i.quantity < i.safety_stock\nGROUP BY 1, 2, 3 ORDER BY low_stock_items DESC LIMIT 20;\n",
+      "actualSql": "SELECT w.warehouse_name, r.region_name, b.brand_name,\n       COUNT(DISTINCT i.product_id) AS product_count\nFROM inventory i\nJOIN warehouses w ON w.warehouse_id = i.warehouse_id\nLEFT JOIN regions r ON r.region_code = w.region_code\nLEFT JOIN product_brand_map pbm ON pbm.product_id = i.product_id AND pbm.is_current = true\nLEFT JOIN brands b ON b.brand_id = pbm.brand_id\nWHERE i.quantity < i.safety_stock\nGROUP BY w.warehouse_id, w.warehouse_name, r.region_code, r.region_name, pbm.brand_id, b.brand_name\nORDER BY product_count DESC, w.warehouse_name, r.region_name, b.brand_name\nLIMIT 20;",
+      "goldSqlSha256": "78790eaad985cfb3fba3dc293867f1d7ea1ec191f34955e152692e6fa88444e1"
+    },
+    {
+      "round": "r3",
+      "id": "T5-010",
+      "status": "REQUEST_TIMEOUT",
+      "question": "每个卖家结算明细覆盖了多少个英文商品类目、佣金合计多少？取佣金前 20。",
+      "goldSql": "SELECT st.seller_id, COUNT(DISTINCT t.product_category_name_english) AS category_cnt,\n       ROUND(SUM(si.commission_amount), 2) AS commission\nFROM settlements st\nJOIN settlement_items si ON si.settlement_id = st.settlement_id\nJOIN order_items oi ON oi.order_id = si.order_id AND oi.order_item_id = si.order_item_id\nJOIN products p ON p.product_id = oi.product_id\nJOIN product_category_translation t ON t.product_category_name = p.product_category_name\nGROUP BY 1 ORDER BY commission DESC LIMIT 20;\n",
+      "actualSql": null,
+      "goldSqlSha256": "36c390610e41712660166ae7078685c04be4a650f607b428e4dd4e0a09c94a44"
+    },
+    {
+      "round": "r3",
+      "id": "T5-012",
+      "status": "REQUEST_TIMEOUT",
+      "question": "每类用户标签覆盖多少会员、这些会员订单的平均商品单价是多少？",
+      "goldSql": "SELECT ut.tag_name, COUNT(DISTINCT m.member_id) AS members, ROUND(AVG(oi.price), 2) AS avg_item_price\nFROM user_tag_map utm\nJOIN user_tags ut ON ut.tag_id = utm.tag_id\nJOIN members m ON m.member_id = utm.member_id\nLEFT JOIN customers c ON c.customer_unique_id = m.customer_unique_id\nLEFT JOIN orders o ON o.customer_id = c.customer_id\nLEFT JOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY members DESC;\n",
+      "actualSql": null,
+      "goldSqlSha256": "65d0d59e5921e16c686ceb5016d54829e8437bdadf0c66f3de4bf731cc0da7e4"
+    },
+    {
+      "round": "r3",
+      "id": "T5-016",
+      "status": "REQUEST_TIMEOUT",
+      "question": "按英文类目和退款原因统计退款笔数与退款金额，列出前 20。",
+      "goldSql": "SELECT t.product_category_name_english, r.reason_code,\n       COUNT(DISTINCT r.refund_id) AS refunds, ROUND(SUM(ri.refund_value), 2) AS amt\nFROM refunds r\nJOIN refund_items ri ON ri.refund_id = r.refund_id\nJOIN order_items oi ON oi.order_id = ri.order_id AND oi.order_item_id = ri.order_item_id\nJOIN products p ON p.product_id = oi.product_id\nJOIN product_category_translation t ON t.product_category_name = p.product_category_name\nGROUP BY 1, 2 ORDER BY amt DESC LIMIT 20;\n",
+      "actualSql": null,
+      "goldSqlSha256": "c58546ff46d73f638fb568fc870cdd3bbb4c235243942b2ea58e5f2109ada7a6"
+    },
+    {
+      "round": "r3",
+      "id": "T6-002",
+      "status": "SUCCESS",
+      "question": "有效订单（排除已取消和不可用）的订单数、下单人数、客单价分别是多少？",
+      "goldSql": "SELECT COUNT(DISTINCT o.order_id) AS valid_orders,\n       COUNT(DISTINCT c.customer_unique_id) AS buyers,\n       ROUND(SUM(oi.price + oi.freight_value) / COUNT(DISTINCT o.order_id), 2) AS aov\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN order_items oi ON oi.order_id = o.order_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable');\n",
+      "actualSql": "SELECT COUNT(DISTINCT o.order_id) AS order_count, COUNT(DISTINCT c.customer_unique_id) AS buyer_count, ROUND(SUM(oi.price + oi.freight_value) / NULLIF(COUNT(DISTINCT o.order_id), 0), 2) AS aov FROM orders o JOIN customers c ON c.customer_id = o.customer_id LEFT JOIN order_items oi ON oi.order_id = o.order_id WHERE o.order_status NOT IN ('canceled', 'unavailable') LIMIT 201",
+      "goldSqlSha256": "7c887282a07e2f0d1d4b1189655bfa8b8818d89c26d88c7efe789ec6f245c2c2"
+    },
+    {
+      "round": "r3",
+      "id": "T6-004",
+      "status": "REQUEST_TIMEOUT",
+      "question": "首单在 2017 年上半年的用户，在 2017 年下半年是否再次下单？按月留存率是多少？",
+      "goldSql": "WITH first_order AS (\n  SELECT c.customer_unique_id, MIN(o.order_purchase_timestamp) AS first_ts\n  FROM orders o\n  JOIN customers c ON c.customer_id = o.customer_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n  GROUP BY 1\n),\ncohort AS (\n  SELECT customer_unique_id, DATE_TRUNC('month', first_ts)::date AS cohort_month\n  FROM first_order\n  WHERE first_ts >= DATE '2017-01-01' AND first_ts < DATE '2017-07-01'\n),\nreturner AS (\n  SELECT DISTINCT co.customer_unique_id, co.cohort_month\n  FROM cohort co\n  JOIN customers c ON c.customer_unique_id = co.customer_unique_id\n  JOIN orders o ON o.customer_id = c.customer_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n    AND o.order_purchase_timestamp >= DATE '2017-07-01'\n    AND o.order_purchase_timestamp < DATE '2018-01-01'\n)\nSELECT co.cohort_month,\n       ROUND(100.0 * COUNT(re.customer_unique_id) / COUNT(*), 2) AS retention_pct\nFROM cohort co\nLEFT JOIN returner re ON re.customer_unique_id = co.customer_unique_id\nGROUP BY 1 ORDER BY 1;\n",
+      "actualSql": null,
+      "goldSqlSha256": "8d29dc5cce7b86e4061b7d47f906558b2b13f836e64aff28c002181ac3f49716"
+    },
+    {
+      "round": "r3",
+      "id": "T6-013",
+      "status": "SUCCESS",
+      "question": "优惠券带来的 GMV 和优惠金额分别是多少？用券订单的折扣率是多少？",
+      "goldSql": "SELECT ROUND(SUM(oi.price + oi.freight_value), 2) AS gmv,\n       ROUND(SUM(cu.discount_amount), 2) AS discount,\n       ROUND(100.0 * SUM(cu.discount_amount) / SUM(oi.price + oi.freight_value), 2) AS discount_pct\nFROM coupon_usages cu\nJOIN orders o ON o.order_id = cu.order_id\nJOIN order_items oi ON oi.order_id = cu.order_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable');\n",
+      "actualSql": "WITH coupon_totals AS (SELECT order_id, SUM(discount_amount) AS discount_amount FROM coupon_usages GROUP BY order_id), order_totals AS (SELECT order_id, SUM(price + freight_value) AS order_gmv FROM order_items GROUP BY order_id) SELECT ROUND(SUM(ot.order_gmv), 2) AS gmv, ROUND(SUM(ct.discount_amount), 2) AS discount, ROUND(100.0 * SUM(ct.discount_amount) / NULLIF(SUM(ot.order_gmv), 0), 2) AS discount_pct FROM coupon_totals ct JOIN orders o ON o.order_id = ct.order_id JOIN order_totals ot ON ot.order_id = ct.order_id WHERE o.order_status NOT IN ('canceled', 'unavailable') LIMIT 201",
+      "goldSqlSha256": "682574573d43204ec7ccf6219b05f2a1c6ed091eb2921af422384378a73ce8b1"
+    },
+    {
+      "round": "r3",
+      "id": "T6-022",
+      "status": "SUCCESS",
+      "question": "2017 年和 2018 年各月 GMV 分别是多少？并计算 2018 年相对 2017 年同月的同比增长率。",
+      "goldSql": "WITH monthly AS (\n  SELECT EXTRACT(YEAR FROM o.order_purchase_timestamp)::int AS yr,\n         EXTRACT(MONTH FROM o.order_purchase_timestamp)::int AS mo,\n         SUM(oi.price + oi.freight_value) AS gmv\n  FROM orders o\n  JOIN order_items oi ON oi.order_id = o.order_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n  GROUP BY 1, 2\n)\nSELECT m18.mo,\n       ROUND(m17.gmv, 2) AS gmv_2017,\n       ROUND(m18.gmv, 2) AS gmv_2018,\n       ROUND(100.0 * (m18.gmv - m17.gmv) / m17.gmv, 2) AS yoy_pct\nFROM monthly m18\nJOIN monthly m17 ON m17.mo = m18.mo AND m17.yr = 2017\nWHERE m18.yr = 2018\nORDER BY m18.mo;\n",
+      "actualSql": "WITH monthly AS (SELECT EXTRACT(MONTH FROM o.order_purchase_timestamp)::int AS month, SUM(CASE WHEN EXTRACT(YEAR FROM o.order_purchase_timestamp)::int = 2017 THEN oi.price + oi.freight_value END) AS gmv_2017, SUM(CASE WHEN EXTRACT(YEAR FROM o.order_purchase_timestamp)::int = 2018 THEN oi.price + oi.freight_value END) AS gmv_2018 FROM orders o JOIN order_items oi ON oi.order_id = o.order_id WHERE o.order_status NOT IN ('canceled', 'unavailable') AND EXTRACT(YEAR FROM o.order_purchase_timestamp)::int IN (2017, 2018) GROUP BY 1) SELECT MONTH, ROUND(gmv_2017, 2) AS gmv_2017, ROUND(gmv_2018, 2) AS gmv_2018, ROUND(100.0 * (gmv_2018 - gmv_2017) / NULLIF(gmv_2017, 0), 2) AS yoy_growth_percent FROM monthly ORDER BY MONTH LIMIT 201",
+      "goldSqlSha256": "36852c938176805fc54a2805c86c3f33fa5f3e67fa0593bf2598d1d300a8d33a"
+    },
+    {
+      "round": "r3",
+      "id": "T6-024",
+      "status": "REQUEST_TIMEOUT",
+      "question": "退款原因与客户评分的关系：各退款原因对应的平均评分和低分率是多少？",
+      "goldSql": "SELECT r.reason_code,\n       ROUND(AVG(rev.review_score), 2) AS avg_score,\n       ROUND(100.0 * COUNT(*) FILTER (WHERE rev.review_score <= 2) / COUNT(*), 2) AS low_score_pct\nFROM refunds r\nJOIN orders o ON o.order_id = r.order_id\nJOIN order_reviews rev ON rev.order_id = r.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY 1 ORDER BY low_score_pct DESC;\n",
+      "actualSql": null,
+      "goldSqlSha256": "393a57cad06fc6bcd8ee088d1cfd8c6181f4efb4aa13ad715b0978ac605406a8"
+    }
+  ]
+}
