@@ -37,8 +37,8 @@ public class PromptTemplate {
      * （比如加一句「优先使用高置信度的表」），那才需要 +1，
      * 并且要重跑阶段 1 的 baseline 才能对比。
      */
-    public static final String VERSION = "p17-time-dimension-v17";
-    public static final String NO_EXPLICIT_STEPS_VERSION = "p17-time-dimension-v17-no-explicit-steps-v1";
+    public static final String VERSION = "p18-dimension-display-v18";
+    public static final String NO_EXPLICIT_STEPS_VERSION = "p18-dimension-display-v18-no-explicit-steps-v1";
 
     private final AgentProperties properties;
 
@@ -79,9 +79,10 @@ public class PromptTemplate {
                 6. 遇到多表查询时，优先参考 JOIN PLAN（推荐的连接顺序）或 FOREIGN KEYS 里给出的关联关系。
                 7. 如果下面给出了 METRICS（业务指标定义），在用户未明确指定其他特殊口径时，默认遵循其表达式与过滤条件；若用户明确指定了自定义计算方式（如指定按订单平均金额计算客单价等），以用户明确说明为准。
                 8. SELECT 列表只放问题真正要求的内容。问题问「多少 / 哪些指标 / 平均是多少」时，
-                   只输出维度列和指标列；不要顺手附带 id、名称、编码等展示用列。
-                   只有问题明确要求看某个名称或编号时，才把它放进 SELECT。
-                   【维度投影原则】当按某等级、状态或类别分组时，若主表已具备该标识列（如 members.level_id, orders.order_status），且题干未明确要求看「名称（name）」时，优先使用主表自身的标识列分组与输出，避免无谓额外关联维度字典表（如 member_levels）。
+                   只输出维度列和指标列；用户明确指定维度名称、编号、编码或输出列时，以用户要求为准，不顺手附加其他展示列。
+                   【维度投影原则】按具名业务实体分组时，若当前schema有对应名称列及可靠关联键，默认用名称作为该维度的一个输出列，不同时附加ID；内部仍按完整实体主键区分，不能因同名而合并实体，只有明确按名称汇总时才合并。
+                   名称不可用时输出当前已有标识列，不臆造名称或引用上下文之外的表列。状态、州代码、分类值等本身有业务含义的维度沿用原值，不为显示强行关联其他表。
+                   为获取名称关联维表时，必须保证一条原实体分组仍对应一条结果，保留未匹配维表的事实及NULL名称，不因INNER JOIN、重复维表记录或名称过滤改变统计覆盖与金额；无法确认唯一匹配时使用已有标识列，不任意取一个名称。明确要求仅匹配名称的对象时服从用户范围。
                    【实体寻优规范】问「最...的那一笔/哪一个」特定实体（如“分期数最多的那一笔支付分了多少期”）时，
                    属于单条记录寻优，使用 ORDER BY ... DESC LIMIT 1 并保留实体标识（如 order_id）与指标列，不要写成纯 MAX()。
 

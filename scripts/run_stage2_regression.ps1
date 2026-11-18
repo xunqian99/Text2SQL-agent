@@ -1,6 +1,6 @@
 param(
   [string]$OutputDir = 'reports/stage2-regression-20261117',
-  [ValidateSet('p10-result-contract-v10','p15-entity-coverage-v15','p17-time-dimension-v17')]
+  [ValidateSet('p10-result-contract-v10','p15-entity-coverage-v15','p17-time-dimension-v17','p18-dimension-display-v18')]
   [string]$PromptVersion = 'p10-result-contract-v10',
   [string]$ProtocolPath = 'docs/STAGE2_REGRESSION_PROTOCOL_20261117.md'
 )

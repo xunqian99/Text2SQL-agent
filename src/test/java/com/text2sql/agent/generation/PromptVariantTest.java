@@ -36,7 +36,7 @@ class PromptVariantTest {
 
     @Test void archivedP14PreservesUnaffectedRulesFromP9() throws Exception {
         var template = new PromptTemplate();
-        assertThat(template.version()).isEqualTo("p17-time-dimension-v17");
+        assertThat(template.version()).isEqualTo("p18-dimension-display-v18");
         try (var in = getClass().getResourceAsStream("/prompts/p9-system.txt")) {
             assertThat(in).isNotNull();
             String archived = new String(in.readAllBytes(), StandardCharsets.UTF_8);
@@ -91,7 +91,7 @@ class PromptVariantTest {
         assertThat(shortened).isEqualTo(full.replace(full.substring(full.indexOf("思考与推理步骤"), full.indexOf("硬性规则")), ""));
         assertThat(shortened.substring(shortened.indexOf("硬性规则")))
                 .isEqualTo(full.substring(full.indexOf("硬性规则")));
-        assertThat(candidate.version()).isEqualTo("p17-time-dimension-v17-no-explicit-steps-v1");
+        assertThat(candidate.version()).isEqualTo("p18-dimension-display-v18-no-explicit-steps-v1");
         var schema = new SchemaContext(List.of(), List.of(), "画像", "CREATE TABLE orders(order_id text);");
         assertThat(candidate.userPrompt(schema, "订单有多少？")).isEqualTo(new PromptTemplate().userPrompt(schema, "订单有多少？"));
         assertThat(candidate.correctionPrompt(schema, "订单有多少？", "SELECT 0", "请修正"))
@@ -146,11 +146,21 @@ class PromptVariantTest {
         assertThat(after.length()).isLessThan(before.length());
     }
 
-    @Test void currentTimeCandidateKeepsP15RulesOutsideRule13AndRejectsP16EntityChanges() throws Exception {
-        String current = new PromptTemplate().systemPrompt(), before = frozenP15();
+    @Test void archivedP17KeepsP15RulesOutsideRule13AndRejectsP16EntityChanges() throws Exception {
+        String current = frozenP17(), before = frozenP15();
         assertThat(withoutTimeRule(current)).isEqualTo(withoutTimeRule(before));
         assertThat(current).contains("会员数包括无订单会员", "统计标签覆盖会员数及其商品均价时");
-        assertThat(new PromptTemplate().version()).isEqualTo("p17-time-dimension-v17");
+    }
+
+    @Test void dimensionDisplayChangesOnlyRule8AndPreservesInternalEntityIdentity() throws Exception {
+        String current = new PromptTemplate().systemPrompt(), before = frozenP17();
+        assertThat(withoutProjectionRule(current)).isEqualTo(withoutProjectionRule(before));
+        assertThat(current).contains("默认用名称作为该维度的一个输出列，不同时附加ID",
+                "内部仍按完整实体主键区分", "只有明确按名称汇总时才合并", "名称不可用时输出当前已有标识列",
+                "用户明确指定维度名称、编号、编码或输出列时", "保留未匹配维表的事实及NULL名称",
+                "重复维表记录或名称过滤改变统计覆盖与金额", "状态、州代码、分类值等本身有业务含义的维度沿用原值")
+                .doesNotContain("优先使用主表自身的标识列分组与输出");
+        assertThat(new PromptTemplate().version()).isEqualTo("p18-dimension-display-v18");
     }
 
     @Test void timeDimensionDefaultsAreDistinctFromExplicitDisplayOverrides() {
@@ -169,6 +179,20 @@ class PromptVariantTest {
                     .isEqualTo("23608183c2f8f3b03e2c6c948aa5963d3a93a24317590102e8f5894ab6893c71");
             return new String(bytes, StandardCharsets.UTF_8);
         }
+    }
+
+    private static String frozenP17() throws Exception {
+        try (var in = PromptVariantTest.class.getResourceAsStream("/prompts/p17-system.txt")) {
+            assertThat(in).isNotNull();
+            byte[] bytes = in.readAllBytes();
+            assertThat(HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes)))
+                    .isEqualTo("2886da41d0dd92b3bf17ac066e81550f907d290ef97fd2e11d81820e79277b0c");
+            return new String(bytes, StandardCharsets.UTF_8);
+        }
+    }
+
+    private static String withoutProjectionRule(String prompt) {
+        return prompt.substring(0, prompt.indexOf("8. SELECT")) + prompt.substring(prompt.indexOf("9. 聚合"));
     }
 
     private static String frozenP14() throws Exception {

@@ -12,6 +12,17 @@ from summarize_holdout import read, dataset_hash, ids_hash, is_dev
 from summarize_request_budget import audit_run
 
 
+def audit_baseline_config(config, baseline, candidate_metric_sha, require):
+    """A registered metric resource may change; all runtime settings remain comparable."""
+    if candidate_metric_sha is not None:
+        require(bool(candidate_metric_sha) and config.get('metricDefinitionsSha256') == candidate_metric_sha,
+                'candidate metric resource differs from frozen source')
+    for key, value in baseline.items():
+        if key == 'metricDefinitionsSha256' and candidate_metric_sha is not None:
+            continue
+        require(config.get(key) == value, 'original baseline config differs: ' + key)
+
+
 def summarize(directory, live=False):
     folder = Path(directory)
     manifest = read(folder / 'manifest.json')
@@ -26,7 +37,7 @@ def summarize(directory, live=False):
     require(manifest['referenceAccuracyPercent'] == 91 and manifest['minimumMeanAccuracyPercent'] == 89, 'threshold changed')
     require(manifest['distinctRealQuestions'] == 100 and manifest['plannedRealRequests'] == 300, 'denominator changed')
     expected_prompt = manifest.get('expectedPromptVersion', 'p10-result-contract-v10')
-    require(expected_prompt in ('p10-result-contract-v10', 'p15-entity-coverage-v15', 'p17-time-dimension-v17'), 'unregistered prompt')
+    require(expected_prompt in ('p10-result-contract-v10', 'p15-entity-coverage-v15', 'p17-time-dimension-v17', 'p18-dimension-display-v18'), 'unregistered prompt')
     protocol_path = manifest.get('protocolPath', 'docs/STAGE2_REGRESSION_PROTOCOL_20261117.md')
     require(protocol_path in manifest['protectedSha256'], 'protocol not frozen')
     protocol = subprocess.check_output(['git', 'show', manifest['codeCommit'] + ':' + protocol_path]).decode('utf-8')
@@ -99,8 +110,11 @@ def summarize(directory, live=False):
             common = comparable
         require(comparable == common, name + ': round config differs')
         old = baseline_reports[int(name[-1]) - 1]
-        for k, v in old['meta']['effectiveConfig'].items():
-            require(config.get(k) == v, name + ': original baseline config differs: ' + k)
+        candidate_metric_sha = None
+        if expected_prompt == 'p18-dimension-display-v18':
+            candidate_metric_sha = manifest['protectedSha256'].get('src/main/resources/schema/metrics.yml', '')
+        audit_baseline_config(config, old['meta']['effectiveConfig'], candidate_metric_sha,
+                              lambda ok, msg: require(ok, name + ': ' + msg))
         for k in ('model','baseUrl','includeDataProfile','includeForeignKeys','limitMode','maxRows','retrievalTopK','joinHintsEnabled'):
             require(meta[k] == old['meta'][k], name + ': baseline metadata differs: ' + k)
         old_items = {i['id']: i for i in old['itemEvidence']}
