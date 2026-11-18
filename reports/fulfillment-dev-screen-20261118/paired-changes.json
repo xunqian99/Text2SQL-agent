@@ -1,0 +1,74 @@
+[
+  {
+    "id": "T1-019",
+    "beforeCorrect": false,
+    "afterCorrect": true,
+    "beforeStatus": "SUCCESS",
+    "afterStatus": "SUCCESS",
+    "beforeSql": "SELECT COUNT(*) AS undelivered_order_count\nFROM orders\nWHERE order_status <> 'delivered';",
+    "afterSql": "SELECT COUNT(*) AS undelivered_order_count\nFROM orders\nWHERE order_delivered_customer_date IS NULL;"
+  },
+  {
+    "id": "T1-028",
+    "beforeCorrect": true,
+    "afterCorrect": false,
+    "beforeStatus": "SUCCESS",
+    "afterStatus": "SUCCESS",
+    "beforeSql": "SELECT warehouse_id, warehouse_name, capacity\nFROM warehouses\nORDER BY capacity DESC NULLS LAST\nLIMIT 1;",
+    "afterSql": "SELECT warehouse_id, capacity\nFROM warehouses\nORDER BY capacity DESC\nLIMIT 1;"
+  },
+  {
+    "id": "T3-020",
+    "beforeCorrect": false,
+    "afterCorrect": true,
+    "beforeStatus": "SUCCESS",
+    "afterStatus": "SUCCESS",
+    "beforeSql": "SELECT ROUND((COUNT(DISTINCT r.order_id) FILTER (WHERE r.reason_code = 'LATE'))::numeric / NULLIF(COUNT(DISTINCT o.order_id), 0), 4) AS late_delivery_ratio FROM orders o LEFT JOIN refunds r ON r.order_id = o.order_id WHERE o.order_status = 'delivered' LIMIT 201",
+    "afterSql": "SELECT ROUND(COUNT(*) FILTER (WHERE order_delivered_customer_date > order_estimated_delivery_date)::numeric / NULLIF(COUNT(*), 0), 4) AS late_delivery_ratio FROM orders WHERE order_status = 'delivered' LIMIT 201"
+  },
+  {
+    "id": "T4-007",
+    "beforeCorrect": true,
+    "afterCorrect": false,
+    "beforeStatus": "SUCCESS",
+    "afterStatus": "SUCCESS",
+    "beforeSql": "SELECT COUNT(*) AS product_count\nFROM products p\nWHERE NOT EXISTS (\n  SELECT 1\n  FROM product_price_history pph\n  WHERE pph.product_id = p.product_id\n);",
+    "afterSql": "SELECT COUNT(DISTINCT p.product_id) AS never_changed_product_count\nFROM products p\nWHERE NOT EXISTS (\n    SELECT 1\n    FROM product_price_history h\n    WHERE h.product_id = p.product_id\n      AND h.old_price IS DISTINCT FROM h.new_price\n);"
+  },
+  {
+    "id": "T4-032",
+    "beforeCorrect": true,
+    "afterCorrect": false,
+    "beforeStatus": "SUCCESS",
+    "afterStatus": "REQUEST_TIMEOUT",
+    "beforeSql": "SELECT p.product_category_name AS category,\n       COUNT(DISTINCT r.refund_id) AS refund_count\nFROM refunds r\nJOIN orders o ON o.order_id = r.order_id\nJOIN order_items oi ON oi.order_id = o.order_id\nJOIN products p ON p.product_id = oi.product_id\nWHERE p.product_category_name IS NOT NULL\nGROUP BY p.product_category_name\nORDER BY refund_count DESC\nLIMIT 100;",
+    "afterSql": null
+  },
+  {
+    "id": "T4-038",
+    "beforeCorrect": true,
+    "afterCorrect": false,
+    "beforeStatus": "SUCCESS",
+    "afterStatus": "SUCCESS",
+    "beforeSql": "-- 统计各会员等级中被打上流失风险标签的会员人数\nSELECT m.level_id, COUNT(DISTINCT m.member_id) AS churn_risk_members\nFROM members m\nJOIN user_tag_map utm ON utm.member_id = m.member_id\nJOIN user_tags ut ON ut.tag_id = utm.tag_id\nWHERE ut.tag_code = 'CHURN_RISK'\nGROUP BY m.level_id\nORDER BY churn_risk_members DESC\nLIMIT 100;",
+    "afterSql": "SELECT ml.level_id, COUNT(DISTINCT m.member_id) AS member_count FROM member_levels ml LEFT JOIN members m ON m.level_id = ml.level_id LEFT JOIN user_tag_map utm ON utm.member_id = m.member_id AND utm.tag_id = (SELECT tag_id FROM user_tags WHERE tag_code = 'CHURN_RISK') GROUP BY ml.level_id ORDER BY ml.level_id LIMIT 201"
+  },
+  {
+    "id": "T5-017",
+    "beforeCorrect": true,
+    "afterCorrect": false,
+    "beforeStatus": "SUCCESS",
+    "afterStatus": "SUCCESS",
+    "beforeSql": "SELECT tc.category_name,\n       st.priority,\n       COUNT(DISTINCT st.ticket_id) AS ticket_count,\n       COUNT(tm.message_id) AS message_count\nFROM support_tickets st\nJOIN ticket_categories tc ON tc.category_id = st.category_id\nLEFT JOIN ticket_messages tm ON tm.ticket_id = st.ticket_id\nGROUP BY tc.category_name, st.priority\nORDER BY tc.category_name, st.priority\nLIMIT 100;",
+    "afterSql": "SELECT st.category_id,\n       st.priority,\n       COUNT(DISTINCT st.ticket_id) AS ticket_count,\n       COUNT(tm.message_id) AS message_count\nFROM support_tickets st\nLEFT JOIN ticket_messages tm ON tm.ticket_id = st.ticket_id\nGROUP BY st.category_id, st.priority\nORDER BY st.category_id, st.priority\nLIMIT 200;"
+  },
+  {
+    "id": "T6-009",
+    "beforeCorrect": false,
+    "afterCorrect": true,
+    "beforeStatus": "REQUEST_TIMEOUT",
+    "afterStatus": "SUCCESS",
+    "beforeSql": null,
+    "afterSql": "SELECT c.customer_state,\n       ROUND(100.0 * COUNT(*) FILTER (WHERE r.review_score <= 2) / NULLIF(COUNT(*), 0), 2) AS low_score_rate\nFROM order_reviews r\nJOIN orders o ON o.order_id = r.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable')\nGROUP BY c.customer_state\nORDER BY low_score_rate DESC\nLIMIT 10;"
+  }
+]
