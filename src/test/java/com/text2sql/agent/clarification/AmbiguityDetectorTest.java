@@ -55,7 +55,7 @@ class AmbiguityDetectorTest {
 
         assertThat(detector.clarificationFor("销售额 是多少")).isPresent();
         // 限定词里带空格同样要能识别
-        assertThat(detector.clarificationFor("销售额是 含运费 的吗？")).isEmpty();
+        assertThat(detector.clarificationFor("销售额按 含运费 计算")).isEmpty();
     }
 
     @Test

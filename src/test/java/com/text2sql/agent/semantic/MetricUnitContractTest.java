@@ -34,7 +34,7 @@ class MetricUnitContractTest {
         assertThat(metric("gmv_with_freight").outputUnit()).isNull();
     }
 
-    @Test void archivedDefinitionsStayUnchangedExceptDocumentedUnitRepeatDeliveryOnTimeAndEntityScopeAdditions() throws Exception {
+    @Test void archivedDefinitionsStayUnchangedExceptDocumentedUnitDeliveryEntityAndFreightAliasChanges() throws Exception {
         var mapper = new ObjectMapper(new YAMLFactory());
         var before = mapper.readTree(getClass().getResourceAsStream("/contracts/metrics-before-result-contract.yml"));
         var after = mapper.readTree(getClass().getResourceAsStream("/schema/metrics.yml"));
@@ -50,6 +50,13 @@ class MetricUnitContractTest {
         }
         for (var entry : after.path("metrics")) {
             var node = (com.fasterxml.jackson.databind.node.ObjectNode) entry;
+            if (node.path("name").asText().equals("gmv_with_freight")) {
+                // FreightMetricScopeTest verifies the behavior; never rewrite the historical snapshot.
+                assertThat(node.path("aliases").toString()).isEqualTo("[\"GMV\",\"成交总额\",\"商品交易总额\"]");
+                var original = java.util.stream.StreamSupport.stream(before.path("metrics").spliterator(), false)
+                        .filter(n -> n.path("name").asText().equals("gmv_with_freight")).findFirst().orElseThrow();
+                node.set("aliases", original.path("aliases"));
+            }
             if (node.path("name").asText().equals("delivery_days")) {
                 node.remove("excludedContextAny");
                 node.remove("preferredContextAny");

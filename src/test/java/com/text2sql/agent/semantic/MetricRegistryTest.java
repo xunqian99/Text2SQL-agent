@@ -292,7 +292,7 @@ class MetricRegistryTest {
         // 黑话（GMV / 复购率 / 动销率 / 会员渗透率）才需要口径定义；
         // 普通问法（销售额 / 金额 / 数量）让模型按字面写就行。
         List<String> plainWords = List.of(
-                "销售额", "商品销售额", "商品金额", "金额", "数量", "订单数");
+                "销售额", "商品销售额", "商品金额", "金额", "数量", "订单数", "含运费");
 
         for (Metric metric : registry.all()) {
             for (String alias : metric.aliases()) {

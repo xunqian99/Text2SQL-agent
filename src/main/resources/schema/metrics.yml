@@ -47,7 +47,9 @@ metrics:
       是最高频的口径。**只要题目没明说包含全部订单，默认就要排除。**
 
   - name: gmv_with_freight
-    aliases: [GMV, 成交总额, 商品交易总额, 含运费]
+    # “含运费”是金额的限定词，不是指标名称；也会包含在“不含运费”中。
+    # 退款金额等其他事实的含运费要求不能据此注入整单GMV和有效订单过滤。
+    aliases: [GMV, 成交总额, 商品交易总额]
     description: GMV（含运费）= 商品金额 + 运费
     expression: "SUM(oi.price + oi.freight_value)"
     tables: [order_items, orders]
