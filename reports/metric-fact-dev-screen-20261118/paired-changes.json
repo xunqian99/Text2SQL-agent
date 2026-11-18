@@ -1,0 +1,102 @@
+[
+  {
+    "id": "T1-028",
+    "beforeCorrect": false,
+    "afterCorrect": true,
+    "beforeStatus": "SUCCESS",
+    "afterStatus": "SUCCESS",
+    "beforeSql": "SELECT warehouse_id, capacity\nFROM warehouses\nORDER BY capacity DESC\nLIMIT 1;",
+    "afterSql": "SELECT warehouse_id, warehouse_name, capacity\nFROM warehouses\nORDER BY capacity DESC\nLIMIT 1;",
+    "firstPromptUnchanged": true
+  },
+  {
+    "id": "T3-011",
+    "beforeCorrect": false,
+    "afterCorrect": true,
+    "beforeStatus": "SUCCESS",
+    "afterStatus": "SUCCESS",
+    "beforeSql": "WITH monthly AS (\n  SELECT DATE_TRUNC('month', order_purchase_timestamp) AS month,\n         COUNT(*) AS order_cnt\n  FROM orders\n  GROUP BY 1\n)\nSELECT month,\n       ROUND(\n         100.0 * (order_cnt - LAG(order_cnt) OVER (ORDER BY month))\n         / NULLIF(LAG(order_cnt) OVER (ORDER BY month), 0),\n         2\n       ) AS mom_growth_pct\nFROM monthly\nORDER BY month\nLIMIT 1000;",
+    "afterSql": "-- 每月订单量及环比增长率\nWITH monthly AS (\n    SELECT DATE_TRUNC('month', order_purchase_timestamp) AS month,\n           COUNT(*) AS order_cnt\n    FROM orders\n    GROUP BY 1\n)\nSELECT month,\n       order_cnt,\n       ROUND(\n           (order_cnt - LAG(order_cnt) OVER (ORDER BY month))::numeric\n           / NULLIF(LAG(order_cnt) OVER (ORDER BY month), 0),\n           4\n       ) AS mom_growth_rate\nFROM monthly\nORDER BY month\nLIMIT 100;",
+    "firstPromptUnchanged": true
+  },
+  {
+    "id": "T4-007",
+    "beforeCorrect": false,
+    "afterCorrect": true,
+    "beforeStatus": "SUCCESS",
+    "afterStatus": "SUCCESS",
+    "beforeSql": "SELECT COUNT(DISTINCT p.product_id) AS never_changed_product_count\nFROM products p\nWHERE NOT EXISTS (\n    SELECT 1\n    FROM product_price_history h\n    WHERE h.product_id = p.product_id\n      AND h.old_price IS DISTINCT FROM h.new_price\n);",
+    "afterSql": "SELECT COUNT(*) AS product_cnt\nFROM products p\nWHERE NOT EXISTS (\n    SELECT 1\n    FROM product_price_history h\n    WHERE h.product_id = p.product_id\n);",
+    "firstPromptUnchanged": true
+  },
+  {
+    "id": "T4-010",
+    "beforeCorrect": true,
+    "afterCorrect": false,
+    "beforeStatus": "SUCCESS",
+    "afterStatus": "SUCCESS",
+    "beforeSql": "SELECT o.order_status, ROUND(SUM(oi.price), 2) AS total_sales\nFROM order_items oi\nJOIN orders o ON o.order_id = oi.order_id\nGROUP BY o.order_status\nORDER BY o.order_status\nLIMIT 100;",
+    "afterSql": "SELECT o.order_status, ROUND(COALESCE(SUM(oi.price), 0), 2) AS total_sales\nFROM orders o\nLEFT JOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY o.order_status\nLIMIT 100;",
+    "firstPromptUnchanged": true
+  },
+  {
+    "id": "T4-018",
+    "beforeCorrect": true,
+    "afterCorrect": false,
+    "beforeStatus": "SUCCESS",
+    "afterStatus": "REQUEST_TIMEOUT",
+    "beforeSql": "SELECT m.level_id, ROUND(SUM(oi.price), 2) AS total_consumption\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN members m ON m.customer_unique_id = c.customer_unique_id\nJOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY m.level_id\nORDER BY total_consumption DESC\nLIMIT 20;",
+    "afterSql": null,
+    "firstPromptUnchanged": true
+  },
+  {
+    "id": "T4-032",
+    "beforeCorrect": false,
+    "afterCorrect": true,
+    "beforeStatus": "REQUEST_TIMEOUT",
+    "afterStatus": "SUCCESS",
+    "beforeSql": null,
+    "afterSql": "SELECT p.product_category_name, COUNT(DISTINCT r.refund_id) AS refund_count\nFROM refunds r\nJOIN orders o ON o.order_id = r.order_id\nJOIN order_items oi ON oi.order_id = o.order_id\nJOIN products p ON p.product_id = oi.product_id\nWHERE p.product_category_name IS NOT NULL\nGROUP BY p.product_category_name\nORDER BY refund_count DESC\nLIMIT 100;",
+    "firstPromptUnchanged": true
+  },
+  {
+    "id": "T4-034",
+    "beforeCorrect": false,
+    "afterCorrect": true,
+    "beforeStatus": "REQUEST_TIMEOUT",
+    "afterStatus": "SUCCESS",
+    "beforeSql": null,
+    "afterSql": "SELECT ROUND(COUNT(DISTINCT r.order_id)::numeric / NULLIF(COUNT(DISTINCT o.order_id), 0), 4) AS refund_order_ratio FROM orders o LEFT JOIN refunds r ON r.order_id = o.order_id LIMIT 201",
+    "firstPromptUnchanged": true
+  },
+  {
+    "id": "T4-038",
+    "beforeCorrect": false,
+    "afterCorrect": true,
+    "beforeStatus": "SUCCESS",
+    "afterStatus": "SUCCESS",
+    "beforeSql": "SELECT ml.level_id, COUNT(DISTINCT m.member_id) AS member_count FROM member_levels ml LEFT JOIN members m ON m.level_id = ml.level_id LEFT JOIN user_tag_map utm ON utm.member_id = m.member_id AND utm.tag_id = (SELECT tag_id FROM user_tags WHERE tag_code = 'CHURN_RISK') GROUP BY ml.level_id ORDER BY ml.level_id LIMIT 201",
+    "afterSql": "SELECT m.level_id, COUNT(DISTINCT m.member_id) AS member_count\nFROM members m\nJOIN user_tag_map utm ON utm.member_id = m.member_id\nJOIN user_tags ut ON ut.tag_id = utm.tag_id\nWHERE ut.tag_code = 'CHURN_RISK'\nGROUP BY m.level_id\nORDER BY m.level_id\nLIMIT 100;",
+    "firstPromptUnchanged": true
+  },
+  {
+    "id": "T5-004",
+    "beforeCorrect": true,
+    "afterCorrect": false,
+    "beforeStatus": "SUCCESS",
+    "afterStatus": "REQUEST_TIMEOUT",
+    "beforeSql": "SELECT r.region_name,\n       COUNT(*) AS shipment_count,\n       COUNT(DISTINCT s.order_id) AS covered_order_count\nFROM shipments s\nJOIN warehouses w ON w.warehouse_id = s.warehouse_id\nJOIN regions r ON r.region_code = w.region_code\nGROUP BY r.region_name\nORDER BY shipment_count DESC, r.region_name\nLIMIT 100;",
+    "afterSql": null,
+    "firstPromptUnchanged": true
+  },
+  {
+    "id": "T5-017",
+    "beforeCorrect": false,
+    "afterCorrect": true,
+    "beforeStatus": "SUCCESS",
+    "afterStatus": "SUCCESS",
+    "beforeSql": "SELECT st.category_id,\n       st.priority,\n       COUNT(DISTINCT st.ticket_id) AS ticket_count,\n       COUNT(tm.message_id) AS message_count\nFROM support_tickets st\nLEFT JOIN ticket_messages tm ON tm.ticket_id = st.ticket_id\nGROUP BY st.category_id, st.priority\nORDER BY st.category_id, st.priority\nLIMIT 200;",
+    "afterSql": "SELECT tc.category_name, st.priority, COUNT(DISTINCT st.ticket_id) AS ticket_count, COUNT(tm.message_id) AS message_count\nFROM support_tickets st\nJOIN ticket_categories tc ON tc.category_id = st.category_id\nLEFT JOIN ticket_messages tm ON tm.ticket_id = st.ticket_id\nGROUP BY tc.category_id, tc.category_name, st.priority\nORDER BY tc.category_name, st.priority\nLIMIT 100;",
+    "firstPromptUnchanged": true
+  }
+]
