@@ -1,0 +1,2572 @@
+[
+  {
+    "id": "T1-028",
+    "difficulty": "single_table_basic",
+    "questionSha256": "20877041ee41b7f006cfba6c9b19d502add18317c8d6dd149f3963a111319ce8",
+    "goldSqlSha256": "d073d156d6dec1bd89773241a7007e9e2bb6407f7e43b8c654036c036fb98d99",
+    "goldResultSha256": "ca25f25f840a435951d1a389b8dbc6ac7b0b16c5b878c1cfc4ac5e59b69b1864",
+    "promptHashVersion": "text-tool-messages-v1",
+    "status": "SUCCESS",
+    "finalSql": "SELECT warehouse_id, capacity\nFROM warehouses\nORDER BY capacity DESC\nLIMIT 1;",
+    "correct": false,
+    "wallLatencyMs": 1077,
+    "timings": {
+      "retrievalMs": 1,
+      "generationMs": 1066,
+      "validationMs": 2,
+      "executionMs": 5,
+      "totalMs": 1077
+    },
+    "totalUsage": {
+      "model": "deepseek-flash",
+      "promptTokens": 3104,
+      "completionTokens": 117,
+      "totalTokens": 3221,
+      "promptChars": 6572,
+      "latencyMs": 1065,
+      "costYuan": 0.0014395200000000001,
+      "cacheHitTokens": 2176,
+      "cacheMissTokens": 928
+    },
+    "retryTrigger": "NONE",
+    "selectedAttempt": 1,
+    "calls": [
+      {
+        "number": 1,
+        "status": "OK",
+        "promptSha256": "4bf0aa4c95b1b7b9454da6e87826f2b3e1d7915e0c5cdcc1d99e56f5f2d10a0f",
+        "usage": {
+          "model": "deepseek-flash",
+          "promptTokens": 3104,
+          "completionTokens": 117,
+          "totalTokens": 3221,
+          "promptChars": 6572,
+          "latencyMs": 1065,
+          "costYuan": 0.0014395200000000001,
+          "cacheHitTokens": 2176,
+          "cacheMissTokens": 928
+        }
+      }
+    ],
+    "productionAttempts": [
+      {
+        "number": 1,
+        "stage": "INITIAL_SQL",
+        "status": "SUCCESS",
+        "sql": "SELECT warehouse_id, capacity\nFROM warehouses\nORDER BY capacity DESC\nLIMIT 1;",
+        "message": null,
+        "correct": false,
+        "columns": [
+          "warehouse_id",
+          "capacity"
+        ],
+        "rowCount": 1,
+        "truncated": false,
+        "resultSha256": "439c41a855ac959b8991beff0e1da550d7ee08c734c41f567d292d60e937b061"
+      }
+    ],
+    "budget": {
+      "requestId": "f2343a20-09f3-47d4-804e-472e43d865ff",
+      "timeoutMs": 15000,
+      "maxModelCalls": 2,
+      "modelCalls": 1,
+      "unknownUsageCalls": 0,
+      "elapsedMs": 1077,
+      "termination": "COMPLETE",
+      "stage": "CONVERSATION",
+      "retrySkippedReason": null,
+      "stageMs": {
+        "EXPLAIN": 4,
+        "VALIDATION": 2,
+        "ADMISSION": 0,
+        "SESSION": 0,
+        "EXECUTION": 1,
+        "MODEL": 1066,
+        "GENERATION": 0,
+        "CACHE": 0,
+        "CONVERSATION": 0,
+        "RETRIEVAL": 1,
+        "RESULT_CHECK": 0,
+        "CACHE_WRITE": 0,
+        "CLARIFICATION": 0
+      },
+      "cancellationRejected": 0,
+      "timingsVersion": "request-budget-exclusive-v1",
+      "otherMs": 3,
+      "currentStageMs": 0
+    },
+    "question": "容量最大的仓库是哪一个？",
+    "goldSql": "SELECT warehouse_id, warehouse_name, capacity\nFROM warehouses ORDER BY capacity DESC LIMIT 1;\n",
+    "notes": null
+  },
+  {
+    "id": "T2-030",
+    "difficulty": "single_table_agg",
+    "questionSha256": "65dbf4b5c0ecc2bac27bbf14278b1dc891c8b0eb6989b4081eef4b258673e624",
+    "goldSqlSha256": "7b4e4f68b1b775115b932f5199c5fcaa36196bc45db98f490f25749a1075fd25",
+    "goldResultSha256": "1d59e1dc56d15e892810ce29dfcb3cd034455ad6e999be5c2c029e17bb8b4522",
+    "promptHashVersion": "text-tool-messages-v1",
+    "status": "SUCCESS",
+    "finalSql": "SELECT tc.category_name, COUNT(st.ticket_id) AS ticket_count\nFROM support_tickets st\nLEFT JOIN ticket_categories tc ON tc.category_id = st.category_id\nGROUP BY tc.category_id, tc.category_name\nORDER BY ticket_count DESC\nLIMIT 100;",
+    "correct": false,
+    "wallLatencyMs": 4323,
+    "timings": {
+      "retrievalMs": 2,
+      "generationMs": 4303,
+      "validationMs": 6,
+      "executionMs": 9,
+      "totalMs": 4323
+    },
+    "totalUsage": {
+      "model": "deepseek-flash",
+      "promptTokens": 3160,
+      "completionTokens": 606,
+      "totalTokens": 3766,
+      "promptChars": 6799,
+      "latencyMs": 4303,
+      "costYuan": 0.00332608,
+      "cacheHitTokens": 2304,
+      "cacheMissTokens": 856
+    },
+    "retryTrigger": "NONE",
+    "selectedAttempt": 1,
+    "calls": [
+      {
+        "number": 1,
+        "status": "OK",
+        "promptSha256": "e97ad1dd6901c2e85757f647fa96be59551836c7c10871901ad08ccde2e931cf",
+        "usage": {
+          "model": "deepseek-flash",
+          "promptTokens": 3160,
+          "completionTokens": 606,
+          "totalTokens": 3766,
+          "promptChars": 6799,
+          "latencyMs": 4303,
+          "costYuan": 0.00332608,
+          "cacheHitTokens": 2304,
+          "cacheMissTokens": 856
+        }
+      }
+    ],
+    "productionAttempts": [
+      {
+        "number": 1,
+        "stage": "INITIAL_SQL",
+        "status": "SUCCESS",
+        "sql": "SELECT tc.category_name, COUNT(st.ticket_id) AS ticket_count\nFROM support_tickets st\nLEFT JOIN ticket_categories tc ON tc.category_id = st.category_id\nGROUP BY tc.category_id, tc.category_name\nORDER BY ticket_count DESC\nLIMIT 100;",
+        "message": null,
+        "correct": false,
+        "columns": [
+          "category_name",
+          "ticket_count"
+        ],
+        "rowCount": 6,
+        "truncated": false,
+        "resultSha256": "2a79602c5580111c597f91ec306556cf756438009e3357e8784a963ab3448e0e"
+      }
+    ],
+    "budget": {
+      "requestId": "4a9bd814-a00e-4f41-ba20-cf1d4953a156",
+      "timeoutMs": 15000,
+      "maxModelCalls": 2,
+      "modelCalls": 1,
+      "unknownUsageCalls": 0,
+      "elapsedMs": 4323,
+      "termination": "COMPLETE",
+      "stage": "CONVERSATION",
+      "retrySkippedReason": null,
+      "stageMs": {
+        "EXPLAIN": 5,
+        "VALIDATION": 6,
+        "ADMISSION": 0,
+        "SESSION": 0,
+        "EXECUTION": 4,
+        "MODEL": 4303,
+        "GENERATION": 0,
+        "CACHE": 0,
+        "CONVERSATION": 0,
+        "RETRIEVAL": 2,
+        "RESULT_CHECK": 0,
+        "CACHE_WRITE": 0,
+        "CLARIFICATION": 0
+      },
+      "cancellationRejected": 0,
+      "timingsVersion": "request-budget-exclusive-v1",
+      "otherMs": 3,
+      "currentStageMs": 0
+    },
+    "question": "每个工单分类各有多少个工单？",
+    "goldSql": "SELECT category_id, COUNT(*) AS cnt\nFROM support_tickets GROUP BY category_id ORDER BY category_id;\n",
+    "notes": null
+  },
+  {
+    "id": "T2-036",
+    "difficulty": "single_table_agg",
+    "questionSha256": "45c179b62163073552d65715f844e459b496b8ec4b3dfc0e8ce47cb852703adf",
+    "goldSqlSha256": "2621b67a2a99fde269372047cd010ac317ee6b9efbcabedf3b78c59ab372ea6c",
+    "goldResultSha256": "1adf4339d91f5b4466d64a2715094567876213146f094bf630191b641ab9239a",
+    "promptHashVersion": "text-tool-messages-v1",
+    "status": "SUCCESS",
+    "finalSql": "SELECT p.product_category_name\nFROM products p\nWHERE p.product_category_name IS NOT NULL\nGROUP BY p.product_category_name\nHAVING COUNT(*) > 1500\nLIMIT 100;",
+    "correct": false,
+    "wallLatencyMs": 3455,
+    "timings": {
+      "retrievalMs": 2,
+      "generationMs": 3443,
+      "validationMs": 2,
+      "executionMs": 5,
+      "totalMs": 3455
+    },
+    "totalUsage": {
+      "model": "deepseek-flash",
+      "promptTokens": 3403,
+      "completionTokens": 472,
+      "totalTokens": 3875,
+      "promptChars": 7356,
+      "latencyMs": 3442,
+      "costYuan": 0.002155,
+      "cacheHitTokens": 3200,
+      "cacheMissTokens": 203
+    },
+    "retryTrigger": "NONE",
+    "selectedAttempt": 1,
+    "calls": [
+      {
+        "number": 1,
+        "status": "OK",
+        "promptSha256": "b8a0731ce40b1a8dd32e19f49f4415e28a36e18676ac7ef6d425b0358ed2aeb0",
+        "usage": {
+          "model": "deepseek-flash",
+          "promptTokens": 3403,
+          "completionTokens": 472,
+          "totalTokens": 3875,
+          "promptChars": 7356,
+          "latencyMs": 3442,
+          "costYuan": 0.002155,
+          "cacheHitTokens": 3200,
+          "cacheMissTokens": 203
+        }
+      }
+    ],
+    "productionAttempts": [
+      {
+        "number": 1,
+        "stage": "INITIAL_SQL",
+        "status": "SUCCESS",
+        "sql": "SELECT p.product_category_name\nFROM products p\nWHERE p.product_category_name IS NOT NULL\nGROUP BY p.product_category_name\nHAVING COUNT(*) > 1500\nLIMIT 100;",
+        "message": null,
+        "correct": false,
+        "columns": [
+          "product_category_name"
+        ],
+        "rowCount": 7,
+        "truncated": false,
+        "resultSha256": "fc24fb86eb0bdfb289beefb430c57d12931340502f9322eee02bf17bf742bb21"
+      }
+    ],
+    "budget": {
+      "requestId": "0f3f76bd-3bb7-45ab-accd-59e5cbe6b64c",
+      "timeoutMs": 15000,
+      "maxModelCalls": 2,
+      "modelCalls": 1,
+      "unknownUsageCalls": 0,
+      "elapsedMs": 3455,
+      "termination": "COMPLETE",
+      "stage": "CONVERSATION",
+      "retrySkippedReason": null,
+      "stageMs": {
+        "EXPLAIN": 2,
+        "VALIDATION": 2,
+        "ADMISSION": 0,
+        "SESSION": 0,
+        "EXECUTION": 3,
+        "MODEL": 3443,
+        "GENERATION": 0,
+        "CACHE": 0,
+        "CONVERSATION": 0,
+        "RETRIEVAL": 2,
+        "RESULT_CHECK": 0,
+        "CACHE_WRITE": 0,
+        "CLARIFICATION": 0
+      },
+      "cancellationRejected": 0,
+      "timingsVersion": "request-budget-exclusive-v1",
+      "otherMs": 3,
+      "currentStageMs": 0
+    },
+    "question": "商品数量超过 1500 个的类目有哪些？",
+    "goldSql": "SELECT product_category_name, COUNT(*) AS cnt\nFROM products\nWHERE product_category_name IS NOT NULL\nGROUP BY product_category_name\nHAVING COUNT(*) > 1500\nORDER BY cnt DESC;\n",
+    "notes": null
+  },
+  {
+    "id": "T3-008",
+    "difficulty": "time_window",
+    "questionSha256": "839a379e077fa6e742b7b6fe7121112b69b87480dbec44f0ed460af0f99a5857",
+    "goldSqlSha256": "b3532d96e01f29b688e66fcdfb878ece7d12a6eda5af3299e969497a50b5340f",
+    "goldResultSha256": "cd233a6cd25452b57df74a310c843e3aee6dbde18b29cb8f949f7b33bd4b6eb0",
+    "promptHashVersion": "text-tool-messages-v1",
+    "status": "SUCCESS",
+    "finalSql": "SELECT DATE_TRUNC('month', o.order_purchase_timestamp) AS month,\n       ROUND(SUM(oi.price)::numeric / NULLIF(COUNT(DISTINCT o.order_id), 0), 2) AS avg_order_amount\nFROM orders o\nJOIN order_items oi ON oi.order_id = o.order_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable')\nGROUP BY 1\nORDER BY 1\nLIMIT 100;",
+    "correct": false,
+    "wallLatencyMs": 5163,
+    "timings": {
+      "retrievalMs": 4,
+      "generationMs": 4843,
+      "validationMs": 1,
+      "executionMs": 310,
+      "totalMs": 5162
+    },
+    "totalUsage": {
+      "model": "deepseek-flash",
+      "promptTokens": 3564,
+      "completionTokens": 802,
+      "totalTokens": 4366,
+      "promptChars": 7961,
+      "latencyMs": 4843,
+      "costYuan": 0.00451408,
+      "cacheHitTokens": 2304,
+      "cacheMissTokens": 1260
+    },
+    "retryTrigger": "NONE",
+    "selectedAttempt": 1,
+    "calls": [
+      {
+        "number": 1,
+        "status": "OK",
+        "promptSha256": "b3f1d0cb1d9f5738dc5df0f86f478154c8aa4efb4fae20d77f23e40556b528a0",
+        "usage": {
+          "model": "deepseek-flash",
+          "promptTokens": 3564,
+          "completionTokens": 802,
+          "totalTokens": 4366,
+          "promptChars": 7961,
+          "latencyMs": 4843,
+          "costYuan": 0.00451408,
+          "cacheHitTokens": 2304,
+          "cacheMissTokens": 1260
+        }
+      }
+    ],
+    "productionAttempts": [
+      {
+        "number": 1,
+        "stage": "INITIAL_SQL",
+        "status": "SUCCESS",
+        "sql": "SELECT DATE_TRUNC('month', o.order_purchase_timestamp) AS month,\n       ROUND(SUM(oi.price)::numeric / NULLIF(COUNT(DISTINCT o.order_id), 0), 2) AS avg_order_amount\nFROM orders o\nJOIN order_items oi ON oi.order_id = o.order_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable')\nGROUP BY 1\nORDER BY 1\nLIMIT 100;",
+        "message": null,
+        "correct": false,
+        "columns": [
+          "month",
+          "avg_order_amount"
+        ],
+        "rowCount": 24,
+        "truncated": false,
+        "resultSha256": "37def8c8354b7d9a5e91b387ad90446d347b2bd406e29336f1ca9768a3d1a196"
+      }
+    ],
+    "budget": {
+      "requestId": "f97fa035-7607-4208-8d3c-350245af37c7",
+      "timeoutMs": 15000,
+      "maxModelCalls": 2,
+      "modelCalls": 1,
+      "unknownUsageCalls": 0,
+      "elapsedMs": 5162,
+      "termination": "COMPLETE",
+      "stage": "CONVERSATION",
+      "retrySkippedReason": null,
+      "stageMs": {
+        "EXPLAIN": 2,
+        "VALIDATION": 1,
+        "ADMISSION": 0,
+        "SESSION": 0,
+        "EXECUTION": 308,
+        "MODEL": 4843,
+        "GENERATION": 0,
+        "CACHE": 0,
+        "CONVERSATION": 0,
+        "RETRIEVAL": 4,
+        "RESULT_CHECK": 0,
+        "CACHE_WRITE": 0,
+        "CLARIFICATION": 0
+      },
+      "cancellationRejected": 0,
+      "timingsVersion": "request-budget-exclusive-v1",
+      "otherMs": 4,
+      "currentStageMs": 0
+    },
+    "question": "每个月的平均订单金额（按订单明细商品金额计）是多少？",
+    "goldSql": "SELECT DATE_TRUNC('month', o.order_purchase_timestamp) AS month,\n       ROUND(SUM(oi.price) / COUNT(DISTINCT o.order_id), 2) AS avg_order_value\nFROM orders o JOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY 1;\n",
+    "notes": "客单价 = 商品总额 / 去重订单数。分母用 COUNT(DISTINCT order_id) 而非 COUNT(*)，因为一个订单有多条明细。"
+  },
+  {
+    "id": "T3-011",
+    "difficulty": "time_window",
+    "questionSha256": "4fae44ee5e358d66c138fe394fdf740fcfe9753a69e076439468f85911db0f1a",
+    "goldSqlSha256": "163ed7e3da5266c34770b3b3412d1843b715fa4ddf6c1d71728fedccc3314244",
+    "goldResultSha256": "a5239c062173af09c102a10c4e6377fd2f892e100ef64bc4824d7cd9db2fcaff",
+    "promptHashVersion": "text-tool-messages-v1",
+    "status": "SUCCESS",
+    "finalSql": "WITH monthly_orders AS (\n  SELECT DATE_TRUNC('month', o.order_purchase_timestamp) AS month,\n         COUNT(*) AS order_count\n  FROM orders o\n  GROUP BY 1\n), monthly_growth AS (\n  SELECT month,\n         order_count,\n         LAG(order_count) OVER (ORDER BY month) AS prev_order_count\n  FROM monthly_orders\n)\nSELECT month,\n       ROUND((order_count - prev_order_count)::numeric / NULLIF(prev_order_count, 0), 4) AS mom_growth_rate\nFROM monthly_growth\nORDER BY month\nLIMIT 1000;",
+    "correct": false,
+    "wallLatencyMs": 4920,
+    "timings": {
+      "retrievalMs": 1,
+      "generationMs": 4888,
+      "validationMs": 6,
+      "executionMs": 22,
+      "totalMs": 4920
+    },
+    "totalUsage": {
+      "model": "deepseek-flash",
+      "promptTokens": 3245,
+      "completionTokens": 845,
+      "totalTokens": 4090,
+      "promptChars": 7241,
+      "latencyMs": 4887,
+      "costYuan": 0.0036144399999999996,
+      "cacheHitTokens": 3072,
+      "cacheMissTokens": 173
+    },
+    "retryTrigger": "NONE",
+    "selectedAttempt": 1,
+    "calls": [
+      {
+        "number": 1,
+        "status": "OK",
+        "promptSha256": "22e8e40bed615c7bf18c7099293c94c7f8a3e08f69154969804fb18ac3985bb6",
+        "usage": {
+          "model": "deepseek-flash",
+          "promptTokens": 3245,
+          "completionTokens": 845,
+          "totalTokens": 4090,
+          "promptChars": 7241,
+          "latencyMs": 4887,
+          "costYuan": 0.0036144399999999996,
+          "cacheHitTokens": 3072,
+          "cacheMissTokens": 173
+        }
+      }
+    ],
+    "productionAttempts": [
+      {
+        "number": 1,
+        "stage": "INITIAL_SQL",
+        "status": "SUCCESS",
+        "sql": "WITH monthly_orders AS (\n  SELECT DATE_TRUNC('month', o.order_purchase_timestamp) AS month,\n         COUNT(*) AS order_count\n  FROM orders o\n  GROUP BY 1\n), monthly_growth AS (\n  SELECT month,\n         order_count,\n         LAG(order_count) OVER (ORDER BY month) AS prev_order_count\n  FROM monthly_orders\n)\nSELECT month,\n       ROUND((order_count - prev_order_count)::numeric / NULLIF(prev_order_count, 0), 4) AS mom_growth_rate\nFROM monthly_growth\nORDER BY month\nLIMIT 1000;",
+        "message": null,
+        "correct": false,
+        "columns": [
+          "month",
+          "mom_growth_rate"
+        ],
+        "rowCount": 25,
+        "truncated": false,
+        "resultSha256": "c95634c5f41e6328990f942aebb3f7ab653992c1a4ecda1150425787dc66dfe9"
+      }
+    ],
+    "budget": {
+      "requestId": "bf703dbc-d973-4f6d-a0c6-1f75c8e5a3e9",
+      "timeoutMs": 15000,
+      "maxModelCalls": 2,
+      "modelCalls": 1,
+      "unknownUsageCalls": 0,
+      "elapsedMs": 4920,
+      "termination": "COMPLETE",
+      "stage": "CONVERSATION",
+      "retrySkippedReason": null,
+      "stageMs": {
+        "EXPLAIN": 3,
+        "VALIDATION": 6,
+        "ADMISSION": 0,
+        "SESSION": 0,
+        "EXECUTION": 19,
+        "MODEL": 4888,
+        "GENERATION": 0,
+        "CACHE": 0,
+        "CONVERSATION": 0,
+        "RETRIEVAL": 1,
+        "RESULT_CHECK": 0,
+        "CACHE_WRITE": 0,
+        "CLARIFICATION": 0
+      },
+      "cancellationRejected": 0,
+      "timingsVersion": "request-budget-exclusive-v1",
+      "otherMs": 3,
+      "currentStageMs": 0
+    },
+    "question": "每个月的订单量环比增长率是多少？",
+    "goldSql": "WITH monthly AS (\n  SELECT DATE_TRUNC('month', order_purchase_timestamp) AS m, COUNT(*) AS cnt\n  FROM orders GROUP BY 1\n)\nSELECT m AS month,\n       cnt,\n       ROUND((cnt - LAG(cnt) OVER (ORDER BY m))::NUMERIC\n             / NULLIF(LAG(cnt) OVER (ORDER BY m), 0), 4) AS mom_rate\nFROM monthly ORDER BY m;\n",
+    "notes": "必须用 NULLIF 防除零，第一个月没有上月数据，结果应为 NULL。"
+  },
+  {
+    "id": "T4-010",
+    "difficulty": "multi_join",
+    "questionSha256": "b493c462004ddb6fcff8a3fc36fa1ec038f18e1ad517cf07219bd4f38c5302f5",
+    "goldSqlSha256": "55483954c22e1c166cdb2525e28e1f47e4f1aee106d830fdd16726e78e204d7d",
+    "goldResultSha256": "a4b278c24f4658ed36c8d71dc7b6b920d8a5bed933f8acedc42e46b2afb6ce12",
+    "promptHashVersion": "text-tool-messages-v1",
+    "status": "SUCCESS",
+    "finalSql": "SELECT o.order_status, ROUND(COALESCE(SUM(oi.price), 0), 2) AS total_sales\nFROM orders o\nLEFT JOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY o.order_status\nLIMIT 100;",
+    "correct": false,
+    "wallLatencyMs": 4351,
+    "timings": {
+      "retrievalMs": 2,
+      "generationMs": 4221,
+      "validationMs": 7,
+      "executionMs": 118,
+      "totalMs": 4351
+    },
+    "totalUsage": {
+      "model": "deepseek-flash",
+      "promptTokens": 3240,
+      "completionTokens": 663,
+      "totalTokens": 3903,
+      "promptChars": 7150,
+      "latencyMs": 4221,
+      "costYuan": 0.0035086400000000004,
+      "cacheHitTokens": 2432,
+      "cacheMissTokens": 808
+    },
+    "retryTrigger": "NONE",
+    "selectedAttempt": 1,
+    "calls": [
+      {
+        "number": 1,
+        "status": "OK",
+        "promptSha256": "c01f950ed5249860ccf56705632b3c6af3557fce7d3056597b2b82eb3e896f95",
+        "usage": {
+          "model": "deepseek-flash",
+          "promptTokens": 3240,
+          "completionTokens": 663,
+          "totalTokens": 3903,
+          "promptChars": 7150,
+          "latencyMs": 4221,
+          "costYuan": 0.0035086400000000004,
+          "cacheHitTokens": 2432,
+          "cacheMissTokens": 808
+        }
+      }
+    ],
+    "productionAttempts": [
+      {
+        "number": 1,
+        "stage": "INITIAL_SQL",
+        "status": "SUCCESS",
+        "sql": "SELECT o.order_status, ROUND(COALESCE(SUM(oi.price), 0), 2) AS total_sales\nFROM orders o\nLEFT JOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY o.order_status\nLIMIT 100;",
+        "message": null,
+        "correct": false,
+        "columns": [
+          "order_status",
+          "total_sales"
+        ],
+        "rowCount": 8,
+        "truncated": false,
+        "resultSha256": "29b38a5711c8e92cca20154077f4b537c450cef061ec7a7b12762022046fe68d"
+      }
+    ],
+    "budget": {
+      "requestId": "d76e0d85-d04f-4326-aca6-4ad8dcaaddb7",
+      "timeoutMs": 15000,
+      "maxModelCalls": 2,
+      "modelCalls": 1,
+      "unknownUsageCalls": 0,
+      "elapsedMs": 4351,
+      "termination": "COMPLETE",
+      "stage": "CONVERSATION",
+      "retrySkippedReason": null,
+      "stageMs": {
+        "EXPLAIN": 2,
+        "VALIDATION": 7,
+        "ADMISSION": 0,
+        "SESSION": 0,
+        "EXECUTION": 116,
+        "MODEL": 4221,
+        "GENERATION": 0,
+        "CACHE": 0,
+        "CONVERSATION": 0,
+        "RETRIEVAL": 2,
+        "RESULT_CHECK": 0,
+        "CACHE_WRITE": 0,
+        "CLARIFICATION": 0
+      },
+      "cancellationRejected": 0,
+      "timingsVersion": "request-budget-exclusive-v1",
+      "otherMs": 3,
+      "currentStageMs": 0
+    },
+    "question": "每个订单状态的商品销售总额是多少？",
+    "goldSql": "SELECT o.order_status, ROUND(SUM(oi.price), 2) AS sales\nFROM orders o JOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY sales DESC;\n",
+    "notes": null
+  },
+  {
+    "id": "T4-012",
+    "difficulty": "multi_join",
+    "questionSha256": "32bdd0ba4b28ea3014e6b09be0a248aa26dd923b926b638f5123c364dfaca4cb",
+    "goldSqlSha256": "2e531870ad8051971fc04ccb29ac49d18de4b436531f2d4e3c4fa9b3f8b6f066",
+    "goldResultSha256": "74bc6780470c03d2f9eca86060f3dbd67ec205e5052a595f534967b6fd1019d3",
+    "promptHashVersion": "text-tool-messages-v1",
+    "status": "SUCCESS",
+    "finalSql": "SELECT c.customer_state, ROUND(AVG(r.review_score), 2) AS avg_review_score\nFROM order_reviews r\nJOIN orders o ON o.order_id = r.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY c.customer_state\nORDER BY COUNT(*) DESC\nLIMIT 10;",
+    "correct": false,
+    "wallLatencyMs": 5141,
+    "timings": {
+      "retrievalMs": 2,
+      "generationMs": 4958,
+      "validationMs": 3,
+      "executionMs": 176,
+      "totalMs": 5141
+    },
+    "totalUsage": {
+      "model": "deepseek-flash",
+      "promptTokens": 3250,
+      "completionTokens": 807,
+      "totalTokens": 4057,
+      "promptChars": 7108,
+      "latencyMs": 4957,
+      "costYuan": 0.00422008,
+      "cacheHitTokens": 2304,
+      "cacheMissTokens": 946
+    },
+    "retryTrigger": "NONE",
+    "selectedAttempt": 1,
+    "calls": [
+      {
+        "number": 1,
+        "status": "OK",
+        "promptSha256": "af6acba317358d94cfbf25f20847aff4034d87c793e007992b85f668538d837a",
+        "usage": {
+          "model": "deepseek-flash",
+          "promptTokens": 3250,
+          "completionTokens": 807,
+          "totalTokens": 4057,
+          "promptChars": 7108,
+          "latencyMs": 4957,
+          "costYuan": 0.00422008,
+          "cacheHitTokens": 2304,
+          "cacheMissTokens": 946
+        }
+      }
+    ],
+    "productionAttempts": [
+      {
+        "number": 1,
+        "stage": "INITIAL_SQL",
+        "status": "SUCCESS",
+        "sql": "SELECT c.customer_state, ROUND(AVG(r.review_score), 2) AS avg_review_score\nFROM order_reviews r\nJOIN orders o ON o.order_id = r.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY c.customer_state\nORDER BY COUNT(*) DESC\nLIMIT 10;",
+        "message": null,
+        "correct": false,
+        "columns": [
+          "customer_state",
+          "avg_review_score"
+        ],
+        "rowCount": 10,
+        "truncated": false,
+        "resultSha256": "bc8a74d3a1c4cc3c14eda37540f357434ec89ca95a43b16afc6d88410a342bd9"
+      }
+    ],
+    "budget": {
+      "requestId": "175da98e-4d8d-45cf-bda0-4e1f2aa4175e",
+      "timeoutMs": 15000,
+      "maxModelCalls": 2,
+      "modelCalls": 1,
+      "unknownUsageCalls": 0,
+      "elapsedMs": 5141,
+      "termination": "COMPLETE",
+      "stage": "CONVERSATION",
+      "retrySkippedReason": null,
+      "stageMs": {
+        "EXPLAIN": 3,
+        "VALIDATION": 3,
+        "ADMISSION": 0,
+        "SESSION": 0,
+        "EXECUTION": 173,
+        "MODEL": 4958,
+        "GENERATION": 0,
+        "CACHE": 0,
+        "CONVERSATION": 0,
+        "RETRIEVAL": 2,
+        "RESULT_CHECK": 0,
+        "CACHE_WRITE": 0,
+        "CLARIFICATION": 0
+      },
+      "cancellationRejected": 0,
+      "timingsVersion": "request-budget-exclusive-v1",
+      "otherMs": 2,
+      "currentStageMs": 0
+    },
+    "question": "每个州的评价平均分是多少？取评价数最多的 10 个州。",
+    "goldSql": "SELECT c.customer_state, ROUND(AVG(r.review_score), 2) AS avg_score, COUNT(*) AS cnt\nFROM order_reviews r\nJOIN orders o ON o.order_id = r.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY 1 ORDER BY cnt DESC LIMIT 10;\n",
+    "notes": null
+  },
+  {
+    "id": "T4-014",
+    "difficulty": "multi_join",
+    "questionSha256": "b0611bea50ee0a81ca0b484b6a0f736d58a7d6563d7fe36ae94872bb4b91ee7f",
+    "goldSqlSha256": "cfe0993896769bbaf84c1a3d428f116dd8300c56181b89bef6867db2256c124b",
+    "goldResultSha256": "0dab9bb357f1d0cea13d9b9bdf42efaf931421a73fd53cc82d387857dcba3472",
+    "promptHashVersion": "text-tool-messages-v1",
+    "status": "REQUEST_TIMEOUT",
+    "finalSql": null,
+    "correct": false,
+    "wallLatencyMs": 15009,
+    "timings": {
+      "retrievalMs": 2,
+      "generationMs": 15005,
+      "validationMs": 0,
+      "executionMs": 0,
+      "totalMs": 15008
+    },
+    "totalUsage": null,
+    "retryTrigger": "NONE",
+    "selectedAttempt": 1,
+    "calls": [
+      {
+        "number": 1,
+        "status": "CALL_FAILED",
+        "promptSha256": "df409e55ee645036c7d2c316802fb76a317dda5b0f062065f5704a2219c796c8",
+        "usage": null
+      }
+    ],
+    "productionAttempts": [
+      {
+        "number": 1,
+        "stage": "REQUEST_STOP",
+        "status": "REQUEST_TIMEOUT",
+        "sql": null,
+        "message": "请求已超过时间上限，请缩小查询范围后重试。",
+        "correct": false,
+        "columns": [],
+        "rowCount": 0,
+        "truncated": false,
+        "resultSha256": "04e04a0c54b20c36518d69b0d54759ec8dd0520bc3dd2fff18b1311ecf8241fe"
+      }
+    ],
+    "budget": {
+      "requestId": "7c0f740b-30c3-40dd-b86d-0b7bcde6e721",
+      "timeoutMs": 15000,
+      "maxModelCalls": 2,
+      "modelCalls": 1,
+      "unknownUsageCalls": 1,
+      "elapsedMs": 15008,
+      "termination": "DEADLINE_EXCEEDED",
+      "stage": "MODEL",
+      "retrySkippedReason": null,
+      "stageMs": {
+        "ADMISSION": 0,
+        "CACHE": 0,
+        "CLARIFICATION": 0,
+        "RETRIEVAL": 2,
+        "SESSION": 0,
+        "GENERATION": 0,
+        "MODEL": 15005
+      },
+      "cancellationRejected": 0,
+      "timingsVersion": "request-budget-exclusive-v1",
+      "otherMs": 1,
+      "currentStageMs": 15005
+    },
+    "question": "每种支付方式的评价平均分是多少？",
+    "goldSql": "SELECT p.payment_type, ROUND(AVG(r.review_score), 2) AS avg_score\nFROM order_payments p\nJOIN order_reviews r ON r.order_id = p.order_id\nGROUP BY 1 ORDER BY avg_score DESC;\n",
+    "notes": null
+  },
+  {
+    "id": "T4-016",
+    "difficulty": "multi_join",
+    "questionSha256": "468b991a0200697719865fdb321f05ad66ba4cce06ff4a590985a0481aa12f8b",
+    "goldSqlSha256": "6d84c8b908a4c39a78495e2855bd44621cf1e79ae4ad5bf6a240c8c3eb69b750",
+    "goldResultSha256": "d41d46db77f53d2ff292b3151cf156945fe538392bf18632af640269e19b276b",
+    "promptHashVersion": "text-tool-messages-v1",
+    "status": "SUCCESS",
+    "finalSql": "SELECT r.macro_region, ROUND(SUM(oi.price), 2) AS sales\nFROM order_items oi\nJOIN sellers s ON s.seller_id = oi.seller_id\nJOIN regions r ON r.region_code = s.seller_state\nGROUP BY r.macro_region\nORDER BY sales DESC\nLIMIT 100;",
+    "correct": false,
+    "wallLatencyMs": 3744,
+    "timings": {
+      "retrievalMs": 2,
+      "generationMs": 3661,
+      "validationMs": 11,
+      "executionMs": 67,
+      "totalMs": 3744
+    },
+    "totalUsage": {
+      "model": "deepseek-flash",
+      "promptTokens": 3213,
+      "completionTokens": 551,
+      "totalTokens": 3764,
+      "promptChars": 7107,
+      "latencyMs": 3660,
+      "costYuan": 0.0031590800000000003,
+      "cacheHitTokens": 2304,
+      "cacheMissTokens": 909
+    },
+    "retryTrigger": "NONE",
+    "selectedAttempt": 1,
+    "calls": [
+      {
+        "number": 1,
+        "status": "OK",
+        "promptSha256": "09132da274d135484a6e9b70145ef6303c863defe435bdadbd594f32143076d3",
+        "usage": {
+          "model": "deepseek-flash",
+          "promptTokens": 3213,
+          "completionTokens": 551,
+          "totalTokens": 3764,
+          "promptChars": 7107,
+          "latencyMs": 3660,
+          "costYuan": 0.0031590800000000003,
+          "cacheHitTokens": 2304,
+          "cacheMissTokens": 909
+        }
+      }
+    ],
+    "productionAttempts": [
+      {
+        "number": 1,
+        "stage": "INITIAL_SQL",
+        "status": "SUCCESS",
+        "sql": "SELECT r.macro_region, ROUND(SUM(oi.price), 2) AS sales\nFROM order_items oi\nJOIN sellers s ON s.seller_id = oi.seller_id\nJOIN regions r ON r.region_code = s.seller_state\nGROUP BY r.macro_region\nORDER BY sales DESC\nLIMIT 100;",
+        "message": null,
+        "correct": false,
+        "columns": [
+          "macro_region",
+          "sales"
+        ],
+        "rowCount": 5,
+        "truncated": false,
+        "resultSha256": "a512f3ab9f7a633bef793beaa67a9b48ecdd0080473cb53a26ad329868a9e684"
+      }
+    ],
+    "budget": {
+      "requestId": "57240f13-217d-46f0-8b91-2549f1a4f3cc",
+      "timeoutMs": 15000,
+      "maxModelCalls": 2,
+      "modelCalls": 1,
+      "unknownUsageCalls": 0,
+      "elapsedMs": 3744,
+      "termination": "COMPLETE",
+      "stage": "CONVERSATION",
+      "retrySkippedReason": null,
+      "stageMs": {
+        "EXPLAIN": 4,
+        "VALIDATION": 11,
+        "ADMISSION": 0,
+        "SESSION": 0,
+        "EXECUTION": 63,
+        "MODEL": 3661,
+        "GENERATION": 0,
+        "CACHE": 0,
+        "CONVERSATION": 0,
+        "RETRIEVAL": 2,
+        "RESULT_CHECK": 0,
+        "CACHE_WRITE": 0,
+        "CLARIFICATION": 0
+      },
+      "cancellationRejected": 0,
+      "timingsVersion": "request-budget-exclusive-v1",
+      "otherMs": 3,
+      "currentStageMs": 0
+    },
+    "question": "每个大区的商品销售额是多少？",
+    "goldSql": "SELECT r.macro_region, ROUND(SUM(oi.price), 2) AS sales\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN regions r ON r.region_code = c.customer_state\nJOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY sales DESC;\n",
+    "notes": null
+  },
+  {
+    "id": "T4-018",
+    "difficulty": "multi_join",
+    "questionSha256": "3142c0ed9bd392479a7800ada84ed293f160a5f8c78f2d6018956e234a3702fd",
+    "goldSqlSha256": "e3cae59d15cf6b70b7ceb35a9d8ba0ffb53504b4e22e70173fb0c35965ec2cbf",
+    "goldResultSha256": "98cc64fc636e36d70db6d9a81e5e9cbac0a22b1d3af6ec5512b8733426e6936c",
+    "promptHashVersion": "text-tool-messages-v1",
+    "status": "SUCCESS",
+    "finalSql": "-- 先按订单汇总商品金额以避免明细放大，再按订单-等级去重关联会员等级\nWITH order_amount AS (\n  SELECT order_id, SUM(price) AS amt\n  FROM order_items\n  GROUP BY order_id\n),\norder_level AS (\n  SELECT DISTINCT o.order_id, m.level_id\n  FROM orders o\n  JOIN customers c ON c.customer_id = o.customer_id\n  JOIN members m ON m.customer_unique_id = c.customer_unique_id\n)\nSELECT ml.level_name, ROUND(SUM(oa.amt), 2) AS total_consumption\nFROM order_level ol\nJOIN member_levels ml ON ml.level_id = ol.level_id\nJOIN order_amount oa ON oa.order_id = ol.order_id\nGROUP BY ml.level_name\nORDER BY total_consumption DESC\nLIMIT 20;",
+    "correct": false,
+    "wallLatencyMs": 6468,
+    "timings": {
+      "retrievalMs": 2,
+      "generationMs": 6065,
+      "validationMs": 12,
+      "executionMs": 386,
+      "totalMs": 6468
+    },
+    "totalUsage": {
+      "model": "deepseek-flash",
+      "promptTokens": 3967,
+      "completionTokens": 1069,
+      "totalTokens": 5036,
+      "promptChars": 8479,
+      "latencyMs": 6064,
+      "costYuan": 0.00598508,
+      "cacheHitTokens": 2304,
+      "cacheMissTokens": 1663
+    },
+    "retryTrigger": "NONE",
+    "selectedAttempt": 1,
+    "calls": [
+      {
+        "number": 1,
+        "status": "OK",
+        "promptSha256": "6c1604641749c1acd674d887f4e5793c15d2c48197d69a8d80e6471ada76f1fd",
+        "usage": {
+          "model": "deepseek-flash",
+          "promptTokens": 3967,
+          "completionTokens": 1069,
+          "totalTokens": 5036,
+          "promptChars": 8479,
+          "latencyMs": 6064,
+          "costYuan": 0.00598508,
+          "cacheHitTokens": 2304,
+          "cacheMissTokens": 1663
+        }
+      }
+    ],
+    "productionAttempts": [
+      {
+        "number": 1,
+        "stage": "INITIAL_SQL",
+        "status": "SUCCESS",
+        "sql": "-- 先按订单汇总商品金额以避免明细放大，再按订单-等级去重关联会员等级\nWITH order_amount AS (\n  SELECT order_id, SUM(price) AS amt\n  FROM order_items\n  GROUP BY order_id\n),\norder_level AS (\n  SELECT DISTINCT o.order_id, m.level_id\n  FROM orders o\n  JOIN customers c ON c.customer_id = o.customer_id\n  JOIN members m ON m.customer_unique_id = c.customer_unique_id\n)\nSELECT ml.level_name, ROUND(SUM(oa.amt), 2) AS total_consumption\nFROM order_level ol\nJOIN member_levels ml ON ml.level_id = ol.level_id\nJOIN order_amount oa ON oa.order_id = ol.order_id\nGROUP BY ml.level_name\nORDER BY total_consumption DESC\nLIMIT 20;",
+        "message": null,
+        "correct": false,
+        "columns": [
+          "level_name",
+          "total_consumption"
+        ],
+        "rowCount": 4,
+        "truncated": false,
+        "resultSha256": "ef112117fd8eccd674d4c64194c785ad81e8fe26826f2ffc89ffd57f2d3c4e4a"
+      }
+    ],
+    "budget": {
+      "requestId": "a3f6704e-b0f3-400c-a995-1ba280492278",
+      "timeoutMs": 15000,
+      "maxModelCalls": 2,
+      "modelCalls": 1,
+      "unknownUsageCalls": 0,
+      "elapsedMs": 6468,
+      "termination": "COMPLETE",
+      "stage": "CONVERSATION",
+      "retrySkippedReason": null,
+      "stageMs": {
+        "EXPLAIN": 4,
+        "VALIDATION": 12,
+        "ADMISSION": 0,
+        "SESSION": 0,
+        "EXECUTION": 382,
+        "MODEL": 6065,
+        "GENERATION": 0,
+        "CACHE": 0,
+        "CONVERSATION": 0,
+        "RETRIEVAL": 2,
+        "RESULT_CHECK": 0,
+        "CACHE_WRITE": 0,
+        "CLARIFICATION": 0
+      },
+      "cancellationRejected": 0,
+      "timingsVersion": "request-budget-exclusive-v1",
+      "otherMs": 3,
+      "currentStageMs": 0
+    },
+    "question": "每个会员等级的用户消费总额是多少？",
+    "goldSql": "SELECT m.level_id, ROUND(SUM(oi.price), 2) AS sales\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN members m ON m.customer_unique_id = c.customer_unique_id\nJOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY 1;\n",
+    "notes": null
+  },
+  {
+    "id": "T4-021",
+    "difficulty": "multi_join",
+    "questionSha256": "fdf37bcb6096f052a77137c92f558a51147031b6823bac835a7c2fde5360a05f",
+    "goldSqlSha256": "6d3e4010a5191014d298793c9528d6fbe9bdaa78d4b2c03f198658db2ae5c83f",
+    "goldResultSha256": "28e2b89de6bb3f7ca75ea04193b93196f7c14689d3efb2b094638ccc3143fab5",
+    "promptHashVersion": "text-tool-messages-v1",
+    "status": "SUCCESS",
+    "finalSql": "SELECT c.campaign_id, COUNT(cu.usage_id) AS coupon_usage_count\nFROM campaigns c\nLEFT JOIN coupons cp ON cp.campaign_id = c.campaign_id\nLEFT JOIN coupon_usages cu ON cu.coupon_id = cp.coupon_id\nGROUP BY c.campaign_id\nLIMIT 1000;",
+    "correct": false,
+    "wallLatencyMs": 5382,
+    "timings": {
+      "retrievalMs": 2,
+      "generationMs": 5366,
+      "validationMs": 1,
+      "executionMs": 10,
+      "totalMs": 5382
+    },
+    "totalUsage": {
+      "model": "deepseek-flash",
+      "promptTokens": 2975,
+      "completionTokens": 796,
+      "totalTokens": 3771,
+      "promptChars": 6010,
+      "latencyMs": 5365,
+      "costYuan": 0.0039010800000000003,
+      "cacheHitTokens": 2304,
+      "cacheMissTokens": 671
+    },
+    "retryTrigger": "NONE",
+    "selectedAttempt": 1,
+    "calls": [
+      {
+        "number": 1,
+        "status": "OK",
+        "promptSha256": "463814e7ff6bf47dd21ea544579d0339a76a8f024291707a0e3853f787e34a40",
+        "usage": {
+          "model": "deepseek-flash",
+          "promptTokens": 2975,
+          "completionTokens": 796,
+          "totalTokens": 3771,
+          "promptChars": 6010,
+          "latencyMs": 5365,
+          "costYuan": 0.0039010800000000003,
+          "cacheHitTokens": 2304,
+          "cacheMissTokens": 671
+        }
+      }
+    ],
+    "productionAttempts": [
+      {
+        "number": 1,
+        "stage": "INITIAL_SQL",
+        "status": "SUCCESS",
+        "sql": "SELECT c.campaign_id, COUNT(cu.usage_id) AS coupon_usage_count\nFROM campaigns c\nLEFT JOIN coupons cp ON cp.campaign_id = c.campaign_id\nLEFT JOIN coupon_usages cu ON cu.coupon_id = cp.coupon_id\nGROUP BY c.campaign_id\nLIMIT 1000;",
+        "message": null,
+        "correct": false,
+        "columns": [
+          "campaign_id",
+          "coupon_usage_count"
+        ],
+        "rowCount": 52,
+        "truncated": false,
+        "resultSha256": "626c3e4cfe2a204d73bbf8ab6591506e73c5b934b3192889f26e13794accb435"
+      }
+    ],
+    "budget": {
+      "requestId": "305f4466-734a-4556-9ca2-7673667a3ea8",
+      "timeoutMs": 15000,
+      "maxModelCalls": 2,
+      "modelCalls": 1,
+      "unknownUsageCalls": 0,
+      "elapsedMs": 5382,
+      "termination": "COMPLETE",
+      "stage": "CONVERSATION",
+      "retrySkippedReason": null,
+      "stageMs": {
+        "EXPLAIN": 3,
+        "VALIDATION": 1,
+        "ADMISSION": 0,
+        "SESSION": 0,
+        "EXECUTION": 7,
+        "MODEL": 5366,
+        "GENERATION": 0,
+        "CACHE": 0,
+        "CONVERSATION": 0,
+        "RETRIEVAL": 2,
+        "RESULT_CHECK": 0,
+        "CACHE_WRITE": 0,
+        "CLARIFICATION": 0
+      },
+      "cancellationRejected": 0,
+      "timingsVersion": "request-budget-exclusive-v1",
+      "otherMs": 3,
+      "currentStageMs": 0
+    },
+    "question": "每个活动带来的用券次数是多少？",
+    "goldSql": "SELECT c.campaign_name, COUNT(*) AS cnt\nFROM coupon_usages cu\nJOIN coupons cp ON cp.coupon_id = cu.coupon_id\nJOIN campaigns c ON c.campaign_id = cp.campaign_id\nGROUP BY 1 ORDER BY cnt DESC;\n",
+    "notes": null
+  },
+  {
+    "id": "T4-027",
+    "difficulty": "multi_join",
+    "questionSha256": "28b80720191a9f21d70178277a1b578d9c851a5e2f0bc883ed172fa5d7da063f",
+    "goldSqlSha256": "57ef87e223b52983822284585bfa6bfa9ceeea1a34947fa512c8a0f4d9545483",
+    "goldResultSha256": "a489093298420fb22e139f51e1654314d8c8456158ed4ca227a282b40f1d35e2",
+    "promptHashVersion": "text-tool-messages-v1",
+    "status": "SUCCESS",
+    "finalSql": "SELECT warehouse_id,\n       SUM(quantity) AS total_quantity,\n       ROUND(AVG(quantity)::NUMERIC, 2) AS avg_quantity\nFROM inventory\nGROUP BY warehouse_id\nORDER BY warehouse_id\nLIMIT 100;",
+    "correct": false,
+    "wallLatencyMs": 1127,
+    "timings": {
+      "retrievalMs": 1,
+      "generationMs": 1113,
+      "validationMs": 2,
+      "executionMs": 9,
+      "totalMs": 1127
+    },
+    "totalUsage": {
+      "model": "deepseek-flash",
+      "promptTokens": 3199,
+      "completionTokens": 102,
+      "totalTokens": 3301,
+      "promptChars": 6951,
+      "latencyMs": 1112,
+      "costYuan": 0.0013490800000000001,
+      "cacheHitTokens": 2304,
+      "cacheMissTokens": 895
+    },
+    "retryTrigger": "NONE",
+    "selectedAttempt": 1,
+    "calls": [
+      {
+        "number": 1,
+        "status": "OK",
+        "promptSha256": "04ab1009b6454b6645c2ea07e325a6d6c00e46d842feb3227bc21b464df2415d",
+        "usage": {
+          "model": "deepseek-flash",
+          "promptTokens": 3199,
+          "completionTokens": 102,
+          "totalTokens": 3301,
+          "promptChars": 6951,
+          "latencyMs": 1112,
+          "costYuan": 0.0013490800000000001,
+          "cacheHitTokens": 2304,
+          "cacheMissTokens": 895
+        }
+      }
+    ],
+    "productionAttempts": [
+      {
+        "number": 1,
+        "stage": "INITIAL_SQL",
+        "status": "SUCCESS",
+        "sql": "SELECT warehouse_id,\n       SUM(quantity) AS total_quantity,\n       ROUND(AVG(quantity)::NUMERIC, 2) AS avg_quantity\nFROM inventory\nGROUP BY warehouse_id\nORDER BY warehouse_id\nLIMIT 100;",
+        "message": null,
+        "correct": false,
+        "columns": [
+          "warehouse_id",
+          "total_quantity",
+          "avg_quantity"
+        ],
+        "rowCount": 5,
+        "truncated": false,
+        "resultSha256": "3a078f0cac3ee5daaa2c7317fa072d3e266eb1a1ab48f58c09f536a297859c9c"
+      }
+    ],
+    "budget": {
+      "requestId": "e1c4eef6-4fa7-4809-a870-161105bfcaf6",
+      "timeoutMs": 15000,
+      "maxModelCalls": 2,
+      "modelCalls": 1,
+      "unknownUsageCalls": 0,
+      "elapsedMs": 1127,
+      "termination": "COMPLETE",
+      "stage": "CONVERSATION",
+      "retrySkippedReason": null,
+      "stageMs": {
+        "EXPLAIN": 3,
+        "VALIDATION": 2,
+        "ADMISSION": 0,
+        "SESSION": 0,
+        "EXECUTION": 6,
+        "MODEL": 1113,
+        "GENERATION": 0,
+        "CACHE": 0,
+        "CONVERSATION": 0,
+        "RETRIEVAL": 1,
+        "RESULT_CHECK": 0,
+        "CACHE_WRITE": 0,
+        "CLARIFICATION": 0
+      },
+      "cancellationRejected": 0,
+      "timingsVersion": "request-budget-exclusive-v1",
+      "otherMs": 2,
+      "currentStageMs": 0
+    },
+    "question": "每个仓库的库存总量和平均库存量分别是多少？",
+    "goldSql": "SELECT w.warehouse_name, SUM(i.quantity) AS total_qty, ROUND(AVG(i.quantity), 2) AS avg_qty\nFROM inventory i JOIN warehouses w ON w.warehouse_id = i.warehouse_id\nGROUP BY 1 ORDER BY total_qty DESC;\n",
+    "notes": null
+  },
+  {
+    "id": "T4-036",
+    "difficulty": "multi_join",
+    "questionSha256": "4d4b017f62d7c65cbd5a42a4cfa51b14458143351166c36a49416e0c9811c5f1",
+    "goldSqlSha256": "4c89bb701acb4c61d4f621dc55b4b4732f4f5148a035296c8d0b29410d11965c",
+    "goldResultSha256": "a02760d53728038c016e942a803dea4fda49b86341c70761d719efdfb9bf2607",
+    "promptHashVersion": "text-tool-messages-v1",
+    "status": "REQUEST_TIMEOUT",
+    "finalSql": null,
+    "correct": false,
+    "wallLatencyMs": 15010,
+    "timings": {
+      "retrievalMs": 2,
+      "generationMs": 15006,
+      "validationMs": 0,
+      "executionMs": 0,
+      "totalMs": 15009
+    },
+    "totalUsage": null,
+    "retryTrigger": "NONE",
+    "selectedAttempt": 2,
+    "calls": [
+      {
+        "number": 1,
+        "status": "CALL_FAILED",
+        "promptSha256": "ce4496931b4ff4cbc8a1b09d3adaf58ff1589e2b590ddb092b4a4aedb89f6bce",
+        "usage": null
+      }
+    ],
+    "productionAttempts": [
+      {
+        "number": 1,
+        "stage": "GENERATION",
+        "status": "GENERATION_FAILED",
+        "sql": null,
+        "message": "CALL_FAILED",
+        "correct": false,
+        "columns": [],
+        "rowCount": 0,
+        "truncated": false,
+        "resultSha256": "04e04a0c54b20c36518d69b0d54759ec8dd0520bc3dd2fff18b1311ecf8241fe"
+      },
+      {
+        "number": 2,
+        "stage": "REQUEST_STOP",
+        "status": "REQUEST_TIMEOUT",
+        "sql": null,
+        "message": "请求已超过时间上限，请缩小查询范围后重试。",
+        "correct": false,
+        "columns": [],
+        "rowCount": 0,
+        "truncated": false,
+        "resultSha256": "04e04a0c54b20c36518d69b0d54759ec8dd0520bc3dd2fff18b1311ecf8241fe"
+      }
+    ],
+    "budget": {
+      "requestId": "c24a0d98-b13f-4d0f-a303-c95365f83c5a",
+      "timeoutMs": 15000,
+      "maxModelCalls": 2,
+      "modelCalls": 1,
+      "unknownUsageCalls": 1,
+      "elapsedMs": 15009,
+      "termination": "DEADLINE_EXCEEDED",
+      "stage": "MODEL",
+      "retrySkippedReason": null,
+      "stageMs": {
+        "ADMISSION": 0,
+        "CACHE": 0,
+        "CLARIFICATION": 0,
+        "RETRIEVAL": 2,
+        "SESSION": 0,
+        "GENERATION": 0,
+        "MODEL": 15006
+      },
+      "cancellationRejected": 0,
+      "timingsVersion": "request-budget-exclusive-v1",
+      "otherMs": 1,
+      "currentStageMs": 15006
+    },
+    "question": "每个州的客户平均消费了多少？",
+    "goldSql": "SELECT c.customer_state,\n       ROUND(SUM(oi.price) / COUNT(DISTINCT c.customer_unique_id), 2) AS avg_per_customer\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY avg_per_customer DESC;\n",
+    "notes": null
+  },
+  {
+    "id": "T4-038",
+    "difficulty": "multi_join",
+    "questionSha256": "55e70204502e6b2fb8d4d40beb52b4bbd037b3c6826ea9480575502b3068e256",
+    "goldSqlSha256": "eb08a803fe5c555cf8d79aca7b3805e1029a20f9ad7c07a2d7054f0cc8bb889b",
+    "goldResultSha256": "2aa09d5a2e5bedb8deb1741513098c5ec529013ddcbee8e0224703c6e3859eea",
+    "promptHashVersion": "text-tool-messages-v1",
+    "status": "REQUEST_TIMEOUT",
+    "finalSql": null,
+    "correct": false,
+    "wallLatencyMs": 15001,
+    "timings": {
+      "retrievalMs": 2,
+      "generationMs": 14997,
+      "validationMs": 0,
+      "executionMs": 0,
+      "totalMs": 15001
+    },
+    "totalUsage": null,
+    "retryTrigger": "NONE",
+    "selectedAttempt": 1,
+    "calls": [
+      {
+        "number": 1,
+        "status": "IN_FLIGHT",
+        "promptSha256": "248de4b54e77e1fd47e1194ab4e0355bc891a03729b606f107889b7c6120e1a5",
+        "usage": null
+      }
+    ],
+    "productionAttempts": [
+      {
+        "number": 1,
+        "stage": "REQUEST_STOP",
+        "status": "REQUEST_TIMEOUT",
+        "sql": null,
+        "message": "请求已超过时间上限，请缩小查询范围后重试。",
+        "correct": false,
+        "columns": [],
+        "rowCount": 0,
+        "truncated": false,
+        "resultSha256": "04e04a0c54b20c36518d69b0d54759ec8dd0520bc3dd2fff18b1311ecf8241fe"
+      }
+    ],
+    "budget": {
+      "requestId": "bfd86686-adba-4c4f-a6d4-757f952595bf",
+      "timeoutMs": 15000,
+      "maxModelCalls": 2,
+      "modelCalls": 1,
+      "unknownUsageCalls": 1,
+      "elapsedMs": 15001,
+      "termination": "DEADLINE_EXCEEDED",
+      "stage": "MODEL",
+      "retrySkippedReason": null,
+      "stageMs": {
+        "ADMISSION": 0,
+        "CACHE": 0,
+        "CLARIFICATION": 0,
+        "RETRIEVAL": 2,
+        "SESSION": 0,
+        "GENERATION": 0,
+        "MODEL": 14997
+      },
+      "cancellationRejected": 0,
+      "timingsVersion": "request-budget-exclusive-v1",
+      "otherMs": 2,
+      "currentStageMs": 14997
+    },
+    "question": "每个会员等级里有多少人打过\"流失风险用户\"标签？",
+    "goldSql": "SELECT m.level_id, COUNT(DISTINCT m.member_id) AS cnt\nFROM members m\nJOIN user_tag_map tm ON tm.member_id = m.member_id\nJOIN user_tags t ON t.tag_id = tm.tag_id\nWHERE t.tag_code = 'CHURN_RISK'\nGROUP BY 1 ORDER BY 1;\n",
+    "notes": null
+  },
+  {
+    "id": "T4-041",
+    "difficulty": "multi_join",
+    "questionSha256": "0051eb710dcc09710a63e5286cffddcd590b81c065a3a34927373ba2ddeb2cf2",
+    "goldSqlSha256": "a5d42b0423732fa039cb9342743c8f09e3a11e421dc537fe723ceb078ae342a1",
+    "goldResultSha256": "f793e9f65e9bb05f8dfcf30630a0e8d0f3f4524763cc900e1119675527d603ee",
+    "promptHashVersion": "text-tool-messages-v1",
+    "status": "REQUEST_TIMEOUT",
+    "finalSql": null,
+    "correct": false,
+    "wallLatencyMs": 15003,
+    "timings": {
+      "retrievalMs": 2,
+      "generationMs": 15000,
+      "validationMs": 0,
+      "executionMs": 0,
+      "totalMs": 15003
+    },
+    "totalUsage": null,
+    "retryTrigger": "NONE",
+    "selectedAttempt": 1,
+    "calls": [
+      {
+        "number": 1,
+        "status": "IN_FLIGHT",
+        "promptSha256": "071b904b04ece9b362351a91423d3321722cd31520a6934a7ae37234654ecd10",
+        "usage": null
+      }
+    ],
+    "productionAttempts": [
+      {
+        "number": 1,
+        "stage": "REQUEST_STOP",
+        "status": "REQUEST_TIMEOUT",
+        "sql": null,
+        "message": "请求已超过时间上限，请缩小查询范围后重试。",
+        "correct": false,
+        "columns": [],
+        "rowCount": 0,
+        "truncated": false,
+        "resultSha256": "04e04a0c54b20c36518d69b0d54759ec8dd0520bc3dd2fff18b1311ecf8241fe"
+      }
+    ],
+    "budget": {
+      "requestId": "796b4780-bb47-425e-b3b9-7caac455720a",
+      "timeoutMs": 15000,
+      "maxModelCalls": 2,
+      "modelCalls": 1,
+      "unknownUsageCalls": 1,
+      "elapsedMs": 15003,
+      "termination": "DEADLINE_EXCEEDED",
+      "stage": "MODEL",
+      "retrySkippedReason": null,
+      "stageMs": {
+        "ADMISSION": 0,
+        "CACHE": 0,
+        "CLARIFICATION": 0,
+        "RETRIEVAL": 2,
+        "SESSION": 0,
+        "GENERATION": 0,
+        "MODEL": 15000
+      },
+      "cancellationRejected": 0,
+      "timingsVersion": "request-budget-exclusive-v1",
+      "otherMs": 1,
+      "currentStageMs": 15000
+    },
+    "question": "每个品牌的商品有多少个？品牌的商品销售总额是多少？",
+    "goldSql": "SELECT b.brand_name, COUNT(DISTINCT oi.product_id) AS product_cnt,\n       ROUND(SUM(oi.price), 2) AS sales\nFROM order_items oi\nJOIN product_brand_map bm ON bm.product_id = oi.product_id\nJOIN brands b ON b.brand_id = bm.brand_id\nGROUP BY 1 ORDER BY sales DESC LIMIT 10;\n",
+    "notes": "products 到 brands 没有直接外键，必须经过 product_brand_map 两跳。此题考察模型能否找到间接关联路径。"
+  },
+  {
+    "id": "T4-043",
+    "difficulty": "multi_join",
+    "questionSha256": "c7d3453d431fe868068a8179e96cd16070346c95e494081786e4b94095feacd0",
+    "goldSqlSha256": "665f0c10dd251e5cca3fd427b71e70faf8c98c2d2995646e1e7ad50303aac576",
+    "goldResultSha256": "1aa7d0aa66f2448bb8e72031bafe776001a1345a2316de59ae6c8522791c5d3c",
+    "promptHashVersion": "text-tool-messages-v1",
+    "status": "SUCCESS",
+    "finalSql": "SELECT status,\n       ROUND(AVG(tracking_cnt)::numeric, 2) AS avg_tracking_records\nFROM (\n  SELECT s.shipment_id,\n         s.status,\n         COUNT(t.tracking_id) AS tracking_cnt\n  FROM shipments s\n  LEFT JOIN shipment_tracking t\n    ON t.shipment_id = s.shipment_id\n  GROUP BY s.shipment_id, s.status\n) sub\nGROUP BY status\nORDER BY status\nLIMIT 100;",
+    "correct": false,
+    "wallLatencyMs": 2124,
+    "timings": {
+      "retrievalMs": 1,
+      "generationMs": 1980,
+      "validationMs": 3,
+      "executionMs": 137,
+      "totalMs": 2124
+    },
+    "totalUsage": {
+      "model": "deepseek-flash",
+      "promptTokens": 3028,
+      "completionTokens": 314,
+      "totalTokens": 3342,
+      "promptChars": 6383,
+      "latencyMs": 1979,
+      "costYuan": 0.00202608,
+      "cacheHitTokens": 2304,
+      "cacheMissTokens": 724
+    },
+    "retryTrigger": "NONE",
+    "selectedAttempt": 1,
+    "calls": [
+      {
+        "number": 1,
+        "status": "OK",
+        "promptSha256": "4e36a58695d31c3fb1c28fde9e59353c0c0a262bacd90e7c7f1187fdc3cfdc51",
+        "usage": {
+          "model": "deepseek-flash",
+          "promptTokens": 3028,
+          "completionTokens": 314,
+          "totalTokens": 3342,
+          "promptChars": 6383,
+          "latencyMs": 1979,
+          "costYuan": 0.00202608,
+          "cacheHitTokens": 2304,
+          "cacheMissTokens": 724
+        }
+      }
+    ],
+    "productionAttempts": [
+      {
+        "number": 1,
+        "stage": "INITIAL_SQL",
+        "status": "SUCCESS",
+        "sql": "SELECT status,\n       ROUND(AVG(tracking_cnt)::numeric, 2) AS avg_tracking_records\nFROM (\n  SELECT s.shipment_id,\n         s.status,\n         COUNT(t.tracking_id) AS tracking_cnt\n  FROM shipments s\n  LEFT JOIN shipment_tracking t\n    ON t.shipment_id = s.shipment_id\n  GROUP BY s.shipment_id, s.status\n) sub\nGROUP BY status\nORDER BY status\nLIMIT 100;",
+        "message": null,
+        "correct": false,
+        "columns": [
+          "status",
+          "avg_tracking_records"
+        ],
+        "rowCount": 3,
+        "truncated": false,
+        "resultSha256": "49f16753478840b1d675f883442d5102dc0aaf70d7eef402e8bc090954370756"
+      }
+    ],
+    "budget": {
+      "requestId": "d3194708-b980-4306-9887-3c5f4b7e74f0",
+      "timeoutMs": 15000,
+      "maxModelCalls": 2,
+      "modelCalls": 1,
+      "unknownUsageCalls": 0,
+      "elapsedMs": 2124,
+      "termination": "COMPLETE",
+      "stage": "CONVERSATION",
+      "retrySkippedReason": null,
+      "stageMs": {
+        "EXPLAIN": 5,
+        "VALIDATION": 3,
+        "ADMISSION": 0,
+        "SESSION": 0,
+        "EXECUTION": 132,
+        "MODEL": 1980,
+        "GENERATION": 0,
+        "CACHE": 0,
+        "CONVERSATION": 0,
+        "RETRIEVAL": 1,
+        "RESULT_CHECK": 0,
+        "CACHE_WRITE": 0,
+        "CLARIFICATION": 0
+      },
+      "cancellationRejected": 0,
+      "timingsVersion": "request-budget-exclusive-v1",
+      "otherMs": 3,
+      "currentStageMs": 0
+    },
+    "question": "每个发货状态的发货单平均有几条物流轨迹记录？",
+    "goldSql": "SELECT s.status, ROUND(AVG(t.cnt), 2) AS avg_events\nFROM shipments s\nJOIN (SELECT shipment_id, COUNT(*) AS cnt FROM shipment_tracking GROUP BY 1) t\n  ON t.shipment_id = s.shipment_id\nGROUP BY 1 ORDER BY 1;\n",
+    "notes": null
+  },
+  {
+    "id": "T4-045",
+    "difficulty": "multi_join",
+    "questionSha256": "3396717599a19b6a1afd39324c05554f235ed1bbe0e1f419def4b3c87154252e",
+    "goldSqlSha256": "a52f63f63eb862c9f7169385b4d0490f2e2691b6859281e11d9b1bf36925521c",
+    "goldResultSha256": "67dfed6f191b7ff0cb8ab830468c96fff6e79666de2cfc6beb0707e504710fb1",
+    "promptHashVersion": "text-tool-messages-v1",
+    "status": "SUCCESS",
+    "finalSql": "SELECT product_category_name,\n       ROUND(AVG(product_weight_g), 2) AS avg_weight_g\nFROM products\nWHERE product_category_name IS NOT NULL\nGROUP BY product_category_name\nORDER BY COUNT(*) DESC\nLIMIT 10;",
+    "correct": false,
+    "wallLatencyMs": 2657,
+    "timings": {
+      "retrievalMs": 4,
+      "generationMs": 2602,
+      "validationMs": 40,
+      "executionMs": 8,
+      "totalMs": 2657
+    },
+    "totalUsage": {
+      "model": "deepseek-flash",
+      "promptTokens": 3409,
+      "completionTokens": 387,
+      "totalTokens": 3796,
+      "promptChars": 7366,
+      "latencyMs": 2602,
+      "costYuan": 0.0018210000000000001,
+      "cacheHitTokens": 3200,
+      "cacheMissTokens": 209
+    },
+    "retryTrigger": "NONE",
+    "selectedAttempt": 1,
+    "calls": [
+      {
+        "number": 1,
+        "status": "OK",
+        "promptSha256": "ea8c5de5b331a0dbb985e86eaa4ee9a265cd5c0395d48035e00456af59ef613a",
+        "usage": {
+          "model": "deepseek-flash",
+          "promptTokens": 3409,
+          "completionTokens": 387,
+          "totalTokens": 3796,
+          "promptChars": 7366,
+          "latencyMs": 2602,
+          "costYuan": 0.0018210000000000001,
+          "cacheHitTokens": 3200,
+          "cacheMissTokens": 209
+        }
+      }
+    ],
+    "productionAttempts": [
+      {
+        "number": 1,
+        "stage": "INITIAL_SQL",
+        "status": "SUCCESS",
+        "sql": "SELECT product_category_name,\n       ROUND(AVG(product_weight_g), 2) AS avg_weight_g\nFROM products\nWHERE product_category_name IS NOT NULL\nGROUP BY product_category_name\nORDER BY COUNT(*) DESC\nLIMIT 10;",
+        "message": null,
+        "correct": false,
+        "columns": [
+          "product_category_name",
+          "avg_weight_g"
+        ],
+        "rowCount": 10,
+        "truncated": false,
+        "resultSha256": "08887baabe44730f99e0bbff32d7e99f56396376539b64f80b893b0655cc4bb2"
+      }
+    ],
+    "budget": {
+      "requestId": "2b06bbe7-349b-424a-8bd3-7ddc755d8c34",
+      "timeoutMs": 15000,
+      "maxModelCalls": 2,
+      "modelCalls": 1,
+      "unknownUsageCalls": 0,
+      "elapsedMs": 2657,
+      "termination": "COMPLETE",
+      "stage": "CONVERSATION",
+      "retrySkippedReason": null,
+      "stageMs": {
+        "EXPLAIN": 2,
+        "VALIDATION": 40,
+        "ADMISSION": 0,
+        "SESSION": 0,
+        "EXECUTION": 6,
+        "MODEL": 2602,
+        "GENERATION": 0,
+        "CACHE": 0,
+        "CONVERSATION": 0,
+        "RETRIEVAL": 4,
+        "RESULT_CHECK": 0,
+        "CACHE_WRITE": 0,
+        "CLARIFICATION": 0
+      },
+      "cancellationRejected": 0,
+      "timingsVersion": "request-budget-exclusive-v1",
+      "otherMs": 3,
+      "currentStageMs": 0
+    },
+    "question": "每个类目的平均商品重量是多少？取商品数最多的 10 个类目。",
+    "goldSql": "SELECT p.product_category_name,\n       COUNT(*) AS product_cnt,\n       ROUND(AVG(p.product_weight_g), 2) AS avg_weight\nFROM products p\nWHERE p.product_category_name IS NOT NULL AND p.product_weight_g IS NOT NULL\nGROUP BY 1 ORDER BY product_cnt DESC LIMIT 10;\n",
+    "notes": null
+  },
+  {
+    "id": "T5-004",
+    "difficulty": "multi_join_deep",
+    "questionSha256": "c335be9b7df44e47ac440cd0fbf377735b39967a9cc42174ab73c349bba75290",
+    "goldSqlSha256": "7538535e31d1ec05043defbba2852737436a8369f12335a2798cda06626ddcda",
+    "goldResultSha256": "39c6145c36ff265e2ca20f93383b3872769b5abb03274516b2a0b42035ae84ca",
+    "promptHashVersion": "text-tool-messages-v1",
+    "status": "REQUEST_TIMEOUT",
+    "finalSql": null,
+    "correct": false,
+    "wallLatencyMs": 15007,
+    "timings": {
+      "retrievalMs": 3,
+      "generationMs": 15002,
+      "validationMs": 0,
+      "executionMs": 0,
+      "totalMs": 15006
+    },
+    "totalUsage": null,
+    "retryTrigger": "NONE",
+    "selectedAttempt": 1,
+    "calls": [
+      {
+        "number": 1,
+        "status": "IN_FLIGHT",
+        "promptSha256": "076583954682377c1ef3f345a1c8548eeab1b08b9189181f82c3486421133844",
+        "usage": null
+      }
+    ],
+    "productionAttempts": [
+      {
+        "number": 1,
+        "stage": "REQUEST_STOP",
+        "status": "REQUEST_TIMEOUT",
+        "sql": null,
+        "message": "请求已超过时间上限，请缩小查询范围后重试。",
+        "correct": false,
+        "columns": [],
+        "rowCount": 0,
+        "truncated": false,
+        "resultSha256": "04e04a0c54b20c36518d69b0d54759ec8dd0520bc3dd2fff18b1311ecf8241fe"
+      }
+    ],
+    "budget": {
+      "requestId": "ed435d08-2423-410a-8aaf-b01948b8c01c",
+      "timeoutMs": 15000,
+      "maxModelCalls": 2,
+      "modelCalls": 1,
+      "unknownUsageCalls": 1,
+      "elapsedMs": 15006,
+      "termination": "DEADLINE_EXCEEDED",
+      "stage": "MODEL",
+      "retrySkippedReason": null,
+      "stageMs": {
+        "ADMISSION": 0,
+        "CACHE": 0,
+        "CLARIFICATION": 0,
+        "RETRIEVAL": 3,
+        "SESSION": 0,
+        "GENERATION": 0,
+        "MODEL": 15002
+      },
+      "cancellationRejected": 0,
+      "timingsVersion": "request-budget-exclusive-v1",
+      "otherMs": 1,
+      "currentStageMs": 15002
+    },
+    "question": "每个仓库所在区域的发货单量和覆盖订单数分别是多少？",
+    "goldSql": "SELECT r.region_name, COUNT(DISTINCT s.shipment_id) AS shipments, COUNT(DISTINCT o.order_id) AS orders\nFROM shipments s\nJOIN warehouses w ON w.warehouse_id = s.warehouse_id\nJOIN regions r ON r.region_code = w.region_code\nJOIN orders o ON o.order_id = s.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY 1 ORDER BY shipments DESC;\n",
+    "notes": "仓库属于发货地，regions 这里描述的是仓库所在区域，不是客户所在区域。"
+  },
+  {
+    "id": "T5-008",
+    "difficulty": "multi_join_deep",
+    "questionSha256": "543021d1f166b8bb31f6b3abda27ed89f92cbc70baccd362416de22d0b9234aa",
+    "goldSqlSha256": "f76a19fec84b129e7ec0023a526caaa31a5cfad6ca06dd0bc20d2867139dae71",
+    "goldResultSha256": "16628d26bc14171fcdad68a5ab79a5a84c289d6164789dfe3ecefb65e0342f0b",
+    "promptHashVersion": "text-tool-messages-v1",
+    "status": "REQUEST_TIMEOUT",
+    "finalSql": null,
+    "correct": false,
+    "wallLatencyMs": 15012,
+    "timings": {
+      "retrievalMs": 2,
+      "generationMs": 15008,
+      "validationMs": 0,
+      "executionMs": 0,
+      "totalMs": 15011
+    },
+    "totalUsage": null,
+    "retryTrigger": "NONE",
+    "selectedAttempt": 1,
+    "calls": [
+      {
+        "number": 1,
+        "status": "IN_FLIGHT",
+        "promptSha256": "898c8c074d5af7d75a0fdea841c7f2f5a0cb2db3f94dc1a1337596b47c59345d",
+        "usage": null
+      }
+    ],
+    "productionAttempts": [
+      {
+        "number": 1,
+        "stage": "REQUEST_STOP",
+        "status": "REQUEST_TIMEOUT",
+        "sql": null,
+        "message": "请求已超过时间上限，请缩小查询范围后重试。",
+        "correct": false,
+        "columns": [],
+        "rowCount": 0,
+        "truncated": false,
+        "resultSha256": "04e04a0c54b20c36518d69b0d54759ec8dd0520bc3dd2fff18b1311ecf8241fe"
+      }
+    ],
+    "budget": {
+      "requestId": "afc626e2-efc9-4f7a-9150-c7b0673efd1a",
+      "timeoutMs": 15000,
+      "maxModelCalls": 2,
+      "modelCalls": 1,
+      "unknownUsageCalls": 1,
+      "elapsedMs": 15011,
+      "termination": "DEADLINE_EXCEEDED",
+      "stage": "MODEL",
+      "retrySkippedReason": null,
+      "stageMs": {
+        "ADMISSION": 0,
+        "CACHE": 0,
+        "CLARIFICATION": 0,
+        "RETRIEVAL": 2,
+        "SESSION": 0,
+        "GENERATION": 0,
+        "MODEL": 15008
+      },
+      "cancellationRejected": 0,
+      "timingsVersion": "request-budget-exclusive-v1",
+      "otherMs": 1,
+      "currentStageMs": 15008
+    },
+    "question": "按推荐人和被推荐人的会员等级组合统计推荐关系数量和奖励金额。",
+    "goldSql": "SELECT mlr.level_name AS referrer_level, mli.level_name AS invitee_level,\n       COUNT(*) AS referrals, ROUND(SUM(rf.reward_amount), 2) AS reward\nFROM referrals rf\nJOIN members mr ON mr.member_id = rf.referrer_member_id\nJOIN member_levels mlr ON mlr.level_id = mr.level_id\nJOIN members mi ON mi.member_id = rf.invitee_member_id\nJOIN member_levels mli ON mli.level_id = mi.level_id\nGROUP BY 1, 2 ORDER BY referrals DESC;\n",
+    "notes": "members 和 member_levels 各 join 两次，必须用不同别名，否则无法区分推荐人和被推荐人。"
+  },
+  {
+    "id": "T5-011",
+    "difficulty": "multi_join_deep",
+    "questionSha256": "71a1a33a97fe16b8d53dab3b2ad6017b2ae1fe92022de9340e5533d0eac4c8a9",
+    "goldSqlSha256": "14ab337c797523140ed84025cd2f7dd8468cca1f035065af6de13f5b4689fddb",
+    "goldResultSha256": "3041644b3deb20b971bc941cffa028154f5ad3f4d1c5364af57322996b52d4f5",
+    "promptHashVersion": "text-tool-messages-v1",
+    "status": "SUCCESS",
+    "finalSql": "SELECT b.brand_id, ROUND(SUM(oi.price), 2) AS sales\nFROM order_items oi\nJOIN product_brand_map pbm ON pbm.product_id = oi.product_id AND pbm.is_current = true\nJOIN brands b ON b.brand_id = pbm.brand_id\nGROUP BY b.brand_id\nORDER BY sales DESC\nLIMIT 10;",
+    "correct": false,
+    "wallLatencyMs": 14460,
+    "timings": {
+      "retrievalMs": 1,
+      "generationMs": 14402,
+      "validationMs": 11,
+      "executionMs": 43,
+      "totalMs": 14460
+    },
+    "totalUsage": {
+      "model": "deepseek-flash",
+      "promptTokens": 3220,
+      "completionTokens": 2628,
+      "totalTokens": 5848,
+      "promptChars": 7078,
+      "latencyMs": 14402,
+      "costYuan": 0.01134864,
+      "cacheHitTokens": 2432,
+      "cacheMissTokens": 788
+    },
+    "retryTrigger": "NONE",
+    "selectedAttempt": 1,
+    "calls": [
+      {
+        "number": 1,
+        "status": "OK",
+        "promptSha256": "07d4bc7b642fa9a79d7c2c51bfae8d19ab4eedbfdbef9b039f93077c9b2b8441",
+        "usage": {
+          "model": "deepseek-flash",
+          "promptTokens": 3220,
+          "completionTokens": 2628,
+          "totalTokens": 5848,
+          "promptChars": 7078,
+          "latencyMs": 14402,
+          "costYuan": 0.01134864,
+          "cacheHitTokens": 2432,
+          "cacheMissTokens": 788
+        }
+      }
+    ],
+    "productionAttempts": [
+      {
+        "number": 1,
+        "stage": "INITIAL_SQL",
+        "status": "SUCCESS",
+        "sql": "SELECT b.brand_id, ROUND(SUM(oi.price), 2) AS sales\nFROM order_items oi\nJOIN product_brand_map pbm ON pbm.product_id = oi.product_id AND pbm.is_current = true\nJOIN brands b ON b.brand_id = pbm.brand_id\nGROUP BY b.brand_id\nORDER BY sales DESC\nLIMIT 10;",
+        "message": null,
+        "correct": false,
+        "columns": [
+          "brand_id",
+          "sales"
+        ],
+        "rowCount": 10,
+        "truncated": false,
+        "resultSha256": "09458f2bdc41925b374af19c2173fb2d0fa988a958a0890dd2c6af635ef8c154"
+      }
+    ],
+    "budget": {
+      "requestId": "09f22ea6-3fba-4647-8454-9abf5c18079e",
+      "timeoutMs": 15000,
+      "maxModelCalls": 2,
+      "modelCalls": 1,
+      "unknownUsageCalls": 0,
+      "elapsedMs": 14460,
+      "termination": "COMPLETE",
+      "stage": "CONVERSATION",
+      "retrySkippedReason": null,
+      "stageMs": {
+        "EXPLAIN": 3,
+        "VALIDATION": 11,
+        "ADMISSION": 0,
+        "SESSION": 0,
+        "EXECUTION": 40,
+        "MODEL": 14402,
+        "GENERATION": 0,
+        "CACHE": 0,
+        "CONVERSATION": 0,
+        "RETRIEVAL": 1,
+        "RESULT_CHECK": 0,
+        "CACHE_WRITE": 0,
+        "CLARIFICATION": 0
+      },
+      "cancellationRejected": 0,
+      "timingsVersion": "request-budget-exclusive-v1",
+      "otherMs": 3,
+      "currentStageMs": 0
+    },
+    "question": "品牌销售额排名前 10 是哪些？销售额按商品金额统计。",
+    "goldSql": "SELECT b.brand_name, ROUND(SUM(oi.price), 2) AS sales\nFROM order_items oi\nJOIN product_brand_map pbm ON pbm.product_id = oi.product_id AND pbm.is_current\nJOIN brands b ON b.brand_id = pbm.brand_id\nJOIN orders o ON o.order_id = oi.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY 1 ORDER BY sales DESC LIMIT 10;\n",
+    "notes": "一个商品在 product_brand_map 里可能有历史品牌映射，必须用 is_current 过滤，否则同一商品会被重复计入多个品牌。"
+  },
+  {
+    "id": "T5-013",
+    "difficulty": "multi_join_deep",
+    "questionSha256": "1445202169feeecbe6464feaa7111f867dd905d28ea1ade5cdba9d4dec6e41c7",
+    "goldSqlSha256": "8d1f12e0784f3e43ab7285a3a718b23b624af64adeb30a925d84ef0a5aa40992",
+    "goldResultSha256": "51c8eccc0b3464b3ca6ae9ba4e329ec0d1f9ca68dd2be4df709f07567d4e599f",
+    "promptHashVersion": "text-tool-messages-v1",
+    "status": "NEEDS_CLARIFICATION",
+    "finalSql": null,
+    "correct": false,
+    "wallLatencyMs": 0,
+    "timings": {
+      "retrievalMs": 0,
+      "generationMs": 0,
+      "validationMs": 0,
+      "executionMs": 0,
+      "totalMs": 0
+    },
+    "totalUsage": null,
+    "retryTrigger": "NONE",
+    "selectedAttempt": 0,
+    "calls": [],
+    "productionAttempts": [],
+    "budget": {
+      "requestId": "b2e7235a-284a-4c90-9899-bda1348675c7",
+      "timeoutMs": 15000,
+      "maxModelCalls": 2,
+      "modelCalls": 0,
+      "unknownUsageCalls": 0,
+      "elapsedMs": 0,
+      "termination": "COMPLETE",
+      "stage": "CONVERSATION",
+      "retrySkippedReason": null,
+      "stageMs": {
+        "CLARIFICATION": 0,
+        "CONVERSATION": 0,
+        "ADMISSION": 0,
+        "SESSION": 0
+      },
+      "cancellationRejected": 0,
+      "timingsVersion": "request-budget-exclusive-v1",
+      "otherMs": 0,
+      "currentStageMs": 0
+    },
+    "question": "每个营销活动关联商品实际带来的订单数和销售额，取前 10。",
+    "goldSql": "SELECT ca.campaign_name, COUNT(DISTINCT oi.order_id) AS orders, ROUND(SUM(oi.price), 2) AS gmv\nFROM campaign_products cp\nJOIN campaigns ca ON ca.campaign_id = cp.campaign_id\nJOIN order_items oi ON oi.product_id = cp.product_id\nJOIN orders o ON o.order_id = oi.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY 1 ORDER BY gmv DESC LIMIT 10;\n",
+    "notes": "这是「活动挂了哪些商品 -> 这些商品卖了多少钱」，不是「用了券的订单」，与 T5-005 口径不同。"
+  },
+  {
+    "id": "T5-015",
+    "difficulty": "multi_join_deep",
+    "questionSha256": "ef9210649f7dae95948a301b3d57db825dee0a2adc8f4f30f1924b084b8b34da",
+    "goldSqlSha256": "f6fc9039183a88f1aaa8717cf0e69e151a8c2594fc8716ef3653554fa4fb708a",
+    "goldResultSha256": "8a5cc881754b94251b0c81ac8a86cecc505d7196d552fe8c930ca7d591ccfdc3",
+    "promptHashVersion": "text-tool-messages-v1",
+    "status": "SUCCESS",
+    "finalSql": "SELECT st.event_code, c.customer_state, COUNT(DISTINCT st.shipment_id) AS shipment_count\nFROM shipment_tracking st\nJOIN shipments s ON s.shipment_id = st.shipment_id\nJOIN orders o ON o.order_id = s.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY st.event_code, c.customer_state\nORDER BY shipment_count DESC\nLIMIT 20;",
+    "correct": false,
+    "wallLatencyMs": 4712,
+    "timings": {
+      "retrievalMs": 1,
+      "generationMs": 4036,
+      "validationMs": 7,
+      "executionMs": 664,
+      "totalMs": 4712
+    },
+    "totalUsage": {
+      "model": "deepseek-flash",
+      "promptTokens": 4082,
+      "completionTokens": 745,
+      "totalTokens": 4827,
+      "promptChars": 8990,
+      "latencyMs": 4036,
+      "costYuan": 0.0048040800000000005,
+      "cacheHitTokens": 2304,
+      "cacheMissTokens": 1778
+    },
+    "retryTrigger": "NONE",
+    "selectedAttempt": 1,
+    "calls": [
+      {
+        "number": 1,
+        "status": "OK",
+        "promptSha256": "98e584cb500fa429575851ba676dd8f008ee69a2b093af0613e54a955451925a",
+        "usage": {
+          "model": "deepseek-flash",
+          "promptTokens": 4082,
+          "completionTokens": 745,
+          "totalTokens": 4827,
+          "promptChars": 8990,
+          "latencyMs": 4036,
+          "costYuan": 0.0048040800000000005,
+          "cacheHitTokens": 2304,
+          "cacheMissTokens": 1778
+        }
+      }
+    ],
+    "productionAttempts": [
+      {
+        "number": 1,
+        "stage": "INITIAL_SQL",
+        "status": "SUCCESS",
+        "sql": "SELECT st.event_code, c.customer_state, COUNT(DISTINCT st.shipment_id) AS shipment_count\nFROM shipment_tracking st\nJOIN shipments s ON s.shipment_id = st.shipment_id\nJOIN orders o ON o.order_id = s.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY st.event_code, c.customer_state\nORDER BY shipment_count DESC\nLIMIT 20;",
+        "message": null,
+        "correct": false,
+        "columns": [
+          "event_code",
+          "customer_state",
+          "shipment_count"
+        ],
+        "rowCount": 20,
+        "truncated": false,
+        "resultSha256": "aad3b896869519809cb2cd36c2c8fc253d2e62e2a83fabc4a7a9f78275e36e0f"
+      }
+    ],
+    "budget": {
+      "requestId": "22a3e3b0-2dd7-40b9-a63c-19d8862c4f70",
+      "timeoutMs": 15000,
+      "maxModelCalls": 2,
+      "modelCalls": 1,
+      "unknownUsageCalls": 0,
+      "elapsedMs": 4712,
+      "termination": "COMPLETE",
+      "stage": "CONVERSATION",
+      "retrySkippedReason": null,
+      "stageMs": {
+        "EXPLAIN": 5,
+        "VALIDATION": 7,
+        "ADMISSION": 0,
+        "SESSION": 0,
+        "EXECUTION": 659,
+        "MODEL": 4036,
+        "GENERATION": 0,
+        "CACHE": 0,
+        "CONVERSATION": 0,
+        "RETRIEVAL": 1,
+        "RESULT_CHECK": 0,
+        "CACHE_WRITE": 0,
+        "CLARIFICATION": 0
+      },
+      "cancellationRejected": 0,
+      "timingsVersion": "request-budget-exclusive-v1",
+      "otherMs": 4,
+      "currentStageMs": 0
+    },
+    "question": "物流轨迹事件类型按客户所在州分布，列出前 20 组（按发货单去重）。",
+    "goldSql": "SELECT st.event_code, c.customer_state, COUNT(DISTINCT s.shipment_id) AS shipments\nFROM shipment_tracking st\nJOIN shipments s ON s.shipment_id = st.shipment_id\nJOIN orders o ON o.order_id = s.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1, 2 ORDER BY shipments DESC LIMIT 20;\n",
+    "notes": "一个发货单有多条轨迹事件，COUNT(DISTINCT shipment_id) 才是发货单数，COUNT(*) 是事件数。"
+  },
+  {
+    "id": "T5-017",
+    "difficulty": "multi_join_deep",
+    "questionSha256": "cd03aaf31cc030545dbb1990df142ba8f25b9a9e2415453c87445670aad255d1",
+    "goldSqlSha256": "39f4488297808a91de984a1030e182e9a5a23335023502809187164bcf27a691",
+    "goldResultSha256": "12d5515b85698b266b3dfdee31feb1d777676ddc6a1c2f72afa4b53693dca63c",
+    "promptHashVersion": "text-tool-messages-v1",
+    "status": "REQUEST_TIMEOUT",
+    "finalSql": null,
+    "correct": false,
+    "wallLatencyMs": 15011,
+    "timings": {
+      "retrievalMs": 2,
+      "generationMs": 15009,
+      "validationMs": 0,
+      "executionMs": 0,
+      "totalMs": 15011
+    },
+    "totalUsage": null,
+    "retryTrigger": "NONE",
+    "selectedAttempt": 1,
+    "calls": [
+      {
+        "number": 1,
+        "status": "IN_FLIGHT",
+        "promptSha256": "865aae4fe1c76b9da9590e8e91c166ecdebe78cc431cee473f6b7cc9481ba98c",
+        "usage": null
+      }
+    ],
+    "productionAttempts": [
+      {
+        "number": 1,
+        "stage": "REQUEST_STOP",
+        "status": "REQUEST_TIMEOUT",
+        "sql": null,
+        "message": "请求已超过时间上限，请缩小查询范围后重试。",
+        "correct": false,
+        "columns": [],
+        "rowCount": 0,
+        "truncated": false,
+        "resultSha256": "04e04a0c54b20c36518d69b0d54759ec8dd0520bc3dd2fff18b1311ecf8241fe"
+      }
+    ],
+    "budget": {
+      "requestId": "4960d574-dcd1-43d2-aa6e-65330f203d76",
+      "timeoutMs": 15000,
+      "maxModelCalls": 2,
+      "modelCalls": 1,
+      "unknownUsageCalls": 1,
+      "elapsedMs": 15011,
+      "termination": "DEADLINE_EXCEEDED",
+      "stage": "MODEL",
+      "retrySkippedReason": null,
+      "stageMs": {
+        "ADMISSION": 0,
+        "CACHE": 0,
+        "CLARIFICATION": 0,
+        "RETRIEVAL": 2,
+        "SESSION": 0,
+        "GENERATION": 0,
+        "MODEL": 15009
+      },
+      "cancellationRejected": 0,
+      "timingsVersion": "request-budget-exclusive-v1",
+      "otherMs": 0,
+      "currentStageMs": 15009
+    },
+    "question": "各工单类目、优先级的工单数和消息条数分别是多少？",
+    "goldSql": "SELECT tc.category_name, st.priority, COUNT(DISTINCT st.ticket_id) AS tickets,\n       COUNT(tm.message_id) AS messages\nFROM support_tickets st\nJOIN ticket_categories tc ON tc.category_id = st.category_id\nJOIN ticket_messages tm ON tm.ticket_id = st.ticket_id\nJOIN members m ON m.member_id = st.member_id\nJOIN member_levels ml ON ml.level_id = m.level_id\nGROUP BY 1, 2 ORDER BY tickets DESC;\n",
+    "notes": "priority 是数字代码（1=低 2=中 3=高 4=紧急），列注释里有含义。工单数与消息数必须用不同聚合函数，否则会被 join 放大。"
+  },
+  {
+    "id": "T5-019",
+    "difficulty": "multi_join_deep",
+    "questionSha256": "c3a3e004a03e068652478e3335db420ef029795bd38f2e127f737d5759a5e2b2",
+    "goldSqlSha256": "6b2f88c48c48d7bc1a3cfb56cec29f1e8e4f97ba14a73a3e533f8bd1f4bea280",
+    "goldResultSha256": "78eb2992fb84bb1dad525d7ffb3e8a57a908585641009240471b966290055220",
+    "promptHashVersion": "text-tool-messages-v1",
+    "status": "SUCCESS",
+    "finalSql": "-- 先按商品汇总价格变动率，再按类目平均；订单数单独按类目去重统计，避免与价格历史明细相乘放大\nWITH product_changes AS (\n  SELECT h.product_id,\n         AVG((h.new_price - h.old_price) / NULLIF(h.old_price, 0)) AS avg_change\n  FROM product_price_history h\n  GROUP BY h.product_id\n),\ncat_change AS (\n  SELECT p.product_category_name AS category,\n         AVG(pc.avg_change) AS avg_change\n  FROM product_changes pc\n  JOIN products p ON p.product_id = pc.product_id\n  WHERE p.product_category_name IS NOT NULL\n  GROUP BY p.product_category_name\n),\ncat_orders AS (\n  SELECT p.product_category_name AS category,\n         COUNT(DISTINCT oi.order_id) AS order_cnt\n  FROM order_items oi\n  JOIN products p ON p.product_id = oi.product_id\n  JOIN product_changes pc ON pc.product_id = p.product_id\n  WHERE p.product_category_name IS NOT NULL\n  GROUP BY p.product_category_name\n)\nSELECT cc.category,\n       ROUND(cc.avg_change, 4) AS avg_change_rate,\n       COALESCE(co.order_cnt, 0) AS order_cnt\nFROM cat_change cc\nLEFT JOIN cat_orders co ON co.category = cc.category\nORDER BY order_cnt DESC\nLIMIT 20;",
+    "correct": false,
+    "wallLatencyMs": 10368,
+    "timings": {
+      "retrievalMs": 2,
+      "generationMs": 10279,
+      "validationMs": 4,
+      "executionMs": 81,
+      "totalMs": 10368
+    },
+    "totalUsage": {
+      "model": "deepseek-flash",
+      "promptTokens": 3558,
+      "completionTokens": 2015,
+      "totalTokens": 5573,
+      "promptChars": 7920,
+      "latencyMs": 10278,
+      "costYuan": 0.009360080000000002,
+      "cacheHitTokens": 2304,
+      "cacheMissTokens": 1254
+    },
+    "retryTrigger": "NONE",
+    "selectedAttempt": 1,
+    "calls": [
+      {
+        "number": 1,
+        "status": "OK",
+        "promptSha256": "e43608898fc345f5b23553a6fbad843ccc5e1525efdfbd50d1a4d13385f434dc",
+        "usage": {
+          "model": "deepseek-flash",
+          "promptTokens": 3558,
+          "completionTokens": 2015,
+          "totalTokens": 5573,
+          "promptChars": 7920,
+          "latencyMs": 10278,
+          "costYuan": 0.009360080000000002,
+          "cacheHitTokens": 2304,
+          "cacheMissTokens": 1254
+        }
+      }
+    ],
+    "productionAttempts": [
+      {
+        "number": 1,
+        "stage": "INITIAL_SQL",
+        "status": "SUCCESS",
+        "sql": "-- 先按商品汇总价格变动率，再按类目平均；订单数单独按类目去重统计，避免与价格历史明细相乘放大\nWITH product_changes AS (\n  SELECT h.product_id,\n         AVG((h.new_price - h.old_price) / NULLIF(h.old_price, 0)) AS avg_change\n  FROM product_price_history h\n  GROUP BY h.product_id\n),\ncat_change AS (\n  SELECT p.product_category_name AS category,\n         AVG(pc.avg_change) AS avg_change\n  FROM product_changes pc\n  JOIN products p ON p.product_id = pc.product_id\n  WHERE p.product_category_name IS NOT NULL\n  GROUP BY p.product_category_name\n),\ncat_orders AS (\n  SELECT p.product_category_name AS category,\n         COUNT(DISTINCT oi.order_id) AS order_cnt\n  FROM order_items oi\n  JOIN products p ON p.product_id = oi.product_id\n  JOIN product_changes pc ON pc.product_id = p.product_id\n  WHERE p.product_category_name IS NOT NULL\n  GROUP BY p.product_category_name\n)\nSELECT cc.category,\n       ROUND(cc.avg_change, 4) AS avg_change_rate,\n       COALESCE(co.order_cnt, 0) AS order_cnt\nFROM cat_change cc\nLEFT JOIN cat_orders co ON co.category = cc.category\nORDER BY order_cnt DESC\nLIMIT 20;",
+        "message": null,
+        "correct": false,
+        "columns": [
+          "category",
+          "avg_change_rate",
+          "order_cnt"
+        ],
+        "rowCount": 20,
+        "truncated": false,
+        "resultSha256": "90df0c2788151e41ed10a6ae38cb3f071eab3c11010298d1d4ed92bca61ccf36"
+      }
+    ],
+    "budget": {
+      "requestId": "82493878-bf5d-4608-9c4a-31d3e15bb904",
+      "timeoutMs": 15000,
+      "maxModelCalls": 2,
+      "modelCalls": 1,
+      "unknownUsageCalls": 0,
+      "elapsedMs": 10368,
+      "termination": "COMPLETE",
+      "stage": "CONVERSATION",
+      "retrySkippedReason": null,
+      "stageMs": {
+        "EXPLAIN": 5,
+        "VALIDATION": 4,
+        "ADMISSION": 0,
+        "SESSION": 0,
+        "EXECUTION": 76,
+        "MODEL": 10279,
+        "GENERATION": 0,
+        "CACHE": 0,
+        "CONVERSATION": 0,
+        "RETRIEVAL": 2,
+        "RESULT_CHECK": 0,
+        "CACHE_WRITE": 0,
+        "CLARIFICATION": 0
+      },
+      "cancellationRejected": 0,
+      "timingsVersion": "request-budget-exclusive-v1",
+      "otherMs": 2,
+      "currentStageMs": 0
+    },
+    "question": "发生过价格变动的商品，按类目统计平均涨跌幅和关联订单数，取订单数前 20。",
+    "goldSql": "SELECT p.product_category_name,\n       ROUND(AVG(pph.new_price - pph.old_price), 2) AS avg_price_change,\n       COUNT(DISTINCT oi.order_id) AS orders\nFROM product_price_history pph\nJOIN products p ON p.product_id = pph.product_id\nJOIN order_items oi ON oi.product_id = pph.product_id\nJOIN orders o ON o.order_id = oi.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY 1 ORDER BY orders DESC LIMIT 20;\n",
+    "notes": "一个商品可能有多条价格变动记录，avg_price_change 是变动幅度均值，不是当前价与历史价之差。"
+  },
+  {
+    "id": "T6-014",
+    "difficulty": "business_semantics",
+    "questionSha256": "3012d0e126bc9ddcfc5b2aab6c1864b80329f71955f9539df1586e477a10f487",
+    "goldSqlSha256": "0ef2071cb5a0b0715e4734da85f8539baceae926a2a3a30f51a6a132e3d3bb88",
+    "goldResultSha256": "ec2b4b694864d0ba0300a8d93de3aff88c64e2988817bdf25c542a3f3e251dfa",
+    "promptHashVersion": "text-tool-messages-v1",
+    "status": "REQUEST_TIMEOUT",
+    "finalSql": null,
+    "correct": false,
+    "wallLatencyMs": 15007,
+    "timings": {
+      "retrievalMs": 3,
+      "generationMs": 15003,
+      "validationMs": 0,
+      "executionMs": 0,
+      "totalMs": 15007
+    },
+    "totalUsage": null,
+    "retryTrigger": "NONE",
+    "selectedAttempt": 1,
+    "calls": [
+      {
+        "number": 1,
+        "status": "IN_FLIGHT",
+        "promptSha256": "d55847c87dbeed58bc031065a6a1815298f1af2f85191ccd0f22ab7029704491",
+        "usage": null
+      }
+    ],
+    "productionAttempts": [
+      {
+        "number": 1,
+        "stage": "REQUEST_STOP",
+        "status": "REQUEST_TIMEOUT",
+        "sql": null,
+        "message": "请求已超过时间上限，请缩小查询范围后重试。",
+        "correct": false,
+        "columns": [],
+        "rowCount": 0,
+        "truncated": false,
+        "resultSha256": "04e04a0c54b20c36518d69b0d54759ec8dd0520bc3dd2fff18b1311ecf8241fe"
+      }
+    ],
+    "budget": {
+      "requestId": "a98d3bcf-2e06-4e43-83bc-00702168ebf3",
+      "timeoutMs": 15000,
+      "maxModelCalls": 2,
+      "modelCalls": 1,
+      "unknownUsageCalls": 1,
+      "elapsedMs": 15007,
+      "termination": "DEADLINE_EXCEEDED",
+      "stage": "MODEL",
+      "retrySkippedReason": null,
+      "stageMs": {
+        "ADMISSION": 0,
+        "CACHE": 0,
+        "CLARIFICATION": 0,
+        "RETRIEVAL": 3,
+        "SESSION": 0,
+        "GENERATION": 0,
+        "MODEL": 15003
+      },
+      "cancellationRejected": 0,
+      "timingsVersion": "request-budget-exclusive-v1",
+      "otherMs": 1,
+      "currentStageMs": 15003
+    },
+    "question": "各会员等级的用户数、人均订单数、人均 GMV 分别是多少？",
+    "goldSql": "WITH user_level AS (\n  SELECT m.member_id, ml.level_name\n  FROM members m JOIN member_levels ml ON ml.level_id = m.level_id\n),\nuser_orders AS (\n  SELECT ul.level_name, c.customer_unique_id, COUNT(DISTINCT o.order_id) AS order_cnt,\n         SUM(oi.price + oi.freight_value) AS gmv\n  FROM user_level ul\n  JOIN customers c ON c.customer_unique_id = (\n    SELECT m2.customer_unique_id FROM members m2 WHERE m2.member_id = ul.member_id\n  )\n  JOIN orders o ON o.customer_id = c.customer_id\n  JOIN order_items oi ON oi.order_id = o.order_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n  GROUP BY 1, 2\n)\nSELECT level_name, COUNT(*) AS users,\n       ROUND(AVG(order_cnt), 2) AS orders_per_user,\n       ROUND(AVG(gmv), 2) AS gmv_per_user\nFROM user_orders GROUP BY 1 ORDER BY gmv_per_user DESC;\n",
+    "notes": "【需确认】 人均 GMV 按「有有效订单的会员」计算，不含零订单会员。若把零订单会员计入分母，人均值会被拉低。"
+  },
+  {
+    "id": "T6-016",
+    "difficulty": "business_semantics",
+    "questionSha256": "2f96be1a393e637df19e775fe528ec4010225df95638588b2b98de415c0ce9f5",
+    "goldSqlSha256": "298969b5f97dce0b7e8eb08029e9270f36b1173436f32153eeb2bd242ddb4c6e",
+    "goldResultSha256": "eb5a95433ff70ea93e6892ca7a0956f9dd754294a21abab6c5825f59523d469e",
+    "promptHashVersion": "text-tool-messages-v1",
+    "status": "NEEDS_CLARIFICATION",
+    "finalSql": null,
+    "correct": false,
+    "wallLatencyMs": 0,
+    "timings": {
+      "retrievalMs": 0,
+      "generationMs": 0,
+      "validationMs": 0,
+      "executionMs": 0,
+      "totalMs": 0
+    },
+    "totalUsage": null,
+    "retryTrigger": "NONE",
+    "selectedAttempt": 0,
+    "calls": [],
+    "productionAttempts": [],
+    "budget": {
+      "requestId": "d420b687-77bb-4c93-8311-509a0589a6cc",
+      "timeoutMs": 15000,
+      "maxModelCalls": 2,
+      "modelCalls": 0,
+      "unknownUsageCalls": 0,
+      "elapsedMs": 0,
+      "termination": "COMPLETE",
+      "stage": "CONVERSATION",
+      "retrySkippedReason": null,
+      "stageMs": {
+        "CLARIFICATION": 0,
+        "CONVERSATION": 0,
+        "ADMISSION": 0,
+        "SESSION": 0
+      },
+      "cancellationRejected": 0,
+      "timingsVersion": "request-budget-exclusive-v1",
+      "otherMs": 0,
+      "currentStageMs": 0
+    },
+    "question": "各品牌的商品数、动销商品数、销售额和动销率分别是多少？取销售额前 10。",
+    "goldSql": "WITH brand_products AS (\n  SELECT b.brand_id, b.brand_name, pbm.product_id\n  FROM brands b\n  JOIN product_brand_map pbm ON pbm.brand_id = b.brand_id AND pbm.is_current\n),\nsales AS (\n  SELECT bp.brand_id, COUNT(DISTINCT oi.product_id) AS sold_products,\n         SUM(oi.price) AS sales\n  FROM brand_products bp\n  JOIN order_items oi ON oi.product_id = bp.product_id\n  JOIN orders o ON o.order_id = oi.order_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n  GROUP BY 1\n),\ntotal AS (\n  SELECT brand_id, COUNT(*) AS product_cnt FROM brand_products GROUP BY 1\n)\nSELECT bp.brand_name, t.product_cnt, COALESCE(s.sold_products, 0) AS sold_products,\n       ROUND(COALESCE(s.sales, 0), 2) AS sales,\n       ROUND(100.0 * COALESCE(s.sold_products, 0) / t.product_cnt, 2) AS sell_through_pct\nFROM brands bp\nJOIN total t ON t.brand_id = bp.brand_id\nLEFT JOIN sales s ON s.brand_id = bp.brand_id\nORDER BY sales DESC LIMIT 10;\n",
+    "notes": "【需确认】 动销率分母假设为「品牌当前映射的全部商品」。品牌到商品是 2 跳（brands -> product_brand_map -> products），且必须过滤 is_current。"
+  },
+  {
+    "id": "T6-018",
+    "difficulty": "business_semantics",
+    "questionSha256": "cfd70ae0e3271cb347b83698c53439c4da5b39d6ed6c9c1c07538b575985c651",
+    "goldSqlSha256": "457f7372c0799fbaa8ae504f84c5d09b80f2beaa192487172beebf0cb2d6cc02",
+    "goldResultSha256": "1e254191afbe0db7b8397f71b52a794d3e0552f94c163b1576a661687d8983b1",
+    "promptHashVersion": "text-tool-messages-v1",
+    "status": "NEEDS_CLARIFICATION",
+    "finalSql": null,
+    "correct": false,
+    "wallLatencyMs": 0,
+    "timings": {
+      "retrievalMs": 0,
+      "generationMs": 0,
+      "validationMs": 0,
+      "executionMs": 0,
+      "totalMs": 0
+    },
+    "totalUsage": null,
+    "retryTrigger": "NONE",
+    "selectedAttempt": 0,
+    "calls": [],
+    "productionAttempts": [],
+    "budget": {
+      "requestId": "b8af0ee4-2383-45c5-a549-73d8790e6d5f",
+      "timeoutMs": 15000,
+      "maxModelCalls": 2,
+      "modelCalls": 0,
+      "unknownUsageCalls": 0,
+      "elapsedMs": 0,
+      "termination": "COMPLETE",
+      "stage": "CONVERSATION",
+      "retrySkippedReason": null,
+      "stageMs": {
+        "CLARIFICATION": 0,
+        "CONVERSATION": 0,
+        "ADMISSION": 0,
+        "SESSION": 0
+      },
+      "cancellationRejected": 0,
+      "timingsVersion": "request-budget-exclusive-v1",
+      "otherMs": 0,
+      "currentStageMs": 0
+    },
+    "question": "会员与非会员的复购率分别是多少？",
+    "goldSql": "WITH user_orders AS (\n  SELECT c.customer_unique_id,\n         BOOL_OR(m.member_id IS NOT NULL) AS is_member,\n         COUNT(DISTINCT o.order_id) AS order_cnt\n  FROM orders o\n  JOIN customers c ON c.customer_id = o.customer_id\n  LEFT JOIN members m ON m.customer_unique_id = c.customer_unique_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n  GROUP BY 1\n)\nSELECT CASE WHEN is_member THEN 'member' ELSE 'non_member' END AS user_type,\n       ROUND(100.0 * COUNT(*) FILTER (WHERE order_cnt >= 2) / COUNT(*), 2) AS repeat_rate_pct\nFROM user_orders GROUP BY 1 ORDER BY 1;\n",
+    "notes": "【需确认】 这里把「当前是会员」定义为会员，没有考虑下单时点是否已是会员（缺少历史会员状态流水，member_snapshot 只有等级快照）。这是本数据集的能力边界，属于设计已知局限。"
+  },
+  {
+    "id": "T6-021",
+    "difficulty": "business_semantics",
+    "questionSha256": "f128e5c9d320db53cb6e7a2d522d918245a71c9d04aa29db747e5e660c07994c",
+    "goldSqlSha256": "fe541b88f5b66350cfee35938872a8076ee101cb52a87a4fb50b77e1c7f057b8",
+    "goldResultSha256": "88a0c3a3e5ab0158755b923f3271fd84d816f1efc15f8802eafb98b6d7741629",
+    "promptHashVersion": "text-tool-messages-v1",
+    "status": "REQUEST_TIMEOUT",
+    "finalSql": null,
+    "correct": false,
+    "wallLatencyMs": 15001,
+    "timings": {
+      "retrievalMs": 3,
+      "generationMs": 14997,
+      "validationMs": 0,
+      "executionMs": 0,
+      "totalMs": 15001
+    },
+    "totalUsage": null,
+    "retryTrigger": "NONE",
+    "selectedAttempt": 1,
+    "calls": [
+      {
+        "number": 1,
+        "status": "IN_FLIGHT",
+        "promptSha256": "0b4005b4753f35ac778b3cc61f2382ed4d82b9cfaa65a3025101b35ae1acf759",
+        "usage": null
+      }
+    ],
+    "productionAttempts": [
+      {
+        "number": 1,
+        "stage": "REQUEST_STOP",
+        "status": "REQUEST_TIMEOUT",
+        "sql": null,
+        "message": "请求已超过时间上限，请缩小查询范围后重试。",
+        "correct": false,
+        "columns": [],
+        "rowCount": 0,
+        "truncated": false,
+        "resultSha256": "04e04a0c54b20c36518d69b0d54759ec8dd0520bc3dd2fff18b1311ecf8241fe"
+      }
+    ],
+    "budget": {
+      "requestId": "a8e8cf41-0611-4568-ba07-c5b068671dde",
+      "timeoutMs": 15000,
+      "maxModelCalls": 2,
+      "modelCalls": 1,
+      "unknownUsageCalls": 1,
+      "elapsedMs": 15001,
+      "termination": "DEADLINE_EXCEEDED",
+      "stage": "MODEL",
+      "retrySkippedReason": null,
+      "stageMs": {
+        "ADMISSION": 0,
+        "CACHE": 0,
+        "CLARIFICATION": 0,
+        "RETRIEVAL": 3,
+        "SESSION": 0,
+        "GENERATION": 0,
+        "MODEL": 14997
+      },
+      "cancellationRejected": 0,
+      "timingsVersion": "request-budget-exclusive-v1",
+      "otherMs": 1,
+      "currentStageMs": 14997
+    },
+    "question": "按用户累计 GMV 排序，贡献前 20% 的用户占总 GMV 的比例是多少？",
+    "goldSql": "WITH user_gmv AS (\n  SELECT c.customer_unique_id, SUM(oi.price + oi.freight_value) AS gmv\n  FROM orders o\n  JOIN customers c ON c.customer_id = o.customer_id\n  JOIN order_items oi ON oi.order_id = o.order_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n  GROUP BY 1\n),\nranked AS (\n  SELECT gmv, NTILE(5) OVER (ORDER BY gmv DESC) AS quintile\n  FROM user_gmv\n)\nSELECT quintile, ROUND(100.0 * SUM(gmv) / (SELECT SUM(gmv) FROM user_gmv), 2) AS gmv_pct\nFROM ranked GROUP BY 1 ORDER BY 1;\n",
+    "notes": "【需确认】 用 NTILE(5) 分五档，quintile=1 即前 20%。NTILE 在人数不能整除时分组大小略有差异，这是可接受的近似。"
+  },
+  {
+    "id": "T6-023",
+    "difficulty": "business_semantics",
+    "questionSha256": "af3aad86032f7251e0a1d9efcf27f784c2f20f8508cd172a66a6e9aa82240d3f",
+    "goldSqlSha256": "ace716b607afcb18e3eb4be013c489be5e6b8fc404ba77bac69ee078313a8531",
+    "goldResultSha256": "22fc7296e06faf043a3f7f99abb3845d34e9e86be7f1777eabf80b6b78ec84ac",
+    "promptHashVersion": "text-tool-messages-v1",
+    "status": "SUCCESS",
+    "finalSql": "-- 各仓库：当前库存、近90天出库量、库存周转天数（时间锚定 movement 最大时间）\nWITH anchor AS (\n    SELECT MAX(moved_at) AS max_at FROM inventory_movements\n),\nstock AS (\n    SELECT warehouse_id, SUM(quantity) AS current_stock\n    FROM inventory\n    GROUP BY warehouse_id\n),\noutbound AS (\n    SELECT warehouse_id, SUM(quantity) AS out_qty\n    FROM inventory_movements\n    WHERE movement_type = '2'\n      AND moved_at >= (SELECT max_at FROM anchor) - INTERVAL '90 days'\n      AND moved_at < (SELECT max_at FROM anchor) + INTERVAL '1 second'\n    GROUP BY warehouse_id\n)\nSELECT w.warehouse_id,\n       s.current_stock,\n       o.out_qty,\n       ROUND(90.0 * s.current_stock / NULLIF(o.out_qty, 0), 1) AS turnover_days\nFROM warehouses w\nLEFT JOIN stock s ON s.warehouse_id = w.warehouse_id\nLEFT JOIN outbound o ON o.warehouse_id = w.warehouse_id\nORDER BY w.warehouse_id\nLIMIT 1000;",
+    "correct": false,
+    "wallLatencyMs": 4483,
+    "timings": {
+      "retrievalMs": 2,
+      "generationMs": 4431,
+      "validationMs": 31,
+      "executionMs": 15,
+      "totalMs": 4483
+    },
+    "totalUsage": {
+      "model": "deepseek-flash",
+      "promptTokens": 3429,
+      "completionTokens": 992,
+      "totalTokens": 4421,
+      "promptChars": 7506,
+      "latencyMs": 4431,
+      "costYuan": 0.005139080000000001,
+      "cacheHitTokens": 2304,
+      "cacheMissTokens": 1125
+    },
+    "retryTrigger": "NONE",
+    "selectedAttempt": 1,
+    "calls": [
+      {
+        "number": 1,
+        "status": "OK",
+        "promptSha256": "7b2cded3a3210008124533ac8f0b2b4c660231586b63cfd564a853c21bb0491a",
+        "usage": {
+          "model": "deepseek-flash",
+          "promptTokens": 3429,
+          "completionTokens": 992,
+          "totalTokens": 4421,
+          "promptChars": 7506,
+          "latencyMs": 4431,
+          "costYuan": 0.005139080000000001,
+          "cacheHitTokens": 2304,
+          "cacheMissTokens": 1125
+        }
+      }
+    ],
+    "productionAttempts": [
+      {
+        "number": 1,
+        "stage": "INITIAL_SQL",
+        "status": "SUCCESS",
+        "sql": "-- 各仓库：当前库存、近90天出库量、库存周转天数（时间锚定 movement 最大时间）\nWITH anchor AS (\n    SELECT MAX(moved_at) AS max_at FROM inventory_movements\n),\nstock AS (\n    SELECT warehouse_id, SUM(quantity) AS current_stock\n    FROM inventory\n    GROUP BY warehouse_id\n),\noutbound AS (\n    SELECT warehouse_id, SUM(quantity) AS out_qty\n    FROM inventory_movements\n    WHERE movement_type = '2'\n      AND moved_at >= (SELECT max_at FROM anchor) - INTERVAL '90 days'\n      AND moved_at < (SELECT max_at FROM anchor) + INTERVAL '1 second'\n    GROUP BY warehouse_id\n)\nSELECT w.warehouse_id,\n       s.current_stock,\n       o.out_qty,\n       ROUND(90.0 * s.current_stock / NULLIF(o.out_qty, 0), 1) AS turnover_days\nFROM warehouses w\nLEFT JOIN stock s ON s.warehouse_id = w.warehouse_id\nLEFT JOIN outbound o ON o.warehouse_id = w.warehouse_id\nORDER BY w.warehouse_id\nLIMIT 1000;",
+        "message": null,
+        "correct": false,
+        "columns": [
+          "warehouse_id",
+          "current_stock",
+          "out_qty",
+          "turnover_days"
+        ],
+        "rowCount": 5,
+        "truncated": false,
+        "resultSha256": "0b423fec37260851aca4170b63bd3e2d2e1d2d14e9b0e9022b9e4991aa05f73e"
+      }
+    ],
+    "budget": {
+      "requestId": "d80ce73b-5df4-458d-99fd-e03c00545707",
+      "timeoutMs": 15000,
+      "maxModelCalls": 2,
+      "modelCalls": 1,
+      "unknownUsageCalls": 0,
+      "elapsedMs": 4483,
+      "termination": "COMPLETE",
+      "stage": "CONVERSATION",
+      "retrySkippedReason": null,
+      "stageMs": {
+        "EXPLAIN": 4,
+        "VALIDATION": 31,
+        "ADMISSION": 0,
+        "SESSION": 0,
+        "EXECUTION": 11,
+        "MODEL": 4431,
+        "GENERATION": 0,
+        "CACHE": 0,
+        "CONVERSATION": 0,
+        "RETRIEVAL": 2,
+        "RESULT_CHECK": 0,
+        "CACHE_WRITE": 0,
+        "CLARIFICATION": 0
+      },
+      "cancellationRejected": 0,
+      "timingsVersion": "request-budget-exclusive-v1",
+      "otherMs": 4,
+      "currentStageMs": 0
+    },
+    "question": "各仓库的库存周转情况：当前库存量、近 90 天出库量、库存周转天数分别是多少？",
+    "goldSql": "WITH anchor AS (\n  SELECT MAX(moved_at) AS max_ts FROM inventory_movements\n),\noutbound AS (\n  SELECT im.warehouse_id, SUM(im.quantity) AS out_qty\n  FROM inventory_movements im, anchor a\n  WHERE im.movement_type = 2\n    AND im.moved_at > a.max_ts - INTERVAL '90 days'\n    AND im.moved_at <= a.max_ts\n  GROUP BY 1\n),\nstock AS (\n  SELECT warehouse_id, SUM(quantity) AS stock_qty FROM inventory GROUP BY 1\n)\nSELECT w.warehouse_name, s.stock_qty, COALESCE(o.out_qty, 0) AS out_qty_90d,\n       CASE WHEN COALESCE(o.out_qty, 0) > 0\n            THEN ROUND(90.0 * s.stock_qty / o.out_qty, 1) END AS turnover_days\nFROM warehouses w\nJOIN stock s ON s.warehouse_id = w.warehouse_id\nLEFT JOIN outbound o ON o.warehouse_id = w.warehouse_id\nORDER BY turnover_days DESC NULLS LAST;\n",
+    "notes": "【需确认】 时间锚点用「库存流水的最大时间」而不是 current_date，因为数据集是历史数据；用 current_date 会导致 90 天窗口为空。"
+  },
+  {
+    "id": "T6-025",
+    "difficulty": "business_semantics",
+    "questionSha256": "54b4d1639506f18b17a10bcc046d734a280d89590e6f55953dab3c26a3d75e93",
+    "goldSqlSha256": "cec941fead36ba6f7cfc280fa0dce46b732ad2f59d801cbd48085288ead5fd21",
+    "goldResultSha256": "562b63f2f16a7183f1e88625b8cb4f8e438f1c041e0a1a142d3ea97f1f804bc6",
+    "promptHashVersion": "text-tool-messages-v1",
+    "status": "REQUEST_TIMEOUT",
+    "finalSql": null,
+    "correct": false,
+    "wallLatencyMs": 15005,
+    "timings": {
+      "retrievalMs": 2,
+      "generationMs": 15002,
+      "validationMs": 0,
+      "executionMs": 0,
+      "totalMs": 15005
+    },
+    "totalUsage": null,
+    "retryTrigger": "NONE",
+    "selectedAttempt": 1,
+    "calls": [
+      {
+        "number": 1,
+        "status": "IN_FLIGHT",
+        "promptSha256": "7d705f9cdb3ce88e43288f017da2515ecfac6a3bdcc3a97ab424e3f44108f1e4",
+        "usage": null
+      }
+    ],
+    "productionAttempts": [
+      {
+        "number": 1,
+        "stage": "REQUEST_STOP",
+        "status": "REQUEST_TIMEOUT",
+        "sql": null,
+        "message": "请求已超过时间上限，请缩小查询范围后重试。",
+        "correct": false,
+        "columns": [],
+        "rowCount": 0,
+        "truncated": false,
+        "resultSha256": "04e04a0c54b20c36518d69b0d54759ec8dd0520bc3dd2fff18b1311ecf8241fe"
+      }
+    ],
+    "budget": {
+      "requestId": "7a8c4915-ffce-4c63-9cd2-9d5d848e4297",
+      "timeoutMs": 15000,
+      "maxModelCalls": 2,
+      "modelCalls": 1,
+      "unknownUsageCalls": 1,
+      "elapsedMs": 15005,
+      "termination": "DEADLINE_EXCEEDED",
+      "stage": "MODEL",
+      "retrySkippedReason": null,
+      "stageMs": {
+        "ADMISSION": 0,
+        "CACHE": 0,
+        "CLARIFICATION": 0,
+        "RETRIEVAL": 2,
+        "SESSION": 0,
+        "GENERATION": 0,
+        "MODEL": 15002
+      },
+      "cancellationRejected": 0,
+      "timingsVersion": "request-budget-exclusive-v1",
+      "otherMs": 1,
+      "currentStageMs": 15002
+    },
+    "question": "2018 年每个月的 GMV 中，新客和老客各贡献多少？",
+    "goldSql": "WITH first_order AS (\n  SELECT c.customer_unique_id, MIN(o.order_purchase_timestamp) AS first_ts\n  FROM orders o\n  JOIN customers c ON c.customer_id = o.customer_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n  GROUP BY 1\n),\nmonthly AS (\n  SELECT DATE_TRUNC('month', o.order_purchase_timestamp)::date AS month,\n         c.customer_unique_id,\n         SUM(oi.price + oi.freight_value) AS gmv\n  FROM orders o\n  JOIN customers c ON c.customer_id = o.customer_id\n  JOIN order_items oi ON oi.order_id = o.order_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n    AND o.order_purchase_timestamp >= DATE '2018-01-01'\n    AND o.order_purchase_timestamp < DATE '2019-01-01'\n  GROUP BY 1, 2\n)\nSELECT m.month,\n       ROUND(SUM(m.gmv) FILTER (WHERE DATE_TRUNC('month', f.first_ts)::date = m.month), 2) AS new_customer_gmv,\n       ROUND(SUM(m.gmv) FILTER (WHERE DATE_TRUNC('month', f.first_ts)::date <> m.month), 2) AS returning_gmv\nFROM monthly m\nJOIN first_order f ON f.customer_unique_id = m.customer_unique_id\nGROUP BY 1 ORDER BY 1;\n",
+    "notes": "【需确认】 新客定义为「该用户的首单发生在当月」，老客为「首单在更早月份」。这依赖完整历史数据，数据集从 2016-09 开始，因此 2018 年的新客判定是可信的。"
+  }
+]
