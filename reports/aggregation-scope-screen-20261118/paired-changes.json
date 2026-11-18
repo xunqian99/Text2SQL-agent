@@ -1,0 +1,101 @@
+[
+  {
+    "id": "T1-013",
+    "before": false,
+    "after": true,
+    "beforeStatus": "SUCCESS",
+    "afterStatus": "SUCCESS",
+    "beforeSql": "SELECT order_id, order_item_id, freight_value\nFROM order_items\nORDER BY freight_value DESC NULLS LAST, order_id, order_item_id\nLIMIT 5;",
+    "afterSql": "SELECT order_id, order_item_id, freight_value\nFROM order_items\nORDER BY freight_value DESC\nLIMIT 5;"
+  },
+  {
+    "id": "T1-020",
+    "before": false,
+    "after": true,
+    "beforeStatus": "SUCCESS",
+    "afterStatus": "SUCCESS",
+    "beforeSql": "SELECT COUNT(*) AS review_count\nFROM order_reviews\nWHERE review_comment_title IS NOT NULL\n  AND TRIM(review_comment_title) <> '';",
+    "afterSql": "SELECT COUNT(*) AS cnt\nFROM order_reviews\nWHERE review_comment_title IS NOT NULL\n  AND review_comment_title <> '';"
+  },
+  {
+    "id": "T1-026",
+    "before": true,
+    "after": false,
+    "beforeStatus": "SUCCESS",
+    "afterStatus": "SUCCESS",
+    "beforeSql": "SELECT member_id, points\nFROM members\nORDER BY points DESC\nLIMIT 10;",
+    "afterSql": "SELECT member_id, points\nFROM members\nORDER BY points DESC NULLS LAST, member_id\nLIMIT 10;"
+  },
+  {
+    "id": "T1-040",
+    "before": false,
+    "after": true,
+    "beforeStatus": "SUCCESS",
+    "afterStatus": "SUCCESS",
+    "beforeSql": "SELECT COUNT(DISTINCT product_id) AS product_cnt\nFROM product_price_history\nWHERE old_price IS DISTINCT FROM new_price;",
+    "afterSql": "SELECT COUNT(DISTINCT product_id) AS adjusted_product_cnt\nFROM product_price_history;"
+  },
+  {
+    "id": "T2-030",
+    "before": true,
+    "after": false,
+    "beforeStatus": "SUCCESS",
+    "afterStatus": "SUCCESS",
+    "beforeSql": "SELECT category_id, COUNT(*) AS ticket_count\nFROM support_tickets\nGROUP BY category_id\nORDER BY ticket_count DESC\nLIMIT 100;",
+    "afterSql": "SELECT tc.category_name, COUNT(*) AS ticket_count\nFROM support_tickets st\nJOIN ticket_categories tc ON tc.category_id = st.category_id\nGROUP BY tc.category_name\nORDER BY ticket_count DESC\nLIMIT 100;"
+  },
+  {
+    "id": "T2-036",
+    "before": true,
+    "after": false,
+    "beforeStatus": "SUCCESS",
+    "afterStatus": "SUCCESS",
+    "beforeSql": "SELECT product_category_name, COUNT(*) AS product_count\nFROM products\nWHERE product_category_name IS NOT NULL\nGROUP BY product_category_name\nHAVING COUNT(*) > 1500\nORDER BY product_count DESC\nLIMIT 100;",
+    "afterSql": "SELECT product_category_name\nFROM products\nWHERE product_category_name IS NOT NULL\nGROUP BY product_category_name\nHAVING COUNT(product_id) > 1500\nORDER BY COUNT(product_id) DESC\nLIMIT 100;"
+  },
+  {
+    "id": "T4-001",
+    "before": true,
+    "after": false,
+    "beforeStatus": "SUCCESS",
+    "afterStatus": "SUCCESS",
+    "beforeSql": "SELECT c.customer_unique_id, COUNT(DISTINCT o.order_id) AS order_count\nFROM customers c\nJOIN orders o ON o.customer_id = c.customer_id\nWHERE c.customer_unique_id IS NOT NULL\nGROUP BY c.customer_unique_id\nORDER BY order_count DESC\nLIMIT 10;",
+    "afterSql": "SELECT c.customer_unique_id, COUNT(DISTINCT o.order_id) AS order_count\nFROM customers c\nJOIN orders o ON o.customer_id = c.customer_id\nGROUP BY c.customer_unique_id\nORDER BY order_count DESC, c.customer_unique_id\nLIMIT 10;"
+  },
+  {
+    "id": "T4-021",
+    "before": false,
+    "after": true,
+    "beforeStatus": "SUCCESS",
+    "afterStatus": "SUCCESS",
+    "beforeSql": "SELECT ca.campaign_id, COUNT(cu.usage_id) AS usage_count\nFROM campaigns ca\nLEFT JOIN coupons c ON c.campaign_id = ca.campaign_id\nLEFT JOIN coupon_usages cu ON cu.coupon_id = c.coupon_id\nGROUP BY ca.campaign_id\nORDER BY ca.campaign_id\nLIMIT 1000;",
+    "afterSql": "SELECT ca.campaign_name, COUNT(cu.usage_id) AS usage_count\nFROM campaigns ca\nLEFT JOIN coupons c ON ca.campaign_id = c.campaign_id\nLEFT JOIN coupon_usages cu ON c.coupon_id = cu.coupon_id\nGROUP BY ca.campaign_id, ca.campaign_name\nORDER BY usage_count DESC\nLIMIT 100;"
+  },
+  {
+    "id": "T4-032",
+    "before": false,
+    "after": true,
+    "beforeStatus": "REQUEST_TIMEOUT",
+    "afterStatus": "SUCCESS",
+    "beforeSql": null,
+    "afterSql": "SELECT p.product_category_name,\n       COUNT(DISTINCT r.refund_id) AS refund_count\nFROM refunds r\nJOIN order_items oi ON oi.order_id = r.order_id\nJOIN products p ON p.product_id = oi.product_id\nWHERE p.product_category_name IS NOT NULL\nGROUP BY p.product_category_name\nLIMIT 100;"
+  },
+  {
+    "id": "T5-004",
+    "before": true,
+    "after": false,
+    "beforeStatus": "SUCCESS",
+    "afterStatus": "REQUEST_TIMEOUT",
+    "beforeSql": "SELECT r.region_name,\n       COUNT(*) AS shipment_count,\n       COUNT(DISTINCT s.order_id) AS order_count\nFROM shipments s\nJOIN warehouses w ON w.warehouse_id = s.warehouse_id\nJOIN regions r ON r.region_code = w.region_code\nGROUP BY r.region_name\nORDER BY shipment_count DESC\nLIMIT 100;",
+    "afterSql": null
+  },
+  {
+    "id": "T5-008",
+    "before": true,
+    "after": false,
+    "beforeStatus": "SUCCESS",
+    "afterStatus": "SUCCESS",
+    "beforeSql": "SELECT rl.level_name AS referrer_level,\n       il.level_name AS invitee_level,\n       COUNT(*) AS referral_count,\n       ROUND(SUM(r.reward_amount), 2) AS total_reward\nFROM referrals r\nJOIN members rm ON rm.member_id = r.referrer_member_id\nJOIN member_levels rl ON rl.level_id = rm.level_id\nJOIN members im ON im.member_id = r.invitee_member_id\nJOIN member_levels il ON il.level_id = im.level_id\nGROUP BY rl.level_name, il.level_name\nORDER BY referral_count DESC\nLIMIT 100;",
+    "afterSql": "SELECT rm.level_id AS referrer_level_id,\n       im.level_id AS invitee_level_id,\n       COUNT(*) AS referral_count,\n       ROUND(SUM(r.reward_amount), 2) AS total_reward_amount\nFROM referrals r\nJOIN members rm ON rm.member_id = r.referrer_member_id\nJOIN members im ON im.member_id = r.invitee_member_id\nGROUP BY rm.level_id, im.level_id\nORDER BY referral_count DESC\nLIMIT 100;"
+  }
+]

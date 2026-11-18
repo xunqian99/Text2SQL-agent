@@ -36,7 +36,7 @@ class PromptVariantTest {
 
     @Test void archivedP14PreservesUnaffectedRulesFromP9() throws Exception {
         var template = new PromptTemplate();
-        assertThat(template.version()).isEqualTo("p16-aggregation-scope-v16");
+        assertThat(template.version()).isEqualTo("p15-entity-coverage-v15");
         try (var in = getClass().getResourceAsStream("/prompts/p9-system.txt")) {
             assertThat(in).isNotNull();
             String archived = new String(in.readAllBytes(), StandardCharsets.UTF_8);
@@ -91,7 +91,7 @@ class PromptVariantTest {
         assertThat(shortened).isEqualTo(full.replace(full.substring(full.indexOf("思考与推理步骤"), full.indexOf("硬性规则")), ""));
         assertThat(shortened.substring(shortened.indexOf("硬性规则")))
                 .isEqualTo(full.substring(full.indexOf("硬性规则")));
-        assertThat(candidate.version()).isEqualTo("p16-aggregation-scope-v16-no-explicit-steps-v1");
+        assertThat(candidate.version()).isEqualTo("p15-entity-coverage-v15-no-explicit-steps-v1");
         var schema = new SchemaContext(List.of(), List.of(), "画像", "CREATE TABLE orders(order_id text);");
         assertThat(candidate.userPrompt(schema, "订单有多少？")).isEqualTo(new PromptTemplate().userPrompt(schema, "订单有多少？"));
         assertThat(candidate.correctionPrompt(schema, "订单有多少？", "SELECT 0", "请修正"))
@@ -129,14 +129,26 @@ class PromptVariantTest {
                 "右表条件放ON或对应聚合内", "没有价格时均价为NULL");
     }
 
-    @Test void aggregationScopeChangesOnlyRule9WithoutSpreadingTheMemberExample() throws Exception {
-        String before = frozenP15(), after = new PromptTemplate().systemPrompt();
+    @Test void archivedP16ChangesOnlyRule9WithoutSpreadingTheMemberExample() throws Exception {
+        String before = frozenP15(), after;
+        try (var in = getClass().getResourceAsStream("/prompts/p16-system.txt")) {
+            assertThat(in).isNotNull();
+            byte[] bytes = in.readAllBytes();
+            assertThat(HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes)))
+                    .isEqualTo("8d6fb246e1c38553c877c72c5b9955d556fdbc78c5a80ca8dd08c11e189d5b8e");
+            after = new String(bytes, StandardCharsets.UTF_8);
+        }
         assertThat(withoutEntityRule(after)).isEqualTo(withoutEntityRule(before));
         assertThat(after).contains("内部去重/分组键不等于输出列", "投影仍遵循规则8",
                 "不能用SUM(DISTINCT 金额)", "每个指标按用户要求与其业务契约分别确定覆盖范围",
                 "只有需要保留未匹配对象时使用LEFT JOIN", "没有明细时均价为NULL，不补0")
                 .doesNotContain("统计标签覆盖会员数及其商品均价时", "会员数包括无订单会员");
         assertThat(after.length()).isLessThan(before.length());
+    }
+
+    @Test void rejectedP16DoesNotRemainTheDefaultTemplate() throws Exception {
+        assertThat(new PromptTemplate().systemPrompt()).isEqualTo(frozenP15());
+        assertThat(new PromptTemplate().version()).isEqualTo("p15-entity-coverage-v15");
     }
 
     private static String frozenP15() throws Exception {
