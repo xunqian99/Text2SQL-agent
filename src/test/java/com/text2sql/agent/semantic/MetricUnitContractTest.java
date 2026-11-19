@@ -54,6 +54,12 @@ class MetricUnitContractTest {
             String name = node.path("name").asText();
             var originalMetric = java.util.stream.StreamSupport.stream(before.path("metrics").spliterator(), false)
                     .filter(n -> n.path("name").asText().equals(name)).findFirst().orElseThrow();
+            if (name.equals("aov")) {
+                // Generic averages must not acquire the business metric's freight/status defaults.
+                // MetricAliasScopeTest covers ordinary descriptions, explicit metrics and compound requests.
+                assertThat(node.path("aliases").toString()).isEqualTo("[\"客单价\"]");
+                node.set("aliases", originalMetric.path("aliases"));
+            }
             if (java.util.Set.of("aov", "refund_rate", "sell_through_rate", "low_score_rate", "ctr",
                     "freight_ratio", "sla_rate", "discount_rate", "commission_rate", "conversion_rate",
                     "retention_rate", "yoy_growth").contains(name)) {

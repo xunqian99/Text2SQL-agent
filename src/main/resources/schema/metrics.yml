@@ -127,7 +127,9 @@ metrics:
   # 比例类指标：全部乘 100 保留 2 位小数，保持格式一致
   # --------------------------------------------------------------------------
   - name: aov
-    aliases: [客单价, 平均订单金额, 订单均价]
+    # 普通平均金额描述不等于业务黑话；金额组成和订单范围由请求决定。
+    # 否则“按明细商品金额计”的平均值也会被注入含运费/有效订单默认口径。
+    aliases: [客单价]
     description: 客单价 = GMV / 有效订单数
     expression: "ROUND(SUM(oi.price + oi.freight_value) / NULLIF(COUNT(DISTINCT o.order_id), 0), 2)"
     tables: [orders, order_items]
