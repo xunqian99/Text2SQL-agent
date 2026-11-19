@@ -78,6 +78,13 @@ public class AmbiguityDetector {
                         throw new IllegalArgumentException("Incomplete or duplicate clarification evidence group");
                     groups.put(group.name(), group.patterns().stream().map(Pattern::compile).toList());
                 }
+                for (var option : ambiguity.replyOptions()) {
+                    if (option.group() == null || !(groups.isEmpty() ? option.group().equals("legacy-hint") : groups.containsKey(option.group()))
+                            || option.replies().isEmpty() || option.replies().stream().anyMatch(r -> r == null || r.isBlank())
+                            || option.confirmation() == null || option.confirmation().isBlank()) {
+                        throw new IllegalArgumentException("Incomplete clarification reply option or unknown group");
+                    }
+                }
                 compiled.add(new CompiledRule(ambiguity, Map.copyOf(groups),
                         ambiguity.unresolvedPatterns().stream().map(Pattern::compile).toList(),
                         ambiguity.triggerPatterns().stream().map(Pattern::compile).toList()));
@@ -104,6 +111,61 @@ public class AmbiguityDetector {
      */
     public java.util.Optional<String> clarificationFor(String question) {
         return decisionsFor(question).stream().filter(Decision::needsClarification).map(Decision::question).findFirst();
+    }
+
+    public java.util.Optional<String> clarificationForState(ClarificationState state) {
+        return decisionsForState(state).stream().filter(Decision::needsClarification).map(Decision::question).findFirst();
+    }
+
+    /** Replays validated selections; unresolved original choices require confirmation of every group. */
+    public List<Decision> decisionsForState(ClarificationState state) {
+        return decisionsFor(state.question()).stream().map(base -> {
+            var selections = state.confirmations().stream().filter(c -> c.term().equals(base.term())).toList();
+            if (selections.isEmpty()) return base;
+            var rule = ambiguities.stream().filter(a -> a.term().equals(base.term())).findFirst().orElseThrow();
+            var groups = rule.requiredEvidence().isEmpty() ? List.of("legacy-hint")
+                    : rule.requiredEvidence().stream().map(EvidenceGroup::name).toList();
+            var evidence = new ArrayList<Evidence>();
+            var missing = new ArrayList<String>();
+            // Keep source evidence but do not let an unresolved candidate phrase resolve a group.
+            for (var e : base.evidence()) evidence.add(base.unresolvedEvidence().isEmpty() || e.group().equals("applicability")
+                    ? e : new Evidence("unresolved-base-pattern", e.group(), e.matchedText()));
+            for (var group : groups) {
+                var choice = selections.stream().filter(c -> c.group().equals(group)).findFirst();
+                if (choice.isPresent()) {
+                    evidence.add(new Evidence("confirmed-reply", group, choice.get().reply()));
+                } else if (!base.unresolvedEvidence().isEmpty() || base.missingGroups().contains(group)) {
+                    missing.add(group);
+                }
+            }
+            return new Decision(base.term(), base.matchedTerm(), List.copyOf(evidence), List.copyOf(missing),
+                    missing.isEmpty() ? List.of() : base.unresolvedEvidence(), !missing.isEmpty(), base.question());
+        }).toList();
+    }
+
+    /** Only exact configured answers to a currently unresolved rule are accepted; no substring guessing. */
+    public java.util.Optional<ClarificationState> replyTo(ClarificationState state, String reply) {
+        if (reply == null || reply.length() > 120) return java.util.Optional.empty();
+        String text = normalize(reply).replaceAll("[。.!！?？]+$", "");
+        var active = decisionsForState(state).stream().filter(Decision::needsClarification).map(Decision::term).toList();
+        var next = state;
+        for (var rule : ambiguities) {
+            if (!active.contains(rule.term())) continue;
+            for (var option : rule.replyOptions()) {
+                if (option.replies().stream().anyMatch(r -> normalize(r).equals(text))) {
+                    next = next.with(new ClarificationState.Confirmation(rule.term(), option.group(), reply, option.confirmation()));
+                }
+            }
+        }
+        return next == state ? java.util.Optional.empty() : java.util.Optional.of(next);
+    }
+
+    /** Explicit fresh analyses abandon pending context; other unrecognized fragments are re-asked. */
+    public boolean isFreshQuestion(String question) {
+        if (question == null) return false;
+        String text = normalize(question);
+        return text.length() > 120 || Pattern.compile("多少|什么|查询|统计|列出|展示|分别|合计|总额|平均|销售额|复购率|gmv|^(?:换个问题|另一个问题|重新开始|取消|算了|不问了)")
+                .matcher(text).find();
     }
 
     /** Explicit evidence stays inspectable; merely mentioning a field is not proof of its value. */
@@ -168,9 +230,9 @@ public class AmbiguityDetector {
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Ambiguity(String term, List<String> hints, String question, List<String> aliases,
                             List<EvidenceGroup> requiredEvidence, List<String> unresolvedPatterns,
-                            List<String> triggerPatterns) {
+                            List<String> triggerPatterns, List<ReplyOption> replyOptions) {
         public Ambiguity(String term, List<String> hints, String question) {
-            this(term, hints, question, List.of(), List.of(), List.of(), List.of());
+            this(term, hints, question, List.of(), List.of(), List.of(), List.of(), List.of());
         }
         public Ambiguity {
             hints = hints == null ? List.of() : List.copyOf(hints);
@@ -178,11 +240,15 @@ public class AmbiguityDetector {
             requiredEvidence = requiredEvidence == null ? List.of() : List.copyOf(requiredEvidence);
             unresolvedPatterns = unresolvedPatterns == null ? List.of() : List.copyOf(unresolvedPatterns);
             triggerPatterns = triggerPatterns == null ? List.of() : List.copyOf(triggerPatterns);
+            replyOptions = replyOptions == null ? List.of() : List.copyOf(replyOptions);
         }
     }
 
     public record EvidenceGroup(String name, List<String> patterns) {
         public EvidenceGroup { patterns = patterns == null ? List.of() : List.copyOf(patterns); }
+    }
+    public record ReplyOption(String group, List<String> replies, String confirmation) {
+        public ReplyOption { replies = replies == null ? List.of() : List.copyOf(replies); }
     }
     public record Evidence(String source, String group, String matchedText) { }
     public record Decision(String term, String matchedTerm, List<Evidence> evidence, List<String> missingGroups,

@@ -25,6 +25,8 @@ public class ConversationSession {
     private volatile boolean closed;
     private volatile SchemaContext lastSchema;
     private volatile SessionContextSummary contextSummary = SessionContextSummary.empty();
+    private volatile com.text2sql.agent.clarification.ClarificationState pendingClarification;
+    private long clarificationRequest;
     private final List<ConversationTurn> turns = Collections.synchronizedList(new ArrayList<>());
 
     public ConversationSession(String sessionId) {
@@ -71,8 +73,17 @@ public class ConversationSession {
     }
 
     public void close() {
-        this.closed = true;
+        synchronized (this) { closed = true; pendingClarification = null; clarificationRequest++; }
         touch();
+    }
+
+    public com.text2sql.agent.clarification.ClarificationState pendingClarification() { return pendingClarification; }
+
+    public synchronized long beginClarificationRequest() { return ++clarificationRequest; }
+
+    /** Only the newest admitted request may update this state; an old timeout cannot restore it. */
+    public synchronized void finishClarificationRequest(long request, com.text2sql.agent.clarification.ClarificationState state) {
+        if (!closed && request == clarificationRequest) pendingClarification = state;
     }
 
     /**

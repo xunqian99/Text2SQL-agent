@@ -23,6 +23,13 @@
 ambiguities:
   - term: 销售额
     hints: [含运费, 不含运费, GMV, 商品金额, 商品销售额]
+    replyOptions:
+      - group: legacy-hint
+        replies: [含运费, 按含运费, 含运费的, GMV]
+        confirmation: 销售额按含运费的GMV计算
+      - group: legacy-hint
+        replies: [不含运费, 按不含运费, 不含运费的, 商品金额, 按商品金额]
+        confirmation: 销售额按不含运费的商品金额计算
     # 提到候选口径不代表已经选定。沿用现有阻断证据机制，不增加新的判定器。
     unresolvedPatterns:
       - '不(?:确定|清楚|知道|明白)|未(?:确定|明确|确认)|还没(?:定|确定|确认)'
@@ -32,10 +39,18 @@ ambiguities:
 
   - term: 活跃用户
     hints: [下单, 登录, 有订单, 访问]
+    replyOptions:
+      - group: legacy-hint
+        replies: [下单, 按下单, 当月有下单]
+        confirmation: 活跃用户按当月有下单计算
     question: 「活跃用户」按什么口径算？按当月有下单，还是按当月有登录？本数据集只有下单时间可用。
 
   - term: 复购率
     aliases: [回购率, 重复购买率]
+    replyOptions:
+      - group: denominator
+        replies: [全部下单用户, 以全部下单用户为分母, 分母是全部下单用户]
+        confirmation: 复购率以全部下单用户为分母
     # 有requiredEvidence时，不使用“出现任一hint就放行”的旧模式。
     # 这里检查分母，不凭“两次及以上”（分子）或“有效订单”（过滤范围）假装分母已确认。
     requiredEvidence:
@@ -51,6 +66,16 @@ ambiguities:
 
   - term: 大区
     aliases: [宏观区域, macro_region]
+    replyOptions:
+      - group: regional-subject
+        replies: [客户, 按客户, 客户收货地, 按客户收货地]
+        confirmation: 按客户所在大区统计
+      - group: regional-subject
+        replies: [卖家, 按卖家, 卖家所在地, 按卖家所在地]
+        confirmation: 按卖家所在大区统计
+      - group: regional-subject
+        replies: [仓库, 按仓库, 仓库所在地, 按仓库所在地]
+        confirmation: 按仓库所在地统计大区
     # 交易事实有客户/卖家等多条地域来源；纯地区字典、仓库容量和库存统计不套本规则。
     triggerPatterns:
       - '(?:大区|宏观区域|macro_region).{0,40}(?:订单|销售额|gmv|成交|运费|退款)|(?:订单|销售额|gmv|成交|运费|退款).{0,40}(?:大区|宏观区域|macro_region)'
@@ -69,6 +94,22 @@ ambiguities:
 
   - term: 平均涨跌幅
     aliases: [平均涨幅, 平均跌幅]
+    replyOptions:
+      - group: price-change-unit
+        replies: [百分比, 按百分比, 相对涨跌率]
+        confirmation: 价格平均涨跌幅按相对涨跌率计算（新价减旧价后除以旧价）
+      - group: price-change-unit
+        replies: [金额差, 按金额差, 绝对价差, 新价减旧价]
+        confirmation: 价格平均涨跌幅按新价减旧价的金额差计算
+      - group: averaging-grain
+        replies: [每条记录等权, 每条变动记录等权, 按记录, 按变动记录平均]
+        confirmation: 每条价格变动记录等权平均
+      - group: averaging-grain
+        replies: [先按商品平均再按类目平均, 先按商品平均，再按类目平均]
+        confirmation: 先按每个商品平均，再按类目平均
+      - group: averaging-grain
+        replies: [按销量加权, 以销量加权]
+        confirmation: 按销量加权平均
     # 只有价格平均值才需要该选择，不拦订单量或库存数量的平均涨幅。
     triggerPatterns:
       - '(?:价格|调价|价差|old_price|new_price).{0,80}(?:平均涨跌幅|平均涨幅|平均跌幅)|(?:平均涨跌幅|平均涨幅|平均跌幅).{0,80}(?:价格|调价|价差|old_price|new_price)'

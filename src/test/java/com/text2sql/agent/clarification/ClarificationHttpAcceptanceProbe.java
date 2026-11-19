@@ -51,6 +51,7 @@ public final class ClarificationHttpAcceptanceProbe {
         var app = new SpringApplication(Text2SqlAgentApplication.class);
         app.addInitializers(c -> c.getEnvironment().getPropertySources().addFirst(new MapPropertySource("probe-auth", Map.of("agent.access.token", token))));
         var calls = new AtomicInteger(); var evidence = new ArrayList<Object>(); int port;
+        var prompts = new java.util.concurrent.CopyOnWriteArrayList<String>();
         try (var context = (ServletWebServerApplicationContext) app.run("--spring.profiles.active=local,demo,protected", "--server.port=0",
                 "--server.address=127.0.0.1", "--agent.eval.enabled=false", "--agent.cost-quota.state-file=" + dir.resolve("ledger.json"),
                 "--agent.access.burst=100", "--agent.access.requests-per-minute=60000",
@@ -61,6 +62,8 @@ public final class ClarificationHttpAcceptanceProbe {
             var model = mock(ChatModel.class);
             when(model.call(any(Prompt.class))).thenAnswer(i -> {
                 calls.incrementAndGet();
+                prompts.add(((Prompt) i.getArgument(0)).getInstructions().stream()
+                        .map(m -> m.getText()).collect(java.util.stream.Collectors.joining("\n")));
                 return new ChatResponse(List.of(new Generation(new AssistantMessage("SELECT 1 AS controlled_answer"))),
                         ChatResponseMetadata.builder().usage(new DefaultUsage(10, 5)).build());
             });
@@ -83,7 +86,18 @@ public final class ClarificationHttpAcceptanceProbe {
                     new Case("price-unit-only", "价格平均涨幅用百分比输出", true),
                     new Case("price-explicit", "价格平均涨幅用百分比输出，每条变动记录等权", false),
                     new Case("regional-resubmitted", "商品销售额按客户所在大区统计", false, "regional-bare", 2),
-                    new Case("price-resubmitted", "价格平均涨幅用金额差计算，每条变动记录等权", false, "price-bare", 2));
+                    new Case("price-resubmitted", "价格平均涨幅用金额差计算，每条变动记录等权", false, "price-bare", 2),
+                    new Case("sales-short", "不含运费", false, "legacy-sales", 2),
+                    new Case("regional-short-start", "2018年按大区统计商品销售额，只看已送达订单", true),
+                    new Case("regional-short", "按客户", false, "regional-short-start", 2),
+                    new Case("price-short-start", "2018年按类目统计价格平均涨跌幅，只看涨价记录", true),
+                    new Case("price-short-unit", "百分比", true, "price-short-start", 2),
+                    new Case("price-short-grain", "每条记录等权", false, "price-short-start", 3),
+                    new Case("regional-choice-short", "卖家", false, "regional-choice", 2),
+                    new Case("unknown-short-start", "销售额是多少", true),
+                    new Case("unknown-short", "随便", true, "unknown-short-start", 2),
+                    new Case("isolation-short", "含运费", true, "bare", 2),
+                    new Case("fresh-question", "查询订单数量", false, "unknown-short-start", 3));
             for (var item : cases) {
                 int before = calls.get(); String session = "clarification-" + item.session();
                 var request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/api/ask"))
@@ -96,11 +110,28 @@ public final class ClarificationHttpAcceptanceProbe {
                 assertThat(calls.get() - before).isEqualTo(expectedCalls);
                 assertThat(body.path("budget").path("modelCalls").asInt()).isEqualTo(expectedCalls);
                 assertThat(body.path("budget").path("unknownUsageCalls").asInt()).isZero();
-                int turns = context.getBean(SessionStore.class).get(session).orElseThrow().turns().size();
+                var currentSession = context.getBean(SessionStore.class).get(session).orElseThrow();
+                int turns = currentSession.turns().size();
                 assertThat(turns).isEqualTo(item.expectedTurns());
+                if (item.id().equals("regional-short")) {
+                    assertThat(body.path("rewrittenQuestion").asText()).contains("2018年", "商品销售额", "已送达订单", "按客户所在大区统计");
+                    assertThat(prompts.getLast()).contains(body.path("rewrittenQuestion").asText());
+                }
+                if (item.id().equals("price-short-grain")) {
+                    assertThat(body.path("rewrittenQuestion").asText()).contains("2018年", "按类目", "只看涨价记录", "相对涨跌率", "每条价格变动记录等权");
+                    assertThat(prompts.getLast()).contains(body.path("rewrittenQuestion").asText());
+                }
+                if (item.id().equals("fresh-question")) {
+                    assertThat(body.path("rewrittenQuestion").isNull()).isTrue();
+                    assertThat(prompts.getLast()).doesNotContain("用户已确认的口径");
+                }
+                assertThat(currentSession.pendingClarification() != null).isEqualTo(item.needsClarification());
                 evidence.add(Map.of("id", item.id(), "question", item.question(), "expectedClarification", item.needsClarification(),
                         "httpStatus", response.statusCode(), "body", body,
-                        "sessionTurns", turns, "decision", context.getBean(AmbiguityDetector.class).decisionsFor(item.question())));
+                        "sessionTurns", turns, "decision", currentSession.pendingClarification() == null
+                                ? context.getBean(AmbiguityDetector.class).decisionsFor(item.question())
+                                : context.getBean(AmbiguityDetector.class).decisionsForState(currentSession.pendingClarification()),
+                        "prompt", expectedCalls == 0 ? "" : prompts.getLast()));
             }
             assertThat(calls).hasValue((int) cases.stream().filter(c -> !c.needsClarification()).count());
         }

@@ -194,7 +194,22 @@ public class Text2SqlOrchestrator {
         long rewriteMs = 0;
         com.text2sql.agent.observability.LlmCallRecord rewriteCall = null;
 
-        if (convEnabled && questionRewriter.isFollowUp(question, session)) {
+        com.text2sql.agent.clarification.ClarificationState resumedClarification = null;
+        boolean pendingContext = convEnabled && properties.getClarification().isEnabled()
+                && conversation.initialClarification != null;
+        if (pendingContext) {
+            var pending = conversation.initialClarification;
+            resumedClarification = ambiguityDetector.replyTo(pending, question)
+                    .orElseGet(() -> ambiguityDetector.isFreshQuestion(question) ? null : pending);
+            if (resumedClarification != null) {
+                effectiveQuestion = resumedClarification.effectiveQuestion();
+                rewrittenQuestion = effectiveQuestion;
+            }
+            // Resolve choices before generic LLM rewriting; always retrieve fresh schema afterwards.
+            conversation.metadata = new ConversationMetadata(rewrittenQuestion, false, null, resumedClarification);
+        }
+
+        if (convEnabled && !pendingContext && questionRewriter.isFollowUp(question, session)) {
             RequestBudget.stage("REWRITE");
             var rewriteOutcome = questionRewriter.rewriteWithOutcome(question, session);
             rewrittenQuestion = rewriteOutcome.question();
@@ -213,8 +228,12 @@ public class Text2SqlOrchestrator {
         // 放在最前面，是因为它要在花掉一次模型调用之前生效。
         RequestBudget.stage("CLARIFICATION");
         if (properties.getClarification().isEnabled()) {
-            var prompt = ambiguityDetector.clarificationFor(effectiveQuestion);
+            var prompt = resumedClarification == null ? ambiguityDetector.clarificationFor(effectiveQuestion)
+                    : ambiguityDetector.clarificationForState(resumedClarification);
             if (prompt.isPresent()) {
+                var pending = resumedClarification == null
+                        ? new com.text2sql.agent.clarification.ClarificationState(effectiveQuestion, List.of()) : resumedClarification;
+                conversation.metadata = new ConversationMetadata(rewrittenQuestion, false, null, pending);
                 log.info("问题存在口径歧义，主动反问：{}", prompt.get());
                 AgentResponse clar = AgentResponse.clarification(question, prompt.get());
                 if (convEnabled) {
@@ -223,6 +242,7 @@ public class Text2SqlOrchestrator {
                 return clar;
             }
         }
+        if (pendingContext) conversation.metadata = new ConversationMetadata(rewrittenQuestion, false, null);
 
         if (schema == null) {
             RequestBudget.stage("RETRIEVAL");
@@ -372,18 +392,28 @@ public class Text2SqlOrchestrator {
         return sessionStore;
     }
 
-    private record ConversationMetadata(String rewrittenQuestion, boolean schemaReused, SchemaContext schema) { }
+    private record ConversationMetadata(String rewrittenQuestion, boolean schemaReused, SchemaContext schema,
+                                        com.text2sql.agent.clarification.ClarificationState clarification) {
+        private ConversationMetadata(String rewrittenQuestion, boolean schemaReused, SchemaContext schema) {
+            this(rewrittenQuestion, schemaReused, schema, null);
+        }
+    }
 
     /** Payload selection owns the only history write; metadata updates alone never mutate a session. */
     private final class ConversationOutcome {
         private final ConversationSession session;
         private final String question;
-        private volatile ConversationMetadata metadata = new ConversationMetadata(null, false, null);
+        private final long clarificationRequest;
+        private final com.text2sql.agent.clarification.ClarificationState initialClarification;
+        private volatile ConversationMetadata metadata;
         private AgentResponse selected;
 
         private ConversationOutcome(ConversationSession session, String question) {
             this.session = session;
             this.question = question;
+            this.clarificationRequest = session == null ? 0 : session.beginClarificationRequest();
+            this.initialClarification = session == null ? null : session.pendingClarification();
+            this.metadata = new ConversationMetadata(null, false, null, initialClarification);
         }
 
         private synchronized AgentResponse finish(AgentResponse response) {
@@ -394,6 +424,7 @@ public class Text2SqlOrchestrator {
             // Do not revive deleted sessions or inject an old completion into a new generation.
             if (sessionStore.get(session.sessionId()).orElse(null) == session && !session.isClosed()) {
                 synchronized (session) {
+                    session.finishClarificationRequest(clarificationRequest, snapshot.clarification());
                     if (selected.success() && snapshot.schema() != null) session.setLastSchema(snapshot.schema());
                     recordConversationTurn(session, question, snapshot.rewrittenQuestion(), selected);
                 }
