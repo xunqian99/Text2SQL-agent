@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import copy
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
@@ -29,7 +30,10 @@ import zipfile
 
 ROOT=Path(__file__).resolve().parent.parent
 BASE=ROOT/"reports/replan-stage-d-20261119"
-BATCH=BASE/"batch-1"
+INITIAL_BATCH=BASE/"batch-1"
+BATCH=INITIAL_BATCH/"revision-2"
+INITIAL_PLAN_SHA="fc13d6c9ec0eddb5909c32d93dd69fde3a4ce32632b758fd32674c90025813ce"
+REVIEW_ROOT=BASE/"independent-review/submission-2"
 PROTOCOL=ROOT/"docs/REPLAN_STAGE_D_PROTOCOL_20261119.md"
 JAVA=Path(r"C:\Users\xunqian\.jdks\corretto-21.0.11\bin\java.exe")
 JAVAC=JAVA.with_name("javac.exe")
@@ -188,6 +192,16 @@ def bridge(cp,*args):
 
 def prepare():
     if BATCH.exists(): raise Refused("One batch only; existing directory is never reset")
+    # A free controller repair is a revision of the same never-started batch.
+    # Retain the rejected plan, evidence, empty counters, and original decision.
+    prior_plan=INITIAL_BATCH/"plan.json"
+    prior_state=read(INITIAL_BATCH/"state.json"); prior_ledger=read(INITIAL_BATCH/"send-ledger.json")
+    prior_decision=read(BASE/"independent-review/decision.json")
+    if (sha(prior_plan)!=INITIAL_PLAN_SHA or prior_state["planSha256"]!=INITIAL_PLAN_SHA
+        or prior_ledger["planSha256"]!=INITIAL_PLAN_SHA or prior_state["requestsStarted"]!=0
+        or prior_state["rounds"] or prior_ledger["calls"] or prior_ledger["rejections"] or prior_ledger["breaches"]
+        or prior_decision.get("accepted") is not False or prior_decision.get("planSha256")!=INITIAL_PLAN_SHA):
+        raise Refused("Free revision requires the rejected initial plan and zero paid counters")
     for side in SYSTEMS.values():
         if sha(ROOT/side["jar"])!=side["sha256"]: raise Refused("Frozen JAR drift")
     decision=read(ROOT/"reports/replan-stage-c-20261119/independent-review/c1-submission-1/decision.json")
@@ -199,8 +213,10 @@ def prepare():
     b0=read(ROOT/"reports/replan-stage-b-20261119/b0-identity.json")
     if database!=b0["database"]: raise Refused("Data differs from accepted B0")
     files=tool_files()+dataset_files()+[BATCH/(n+"-reference.json") for n in ("dev","formal","targets")]
+    files.extend([prior_plan,INITIAL_BATCH/"state.json",INITIAL_BATCH/"send-ledger.json",BASE/"independent-review/decision.json"])
     files.extend(p for p in (BATCH/"tool-runtime").rglob("*") if p.is_file())
-    plan=dict(format="replan-d-selected-c1-v1",createdAt=stamp(),systems=SYSTEMS,order=list(ORDER),
+    plan=dict(format="replan-d-selected-c1-v2",createdAt=stamp(),systems=SYSTEMS,order=list(ORDER),
+        revision=2,samePaidBatch="batch-1",supersedesRejectedPlanSha256=INITIAL_PLAN_SHA,priorProviderCalls=0,
         selectedCandidate="C1 only; C2 not admitted",limits=dict(requests=MAX_REQUESTS,calls=MAX_CALLS,globalPlanRequests=1002,globalPlanCalls=2004,
           callsPerRequest=2,requestMs=15000,sdkAttempts=1,roundGuardSeconds=ROUND_GUARD,sendGuardSeconds=SEND_GUARD,
           totalYuan=str(LIMIT),reservationYuan=str(RESERVE),maxPayloadBytes=MAX_PAYLOAD,maxCompletionTokens=8192,inputFramingEstimate=1024),
@@ -226,17 +242,24 @@ def verify(plan,*,database=True):
 def percentile(values): return sorted(values)[math.ceil(.95*len(values))-1]
 
 
-def dev_gate(group):
+def dev_metric_gate(group):
     layers=group["byLayer"]
     deep=layers.get("multi_join_deep",{}); business=layers.get("business_semantics",{})
     checks=dict(denominator=group["total"]==100,correct=group["correct"]>=71,
         deep=deep.get("total")==10 and deep.get("correct",0)>=4,
         business=business.get("total")==13 and business.get("correct",0)>=6,
-        timeouts=group["timeoutCount"]<=9,dangerous=group.get("newDangerousAllowances",0)==0)
+        timeouts=group["timeoutCount"]<=9)
     return dict(passed=all(checks.values()),checks=checks)
 
 
-def formal_gate(rounds):
+def dev_gate(group):
+    gate=dev_metric_gate(group)
+    gate["checks"]["dangerous"]=type(group.get("newDangerousAllowances")) is int and group["newDangerousAllowances"]==0
+    gate["passed"]=all(gate["checks"].values())
+    return gate
+
+
+def formal_metric_gate(rounds):
     b=[rounds[n]["summary"] for n in ("B1","B2","B3")]
     f=[rounds[n]["summary"] for n in ("F1","F2","F3")]
     b_correct=sum(g["correct"] for g in b); f_correct=sum(g["correct"] for g in f)
@@ -245,16 +268,25 @@ def formal_gate(rounds):
     checks=dict(denominators=all(g["total"]==100 for g in b+f),accuracy=f_correct>=267,
       relativeAccuracy=f_correct>=b_correct-6,p95Relative=f_p95<=b_p95,p95Absolute=f_p95<=13642,
       timeoutRelative=f_timeout<=b_timeout,timeoutAbsolute=f_timeout<=14,
-      dangerous=all(g.get("newDangerousAllowances",0)==0 for g in b+f),
       completeAccounting=all(g["accounting"]["unknownUsageCalls"]==0 for g in b+f))
     return dict(passed=all(checks.values()),checks=checks,baselineCorrect=b_correct,candidateCorrect=f_correct,
       baselineP95MeanMs=b_p95,candidateP95MeanMs=f_p95,baselineTimeouts=b_timeout,candidateTimeouts=f_timeout)
+
+
+def formal_gate(rounds):
+    gate=formal_metric_gate(rounds)
+    gate["checks"]["dangerous"]=all(type(rounds[n]["summary"].get("newDangerousAllowances")) is int
+        and rounds[n]["summary"]["newDangerousAllowances"]==0 for n in FORMAL)
+    gate["passed"]=all(gate["checks"].values())
+    return gate
 
 
 def next_round(state):
     if state.get("terminal"): raise Refused("Batch stopped: "+state["terminal"])
     rounds=state["rounds"]
     if any(r["status"]!="COMPLETED" for r in rounds.values()): raise Refused("Interrupted/running round is never replayed")
+    if any(r.get("independentSafetyReviewVerified") is not True for r in rounds.values()):
+        raise Refused("Completed actual HTTP outputs await bound independent safety review")
     if "DEV_F" not in rounds: return "DEV_F"
     if not rounds["DEV_F"]["gate"]["passed"]: raise Refused("Development failed; selected route stops")
     if "TARGETS" not in rounds: return "TARGETS"
@@ -282,6 +314,12 @@ class SendGate:
             if not permit.is_file() or read(permit)!=admitted: raise Refused("Send permit admission drift")
             final=self.events/(call["token"]+"-completion.json")
             if call.get("result") is not None: expected.add(final.name)
+            if call.get("result") is not None:
+                raw=self.events/(call["token"]+"-upstream.body.bin");expected.add(raw.name)
+                if (call["result"].get("responseBodyFile")!=raw.name or not raw.is_file()
+                    or sha(raw)!=call["result"].get("responseBodySha256")
+                    or raw.stat().st_size!=call["result"].get("responseBytes")):
+                    raise Refused("Original upstream response evidence drift")
             source=final if call.get("result") is not None else permit
             if not source.is_file() or read(source)!=call: raise Refused("Send ledger/event identity mismatch")
         for rejection in self.data["rejections"]:
@@ -348,6 +386,13 @@ class SendGate:
         with self.lock:
             matches=[c for c in self.data["calls"] if c["token"]==permit["token"]]
             if len(matches)!=1 or matches[0]["result"] is not None: raise Refused("Duplicate/missing completion identity")
+            result=dict(result);raw=result.pop("responseBodyRaw",None)
+            if not isinstance(raw,bytes): raise Refused("Original upstream response bytes missing")
+            raw_path=self.events/(permit["token"]+"-upstream.body.bin")
+            write_bytes(raw_path,raw)
+            if result.get("responseBodySha256")!=hashlib.sha256(raw).hexdigest() or result.get("responseBytes")!=len(raw):
+                raise Refused("Original upstream response hash/length mismatch")
+            result["responseBodyFile"]=raw_path.name
             call=matches[0]; call["result"]=result
             if "D_LOCAL_RESPONSE:" in (result.get("error") or ""):
                 self.data["breaches"].append(dict(token=call["token"],reason="UNTRUSTED_PROVIDER_RESPONSE"))
@@ -530,6 +575,53 @@ def validate_completed_rounds(state):
     if state["requestsStarted"]!=questions: raise Refused("Question counter differs from immutable completed answers")
 
 
+def audited_rounds(state):
+    """Bind a separate independent judgment to every actual saved answer.
+
+    Original round summaries remain pending and immutable. Only this verified
+    view may promote; accepted reports are also sealed before any later key read.
+    """
+    effective=copy.deepcopy(state)
+    for name,record in state["rounds"].items():
+        path=REVIEW_ROOT/"rounds"/(name+".json")
+        if not path.is_file(): raise Refused("Pending independent actual-output safety review: "+name)
+        review=read(path);responses=BATCH/name/"responses.json";score=BATCH/name/"score.json"
+        rows=read(responses)["items"];items=review.get("items")
+        if (review.get("format")!="replan-d-round-safety-v1" or review.get("round")!=name
+            or review.get("planSha256")!=state["planSha256"] or review.get("responsesSha256")!=sha(responses)
+            or review.get("scoreSha256")!=sha(score) or not isinstance(items,list)
+            or [i.get("id") for i in items]!=[r["id"] for r in rows]
+            or review.get("independence")!={"candidateImplementation":False,"questionAuthoring":False,"paidOutputTuning":False}):
+            raise Refused("Independent safety identity/denominator mismatch: "+name)
+        for item,row in zip(items,rows):
+            sql=row["body"].get("sql") or ""
+            if (item.get("sqlSha256")!=hashlib.sha256(sql.encode()).hexdigest()
+                or type(item.get("dangerousAllowed")) is not bool or not isinstance(item.get("reason"),str) or not item["reason"].strip()):
+                raise Refused("Independent safety per-answer evidence missing: "+name)
+        count=sum(i["dangerousAllowed"] for i in items)
+        if type(review.get("newDangerousAllowances")) is not int or review["newDangerousAllowances"]!=count:
+            raise Refused("Independent safety count mismatch: "+name)
+        evidence=review.get("evidence")
+        if not isinstance(evidence,dict) or not evidence: raise Refused("Independent safety diagnostic evidence missing")
+        for relative,expected in evidence.items():
+            evidence_path=(ROOT/relative).resolve()
+            if not evidence_path.is_relative_to(REVIEW_ROOT.resolve()) or not evidence_path.is_file() or sha(evidence_path)!=expected:
+                raise Refused("Independent safety diagnostic evidence drift")
+        seal=dict(round=name,planSha256=state["planSha256"],reviewSha256=sha(path),responsesSha256=sha(responses),scoreSha256=sha(score))
+        sealed=BATCH/"safety-review-events"/(name+".json")
+        if sealed.exists():
+            if read(sealed)!=seal: raise Refused("Previously consumed independent safety review drift")
+        else: write(sealed,seal)
+        if review.get("accepted") is not True or count!=0: raise Refused("Independent safety review rejected actual outputs: "+name)
+        verified=effective["rounds"][name]
+        verified["independentSafetyReviewVerified"]=True
+        verified["summary"]["newDangerousAllowances"]=count
+        verified["summary"]["independentSafetyReviewSha256"]=seal["reviewSha256"]
+        if name=="DEV_F": verified["gate"]=dev_gate(verified["summary"])
+    if all(n in effective["rounds"] for n in FORMAL): effective["formalGate"]=formal_gate(effective["rounds"])
+    return effective
+
+
 def offline_preflight(plan,output):
     """Two actual HTTP requests per JAR plus 98 explicitly synthetic score rows.
 
@@ -615,13 +707,14 @@ def run_next():
         if state["planSha256"]!=plan_sha: raise Refused("State/plan identity")
         verify(plan)
         validate_completed_rounds(state)
-        admission=read(BASE/"independent-review/decision.json")
+        admission=read(REVIEW_ROOT/"decision.json")
         if admission.get("accepted") is not True or admission.get("planSha256")!=plan_sha: raise Refused("No matching independent D admission")
         preflight=read(BATCH/"preflight.json")
         if preflight.get("passed") is not True or preflight.get("planSha256")!=plan_sha: raise Refused("Preflight missing")
         for path,value in preflight["evidence"].items():
             if sha(ROOT/path)!=value: raise Refused("Preflight evidence drift")
-        name=next_round(state); whole_window=require_window(ROUND_GUARD)
+        effective=audited_rounds(state)
+        name=next_round(effective); whole_window=require_window(ROUND_GUARD)
         side="B" if name.startswith("B") else "F"
         dataset="dev" if name=="DEV_F" else "targets" if name=="TARGETS" else "formal"
         prepared=read(BATCH/(dataset+"-reference.json")); items=prepared["items"]
@@ -671,11 +764,14 @@ def run_next():
             summary.update(wallP95Ms=percentile([r["wallLatencyMs"] for r in responses]),
                 wallMeanMs=sum(r["wallLatencyMs"] for r in responses)/len(responses),
                 timeoutCount=sum(r["body"].get("status")=="REQUEST_TIMEOUT" or (r["body"].get("budget") or {}).get("termination")=="DEADLINE_EXCEEDED" for r in responses),
-                accounting=costs,newDangerousAllowances=0,newDangerousAllowancesScope="independent C/D tested boundaries; not proof of all possible SQL")
-            result=dict(status="COMPLETED",side=side,dataset=dataset,summary=summary,finishedAt=stamp())
+                accounting=costs,newDangerousAllowances=None,newDangerousAllowancesScope="PENDING independent review of this round actual HTTP outputs",
+                localTestedBoundaryNewDangerousAllowances=0,localTestedBoundaryScope="prior C/D synthetic boundary tests only")
+            result=dict(status="COMPLETED",side=side,dataset=dataset,summary=summary,finishedAt=stamp(),independentSafetyReviewPending=True)
             if name=="DEV_F":
                 result["gate"]=dev_gate(summary)
-                if not result["gate"]["passed"]: state["terminal"]="DEVELOPMENT_FAILED_NO_C2"
+                result["metricGate"]=dev_metric_gate(summary)
+                result["independentSafetyReviewPending"]=True
+                if not result["metricGate"]["passed"]: state["terminal"]="DEVELOPMENT_FAILED_NO_C2"
             elif name=="TARGETS":
                 dev_score=read(BATCH/"DEV_F/score.json")
                 t3=[r for r in dev_score["items"] if r["id"]=="T3-002"]
@@ -686,7 +782,8 @@ def run_next():
             state["rounds"][name]=result
             if name=="F3":
                 state["formalGate"]=formal_gate(state["rounds"])
-                if not state["formalGate"]["passed"]: state["terminal"]="FORMAL_FAILED_NO_UNSEEN"
+                state["formalMetricGate"]=formal_metric_gate(state["rounds"])
+                if not state["formalMetricGate"]["passed"]: state["terminal"]="FORMAL_FAILED_NO_UNSEEN"
             call_tokens={c["token"] for c in gate.data["calls"] if c["round"]==name}
             events=[p for p in gate.events.iterdir() if any(p.name.startswith(token+"-") for token in call_tokens)]
             result["evidence"]={p.relative_to(ROOT).as_posix():sha(p) for p in [*out.rglob("*"),*events] if p.is_file()}
@@ -707,7 +804,8 @@ def main():
     elif args.action=="preflight": preflight()
     elif args.action=="run-next": run_next()
     else:
-        plan=read(BATCH/"plan.json");verify(plan);print(json.dumps(read(BATCH/"state.json"),ensure_ascii=False,indent=2))
+        plan=read(BATCH/"plan.json");verify(plan);state=read(BATCH/"state.json");validate_completed_rounds(state)
+        print(json.dumps(audited_rounds(state),ensure_ascii=False,indent=2))
 
 
 if __name__=="__main__":

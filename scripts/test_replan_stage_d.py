@@ -26,7 +26,10 @@ def result(usage=True,**changes):
       startedAtUtc="2026-11-21T12:00:00+00:00",finishedAtUtc="2026-11-21T12:00:01+00:00",
       responseJson={"usage":dict(prompt_tokens=10,completion_tokens=20,total_tokens=30,
                       prompt_cache_hit_tokens=3,prompt_cache_miss_tokens=7)} if usage else None)
-    value.update(changes);return value
+    value.update(changes)
+    raw=json.dumps(value["responseJson"],ensure_ascii=False).encode() if value["responseJson"] is not None else b""
+    value.update(responseBodyRaw=raw,responseBodySha256=hashlib.sha256(raw).hexdigest(),responseBytes=len(raw))
+    return value
 
 
 class SendGateTest(unittest.TestCase):
@@ -124,6 +127,16 @@ class SendGateTest(unittest.TestCase):
         value=d.read(path);value["requestBodySha256"]="changed";d.write(path,value,replace=True)
         with self.assertRaisesRegex(d.Refused,"permit admission drift"): d.SendGate(self.path,"plan","B1")
 
+    def test_raw_upstream_response_is_retained_and_rechecked_on_restart(self):
+        permit=self.gate.before(*payload());value=result();raw=value["responseBodyRaw"]
+        self.gate.after(permit,value)
+        path=self.gate.events/(permit["token"]+"-upstream.body.bin")
+        self.assertEqual(path.read_bytes(),raw)
+        self.assertNotIn("responseBodyRaw",self.gate.data["calls"][0]["result"])
+        d.SendGate(self.path,"plan","B1")
+        path.write_bytes(b"changed")
+        with self.assertRaisesRegex(d.Refused,"upstream response evidence drift"): d.SendGate(self.path,"plan","B1")
+
     def test_http_budget_reconciliation_and_late_known_cost(self):
         permit=self.gate.before(*payload());self.gate.after(permit,result())
         row=dict(id="Q1",body=dict(budget=dict(timeoutMs=15000,maxModelCalls=2,modelCalls=1,unknownUsageCalls=1)),
@@ -159,15 +172,15 @@ class StageStateTest(unittest.TestCase):
             with self.subTest(at=at): self.assertEqual(d.window(at,guard)["allowed"],allowed)
 
     def test_development_failure_cannot_replay_or_select_c2(self):
-        state=dict(rounds={"DEV_F":dict(status="COMPLETED",gate=dict(passed=False))},terminal=None)
+        state=dict(rounds={"DEV_F":dict(status="COMPLETED",gate=dict(passed=False),independentSafetyReviewVerified=True)},terminal=None)
         with self.assertRaisesRegex(d.Refused,"Development failed"): d.next_round(state)
         state["rounds"]["DEV_F"]["status"]="INTERRUPTED"
         with self.assertRaisesRegex(d.Refused,"never replayed"): d.next_round(state)
 
     def test_targets_are_required_before_formal(self):
-        state=dict(rounds={"DEV_F":dict(status="COMPLETED",gate=dict(passed=True))},terminal=None)
+        state=dict(rounds={"DEV_F":dict(status="COMPLETED",gate=dict(passed=True),independentSafetyReviewVerified=True)},terminal=None)
         self.assertEqual(d.next_round(state),"TARGETS")
-        state["rounds"]["TARGETS"]=dict(status="COMPLETED",gate=dict(passed=False))
+        state["rounds"]["TARGETS"]=dict(status="COMPLETED",gate=dict(passed=False),independentSafetyReviewVerified=True)
         with self.assertRaisesRegex(d.Refused,"Original targets failed"): d.next_round(state)
 
     def test_formal_slow_both_or_unknown_cost_cannot_promote(self):
@@ -181,16 +194,65 @@ class StageStateTest(unittest.TestCase):
         self.assertFalse(d.formal_gate(rounds)["passed"])
 
     def test_development_full_layer_denominators_and_no_high_score_rerun(self):
-        group=dict(total=100,correct=71,timeoutCount=9,byLayer={"multi_join_deep":dict(total=10,correct=4),"business_semantics":dict(total=13,correct=6)})
+        group=dict(total=100,correct=71,timeoutCount=9,newDangerousAllowances=0,byLayer={"multi_join_deep":dict(total=10,correct=4),"business_semantics":dict(total=13,correct=6)})
         self.assertTrue(d.dev_gate(group)["passed"])
         group["byLayer"]["multi_join_deep"]["total"]=9
         self.assertFalse(d.dev_gate(group)["passed"])
 
     def test_formal_pass_still_does_not_let_root_read_unseen(self):
-        summary=dict(total=100,correct=90,wallP95Ms=12000,timeoutCount=0,accounting=dict(unknownUsageCalls=0))
-        rounds={"DEV_F":dict(status="COMPLETED",gate=dict(passed=True)),"TARGETS":dict(status="COMPLETED",gate=dict(passed=True)),
-                **{n:dict(status="COMPLETED",summary=summary) for n in d.FORMAL}}
+        summary=dict(total=100,correct=90,wallP95Ms=12000,timeoutCount=0,newDangerousAllowances=0,accounting=dict(unknownUsageCalls=0))
+        rounds={"DEV_F":dict(status="COMPLETED",gate=dict(passed=True),independentSafetyReviewVerified=True),
+                "TARGETS":dict(status="COMPLETED",gate=dict(passed=True),independentSafetyReviewVerified=True),
+                **{n:dict(status="COMPLETED",summary=summary,independentSafetyReviewVerified=True) for n in d.FORMAL}}
         with self.assertRaisesRegex(d.Refused,"INDEPENDENT_UNSEEN"): d.next_round(dict(rounds=rounds,terminal=None))
+
+    def test_safety_missing_is_pending_even_if_metrics_all_pass(self):
+        group=dict(total=100,correct=100,timeoutCount=0,byLayer={"multi_join_deep":dict(total=10,correct=10),"business_semantics":dict(total=13,correct=13)})
+        self.assertTrue(d.dev_metric_gate(group)["passed"])
+        self.assertFalse(d.dev_gate(group)["passed"])
+        state=dict(rounds={"DEV_F":dict(status="COMPLETED",gate=dict(passed=True))},terminal=None)
+        with self.assertRaisesRegex(d.Refused,"await bound independent"):d.next_round(state)
+
+
+class RoundReviewTest(unittest.TestCase):
+    def setUp(self):
+        self.temp=tempfile.TemporaryDirectory();self.root=Path(self.temp.name)
+        self.batch=self.root/"batch";self.reviews=self.root/"review"
+        self.patchers=[patch.object(d,"ROOT",self.root),patch.object(d,"BATCH",self.batch),patch.object(d,"REVIEW_ROOT",self.reviews)]
+        for p in self.patchers:p.start()
+        d.write(self.batch/"DEV_F/responses.json",dict(items=[dict(id="Q1",body=dict(sql="SELECT 1"))]))
+        d.write(self.batch/"DEV_F/score.json",dict(total=1))
+        d.write(self.reviews/"diagnostic.json",dict(independentSyntheticCheck=True))
+        self.state=dict(planSha256="plan",rounds={"DEV_F":dict(status="COMPLETED",summary=dict(total=100,correct=100,timeoutCount=0,
+            newDangerousAllowances=None,byLayer={"multi_join_deep":dict(total=10,correct=10),"business_semantics":dict(total=13,correct=13)}))})
+    def tearDown(self):
+        for p in reversed(self.patchers):p.stop()
+        self.temp.cleanup()
+    def report(self,**changes):
+        value=dict(format="replan-d-round-safety-v1",round="DEV_F",planSha256="plan",accepted=True,
+            responsesSha256=d.sha(self.batch/"DEV_F/responses.json"),scoreSha256=d.sha(self.batch/"DEV_F/score.json"),
+            independence=dict(candidateImplementation=False,questionAuthoring=False,paidOutputTuning=False),newDangerousAllowances=0,
+            items=[dict(id="Q1",sqlSha256=hashlib.sha256(b"SELECT 1").hexdigest(),dangerousAllowed=False,reason="independent local fixture")],
+            evidence={"review/diagnostic.json":d.sha(self.reviews/"diagnostic.json")})
+        value.update(changes);d.write(self.reviews/"rounds/DEV_F.json",value)
+    def test_missing_review_never_advances(self):
+        with self.assertRaisesRegex(d.Refused,"Pending independent"):d.audited_rounds(self.state)
+    def test_complete_bound_review_enriches_only_a_verified_view(self):
+        self.report();effective=d.audited_rounds(self.state)
+        self.assertTrue(effective["rounds"]["DEV_F"]["gate"]["passed"])
+        self.assertIsNone(self.state["rounds"]["DEV_F"]["summary"]["newDangerousAllowances"])
+        self.assertTrue((self.batch/"safety-review-events/DEV_F.json").is_file())
+        self.assertEqual(d.audited_rounds(self.state),effective)
+    def test_wrong_answer_hash_or_denominator_is_rejected(self):
+        self.report(items=[])
+        with self.assertRaisesRegex(d.Refused,"identity/denominator"):d.audited_rounds(self.state)
+    def test_dangerous_output_is_not_promoted(self):
+        self.report(accepted=False,newDangerousAllowances=1,items=[dict(id="Q1",sqlSha256=hashlib.sha256(b"SELECT 1").hexdigest(),dangerousAllowed=True,reason="synthetic unsafe")])
+        with self.assertRaisesRegex(d.Refused,"rejected actual outputs"):d.audited_rounds(self.state)
+    def test_consumed_review_cannot_be_rewritten(self):
+        self.report();d.audited_rounds(self.state)
+        path=self.reviews/"rounds/DEV_F.json";value=d.read(path);value["extra"]="changed";d.write(path,value,replace=True)
+        with self.assertRaisesRegex(d.Refused,"Previously consumed"):d.audited_rounds(self.state)
 
 
 class HttpEvidenceTest(unittest.TestCase):
