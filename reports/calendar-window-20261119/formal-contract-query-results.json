@@ -1,0 +1,1303 @@
+{
+  "queries": [
+    {
+      "name": "T4-019-gold",
+      "sql": "SELECT t.tag_name, COUNT(DISTINCT m.member_id) AS cnt\nFROM user_tag_map m JOIN user_tags t ON t.tag_id = m.tag_id\nGROUP BY 1 ORDER BY cnt DESC"
+    },
+    {
+      "name": "T4-019-contract",
+      "sql": "SELECT t.tag_id, COUNT(DISTINCT m.member_id) AS cnt\nFROM user_tag_map m JOIN user_tags t ON t.tag_id = m.tag_id\nGROUP BY 1 ORDER BY cnt DESC"
+    },
+    {
+      "name": "T4-028-gold",
+      "sql": "SELECT tc.category_name,\n       ROUND(AVG(EXTRACT(EPOCH FROM (st.resolved_at - st.created_at)) / 3600), 2) AS avg_hours\nFROM support_tickets st\nJOIN ticket_categories tc ON tc.category_id = st.category_id\nWHERE st.resolved_at IS NOT NULL\nGROUP BY 1 ORDER BY avg_hours DESC"
+    },
+    {
+      "name": "T4-028-contract",
+      "sql": "SELECT tc.category_id,\n       ROUND(AVG(EXTRACT(EPOCH FROM (st.resolved_at - st.created_at)) / 3600), 2) AS avg_hours\nFROM support_tickets st\nJOIN ticket_categories tc ON tc.category_id = st.category_id\nWHERE st.resolved_at IS NOT NULL\nGROUP BY 1 ORDER BY avg_hours DESC"
+    },
+    {
+      "name": "T5-005-gold",
+      "sql": "SELECT ca.campaign_name, COUNT(DISTINCT cu.order_id) AS used_orders, ROUND(SUM(oi.price), 2) AS gmv\nFROM coupon_usages cu\nJOIN coupons cp ON cp.coupon_id = cu.coupon_id\nJOIN campaigns ca ON ca.campaign_id = cp.campaign_id\nJOIN orders o ON o.order_id = cu.order_id\nJOIN order_items oi ON oi.order_id = cu.order_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable')\nGROUP BY 1 ORDER BY gmv DESC LIMIT 10"
+    },
+    {
+      "name": "T5-005-contract",
+      "sql": "SELECT ca.campaign_id, COUNT(DISTINCT cu.order_id) AS used_orders, ROUND(SUM(oi.price), 2) AS gmv\nFROM coupon_usages cu\nJOIN coupons cp ON cp.coupon_id = cu.coupon_id\nJOIN campaigns ca ON ca.campaign_id = cp.campaign_id\nJOIN orders o ON o.order_id = cu.order_id\nJOIN order_items oi ON oi.order_id = cu.order_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable')\nGROUP BY 1 ORDER BY gmv DESC LIMIT 10"
+    },
+    {
+      "name": "T5-009-gold",
+      "sql": "SELECT w.warehouse_name, r.region_name, b.brand_name, COUNT(*) AS low_stock_items\nFROM inventory i\nJOIN warehouses w ON w.warehouse_id = i.warehouse_id\nJOIN regions r ON r.region_code = w.region_code\nJOIN product_brand_map pbm ON pbm.product_id = i.product_id AND pbm.is_current\nJOIN brands b ON b.brand_id = pbm.brand_id\nWHERE i.quantity < i.safety_stock\nGROUP BY 1, 2, 3 ORDER BY low_stock_items DESC LIMIT 20"
+    },
+    {
+      "name": "T5-009-contract",
+      "sql": "SELECT w.warehouse_id, r.region_code, b.brand_id, COUNT(*) AS low_stock_items\nFROM inventory i\nJOIN warehouses w ON w.warehouse_id = i.warehouse_id\nJOIN regions r ON r.region_code = w.region_code\nJOIN product_brand_map pbm ON pbm.product_id = i.product_id AND pbm.is_current\nJOIN brands b ON b.brand_id = pbm.brand_id\nWHERE i.quantity < i.safety_stock\nGROUP BY 1, 2, 3 ORDER BY low_stock_items DESC LIMIT 20"
+    },
+    {
+      "name": "T5-012-gold",
+      "sql": "SELECT ut.tag_name, COUNT(DISTINCT m.member_id) AS members, ROUND(AVG(oi.price), 2) AS avg_item_price\nFROM user_tag_map utm\nJOIN user_tags ut ON ut.tag_id = utm.tag_id\nJOIN members m ON m.member_id = utm.member_id\nLEFT JOIN customers c ON c.customer_unique_id = m.customer_unique_id\nLEFT JOIN orders o ON o.customer_id = c.customer_id\nLEFT JOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY members DESC"
+    },
+    {
+      "name": "T5-012-contract",
+      "sql": "SELECT ut.tag_id, COUNT(DISTINCT m.member_id) AS members, ROUND(AVG(oi.price), 2) AS avg_item_price\nFROM user_tag_map utm\nJOIN user_tags ut ON ut.tag_id = utm.tag_id\nJOIN members m ON m.member_id = utm.member_id\nLEFT JOIN customers c ON c.customer_unique_id = m.customer_unique_id\nLEFT JOIN orders o ON o.customer_id = c.customer_id\nLEFT JOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY members DESC"
+    },
+    {
+      "name": "T6-015-gold",
+      "sql": "SELECT tc.category_name,\n       ROUND(100.0 * COUNT(*) FILTER (\n         WHERE st.resolved_at IS NOT NULL\n           AND EXTRACT(EPOCH FROM (st.resolved_at - st.created_at)) / 3600.0 <= tc.sla_hours\n       ) / COUNT(*), 2) AS sla_pct\nFROM support_tickets st\nJOIN ticket_categories tc ON tc.category_id = st.category_id\nGROUP BY 1 ORDER BY sla_pct"
+    },
+    {
+      "name": "T6-015-contract",
+      "sql": "SELECT tc.category_id,\n       ROUND(100.0 * COUNT(*) FILTER (\n         WHERE st.resolved_at IS NOT NULL\n           AND EXTRACT(EPOCH FROM (st.resolved_at - st.created_at)) / 3600.0 <= tc.sla_hours\n       ) / COUNT(*), 2) AS sla_pct\nFROM support_tickets st\nJOIN ticket_categories tc ON tc.category_id = st.category_id\nGROUP BY 1 ORDER BY sla_pct"
+    },
+    {
+      "name": "T4-013-gold",
+      "sql": "SELECT c.customer_state, COUNT(*) AS cnt\nFROM order_reviews r\nJOIN orders o ON o.order_id = r.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nWHERE r.review_score <= 2\nGROUP BY 1 ORDER BY cnt DESC"
+    },
+    {
+      "name": "T4-013-contract",
+      "sql": "SELECT c.customer_state, COUNT(DISTINCT o.order_id) AS cnt\nFROM order_reviews r\nJOIN orders o ON o.order_id = r.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nWHERE r.review_score <= 2\nGROUP BY 1 ORDER BY cnt DESC"
+    },
+    {
+      "name": "T6-013-gold",
+      "sql": "SELECT ROUND(SUM(oi.price + oi.freight_value), 2) AS gmv,\n       ROUND(SUM(cu.discount_amount), 2) AS discount,\n       ROUND(100.0 * SUM(cu.discount_amount) / SUM(oi.price + oi.freight_value), 2) AS discount_pct\nFROM coupon_usages cu\nJOIN orders o ON o.order_id = cu.order_id\nJOIN order_items oi ON oi.order_id = cu.order_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable')"
+    },
+    {
+      "name": "T6-013-contract",
+      "sql": "WITH ct AS(SELECT order_id,SUM(discount_amount) AS discount FROM coupon_usages GROUP BY 1),\n    ot AS(SELECT order_id,SUM(price+freight_value) AS gmv FROM order_items GROUP BY 1)\n    SELECT ROUND(SUM(ot.gmv),2) AS gmv,ROUND(SUM(ct.discount),2) AS discount,\n           ROUND(100.0*SUM(ct.discount)/NULLIF(SUM(ot.gmv),0),2) AS discount_pct\n    FROM ct JOIN orders o USING(order_id) JOIN ot USING(order_id)\n    WHERE o.order_status NOT IN ('canceled','unavailable')"
+    },
+    {
+      "name": "T3-014-gold",
+      "sql": "WITH anchor AS (SELECT MAX(order_purchase_timestamp) AS mx FROM orders)\nSELECT DATE_TRUNC('week', o.order_purchase_timestamp)::DATE AS week_start,\n       ROUND(SUM(oi.price), 2) AS sales\nFROM orders o\nJOIN order_items oi ON oi.order_id = o.order_id\nCROSS JOIN anchor a\nWHERE o.order_purchase_timestamp > a.mx - INTERVAL '90 days'\n  AND o.order_purchase_timestamp <= a.mx\nGROUP BY 1 ORDER BY 1"
+    },
+    {
+      "name": "T3-014-contract",
+      "sql": "WITH anchor AS (SELECT MAX(order_purchase_timestamp) AS mx FROM orders)\nSELECT DATE_TRUNC('week', o.order_purchase_timestamp)::DATE AS week_start,\n       ROUND(SUM(oi.price), 2) AS sales\nFROM orders o\nJOIN order_items oi ON oi.order_id = o.order_id\nCROSS JOIN anchor a\nWHERE o.order_purchase_timestamp >= a.mx::date - 89\n  AND o.order_purchase_timestamp < a.mx::date + 1\nGROUP BY 1 ORDER BY 1"
+    },
+    {
+      "name": "review-grain",
+      "sql": "SELECT COUNT(*) AS review_rows,COUNT(DISTINCT order_id) AS distinct_orders FROM order_reviews WHERE review_score<=2"
+    },
+    {
+      "name": "coupon-campaign-multiplicity",
+      "sql": "SELECT COUNT(*) AS duplicate_campaign_order_pairs FROM(SELECT cp.campaign_id,cu.order_id FROM coupon_usages cu JOIN coupons cp USING(coupon_id) GROUP BY 1,2 HAVING COUNT(*)>1)t"
+    },
+    {
+      "name": "snapshot-multiplicity",
+      "sql": "SELECT COUNT(*) AS rows,COUNT(DISTINCT member_id) AS members,COUNT(*) FILTER(WHERE snapshot_date IS NULL) AS null_dates FROM member_snapshot"
+    },
+    {
+      "name": "search-click-coverage",
+      "sql": "SELECT COUNT(*) AS clicked,COUNT(*) FILTER(WHERE m.member_id IS NULL) AS missing_member,COUNT(*) FILTER(WHERE ml.level_id IS NULL) AS missing_level FROM search_logs sl LEFT JOIN members m USING(member_id) LEFT JOIN member_levels ml ON ml.level_id=m.level_id WHERE sl.clicked_product_id IS NOT NULL"
+    },
+    {
+      "name": "customer-order-coincidence",
+      "sql": "SELECT (SELECT COUNT(*) FROM customers) AS customers,(SELECT COUNT(*) FROM orders) AS orders,(SELECT COUNT(*) FROM customers c WHERE NOT EXISTS(SELECT 1 FROM orders o WHERE o.customer_id=c.customer_id)) AS without_orders,(SELECT COUNT(*) FROM(SELECT customer_id FROM orders GROUP BY 1 HAVING COUNT(*)>1)t) AS multiple_orders"
+    },
+    {
+      "name": "registration-null",
+      "sql": "SELECT COUNT(*) FILTER(WHERE register_date IS NULL) AS null_registration FROM members"
+    },
+    {
+      "name": "order-item-population",
+      "sql": "SELECT COUNT(*) AS all_orders,COUNT(*) FILTER(WHERE NOT EXISTS(SELECT 1 FROM order_items oi WHERE oi.order_id=o.order_id)) AS without_items FROM orders o"
+    },
+    {
+      "name": "display-name-uniqueness",
+      "sql": "SELECT 'user_tags' AS entity,COUNT(*) AS rows,COUNT(DISTINCT tag_name) AS names FROM user_tags UNION ALL SELECT 'ticket_categories',COUNT(*),COUNT(DISTINCT category_name) FROM ticket_categories UNION ALL SELECT 'warehouses',COUNT(*),COUNT(DISTINCT warehouse_name) FROM warehouses UNION ALL SELECT 'campaigns',COUNT(*),COUNT(DISTINCT campaign_name) FROM campaigns UNION ALL SELECT 'member_levels',COUNT(*),COUNT(DISTINCT level_name) FROM member_levels"
+    },
+    {
+      "name": "T1-012-cutoff",
+      "sql": "WITH candidates AS(SELECT order_id, order_item_id, price\nFROM order_items), cutoff AS(\n      SELECT price AS value FROM candidates ORDER BY price DESC OFFSET 9 LIMIT 1)\n      SELECT (SELECT value FROM cutoff) AS cutoff,COUNT(*) AS candidates,\n      COUNT(*) FILTER(WHERE price>(SELECT value FROM cutoff)) AS strictly_above,\n      COUNT(*) FILTER(WHERE price=(SELECT value FROM cutoff)) AS tied_at_cutoff FROM candidates"
+    },
+    {
+      "name": "T1-016-cutoff",
+      "sql": "WITH candidates AS(SELECT order_id, payment_installments\nFROM order_payments), cutoff AS(\n      SELECT payment_installments AS value FROM candidates ORDER BY payment_installments DESC OFFSET 0 LIMIT 1)\n      SELECT (SELECT value FROM cutoff) AS cutoff,COUNT(*) AS candidates,\n      COUNT(*) FILTER(WHERE payment_installments>(SELECT value FROM cutoff)) AS strictly_above,\n      COUNT(*) FILTER(WHERE payment_installments=(SELECT value FROM cutoff)) AS tied_at_cutoff FROM candidates"
+    },
+    {
+      "name": "T2-008-cutoff",
+      "sql": "WITH candidates AS(SELECT customer_state, COUNT(*) AS cnt\nFROM customers GROUP BY customer_state), cutoff AS(\n      SELECT cnt AS value FROM candidates ORDER BY cnt DESC OFFSET 4 LIMIT 1)\n      SELECT (SELECT value FROM cutoff) AS cutoff,COUNT(*) AS candidates,\n      COUNT(*) FILTER(WHERE cnt>(SELECT value FROM cutoff)) AS strictly_above,\n      COUNT(*) FILTER(WHERE cnt=(SELECT value FROM cutoff)) AS tied_at_cutoff FROM candidates"
+    },
+    {
+      "name": "T2-011-cutoff",
+      "sql": "WITH candidates AS(SELECT seller_id, ROUND(SUM(price), 2) AS total\nFROM order_items GROUP BY seller_id), cutoff AS(\n      SELECT total AS value FROM candidates ORDER BY total DESC OFFSET 9 LIMIT 1)\n      SELECT (SELECT value FROM cutoff) AS cutoff,COUNT(*) AS candidates,\n      COUNT(*) FILTER(WHERE total>(SELECT value FROM cutoff)) AS strictly_above,\n      COUNT(*) FILTER(WHERE total=(SELECT value FROM cutoff)) AS tied_at_cutoff FROM candidates"
+    },
+    {
+      "name": "T2-035-cutoff",
+      "sql": "WITH candidates AS(SELECT keyword, COUNT(*) AS cnt\nFROM search_logs GROUP BY keyword), cutoff AS(\n      SELECT cnt AS value FROM candidates ORDER BY cnt DESC OFFSET 9 LIMIT 1)\n      SELECT (SELECT value FROM cutoff) AS cutoff,COUNT(*) AS candidates,\n      COUNT(*) FILTER(WHERE cnt>(SELECT value FROM cutoff)) AS strictly_above,\n      COUNT(*) FILTER(WHERE cnt=(SELECT value FROM cutoff)) AS tied_at_cutoff FROM candidates"
+    },
+    {
+      "name": "T3-005-cutoff",
+      "sql": "WITH candidates AS(SELECT DATE_TRUNC('week', order_purchase_timestamp)::DATE AS week_start, COUNT(*) AS cnt\nFROM orders GROUP BY 1), cutoff AS(\n      SELECT cnt AS value FROM candidates ORDER BY cnt DESC OFFSET 0 LIMIT 1)\n      SELECT (SELECT value FROM cutoff) AS cutoff,COUNT(*) AS candidates,\n      COUNT(*) FILTER(WHERE cnt>(SELECT value FROM cutoff)) AS strictly_above,\n      COUNT(*) FILTER(WHERE cnt=(SELECT value FROM cutoff)) AS tied_at_cutoff FROM candidates"
+    },
+    {
+      "name": "T3-016-cutoff",
+      "sql": "WITH candidates AS(SELECT EXTRACT(DOW FROM order_purchase_timestamp)::INT AS dow, COUNT(*) AS cnt\nFROM orders GROUP BY 1), cutoff AS(\n      SELECT cnt AS value FROM candidates ORDER BY cnt DESC OFFSET 0 LIMIT 1)\n      SELECT (SELECT value FROM cutoff) AS cutoff,COUNT(*) AS candidates,\n      COUNT(*) FILTER(WHERE cnt>(SELECT value FROM cutoff)) AS strictly_above,\n      COUNT(*) FILTER(WHERE cnt=(SELECT value FROM cutoff)) AS tied_at_cutoff FROM candidates"
+    },
+    {
+      "name": "T4-004-cutoff",
+      "sql": "WITH candidates AS(SELECT t.product_category_name_english, ROUND(SUM(oi.price), 2) AS sales\nFROM order_items oi\nJOIN products p ON p.product_id = oi.product_id\nJOIN product_category_translation t ON t.product_category_name = p.product_category_name\nGROUP BY 1), cutoff AS(\n      SELECT sales AS value FROM candidates ORDER BY sales DESC OFFSET 0 LIMIT 1)\n      SELECT (SELECT value FROM cutoff) AS cutoff,COUNT(*) AS candidates,\n      COUNT(*) FILTER(WHERE sales>(SELECT value FROM cutoff)) AS strictly_above,\n      COUNT(*) FILTER(WHERE sales=(SELECT value FROM cutoff)) AS tied_at_cutoff FROM candidates"
+    },
+    {
+      "name": "T4-035-cutoff",
+      "sql": "WITH candidates AS(SELECT c.customer_unique_id,\n       ROUND(SUM(oi.price + oi.freight_value) / COUNT(DISTINCT o.order_id), 2) AS avg_order_value\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN order_items oi ON oi.order_id = o.order_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable')\nGROUP BY 1), cutoff AS(\n      SELECT avg_order_value AS value FROM candidates ORDER BY avg_order_value DESC OFFSET 9 LIMIT 1)\n      SELECT (SELECT value FROM cutoff) AS cutoff,COUNT(*) AS candidates,\n      COUNT(*) FILTER(WHERE avg_order_value>(SELECT value FROM cutoff)) AS strictly_above,\n      COUNT(*) FILTER(WHERE avg_order_value=(SELECT value FROM cutoff)) AS tied_at_cutoff FROM candidates"
+    },
+    {
+      "name": "T4-037-cutoff",
+      "sql": "WITH candidates AS(SELECT p.product_id, p.product_photos_qty, COUNT(*) AS sold\nFROM order_items oi JOIN products p ON p.product_id = oi.product_id\nGROUP BY 1, 2), cutoff AS(\n      SELECT sold AS value FROM candidates ORDER BY sold DESC OFFSET 9 LIMIT 1)\n      SELECT (SELECT value FROM cutoff) AS cutoff,COUNT(*) AS candidates,\n      COUNT(*) FILTER(WHERE sold>(SELECT value FROM cutoff)) AS strictly_above,\n      COUNT(*) FILTER(WHERE sold=(SELECT value FROM cutoff)) AS tied_at_cutoff FROM candidates"
+    },
+    {
+      "name": "T5-003-cutoff",
+      "sql": "WITH candidates AS(SELECT t.product_category_name_english, ROUND(SUM(ri.refund_value), 2) AS refund_amt\nFROM refunds r\nJOIN refund_items ri ON ri.refund_id = r.refund_id\nJOIN order_items oi ON oi.order_id = ri.order_id AND oi.order_item_id = ri.order_item_id\nJOIN products p ON p.product_id = oi.product_id\nJOIN product_category_translation t ON t.product_category_name = p.product_category_name\nGROUP BY 1), cutoff AS(\n      SELECT refund_amt AS value FROM candidates ORDER BY refund_amt DESC OFFSET 14 LIMIT 1)\n      SELECT (SELECT value FROM cutoff) AS cutoff,COUNT(*) AS candidates,\n      COUNT(*) FILTER(WHERE refund_amt>(SELECT value FROM cutoff)) AS strictly_above,\n      COUNT(*) FILTER(WHERE refund_amt=(SELECT value FROM cutoff)) AS tied_at_cutoff FROM candidates"
+    },
+    {
+      "name": "T5-005-cutoff",
+      "sql": "WITH candidates AS(SELECT ca.campaign_name, COUNT(DISTINCT cu.order_id) AS used_orders, ROUND(SUM(oi.price), 2) AS gmv\nFROM coupon_usages cu\nJOIN coupons cp ON cp.coupon_id = cu.coupon_id\nJOIN campaigns ca ON ca.campaign_id = cp.campaign_id\nJOIN orders o ON o.order_id = cu.order_id\nJOIN order_items oi ON oi.order_id = cu.order_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable')\nGROUP BY 1), cutoff AS(\n      SELECT gmv AS value FROM candidates ORDER BY gmv DESC OFFSET 9 LIMIT 1)\n      SELECT (SELECT value FROM cutoff) AS cutoff,COUNT(*) AS candidates,\n      COUNT(*) FILTER(WHERE gmv>(SELECT value FROM cutoff)) AS strictly_above,\n      COUNT(*) FILTER(WHERE gmv=(SELECT value FROM cutoff)) AS tied_at_cutoff FROM candidates"
+    },
+    {
+      "name": "T5-007-cutoff",
+      "sql": "WITH candidates AS(SELECT sl.keyword, t.product_category_name_english, COUNT(*) AS clicks\nFROM search_logs sl\nJOIN products p ON p.product_id = sl.clicked_product_id\nJOIN product_category_translation t ON t.product_category_name = p.product_category_name\nJOIN members m ON m.member_id = sl.member_id\nJOIN member_levels ml ON ml.level_id = m.level_id\nWHERE sl.clicked_product_id IS NOT NULL\nGROUP BY 1, 2), cutoff AS(\n      SELECT clicks AS value FROM candidates ORDER BY clicks DESC OFFSET 19 LIMIT 1)\n      SELECT (SELECT value FROM cutoff) AS cutoff,COUNT(*) AS candidates,\n      COUNT(*) FILTER(WHERE clicks>(SELECT value FROM cutoff)) AS strictly_above,\n      COUNT(*) FILTER(WHERE clicks=(SELECT value FROM cutoff)) AS tied_at_cutoff FROM candidates"
+    },
+    {
+      "name": "T5-009-cutoff",
+      "sql": "WITH candidates AS(SELECT w.warehouse_name, r.region_name, b.brand_name, COUNT(*) AS low_stock_items\nFROM inventory i\nJOIN warehouses w ON w.warehouse_id = i.warehouse_id\nJOIN regions r ON r.region_code = w.region_code\nJOIN product_brand_map pbm ON pbm.product_id = i.product_id AND pbm.is_current\nJOIN brands b ON b.brand_id = pbm.brand_id\nWHERE i.quantity < i.safety_stock\nGROUP BY 1, 2, 3), cutoff AS(\n      SELECT low_stock_items AS value FROM candidates ORDER BY low_stock_items DESC OFFSET 19 LIMIT 1)\n      SELECT (SELECT value FROM cutoff) AS cutoff,COUNT(*) AS candidates,\n      COUNT(*) FILTER(WHERE low_stock_items>(SELECT value FROM cutoff)) AS strictly_above,\n      COUNT(*) FILTER(WHERE low_stock_items=(SELECT value FROM cutoff)) AS tied_at_cutoff FROM candidates"
+    },
+    {
+      "name": "T5-010-cutoff",
+      "sql": "WITH candidates AS(SELECT st.seller_id, COUNT(DISTINCT t.product_category_name_english) AS category_cnt,\n       ROUND(SUM(si.commission_amount), 2) AS commission\nFROM settlements st\nJOIN settlement_items si ON si.settlement_id = st.settlement_id\nJOIN order_items oi ON oi.order_id = si.order_id AND oi.order_item_id = si.order_item_id\nJOIN products p ON p.product_id = oi.product_id\nJOIN product_category_translation t ON t.product_category_name = p.product_category_name\nGROUP BY 1), cutoff AS(\n      SELECT commission AS value FROM candidates ORDER BY commission DESC OFFSET 19 LIMIT 1)\n      SELECT (SELECT value FROM cutoff) AS cutoff,COUNT(*) AS candidates,\n      COUNT(*) FILTER(WHERE commission>(SELECT value FROM cutoff)) AS strictly_above,\n      COUNT(*) FILTER(WHERE commission=(SELECT value FROM cutoff)) AS tied_at_cutoff FROM candidates"
+    },
+    {
+      "name": "T5-016-cutoff",
+      "sql": "WITH candidates AS(SELECT t.product_category_name_english, r.reason_code,\n       COUNT(DISTINCT r.refund_id) AS refunds, ROUND(SUM(ri.refund_value), 2) AS amt\nFROM refunds r\nJOIN refund_items ri ON ri.refund_id = r.refund_id\nJOIN order_items oi ON oi.order_id = ri.order_id AND oi.order_item_id = ri.order_item_id\nJOIN products p ON p.product_id = oi.product_id\nJOIN product_category_translation t ON t.product_category_name = p.product_category_name\nGROUP BY 1, 2), cutoff AS(\n      SELECT amt AS value FROM candidates ORDER BY amt DESC OFFSET 19 LIMIT 1)\n      SELECT (SELECT value FROM cutoff) AS cutoff,COUNT(*) AS candidates,\n      COUNT(*) FILTER(WHERE amt>(SELECT value FROM cutoff)) AS strictly_above,\n      COUNT(*) FILTER(WHERE amt=(SELECT value FROM cutoff)) AS tied_at_cutoff FROM candidates"
+    },
+    {
+      "name": "T5-018-cutoff",
+      "sql": "WITH candidates AS(SELECT sa.state AS addr_state, c.customer_state, COUNT(DISTINCT o.order_id) AS orders\nFROM shipping_addresses sa\nJOIN customers c ON c.customer_id = sa.customer_id\nJOIN orders o ON o.customer_id = c.customer_id\nWHERE sa.is_default\nGROUP BY 1, 2), cutoff AS(\n      SELECT orders AS value FROM candidates ORDER BY orders DESC OFFSET 19 LIMIT 1)\n      SELECT (SELECT value FROM cutoff) AS cutoff,COUNT(*) AS candidates,\n      COUNT(*) FILTER(WHERE orders>(SELECT value FROM cutoff)) AS strictly_above,\n      COUNT(*) FILTER(WHERE orders=(SELECT value FROM cutoff)) AS tied_at_cutoff FROM candidates"
+    },
+    {
+      "name": "T6-019-cutoff",
+      "sql": "WITH candidates AS(SELECT c.customer_state,\n       ROUND(AVG(EXTRACT(EPOCH FROM (o.order_delivered_customer_date - o.order_purchase_timestamp)) / 86400.0), 2) AS avg_days\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nWHERE o.order_delivered_customer_date IS NOT NULL\nGROUP BY 1), cutoff AS(\n      SELECT avg_days AS value FROM candidates ORDER BY avg_days DESC OFFSET 9 LIMIT 1)\n      SELECT (SELECT value FROM cutoff) AS cutoff,COUNT(*) AS candidates,\n      COUNT(*) FILTER(WHERE avg_days>(SELECT value FROM cutoff)) AS strictly_above,\n      COUNT(*) FILTER(WHERE avg_days=(SELECT value FROM cutoff)) AS tied_at_cutoff FROM candidates"
+    }
+  ],
+  "results": {
+    "T4-019-gold": [
+      {
+        "tag_name": "活跃评价用户",
+        "cnt": 95380
+      },
+      {
+        "tag_name": "流失风险用户",
+        "cnt": 65998
+      },
+      {
+        "tag_name": "价格敏感用户",
+        "cnt": 23004
+      },
+      {
+        "tag_name": "高价值用户",
+        "cnt": 19299
+      },
+      {
+        "tag_name": "新客",
+        "cnt": 11615
+      },
+      {
+        "tag_name": "复购用户",
+        "cnt": 2997
+      }
+    ],
+    "T4-019-contract": [
+      {
+        "tag_id": 6,
+        "cnt": 95380
+      },
+      {
+        "tag_id": 2,
+        "cnt": 65998
+      },
+      {
+        "tag_id": 3,
+        "cnt": 23004
+      },
+      {
+        "tag_id": 1,
+        "cnt": 19299
+      },
+      {
+        "tag_id": 4,
+        "cnt": 11615
+      },
+      {
+        "tag_id": 5,
+        "cnt": 2997
+      }
+    ],
+    "T4-028-gold": [
+      {
+        "category_name": "退款咨询",
+        "avg_hours": "100.64"
+      },
+      {
+        "category_name": "账号问题",
+        "avg_hours": "90.90"
+      },
+      {
+        "category_name": "其他",
+        "avg_hours": "79.31"
+      },
+      {
+        "category_name": "发票问题",
+        "avg_hours": "78.85"
+      },
+      {
+        "category_name": "商品质量问题",
+        "avg_hours": "75.92"
+      },
+      {
+        "category_name": "物流延迟",
+        "avg_hours": "74.27"
+      }
+    ],
+    "T4-028-contract": [
+      {
+        "category_id": 3,
+        "avg_hours": "100.64"
+      },
+      {
+        "category_id": 5,
+        "avg_hours": "90.90"
+      },
+      {
+        "category_id": 6,
+        "avg_hours": "79.31"
+      },
+      {
+        "category_id": 4,
+        "avg_hours": "78.85"
+      },
+      {
+        "category_id": 2,
+        "avg_hours": "75.92"
+      },
+      {
+        "category_id": 1,
+        "avg_hours": "74.27"
+      }
+    ],
+    "T5-005-gold": [
+      {
+        "campaign_name": "活动_16",
+        "used_orders": 268,
+        "gmv": "41423.64"
+      },
+      {
+        "campaign_name": "活动_28",
+        "used_orders": 218,
+        "gmv": "39668.42"
+      },
+      {
+        "campaign_name": "活动_49",
+        "used_orders": 225,
+        "gmv": "39626.69"
+      },
+      {
+        "campaign_name": "活动_4",
+        "used_orders": 258,
+        "gmv": "38989.22"
+      },
+      {
+        "campaign_name": "活动_27",
+        "used_orders": 274,
+        "gmv": "37363.43"
+      },
+      {
+        "campaign_name": "活动_12",
+        "used_orders": 242,
+        "gmv": "36990.08"
+      },
+      {
+        "campaign_name": "活动_37",
+        "used_orders": 264,
+        "gmv": "36511.68"
+      },
+      {
+        "campaign_name": "活动_48",
+        "used_orders": 206,
+        "gmv": "36157.79"
+      },
+      {
+        "campaign_name": "活动_41",
+        "used_orders": 210,
+        "gmv": "35945.43"
+      },
+      {
+        "campaign_name": "活动_36",
+        "used_orders": 237,
+        "gmv": "35861.04"
+      }
+    ],
+    "T5-005-contract": [
+      {
+        "campaign_id": 16,
+        "used_orders": 268,
+        "gmv": "41423.64"
+      },
+      {
+        "campaign_id": 28,
+        "used_orders": 218,
+        "gmv": "39668.42"
+      },
+      {
+        "campaign_id": 49,
+        "used_orders": 225,
+        "gmv": "39626.69"
+      },
+      {
+        "campaign_id": 4,
+        "used_orders": 258,
+        "gmv": "38989.22"
+      },
+      {
+        "campaign_id": 27,
+        "used_orders": 274,
+        "gmv": "37363.43"
+      },
+      {
+        "campaign_id": 12,
+        "used_orders": 242,
+        "gmv": "36990.08"
+      },
+      {
+        "campaign_id": 37,
+        "used_orders": 264,
+        "gmv": "36511.68"
+      },
+      {
+        "campaign_id": 48,
+        "used_orders": 206,
+        "gmv": "36157.79"
+      },
+      {
+        "campaign_id": 41,
+        "used_orders": 210,
+        "gmv": "35945.43"
+      },
+      {
+        "campaign_id": 36,
+        "used_orders": 237,
+        "gmv": "35861.04"
+      }
+    ],
+    "T5-009-gold": [
+      {
+        "warehouse_name": "米纳斯仓",
+        "region_name": "Minas Gerais",
+        "brand_name": "Brand_53",
+        "low_stock_items": 8
+      },
+      {
+        "warehouse_name": "米纳斯仓",
+        "region_name": "Minas Gerais",
+        "brand_name": "Brand_17",
+        "low_stock_items": 8
+      },
+      {
+        "warehouse_name": "南部仓",
+        "region_name": "Rio Grande do Sul",
+        "brand_name": "Brand_30",
+        "low_stock_items": 8
+      },
+      {
+        "warehouse_name": "米纳斯仓",
+        "region_name": "Minas Gerais",
+        "brand_name": "Brand_34",
+        "low_stock_items": 7
+      },
+      {
+        "warehouse_name": "南部仓",
+        "region_name": "Rio Grande do Sul",
+        "brand_name": "Brand_18",
+        "low_stock_items": 7
+      },
+      {
+        "warehouse_name": "圣保罗中心仓",
+        "region_name": "São Paulo",
+        "brand_name": "Brand_18",
+        "low_stock_items": 7
+      },
+      {
+        "warehouse_name": "东北仓",
+        "region_name": "Bahia",
+        "brand_name": "Brand_29",
+        "low_stock_items": 7
+      },
+      {
+        "warehouse_name": "里约分仓",
+        "region_name": "Rio de Janeiro",
+        "brand_name": "Brand_43",
+        "low_stock_items": 7
+      },
+      {
+        "warehouse_name": "东北仓",
+        "region_name": "Bahia",
+        "brand_name": "Brand_59",
+        "low_stock_items": 6
+      },
+      {
+        "warehouse_name": "里约分仓",
+        "region_name": "Rio de Janeiro",
+        "brand_name": "Brand_4",
+        "low_stock_items": 6
+      },
+      {
+        "warehouse_name": "里约分仓",
+        "region_name": "Rio de Janeiro",
+        "brand_name": "Brand_55",
+        "low_stock_items": 6
+      },
+      {
+        "warehouse_name": "东北仓",
+        "region_name": "Bahia",
+        "brand_name": "Brand_52",
+        "low_stock_items": 6
+      },
+      {
+        "warehouse_name": "南部仓",
+        "region_name": "Rio Grande do Sul",
+        "brand_name": "Brand_57",
+        "low_stock_items": 6
+      },
+      {
+        "warehouse_name": "南部仓",
+        "region_name": "Rio Grande do Sul",
+        "brand_name": "Brand_50",
+        "low_stock_items": 6
+      },
+      {
+        "warehouse_name": "米纳斯仓",
+        "region_name": "Minas Gerais",
+        "brand_name": "Brand_8",
+        "low_stock_items": 6
+      },
+      {
+        "warehouse_name": "南部仓",
+        "region_name": "Rio Grande do Sul",
+        "brand_name": "Brand_39",
+        "low_stock_items": 6
+      },
+      {
+        "warehouse_name": "圣保罗中心仓",
+        "region_name": "São Paulo",
+        "brand_name": "Brand_15",
+        "low_stock_items": 6
+      },
+      {
+        "warehouse_name": "里约分仓",
+        "region_name": "Rio de Janeiro",
+        "brand_name": "Brand_42",
+        "low_stock_items": 6
+      },
+      {
+        "warehouse_name": "里约分仓",
+        "region_name": "Rio de Janeiro",
+        "brand_name": "Brand_28",
+        "low_stock_items": 6
+      },
+      {
+        "warehouse_name": "圣保罗中心仓",
+        "region_name": "São Paulo",
+        "brand_name": "Brand_40",
+        "low_stock_items": 5
+      }
+    ],
+    "T5-009-contract": [
+      {
+        "warehouse_id": 3,
+        "region_code": "MG",
+        "brand_id": 17,
+        "low_stock_items": 8
+      },
+      {
+        "warehouse_id": 4,
+        "region_code": "RS",
+        "brand_id": 30,
+        "low_stock_items": 8
+      },
+      {
+        "warehouse_id": 3,
+        "region_code": "MG",
+        "brand_id": 53,
+        "low_stock_items": 8
+      },
+      {
+        "warehouse_id": 4,
+        "region_code": "RS",
+        "brand_id": 18,
+        "low_stock_items": 7
+      },
+      {
+        "warehouse_id": 3,
+        "region_code": "MG",
+        "brand_id": 34,
+        "low_stock_items": 7
+      },
+      {
+        "warehouse_id": 1,
+        "region_code": "SP",
+        "brand_id": 18,
+        "low_stock_items": 7
+      },
+      {
+        "warehouse_id": 2,
+        "region_code": "RJ",
+        "brand_id": 43,
+        "low_stock_items": 7
+      },
+      {
+        "warehouse_id": 5,
+        "region_code": "BA",
+        "brand_id": 29,
+        "low_stock_items": 7
+      },
+      {
+        "warehouse_id": 1,
+        "region_code": "SP",
+        "brand_id": 15,
+        "low_stock_items": 6
+      },
+      {
+        "warehouse_id": 2,
+        "region_code": "RJ",
+        "brand_id": 55,
+        "low_stock_items": 6
+      },
+      {
+        "warehouse_id": 3,
+        "region_code": "MG",
+        "brand_id": 8,
+        "low_stock_items": 6
+      },
+      {
+        "warehouse_id": 4,
+        "region_code": "RS",
+        "brand_id": 57,
+        "low_stock_items": 6
+      },
+      {
+        "warehouse_id": 4,
+        "region_code": "RS",
+        "brand_id": 39,
+        "low_stock_items": 6
+      },
+      {
+        "warehouse_id": 2,
+        "region_code": "RJ",
+        "brand_id": 42,
+        "low_stock_items": 6
+      },
+      {
+        "warehouse_id": 2,
+        "region_code": "RJ",
+        "brand_id": 28,
+        "low_stock_items": 6
+      },
+      {
+        "warehouse_id": 5,
+        "region_code": "BA",
+        "brand_id": 59,
+        "low_stock_items": 6
+      },
+      {
+        "warehouse_id": 4,
+        "region_code": "RS",
+        "brand_id": 50,
+        "low_stock_items": 6
+      },
+      {
+        "warehouse_id": 5,
+        "region_code": "BA",
+        "brand_id": 52,
+        "low_stock_items": 6
+      },
+      {
+        "warehouse_id": 2,
+        "region_code": "RJ",
+        "brand_id": 4,
+        "low_stock_items": 6
+      },
+      {
+        "warehouse_id": 3,
+        "region_code": "MG",
+        "brand_id": 2,
+        "low_stock_items": 5
+      }
+    ],
+    "T5-012-gold": [
+      {
+        "tag_name": "活跃评价用户",
+        "members": 95380,
+        "avg_item_price": "120.55"
+      },
+      {
+        "tag_name": "流失风险用户",
+        "members": 65998,
+        "avg_item_price": "120.82"
+      },
+      {
+        "tag_name": "价格敏感用户",
+        "members": 23004,
+        "avg_item_price": "104.28"
+      },
+      {
+        "tag_name": "高价值用户",
+        "members": 19299,
+        "avg_item_price": "120.45"
+      },
+      {
+        "tag_name": "新客",
+        "members": 11615,
+        "avg_item_price": "120.43"
+      },
+      {
+        "tag_name": "复购用户",
+        "members": 2997,
+        "avg_item_price": "102.91"
+      }
+    ],
+    "T5-012-contract": [
+      {
+        "tag_id": 6,
+        "members": 95380,
+        "avg_item_price": "120.55"
+      },
+      {
+        "tag_id": 2,
+        "members": 65998,
+        "avg_item_price": "120.82"
+      },
+      {
+        "tag_id": 3,
+        "members": 23004,
+        "avg_item_price": "104.28"
+      },
+      {
+        "tag_id": 1,
+        "members": 19299,
+        "avg_item_price": "120.45"
+      },
+      {
+        "tag_id": 4,
+        "members": 11615,
+        "avg_item_price": "120.43"
+      },
+      {
+        "tag_id": 5,
+        "members": 2997,
+        "avg_item_price": "102.91"
+      }
+    ],
+    "T6-015-gold": [
+      {
+        "category_name": "退款咨询",
+        "sla_pct": "32.39"
+      },
+      {
+        "category_name": "账号问题",
+        "sla_pct": "32.55"
+      },
+      {
+        "category_name": "物流延迟",
+        "sla_pct": "33.50"
+      },
+      {
+        "category_name": "其他",
+        "sla_pct": "37.18"
+      },
+      {
+        "category_name": "商品质量问题",
+        "sla_pct": "37.96"
+      },
+      {
+        "category_name": "发票问题",
+        "sla_pct": "40.09"
+      }
+    ],
+    "T6-015-contract": [
+      {
+        "category_id": 3,
+        "sla_pct": "32.39"
+      },
+      {
+        "category_id": 5,
+        "sla_pct": "32.55"
+      },
+      {
+        "category_id": 1,
+        "sla_pct": "33.50"
+      },
+      {
+        "category_id": 6,
+        "sla_pct": "37.18"
+      },
+      {
+        "category_id": 2,
+        "sla_pct": "37.96"
+      },
+      {
+        "category_id": 4,
+        "sla_pct": "40.09"
+      }
+    ],
+    "T4-013-gold": [
+      {
+        "customer_state": "SP",
+        "cnt": 5265
+      },
+      {
+        "customer_state": "RJ",
+        "cnt": 2647
+      },
+      {
+        "customer_state": "MG",
+        "cnt": 1546
+      },
+      {
+        "customer_state": "RS",
+        "cnt": 732
+      },
+      {
+        "customer_state": "BA",
+        "cnt": 634
+      },
+      {
+        "customer_state": "PR",
+        "cnt": 629
+      },
+      {
+        "customer_state": "SC",
+        "cnt": 532
+      },
+      {
+        "customer_state": "DF",
+        "cnt": 323
+      },
+      {
+        "customer_state": "ES",
+        "cnt": 300
+      },
+      {
+        "customer_state": "GO",
+        "cnt": 300
+      },
+      {
+        "customer_state": "PE",
+        "cnt": 274
+      },
+      {
+        "customer_state": "CE",
+        "cnt": 264
+      },
+      {
+        "customer_state": "PA",
+        "cnt": 190
+      },
+      {
+        "customer_state": "MA",
+        "cnt": 162
+      },
+      {
+        "customer_state": "MT",
+        "cnt": 124
+      },
+      {
+        "customer_state": "MS",
+        "cnt": 104
+      },
+      {
+        "customer_state": "AL",
+        "cnt": 99
+      },
+      {
+        "customer_state": "PI",
+        "cnt": 90
+      },
+      {
+        "customer_state": "PB",
+        "cnt": 88
+      },
+      {
+        "customer_state": "SE",
+        "cnt": 76
+      },
+      {
+        "customer_state": "RN",
+        "cnt": 68
+      },
+      {
+        "customer_state": "RO",
+        "cnt": 39
+      },
+      {
+        "customer_state": "TO",
+        "cnt": 38
+      },
+      {
+        "customer_state": "AM",
+        "cnt": 22
+      },
+      {
+        "customer_state": "AC",
+        "cnt": 13
+      },
+      {
+        "customer_state": "RR",
+        "cnt": 11
+      },
+      {
+        "customer_state": "AP",
+        "cnt": 5
+      }
+    ],
+    "T4-013-contract": [
+      {
+        "customer_state": "SP",
+        "cnt": 5251
+      },
+      {
+        "customer_state": "RJ",
+        "cnt": 2634
+      },
+      {
+        "customer_state": "MG",
+        "cnt": 1542
+      },
+      {
+        "customer_state": "RS",
+        "cnt": 730
+      },
+      {
+        "customer_state": "BA",
+        "cnt": 633
+      },
+      {
+        "customer_state": "PR",
+        "cnt": 627
+      },
+      {
+        "customer_state": "SC",
+        "cnt": 529
+      },
+      {
+        "customer_state": "DF",
+        "cnt": 323
+      },
+      {
+        "customer_state": "ES",
+        "cnt": 300
+      },
+      {
+        "customer_state": "GO",
+        "cnt": 300
+      },
+      {
+        "customer_state": "PE",
+        "cnt": 274
+      },
+      {
+        "customer_state": "CE",
+        "cnt": 263
+      },
+      {
+        "customer_state": "PA",
+        "cnt": 190
+      },
+      {
+        "customer_state": "MA",
+        "cnt": 162
+      },
+      {
+        "customer_state": "MT",
+        "cnt": 124
+      },
+      {
+        "customer_state": "MS",
+        "cnt": 104
+      },
+      {
+        "customer_state": "AL",
+        "cnt": 98
+      },
+      {
+        "customer_state": "PI",
+        "cnt": 90
+      },
+      {
+        "customer_state": "PB",
+        "cnt": 88
+      },
+      {
+        "customer_state": "SE",
+        "cnt": 76
+      },
+      {
+        "customer_state": "RN",
+        "cnt": 68
+      },
+      {
+        "customer_state": "RO",
+        "cnt": 39
+      },
+      {
+        "customer_state": "TO",
+        "cnt": 38
+      },
+      {
+        "customer_state": "AM",
+        "cnt": 21
+      },
+      {
+        "customer_state": "AC",
+        "cnt": 13
+      },
+      {
+        "customer_state": "RR",
+        "cnt": 11
+      },
+      {
+        "customer_state": "AP",
+        "cnt": 5
+      }
+    ],
+    "T6-013-gold": [
+      {
+        "gmv": "1930583.35",
+        "discount": "473711.60",
+        "discount_pct": "24.54"
+      }
+    ],
+    "T6-013-contract": [
+      {
+        "gmv": "1930583.35",
+        "discount": "417833.13",
+        "discount_pct": "21.64"
+      }
+    ],
+    "T3-014-gold": [
+      {
+        "week_start": "2018-07-16",
+        "sales": "91737.32"
+      },
+      {
+        "week_start": "2018-07-23",
+        "sales": "242163.15"
+      },
+      {
+        "week_start": "2018-07-30",
+        "sales": "276573.90"
+      },
+      {
+        "week_start": "2018-08-06",
+        "sales": "279889.59"
+      },
+      {
+        "week_start": "2018-08-13",
+        "sales": "245609.63"
+      },
+      {
+        "week_start": "2018-08-20",
+        "sales": "126434.29"
+      },
+      {
+        "week_start": "2018-08-27",
+        "sales": "10565.86"
+      },
+      {
+        "week_start": "2018-09-03",
+        "sales": "145.00"
+      }
+    ],
+    "T3-014-contract": [
+      {
+        "week_start": "2018-07-16",
+        "sales": "80898.44"
+      },
+      {
+        "week_start": "2018-07-23",
+        "sales": "242163.15"
+      },
+      {
+        "week_start": "2018-07-30",
+        "sales": "276573.90"
+      },
+      {
+        "week_start": "2018-08-06",
+        "sales": "279889.59"
+      },
+      {
+        "week_start": "2018-08-13",
+        "sales": "245609.63"
+      },
+      {
+        "week_start": "2018-08-20",
+        "sales": "126434.29"
+      },
+      {
+        "week_start": "2018-08-27",
+        "sales": "10565.86"
+      },
+      {
+        "week_start": "2018-09-03",
+        "sales": "145.00"
+      }
+    ],
+    "review-grain": [
+      {
+        "review_rows": 14575,
+        "distinct_orders": 14533
+      }
+    ],
+    "coupon-campaign-multiplicity": [
+      {
+        "duplicate_campaign_order_pairs": 0
+      }
+    ],
+    "snapshot-multiplicity": [
+      {
+        "rows": 38471,
+        "members": 38471,
+        "null_dates": 0
+      }
+    ],
+    "search-click-coverage": [
+      {
+        "clicked": 8651,
+        "missing_member": 0,
+        "missing_level": 0
+      }
+    ],
+    "customer-order-coincidence": [
+      {
+        "customers": 99441,
+        "orders": 99441,
+        "without_orders": 0,
+        "multiple_orders": 0
+      }
+    ],
+    "registration-null": [
+      {
+        "null_registration": 0
+      }
+    ],
+    "order-item-population": [
+      {
+        "all_orders": 99441,
+        "without_items": 775
+      }
+    ],
+    "display-name-uniqueness": [
+      {
+        "entity": "user_tags",
+        "rows": 6,
+        "names": 6
+      },
+      {
+        "entity": "ticket_categories",
+        "rows": 6,
+        "names": 6
+      },
+      {
+        "entity": "warehouses",
+        "rows": 5,
+        "names": 5
+      },
+      {
+        "entity": "campaigns",
+        "rows": 52,
+        "names": 52
+      },
+      {
+        "entity": "member_levels",
+        "rows": 4,
+        "names": 4
+      }
+    ],
+    "T1-012-cutoff": [
+      {
+        "cutoff": "3999.90",
+        "candidates": 112650,
+        "strictly_above": 9,
+        "tied_at_cutoff": 1,
+        "limit": 10,
+        "ambiguousMembership": false
+      }
+    ],
+    "T1-016-cutoff": [
+      {
+        "cutoff": 24,
+        "candidates": 103886,
+        "strictly_above": 0,
+        "tied_at_cutoff": 18,
+        "limit": 1,
+        "ambiguousMembership": true
+      }
+    ],
+    "T2-008-cutoff": [
+      {
+        "cutoff": 5045,
+        "candidates": 27,
+        "strictly_above": 4,
+        "tied_at_cutoff": 1,
+        "limit": 5,
+        "ambiguousMembership": false
+      }
+    ],
+    "T2-011-cutoff": [
+      {
+        "cutoff": "135171.70",
+        "candidates": 3095,
+        "strictly_above": 9,
+        "tied_at_cutoff": 1,
+        "limit": 10,
+        "ambiguousMembership": false
+      }
+    ],
+    "T2-035-cutoff": [
+      {
+        "cutoff": 774,
+        "candidates": 10,
+        "strictly_above": 9,
+        "tied_at_cutoff": 1,
+        "limit": 10,
+        "ambiguousMembership": false
+      }
+    ],
+    "T3-005-cutoff": [
+      {
+        "cutoff": 3008,
+        "candidates": 101,
+        "strictly_above": 0,
+        "tied_at_cutoff": 1,
+        "limit": 1,
+        "ambiguousMembership": false
+      }
+    ],
+    "T3-016-cutoff": [
+      {
+        "cutoff": 16196,
+        "candidates": 7,
+        "strictly_above": 0,
+        "tied_at_cutoff": 1,
+        "limit": 1,
+        "ambiguousMembership": false
+      }
+    ],
+    "T4-004-cutoff": [
+      {
+        "cutoff": "1258681.34",
+        "candidates": 71,
+        "strictly_above": 0,
+        "tied_at_cutoff": 1,
+        "limit": 1,
+        "ambiguousMembership": false
+      }
+    ],
+    "T4-035-cutoff": [
+      {
+        "cutoff": "4445.50",
+        "candidates": 94983,
+        "strictly_above": 9,
+        "tied_at_cutoff": 1,
+        "limit": 10,
+        "ambiguousMembership": false
+      }
+    ],
+    "T4-037-cutoff": [
+      {
+        "cutoff": 274,
+        "candidates": 32951,
+        "strictly_above": 9,
+        "tied_at_cutoff": 1,
+        "limit": 10,
+        "ambiguousMembership": false
+      }
+    ],
+    "T5-003-cutoff": [
+      {
+        "cutoff": "13359.56",
+        "candidates": 66,
+        "strictly_above": 14,
+        "tied_at_cutoff": 1,
+        "limit": 15,
+        "ambiguousMembership": false
+      }
+    ],
+    "T5-005-cutoff": [
+      {
+        "cutoff": "35861.04",
+        "candidates": 52,
+        "strictly_above": 9,
+        "tied_at_cutoff": 1,
+        "limit": 10,
+        "ambiguousMembership": false
+      }
+    ],
+    "T5-007-cutoff": [
+      {
+        "cutoff": 77,
+        "candidates": 546,
+        "strictly_above": 16,
+        "tied_at_cutoff": 4,
+        "limit": 20,
+        "ambiguousMembership": false
+      }
+    ],
+    "T5-009-cutoff": [
+      {
+        "cutoff": 5,
+        "candidates": 282,
+        "strictly_above": 19,
+        "tied_at_cutoff": 19,
+        "limit": 20,
+        "ambiguousMembership": true
+      }
+    ],
+    "T5-010-cutoff": [
+      {
+        "cutoff": "3422.16",
+        "candidates": 2131,
+        "strictly_above": 19,
+        "tied_at_cutoff": 1,
+        "limit": 20,
+        "ambiguousMembership": false
+      }
+    ],
+    "T5-016-cutoff": [
+      {
+        "cutoff": "9490.91",
+        "candidates": 228,
+        "strictly_above": 19,
+        "tied_at_cutoff": 1,
+        "limit": 20,
+        "ambiguousMembership": false
+      }
+    ],
+    "T5-018-cutoff": [
+      {
+        "cutoff": 413,
+        "candidates": 27,
+        "strictly_above": 19,
+        "tied_at_cutoff": 1,
+        "limit": 20,
+        "ambiguousMembership": false
+      }
+    ],
+    "T6-019-cutoff": [
+      {
+        "cutoff": "20.43",
+        "candidates": 27,
+        "strictly_above": 9,
+        "tied_at_cutoff": 1,
+        "limit": 10,
+        "ambiguousMembership": false
+      }
+    ]
+  }
+}
