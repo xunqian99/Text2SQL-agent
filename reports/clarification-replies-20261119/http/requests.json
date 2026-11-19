@@ -1,0 +1,2045 @@
+[ {
+  "httpStatus" : 200,
+  "id" : "original-explicit",
+  "expectedClarification" : false,
+  "decision" : [ {
+    "term" : "复购率",
+    "matchedTerm" : "复购率",
+    "evidence" : [ {
+      "source" : "required-pattern",
+      "group" : "denominator",
+      "matchedText" : "占全部下单用户"
+    } ],
+    "missingGroups" : [ ],
+    "unresolvedEvidence" : [ ],
+    "needsClarification" : false,
+    "question" : "「复购率」的分母是全部下单用户，还是注册满一定天数的用户？两者差异很大，请确认。"
+  } ],
+  "sessionTurns" : 1,
+  "body" : {
+    "status" : "SUCCESS",
+    "sql" : "SELECT 1 AS controlled_answer LIMIT 201",
+    "message" : null,
+    "violations" : [ ],
+    "columns" : [ "controlled_answer" ],
+    "rows" : [ [ "1" ] ],
+    "truncated" : false,
+    "rewritten" : true,
+    "rowCount" : 1,
+    "schemaTableCount" : 8,
+    "retrievedTables" : [ "customers", "orders", "order_items", "order_payments", "order_reviews", "coupon_usages", "members", "refund_items" ],
+    "schemaDdlChars" : 1589,
+    "llm" : {
+      "model" : "deepseek-flash",
+      "promptTokens" : 10,
+      "completionTokens" : 5,
+      "totalTokens" : 15,
+      "latencyMs" : 48,
+      "costYuan" : 0.02
+    },
+    "timings" : {
+      "retrievalMs" : 152,
+      "generationMs" : 69,
+      "validationMs" : 20,
+      "executionMs" : 70,
+      "totalMs" : 333
+    },
+    "sessionId" : "clarification-original-explicit",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "46444649-1878-472e-9ee8-a371c7073366",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 1,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 333,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "SESSION" : 0,
+        "ADMISSION" : 7,
+        "VALIDATION" : 15,
+        "EXPLAIN" : 61,
+        "CLARIFICATION" : 5,
+        "CACHE_WRITE" : 0,
+        "RESULT_CHECK" : 5,
+        "RETRIEVAL" : 152,
+        "CONVERSATION" : 7,
+        "CACHE" : 0,
+        "GENERATION" : 35,
+        "MODEL" : 34,
+        "EXECUTION" : 9
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 22,
+      "currentStageMs" : 7
+    }
+  },
+  "prompt" : "你是一个 PostgreSQL 数据分析助手。你的唯一任务是把用户的中文问题翻译成一条可执行的 SQL。\n\n思考与推理步骤（Chain-of-Thought 思维链）：\n在编写 SQL 前，请严格按以下四步逻辑进行推导：\n1. 识别实体与目标表：从问题中提取核心业务实体，锁定需要的表；\n2. 规划连接路径：多表查询时，参考 JOIN PLAN 与 FOREIGN KEYS 确定连接键，防止过度连接或笛卡尔积；\n3. 对齐过滤条件：涉及状态、编码或业务指标时，严格按「字段枚举对齐」与 METRICS 表达式对齐物理值；\n4. 确定维度与聚合：确定 GROUP BY 维度、聚合函数与排序规则，仅投影问题真正需要的字段。\n\n硬性规则：\n1. 只输出一条 SELECT 语句，不要输出 INSERT/UPDATE/DELETE/DROP/ALTER/TRUNCATE。\n2. 不要输出任何代码围栏外解释或闲聊文本，直接输出可执行的 SQL 语句。\n3. 必须带 LIMIT，除非结果是单行聚合值（如 COUNT/SUM/AVG 且无 GROUP BY）。\n4. 只使用下面 schema 里真实存在的表和列，不要臆造字段名。\n5. 表名和列名一律用小写，不要加引号。\n6. 遇到多表查询时，优先参考 JOIN PLAN（推荐的连接顺序）或 FOREIGN KEYS 里给出的关联关系。\n7. 如果下面给出了 METRICS（业务指标定义），在用户未明确指定其他特殊口径时，默认遵循其表达式与过滤条件；若用户明确指定了自定义计算方式（如指定按订单平均金额计算客单价等），以用户明确说明为准。\n   事实筛选必须有用户请求或当前业务契约的依据；schema列出某状态枚举，不代表问题要求只统计该状态。不能自行补充“已完成”“有效”“非空”等记录过滤而缩小统计范围；明确请求或业务契约已有的过滤继续执行。\n8. SELECT 列表只放问题真正要求的内容。问题问「多少 / 哪些指标 / 平均是多少」时，\n   只输出维度列和指标列；用户明确指定维度名称、编号、编码或输出列时，以用户要求为准，不顺手附加其他展示列。\n   【维度投影原则】用户未明确要求名称时，默认使用当前事实或实体表已有的标识列作为维度输出，不为展示补关联或同时附加名称；状态、州代码、分类值等有业务含义的维度沿用原值。用户明确要求名称时，才使用当前schema中的名称列及可靠关联键，不臆造名称或引用上下文之外的表列。\n   内部仍按完整实体主键区分，不能因同名而合并实体，只有明确按名称汇总时才合并。为获取明确要求的名称关联维表时，保留未匹配事实及NULL名称，不因INNER JOIN、重复维表或名称过滤改变统计覆盖与金额；无法确认唯一匹配时不能任意取一个名称。明确要求仅匹配名称的对象时服从用户范围。\n   筛选条件、分组身份和中间计算字段不自动成为输出列。只问两期差额或增长率时，不附加两期原始数值；明确要求两期数值及差额/增长率时才全部输出。\n   【实体寻优规范】问「最...的那一笔/哪一个」特定实体（如“分期数最多的那一笔支付分了多少期”）时，\n   属于单条记录寻优，使用 ORDER BY ... DESC LIMIT 1 并保留实体标识（如 order_id）与指标列，不要写成纯 MAX()。\n\n9. 聚合粒度必须与问题的「每个…」一致。GROUP BY 的列要和 SELECT 里的维度列对应，\n   不要多分一层，也不要把分组列换成另一张表里的等价列。\n   - 「每个活动/卖家/标签」等实体按完整主键区分；名称是展示属性，不保证唯一。可按主键和名称分组，不能仅因同名就合并实体；明确按名称汇总时才合并。不为分组身份额外投影用户未要求的列。\n   - 预算等实体自带数值不随子表明细累加；先在原事实粒度计算，再关联。SUM(DISTINCT 金额)会误删金额相同的不同事实，不能用来抵消关联放大。\n   - 同一请求的每个指标分别确定事实全集。统计标签覆盖会员数及其商品均价时，会员数包括无订单会员，均价只统计存在的商品价格；用LEFT JOIN保留会员或分别聚合再合并，避免INNER JOIN缩小会员全集。只有用户明确要求有订单/有商品的会员时才限缩；右表条件放ON或对应聚合内，不能在WHERE中误删左侧记录。没有价格时均价为NULL，不能把空值补0参与平均。\n10. 计数口径规范：\n   - 先确定每个计数的对象与身份：记录数、不同实体数和业务身份去重人数不是同一度量；用户明确单位优先，其次遵循当前业务契约，不能用一个计数方式覆盖同一结果的所有指标。\n   - 统计源表记录且连接不重复该记录时用 COUNT(*)；连接可能重复记录时按源表完整主键去重或先聚合。仅有外键不保证子表关联键唯一，不能据此假定一对一。\n   - 统计满足条件的不同订单时按订单主键去重或使用 EXISTS 筛选订单；同一订单可有多条评价/明细，评价记录数保留每条评价，订单数只计一次。单表上的业务身份去重也须使用对应身份列，不以是否存在JOIN为前提。\n   - 去重不得改变过滤、事实覆盖或分母；NULL身份不自动合并成一个实体，空集合计数为0。组合主键须保留全部分量，不用字符串拼接假造唯一键。\n11. 不要为了「信息更全」而加列、加分组或加排序。评估比的是结果集，\n   多一列和少一列都算错。\n12. 比例与精度口径：\n   - 单位优先级：用户明确指定的单位 > 当前METRIC的默认输出单位 > 通用比例默认值；每个指标分别处理，不把某一列的单位应用到其他列。指标名称本身不算显式单位覆盖。\n   - 用户明确要求百分比/%时输出百分数数值；明确要求0到1/小数比率时输出原始比值。覆盖指标默认单位时同步转换表达式、精度和列别名，参考示例与推荐查询不能覆盖用户要求。\n   - 对已注册指标，遵循其outputUnit/outputScale（如PERCENT按100倍比值、DECIMAL_RATIO按原始比值），不因题干出现「比例」就改用另一单位；未注册指标的普通比例默认输出小数比率、四位小数，明确百分比时乘100、两位小数。分母为零用NULLIF返回NULL，不伪装成0。\n   - 其余一般金额、单价、平均值，统一用 ROUND(表达式, 2) 保留两位小数。\n   - 【PostgreSQL 严格类型约束】PostgreSQL 的 ROUND(val, n) 仅接受 NUMERIC 类型！若表达式涉及 EXTRACT(EPOCH FROM ...) 或浮点计算/AVG，返回值是 DOUBLE PRECISION，必须显式加 ::NUMERIC 转换（例如 ROUND((AVG(EXTRACT(EPOCH FROM ...)) / 86400.0)::NUMERIC, 2)），绝对禁止对 DOUBLE PRECISION 直接传 2 个参数调用 ROUND。\n13. 按时间分组与时间字段选择：\n   - 按年比较或年度分组时，默认用 EXTRACT(YEAR FROM 时间列)::int 输出整数年份（如2017），不要用年初时间戳代替年份标签；用户明确要求年初日期/时间戳时才用 DATE_TRUNC('year', 时间列) 并按要求转换类型。\n   - 按季度分组时，默认用 DATE_TRUNC('quarter', 时间列) 输出一个季度起始时间戳；用户明确要求年/季度编号或标签时按要求输出，不仅用季度编号合并不同年份。\n   - 星期维度默认用 EXTRACT(DOW FROM 时间列)::int 输出编号（周日0、周一1至周六6）；用户明确要求ISO编号（周一1至周日7）或中文名称时按要求输出。\n   - 用 DATE_TRUNC('month'|'week'|'day', 时间列) 作为分组列，不要用 to_char 把时间转成 'YYYY-MM' 这类字符串。\n   - 问题涉及各月/每个月/每周等周期统计时，若表内有自身的业务时间字段（如 refunds.requested_at, support_tickets.created_at, members.register_date, settlements.period_start），优先使用本表对应业务时间，不要无故关联 orders 表。\n14. 时间窗口过滤用 >= 起点 AND < 终点（左闭右开），不要用 BETWEEN：\n   BETWEEN 会把终点那一整天的数据也算进来。\n15. 如果下面给出了「字段枚举与实体取值对齐」，WHERE 过滤条件中涉及该实体时，\n   **必须严格使用对应的物理字段与取值**（例如使用 customer_state = 'SP' 而不是 '圣保罗'）。\n16. 实体与明细字段指引：\n   - 查询订单明细的价格/销售金额时，直接使用 order_items 表及其 price 列；仅在明确提到卖家结算、抽成或对账时才使用 settlements / settlement_items。\n   - 查询承运商配送时长时，直接使用 shipments 表的 (delivered_at - shipped_at)，无需关联轨迹表。\n   - 工单实际处理时长计算用 support_tickets 表的 (resolved_at - created_at)；ticket_categories.sla_hours 仅为时限标准而非实际耗时。\n17. 对比结果的列与行契约：\n   - 用户明确要求横表/纵表、指定列或每个条件一行时，以该要求为准；其次遵循已注册METRIC的输出形状，最后才使用以下默认约定。形状选择不能改动时间范围、事实粒度、过滤、分母或单位。\n   - 按时间比较同一指标，或明确要求按维度分组/每种/分布时，输出维度列、指标列，每个维度值一行；时间维度按时间升序。不要因为列举了年份就自动转成多列。\n   - 未要求分组、只点名多个非时间业务子集的记录计数时，将它们作为多个具名计数指标，一行内按题目点名顺序各占一列；用条件聚合分别计数，不额外投影状态/类型列。某子集无记录计为0，空输入也返回一行各计数为0；不要因一组为空丢掉该计数。\n   - 多个不同指标按题目顺序各占一列；若同时要求每州/每月等分组，则每组一行、组内各指标一列。不要把GMV与销售额强行变成维度行，也不要把复购率等非计数指标套用具名子集计数规则。\n18. 复杂多表关联时，可在 SELECT 语句首行添加一行以 -- 开头的单行注释说明思路，之后紧接完整 SQL。\n=== 数据库 Schema ===\nTABLE customers\n  customer_id character varying\n  customer_unique_id character varying\n  customer_zip_code_prefix integer\n  customer_city character varying\n  PRIMARY KEY (customer_id)\n\nTABLE orders\n  order_id character varying\n  customer_id character varying\n  order_status character varying\n  order_purchase_timestamp timestamp without time zone\n  PRIMARY KEY (order_id)\n\nTABLE order_items\n  order_id character varying\n  order_item_id integer\n  product_id character varying\n  seller_id character varying\n  PRIMARY KEY (order_id, order_item_id)  -- 组合唯一，单列不保证唯一\n\nTABLE order_payments\n  order_id character varying\n  payment_sequential integer\n  payment_type character varying\n  payment_installments integer\n  PRIMARY KEY (order_id, payment_sequential)  -- 组合唯一，单列不保证唯一\n\nTABLE order_reviews\n  review_id character varying\n  order_id character varying\n  review_score integer\n  review_comment_title character varying\n  PRIMARY KEY (review_id, order_id)  -- 组合唯一，单列不保证唯一\n\nTABLE coupon_usages\n  usage_id bigint\n  coupon_id integer\n  order_id character varying\n  member_id bigint\n  PRIMARY KEY (usage_id)\n\nTABLE members\n  member_id bigint\n  customer_unique_id character varying\n  level_id integer\n  status smallint  -- 会员状态：1=正常 2=冻结 3=注销\n  PRIMARY KEY (member_id)\n\nTABLE refund_items\n  refund_id bigint\n  order_id character varying\n  order_item_id integer\n  refund_qty integer\n  PRIMARY KEY (refund_id, order_id, order_item_id)  -- 组合唯一，单列不保证唯一\n\n\nJOIN PLAN（推荐的连接顺序）\n  起点 customers\n  customers.customer_id = orders.customer_id   -- orders [FK]\n  -- 注意：还有 6 张表与起点不在同一连通分量，本段未给出连接顺序；它们的关联见上面的 JOINS。\n\n=== 数据画像 ===\n数据规模：orders 共 99441 行。\n时间范围：order_purchase_timestamp 从 2016-09-04 21:15:19.0 到 2018-10-17 17:30:18.0。\n【重要】这是历史快照数据，不是实时库。凡是\"最近 N 天/本月/上个月/今年\"\n这类相对时间，必须锚定到该表的最大时间，不能用 current_date / now()。\n\n=== 业务指标口径约定（数仓标准度量）===\n【使用原则】当用户问题涉及以下指标且未指定特殊计算口径时，遵循标准度量的表达式与过滤条件；若用户明确指明了特定的计算口径或聚合逻辑，以用户明确说明为准。\nMETRIC repeat_rate  -- 复购率 = 下单 2 次及以上的用户 / 全部下单用户\n  表达式: ROUND(COUNT(*) FILTER (WHERE order_cnt >= 2) * 100.0 / NULLIF(COUNT(*), 0), 2)\n  默认输出单位: PERCENT；保留 2 位小数。\n    百分数按100倍比值输出纯数值，例如比值0.25输出25，不附加%字符；增长率可为负或超过100。\n    此单位仅约束该指标，不影响同一结果的金额/数量/维度列；用户明确指定单位时覆盖默认值并同步转换表达式、精度和列别名，示例结构不能覆盖用户要求。\n  过滤条件（默认附加）: o.order_status NOT IN ('canceled', 'unavailable')\n    —— 例外：只有用户明确覆盖此过滤，或当前指标说明明确规定该场景例外时才省略。类目、年份等其他维度限定不能自动取消此过滤；与它共同限定事实集合。\n  【关键】统计单位是**人**（customer_unique_id）不是订单。\n  订单级 customer_id 每人只有一次，用它算复购率恒为 0。\n  先按人聚合出订单数，再判断 >= 2。\n\nENTITY_POLICY customer_identity_v2 -- customers\n  存储行/关联键：customers.customer_id；业务实体身份：customers.customer_unique_id。\n  populationCountUnit=ROW_KEY；该默认只作用于实体表记录集合的规模/属性分布计数，不覆盖已注册指标的分子分母。\n  未指定自然人/人数/业务身份去重的实体表规模及属性分布，默认统计存储记录：单独统计该表可COUNT(*)，一对多关联后按customers.customer_id去重避免放大；列名应体现记录单位，不把记录数宣称为自然人数。\n  明确问自然人、人数或业务身份去重时按customers.customer_unique_id；按每个实体汇总订单/消费等行为仍默认按业务实体身份分组，跨关联键识别同一实体。\n  用户明确指定按存储行/关联键统计时服从该要求，不擅自改成实体级统计。\n  显式字段/单位优先；同一请求同时要求记录数和人数时分别计算，不用一个默认覆盖所有指标。集合计数不授权改变过滤或JOIN覆盖。\n  本项目区分客户档案记录的规模与自然人行为：裸客户数/按属性分布默认数客户记录， 这是产品默认，不宣称“客户”一词只有这一种解释；明确自然人/人数/去重要求可覆盖默认。 同一自然人可以对应多个客户关联键，每客户订单数、复购、下单人数必须识别跨关联键的同一个人。 同一人可有不同州的客户记录；按州记录数按每条记录的州归属，按州人数则每州内独立去重， 同一人可参与多个州，不能把各州人数相加当全站去重人数，也不猜测“最新州”或唯一归属。 客户关联键仍用于连接订单，不能直接用它代表每个真实客户。 读取交易/事件所属客户记录的属性时，沿该事实的关联键定位customers.customer_id对应记录； customers.customer_unique_id用于身份去重或跨记录汇总，不授权改走其他实体反向匹配该身份的全部客户记录取属性。 同一自然人可对应多条属性不同的客户记录，不能猜测唯一或最新属性； COUNT(DISTINCT 事实主键)只能消除同组重复，不能修复错误属性分组或金额放大。 用户明确要求跨记录属性分布时另按该范围计算。 人数和按人分组时不把SQL NULL身份合并成一个人；默认只统计已知身份， 用户明确要求未知身份分组时可单列未知组，但不能把它称为一个真实客户。 这不授权过滤未按人分组的订单总数或金额，不自动排除取消订单，也不替代指标已有过滤。 关联一对多明细后统计订单数须按订单主键去重，不能把明细行当成订单； 金额聚合须在正确事实粒度处理连接放大，不能用SUM(DISTINCT 金额)误删等额交易。 若要求所有客户含零订单，从客户侧保留无订单者且COUNT订单主键，不用COUNT(*)把空连接计为一单。\n\n=== 参考示例 ===\n问题: 每个会员等级对应的商品销售额是多少？\nSQL: SELECT ml.level_name, ROUND(SUM(oi.price), 2) AS sales\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN members m ON m.customer_unique_id = c.customer_unique_id\nJOIN member_levels ml ON ml.level_id = m.level_id\nJOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY sales DESC;\n---\n问题: 每个州的评价平均分是多少？取评价数最多的 10 个州。\nSQL: SELECT c.customer_state, ROUND(AVG(r.review_score), 2) AS avg_score, COUNT(*) AS cnt\nFROM order_reviews r\nJOIN orders o ON o.order_id = r.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY 1 ORDER BY cnt DESC LIMIT 10;\n---\n\n=== 用户问题 ===\n复购率是多少？（下单 2 次及以上的用户占全部下单用户的比例）\n",
+  "question" : "复购率是多少？（下单 2 次及以上的用户占全部下单用户的比例）"
+}, {
+  "httpStatus" : 200,
+  "id" : "alias-explicit",
+  "expectedClarification" : false,
+  "decision" : [ {
+    "term" : "复购率",
+    "matchedTerm" : "回购率",
+    "evidence" : [ {
+      "source" : "required-pattern",
+      "group" : "denominator",
+      "matchedText" : "全部下单用户为分母"
+    } ],
+    "missingGroups" : [ ],
+    "unresolvedEvidence" : [ ],
+    "needsClarification" : false,
+    "question" : "「复购率」的分母是全部下单用户，还是注册满一定天数的用户？两者差异很大，请确认。"
+  } ],
+  "sessionTurns" : 1,
+  "body" : {
+    "status" : "SUCCESS",
+    "sql" : "SELECT 1 AS controlled_answer LIMIT 201",
+    "message" : null,
+    "violations" : [ ],
+    "columns" : [ "controlled_answer" ],
+    "rows" : [ [ "1" ] ],
+    "truncated" : false,
+    "rewritten" : true,
+    "rowCount" : 1,
+    "schemaTableCount" : 8,
+    "retrievedTables" : [ "orders", "customers", "order_items", "order_payments", "order_reviews", "coupon_usages", "refund_items", "refunds" ],
+    "schemaDdlChars" : 1651,
+    "llm" : {
+      "model" : "deepseek-flash",
+      "promptTokens" : 10,
+      "completionTokens" : 5,
+      "totalTokens" : 15,
+      "latencyMs" : 9,
+      "costYuan" : 0.02
+    },
+    "timings" : {
+      "retrievalMs" : 11,
+      "generationMs" : 11,
+      "validationMs" : 3,
+      "executionMs" : 3,
+      "totalMs" : 32
+    },
+    "sessionId" : "clarification-alias-explicit",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "27b57e61-c56a-40ae-9908-de595b20b6e1",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 1,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 32,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "SESSION" : 0,
+        "ADMISSION" : 0,
+        "VALIDATION" : 3,
+        "EXPLAIN" : 2,
+        "CLARIFICATION" : 0,
+        "CACHE_WRITE" : 0,
+        "RESULT_CHECK" : 0,
+        "RETRIEVAL" : 11,
+        "CONVERSATION" : 0,
+        "CACHE" : 0,
+        "GENERATION" : 7,
+        "MODEL" : 4,
+        "EXECUTION" : 1
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 4,
+      "currentStageMs" : 0
+    }
+  },
+  "prompt" : "你是一个 PostgreSQL 数据分析助手。你的唯一任务是把用户的中文问题翻译成一条可执行的 SQL。\n\n思考与推理步骤（Chain-of-Thought 思维链）：\n在编写 SQL 前，请严格按以下四步逻辑进行推导：\n1. 识别实体与目标表：从问题中提取核心业务实体，锁定需要的表；\n2. 规划连接路径：多表查询时，参考 JOIN PLAN 与 FOREIGN KEYS 确定连接键，防止过度连接或笛卡尔积；\n3. 对齐过滤条件：涉及状态、编码或业务指标时，严格按「字段枚举对齐」与 METRICS 表达式对齐物理值；\n4. 确定维度与聚合：确定 GROUP BY 维度、聚合函数与排序规则，仅投影问题真正需要的字段。\n\n硬性规则：\n1. 只输出一条 SELECT 语句，不要输出 INSERT/UPDATE/DELETE/DROP/ALTER/TRUNCATE。\n2. 不要输出任何代码围栏外解释或闲聊文本，直接输出可执行的 SQL 语句。\n3. 必须带 LIMIT，除非结果是单行聚合值（如 COUNT/SUM/AVG 且无 GROUP BY）。\n4. 只使用下面 schema 里真实存在的表和列，不要臆造字段名。\n5. 表名和列名一律用小写，不要加引号。\n6. 遇到多表查询时，优先参考 JOIN PLAN（推荐的连接顺序）或 FOREIGN KEYS 里给出的关联关系。\n7. 如果下面给出了 METRICS（业务指标定义），在用户未明确指定其他特殊口径时，默认遵循其表达式与过滤条件；若用户明确指定了自定义计算方式（如指定按订单平均金额计算客单价等），以用户明确说明为准。\n   事实筛选必须有用户请求或当前业务契约的依据；schema列出某状态枚举，不代表问题要求只统计该状态。不能自行补充“已完成”“有效”“非空”等记录过滤而缩小统计范围；明确请求或业务契约已有的过滤继续执行。\n8. SELECT 列表只放问题真正要求的内容。问题问「多少 / 哪些指标 / 平均是多少」时，\n   只输出维度列和指标列；用户明确指定维度名称、编号、编码或输出列时，以用户要求为准，不顺手附加其他展示列。\n   【维度投影原则】用户未明确要求名称时，默认使用当前事实或实体表已有的标识列作为维度输出，不为展示补关联或同时附加名称；状态、州代码、分类值等有业务含义的维度沿用原值。用户明确要求名称时，才使用当前schema中的名称列及可靠关联键，不臆造名称或引用上下文之外的表列。\n   内部仍按完整实体主键区分，不能因同名而合并实体，只有明确按名称汇总时才合并。为获取明确要求的名称关联维表时，保留未匹配事实及NULL名称，不因INNER JOIN、重复维表或名称过滤改变统计覆盖与金额；无法确认唯一匹配时不能任意取一个名称。明确要求仅匹配名称的对象时服从用户范围。\n   筛选条件、分组身份和中间计算字段不自动成为输出列。只问两期差额或增长率时，不附加两期原始数值；明确要求两期数值及差额/增长率时才全部输出。\n   【实体寻优规范】问「最...的那一笔/哪一个」特定实体（如“分期数最多的那一笔支付分了多少期”）时，\n   属于单条记录寻优，使用 ORDER BY ... DESC LIMIT 1 并保留实体标识（如 order_id）与指标列，不要写成纯 MAX()。\n\n9. 聚合粒度必须与问题的「每个…」一致。GROUP BY 的列要和 SELECT 里的维度列对应，\n   不要多分一层，也不要把分组列换成另一张表里的等价列。\n   - 「每个活动/卖家/标签」等实体按完整主键区分；名称是展示属性，不保证唯一。可按主键和名称分组，不能仅因同名就合并实体；明确按名称汇总时才合并。不为分组身份额外投影用户未要求的列。\n   - 预算等实体自带数值不随子表明细累加；先在原事实粒度计算，再关联。SUM(DISTINCT 金额)会误删金额相同的不同事实，不能用来抵消关联放大。\n   - 同一请求的每个指标分别确定事实全集。统计标签覆盖会员数及其商品均价时，会员数包括无订单会员，均价只统计存在的商品价格；用LEFT JOIN保留会员或分别聚合再合并，避免INNER JOIN缩小会员全集。只有用户明确要求有订单/有商品的会员时才限缩；右表条件放ON或对应聚合内，不能在WHERE中误删左侧记录。没有价格时均价为NULL，不能把空值补0参与平均。\n10. 计数口径规范：\n   - 先确定每个计数的对象与身份：记录数、不同实体数和业务身份去重人数不是同一度量；用户明确单位优先，其次遵循当前业务契约，不能用一个计数方式覆盖同一结果的所有指标。\n   - 统计源表记录且连接不重复该记录时用 COUNT(*)；连接可能重复记录时按源表完整主键去重或先聚合。仅有外键不保证子表关联键唯一，不能据此假定一对一。\n   - 统计满足条件的不同订单时按订单主键去重或使用 EXISTS 筛选订单；同一订单可有多条评价/明细，评价记录数保留每条评价，订单数只计一次。单表上的业务身份去重也须使用对应身份列，不以是否存在JOIN为前提。\n   - 去重不得改变过滤、事实覆盖或分母；NULL身份不自动合并成一个实体，空集合计数为0。组合主键须保留全部分量，不用字符串拼接假造唯一键。\n11. 不要为了「信息更全」而加列、加分组或加排序。评估比的是结果集，\n   多一列和少一列都算错。\n12. 比例与精度口径：\n   - 单位优先级：用户明确指定的单位 > 当前METRIC的默认输出单位 > 通用比例默认值；每个指标分别处理，不把某一列的单位应用到其他列。指标名称本身不算显式单位覆盖。\n   - 用户明确要求百分比/%时输出百分数数值；明确要求0到1/小数比率时输出原始比值。覆盖指标默认单位时同步转换表达式、精度和列别名，参考示例与推荐查询不能覆盖用户要求。\n   - 对已注册指标，遵循其outputUnit/outputScale（如PERCENT按100倍比值、DECIMAL_RATIO按原始比值），不因题干出现「比例」就改用另一单位；未注册指标的普通比例默认输出小数比率、四位小数，明确百分比时乘100、两位小数。分母为零用NULLIF返回NULL，不伪装成0。\n   - 其余一般金额、单价、平均值，统一用 ROUND(表达式, 2) 保留两位小数。\n   - 【PostgreSQL 严格类型约束】PostgreSQL 的 ROUND(val, n) 仅接受 NUMERIC 类型！若表达式涉及 EXTRACT(EPOCH FROM ...) 或浮点计算/AVG，返回值是 DOUBLE PRECISION，必须显式加 ::NUMERIC 转换（例如 ROUND((AVG(EXTRACT(EPOCH FROM ...)) / 86400.0)::NUMERIC, 2)），绝对禁止对 DOUBLE PRECISION 直接传 2 个参数调用 ROUND。\n13. 按时间分组与时间字段选择：\n   - 按年比较或年度分组时，默认用 EXTRACT(YEAR FROM 时间列)::int 输出整数年份（如2017），不要用年初时间戳代替年份标签；用户明确要求年初日期/时间戳时才用 DATE_TRUNC('year', 时间列) 并按要求转换类型。\n   - 按季度分组时，默认用 DATE_TRUNC('quarter', 时间列) 输出一个季度起始时间戳；用户明确要求年/季度编号或标签时按要求输出，不仅用季度编号合并不同年份。\n   - 星期维度默认用 EXTRACT(DOW FROM 时间列)::int 输出编号（周日0、周一1至周六6）；用户明确要求ISO编号（周一1至周日7）或中文名称时按要求输出。\n   - 用 DATE_TRUNC('month'|'week'|'day', 时间列) 作为分组列，不要用 to_char 把时间转成 'YYYY-MM' 这类字符串。\n   - 问题涉及各月/每个月/每周等周期统计时，若表内有自身的业务时间字段（如 refunds.requested_at, support_tickets.created_at, members.register_date, settlements.period_start），优先使用本表对应业务时间，不要无故关联 orders 表。\n14. 时间窗口过滤用 >= 起点 AND < 终点（左闭右开），不要用 BETWEEN：\n   BETWEEN 会把终点那一整天的数据也算进来。\n15. 如果下面给出了「字段枚举与实体取值对齐」，WHERE 过滤条件中涉及该实体时，\n   **必须严格使用对应的物理字段与取值**（例如使用 customer_state = 'SP' 而不是 '圣保罗'）。\n16. 实体与明细字段指引：\n   - 查询订单明细的价格/销售金额时，直接使用 order_items 表及其 price 列；仅在明确提到卖家结算、抽成或对账时才使用 settlements / settlement_items。\n   - 查询承运商配送时长时，直接使用 shipments 表的 (delivered_at - shipped_at)，无需关联轨迹表。\n   - 工单实际处理时长计算用 support_tickets 表的 (resolved_at - created_at)；ticket_categories.sla_hours 仅为时限标准而非实际耗时。\n17. 对比结果的列与行契约：\n   - 用户明确要求横表/纵表、指定列或每个条件一行时，以该要求为准；其次遵循已注册METRIC的输出形状，最后才使用以下默认约定。形状选择不能改动时间范围、事实粒度、过滤、分母或单位。\n   - 按时间比较同一指标，或明确要求按维度分组/每种/分布时，输出维度列、指标列，每个维度值一行；时间维度按时间升序。不要因为列举了年份就自动转成多列。\n   - 未要求分组、只点名多个非时间业务子集的记录计数时，将它们作为多个具名计数指标，一行内按题目点名顺序各占一列；用条件聚合分别计数，不额外投影状态/类型列。某子集无记录计为0，空输入也返回一行各计数为0；不要因一组为空丢掉该计数。\n   - 多个不同指标按题目顺序各占一列；若同时要求每州/每月等分组，则每组一行、组内各指标一列。不要把GMV与销售额强行变成维度行，也不要把复购率等非计数指标套用具名子集计数规则。\n18. 复杂多表关联时，可在 SELECT 语句首行添加一行以 -- 开头的单行注释说明思路，之后紧接完整 SQL。\n=== 数据库 Schema ===\nTABLE orders\n  order_id character varying\n  customer_id character varying\n  order_status character varying\n  order_purchase_timestamp timestamp without time zone\n  PRIMARY KEY (order_id)\n\nTABLE customers\n  customer_id character varying\n  customer_unique_id character varying\n  customer_zip_code_prefix integer\n  customer_city character varying\n  PRIMARY KEY (customer_id)\n\nTABLE order_items\n  order_id character varying\n  order_item_id integer\n  product_id character varying\n  seller_id character varying\n  PRIMARY KEY (order_id, order_item_id)  -- 组合唯一，单列不保证唯一\n\nTABLE order_payments\n  order_id character varying\n  payment_sequential integer\n  payment_type character varying\n  payment_installments integer\n  PRIMARY KEY (order_id, payment_sequential)  -- 组合唯一，单列不保证唯一\n\nTABLE order_reviews\n  review_id character varying\n  order_id character varying\n  review_score integer\n  review_comment_title character varying\n  PRIMARY KEY (review_id, order_id)  -- 组合唯一，单列不保证唯一\n\nTABLE coupon_usages\n  usage_id bigint\n  coupon_id integer\n  order_id character varying\n  member_id bigint\n  PRIMARY KEY (usage_id)\n\nTABLE refund_items\n  refund_id bigint\n  order_id character varying\n  order_item_id integer\n  refund_qty integer\n  PRIMARY KEY (refund_id, order_id, order_item_id)  -- 组合唯一，单列不保证唯一\n\nTABLE refunds\n  refund_id bigint\n  order_id character varying\n  reason_code character varying  -- 退款原因代码：CUST=客户取消 QUAL=质量问题 LATE=配送超时 OTHER=其他\n  status smallint  -- 退款状态：1=待审核 2=已通过 3=已拒绝 4=已退款\n  PRIMARY KEY (refund_id)\n\n\nJOIN PLAN（推荐的连接顺序）\n  起点 orders\n  orders.customer_id = customers.customer_id   -- customers [FK]\n  -- 注意：还有 6 张表与起点不在同一连通分量，本段未给出连接顺序；它们的关联见上面的 JOINS。\n\n=== 数据画像 ===\n数据规模：orders 共 99441 行。\n时间范围：order_purchase_timestamp 从 2016-09-04 21:15:19.0 到 2018-10-17 17:30:18.0。\n【重要】这是历史快照数据，不是实时库。凡是\"最近 N 天/本月/上个月/今年\"\n这类相对时间，必须锚定到该表的最大时间，不能用 current_date / now()。\n\n=== 业务指标口径约定（数仓标准度量）===\n【使用原则】当用户问题涉及以下指标且未指定特殊计算口径时，遵循标准度量的表达式与过滤条件；若用户明确指明了特定的计算口径或聚合逻辑，以用户明确说明为准。\nMETRIC repeat_rate  -- 复购率 = 下单 2 次及以上的用户 / 全部下单用户\n  表达式: ROUND(COUNT(*) FILTER (WHERE order_cnt >= 2) * 100.0 / NULLIF(COUNT(*), 0), 2)\n  默认输出单位: PERCENT；保留 2 位小数。\n    百分数按100倍比值输出纯数值，例如比值0.25输出25，不附加%字符；增长率可为负或超过100。\n    此单位仅约束该指标，不影响同一结果的金额/数量/维度列；用户明确指定单位时覆盖默认值并同步转换表达式、精度和列别名，示例结构不能覆盖用户要求。\n  过滤条件（默认附加）: o.order_status NOT IN ('canceled', 'unavailable')\n    —— 例外：只有用户明确覆盖此过滤，或当前指标说明明确规定该场景例外时才省略。类目、年份等其他维度限定不能自动取消此过滤；与它共同限定事实集合。\n  【关键】统计单位是**人**（customer_unique_id）不是订单。\n  订单级 customer_id 每人只有一次，用它算复购率恒为 0。\n  先按人聚合出订单数，再判断 >= 2。\n\nENTITY_POLICY customer_identity_v2 -- customers\n  存储行/关联键：customers.customer_id；业务实体身份：customers.customer_unique_id。\n  populationCountUnit=ROW_KEY；该默认只作用于实体表记录集合的规模/属性分布计数，不覆盖已注册指标的分子分母。\n  未指定自然人/人数/业务身份去重的实体表规模及属性分布，默认统计存储记录：单独统计该表可COUNT(*)，一对多关联后按customers.customer_id去重避免放大；列名应体现记录单位，不把记录数宣称为自然人数。\n  明确问自然人、人数或业务身份去重时按customers.customer_unique_id；按每个实体汇总订单/消费等行为仍默认按业务实体身份分组，跨关联键识别同一实体。\n  用户明确指定按存储行/关联键统计时服从该要求，不擅自改成实体级统计。\n  显式字段/单位优先；同一请求同时要求记录数和人数时分别计算，不用一个默认覆盖所有指标。集合计数不授权改变过滤或JOIN覆盖。\n  本项目区分客户档案记录的规模与自然人行为：裸客户数/按属性分布默认数客户记录， 这是产品默认，不宣称“客户”一词只有这一种解释；明确自然人/人数/去重要求可覆盖默认。 同一自然人可以对应多个客户关联键，每客户订单数、复购、下单人数必须识别跨关联键的同一个人。 同一人可有不同州的客户记录；按州记录数按每条记录的州归属，按州人数则每州内独立去重， 同一人可参与多个州，不能把各州人数相加当全站去重人数，也不猜测“最新州”或唯一归属。 客户关联键仍用于连接订单，不能直接用它代表每个真实客户。 读取交易/事件所属客户记录的属性时，沿该事实的关联键定位customers.customer_id对应记录； customers.customer_unique_id用于身份去重或跨记录汇总，不授权改走其他实体反向匹配该身份的全部客户记录取属性。 同一自然人可对应多条属性不同的客户记录，不能猜测唯一或最新属性； COUNT(DISTINCT 事实主键)只能消除同组重复，不能修复错误属性分组或金额放大。 用户明确要求跨记录属性分布时另按该范围计算。 人数和按人分组时不把SQL NULL身份合并成一个人；默认只统计已知身份， 用户明确要求未知身份分组时可单列未知组，但不能把它称为一个真实客户。 这不授权过滤未按人分组的订单总数或金额，不自动排除取消订单，也不替代指标已有过滤。 关联一对多明细后统计订单数须按订单主键去重，不能把明细行当成订单； 金额聚合须在正确事实粒度处理连接放大，不能用SUM(DISTINCT 金额)误删等额交易。 若要求所有客户含零订单，从客户侧保留无订单者且COUNT订单主键，不用COUNT(*)把空连接计为一单。\n\n=== 参考示例 ===\n问题: 每个州的评价平均分是多少？取评价数最多的 10 个州。\nSQL: SELECT c.customer_state, ROUND(AVG(r.review_score), 2) AS avg_score, COUNT(*) AS cnt\nFROM order_reviews r\nJOIN orders o ON o.order_id = r.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY 1 ORDER BY cnt DESC LIMIT 10;\n---\n问题: 低分订单（1-2 星）占比是多少？按客户所在州列出前 10。\nSQL: SELECT c.customer_state,\n       ROUND(100.0 * COUNT(*) FILTER (WHERE r.review_score <= 2) / COUNT(*), 2) AS low_pct\nFROM order_reviews r\nJOIN orders o ON o.order_id = r.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable')\nGROUP BY 1 ORDER BY low_pct DESC LIMIT 10;\n---\n\n=== 用户问题 ===\n回购率以全部下单用户为分母\n",
+  "question" : "回购率以全部下单用户为分母"
+}, {
+  "httpStatus" : 400,
+  "id" : "bare",
+  "expectedClarification" : true,
+  "decision" : [ {
+    "term" : "复购率",
+    "matchedTerm" : "复购率",
+    "evidence" : [ ],
+    "missingGroups" : [ "denominator" ],
+    "unresolvedEvidence" : [ ],
+    "needsClarification" : true,
+    "question" : "「复购率」的分母是全部下单用户，还是注册满一定天数的用户？两者差异很大，请确认。"
+  } ],
+  "sessionTurns" : 1,
+  "body" : {
+    "status" : "NEEDS_CLARIFICATION",
+    "sql" : null,
+    "message" : "「复购率」的分母是全部下单用户，还是注册满一定天数的用户？两者差异很大，请确认。",
+    "violations" : [ ],
+    "columns" : [ ],
+    "rows" : [ ],
+    "truncated" : false,
+    "rewritten" : false,
+    "rowCount" : 0,
+    "schemaTableCount" : 0,
+    "retrievedTables" : [ ],
+    "schemaDdlChars" : 0,
+    "llm" : null,
+    "timings" : {
+      "retrievalMs" : 0,
+      "generationMs" : 0,
+      "validationMs" : 0,
+      "executionMs" : 0,
+      "totalMs" : 1
+    },
+    "sessionId" : "clarification-bare",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "fec3fe1f-d2ed-4102-bb54-2c7147b16860",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 0,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 1,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "CLARIFICATION" : 0,
+        "SESSION" : 0,
+        "ADMISSION" : 0,
+        "CONVERSATION" : 0
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 1,
+      "currentStageMs" : 0
+    }
+  },
+  "prompt" : "",
+  "question" : "复购率是多少"
+}, {
+  "httpStatus" : 400,
+  "id" : "numerator-only",
+  "expectedClarification" : true,
+  "decision" : [ {
+    "term" : "复购率",
+    "matchedTerm" : "复购率",
+    "evidence" : [ ],
+    "missingGroups" : [ "denominator" ],
+    "unresolvedEvidence" : [ ],
+    "needsClarification" : true,
+    "question" : "「复购率」的分母是全部下单用户，还是注册满一定天数的用户？两者差异很大，请确认。"
+  } ],
+  "sessionTurns" : 1,
+  "body" : {
+    "status" : "NEEDS_CLARIFICATION",
+    "sql" : null,
+    "message" : "「复购率」的分母是全部下单用户，还是注册满一定天数的用户？两者差异很大，请确认。",
+    "violations" : [ ],
+    "columns" : [ ],
+    "rows" : [ ],
+    "truncated" : false,
+    "rewritten" : false,
+    "rowCount" : 0,
+    "schemaTableCount" : 0,
+    "retrievedTables" : [ ],
+    "schemaDdlChars" : 0,
+    "llm" : null,
+    "timings" : {
+      "retrievalMs" : 0,
+      "generationMs" : 0,
+      "validationMs" : 0,
+      "executionMs" : 0,
+      "totalMs" : 0
+    },
+    "sessionId" : "clarification-numerator-only",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "2af7e3f3-d5b1-4d76-8151-1ed0a1dccd5b",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 0,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 0,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "CLARIFICATION" : 0,
+        "SESSION" : 0,
+        "ADMISSION" : 0,
+        "CONVERSATION" : 0
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 0,
+      "currentStageMs" : 0
+    }
+  },
+  "prompt" : "",
+  "question" : "复购率只看下单两次及以上的用户"
+}, {
+  "httpStatus" : 400,
+  "id" : "filter-only",
+  "expectedClarification" : true,
+  "decision" : [ {
+    "term" : "复购率",
+    "matchedTerm" : "复购率",
+    "evidence" : [ ],
+    "missingGroups" : [ "denominator" ],
+    "unresolvedEvidence" : [ ],
+    "needsClarification" : true,
+    "question" : "「复购率」的分母是全部下单用户，还是注册满一定天数的用户？两者差异很大，请确认。"
+  } ],
+  "sessionTurns" : 1,
+  "body" : {
+    "status" : "NEEDS_CLARIFICATION",
+    "sql" : null,
+    "message" : "「复购率」的分母是全部下单用户，还是注册满一定天数的用户？两者差异很大，请确认。",
+    "violations" : [ ],
+    "columns" : [ ],
+    "rows" : [ ],
+    "truncated" : false,
+    "rewritten" : false,
+    "rowCount" : 0,
+    "schemaTableCount" : 0,
+    "retrievedTables" : [ ],
+    "schemaDdlChars" : 0,
+    "llm" : null,
+    "timings" : {
+      "retrievalMs" : 0,
+      "generationMs" : 0,
+      "validationMs" : 0,
+      "executionMs" : 0,
+      "totalMs" : 0
+    },
+    "sessionId" : "clarification-filter-only",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "70da0b90-b322-4422-bd25-f77319d76e90",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 0,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 0,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "CLARIFICATION" : 0,
+        "SESSION" : 0,
+        "ADMISSION" : 0,
+        "CONVERSATION" : 0
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 0,
+      "currentStageMs" : 0
+    }
+  },
+  "prompt" : "",
+  "question" : "复购率只统计有效订单"
+}, {
+  "httpStatus" : 400,
+  "id" : "choice",
+  "expectedClarification" : true,
+  "decision" : [ {
+    "term" : "复购率",
+    "matchedTerm" : "复购率",
+    "evidence" : [ {
+      "source" : "required-pattern",
+      "group" : "denominator",
+      "matchedText" : "分母是全部下单用户"
+    } ],
+    "missingGroups" : [ ],
+    "unresolvedEvidence" : [ "还是" ],
+    "needsClarification" : true,
+    "question" : "「复购率」的分母是全部下单用户，还是注册满一定天数的用户？两者差异很大，请确认。"
+  } ],
+  "sessionTurns" : 1,
+  "body" : {
+    "status" : "NEEDS_CLARIFICATION",
+    "sql" : null,
+    "message" : "「复购率」的分母是全部下单用户，还是注册满一定天数的用户？两者差异很大，请确认。",
+    "violations" : [ ],
+    "columns" : [ ],
+    "rows" : [ ],
+    "truncated" : false,
+    "rewritten" : false,
+    "rowCount" : 0,
+    "schemaTableCount" : 0,
+    "retrievedTables" : [ ],
+    "schemaDdlChars" : 0,
+    "llm" : null,
+    "timings" : {
+      "retrievalMs" : 0,
+      "generationMs" : 0,
+      "validationMs" : 0,
+      "executionMs" : 0,
+      "totalMs" : 0
+    },
+    "sessionId" : "clarification-choice",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "b30e3b46-49aa-4344-bdf6-8ec452b81a8b",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 0,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 0,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "CLARIFICATION" : 0,
+        "SESSION" : 0,
+        "ADMISSION" : 0,
+        "CONVERSATION" : 0
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 0,
+      "currentStageMs" : 0
+    }
+  },
+  "prompt" : "",
+  "question" : "复购率分母是全部下单用户还是注册满30天的用户？"
+}, {
+  "httpStatus" : 400,
+  "id" : "negative",
+  "expectedClarification" : true,
+  "decision" : [ {
+    "term" : "复购率",
+    "matchedTerm" : "复购率",
+    "evidence" : [ {
+      "source" : "required-pattern",
+      "group" : "denominator",
+      "matchedText" : "全部下单用户为分母"
+    } ],
+    "missingGroups" : [ ],
+    "unresolvedEvidence" : [ "不要以全部下单用户为分母" ],
+    "needsClarification" : true,
+    "question" : "「复购率」的分母是全部下单用户，还是注册满一定天数的用户？两者差异很大，请确认。"
+  } ],
+  "sessionTurns" : 1,
+  "body" : {
+    "status" : "NEEDS_CLARIFICATION",
+    "sql" : null,
+    "message" : "「复购率」的分母是全部下单用户，还是注册满一定天数的用户？两者差异很大，请确认。",
+    "violations" : [ ],
+    "columns" : [ ],
+    "rows" : [ ],
+    "truncated" : false,
+    "rewritten" : false,
+    "rowCount" : 0,
+    "schemaTableCount" : 0,
+    "retrievedTables" : [ ],
+    "schemaDdlChars" : 0,
+    "llm" : null,
+    "timings" : {
+      "retrievalMs" : 0,
+      "generationMs" : 0,
+      "validationMs" : 0,
+      "executionMs" : 0,
+      "totalMs" : 0
+    },
+    "sessionId" : "clarification-negative",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "f6528523-21ca-451e-9dd2-339c679437b7",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 0,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 0,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "CLARIFICATION" : 0,
+        "SESSION" : 0,
+        "ADMISSION" : 0,
+        "CONVERSATION" : 0
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 0,
+      "currentStageMs" : 0
+    }
+  },
+  "prompt" : "",
+  "question" : "复购率不要以全部下单用户为分母"
+}, {
+  "httpStatus" : 400,
+  "id" : "legacy-sales",
+  "expectedClarification" : true,
+  "decision" : [ {
+    "term" : "销售额",
+    "matchedTerm" : "销售额",
+    "evidence" : [ ],
+    "missingGroups" : [ "legacy-hint" ],
+    "unresolvedEvidence" : [ ],
+    "needsClarification" : true,
+    "question" : "「销售额」有两种常见口径：含运费的 GMV，还是不含运费的商品金额？请确认一种。"
+  } ],
+  "sessionTurns" : 1,
+  "body" : {
+    "status" : "NEEDS_CLARIFICATION",
+    "sql" : null,
+    "message" : "「销售额」有两种常见口径：含运费的 GMV，还是不含运费的商品金额？请确认一种。",
+    "violations" : [ ],
+    "columns" : [ ],
+    "rows" : [ ],
+    "truncated" : false,
+    "rewritten" : false,
+    "rowCount" : 0,
+    "schemaTableCount" : 0,
+    "retrievedTables" : [ ],
+    "schemaDdlChars" : 0,
+    "llm" : null,
+    "timings" : {
+      "retrievalMs" : 0,
+      "generationMs" : 0,
+      "validationMs" : 0,
+      "executionMs" : 0,
+      "totalMs" : 0
+    },
+    "sessionId" : "clarification-legacy-sales",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "ad37f9d2-590d-478d-95de-9297167f476a",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 0,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 0,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "CLARIFICATION" : 0,
+        "SESSION" : 0,
+        "ADMISSION" : 0,
+        "CONVERSATION" : 0
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 0,
+      "currentStageMs" : 0
+    }
+  },
+  "prompt" : "",
+  "question" : "销售额是多少"
+}, {
+  "httpStatus" : 400,
+  "id" : "regional-bare",
+  "expectedClarification" : true,
+  "decision" : [ {
+    "term" : "销售额",
+    "matchedTerm" : "销售额",
+    "evidence" : [ {
+      "source" : "legacy-hint",
+      "group" : "hint",
+      "matchedText" : "商品销售额"
+    } ],
+    "missingGroups" : [ ],
+    "unresolvedEvidence" : [ ],
+    "needsClarification" : false,
+    "question" : "「销售额」有两种常见口径：含运费的 GMV，还是不含运费的商品金额？请确认一种。"
+  }, {
+    "term" : "大区",
+    "matchedTerm" : "大区",
+    "evidence" : [ {
+      "source" : "trigger-pattern",
+      "group" : "applicability",
+      "matchedText" : "大区统计商品销售额"
+    } ],
+    "missingGroups" : [ "regional-subject" ],
+    "unresolvedEvidence" : [ ],
+    "needsClarification" : true,
+    "question" : "交易指标按哪一方的地域归属统计大区：客户收货地、卖家所在地，还是仓库所在地？请明确来源。"
+  } ],
+  "sessionTurns" : 1,
+  "body" : {
+    "status" : "NEEDS_CLARIFICATION",
+    "sql" : null,
+    "message" : "交易指标按哪一方的地域归属统计大区：客户收货地、卖家所在地，还是仓库所在地？请明确来源。",
+    "violations" : [ ],
+    "columns" : [ ],
+    "rows" : [ ],
+    "truncated" : false,
+    "rewritten" : false,
+    "rowCount" : 0,
+    "schemaTableCount" : 0,
+    "retrievedTables" : [ ],
+    "schemaDdlChars" : 0,
+    "llm" : null,
+    "timings" : {
+      "retrievalMs" : 0,
+      "generationMs" : 0,
+      "validationMs" : 0,
+      "executionMs" : 0,
+      "totalMs" : 0
+    },
+    "sessionId" : "clarification-regional-bare",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "a95daa49-fa0e-458e-aad8-b8f8a39b411f",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 0,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 0,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "CLARIFICATION" : 0,
+        "SESSION" : 0,
+        "ADMISSION" : 0,
+        "CONVERSATION" : 0
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 0,
+      "currentStageMs" : 0
+    }
+  },
+  "prompt" : "",
+  "question" : "按大区统计商品销售额"
+}, {
+  "httpStatus" : 200,
+  "id" : "regional-explicit",
+  "expectedClarification" : false,
+  "decision" : [ {
+    "term" : "销售额",
+    "matchedTerm" : "销售额",
+    "evidence" : [ {
+      "source" : "legacy-hint",
+      "group" : "hint",
+      "matchedText" : "商品销售额"
+    } ],
+    "missingGroups" : [ ],
+    "unresolvedEvidence" : [ ],
+    "needsClarification" : false,
+    "question" : "「销售额」有两种常见口径：含运费的 GMV，还是不含运费的商品金额？请确认一种。"
+  }, {
+    "term" : "大区",
+    "matchedTerm" : "大区",
+    "evidence" : [ {
+      "source" : "trigger-pattern",
+      "group" : "applicability",
+      "matchedText" : "大区统计商品销售额"
+    }, {
+      "source" : "required-pattern",
+      "group" : "regional-subject",
+      "matchedText" : "客户所在大区"
+    }, {
+      "source" : "required-pattern",
+      "group" : "regional-subject",
+      "matchedText" : "按客户所在大区"
+    } ],
+    "missingGroups" : [ ],
+    "unresolvedEvidence" : [ ],
+    "needsClarification" : false,
+    "question" : "交易指标按哪一方的地域归属统计大区：客户收货地、卖家所在地，还是仓库所在地？请明确来源。"
+  } ],
+  "sessionTurns" : 1,
+  "body" : {
+    "status" : "SUCCESS",
+    "sql" : "SELECT 1 AS controlled_answer LIMIT 201",
+    "message" : null,
+    "violations" : [ ],
+    "columns" : [ "controlled_answer" ],
+    "rows" : [ [ "1" ] ],
+    "truncated" : false,
+    "rewritten" : true,
+    "rowCount" : 1,
+    "schemaTableCount" : 8,
+    "retrievedTables" : [ "customers", "order_items", "regions", "warehouses", "orders", "products", "sellers", "members" ],
+    "schemaDdlChars" : 1760,
+    "llm" : {
+      "model" : "deepseek-flash",
+      "promptTokens" : 10,
+      "completionTokens" : 5,
+      "totalTokens" : 15,
+      "latencyMs" : 13,
+      "costYuan" : 0.02
+    },
+    "timings" : {
+      "retrievalMs" : 7,
+      "generationMs" : 15,
+      "validationMs" : 6,
+      "executionMs" : 3,
+      "totalMs" : 34
+    },
+    "sessionId" : "clarification-regional-explicit",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "8873d116-d1c3-4839-bd3e-f25b5c77b612",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 1,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 34,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "SESSION" : 0,
+        "ADMISSION" : 0,
+        "VALIDATION" : 6,
+        "EXPLAIN" : 2,
+        "CLARIFICATION" : 0,
+        "CACHE_WRITE" : 0,
+        "RESULT_CHECK" : 0,
+        "RETRIEVAL" : 7,
+        "CONVERSATION" : 0,
+        "CACHE" : 0,
+        "GENERATION" : 9,
+        "MODEL" : 6,
+        "EXECUTION" : 1
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 3,
+      "currentStageMs" : 0
+    }
+  },
+  "prompt" : "你是一个 PostgreSQL 数据分析助手。你的唯一任务是把用户的中文问题翻译成一条可执行的 SQL。\n\n思考与推理步骤（Chain-of-Thought 思维链）：\n在编写 SQL 前，请严格按以下四步逻辑进行推导：\n1. 识别实体与目标表：从问题中提取核心业务实体，锁定需要的表；\n2. 规划连接路径：多表查询时，参考 JOIN PLAN 与 FOREIGN KEYS 确定连接键，防止过度连接或笛卡尔积；\n3. 对齐过滤条件：涉及状态、编码或业务指标时，严格按「字段枚举对齐」与 METRICS 表达式对齐物理值；\n4. 确定维度与聚合：确定 GROUP BY 维度、聚合函数与排序规则，仅投影问题真正需要的字段。\n\n硬性规则：\n1. 只输出一条 SELECT 语句，不要输出 INSERT/UPDATE/DELETE/DROP/ALTER/TRUNCATE。\n2. 不要输出任何代码围栏外解释或闲聊文本，直接输出可执行的 SQL 语句。\n3. 必须带 LIMIT，除非结果是单行聚合值（如 COUNT/SUM/AVG 且无 GROUP BY）。\n4. 只使用下面 schema 里真实存在的表和列，不要臆造字段名。\n5. 表名和列名一律用小写，不要加引号。\n6. 遇到多表查询时，优先参考 JOIN PLAN（推荐的连接顺序）或 FOREIGN KEYS 里给出的关联关系。\n7. 如果下面给出了 METRICS（业务指标定义），在用户未明确指定其他特殊口径时，默认遵循其表达式与过滤条件；若用户明确指定了自定义计算方式（如指定按订单平均金额计算客单价等），以用户明确说明为准。\n   事实筛选必须有用户请求或当前业务契约的依据；schema列出某状态枚举，不代表问题要求只统计该状态。不能自行补充“已完成”“有效”“非空”等记录过滤而缩小统计范围；明确请求或业务契约已有的过滤继续执行。\n8. SELECT 列表只放问题真正要求的内容。问题问「多少 / 哪些指标 / 平均是多少」时，\n   只输出维度列和指标列；用户明确指定维度名称、编号、编码或输出列时，以用户要求为准，不顺手附加其他展示列。\n   【维度投影原则】用户未明确要求名称时，默认使用当前事实或实体表已有的标识列作为维度输出，不为展示补关联或同时附加名称；状态、州代码、分类值等有业务含义的维度沿用原值。用户明确要求名称时，才使用当前schema中的名称列及可靠关联键，不臆造名称或引用上下文之外的表列。\n   内部仍按完整实体主键区分，不能因同名而合并实体，只有明确按名称汇总时才合并。为获取明确要求的名称关联维表时，保留未匹配事实及NULL名称，不因INNER JOIN、重复维表或名称过滤改变统计覆盖与金额；无法确认唯一匹配时不能任意取一个名称。明确要求仅匹配名称的对象时服从用户范围。\n   筛选条件、分组身份和中间计算字段不自动成为输出列。只问两期差额或增长率时，不附加两期原始数值；明确要求两期数值及差额/增长率时才全部输出。\n   【实体寻优规范】问「最...的那一笔/哪一个」特定实体（如“分期数最多的那一笔支付分了多少期”）时，\n   属于单条记录寻优，使用 ORDER BY ... DESC LIMIT 1 并保留实体标识（如 order_id）与指标列，不要写成纯 MAX()。\n\n9. 聚合粒度必须与问题的「每个…」一致。GROUP BY 的列要和 SELECT 里的维度列对应，\n   不要多分一层，也不要把分组列换成另一张表里的等价列。\n   - 「每个活动/卖家/标签」等实体按完整主键区分；名称是展示属性，不保证唯一。可按主键和名称分组，不能仅因同名就合并实体；明确按名称汇总时才合并。不为分组身份额外投影用户未要求的列。\n   - 预算等实体自带数值不随子表明细累加；先在原事实粒度计算，再关联。SUM(DISTINCT 金额)会误删金额相同的不同事实，不能用来抵消关联放大。\n   - 同一请求的每个指标分别确定事实全集。统计标签覆盖会员数及其商品均价时，会员数包括无订单会员，均价只统计存在的商品价格；用LEFT JOIN保留会员或分别聚合再合并，避免INNER JOIN缩小会员全集。只有用户明确要求有订单/有商品的会员时才限缩；右表条件放ON或对应聚合内，不能在WHERE中误删左侧记录。没有价格时均价为NULL，不能把空值补0参与平均。\n10. 计数口径规范：\n   - 先确定每个计数的对象与身份：记录数、不同实体数和业务身份去重人数不是同一度量；用户明确单位优先，其次遵循当前业务契约，不能用一个计数方式覆盖同一结果的所有指标。\n   - 统计源表记录且连接不重复该记录时用 COUNT(*)；连接可能重复记录时按源表完整主键去重或先聚合。仅有外键不保证子表关联键唯一，不能据此假定一对一。\n   - 统计满足条件的不同订单时按订单主键去重或使用 EXISTS 筛选订单；同一订单可有多条评价/明细，评价记录数保留每条评价，订单数只计一次。单表上的业务身份去重也须使用对应身份列，不以是否存在JOIN为前提。\n   - 去重不得改变过滤、事实覆盖或分母；NULL身份不自动合并成一个实体，空集合计数为0。组合主键须保留全部分量，不用字符串拼接假造唯一键。\n11. 不要为了「信息更全」而加列、加分组或加排序。评估比的是结果集，\n   多一列和少一列都算错。\n12. 比例与精度口径：\n   - 单位优先级：用户明确指定的单位 > 当前METRIC的默认输出单位 > 通用比例默认值；每个指标分别处理，不把某一列的单位应用到其他列。指标名称本身不算显式单位覆盖。\n   - 用户明确要求百分比/%时输出百分数数值；明确要求0到1/小数比率时输出原始比值。覆盖指标默认单位时同步转换表达式、精度和列别名，参考示例与推荐查询不能覆盖用户要求。\n   - 对已注册指标，遵循其outputUnit/outputScale（如PERCENT按100倍比值、DECIMAL_RATIO按原始比值），不因题干出现「比例」就改用另一单位；未注册指标的普通比例默认输出小数比率、四位小数，明确百分比时乘100、两位小数。分母为零用NULLIF返回NULL，不伪装成0。\n   - 其余一般金额、单价、平均值，统一用 ROUND(表达式, 2) 保留两位小数。\n   - 【PostgreSQL 严格类型约束】PostgreSQL 的 ROUND(val, n) 仅接受 NUMERIC 类型！若表达式涉及 EXTRACT(EPOCH FROM ...) 或浮点计算/AVG，返回值是 DOUBLE PRECISION，必须显式加 ::NUMERIC 转换（例如 ROUND((AVG(EXTRACT(EPOCH FROM ...)) / 86400.0)::NUMERIC, 2)），绝对禁止对 DOUBLE PRECISION 直接传 2 个参数调用 ROUND。\n13. 按时间分组与时间字段选择：\n   - 按年比较或年度分组时，默认用 EXTRACT(YEAR FROM 时间列)::int 输出整数年份（如2017），不要用年初时间戳代替年份标签；用户明确要求年初日期/时间戳时才用 DATE_TRUNC('year', 时间列) 并按要求转换类型。\n   - 按季度分组时，默认用 DATE_TRUNC('quarter', 时间列) 输出一个季度起始时间戳；用户明确要求年/季度编号或标签时按要求输出，不仅用季度编号合并不同年份。\n   - 星期维度默认用 EXTRACT(DOW FROM 时间列)::int 输出编号（周日0、周一1至周六6）；用户明确要求ISO编号（周一1至周日7）或中文名称时按要求输出。\n   - 用 DATE_TRUNC('month'|'week'|'day', 时间列) 作为分组列，不要用 to_char 把时间转成 'YYYY-MM' 这类字符串。\n   - 问题涉及各月/每个月/每周等周期统计时，若表内有自身的业务时间字段（如 refunds.requested_at, support_tickets.created_at, members.register_date, settlements.period_start），优先使用本表对应业务时间，不要无故关联 orders 表。\n14. 时间窗口过滤用 >= 起点 AND < 终点（左闭右开），不要用 BETWEEN：\n   BETWEEN 会把终点那一整天的数据也算进来。\n15. 如果下面给出了「字段枚举与实体取值对齐」，WHERE 过滤条件中涉及该实体时，\n   **必须严格使用对应的物理字段与取值**（例如使用 customer_state = 'SP' 而不是 '圣保罗'）。\n16. 实体与明细字段指引：\n   - 查询订单明细的价格/销售金额时，直接使用 order_items 表及其 price 列；仅在明确提到卖家结算、抽成或对账时才使用 settlements / settlement_items。\n   - 查询承运商配送时长时，直接使用 shipments 表的 (delivered_at - shipped_at)，无需关联轨迹表。\n   - 工单实际处理时长计算用 support_tickets 表的 (resolved_at - created_at)；ticket_categories.sla_hours 仅为时限标准而非实际耗时。\n17. 对比结果的列与行契约：\n   - 用户明确要求横表/纵表、指定列或每个条件一行时，以该要求为准；其次遵循已注册METRIC的输出形状，最后才使用以下默认约定。形状选择不能改动时间范围、事实粒度、过滤、分母或单位。\n   - 按时间比较同一指标，或明确要求按维度分组/每种/分布时，输出维度列、指标列，每个维度值一行；时间维度按时间升序。不要因为列举了年份就自动转成多列。\n   - 未要求分组、只点名多个非时间业务子集的记录计数时，将它们作为多个具名计数指标，一行内按题目点名顺序各占一列；用条件聚合分别计数，不额外投影状态/类型列。某子集无记录计为0，空输入也返回一行各计数为0；不要因一组为空丢掉该计数。\n   - 多个不同指标按题目顺序各占一列；若同时要求每州/每月等分组，则每组一行、组内各指标一列。不要把GMV与销售额强行变成维度行，也不要把复购率等非计数指标套用具名子集计数规则。\n18. 复杂多表关联时，可在 SELECT 语句首行添加一行以 -- 开头的单行注释说明思路，之后紧接完整 SQL。\n=== 数据库 Schema ===\nTABLE customers\n  customer_id character varying\n  customer_unique_id character varying\n  customer_zip_code_prefix integer\n  customer_state character varying\n  PRIMARY KEY (customer_id)\n\nTABLE order_items\n  order_id character varying\n  order_item_id integer\n  product_id character varying\n  seller_id character varying\n  price numeric\n  PRIMARY KEY (order_id, order_item_id)  -- 组合唯一，单列不保证唯一\n\nTABLE regions  -- 巴西州份到大区的映射，用于区域维度分析\n  region_code character varying\n  region_name character varying\n  macro_region character varying\n  PRIMARY KEY (region_code)\n\nTABLE warehouses\n  warehouse_id integer\n  warehouse_name character varying\n  region_code character varying\n  capacity integer\n  PRIMARY KEY (warehouse_id)\n\nTABLE orders\n  order_id character varying\n  customer_id character varying\n  order_status character varying\n  order_purchase_timestamp timestamp without time zone\n  PRIMARY KEY (order_id)\n\nTABLE products\n  product_id character varying\n  product_category_name character varying\n  product_name_lenght integer\n  product_description_lenght integer\n  PRIMARY KEY (product_id)\n\nTABLE sellers\n  seller_id character varying\n  seller_zip_code_prefix integer\n  seller_city character varying\n  seller_state character varying\n  PRIMARY KEY (seller_id)\n\nTABLE members\n  member_id bigint\n  customer_unique_id character varying\n  level_id integer\n  status smallint  -- 会员状态：1=正常 2=冻结 3=注销\n  PRIMARY KEY (member_id)\n\n\nJOIN PLAN（推荐的连接顺序）\n  起点 customers\n  customers.customer_id = orders.customer_id   -- orders [FK]\n  orders.order_id = order_items.order_id   -- order_items [FK]\n  customers.customer_state = regions.region_code   -- regions [约定]\n  regions.region_code = warehouses.region_code   -- warehouses [约定]\n  -- 注意：还有 3 张表与起点不在同一连通分量，本段未给出连接顺序；它们的关联见上面的 JOINS。\n\n=== 数据画像 ===\n数据规模：orders 共 99441 行。\n时间范围：order_purchase_timestamp 从 2016-09-04 21:15:19.0 到 2018-10-17 17:30:18.0。\n【重要】这是历史快照数据，不是实时库。凡是\"最近 N 天/本月/上个月/今年\"\n这类相对时间，必须锚定到该表的最大时间，不能用 current_date / now()。\n\n=== 业务指标口径约定（数仓标准度量）===\n【使用原则】当用户问题涉及以下指标且未指定特殊计算口径时，遵循标准度量的表达式与过滤条件；若用户明确指明了特定的计算口径或聚合逻辑，以用户明确说明为准。\nENTITY_POLICY customer_identity_v2 -- customers\n  存储行/关联键：customers.customer_id；业务实体身份：customers.customer_unique_id。\n  populationCountUnit=ROW_KEY；该默认只作用于实体表记录集合的规模/属性分布计数，不覆盖已注册指标的分子分母。\n  未指定自然人/人数/业务身份去重的实体表规模及属性分布，默认统计存储记录：单独统计该表可COUNT(*)，一对多关联后按customers.customer_id去重避免放大；列名应体现记录单位，不把记录数宣称为自然人数。\n  明确问自然人、人数或业务身份去重时按customers.customer_unique_id；按每个实体汇总订单/消费等行为仍默认按业务实体身份分组，跨关联键识别同一实体。\n  用户明确指定按存储行/关联键统计时服从该要求，不擅自改成实体级统计。\n  显式字段/单位优先；同一请求同时要求记录数和人数时分别计算，不用一个默认覆盖所有指标。集合计数不授权改变过滤或JOIN覆盖。\n  本项目区分客户档案记录的规模与自然人行为：裸客户数/按属性分布默认数客户记录， 这是产品默认，不宣称“客户”一词只有这一种解释；明确自然人/人数/去重要求可覆盖默认。 同一自然人可以对应多个客户关联键，每客户订单数、复购、下单人数必须识别跨关联键的同一个人。 同一人可有不同州的客户记录；按州记录数按每条记录的州归属，按州人数则每州内独立去重， 同一人可参与多个州，不能把各州人数相加当全站去重人数，也不猜测“最新州”或唯一归属。 客户关联键仍用于连接订单，不能直接用它代表每个真实客户。 读取交易/事件所属客户记录的属性时，沿该事实的关联键定位customers.customer_id对应记录； customers.customer_unique_id用于身份去重或跨记录汇总，不授权改走其他实体反向匹配该身份的全部客户记录取属性。 同一自然人可对应多条属性不同的客户记录，不能猜测唯一或最新属性； COUNT(DISTINCT 事实主键)只能消除同组重复，不能修复错误属性分组或金额放大。 用户明确要求跨记录属性分布时另按该范围计算。 人数和按人分组时不把SQL NULL身份合并成一个人；默认只统计已知身份， 用户明确要求未知身份分组时可单列未知组，但不能把它称为一个真实客户。 这不授权过滤未按人分组的订单总数或金额，不自动排除取消订单，也不替代指标已有过滤。 关联一对多明细后统计订单数须按订单主键去重，不能把明细行当成订单； 金额聚合须在正确事实粒度处理连接放大，不能用SUM(DISTINCT 金额)误删等额交易。 若要求所有客户含零订单，从客户侧保留无订单者且COUNT订单主键，不用COUNT(*)把空连接计为一单。\n\n=== 参考示例 ===\n问题: 每个会员等级对应的商品销售额是多少？\nSQL: SELECT ml.level_name, ROUND(SUM(oi.price), 2) AS sales\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN members m ON m.customer_unique_id = c.customer_unique_id\nJOIN member_levels ml ON ml.level_id = m.level_id\nJOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY sales DESC;\n---\n问题: 每个仓库所在区域的发货单量和覆盖订单数分别是多少？\nSQL: SELECT r.region_name, COUNT(DISTINCT s.shipment_id) AS shipments, COUNT(DISTINCT o.order_id) AS orders\nFROM shipments s\nJOIN warehouses w ON w.warehouse_id = s.warehouse_id\nJOIN regions r ON r.region_code = w.region_code\nJOIN orders o ON o.order_id = s.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY 1 ORDER BY shipments DESC;\n---\n\n=== 用户问题 ===\n按客户所在大区统计商品销售额\n",
+  "question" : "按客户所在大区统计商品销售额"
+}, {
+  "httpStatus" : 400,
+  "id" : "regional-choice",
+  "expectedClarification" : true,
+  "decision" : [ {
+    "term" : "大区",
+    "matchedTerm" : "大区",
+    "evidence" : [ {
+      "source" : "trigger-pattern",
+      "group" : "applicability",
+      "matchedText" : "大区订单"
+    }, {
+      "source" : "required-pattern",
+      "group" : "regional-subject",
+      "matchedText" : "按客户州"
+    } ],
+    "missingGroups" : [ ],
+    "unresolvedEvidence" : [ "客户州还是卖家" ],
+    "needsClarification" : true,
+    "question" : "交易指标按哪一方的地域归属统计大区：客户收货地、卖家所在地，还是仓库所在地？请明确来源。"
+  } ],
+  "sessionTurns" : 1,
+  "body" : {
+    "status" : "NEEDS_CLARIFICATION",
+    "sql" : null,
+    "message" : "交易指标按哪一方的地域归属统计大区：客户收货地、卖家所在地，还是仓库所在地？请明确来源。",
+    "violations" : [ ],
+    "columns" : [ ],
+    "rows" : [ ],
+    "truncated" : false,
+    "rewritten" : false,
+    "rowCount" : 0,
+    "schemaTableCount" : 0,
+    "retrievedTables" : [ ],
+    "schemaDdlChars" : 0,
+    "llm" : null,
+    "timings" : {
+      "retrievalMs" : 0,
+      "generationMs" : 0,
+      "validationMs" : 0,
+      "executionMs" : 0,
+      "totalMs" : 0
+    },
+    "sessionId" : "clarification-regional-choice",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "b3398fcc-9d34-4f8c-87b2-5026df8e4192",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 0,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 0,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "CLARIFICATION" : 0,
+        "SESSION" : 0,
+        "ADMISSION" : 0,
+        "CONVERSATION" : 0
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 0,
+      "currentStageMs" : 0
+    }
+  },
+  "prompt" : "",
+  "question" : "大区订单量按客户州还是卖家州"
+}, {
+  "httpStatus" : 200,
+  "id" : "region-dictionary",
+  "expectedClarification" : false,
+  "decision" : [ ],
+  "sessionTurns" : 1,
+  "body" : {
+    "status" : "SUCCESS",
+    "sql" : "SELECT 1 AS controlled_answer LIMIT 201",
+    "message" : null,
+    "violations" : [ ],
+    "columns" : [ "controlled_answer" ],
+    "rows" : [ [ "1" ] ],
+    "truncated" : false,
+    "rewritten" : true,
+    "rowCount" : 1,
+    "schemaTableCount" : 8,
+    "retrievedTables" : [ "regions", "warehouses", "customers", "geolocation", "shipping_addresses", "shipments", "inventory", "inventory_movements" ],
+    "schemaDdlChars" : 1645,
+    "llm" : {
+      "model" : "deepseek-flash",
+      "promptTokens" : 10,
+      "completionTokens" : 5,
+      "totalTokens" : 15,
+      "latencyMs" : 9,
+      "costYuan" : 0.02
+    },
+    "timings" : {
+      "retrievalMs" : 5,
+      "generationMs" : 10,
+      "validationMs" : 2,
+      "executionMs" : 4,
+      "totalMs" : 24
+    },
+    "sessionId" : "clarification-region-dictionary",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "d6f56fe0-4f79-48ea-b810-e7085f59609b",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 1,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 24,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "SESSION" : 0,
+        "ADMISSION" : 0,
+        "VALIDATION" : 2,
+        "EXPLAIN" : 2,
+        "CLARIFICATION" : 0,
+        "CACHE_WRITE" : 0,
+        "RESULT_CHECK" : 0,
+        "RETRIEVAL" : 5,
+        "CONVERSATION" : 0,
+        "CACHE" : 0,
+        "GENERATION" : 6,
+        "MODEL" : 4,
+        "EXECUTION" : 2
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 3,
+      "currentStageMs" : 0
+    }
+  },
+  "prompt" : "你是一个 PostgreSQL 数据分析助手。你的唯一任务是把用户的中文问题翻译成一条可执行的 SQL。\n\n思考与推理步骤（Chain-of-Thought 思维链）：\n在编写 SQL 前，请严格按以下四步逻辑进行推导：\n1. 识别实体与目标表：从问题中提取核心业务实体，锁定需要的表；\n2. 规划连接路径：多表查询时，参考 JOIN PLAN 与 FOREIGN KEYS 确定连接键，防止过度连接或笛卡尔积；\n3. 对齐过滤条件：涉及状态、编码或业务指标时，严格按「字段枚举对齐」与 METRICS 表达式对齐物理值；\n4. 确定维度与聚合：确定 GROUP BY 维度、聚合函数与排序规则，仅投影问题真正需要的字段。\n\n硬性规则：\n1. 只输出一条 SELECT 语句，不要输出 INSERT/UPDATE/DELETE/DROP/ALTER/TRUNCATE。\n2. 不要输出任何代码围栏外解释或闲聊文本，直接输出可执行的 SQL 语句。\n3. 必须带 LIMIT，除非结果是单行聚合值（如 COUNT/SUM/AVG 且无 GROUP BY）。\n4. 只使用下面 schema 里真实存在的表和列，不要臆造字段名。\n5. 表名和列名一律用小写，不要加引号。\n6. 遇到多表查询时，优先参考 JOIN PLAN（推荐的连接顺序）或 FOREIGN KEYS 里给出的关联关系。\n7. 如果下面给出了 METRICS（业务指标定义），在用户未明确指定其他特殊口径时，默认遵循其表达式与过滤条件；若用户明确指定了自定义计算方式（如指定按订单平均金额计算客单价等），以用户明确说明为准。\n   事实筛选必须有用户请求或当前业务契约的依据；schema列出某状态枚举，不代表问题要求只统计该状态。不能自行补充“已完成”“有效”“非空”等记录过滤而缩小统计范围；明确请求或业务契约已有的过滤继续执行。\n8. SELECT 列表只放问题真正要求的内容。问题问「多少 / 哪些指标 / 平均是多少」时，\n   只输出维度列和指标列；用户明确指定维度名称、编号、编码或输出列时，以用户要求为准，不顺手附加其他展示列。\n   【维度投影原则】用户未明确要求名称时，默认使用当前事实或实体表已有的标识列作为维度输出，不为展示补关联或同时附加名称；状态、州代码、分类值等有业务含义的维度沿用原值。用户明确要求名称时，才使用当前schema中的名称列及可靠关联键，不臆造名称或引用上下文之外的表列。\n   内部仍按完整实体主键区分，不能因同名而合并实体，只有明确按名称汇总时才合并。为获取明确要求的名称关联维表时，保留未匹配事实及NULL名称，不因INNER JOIN、重复维表或名称过滤改变统计覆盖与金额；无法确认唯一匹配时不能任意取一个名称。明确要求仅匹配名称的对象时服从用户范围。\n   筛选条件、分组身份和中间计算字段不自动成为输出列。只问两期差额或增长率时，不附加两期原始数值；明确要求两期数值及差额/增长率时才全部输出。\n   【实体寻优规范】问「最...的那一笔/哪一个」特定实体（如“分期数最多的那一笔支付分了多少期”）时，\n   属于单条记录寻优，使用 ORDER BY ... DESC LIMIT 1 并保留实体标识（如 order_id）与指标列，不要写成纯 MAX()。\n\n9. 聚合粒度必须与问题的「每个…」一致。GROUP BY 的列要和 SELECT 里的维度列对应，\n   不要多分一层，也不要把分组列换成另一张表里的等价列。\n   - 「每个活动/卖家/标签」等实体按完整主键区分；名称是展示属性，不保证唯一。可按主键和名称分组，不能仅因同名就合并实体；明确按名称汇总时才合并。不为分组身份额外投影用户未要求的列。\n   - 预算等实体自带数值不随子表明细累加；先在原事实粒度计算，再关联。SUM(DISTINCT 金额)会误删金额相同的不同事实，不能用来抵消关联放大。\n   - 同一请求的每个指标分别确定事实全集。统计标签覆盖会员数及其商品均价时，会员数包括无订单会员，均价只统计存在的商品价格；用LEFT JOIN保留会员或分别聚合再合并，避免INNER JOIN缩小会员全集。只有用户明确要求有订单/有商品的会员时才限缩；右表条件放ON或对应聚合内，不能在WHERE中误删左侧记录。没有价格时均价为NULL，不能把空值补0参与平均。\n10. 计数口径规范：\n   - 先确定每个计数的对象与身份：记录数、不同实体数和业务身份去重人数不是同一度量；用户明确单位优先，其次遵循当前业务契约，不能用一个计数方式覆盖同一结果的所有指标。\n   - 统计源表记录且连接不重复该记录时用 COUNT(*)；连接可能重复记录时按源表完整主键去重或先聚合。仅有外键不保证子表关联键唯一，不能据此假定一对一。\n   - 统计满足条件的不同订单时按订单主键去重或使用 EXISTS 筛选订单；同一订单可有多条评价/明细，评价记录数保留每条评价，订单数只计一次。单表上的业务身份去重也须使用对应身份列，不以是否存在JOIN为前提。\n   - 去重不得改变过滤、事实覆盖或分母；NULL身份不自动合并成一个实体，空集合计数为0。组合主键须保留全部分量，不用字符串拼接假造唯一键。\n11. 不要为了「信息更全」而加列、加分组或加排序。评估比的是结果集，\n   多一列和少一列都算错。\n12. 比例与精度口径：\n   - 单位优先级：用户明确指定的单位 > 当前METRIC的默认输出单位 > 通用比例默认值；每个指标分别处理，不把某一列的单位应用到其他列。指标名称本身不算显式单位覆盖。\n   - 用户明确要求百分比/%时输出百分数数值；明确要求0到1/小数比率时输出原始比值。覆盖指标默认单位时同步转换表达式、精度和列别名，参考示例与推荐查询不能覆盖用户要求。\n   - 对已注册指标，遵循其outputUnit/outputScale（如PERCENT按100倍比值、DECIMAL_RATIO按原始比值），不因题干出现「比例」就改用另一单位；未注册指标的普通比例默认输出小数比率、四位小数，明确百分比时乘100、两位小数。分母为零用NULLIF返回NULL，不伪装成0。\n   - 其余一般金额、单价、平均值，统一用 ROUND(表达式, 2) 保留两位小数。\n   - 【PostgreSQL 严格类型约束】PostgreSQL 的 ROUND(val, n) 仅接受 NUMERIC 类型！若表达式涉及 EXTRACT(EPOCH FROM ...) 或浮点计算/AVG，返回值是 DOUBLE PRECISION，必须显式加 ::NUMERIC 转换（例如 ROUND((AVG(EXTRACT(EPOCH FROM ...)) / 86400.0)::NUMERIC, 2)），绝对禁止对 DOUBLE PRECISION 直接传 2 个参数调用 ROUND。\n13. 按时间分组与时间字段选择：\n   - 按年比较或年度分组时，默认用 EXTRACT(YEAR FROM 时间列)::int 输出整数年份（如2017），不要用年初时间戳代替年份标签；用户明确要求年初日期/时间戳时才用 DATE_TRUNC('year', 时间列) 并按要求转换类型。\n   - 按季度分组时，默认用 DATE_TRUNC('quarter', 时间列) 输出一个季度起始时间戳；用户明确要求年/季度编号或标签时按要求输出，不仅用季度编号合并不同年份。\n   - 星期维度默认用 EXTRACT(DOW FROM 时间列)::int 输出编号（周日0、周一1至周六6）；用户明确要求ISO编号（周一1至周日7）或中文名称时按要求输出。\n   - 用 DATE_TRUNC('month'|'week'|'day', 时间列) 作为分组列，不要用 to_char 把时间转成 'YYYY-MM' 这类字符串。\n   - 问题涉及各月/每个月/每周等周期统计时，若表内有自身的业务时间字段（如 refunds.requested_at, support_tickets.created_at, members.register_date, settlements.period_start），优先使用本表对应业务时间，不要无故关联 orders 表。\n14. 时间窗口过滤用 >= 起点 AND < 终点（左闭右开），不要用 BETWEEN：\n   BETWEEN 会把终点那一整天的数据也算进来。\n15. 如果下面给出了「字段枚举与实体取值对齐」，WHERE 过滤条件中涉及该实体时，\n   **必须严格使用对应的物理字段与取值**（例如使用 customer_state = 'SP' 而不是 '圣保罗'）。\n16. 实体与明细字段指引：\n   - 查询订单明细的价格/销售金额时，直接使用 order_items 表及其 price 列；仅在明确提到卖家结算、抽成或对账时才使用 settlements / settlement_items。\n   - 查询承运商配送时长时，直接使用 shipments 表的 (delivered_at - shipped_at)，无需关联轨迹表。\n   - 工单实际处理时长计算用 support_tickets 表的 (resolved_at - created_at)；ticket_categories.sla_hours 仅为时限标准而非实际耗时。\n17. 对比结果的列与行契约：\n   - 用户明确要求横表/纵表、指定列或每个条件一行时，以该要求为准；其次遵循已注册METRIC的输出形状，最后才使用以下默认约定。形状选择不能改动时间范围、事实粒度、过滤、分母或单位。\n   - 按时间比较同一指标，或明确要求按维度分组/每种/分布时，输出维度列、指标列，每个维度值一行；时间维度按时间升序。不要因为列举了年份就自动转成多列。\n   - 未要求分组、只点名多个非时间业务子集的记录计数时，将它们作为多个具名计数指标，一行内按题目点名顺序各占一列；用条件聚合分别计数，不额外投影状态/类型列。某子集无记录计为0，空输入也返回一行各计数为0；不要因一组为空丢掉该计数。\n   - 多个不同指标按题目顺序各占一列；若同时要求每州/每月等分组，则每组一行、组内各指标一列。不要把GMV与销售额强行变成维度行，也不要把复购率等非计数指标套用具名子集计数规则。\n18. 复杂多表关联时，可在 SELECT 语句首行添加一行以 -- 开头的单行注释说明思路，之后紧接完整 SQL。\n=== 数据库 Schema ===\nTABLE regions  -- 巴西州份到大区的映射，用于区域维度分析\n  region_code character varying\n  region_name character varying\n  macro_region character varying\n  PRIMARY KEY (region_code)\n\nTABLE warehouses\n  warehouse_id integer\n  warehouse_name character varying\n  region_code character varying\n  capacity integer\n  PRIMARY KEY (warehouse_id)\n\nTABLE customers\n  customer_id character varying\n  customer_unique_id character varying\n  customer_zip_code_prefix integer\n  customer_state character varying\n  PRIMARY KEY (customer_id)\n\nTABLE geolocation\n  geolocation_zip_code_prefix integer\n  geolocation_lat numeric\n  geolocation_lng numeric\n  geolocation_state character varying\n\nTABLE shipping_addresses\n  address_id bigint\n  customer_id character varying\n  zip_code_prefix integer\n  state character varying\n  PRIMARY KEY (address_id)\n\nTABLE shipments\n  shipment_id bigint\n  order_id character varying\n  warehouse_id integer\n  status smallint  -- 发货状态：1=待发货 2=运输中 3=已签收 4=异常\n  PRIMARY KEY (shipment_id)\n\nTABLE inventory\n  warehouse_id integer\n  product_id character varying\n  quantity integer\n  safety_stock integer\n  PRIMARY KEY (warehouse_id, product_id)  -- 组合唯一，单列不保证唯一\n\nTABLE inventory_movements\n  movement_id bigint\n  warehouse_id integer\n  product_id character varying\n  movement_type smallint  -- 出入库类型：1=入库 2=出库 3=退货入库 4=盘亏\n  PRIMARY KEY (movement_id)\n\n\nJOIN PLAN（推荐的连接顺序）\n  起点 regions\n  regions.region_code = warehouses.region_code   -- warehouses [约定]\n  regions.region_code = customers.customer_state   -- customers [约定]\n  customers.customer_id = shipping_addresses.customer_id   -- shipping_addresses [约定]\n  -- 注意：还有 4 张表与起点不在同一连通分量，本段未给出连接顺序；它们的关联见上面的 JOINS。\n\n=== 数据画像 ===\n数据规模：orders 共 99441 行。\n时间范围：order_purchase_timestamp 从 2016-09-04 21:15:19.0 到 2018-10-17 17:30:18.0。\n【重要】这是历史快照数据，不是实时库。凡是\"最近 N 天/本月/上个月/今年\"\n这类相对时间，必须锚定到该表的最大时间，不能用 current_date / now()。\n\n=== 参考示例 ===\n问题: 每个仓库所在区域的发货单量和覆盖订单数分别是多少？\nSQL: SELECT r.region_name, COUNT(DISTINCT s.shipment_id) AS shipments, COUNT(DISTINCT o.order_id) AS orders\nFROM shipments s\nJOIN warehouses w ON w.warehouse_id = s.warehouse_id\nJOIN regions r ON r.region_code = w.region_code\nJOIN orders o ON o.order_id = s.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY 1 ORDER BY shipments DESC;\n---\n问题: 一共有多少个不同的客户（按自然人统计，同一人多次下单只算一个）？\nSQL: SELECT COUNT(DISTINCT customer_unique_id) FROM customers;\n---\n\n=== 用户问题 ===\n每个大区包含多少个州\n",
+  "question" : "每个大区包含多少个州"
+}, {
+  "httpStatus" : 400,
+  "id" : "price-bare",
+  "expectedClarification" : true,
+  "decision" : [ {
+    "term" : "平均涨跌幅",
+    "matchedTerm" : "平均涨跌幅",
+    "evidence" : [ {
+      "source" : "trigger-pattern",
+      "group" : "applicability",
+      "matchedText" : "价格平均涨跌幅"
+    } ],
+    "missingGroups" : [ "price-change-unit", "averaging-grain" ],
+    "unresolvedEvidence" : [ ],
+    "needsClarification" : true,
+    "question" : "价格平均涨跌幅按新价减旧价的金额差，还是除以旧价的比例？平均按每条变动记录等权、先按商品平均，还是按销量加权？请明确两项。"
+  } ],
+  "sessionTurns" : 1,
+  "body" : {
+    "status" : "NEEDS_CLARIFICATION",
+    "sql" : null,
+    "message" : "价格平均涨跌幅按新价减旧价的金额差，还是除以旧价的比例？平均按每条变动记录等权、先按商品平均，还是按销量加权？请明确两项。",
+    "violations" : [ ],
+    "columns" : [ ],
+    "rows" : [ ],
+    "truncated" : false,
+    "rewritten" : false,
+    "rowCount" : 0,
+    "schemaTableCount" : 0,
+    "retrievedTables" : [ ],
+    "schemaDdlChars" : 0,
+    "llm" : null,
+    "timings" : {
+      "retrievalMs" : 0,
+      "generationMs" : 0,
+      "validationMs" : 0,
+      "executionMs" : 0,
+      "totalMs" : 0
+    },
+    "sessionId" : "clarification-price-bare",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "9f63ec8c-1b50-44f5-817d-eaf50554e803",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 0,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 0,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "CLARIFICATION" : 0,
+        "SESSION" : 0,
+        "ADMISSION" : 0,
+        "CONVERSATION" : 0
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 0,
+      "currentStageMs" : 0
+    }
+  },
+  "prompt" : "",
+  "question" : "价格平均涨跌幅是多少"
+}, {
+  "httpStatus" : 400,
+  "id" : "price-unit-only",
+  "expectedClarification" : true,
+  "decision" : [ {
+    "term" : "平均涨跌幅",
+    "matchedTerm" : "平均涨幅",
+    "evidence" : [ {
+      "source" : "trigger-pattern",
+      "group" : "applicability",
+      "matchedText" : "价格平均涨幅"
+    }, {
+      "source" : "required-pattern",
+      "group" : "price-change-unit",
+      "matchedText" : "平均涨幅用百分比"
+    }, {
+      "source" : "required-pattern",
+      "group" : "price-change-unit",
+      "matchedText" : "平均涨幅用百分比输出"
+    } ],
+    "missingGroups" : [ "averaging-grain" ],
+    "unresolvedEvidence" : [ ],
+    "needsClarification" : true,
+    "question" : "价格平均涨跌幅按新价减旧价的金额差，还是除以旧价的比例？平均按每条变动记录等权、先按商品平均，还是按销量加权？请明确两项。"
+  } ],
+  "sessionTurns" : 1,
+  "body" : {
+    "status" : "NEEDS_CLARIFICATION",
+    "sql" : null,
+    "message" : "价格平均涨跌幅按新价减旧价的金额差，还是除以旧价的比例？平均按每条变动记录等权、先按商品平均，还是按销量加权？请明确两项。",
+    "violations" : [ ],
+    "columns" : [ ],
+    "rows" : [ ],
+    "truncated" : false,
+    "rewritten" : false,
+    "rowCount" : 0,
+    "schemaTableCount" : 0,
+    "retrievedTables" : [ ],
+    "schemaDdlChars" : 0,
+    "llm" : null,
+    "timings" : {
+      "retrievalMs" : 0,
+      "generationMs" : 0,
+      "validationMs" : 0,
+      "executionMs" : 0,
+      "totalMs" : 0
+    },
+    "sessionId" : "clarification-price-unit-only",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "6d675049-f271-47a3-b9b0-d9b1da273614",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 0,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 0,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "CLARIFICATION" : 0,
+        "SESSION" : 0,
+        "ADMISSION" : 0,
+        "CONVERSATION" : 0
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 0,
+      "currentStageMs" : 0
+    }
+  },
+  "prompt" : "",
+  "question" : "价格平均涨幅用百分比输出"
+}, {
+  "httpStatus" : 200,
+  "id" : "price-explicit",
+  "expectedClarification" : false,
+  "decision" : [ {
+    "term" : "平均涨跌幅",
+    "matchedTerm" : "平均涨幅",
+    "evidence" : [ {
+      "source" : "trigger-pattern",
+      "group" : "applicability",
+      "matchedText" : "价格平均涨幅"
+    }, {
+      "source" : "required-pattern",
+      "group" : "price-change-unit",
+      "matchedText" : "平均涨幅用百分比"
+    }, {
+      "source" : "required-pattern",
+      "group" : "price-change-unit",
+      "matchedText" : "平均涨幅用百分比输出"
+    }, {
+      "source" : "required-pattern",
+      "group" : "averaging-grain",
+      "matchedText" : "每条变动记录等权"
+    } ],
+    "missingGroups" : [ ],
+    "unresolvedEvidence" : [ ],
+    "needsClarification" : false,
+    "question" : "价格平均涨跌幅按新价减旧价的金额差，还是除以旧价的比例？平均按每条变动记录等权、先按商品平均，还是按销量加权？请明确两项。"
+  } ],
+  "sessionTurns" : 1,
+  "body" : {
+    "status" : "SUCCESS",
+    "sql" : "SELECT 1 AS controlled_answer LIMIT 201",
+    "message" : null,
+    "violations" : [ ],
+    "columns" : [ "controlled_answer" ],
+    "rows" : [ [ "1" ] ],
+    "truncated" : false,
+    "rewritten" : true,
+    "rowCount" : 1,
+    "schemaTableCount" : 6,
+    "retrievedTables" : [ "order_items", "orders", "products", "sellers", "refund_items", "settlement_items" ],
+    "schemaDdlChars" : 1467,
+    "llm" : {
+      "model" : "deepseek-flash",
+      "promptTokens" : 10,
+      "completionTokens" : 5,
+      "totalTokens" : 15,
+      "latencyMs" : 10,
+      "costYuan" : 0.02
+    },
+    "timings" : {
+      "retrievalMs" : 5,
+      "generationMs" : 12,
+      "validationMs" : 3,
+      "executionMs" : 3,
+      "totalMs" : 25
+    },
+    "sessionId" : "clarification-price-explicit",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "dc53a3e7-38b0-4734-b86c-58f665c259af",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 1,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 25,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "SESSION" : 0,
+        "ADMISSION" : 0,
+        "VALIDATION" : 3,
+        "EXPLAIN" : 2,
+        "CLARIFICATION" : 0,
+        "CACHE_WRITE" : 0,
+        "RESULT_CHECK" : 0,
+        "RETRIEVAL" : 5,
+        "CONVERSATION" : 0,
+        "CACHE" : 0,
+        "GENERATION" : 4,
+        "MODEL" : 8,
+        "EXECUTION" : 1
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 2,
+      "currentStageMs" : 0
+    }
+  },
+  "prompt" : "你是一个 PostgreSQL 数据分析助手。你的唯一任务是把用户的中文问题翻译成一条可执行的 SQL。\n\n思考与推理步骤（Chain-of-Thought 思维链）：\n在编写 SQL 前，请严格按以下四步逻辑进行推导：\n1. 识别实体与目标表：从问题中提取核心业务实体，锁定需要的表；\n2. 规划连接路径：多表查询时，参考 JOIN PLAN 与 FOREIGN KEYS 确定连接键，防止过度连接或笛卡尔积；\n3. 对齐过滤条件：涉及状态、编码或业务指标时，严格按「字段枚举对齐」与 METRICS 表达式对齐物理值；\n4. 确定维度与聚合：确定 GROUP BY 维度、聚合函数与排序规则，仅投影问题真正需要的字段。\n\n硬性规则：\n1. 只输出一条 SELECT 语句，不要输出 INSERT/UPDATE/DELETE/DROP/ALTER/TRUNCATE。\n2. 不要输出任何代码围栏外解释或闲聊文本，直接输出可执行的 SQL 语句。\n3. 必须带 LIMIT，除非结果是单行聚合值（如 COUNT/SUM/AVG 且无 GROUP BY）。\n4. 只使用下面 schema 里真实存在的表和列，不要臆造字段名。\n5. 表名和列名一律用小写，不要加引号。\n6. 遇到多表查询时，优先参考 JOIN PLAN（推荐的连接顺序）或 FOREIGN KEYS 里给出的关联关系。\n7. 如果下面给出了 METRICS（业务指标定义），在用户未明确指定其他特殊口径时，默认遵循其表达式与过滤条件；若用户明确指定了自定义计算方式（如指定按订单平均金额计算客单价等），以用户明确说明为准。\n   事实筛选必须有用户请求或当前业务契约的依据；schema列出某状态枚举，不代表问题要求只统计该状态。不能自行补充“已完成”“有效”“非空”等记录过滤而缩小统计范围；明确请求或业务契约已有的过滤继续执行。\n8. SELECT 列表只放问题真正要求的内容。问题问「多少 / 哪些指标 / 平均是多少」时，\n   只输出维度列和指标列；用户明确指定维度名称、编号、编码或输出列时，以用户要求为准，不顺手附加其他展示列。\n   【维度投影原则】用户未明确要求名称时，默认使用当前事实或实体表已有的标识列作为维度输出，不为展示补关联或同时附加名称；状态、州代码、分类值等有业务含义的维度沿用原值。用户明确要求名称时，才使用当前schema中的名称列及可靠关联键，不臆造名称或引用上下文之外的表列。\n   内部仍按完整实体主键区分，不能因同名而合并实体，只有明确按名称汇总时才合并。为获取明确要求的名称关联维表时，保留未匹配事实及NULL名称，不因INNER JOIN、重复维表或名称过滤改变统计覆盖与金额；无法确认唯一匹配时不能任意取一个名称。明确要求仅匹配名称的对象时服从用户范围。\n   筛选条件、分组身份和中间计算字段不自动成为输出列。只问两期差额或增长率时，不附加两期原始数值；明确要求两期数值及差额/增长率时才全部输出。\n   【实体寻优规范】问「最...的那一笔/哪一个」特定实体（如“分期数最多的那一笔支付分了多少期”）时，\n   属于单条记录寻优，使用 ORDER BY ... DESC LIMIT 1 并保留实体标识（如 order_id）与指标列，不要写成纯 MAX()。\n\n9. 聚合粒度必须与问题的「每个…」一致。GROUP BY 的列要和 SELECT 里的维度列对应，\n   不要多分一层，也不要把分组列换成另一张表里的等价列。\n   - 「每个活动/卖家/标签」等实体按完整主键区分；名称是展示属性，不保证唯一。可按主键和名称分组，不能仅因同名就合并实体；明确按名称汇总时才合并。不为分组身份额外投影用户未要求的列。\n   - 预算等实体自带数值不随子表明细累加；先在原事实粒度计算，再关联。SUM(DISTINCT 金额)会误删金额相同的不同事实，不能用来抵消关联放大。\n   - 同一请求的每个指标分别确定事实全集。统计标签覆盖会员数及其商品均价时，会员数包括无订单会员，均价只统计存在的商品价格；用LEFT JOIN保留会员或分别聚合再合并，避免INNER JOIN缩小会员全集。只有用户明确要求有订单/有商品的会员时才限缩；右表条件放ON或对应聚合内，不能在WHERE中误删左侧记录。没有价格时均价为NULL，不能把空值补0参与平均。\n10. 计数口径规范：\n   - 先确定每个计数的对象与身份：记录数、不同实体数和业务身份去重人数不是同一度量；用户明确单位优先，其次遵循当前业务契约，不能用一个计数方式覆盖同一结果的所有指标。\n   - 统计源表记录且连接不重复该记录时用 COUNT(*)；连接可能重复记录时按源表完整主键去重或先聚合。仅有外键不保证子表关联键唯一，不能据此假定一对一。\n   - 统计满足条件的不同订单时按订单主键去重或使用 EXISTS 筛选订单；同一订单可有多条评价/明细，评价记录数保留每条评价，订单数只计一次。单表上的业务身份去重也须使用对应身份列，不以是否存在JOIN为前提。\n   - 去重不得改变过滤、事实覆盖或分母；NULL身份不自动合并成一个实体，空集合计数为0。组合主键须保留全部分量，不用字符串拼接假造唯一键。\n11. 不要为了「信息更全」而加列、加分组或加排序。评估比的是结果集，\n   多一列和少一列都算错。\n12. 比例与精度口径：\n   - 单位优先级：用户明确指定的单位 > 当前METRIC的默认输出单位 > 通用比例默认值；每个指标分别处理，不把某一列的单位应用到其他列。指标名称本身不算显式单位覆盖。\n   - 用户明确要求百分比/%时输出百分数数值；明确要求0到1/小数比率时输出原始比值。覆盖指标默认单位时同步转换表达式、精度和列别名，参考示例与推荐查询不能覆盖用户要求。\n   - 对已注册指标，遵循其outputUnit/outputScale（如PERCENT按100倍比值、DECIMAL_RATIO按原始比值），不因题干出现「比例」就改用另一单位；未注册指标的普通比例默认输出小数比率、四位小数，明确百分比时乘100、两位小数。分母为零用NULLIF返回NULL，不伪装成0。\n   - 其余一般金额、单价、平均值，统一用 ROUND(表达式, 2) 保留两位小数。\n   - 【PostgreSQL 严格类型约束】PostgreSQL 的 ROUND(val, n) 仅接受 NUMERIC 类型！若表达式涉及 EXTRACT(EPOCH FROM ...) 或浮点计算/AVG，返回值是 DOUBLE PRECISION，必须显式加 ::NUMERIC 转换（例如 ROUND((AVG(EXTRACT(EPOCH FROM ...)) / 86400.0)::NUMERIC, 2)），绝对禁止对 DOUBLE PRECISION 直接传 2 个参数调用 ROUND。\n13. 按时间分组与时间字段选择：\n   - 按年比较或年度分组时，默认用 EXTRACT(YEAR FROM 时间列)::int 输出整数年份（如2017），不要用年初时间戳代替年份标签；用户明确要求年初日期/时间戳时才用 DATE_TRUNC('year', 时间列) 并按要求转换类型。\n   - 按季度分组时，默认用 DATE_TRUNC('quarter', 时间列) 输出一个季度起始时间戳；用户明确要求年/季度编号或标签时按要求输出，不仅用季度编号合并不同年份。\n   - 星期维度默认用 EXTRACT(DOW FROM 时间列)::int 输出编号（周日0、周一1至周六6）；用户明确要求ISO编号（周一1至周日7）或中文名称时按要求输出。\n   - 用 DATE_TRUNC('month'|'week'|'day', 时间列) 作为分组列，不要用 to_char 把时间转成 'YYYY-MM' 这类字符串。\n   - 问题涉及各月/每个月/每周等周期统计时，若表内有自身的业务时间字段（如 refunds.requested_at, support_tickets.created_at, members.register_date, settlements.period_start），优先使用本表对应业务时间，不要无故关联 orders 表。\n14. 时间窗口过滤用 >= 起点 AND < 终点（左闭右开），不要用 BETWEEN：\n   BETWEEN 会把终点那一整天的数据也算进来。\n15. 如果下面给出了「字段枚举与实体取值对齐」，WHERE 过滤条件中涉及该实体时，\n   **必须严格使用对应的物理字段与取值**（例如使用 customer_state = 'SP' 而不是 '圣保罗'）。\n16. 实体与明细字段指引：\n   - 查询订单明细的价格/销售金额时，直接使用 order_items 表及其 price 列；仅在明确提到卖家结算、抽成或对账时才使用 settlements / settlement_items。\n   - 查询承运商配送时长时，直接使用 shipments 表的 (delivered_at - shipped_at)，无需关联轨迹表。\n   - 工单实际处理时长计算用 support_tickets 表的 (resolved_at - created_at)；ticket_categories.sla_hours 仅为时限标准而非实际耗时。\n17. 对比结果的列与行契约：\n   - 用户明确要求横表/纵表、指定列或每个条件一行时，以该要求为准；其次遵循已注册METRIC的输出形状，最后才使用以下默认约定。形状选择不能改动时间范围、事实粒度、过滤、分母或单位。\n   - 按时间比较同一指标，或明确要求按维度分组/每种/分布时，输出维度列、指标列，每个维度值一行；时间维度按时间升序。不要因为列举了年份就自动转成多列。\n   - 未要求分组、只点名多个非时间业务子集的记录计数时，将它们作为多个具名计数指标，一行内按题目点名顺序各占一列；用条件聚合分别计数，不额外投影状态/类型列。某子集无记录计为0，空输入也返回一行各计数为0；不要因一组为空丢掉该计数。\n   - 多个不同指标按题目顺序各占一列；若同时要求每州/每月等分组，则每组一行、组内各指标一列。不要把GMV与销售额强行变成维度行，也不要把复购率等非计数指标套用具名子集计数规则。\n18. 复杂多表关联时，可在 SELECT 语句首行添加一行以 -- 开头的单行注释说明思路，之后紧接完整 SQL。\n=== 数据库 Schema ===\nTABLE order_items\n  order_id character varying\n  order_item_id integer\n  product_id character varying\n  seller_id character varying\n  price numeric\n  freight_value numeric\n  PRIMARY KEY (order_id, order_item_id)  -- 组合唯一，单列不保证唯一\n\nTABLE orders\n  order_id character varying\n  customer_id character varying\n  order_status character varying\n  order_purchase_timestamp timestamp without time zone\n  PRIMARY KEY (order_id)\n\nTABLE products\n  product_id character varying\n  product_name_lenght integer\n  product_description_lenght integer\n  product_photos_qty integer\n  product_weight_g integer\n  product_length_cm integer\n  product_height_cm integer\n  product_width_cm integer\n  PRIMARY KEY (product_id)\n\nTABLE sellers\n  seller_id character varying\n  seller_zip_code_prefix integer\n  seller_city character varying\n  seller_state character varying\n  PRIMARY KEY (seller_id)\n\nTABLE refund_items\n  refund_id bigint\n  order_id character varying\n  order_item_id integer\n  refund_qty integer\n  refund_value numeric\n  PRIMARY KEY (refund_id, order_id, order_item_id)  -- 组合唯一，单列不保证唯一\n\nTABLE settlement_items\n  settlement_id bigint\n  order_id character varying\n  order_item_id integer\n  gross_amount numeric\n  commission_rate numeric\n  commission_amount numeric\n  PRIMARY KEY (settlement_id, order_id, order_item_id)  -- 组合唯一，单列不保证唯一\n\nFOREIGN KEYS\n  order_items.order_id -> orders.order_id\n  order_items.product_id -> products.product_id\n  order_items.seller_id -> sellers.seller_id\n\n=== 数据画像 ===\n数据规模：orders 共 99441 行。\n时间范围：order_purchase_timestamp 从 2016-09-04 21:15:19.0 到 2018-10-17 17:30:18.0。\n【重要】这是历史快照数据，不是实时库。凡是\"最近 N 天/本月/上个月/今年\"\n这类相对时间，必须锚定到该表的最大时间，不能用 current_date / now()。\n\n=== 参考示例 ===\n问题: 每个月的商品销售额是多少？\nSQL: SELECT DATE_TRUNC('month', o.order_purchase_timestamp) AS month,\n       ROUND(SUM(oi.price), 2) AS sales\nFROM orders o JOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY 1;\n---\n问题: 每个月的平均订单金额（按订单明细商品金额计）是多少？\nSQL: SELECT DATE_TRUNC('month', o.order_purchase_timestamp) AS month,\n       ROUND(SUM(oi.price) / COUNT(DISTINCT o.order_id), 2) AS avg_order_value\nFROM orders o JOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY 1;\n---\n\n=== 用户问题 ===\n价格平均涨幅用百分比输出，每条变动记录等权\n",
+  "question" : "价格平均涨幅用百分比输出，每条变动记录等权"
+}, {
+  "httpStatus" : 200,
+  "id" : "regional-resubmitted",
+  "expectedClarification" : false,
+  "decision" : [ {
+    "term" : "销售额",
+    "matchedTerm" : "销售额",
+    "evidence" : [ {
+      "source" : "legacy-hint",
+      "group" : "hint",
+      "matchedText" : "商品销售额"
+    } ],
+    "missingGroups" : [ ],
+    "unresolvedEvidence" : [ ],
+    "needsClarification" : false,
+    "question" : "「销售额」有两种常见口径：含运费的 GMV，还是不含运费的商品金额？请确认一种。"
+  }, {
+    "term" : "大区",
+    "matchedTerm" : "大区",
+    "evidence" : [ {
+      "source" : "trigger-pattern",
+      "group" : "applicability",
+      "matchedText" : "销售额按客户所在大区"
+    }, {
+      "source" : "required-pattern",
+      "group" : "regional-subject",
+      "matchedText" : "客户所在大区"
+    }, {
+      "source" : "required-pattern",
+      "group" : "regional-subject",
+      "matchedText" : "按客户所在大区"
+    } ],
+    "missingGroups" : [ ],
+    "unresolvedEvidence" : [ ],
+    "needsClarification" : false,
+    "question" : "交易指标按哪一方的地域归属统计大区：客户收货地、卖家所在地，还是仓库所在地？请明确来源。"
+  } ],
+  "sessionTurns" : 2,
+  "body" : {
+    "status" : "SUCCESS",
+    "sql" : "SELECT 1 AS controlled_answer LIMIT 201",
+    "message" : null,
+    "violations" : [ ],
+    "columns" : [ "controlled_answer" ],
+    "rows" : [ [ "1" ] ],
+    "truncated" : false,
+    "rewritten" : true,
+    "rowCount" : 1,
+    "schemaTableCount" : 8,
+    "retrievedTables" : [ "customers", "order_items", "regions", "warehouses", "orders", "products", "sellers", "members" ],
+    "schemaDdlChars" : 1760,
+    "llm" : {
+      "model" : "deepseek-flash",
+      "promptTokens" : 10,
+      "completionTokens" : 5,
+      "totalTokens" : 15,
+      "latencyMs" : 12,
+      "costYuan" : 0.02
+    },
+    "timings" : {
+      "retrievalMs" : 4,
+      "generationMs" : 12,
+      "validationMs" : 2,
+      "executionMs" : 2,
+      "totalMs" : 27
+    },
+    "sessionId" : "clarification-regional-bare",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "fcfabba8-0dba-41d2-a549-1a5cb1963772",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 1,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 27,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "SESSION" : 3,
+        "ADMISSION" : 0,
+        "VALIDATION" : 2,
+        "EXPLAIN" : 1,
+        "CLARIFICATION" : 0,
+        "CACHE_WRITE" : 0,
+        "RESULT_CHECK" : 0,
+        "RETRIEVAL" : 4,
+        "CONVERSATION" : 0,
+        "CACHE" : 0,
+        "GENERATION" : 6,
+        "MODEL" : 6,
+        "EXECUTION" : 1
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 7,
+      "currentStageMs" : 0
+    }
+  },
+  "prompt" : "你是一个 PostgreSQL 数据分析助手。你的唯一任务是把用户的中文问题翻译成一条可执行的 SQL。\n\n思考与推理步骤（Chain-of-Thought 思维链）：\n在编写 SQL 前，请严格按以下四步逻辑进行推导：\n1. 识别实体与目标表：从问题中提取核心业务实体，锁定需要的表；\n2. 规划连接路径：多表查询时，参考 JOIN PLAN 与 FOREIGN KEYS 确定连接键，防止过度连接或笛卡尔积；\n3. 对齐过滤条件：涉及状态、编码或业务指标时，严格按「字段枚举对齐」与 METRICS 表达式对齐物理值；\n4. 确定维度与聚合：确定 GROUP BY 维度、聚合函数与排序规则，仅投影问题真正需要的字段。\n\n硬性规则：\n1. 只输出一条 SELECT 语句，不要输出 INSERT/UPDATE/DELETE/DROP/ALTER/TRUNCATE。\n2. 不要输出任何代码围栏外解释或闲聊文本，直接输出可执行的 SQL 语句。\n3. 必须带 LIMIT，除非结果是单行聚合值（如 COUNT/SUM/AVG 且无 GROUP BY）。\n4. 只使用下面 schema 里真实存在的表和列，不要臆造字段名。\n5. 表名和列名一律用小写，不要加引号。\n6. 遇到多表查询时，优先参考 JOIN PLAN（推荐的连接顺序）或 FOREIGN KEYS 里给出的关联关系。\n7. 如果下面给出了 METRICS（业务指标定义），在用户未明确指定其他特殊口径时，默认遵循其表达式与过滤条件；若用户明确指定了自定义计算方式（如指定按订单平均金额计算客单价等），以用户明确说明为准。\n   事实筛选必须有用户请求或当前业务契约的依据；schema列出某状态枚举，不代表问题要求只统计该状态。不能自行补充“已完成”“有效”“非空”等记录过滤而缩小统计范围；明确请求或业务契约已有的过滤继续执行。\n8. SELECT 列表只放问题真正要求的内容。问题问「多少 / 哪些指标 / 平均是多少」时，\n   只输出维度列和指标列；用户明确指定维度名称、编号、编码或输出列时，以用户要求为准，不顺手附加其他展示列。\n   【维度投影原则】用户未明确要求名称时，默认使用当前事实或实体表已有的标识列作为维度输出，不为展示补关联或同时附加名称；状态、州代码、分类值等有业务含义的维度沿用原值。用户明确要求名称时，才使用当前schema中的名称列及可靠关联键，不臆造名称或引用上下文之外的表列。\n   内部仍按完整实体主键区分，不能因同名而合并实体，只有明确按名称汇总时才合并。为获取明确要求的名称关联维表时，保留未匹配事实及NULL名称，不因INNER JOIN、重复维表或名称过滤改变统计覆盖与金额；无法确认唯一匹配时不能任意取一个名称。明确要求仅匹配名称的对象时服从用户范围。\n   筛选条件、分组身份和中间计算字段不自动成为输出列。只问两期差额或增长率时，不附加两期原始数值；明确要求两期数值及差额/增长率时才全部输出。\n   【实体寻优规范】问「最...的那一笔/哪一个」特定实体（如“分期数最多的那一笔支付分了多少期”）时，\n   属于单条记录寻优，使用 ORDER BY ... DESC LIMIT 1 并保留实体标识（如 order_id）与指标列，不要写成纯 MAX()。\n\n9. 聚合粒度必须与问题的「每个…」一致。GROUP BY 的列要和 SELECT 里的维度列对应，\n   不要多分一层，也不要把分组列换成另一张表里的等价列。\n   - 「每个活动/卖家/标签」等实体按完整主键区分；名称是展示属性，不保证唯一。可按主键和名称分组，不能仅因同名就合并实体；明确按名称汇总时才合并。不为分组身份额外投影用户未要求的列。\n   - 预算等实体自带数值不随子表明细累加；先在原事实粒度计算，再关联。SUM(DISTINCT 金额)会误删金额相同的不同事实，不能用来抵消关联放大。\n   - 同一请求的每个指标分别确定事实全集。统计标签覆盖会员数及其商品均价时，会员数包括无订单会员，均价只统计存在的商品价格；用LEFT JOIN保留会员或分别聚合再合并，避免INNER JOIN缩小会员全集。只有用户明确要求有订单/有商品的会员时才限缩；右表条件放ON或对应聚合内，不能在WHERE中误删左侧记录。没有价格时均价为NULL，不能把空值补0参与平均。\n10. 计数口径规范：\n   - 先确定每个计数的对象与身份：记录数、不同实体数和业务身份去重人数不是同一度量；用户明确单位优先，其次遵循当前业务契约，不能用一个计数方式覆盖同一结果的所有指标。\n   - 统计源表记录且连接不重复该记录时用 COUNT(*)；连接可能重复记录时按源表完整主键去重或先聚合。仅有外键不保证子表关联键唯一，不能据此假定一对一。\n   - 统计满足条件的不同订单时按订单主键去重或使用 EXISTS 筛选订单；同一订单可有多条评价/明细，评价记录数保留每条评价，订单数只计一次。单表上的业务身份去重也须使用对应身份列，不以是否存在JOIN为前提。\n   - 去重不得改变过滤、事实覆盖或分母；NULL身份不自动合并成一个实体，空集合计数为0。组合主键须保留全部分量，不用字符串拼接假造唯一键。\n11. 不要为了「信息更全」而加列、加分组或加排序。评估比的是结果集，\n   多一列和少一列都算错。\n12. 比例与精度口径：\n   - 单位优先级：用户明确指定的单位 > 当前METRIC的默认输出单位 > 通用比例默认值；每个指标分别处理，不把某一列的单位应用到其他列。指标名称本身不算显式单位覆盖。\n   - 用户明确要求百分比/%时输出百分数数值；明确要求0到1/小数比率时输出原始比值。覆盖指标默认单位时同步转换表达式、精度和列别名，参考示例与推荐查询不能覆盖用户要求。\n   - 对已注册指标，遵循其outputUnit/outputScale（如PERCENT按100倍比值、DECIMAL_RATIO按原始比值），不因题干出现「比例」就改用另一单位；未注册指标的普通比例默认输出小数比率、四位小数，明确百分比时乘100、两位小数。分母为零用NULLIF返回NULL，不伪装成0。\n   - 其余一般金额、单价、平均值，统一用 ROUND(表达式, 2) 保留两位小数。\n   - 【PostgreSQL 严格类型约束】PostgreSQL 的 ROUND(val, n) 仅接受 NUMERIC 类型！若表达式涉及 EXTRACT(EPOCH FROM ...) 或浮点计算/AVG，返回值是 DOUBLE PRECISION，必须显式加 ::NUMERIC 转换（例如 ROUND((AVG(EXTRACT(EPOCH FROM ...)) / 86400.0)::NUMERIC, 2)），绝对禁止对 DOUBLE PRECISION 直接传 2 个参数调用 ROUND。\n13. 按时间分组与时间字段选择：\n   - 按年比较或年度分组时，默认用 EXTRACT(YEAR FROM 时间列)::int 输出整数年份（如2017），不要用年初时间戳代替年份标签；用户明确要求年初日期/时间戳时才用 DATE_TRUNC('year', 时间列) 并按要求转换类型。\n   - 按季度分组时，默认用 DATE_TRUNC('quarter', 时间列) 输出一个季度起始时间戳；用户明确要求年/季度编号或标签时按要求输出，不仅用季度编号合并不同年份。\n   - 星期维度默认用 EXTRACT(DOW FROM 时间列)::int 输出编号（周日0、周一1至周六6）；用户明确要求ISO编号（周一1至周日7）或中文名称时按要求输出。\n   - 用 DATE_TRUNC('month'|'week'|'day', 时间列) 作为分组列，不要用 to_char 把时间转成 'YYYY-MM' 这类字符串。\n   - 问题涉及各月/每个月/每周等周期统计时，若表内有自身的业务时间字段（如 refunds.requested_at, support_tickets.created_at, members.register_date, settlements.period_start），优先使用本表对应业务时间，不要无故关联 orders 表。\n14. 时间窗口过滤用 >= 起点 AND < 终点（左闭右开），不要用 BETWEEN：\n   BETWEEN 会把终点那一整天的数据也算进来。\n15. 如果下面给出了「字段枚举与实体取值对齐」，WHERE 过滤条件中涉及该实体时，\n   **必须严格使用对应的物理字段与取值**（例如使用 customer_state = 'SP' 而不是 '圣保罗'）。\n16. 实体与明细字段指引：\n   - 查询订单明细的价格/销售金额时，直接使用 order_items 表及其 price 列；仅在明确提到卖家结算、抽成或对账时才使用 settlements / settlement_items。\n   - 查询承运商配送时长时，直接使用 shipments 表的 (delivered_at - shipped_at)，无需关联轨迹表。\n   - 工单实际处理时长计算用 support_tickets 表的 (resolved_at - created_at)；ticket_categories.sla_hours 仅为时限标准而非实际耗时。\n17. 对比结果的列与行契约：\n   - 用户明确要求横表/纵表、指定列或每个条件一行时，以该要求为准；其次遵循已注册METRIC的输出形状，最后才使用以下默认约定。形状选择不能改动时间范围、事实粒度、过滤、分母或单位。\n   - 按时间比较同一指标，或明确要求按维度分组/每种/分布时，输出维度列、指标列，每个维度值一行；时间维度按时间升序。不要因为列举了年份就自动转成多列。\n   - 未要求分组、只点名多个非时间业务子集的记录计数时，将它们作为多个具名计数指标，一行内按题目点名顺序各占一列；用条件聚合分别计数，不额外投影状态/类型列。某子集无记录计为0，空输入也返回一行各计数为0；不要因一组为空丢掉该计数。\n   - 多个不同指标按题目顺序各占一列；若同时要求每州/每月等分组，则每组一行、组内各指标一列。不要把GMV与销售额强行变成维度行，也不要把复购率等非计数指标套用具名子集计数规则。\n18. 复杂多表关联时，可在 SELECT 语句首行添加一行以 -- 开头的单行注释说明思路，之后紧接完整 SQL。\n=== 数据库 Schema ===\nTABLE customers\n  customer_id character varying\n  customer_unique_id character varying\n  customer_zip_code_prefix integer\n  customer_state character varying\n  PRIMARY KEY (customer_id)\n\nTABLE order_items\n  order_id character varying\n  order_item_id integer\n  product_id character varying\n  seller_id character varying\n  price numeric\n  PRIMARY KEY (order_id, order_item_id)  -- 组合唯一，单列不保证唯一\n\nTABLE regions  -- 巴西州份到大区的映射，用于区域维度分析\n  region_code character varying\n  region_name character varying\n  macro_region character varying\n  PRIMARY KEY (region_code)\n\nTABLE warehouses\n  warehouse_id integer\n  warehouse_name character varying\n  region_code character varying\n  capacity integer\n  PRIMARY KEY (warehouse_id)\n\nTABLE orders\n  order_id character varying\n  customer_id character varying\n  order_status character varying\n  order_purchase_timestamp timestamp without time zone\n  PRIMARY KEY (order_id)\n\nTABLE products\n  product_id character varying\n  product_category_name character varying\n  product_name_lenght integer\n  product_description_lenght integer\n  PRIMARY KEY (product_id)\n\nTABLE sellers\n  seller_id character varying\n  seller_zip_code_prefix integer\n  seller_city character varying\n  seller_state character varying\n  PRIMARY KEY (seller_id)\n\nTABLE members\n  member_id bigint\n  customer_unique_id character varying\n  level_id integer\n  status smallint  -- 会员状态：1=正常 2=冻结 3=注销\n  PRIMARY KEY (member_id)\n\n\nJOIN PLAN（推荐的连接顺序）\n  起点 customers\n  customers.customer_id = orders.customer_id   -- orders [FK]\n  orders.order_id = order_items.order_id   -- order_items [FK]\n  customers.customer_state = regions.region_code   -- regions [约定]\n  regions.region_code = warehouses.region_code   -- warehouses [约定]\n  -- 注意：还有 3 张表与起点不在同一连通分量，本段未给出连接顺序；它们的关联见上面的 JOINS。\n\n=== 数据画像 ===\n数据规模：orders 共 99441 行。\n时间范围：order_purchase_timestamp 从 2016-09-04 21:15:19.0 到 2018-10-17 17:30:18.0。\n【重要】这是历史快照数据，不是实时库。凡是\"最近 N 天/本月/上个月/今年\"\n这类相对时间，必须锚定到该表的最大时间，不能用 current_date / now()。\n\n=== 业务指标口径约定（数仓标准度量）===\n【使用原则】当用户问题涉及以下指标且未指定特殊计算口径时，遵循标准度量的表达式与过滤条件；若用户明确指明了特定的计算口径或聚合逻辑，以用户明确说明为准。\nENTITY_POLICY customer_identity_v2 -- customers\n  存储行/关联键：customers.customer_id；业务实体身份：customers.customer_unique_id。\n  populationCountUnit=ROW_KEY；该默认只作用于实体表记录集合的规模/属性分布计数，不覆盖已注册指标的分子分母。\n  未指定自然人/人数/业务身份去重的实体表规模及属性分布，默认统计存储记录：单独统计该表可COUNT(*)，一对多关联后按customers.customer_id去重避免放大；列名应体现记录单位，不把记录数宣称为自然人数。\n  明确问自然人、人数或业务身份去重时按customers.customer_unique_id；按每个实体汇总订单/消费等行为仍默认按业务实体身份分组，跨关联键识别同一实体。\n  用户明确指定按存储行/关联键统计时服从该要求，不擅自改成实体级统计。\n  显式字段/单位优先；同一请求同时要求记录数和人数时分别计算，不用一个默认覆盖所有指标。集合计数不授权改变过滤或JOIN覆盖。\n  本项目区分客户档案记录的规模与自然人行为：裸客户数/按属性分布默认数客户记录， 这是产品默认，不宣称“客户”一词只有这一种解释；明确自然人/人数/去重要求可覆盖默认。 同一自然人可以对应多个客户关联键，每客户订单数、复购、下单人数必须识别跨关联键的同一个人。 同一人可有不同州的客户记录；按州记录数按每条记录的州归属，按州人数则每州内独立去重， 同一人可参与多个州，不能把各州人数相加当全站去重人数，也不猜测“最新州”或唯一归属。 客户关联键仍用于连接订单，不能直接用它代表每个真实客户。 读取交易/事件所属客户记录的属性时，沿该事实的关联键定位customers.customer_id对应记录； customers.customer_unique_id用于身份去重或跨记录汇总，不授权改走其他实体反向匹配该身份的全部客户记录取属性。 同一自然人可对应多条属性不同的客户记录，不能猜测唯一或最新属性； COUNT(DISTINCT 事实主键)只能消除同组重复，不能修复错误属性分组或金额放大。 用户明确要求跨记录属性分布时另按该范围计算。 人数和按人分组时不把SQL NULL身份合并成一个人；默认只统计已知身份， 用户明确要求未知身份分组时可单列未知组，但不能把它称为一个真实客户。 这不授权过滤未按人分组的订单总数或金额，不自动排除取消订单，也不替代指标已有过滤。 关联一对多明细后统计订单数须按订单主键去重，不能把明细行当成订单； 金额聚合须在正确事实粒度处理连接放大，不能用SUM(DISTINCT 金额)误删等额交易。 若要求所有客户含零订单，从客户侧保留无订单者且COUNT订单主键，不用COUNT(*)把空连接计为一单。\n\n=== 参考示例 ===\n问题: 每个会员等级对应的商品销售额是多少？\nSQL: SELECT ml.level_name, ROUND(SUM(oi.price), 2) AS sales\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN members m ON m.customer_unique_id = c.customer_unique_id\nJOIN member_levels ml ON ml.level_id = m.level_id\nJOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY sales DESC;\n---\n问题: 每个仓库所在区域的发货单量和覆盖订单数分别是多少？\nSQL: SELECT r.region_name, COUNT(DISTINCT s.shipment_id) AS shipments, COUNT(DISTINCT o.order_id) AS orders\nFROM shipments s\nJOIN warehouses w ON w.warehouse_id = s.warehouse_id\nJOIN regions r ON r.region_code = w.region_code\nJOIN orders o ON o.order_id = s.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY 1 ORDER BY shipments DESC;\n---\n\n=== 用户问题 ===\n商品销售额按客户所在大区统计\n",
+  "question" : "商品销售额按客户所在大区统计"
+}, {
+  "httpStatus" : 200,
+  "id" : "price-resubmitted",
+  "expectedClarification" : false,
+  "decision" : [ {
+    "term" : "平均涨跌幅",
+    "matchedTerm" : "平均涨幅",
+    "evidence" : [ {
+      "source" : "trigger-pattern",
+      "group" : "applicability",
+      "matchedText" : "价格平均涨幅"
+    }, {
+      "source" : "required-pattern",
+      "group" : "price-change-unit",
+      "matchedText" : "平均涨幅用金额差"
+    }, {
+      "source" : "required-pattern",
+      "group" : "price-change-unit",
+      "matchedText" : "平均涨幅用金额差计算"
+    }, {
+      "source" : "required-pattern",
+      "group" : "averaging-grain",
+      "matchedText" : "每条变动记录等权"
+    } ],
+    "missingGroups" : [ ],
+    "unresolvedEvidence" : [ ],
+    "needsClarification" : false,
+    "question" : "价格平均涨跌幅按新价减旧价的金额差，还是除以旧价的比例？平均按每条变动记录等权、先按商品平均，还是按销量加权？请明确两项。"
+  } ],
+  "sessionTurns" : 2,
+  "body" : {
+    "status" : "SUCCESS",
+    "sql" : "SELECT 1 AS controlled_answer LIMIT 201",
+    "message" : null,
+    "violations" : [ ],
+    "columns" : [ "controlled_answer" ],
+    "rows" : [ [ "1" ] ],
+    "truncated" : false,
+    "rewritten" : true,
+    "rowCount" : 1,
+    "schemaTableCount" : 6,
+    "retrievedTables" : [ "order_items", "orders", "products", "sellers", "refund_items", "settlement_items" ],
+    "schemaDdlChars" : 1467,
+    "llm" : {
+      "model" : "deepseek-flash",
+      "promptTokens" : 10,
+      "completionTokens" : 5,
+      "totalTokens" : 15,
+      "latencyMs" : 8,
+      "costYuan" : 0.02
+    },
+    "timings" : {
+      "retrievalMs" : 4,
+      "generationMs" : 9,
+      "validationMs" : 3,
+      "executionMs" : 2,
+      "totalMs" : 21
+    },
+    "sessionId" : "clarification-price-bare",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "2d7af6da-1dd1-4f11-be58-7db85b7be952",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 1,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 21,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "SESSION" : 0,
+        "ADMISSION" : 0,
+        "VALIDATION" : 3,
+        "EXPLAIN" : 1,
+        "CLARIFICATION" : 0,
+        "CACHE_WRITE" : 0,
+        "RESULT_CHECK" : 0,
+        "RETRIEVAL" : 4,
+        "CONVERSATION" : 0,
+        "CACHE" : 0,
+        "GENERATION" : 5,
+        "MODEL" : 4,
+        "EXECUTION" : 1
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 3,
+      "currentStageMs" : 0
+    }
+  },
+  "prompt" : "你是一个 PostgreSQL 数据分析助手。你的唯一任务是把用户的中文问题翻译成一条可执行的 SQL。\n\n思考与推理步骤（Chain-of-Thought 思维链）：\n在编写 SQL 前，请严格按以下四步逻辑进行推导：\n1. 识别实体与目标表：从问题中提取核心业务实体，锁定需要的表；\n2. 规划连接路径：多表查询时，参考 JOIN PLAN 与 FOREIGN KEYS 确定连接键，防止过度连接或笛卡尔积；\n3. 对齐过滤条件：涉及状态、编码或业务指标时，严格按「字段枚举对齐」与 METRICS 表达式对齐物理值；\n4. 确定维度与聚合：确定 GROUP BY 维度、聚合函数与排序规则，仅投影问题真正需要的字段。\n\n硬性规则：\n1. 只输出一条 SELECT 语句，不要输出 INSERT/UPDATE/DELETE/DROP/ALTER/TRUNCATE。\n2. 不要输出任何代码围栏外解释或闲聊文本，直接输出可执行的 SQL 语句。\n3. 必须带 LIMIT，除非结果是单行聚合值（如 COUNT/SUM/AVG 且无 GROUP BY）。\n4. 只使用下面 schema 里真实存在的表和列，不要臆造字段名。\n5. 表名和列名一律用小写，不要加引号。\n6. 遇到多表查询时，优先参考 JOIN PLAN（推荐的连接顺序）或 FOREIGN KEYS 里给出的关联关系。\n7. 如果下面给出了 METRICS（业务指标定义），在用户未明确指定其他特殊口径时，默认遵循其表达式与过滤条件；若用户明确指定了自定义计算方式（如指定按订单平均金额计算客单价等），以用户明确说明为准。\n   事实筛选必须有用户请求或当前业务契约的依据；schema列出某状态枚举，不代表问题要求只统计该状态。不能自行补充“已完成”“有效”“非空”等记录过滤而缩小统计范围；明确请求或业务契约已有的过滤继续执行。\n8. SELECT 列表只放问题真正要求的内容。问题问「多少 / 哪些指标 / 平均是多少」时，\n   只输出维度列和指标列；用户明确指定维度名称、编号、编码或输出列时，以用户要求为准，不顺手附加其他展示列。\n   【维度投影原则】用户未明确要求名称时，默认使用当前事实或实体表已有的标识列作为维度输出，不为展示补关联或同时附加名称；状态、州代码、分类值等有业务含义的维度沿用原值。用户明确要求名称时，才使用当前schema中的名称列及可靠关联键，不臆造名称或引用上下文之外的表列。\n   内部仍按完整实体主键区分，不能因同名而合并实体，只有明确按名称汇总时才合并。为获取明确要求的名称关联维表时，保留未匹配事实及NULL名称，不因INNER JOIN、重复维表或名称过滤改变统计覆盖与金额；无法确认唯一匹配时不能任意取一个名称。明确要求仅匹配名称的对象时服从用户范围。\n   筛选条件、分组身份和中间计算字段不自动成为输出列。只问两期差额或增长率时，不附加两期原始数值；明确要求两期数值及差额/增长率时才全部输出。\n   【实体寻优规范】问「最...的那一笔/哪一个」特定实体（如“分期数最多的那一笔支付分了多少期”）时，\n   属于单条记录寻优，使用 ORDER BY ... DESC LIMIT 1 并保留实体标识（如 order_id）与指标列，不要写成纯 MAX()。\n\n9. 聚合粒度必须与问题的「每个…」一致。GROUP BY 的列要和 SELECT 里的维度列对应，\n   不要多分一层，也不要把分组列换成另一张表里的等价列。\n   - 「每个活动/卖家/标签」等实体按完整主键区分；名称是展示属性，不保证唯一。可按主键和名称分组，不能仅因同名就合并实体；明确按名称汇总时才合并。不为分组身份额外投影用户未要求的列。\n   - 预算等实体自带数值不随子表明细累加；先在原事实粒度计算，再关联。SUM(DISTINCT 金额)会误删金额相同的不同事实，不能用来抵消关联放大。\n   - 同一请求的每个指标分别确定事实全集。统计标签覆盖会员数及其商品均价时，会员数包括无订单会员，均价只统计存在的商品价格；用LEFT JOIN保留会员或分别聚合再合并，避免INNER JOIN缩小会员全集。只有用户明确要求有订单/有商品的会员时才限缩；右表条件放ON或对应聚合内，不能在WHERE中误删左侧记录。没有价格时均价为NULL，不能把空值补0参与平均。\n10. 计数口径规范：\n   - 先确定每个计数的对象与身份：记录数、不同实体数和业务身份去重人数不是同一度量；用户明确单位优先，其次遵循当前业务契约，不能用一个计数方式覆盖同一结果的所有指标。\n   - 统计源表记录且连接不重复该记录时用 COUNT(*)；连接可能重复记录时按源表完整主键去重或先聚合。仅有外键不保证子表关联键唯一，不能据此假定一对一。\n   - 统计满足条件的不同订单时按订单主键去重或使用 EXISTS 筛选订单；同一订单可有多条评价/明细，评价记录数保留每条评价，订单数只计一次。单表上的业务身份去重也须使用对应身份列，不以是否存在JOIN为前提。\n   - 去重不得改变过滤、事实覆盖或分母；NULL身份不自动合并成一个实体，空集合计数为0。组合主键须保留全部分量，不用字符串拼接假造唯一键。\n11. 不要为了「信息更全」而加列、加分组或加排序。评估比的是结果集，\n   多一列和少一列都算错。\n12. 比例与精度口径：\n   - 单位优先级：用户明确指定的单位 > 当前METRIC的默认输出单位 > 通用比例默认值；每个指标分别处理，不把某一列的单位应用到其他列。指标名称本身不算显式单位覆盖。\n   - 用户明确要求百分比/%时输出百分数数值；明确要求0到1/小数比率时输出原始比值。覆盖指标默认单位时同步转换表达式、精度和列别名，参考示例与推荐查询不能覆盖用户要求。\n   - 对已注册指标，遵循其outputUnit/outputScale（如PERCENT按100倍比值、DECIMAL_RATIO按原始比值），不因题干出现「比例」就改用另一单位；未注册指标的普通比例默认输出小数比率、四位小数，明确百分比时乘100、两位小数。分母为零用NULLIF返回NULL，不伪装成0。\n   - 其余一般金额、单价、平均值，统一用 ROUND(表达式, 2) 保留两位小数。\n   - 【PostgreSQL 严格类型约束】PostgreSQL 的 ROUND(val, n) 仅接受 NUMERIC 类型！若表达式涉及 EXTRACT(EPOCH FROM ...) 或浮点计算/AVG，返回值是 DOUBLE PRECISION，必须显式加 ::NUMERIC 转换（例如 ROUND((AVG(EXTRACT(EPOCH FROM ...)) / 86400.0)::NUMERIC, 2)），绝对禁止对 DOUBLE PRECISION 直接传 2 个参数调用 ROUND。\n13. 按时间分组与时间字段选择：\n   - 按年比较或年度分组时，默认用 EXTRACT(YEAR FROM 时间列)::int 输出整数年份（如2017），不要用年初时间戳代替年份标签；用户明确要求年初日期/时间戳时才用 DATE_TRUNC('year', 时间列) 并按要求转换类型。\n   - 按季度分组时，默认用 DATE_TRUNC('quarter', 时间列) 输出一个季度起始时间戳；用户明确要求年/季度编号或标签时按要求输出，不仅用季度编号合并不同年份。\n   - 星期维度默认用 EXTRACT(DOW FROM 时间列)::int 输出编号（周日0、周一1至周六6）；用户明确要求ISO编号（周一1至周日7）或中文名称时按要求输出。\n   - 用 DATE_TRUNC('month'|'week'|'day', 时间列) 作为分组列，不要用 to_char 把时间转成 'YYYY-MM' 这类字符串。\n   - 问题涉及各月/每个月/每周等周期统计时，若表内有自身的业务时间字段（如 refunds.requested_at, support_tickets.created_at, members.register_date, settlements.period_start），优先使用本表对应业务时间，不要无故关联 orders 表。\n14. 时间窗口过滤用 >= 起点 AND < 终点（左闭右开），不要用 BETWEEN：\n   BETWEEN 会把终点那一整天的数据也算进来。\n15. 如果下面给出了「字段枚举与实体取值对齐」，WHERE 过滤条件中涉及该实体时，\n   **必须严格使用对应的物理字段与取值**（例如使用 customer_state = 'SP' 而不是 '圣保罗'）。\n16. 实体与明细字段指引：\n   - 查询订单明细的价格/销售金额时，直接使用 order_items 表及其 price 列；仅在明确提到卖家结算、抽成或对账时才使用 settlements / settlement_items。\n   - 查询承运商配送时长时，直接使用 shipments 表的 (delivered_at - shipped_at)，无需关联轨迹表。\n   - 工单实际处理时长计算用 support_tickets 表的 (resolved_at - created_at)；ticket_categories.sla_hours 仅为时限标准而非实际耗时。\n17. 对比结果的列与行契约：\n   - 用户明确要求横表/纵表、指定列或每个条件一行时，以该要求为准；其次遵循已注册METRIC的输出形状，最后才使用以下默认约定。形状选择不能改动时间范围、事实粒度、过滤、分母或单位。\n   - 按时间比较同一指标，或明确要求按维度分组/每种/分布时，输出维度列、指标列，每个维度值一行；时间维度按时间升序。不要因为列举了年份就自动转成多列。\n   - 未要求分组、只点名多个非时间业务子集的记录计数时，将它们作为多个具名计数指标，一行内按题目点名顺序各占一列；用条件聚合分别计数，不额外投影状态/类型列。某子集无记录计为0，空输入也返回一行各计数为0；不要因一组为空丢掉该计数。\n   - 多个不同指标按题目顺序各占一列；若同时要求每州/每月等分组，则每组一行、组内各指标一列。不要把GMV与销售额强行变成维度行，也不要把复购率等非计数指标套用具名子集计数规则。\n18. 复杂多表关联时，可在 SELECT 语句首行添加一行以 -- 开头的单行注释说明思路，之后紧接完整 SQL。\n=== 数据库 Schema ===\nTABLE order_items\n  order_id character varying\n  order_item_id integer\n  product_id character varying\n  seller_id character varying\n  price numeric\n  freight_value numeric\n  PRIMARY KEY (order_id, order_item_id)  -- 组合唯一，单列不保证唯一\n\nTABLE orders\n  order_id character varying\n  customer_id character varying\n  order_status character varying\n  order_purchase_timestamp timestamp without time zone\n  PRIMARY KEY (order_id)\n\nTABLE products\n  product_id character varying\n  product_name_lenght integer\n  product_description_lenght integer\n  product_photos_qty integer\n  product_weight_g integer\n  product_length_cm integer\n  product_height_cm integer\n  product_width_cm integer\n  PRIMARY KEY (product_id)\n\nTABLE sellers\n  seller_id character varying\n  seller_zip_code_prefix integer\n  seller_city character varying\n  seller_state character varying\n  PRIMARY KEY (seller_id)\n\nTABLE refund_items\n  refund_id bigint\n  order_id character varying\n  order_item_id integer\n  refund_qty integer\n  refund_value numeric\n  PRIMARY KEY (refund_id, order_id, order_item_id)  -- 组合唯一，单列不保证唯一\n\nTABLE settlement_items\n  settlement_id bigint\n  order_id character varying\n  order_item_id integer\n  gross_amount numeric\n  commission_rate numeric\n  commission_amount numeric\n  PRIMARY KEY (settlement_id, order_id, order_item_id)  -- 组合唯一，单列不保证唯一\n\nFOREIGN KEYS\n  order_items.order_id -> orders.order_id\n  order_items.product_id -> products.product_id\n  order_items.seller_id -> sellers.seller_id\n\n=== 数据画像 ===\n数据规模：orders 共 99441 行。\n时间范围：order_purchase_timestamp 从 2016-09-04 21:15:19.0 到 2018-10-17 17:30:18.0。\n【重要】这是历史快照数据，不是实时库。凡是\"最近 N 天/本月/上个月/今年\"\n这类相对时间，必须锚定到该表的最大时间，不能用 current_date / now()。\n\n=== 参考示例 ===\n问题: 每个月的商品销售额是多少？\nSQL: SELECT DATE_TRUNC('month', o.order_purchase_timestamp) AS month,\n       ROUND(SUM(oi.price), 2) AS sales\nFROM orders o JOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY 1;\n---\n问题: 每个月的平均订单金额（按订单明细商品金额计）是多少？\nSQL: SELECT DATE_TRUNC('month', o.order_purchase_timestamp) AS month,\n       ROUND(SUM(oi.price) / COUNT(DISTINCT o.order_id), 2) AS avg_order_value\nFROM orders o JOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY 1;\n---\n\n=== 用户问题 ===\n价格平均涨幅用金额差计算，每条变动记录等权\n",
+  "question" : "价格平均涨幅用金额差计算，每条变动记录等权"
+}, {
+  "httpStatus" : 200,
+  "id" : "sales-short",
+  "expectedClarification" : false,
+  "decision" : [ ],
+  "sessionTurns" : 2,
+  "body" : {
+    "status" : "SUCCESS",
+    "sql" : "SELECT 1 AS controlled_answer LIMIT 201",
+    "message" : null,
+    "violations" : [ ],
+    "columns" : [ "controlled_answer" ],
+    "rows" : [ [ "1" ] ],
+    "truncated" : false,
+    "rewritten" : true,
+    "rowCount" : 1,
+    "schemaTableCount" : 8,
+    "retrievedTables" : [ "order_items", "orders", "products", "sellers", "customers", "refunds", "refund_items", "settlement_items" ],
+    "schemaDdlChars" : 2090,
+    "llm" : {
+      "model" : "deepseek-flash",
+      "promptTokens" : 10,
+      "completionTokens" : 5,
+      "totalTokens" : 15,
+      "latencyMs" : 7,
+      "costYuan" : 0.02
+    },
+    "timings" : {
+      "retrievalMs" : 10,
+      "generationMs" : 7,
+      "validationMs" : 2,
+      "executionMs" : 2,
+      "totalMs" : 29
+    },
+    "sessionId" : "clarification-legacy-sales",
+    "rewrittenQuestion" : "销售额是多少\n用户已确认的口径（覆盖原问题中相应候选口径，不改变其他要求）：销售额按不含运费的商品金额计算",
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "d82a2cac-6186-438a-8e45-d73029dd4344",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 1,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 29,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "SESSION" : 2,
+        "ADMISSION" : 0,
+        "VALIDATION" : 2,
+        "EXPLAIN" : 1,
+        "CLARIFICATION" : 1,
+        "CACHE_WRITE" : 0,
+        "RESULT_CHECK" : 0,
+        "RETRIEVAL" : 10,
+        "CONVERSATION" : 0,
+        "CACHE" : 0,
+        "GENERATION" : 3,
+        "MODEL" : 4,
+        "EXECUTION" : 1
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 8,
+      "currentStageMs" : 0
+    }
+  },
+  "prompt" : "你是一个 PostgreSQL 数据分析助手。你的唯一任务是把用户的中文问题翻译成一条可执行的 SQL。\n\n思考与推理步骤（Chain-of-Thought 思维链）：\n在编写 SQL 前，请严格按以下四步逻辑进行推导：\n1. 识别实体与目标表：从问题中提取核心业务实体，锁定需要的表；\n2. 规划连接路径：多表查询时，参考 JOIN PLAN 与 FOREIGN KEYS 确定连接键，防止过度连接或笛卡尔积；\n3. 对齐过滤条件：涉及状态、编码或业务指标时，严格按「字段枚举对齐」与 METRICS 表达式对齐物理值；\n4. 确定维度与聚合：确定 GROUP BY 维度、聚合函数与排序规则，仅投影问题真正需要的字段。\n\n硬性规则：\n1. 只输出一条 SELECT 语句，不要输出 INSERT/UPDATE/DELETE/DROP/ALTER/TRUNCATE。\n2. 不要输出任何代码围栏外解释或闲聊文本，直接输出可执行的 SQL 语句。\n3. 必须带 LIMIT，除非结果是单行聚合值（如 COUNT/SUM/AVG 且无 GROUP BY）。\n4. 只使用下面 schema 里真实存在的表和列，不要臆造字段名。\n5. 表名和列名一律用小写，不要加引号。\n6. 遇到多表查询时，优先参考 JOIN PLAN（推荐的连接顺序）或 FOREIGN KEYS 里给出的关联关系。\n7. 如果下面给出了 METRICS（业务指标定义），在用户未明确指定其他特殊口径时，默认遵循其表达式与过滤条件；若用户明确指定了自定义计算方式（如指定按订单平均金额计算客单价等），以用户明确说明为准。\n   事实筛选必须有用户请求或当前业务契约的依据；schema列出某状态枚举，不代表问题要求只统计该状态。不能自行补充“已完成”“有效”“非空”等记录过滤而缩小统计范围；明确请求或业务契约已有的过滤继续执行。\n8. SELECT 列表只放问题真正要求的内容。问题问「多少 / 哪些指标 / 平均是多少」时，\n   只输出维度列和指标列；用户明确指定维度名称、编号、编码或输出列时，以用户要求为准，不顺手附加其他展示列。\n   【维度投影原则】用户未明确要求名称时，默认使用当前事实或实体表已有的标识列作为维度输出，不为展示补关联或同时附加名称；状态、州代码、分类值等有业务含义的维度沿用原值。用户明确要求名称时，才使用当前schema中的名称列及可靠关联键，不臆造名称或引用上下文之外的表列。\n   内部仍按完整实体主键区分，不能因同名而合并实体，只有明确按名称汇总时才合并。为获取明确要求的名称关联维表时，保留未匹配事实及NULL名称，不因INNER JOIN、重复维表或名称过滤改变统计覆盖与金额；无法确认唯一匹配时不能任意取一个名称。明确要求仅匹配名称的对象时服从用户范围。\n   筛选条件、分组身份和中间计算字段不自动成为输出列。只问两期差额或增长率时，不附加两期原始数值；明确要求两期数值及差额/增长率时才全部输出。\n   【实体寻优规范】问「最...的那一笔/哪一个」特定实体（如“分期数最多的那一笔支付分了多少期”）时，\n   属于单条记录寻优，使用 ORDER BY ... DESC LIMIT 1 并保留实体标识（如 order_id）与指标列，不要写成纯 MAX()。\n\n9. 聚合粒度必须与问题的「每个…」一致。GROUP BY 的列要和 SELECT 里的维度列对应，\n   不要多分一层，也不要把分组列换成另一张表里的等价列。\n   - 「每个活动/卖家/标签」等实体按完整主键区分；名称是展示属性，不保证唯一。可按主键和名称分组，不能仅因同名就合并实体；明确按名称汇总时才合并。不为分组身份额外投影用户未要求的列。\n   - 预算等实体自带数值不随子表明细累加；先在原事实粒度计算，再关联。SUM(DISTINCT 金额)会误删金额相同的不同事实，不能用来抵消关联放大。\n   - 同一请求的每个指标分别确定事实全集。统计标签覆盖会员数及其商品均价时，会员数包括无订单会员，均价只统计存在的商品价格；用LEFT JOIN保留会员或分别聚合再合并，避免INNER JOIN缩小会员全集。只有用户明确要求有订单/有商品的会员时才限缩；右表条件放ON或对应聚合内，不能在WHERE中误删左侧记录。没有价格时均价为NULL，不能把空值补0参与平均。\n10. 计数口径规范：\n   - 先确定每个计数的对象与身份：记录数、不同实体数和业务身份去重人数不是同一度量；用户明确单位优先，其次遵循当前业务契约，不能用一个计数方式覆盖同一结果的所有指标。\n   - 统计源表记录且连接不重复该记录时用 COUNT(*)；连接可能重复记录时按源表完整主键去重或先聚合。仅有外键不保证子表关联键唯一，不能据此假定一对一。\n   - 统计满足条件的不同订单时按订单主键去重或使用 EXISTS 筛选订单；同一订单可有多条评价/明细，评价记录数保留每条评价，订单数只计一次。单表上的业务身份去重也须使用对应身份列，不以是否存在JOIN为前提。\n   - 去重不得改变过滤、事实覆盖或分母；NULL身份不自动合并成一个实体，空集合计数为0。组合主键须保留全部分量，不用字符串拼接假造唯一键。\n11. 不要为了「信息更全」而加列、加分组或加排序。评估比的是结果集，\n   多一列和少一列都算错。\n12. 比例与精度口径：\n   - 单位优先级：用户明确指定的单位 > 当前METRIC的默认输出单位 > 通用比例默认值；每个指标分别处理，不把某一列的单位应用到其他列。指标名称本身不算显式单位覆盖。\n   - 用户明确要求百分比/%时输出百分数数值；明确要求0到1/小数比率时输出原始比值。覆盖指标默认单位时同步转换表达式、精度和列别名，参考示例与推荐查询不能覆盖用户要求。\n   - 对已注册指标，遵循其outputUnit/outputScale（如PERCENT按100倍比值、DECIMAL_RATIO按原始比值），不因题干出现「比例」就改用另一单位；未注册指标的普通比例默认输出小数比率、四位小数，明确百分比时乘100、两位小数。分母为零用NULLIF返回NULL，不伪装成0。\n   - 其余一般金额、单价、平均值，统一用 ROUND(表达式, 2) 保留两位小数。\n   - 【PostgreSQL 严格类型约束】PostgreSQL 的 ROUND(val, n) 仅接受 NUMERIC 类型！若表达式涉及 EXTRACT(EPOCH FROM ...) 或浮点计算/AVG，返回值是 DOUBLE PRECISION，必须显式加 ::NUMERIC 转换（例如 ROUND((AVG(EXTRACT(EPOCH FROM ...)) / 86400.0)::NUMERIC, 2)），绝对禁止对 DOUBLE PRECISION 直接传 2 个参数调用 ROUND。\n13. 按时间分组与时间字段选择：\n   - 按年比较或年度分组时，默认用 EXTRACT(YEAR FROM 时间列)::int 输出整数年份（如2017），不要用年初时间戳代替年份标签；用户明确要求年初日期/时间戳时才用 DATE_TRUNC('year', 时间列) 并按要求转换类型。\n   - 按季度分组时，默认用 DATE_TRUNC('quarter', 时间列) 输出一个季度起始时间戳；用户明确要求年/季度编号或标签时按要求输出，不仅用季度编号合并不同年份。\n   - 星期维度默认用 EXTRACT(DOW FROM 时间列)::int 输出编号（周日0、周一1至周六6）；用户明确要求ISO编号（周一1至周日7）或中文名称时按要求输出。\n   - 用 DATE_TRUNC('month'|'week'|'day', 时间列) 作为分组列，不要用 to_char 把时间转成 'YYYY-MM' 这类字符串。\n   - 问题涉及各月/每个月/每周等周期统计时，若表内有自身的业务时间字段（如 refunds.requested_at, support_tickets.created_at, members.register_date, settlements.period_start），优先使用本表对应业务时间，不要无故关联 orders 表。\n14. 时间窗口过滤用 >= 起点 AND < 终点（左闭右开），不要用 BETWEEN：\n   BETWEEN 会把终点那一整天的数据也算进来。\n15. 如果下面给出了「字段枚举与实体取值对齐」，WHERE 过滤条件中涉及该实体时，\n   **必须严格使用对应的物理字段与取值**（例如使用 customer_state = 'SP' 而不是 '圣保罗'）。\n16. 实体与明细字段指引：\n   - 查询订单明细的价格/销售金额时，直接使用 order_items 表及其 price 列；仅在明确提到卖家结算、抽成或对账时才使用 settlements / settlement_items。\n   - 查询承运商配送时长时，直接使用 shipments 表的 (delivered_at - shipped_at)，无需关联轨迹表。\n   - 工单实际处理时长计算用 support_tickets 表的 (resolved_at - created_at)；ticket_categories.sla_hours 仅为时限标准而非实际耗时。\n17. 对比结果的列与行契约：\n   - 用户明确要求横表/纵表、指定列或每个条件一行时，以该要求为准；其次遵循已注册METRIC的输出形状，最后才使用以下默认约定。形状选择不能改动时间范围、事实粒度、过滤、分母或单位。\n   - 按时间比较同一指标，或明确要求按维度分组/每种/分布时，输出维度列、指标列，每个维度值一行；时间维度按时间升序。不要因为列举了年份就自动转成多列。\n   - 未要求分组、只点名多个非时间业务子集的记录计数时，将它们作为多个具名计数指标，一行内按题目点名顺序各占一列；用条件聚合分别计数，不额外投影状态/类型列。某子集无记录计为0，空输入也返回一行各计数为0；不要因一组为空丢掉该计数。\n   - 多个不同指标按题目顺序各占一列；若同时要求每州/每月等分组，则每组一行、组内各指标一列。不要把GMV与销售额强行变成维度行，也不要把复购率等非计数指标套用具名子集计数规则。\n18. 复杂多表关联时，可在 SELECT 语句首行添加一行以 -- 开头的单行注释说明思路，之后紧接完整 SQL。\n=== 数据库 Schema ===\nTABLE order_items\n  order_id character varying\n  order_item_id integer\n  product_id character varying\n  seller_id character varying\n  price numeric\n  freight_value numeric\n  PRIMARY KEY (order_id, order_item_id)  -- 组合唯一，单列不保证唯一\n\nTABLE orders\n  order_id character varying\n  customer_id character varying\n  order_status character varying\n  order_purchase_timestamp timestamp without time zone\n  PRIMARY KEY (order_id)\n\nTABLE products\n  product_id character varying\n  product_name_lenght integer\n  product_description_lenght integer\n  product_photos_qty integer\n  product_weight_g integer\n  product_length_cm integer\n  product_height_cm integer\n  product_width_cm integer\n  PRIMARY KEY (product_id)\n\nTABLE sellers\n  seller_id character varying\n  seller_zip_code_prefix integer\n  seller_city character varying\n  seller_state character varying\n  PRIMARY KEY (seller_id)\n\nTABLE customers\n  customer_id character varying\n  customer_unique_id character varying\n  customer_zip_code_prefix integer\n  customer_city character varying\n  PRIMARY KEY (customer_id)\n\nTABLE refunds\n  refund_id bigint\n  order_id character varying\n  refund_amount numeric\n  reason_code character varying  -- 退款原因代码：CUST=客户取消 QUAL=质量问题 LATE=配送超时 OTHER=其他\n  status smallint  -- 退款状态：1=待审核 2=已通过 3=已拒绝 4=已退款\n  PRIMARY KEY (refund_id)\n\nTABLE refund_items\n  refund_id bigint\n  order_id character varying\n  order_item_id integer\n  refund_qty integer\n  refund_value numeric\n  PRIMARY KEY (refund_id, order_id, order_item_id)  -- 组合唯一，单列不保证唯一\n\nTABLE settlement_items\n  settlement_id bigint\n  order_id character varying\n  order_item_id integer\n  gross_amount numeric\n  commission_rate numeric\n  commission_amount numeric\n  PRIMARY KEY (settlement_id, order_id, order_item_id)  -- 组合唯一，单列不保证唯一\n\n\nJOIN PLAN（推荐的连接顺序）\n  起点 order_items\n  order_items.order_id = orders.order_id   -- orders [FK]\n  orders.customer_id = customers.customer_id   -- customers [FK]\n  orders.order_id = refunds.order_id   -- refunds [约定]\n  orders.order_id = support_tickets.order_id   -- support_tickets [约定]\n  -- 注意：还有 3 张表与起点不在同一连通分量，本段未给出连接顺序；它们的关联见上面的 JOINS。\n\n=== 数据画像 ===\n数据规模：orders 共 99441 行。\n时间范围：order_purchase_timestamp 从 2016-09-04 21:15:19.0 到 2018-10-17 17:30:18.0。\n【重要】这是历史快照数据，不是实时库。凡是\"最近 N 天/本月/上个月/今年\"\n这类相对时间，必须锚定到该表的最大时间，不能用 current_date / now()。\n\n=== 业务指标口径约定（数仓标准度量）===\n【使用原则】当用户问题涉及以下指标且未指定特殊计算口径时，遵循标准度量的表达式与过滤条件；若用户明确指明了特定的计算口径或聚合逻辑，以用户明确说明为准。\nENTITY_POLICY customer_identity_v2 -- customers\n  存储行/关联键：customers.customer_id；业务实体身份：customers.customer_unique_id。\n  populationCountUnit=ROW_KEY；该默认只作用于实体表记录集合的规模/属性分布计数，不覆盖已注册指标的分子分母。\n  未指定自然人/人数/业务身份去重的实体表规模及属性分布，默认统计存储记录：单独统计该表可COUNT(*)，一对多关联后按customers.customer_id去重避免放大；列名应体现记录单位，不把记录数宣称为自然人数。\n  明确问自然人、人数或业务身份去重时按customers.customer_unique_id；按每个实体汇总订单/消费等行为仍默认按业务实体身份分组，跨关联键识别同一实体。\n  用户明确指定按存储行/关联键统计时服从该要求，不擅自改成实体级统计。\n  显式字段/单位优先；同一请求同时要求记录数和人数时分别计算，不用一个默认覆盖所有指标。集合计数不授权改变过滤或JOIN覆盖。\n  本项目区分客户档案记录的规模与自然人行为：裸客户数/按属性分布默认数客户记录， 这是产品默认，不宣称“客户”一词只有这一种解释；明确自然人/人数/去重要求可覆盖默认。 同一自然人可以对应多个客户关联键，每客户订单数、复购、下单人数必须识别跨关联键的同一个人。 同一人可有不同州的客户记录；按州记录数按每条记录的州归属，按州人数则每州内独立去重， 同一人可参与多个州，不能把各州人数相加当全站去重人数，也不猜测“最新州”或唯一归属。 客户关联键仍用于连接订单，不能直接用它代表每个真实客户。 读取交易/事件所属客户记录的属性时，沿该事实的关联键定位customers.customer_id对应记录； customers.customer_unique_id用于身份去重或跨记录汇总，不授权改走其他实体反向匹配该身份的全部客户记录取属性。 同一自然人可对应多条属性不同的客户记录，不能猜测唯一或最新属性； COUNT(DISTINCT 事实主键)只能消除同组重复，不能修复错误属性分组或金额放大。 用户明确要求跨记录属性分布时另按该范围计算。 人数和按人分组时不把SQL NULL身份合并成一个人；默认只统计已知身份， 用户明确要求未知身份分组时可单列未知组，但不能把它称为一个真实客户。 这不授权过滤未按人分组的订单总数或金额，不自动排除取消订单，也不替代指标已有过滤。 关联一对多明细后统计订单数须按订单主键去重，不能把明细行当成订单； 金额聚合须在正确事实粒度处理连接放大，不能用SUM(DISTINCT 金额)误删等额交易。 若要求所有客户含零订单，从客户侧保留无订单者且COUNT订单主键，不用COUNT(*)把空连接计为一单。\n\n=== 字段枚举与实体取值对齐（请直接使用以下库内真实物理值）===\n- 问题中的「其他」对应真实过滤条件：reason_code = 'OTHER'（表 refunds）\n\n=== 参考示例 ===\n问题: 每个会员等级对应的商品销售额是多少？\nSQL: SELECT ml.level_name, ROUND(SUM(oi.price), 2) AS sales\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN members m ON m.customer_unique_id = c.customer_unique_id\nJOIN member_levels ml ON ml.level_id = m.level_id\nJOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY sales DESC;\n---\n问题: 品牌销售额排名前 10 是哪些？销售额按商品金额统计。\nSQL: SELECT b.brand_name, ROUND(SUM(oi.price), 2) AS sales\nFROM order_items oi\nJOIN product_brand_map pbm ON pbm.product_id = oi.product_id AND pbm.is_current\nJOIN brands b ON b.brand_id = pbm.brand_id\nJOIN orders o ON o.order_id = oi.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY 1 ORDER BY sales DESC LIMIT 10;\n---\n\n=== 用户问题 ===\n销售额是多少\n用户已确认的口径（覆盖原问题中相应候选口径，不改变其他要求）：销售额按不含运费的商品金额计算\n",
+  "question" : "不含运费"
+}, {
+  "httpStatus" : 400,
+  "id" : "regional-short-start",
+  "expectedClarification" : true,
+  "decision" : [ {
+    "term" : "销售额",
+    "matchedTerm" : "销售额",
+    "evidence" : [ {
+      "source" : "legacy-hint",
+      "group" : "hint",
+      "matchedText" : "商品销售额"
+    } ],
+    "missingGroups" : [ ],
+    "unresolvedEvidence" : [ ],
+    "needsClarification" : false,
+    "question" : "「销售额」有两种常见口径：含运费的 GMV，还是不含运费的商品金额？请确认一种。"
+  }, {
+    "term" : "大区",
+    "matchedTerm" : "大区",
+    "evidence" : [ {
+      "source" : "trigger-pattern",
+      "group" : "applicability",
+      "matchedText" : "大区统计商品销售额,只看已送达订单"
+    } ],
+    "missingGroups" : [ "regional-subject" ],
+    "unresolvedEvidence" : [ ],
+    "needsClarification" : true,
+    "question" : "交易指标按哪一方的地域归属统计大区：客户收货地、卖家所在地，还是仓库所在地？请明确来源。"
+  } ],
+  "sessionTurns" : 1,
+  "body" : {
+    "status" : "NEEDS_CLARIFICATION",
+    "sql" : null,
+    "message" : "交易指标按哪一方的地域归属统计大区：客户收货地、卖家所在地，还是仓库所在地？请明确来源。",
+    "violations" : [ ],
+    "columns" : [ ],
+    "rows" : [ ],
+    "truncated" : false,
+    "rewritten" : false,
+    "rowCount" : 0,
+    "schemaTableCount" : 0,
+    "retrievedTables" : [ ],
+    "schemaDdlChars" : 0,
+    "llm" : null,
+    "timings" : {
+      "retrievalMs" : 0,
+      "generationMs" : 0,
+      "validationMs" : 0,
+      "executionMs" : 0,
+      "totalMs" : 0
+    },
+    "sessionId" : "clarification-regional-short-start",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "d31fd2d8-4170-4f1d-a7aa-c718bec99728",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 0,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 0,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "CLARIFICATION" : 0,
+        "SESSION" : 0,
+        "ADMISSION" : 0,
+        "CONVERSATION" : 0
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 0,
+      "currentStageMs" : 0
+    }
+  },
+  "prompt" : "",
+  "question" : "2018年按大区统计商品销售额，只看已送达订单"
+}, {
+  "httpStatus" : 200,
+  "id" : "regional-short",
+  "expectedClarification" : false,
+  "decision" : [ ],
+  "sessionTurns" : 2,
+  "body" : {
+    "status" : "SUCCESS",
+    "sql" : "SELECT 1 AS controlled_answer LIMIT 201",
+    "message" : null,
+    "violations" : [ ],
+    "columns" : [ "controlled_answer" ],
+    "rows" : [ [ "1" ] ],
+    "truncated" : false,
+    "rewritten" : true,
+    "rowCount" : 1,
+    "schemaTableCount" : 8,
+    "retrievedTables" : [ "customers", "orders", "regions", "warehouses", "order_items", "refunds", "order_payments", "order_reviews" ],
+    "schemaDdlChars" : 2291,
+    "llm" : {
+      "model" : "deepseek-flash",
+      "promptTokens" : 10,
+      "completionTokens" : 5,
+      "totalTokens" : 15,
+      "latencyMs" : 12,
+      "costYuan" : 0.02
+    },
+    "timings" : {
+      "retrievalMs" : 7,
+      "generationMs" : 13,
+      "validationMs" : 7,
+      "executionMs" : 2,
+      "totalMs" : 32
+    },
+    "sessionId" : "clarification-regional-short-start",
+    "rewrittenQuestion" : "2018年按大区统计商品销售额，只看已送达订单\n用户已确认的口径（覆盖原问题中相应候选口径，不改变其他要求）：按客户所在大区统计",
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "cc041f43-3818-4cc9-a6be-c7b1b9412dda",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 1,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 32,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "SESSION" : 0,
+        "ADMISSION" : 0,
+        "VALIDATION" : 7,
+        "EXPLAIN" : 1,
+        "CLARIFICATION" : 0,
+        "CACHE_WRITE" : 0,
+        "RESULT_CHECK" : 0,
+        "RETRIEVAL" : 7,
+        "CONVERSATION" : 0,
+        "CACHE" : 0,
+        "GENERATION" : 6,
+        "MODEL" : 7,
+        "EXECUTION" : 1
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 3,
+      "currentStageMs" : 0
+    }
+  },
+  "prompt" : "你是一个 PostgreSQL 数据分析助手。你的唯一任务是把用户的中文问题翻译成一条可执行的 SQL。\n\n思考与推理步骤（Chain-of-Thought 思维链）：\n在编写 SQL 前，请严格按以下四步逻辑进行推导：\n1. 识别实体与目标表：从问题中提取核心业务实体，锁定需要的表；\n2. 规划连接路径：多表查询时，参考 JOIN PLAN 与 FOREIGN KEYS 确定连接键，防止过度连接或笛卡尔积；\n3. 对齐过滤条件：涉及状态、编码或业务指标时，严格按「字段枚举对齐」与 METRICS 表达式对齐物理值；\n4. 确定维度与聚合：确定 GROUP BY 维度、聚合函数与排序规则，仅投影问题真正需要的字段。\n\n硬性规则：\n1. 只输出一条 SELECT 语句，不要输出 INSERT/UPDATE/DELETE/DROP/ALTER/TRUNCATE。\n2. 不要输出任何代码围栏外解释或闲聊文本，直接输出可执行的 SQL 语句。\n3. 必须带 LIMIT，除非结果是单行聚合值（如 COUNT/SUM/AVG 且无 GROUP BY）。\n4. 只使用下面 schema 里真实存在的表和列，不要臆造字段名。\n5. 表名和列名一律用小写，不要加引号。\n6. 遇到多表查询时，优先参考 JOIN PLAN（推荐的连接顺序）或 FOREIGN KEYS 里给出的关联关系。\n7. 如果下面给出了 METRICS（业务指标定义），在用户未明确指定其他特殊口径时，默认遵循其表达式与过滤条件；若用户明确指定了自定义计算方式（如指定按订单平均金额计算客单价等），以用户明确说明为准。\n   事实筛选必须有用户请求或当前业务契约的依据；schema列出某状态枚举，不代表问题要求只统计该状态。不能自行补充“已完成”“有效”“非空”等记录过滤而缩小统计范围；明确请求或业务契约已有的过滤继续执行。\n8. SELECT 列表只放问题真正要求的内容。问题问「多少 / 哪些指标 / 平均是多少」时，\n   只输出维度列和指标列；用户明确指定维度名称、编号、编码或输出列时，以用户要求为准，不顺手附加其他展示列。\n   【维度投影原则】用户未明确要求名称时，默认使用当前事实或实体表已有的标识列作为维度输出，不为展示补关联或同时附加名称；状态、州代码、分类值等有业务含义的维度沿用原值。用户明确要求名称时，才使用当前schema中的名称列及可靠关联键，不臆造名称或引用上下文之外的表列。\n   内部仍按完整实体主键区分，不能因同名而合并实体，只有明确按名称汇总时才合并。为获取明确要求的名称关联维表时，保留未匹配事实及NULL名称，不因INNER JOIN、重复维表或名称过滤改变统计覆盖与金额；无法确认唯一匹配时不能任意取一个名称。明确要求仅匹配名称的对象时服从用户范围。\n   筛选条件、分组身份和中间计算字段不自动成为输出列。只问两期差额或增长率时，不附加两期原始数值；明确要求两期数值及差额/增长率时才全部输出。\n   【实体寻优规范】问「最...的那一笔/哪一个」特定实体（如“分期数最多的那一笔支付分了多少期”）时，\n   属于单条记录寻优，使用 ORDER BY ... DESC LIMIT 1 并保留实体标识（如 order_id）与指标列，不要写成纯 MAX()。\n\n9. 聚合粒度必须与问题的「每个…」一致。GROUP BY 的列要和 SELECT 里的维度列对应，\n   不要多分一层，也不要把分组列换成另一张表里的等价列。\n   - 「每个活动/卖家/标签」等实体按完整主键区分；名称是展示属性，不保证唯一。可按主键和名称分组，不能仅因同名就合并实体；明确按名称汇总时才合并。不为分组身份额外投影用户未要求的列。\n   - 预算等实体自带数值不随子表明细累加；先在原事实粒度计算，再关联。SUM(DISTINCT 金额)会误删金额相同的不同事实，不能用来抵消关联放大。\n   - 同一请求的每个指标分别确定事实全集。统计标签覆盖会员数及其商品均价时，会员数包括无订单会员，均价只统计存在的商品价格；用LEFT JOIN保留会员或分别聚合再合并，避免INNER JOIN缩小会员全集。只有用户明确要求有订单/有商品的会员时才限缩；右表条件放ON或对应聚合内，不能在WHERE中误删左侧记录。没有价格时均价为NULL，不能把空值补0参与平均。\n10. 计数口径规范：\n   - 先确定每个计数的对象与身份：记录数、不同实体数和业务身份去重人数不是同一度量；用户明确单位优先，其次遵循当前业务契约，不能用一个计数方式覆盖同一结果的所有指标。\n   - 统计源表记录且连接不重复该记录时用 COUNT(*)；连接可能重复记录时按源表完整主键去重或先聚合。仅有外键不保证子表关联键唯一，不能据此假定一对一。\n   - 统计满足条件的不同订单时按订单主键去重或使用 EXISTS 筛选订单；同一订单可有多条评价/明细，评价记录数保留每条评价，订单数只计一次。单表上的业务身份去重也须使用对应身份列，不以是否存在JOIN为前提。\n   - 去重不得改变过滤、事实覆盖或分母；NULL身份不自动合并成一个实体，空集合计数为0。组合主键须保留全部分量，不用字符串拼接假造唯一键。\n11. 不要为了「信息更全」而加列、加分组或加排序。评估比的是结果集，\n   多一列和少一列都算错。\n12. 比例与精度口径：\n   - 单位优先级：用户明确指定的单位 > 当前METRIC的默认输出单位 > 通用比例默认值；每个指标分别处理，不把某一列的单位应用到其他列。指标名称本身不算显式单位覆盖。\n   - 用户明确要求百分比/%时输出百分数数值；明确要求0到1/小数比率时输出原始比值。覆盖指标默认单位时同步转换表达式、精度和列别名，参考示例与推荐查询不能覆盖用户要求。\n   - 对已注册指标，遵循其outputUnit/outputScale（如PERCENT按100倍比值、DECIMAL_RATIO按原始比值），不因题干出现「比例」就改用另一单位；未注册指标的普通比例默认输出小数比率、四位小数，明确百分比时乘100、两位小数。分母为零用NULLIF返回NULL，不伪装成0。\n   - 其余一般金额、单价、平均值，统一用 ROUND(表达式, 2) 保留两位小数。\n   - 【PostgreSQL 严格类型约束】PostgreSQL 的 ROUND(val, n) 仅接受 NUMERIC 类型！若表达式涉及 EXTRACT(EPOCH FROM ...) 或浮点计算/AVG，返回值是 DOUBLE PRECISION，必须显式加 ::NUMERIC 转换（例如 ROUND((AVG(EXTRACT(EPOCH FROM ...)) / 86400.0)::NUMERIC, 2)），绝对禁止对 DOUBLE PRECISION 直接传 2 个参数调用 ROUND。\n13. 按时间分组与时间字段选择：\n   - 按年比较或年度分组时，默认用 EXTRACT(YEAR FROM 时间列)::int 输出整数年份（如2017），不要用年初时间戳代替年份标签；用户明确要求年初日期/时间戳时才用 DATE_TRUNC('year', 时间列) 并按要求转换类型。\n   - 按季度分组时，默认用 DATE_TRUNC('quarter', 时间列) 输出一个季度起始时间戳；用户明确要求年/季度编号或标签时按要求输出，不仅用季度编号合并不同年份。\n   - 星期维度默认用 EXTRACT(DOW FROM 时间列)::int 输出编号（周日0、周一1至周六6）；用户明确要求ISO编号（周一1至周日7）或中文名称时按要求输出。\n   - 用 DATE_TRUNC('month'|'week'|'day', 时间列) 作为分组列，不要用 to_char 把时间转成 'YYYY-MM' 这类字符串。\n   - 问题涉及各月/每个月/每周等周期统计时，若表内有自身的业务时间字段（如 refunds.requested_at, support_tickets.created_at, members.register_date, settlements.period_start），优先使用本表对应业务时间，不要无故关联 orders 表。\n14. 时间窗口过滤用 >= 起点 AND < 终点（左闭右开），不要用 BETWEEN：\n   BETWEEN 会把终点那一整天的数据也算进来。\n15. 如果下面给出了「字段枚举与实体取值对齐」，WHERE 过滤条件中涉及该实体时，\n   **必须严格使用对应的物理字段与取值**（例如使用 customer_state = 'SP' 而不是 '圣保罗'）。\n16. 实体与明细字段指引：\n   - 查询订单明细的价格/销售金额时，直接使用 order_items 表及其 price 列；仅在明确提到卖家结算、抽成或对账时才使用 settlements / settlement_items。\n   - 查询承运商配送时长时，直接使用 shipments 表的 (delivered_at - shipped_at)，无需关联轨迹表。\n   - 工单实际处理时长计算用 support_tickets 表的 (resolved_at - created_at)；ticket_categories.sla_hours 仅为时限标准而非实际耗时。\n17. 对比结果的列与行契约：\n   - 用户明确要求横表/纵表、指定列或每个条件一行时，以该要求为准；其次遵循已注册METRIC的输出形状，最后才使用以下默认约定。形状选择不能改动时间范围、事实粒度、过滤、分母或单位。\n   - 按时间比较同一指标，或明确要求按维度分组/每种/分布时，输出维度列、指标列，每个维度值一行；时间维度按时间升序。不要因为列举了年份就自动转成多列。\n   - 未要求分组、只点名多个非时间业务子集的记录计数时，将它们作为多个具名计数指标，一行内按题目点名顺序各占一列；用条件聚合分别计数，不额外投影状态/类型列。某子集无记录计为0，空输入也返回一行各计数为0；不要因一组为空丢掉该计数。\n   - 多个不同指标按题目顺序各占一列；若同时要求每州/每月等分组，则每组一行、组内各指标一列。不要把GMV与销售额强行变成维度行，也不要把复购率等非计数指标套用具名子集计数规则。\n18. 复杂多表关联时，可在 SELECT 语句首行添加一行以 -- 开头的单行注释说明思路，之后紧接完整 SQL。\n=== 数据库 Schema ===\nTABLE customers\n  customer_id character varying\n  customer_unique_id character varying\n  customer_zip_code_prefix integer\n  customer_state character varying\n  PRIMARY KEY (customer_id)\n\nTABLE orders\n  order_id character varying\n  customer_id character varying\n  order_status character varying\n  order_purchase_timestamp timestamp without time zone\n  order_approved_at timestamp without time zone\n  order_delivered_carrier_date timestamp without time zone\n  order_delivered_customer_date timestamp without time zone\n  order_estimated_delivery_date timestamp without time zone\n  PRIMARY KEY (order_id)\n\nTABLE regions  -- 巴西州份到大区的映射，用于区域维度分析\n  region_code character varying\n  region_name character varying\n  macro_region character varying\n  PRIMARY KEY (region_code)\n\nTABLE warehouses\n  warehouse_id integer\n  warehouse_name character varying\n  region_code character varying\n  capacity integer\n  PRIMARY KEY (warehouse_id)\n\nTABLE order_items\n  order_id character varying\n  order_item_id integer\n  shipping_limit_date timestamp without time zone\n  price numeric\n  PRIMARY KEY (order_id, order_item_id)  -- 组合唯一，单列不保证唯一\n\nTABLE refunds\n  refund_id bigint\n  order_id character varying\n  reason_code character varying  -- 退款原因代码：CUST=客户取消 QUAL=质量问题 LATE=配送超时 OTHER=其他\n  requested_at timestamp without time zone\n  completed_at timestamp without time zone\n  PRIMARY KEY (refund_id)\n\nTABLE order_payments\n  order_id character varying\n  payment_sequential integer\n  payment_type character varying\n  payment_installments integer\n  PRIMARY KEY (order_id, payment_sequential)  -- 组合唯一，单列不保证唯一\n\nTABLE order_reviews\n  review_id character varying\n  order_id character varying\n  review_creation_date timestamp without time zone\n  review_answer_timestamp timestamp without time zone\n  PRIMARY KEY (review_id, order_id)  -- 组合唯一，单列不保证唯一\n\n\nJOIN PLAN（推荐的连接顺序）\n  起点 customers\n  customers.customer_id = orders.customer_id   -- orders [FK]\n  orders.order_id = order_items.order_id   -- order_items [FK]\n  customers.customer_state = regions.region_code   -- regions [约定]\n  regions.region_code = warehouses.region_code   -- warehouses [约定]\n  orders.order_id = refunds.order_id   -- refunds [约定]\n  orders.order_id = support_tickets.order_id   -- support_tickets [约定]\n  -- 注意：还有 1 张表与起点不在同一连通分量，本段未给出连接顺序；它们的关联见上面的 JOINS。\n\n=== 数据画像 ===\n数据规模：orders 共 99441 行。\n时间范围：order_purchase_timestamp 从 2016-09-04 21:15:19.0 到 2018-10-17 17:30:18.0。\n【重要】这是历史快照数据，不是实时库。凡是\"最近 N 天/本月/上个月/今年\"\n这类相对时间，必须锚定到该表的最大时间，不能用 current_date / now()。\n\n=== 业务指标口径约定（数仓标准度量）===\n【使用原则】当用户问题涉及以下指标且未指定特殊计算口径时，遵循标准度量的表达式与过滤条件；若用户明确指明了特定的计算口径或聚合逻辑，以用户明确说明为准。\nENTITY_POLICY customer_identity_v2 -- customers\n  存储行/关联键：customers.customer_id；业务实体身份：customers.customer_unique_id。\n  populationCountUnit=ROW_KEY；该默认只作用于实体表记录集合的规模/属性分布计数，不覆盖已注册指标的分子分母。\n  未指定自然人/人数/业务身份去重的实体表规模及属性分布，默认统计存储记录：单独统计该表可COUNT(*)，一对多关联后按customers.customer_id去重避免放大；列名应体现记录单位，不把记录数宣称为自然人数。\n  明确问自然人、人数或业务身份去重时按customers.customer_unique_id；按每个实体汇总订单/消费等行为仍默认按业务实体身份分组，跨关联键识别同一实体。\n  用户明确指定按存储行/关联键统计时服从该要求，不擅自改成实体级统计。\n  显式字段/单位优先；同一请求同时要求记录数和人数时分别计算，不用一个默认覆盖所有指标。集合计数不授权改变过滤或JOIN覆盖。\n  本项目区分客户档案记录的规模与自然人行为：裸客户数/按属性分布默认数客户记录， 这是产品默认，不宣称“客户”一词只有这一种解释；明确自然人/人数/去重要求可覆盖默认。 同一自然人可以对应多个客户关联键，每客户订单数、复购、下单人数必须识别跨关联键的同一个人。 同一人可有不同州的客户记录；按州记录数按每条记录的州归属，按州人数则每州内独立去重， 同一人可参与多个州，不能把各州人数相加当全站去重人数，也不猜测“最新州”或唯一归属。 客户关联键仍用于连接订单，不能直接用它代表每个真实客户。 读取交易/事件所属客户记录的属性时，沿该事实的关联键定位customers.customer_id对应记录； customers.customer_unique_id用于身份去重或跨记录汇总，不授权改走其他实体反向匹配该身份的全部客户记录取属性。 同一自然人可对应多条属性不同的客户记录，不能猜测唯一或最新属性； COUNT(DISTINCT 事实主键)只能消除同组重复，不能修复错误属性分组或金额放大。 用户明确要求跨记录属性分布时另按该范围计算。 人数和按人分组时不把SQL NULL身份合并成一个人；默认只统计已知身份， 用户明确要求未知身份分组时可单列未知组，但不能把它称为一个真实客户。 这不授权过滤未按人分组的订单总数或金额，不自动排除取消订单，也不替代指标已有过滤。 关联一对多明细后统计订单数须按订单主键去重，不能把明细行当成订单； 金额聚合须在正确事实粒度处理连接放大，不能用SUM(DISTINCT 金额)误删等额交易。 若要求所有客户含零订单，从客户侧保留无订单者且COUNT订单主键，不用COUNT(*)把空连接计为一单。\n\n=== 字段枚举与实体取值对齐（请直接使用以下库内真实物理值）===\n- 问题中的「已送达」对应真实过滤条件：order_status = 'delivered'（表 orders）\n- 问题中的「其他」对应真实过滤条件：reason_code = 'OTHER'（表 refunds）\n\n=== 参考示例 ===\n问题: 每个仓库所在区域的发货单量和覆盖订单数分别是多少？\nSQL: SELECT r.region_name, COUNT(DISTINCT s.shipment_id) AS shipments, COUNT(DISTINCT o.order_id) AS orders\nFROM shipments s\nJOIN warehouses w ON w.warehouse_id = s.warehouse_id\nJOIN regions r ON r.region_code = w.region_code\nJOIN orders o ON o.order_id = s.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY 1 ORDER BY shipments DESC;\n---\n问题: 每个州的评价平均分是多少？取评价数最多的 10 个州。\nSQL: SELECT c.customer_state, ROUND(AVG(r.review_score), 2) AS avg_score, COUNT(*) AS cnt\nFROM order_reviews r\nJOIN orders o ON o.order_id = r.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY 1 ORDER BY cnt DESC LIMIT 10;\n---\n\n=== 用户问题 ===\n2018年按大区统计商品销售额，只看已送达订单\n用户已确认的口径（覆盖原问题中相应候选口径，不改变其他要求）：按客户所在大区统计\n",
+  "question" : "按客户"
+}, {
+  "httpStatus" : 400,
+  "id" : "price-short-start",
+  "expectedClarification" : true,
+  "decision" : [ {
+    "term" : "平均涨跌幅",
+    "matchedTerm" : "平均涨跌幅",
+    "evidence" : [ {
+      "source" : "trigger-pattern",
+      "group" : "applicability",
+      "matchedText" : "价格平均涨跌幅"
+    } ],
+    "missingGroups" : [ "price-change-unit", "averaging-grain" ],
+    "unresolvedEvidence" : [ ],
+    "needsClarification" : true,
+    "question" : "价格平均涨跌幅按新价减旧价的金额差，还是除以旧价的比例？平均按每条变动记录等权、先按商品平均，还是按销量加权？请明确两项。"
+  } ],
+  "sessionTurns" : 1,
+  "body" : {
+    "status" : "NEEDS_CLARIFICATION",
+    "sql" : null,
+    "message" : "价格平均涨跌幅按新价减旧价的金额差，还是除以旧价的比例？平均按每条变动记录等权、先按商品平均，还是按销量加权？请明确两项。",
+    "violations" : [ ],
+    "columns" : [ ],
+    "rows" : [ ],
+    "truncated" : false,
+    "rewritten" : false,
+    "rowCount" : 0,
+    "schemaTableCount" : 0,
+    "retrievedTables" : [ ],
+    "schemaDdlChars" : 0,
+    "llm" : null,
+    "timings" : {
+      "retrievalMs" : 0,
+      "generationMs" : 0,
+      "validationMs" : 0,
+      "executionMs" : 0,
+      "totalMs" : 0
+    },
+    "sessionId" : "clarification-price-short-start",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "44393b35-b513-43a2-834b-38eec257ec03",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 0,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 0,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "CLARIFICATION" : 0,
+        "SESSION" : 0,
+        "ADMISSION" : 0,
+        "CONVERSATION" : 0
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 0,
+      "currentStageMs" : 0
+    }
+  },
+  "prompt" : "",
+  "question" : "2018年按类目统计价格平均涨跌幅，只看涨价记录"
+}, {
+  "httpStatus" : 400,
+  "id" : "price-short-unit",
+  "expectedClarification" : true,
+  "decision" : [ {
+    "term" : "平均涨跌幅",
+    "matchedTerm" : "平均涨跌幅",
+    "evidence" : [ {
+      "source" : "trigger-pattern",
+      "group" : "applicability",
+      "matchedText" : "价格平均涨跌幅"
+    }, {
+      "source" : "confirmed-reply",
+      "group" : "price-change-unit",
+      "matchedText" : "百分比"
+    } ],
+    "missingGroups" : [ "averaging-grain" ],
+    "unresolvedEvidence" : [ ],
+    "needsClarification" : true,
+    "question" : "价格平均涨跌幅按新价减旧价的金额差，还是除以旧价的比例？平均按每条变动记录等权、先按商品平均，还是按销量加权？请明确两项。"
+  } ],
+  "sessionTurns" : 2,
+  "body" : {
+    "status" : "NEEDS_CLARIFICATION",
+    "sql" : null,
+    "message" : "价格平均涨跌幅按新价减旧价的金额差，还是除以旧价的比例？平均按每条变动记录等权、先按商品平均，还是按销量加权？请明确两项。",
+    "violations" : [ ],
+    "columns" : [ ],
+    "rows" : [ ],
+    "truncated" : false,
+    "rewritten" : false,
+    "rowCount" : 0,
+    "schemaTableCount" : 0,
+    "retrievedTables" : [ ],
+    "schemaDdlChars" : 0,
+    "llm" : null,
+    "timings" : {
+      "retrievalMs" : 0,
+      "generationMs" : 0,
+      "validationMs" : 0,
+      "executionMs" : 0,
+      "totalMs" : 0
+    },
+    "sessionId" : "clarification-price-short-start",
+    "rewrittenQuestion" : "2018年按类目统计价格平均涨跌幅，只看涨价记录\n用户已确认的口径（覆盖原问题中相应候选口径，不改变其他要求）：价格平均涨跌幅按相对涨跌率计算（新价减旧价后除以旧价）",
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "39a16356-7616-4db5-98ef-a8995378a355",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 0,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 0,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "CLARIFICATION" : 0,
+        "SESSION" : 0,
+        "ADMISSION" : 0,
+        "CONVERSATION" : 0
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 0,
+      "currentStageMs" : 0
+    }
+  },
+  "prompt" : "",
+  "question" : "百分比"
+}, {
+  "httpStatus" : 200,
+  "id" : "price-short-grain",
+  "expectedClarification" : false,
+  "decision" : [ ],
+  "sessionTurns" : 3,
+  "body" : {
+    "status" : "SUCCESS",
+    "sql" : "SELECT 1 AS controlled_answer LIMIT 201",
+    "message" : null,
+    "violations" : [ ],
+    "columns" : [ "controlled_answer" ],
+    "rows" : [ [ "1" ] ],
+    "truncated" : false,
+    "rewritten" : true,
+    "rowCount" : 1,
+    "schemaTableCount" : 8,
+    "retrievedTables" : [ "product_price_history", "order_items", "customers", "product_category_translation", "products", "refunds", "orders", "sellers" ],
+    "schemaDdlChars" : 2589,
+    "llm" : {
+      "model" : "deepseek-flash",
+      "promptTokens" : 10,
+      "completionTokens" : 5,
+      "totalTokens" : 15,
+      "latencyMs" : 6,
+      "costYuan" : 0.02
+    },
+    "timings" : {
+      "retrievalMs" : 7,
+      "generationMs" : 7,
+      "validationMs" : 1,
+      "executionMs" : 2,
+      "totalMs" : 20
+    },
+    "sessionId" : "clarification-price-short-start",
+    "rewrittenQuestion" : "2018年按类目统计价格平均涨跌幅，只看涨价记录\n用户已确认的口径（覆盖原问题中相应候选口径，不改变其他要求）：价格平均涨跌幅按相对涨跌率计算（新价减旧价后除以旧价）；每条价格变动记录等权平均",
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "56a4d384-af26-4361-a43f-3ddeb61432e7",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 1,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 20,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "SESSION" : 0,
+        "ADMISSION" : 0,
+        "VALIDATION" : 1,
+        "EXPLAIN" : 1,
+        "CLARIFICATION" : 0,
+        "CACHE_WRITE" : 0,
+        "RESULT_CHECK" : 0,
+        "RETRIEVAL" : 7,
+        "CONVERSATION" : 0,
+        "CACHE" : 0,
+        "GENERATION" : 3,
+        "MODEL" : 4,
+        "EXECUTION" : 1
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 3,
+      "currentStageMs" : 0
+    }
+  },
+  "prompt" : "你是一个 PostgreSQL 数据分析助手。你的唯一任务是把用户的中文问题翻译成一条可执行的 SQL。\n\n思考与推理步骤（Chain-of-Thought 思维链）：\n在编写 SQL 前，请严格按以下四步逻辑进行推导：\n1. 识别实体与目标表：从问题中提取核心业务实体，锁定需要的表；\n2. 规划连接路径：多表查询时，参考 JOIN PLAN 与 FOREIGN KEYS 确定连接键，防止过度连接或笛卡尔积；\n3. 对齐过滤条件：涉及状态、编码或业务指标时，严格按「字段枚举对齐」与 METRICS 表达式对齐物理值；\n4. 确定维度与聚合：确定 GROUP BY 维度、聚合函数与排序规则，仅投影问题真正需要的字段。\n\n硬性规则：\n1. 只输出一条 SELECT 语句，不要输出 INSERT/UPDATE/DELETE/DROP/ALTER/TRUNCATE。\n2. 不要输出任何代码围栏外解释或闲聊文本，直接输出可执行的 SQL 语句。\n3. 必须带 LIMIT，除非结果是单行聚合值（如 COUNT/SUM/AVG 且无 GROUP BY）。\n4. 只使用下面 schema 里真实存在的表和列，不要臆造字段名。\n5. 表名和列名一律用小写，不要加引号。\n6. 遇到多表查询时，优先参考 JOIN PLAN（推荐的连接顺序）或 FOREIGN KEYS 里给出的关联关系。\n7. 如果下面给出了 METRICS（业务指标定义），在用户未明确指定其他特殊口径时，默认遵循其表达式与过滤条件；若用户明确指定了自定义计算方式（如指定按订单平均金额计算客单价等），以用户明确说明为准。\n   事实筛选必须有用户请求或当前业务契约的依据；schema列出某状态枚举，不代表问题要求只统计该状态。不能自行补充“已完成”“有效”“非空”等记录过滤而缩小统计范围；明确请求或业务契约已有的过滤继续执行。\n8. SELECT 列表只放问题真正要求的内容。问题问「多少 / 哪些指标 / 平均是多少」时，\n   只输出维度列和指标列；用户明确指定维度名称、编号、编码或输出列时，以用户要求为准，不顺手附加其他展示列。\n   【维度投影原则】用户未明确要求名称时，默认使用当前事实或实体表已有的标识列作为维度输出，不为展示补关联或同时附加名称；状态、州代码、分类值等有业务含义的维度沿用原值。用户明确要求名称时，才使用当前schema中的名称列及可靠关联键，不臆造名称或引用上下文之外的表列。\n   内部仍按完整实体主键区分，不能因同名而合并实体，只有明确按名称汇总时才合并。为获取明确要求的名称关联维表时，保留未匹配事实及NULL名称，不因INNER JOIN、重复维表或名称过滤改变统计覆盖与金额；无法确认唯一匹配时不能任意取一个名称。明确要求仅匹配名称的对象时服从用户范围。\n   筛选条件、分组身份和中间计算字段不自动成为输出列。只问两期差额或增长率时，不附加两期原始数值；明确要求两期数值及差额/增长率时才全部输出。\n   【实体寻优规范】问「最...的那一笔/哪一个」特定实体（如“分期数最多的那一笔支付分了多少期”）时，\n   属于单条记录寻优，使用 ORDER BY ... DESC LIMIT 1 并保留实体标识（如 order_id）与指标列，不要写成纯 MAX()。\n\n9. 聚合粒度必须与问题的「每个…」一致。GROUP BY 的列要和 SELECT 里的维度列对应，\n   不要多分一层，也不要把分组列换成另一张表里的等价列。\n   - 「每个活动/卖家/标签」等实体按完整主键区分；名称是展示属性，不保证唯一。可按主键和名称分组，不能仅因同名就合并实体；明确按名称汇总时才合并。不为分组身份额外投影用户未要求的列。\n   - 预算等实体自带数值不随子表明细累加；先在原事实粒度计算，再关联。SUM(DISTINCT 金额)会误删金额相同的不同事实，不能用来抵消关联放大。\n   - 同一请求的每个指标分别确定事实全集。统计标签覆盖会员数及其商品均价时，会员数包括无订单会员，均价只统计存在的商品价格；用LEFT JOIN保留会员或分别聚合再合并，避免INNER JOIN缩小会员全集。只有用户明确要求有订单/有商品的会员时才限缩；右表条件放ON或对应聚合内，不能在WHERE中误删左侧记录。没有价格时均价为NULL，不能把空值补0参与平均。\n10. 计数口径规范：\n   - 先确定每个计数的对象与身份：记录数、不同实体数和业务身份去重人数不是同一度量；用户明确单位优先，其次遵循当前业务契约，不能用一个计数方式覆盖同一结果的所有指标。\n   - 统计源表记录且连接不重复该记录时用 COUNT(*)；连接可能重复记录时按源表完整主键去重或先聚合。仅有外键不保证子表关联键唯一，不能据此假定一对一。\n   - 统计满足条件的不同订单时按订单主键去重或使用 EXISTS 筛选订单；同一订单可有多条评价/明细，评价记录数保留每条评价，订单数只计一次。单表上的业务身份去重也须使用对应身份列，不以是否存在JOIN为前提。\n   - 去重不得改变过滤、事实覆盖或分母；NULL身份不自动合并成一个实体，空集合计数为0。组合主键须保留全部分量，不用字符串拼接假造唯一键。\n11. 不要为了「信息更全」而加列、加分组或加排序。评估比的是结果集，\n   多一列和少一列都算错。\n12. 比例与精度口径：\n   - 单位优先级：用户明确指定的单位 > 当前METRIC的默认输出单位 > 通用比例默认值；每个指标分别处理，不把某一列的单位应用到其他列。指标名称本身不算显式单位覆盖。\n   - 用户明确要求百分比/%时输出百分数数值；明确要求0到1/小数比率时输出原始比值。覆盖指标默认单位时同步转换表达式、精度和列别名，参考示例与推荐查询不能覆盖用户要求。\n   - 对已注册指标，遵循其outputUnit/outputScale（如PERCENT按100倍比值、DECIMAL_RATIO按原始比值），不因题干出现「比例」就改用另一单位；未注册指标的普通比例默认输出小数比率、四位小数，明确百分比时乘100、两位小数。分母为零用NULLIF返回NULL，不伪装成0。\n   - 其余一般金额、单价、平均值，统一用 ROUND(表达式, 2) 保留两位小数。\n   - 【PostgreSQL 严格类型约束】PostgreSQL 的 ROUND(val, n) 仅接受 NUMERIC 类型！若表达式涉及 EXTRACT(EPOCH FROM ...) 或浮点计算/AVG，返回值是 DOUBLE PRECISION，必须显式加 ::NUMERIC 转换（例如 ROUND((AVG(EXTRACT(EPOCH FROM ...)) / 86400.0)::NUMERIC, 2)），绝对禁止对 DOUBLE PRECISION 直接传 2 个参数调用 ROUND。\n13. 按时间分组与时间字段选择：\n   - 按年比较或年度分组时，默认用 EXTRACT(YEAR FROM 时间列)::int 输出整数年份（如2017），不要用年初时间戳代替年份标签；用户明确要求年初日期/时间戳时才用 DATE_TRUNC('year', 时间列) 并按要求转换类型。\n   - 按季度分组时，默认用 DATE_TRUNC('quarter', 时间列) 输出一个季度起始时间戳；用户明确要求年/季度编号或标签时按要求输出，不仅用季度编号合并不同年份。\n   - 星期维度默认用 EXTRACT(DOW FROM 时间列)::int 输出编号（周日0、周一1至周六6）；用户明确要求ISO编号（周一1至周日7）或中文名称时按要求输出。\n   - 用 DATE_TRUNC('month'|'week'|'day', 时间列) 作为分组列，不要用 to_char 把时间转成 'YYYY-MM' 这类字符串。\n   - 问题涉及各月/每个月/每周等周期统计时，若表内有自身的业务时间字段（如 refunds.requested_at, support_tickets.created_at, members.register_date, settlements.period_start），优先使用本表对应业务时间，不要无故关联 orders 表。\n14. 时间窗口过滤用 >= 起点 AND < 终点（左闭右开），不要用 BETWEEN：\n   BETWEEN 会把终点那一整天的数据也算进来。\n15. 如果下面给出了「字段枚举与实体取值对齐」，WHERE 过滤条件中涉及该实体时，\n   **必须严格使用对应的物理字段与取值**（例如使用 customer_state = 'SP' 而不是 '圣保罗'）。\n16. 实体与明细字段指引：\n   - 查询订单明细的价格/销售金额时，直接使用 order_items 表及其 price 列；仅在明确提到卖家结算、抽成或对账时才使用 settlements / settlement_items。\n   - 查询承运商配送时长时，直接使用 shipments 表的 (delivered_at - shipped_at)，无需关联轨迹表。\n   - 工单实际处理时长计算用 support_tickets 表的 (resolved_at - created_at)；ticket_categories.sla_hours 仅为时限标准而非实际耗时。\n17. 对比结果的列与行契约：\n   - 用户明确要求横表/纵表、指定列或每个条件一行时，以该要求为准；其次遵循已注册METRIC的输出形状，最后才使用以下默认约定。形状选择不能改动时间范围、事实粒度、过滤、分母或单位。\n   - 按时间比较同一指标，或明确要求按维度分组/每种/分布时，输出维度列、指标列，每个维度值一行；时间维度按时间升序。不要因为列举了年份就自动转成多列。\n   - 未要求分组、只点名多个非时间业务子集的记录计数时，将它们作为多个具名计数指标，一行内按题目点名顺序各占一列；用条件聚合分别计数，不额外投影状态/类型列。某子集无记录计为0，空输入也返回一行各计数为0；不要因一组为空丢掉该计数。\n   - 多个不同指标按题目顺序各占一列；若同时要求每州/每月等分组，则每组一行、组内各指标一列。不要把GMV与销售额强行变成维度行，也不要把复购率等非计数指标套用具名子集计数规则。\n18. 复杂多表关联时，可在 SELECT 语句首行添加一行以 -- 开头的单行注释说明思路，之后紧接完整 SQL。\n=== 数据库 Schema ===\nTABLE product_price_history\n  history_id bigint\n  product_id character varying\n  old_price numeric\n  new_price numeric\n  changed_at timestamp without time zone\n  PRIMARY KEY (history_id)\n\nTABLE order_items\n  order_id character varying\n  order_item_id integer\n  product_id character varying\n  seller_id character varying\n  shipping_limit_date timestamp without time zone\n  price numeric\n  freight_value numeric\n  PRIMARY KEY (order_id, order_item_id)  -- 组合唯一，单列不保证唯一\n\nTABLE customers\n  customer_id character varying\n  customer_unique_id character varying\n  customer_zip_code_prefix integer\n  customer_city character varying\n  PRIMARY KEY (customer_id)\n\nTABLE product_category_translation\n  product_category_name character varying\n  product_category_name_english character varying\n  PRIMARY KEY (product_category_name)\n\nTABLE products\n  product_id character varying\n  product_category_name character varying\n  product_name_lenght integer\n  product_description_lenght integer\n  product_photos_qty integer\n  product_weight_g integer\n  product_length_cm integer\n  product_height_cm integer\n  product_width_cm integer\n  PRIMARY KEY (product_id)\n\nTABLE refunds\n  refund_id bigint\n  order_id character varying\n  refund_amount numeric\n  reason_code character varying  -- 退款原因代码：CUST=客户取消 QUAL=质量问题 LATE=配送超时 OTHER=其他\n  status smallint  -- 退款状态：1=待审核 2=已通过 3=已拒绝 4=已退款\n  requested_at timestamp without time zone\n  completed_at timestamp without time zone\n  PRIMARY KEY (refund_id)\n\nTABLE orders\n  order_id character varying\n  customer_id character varying\n  order_purchase_timestamp timestamp without time zone\n  order_approved_at timestamp without time zone\n  order_delivered_carrier_date timestamp without time zone\n  order_delivered_customer_date timestamp without time zone\n  order_estimated_delivery_date timestamp without time zone\n  PRIMARY KEY (order_id)\n\nTABLE sellers\n  seller_id character varying\n  seller_zip_code_prefix integer\n  seller_city character varying\n  seller_state character varying\n  PRIMARY KEY (seller_id)\n\n\nJOIN PLAN（推荐的连接顺序）\n  起点 product_price_history\n  product_price_history.product_id = products.product_id   -- products [约定]\n  products.product_id = order_items.product_id   -- order_items [FK]\n  order_items.order_id = orders.order_id   -- orders [FK]\n  orders.customer_id = customers.customer_id   -- customers [FK]\n  products.product_category_name = product_category_translation.product_category_name   -- product_category_translation [约定]\n  orders.order_id = refunds.order_id   -- refunds [约定]\n  orders.order_id = support_tickets.order_id   -- support_tickets [约定]\n\n=== 数据画像 ===\n数据规模：orders 共 99441 行。\n时间范围：order_purchase_timestamp 从 2016-09-04 21:15:19.0 到 2018-10-17 17:30:18.0。\n【重要】这是历史快照数据，不是实时库。凡是\"最近 N 天/本月/上个月/今年\"\n这类相对时间，必须锚定到该表的最大时间，不能用 current_date / now()。\n\n=== 业务指标口径约定（数仓标准度量）===\n【使用原则】当用户问题涉及以下指标且未指定特殊计算口径时，遵循标准度量的表达式与过滤条件；若用户明确指明了特定的计算口径或聚合逻辑，以用户明确说明为准。\nDIMENSION_POLICY product_category_nulls_v1 -- products.product_category_name\n  适用范围：仅当该字段作为统计分组维度时生效；不改变未按该维度分组的总数或总额。\n  默认空值口径：排除该字段为SQL NULL的数据，附加 products.product_category_name IS NOT NULL。\n  用户明确要求包含缺失/未知类目时，以用户要求为准：不附加上述过滤，保留NULL分组；仅在用户要求显示标签时使用COALESCE，不把原始NULL擅自改成字符串。\n  该口径只处理SQL NULL，不自动排除空字符串、未翻译的类目或文字值“未知”。 多个商品可属于同一订单：统计每类目的订单数时按订单去重，一个订单跨多个类目可分别计入各组， 不能把各类目的订单数相加当成全站去重订单数。显示英文类目时，翻译缺失与原始类目NULL是两件事， 用户要求保留未知时不能用内连接翻译表把这类记录提前丢掉。\n\nENTITY_POLICY customer_identity_v2 -- customers\n  存储行/关联键：customers.customer_id；业务实体身份：customers.customer_unique_id。\n  populationCountUnit=ROW_KEY；该默认只作用于实体表记录集合的规模/属性分布计数，不覆盖已注册指标的分子分母。\n  未指定自然人/人数/业务身份去重的实体表规模及属性分布，默认统计存储记录：单独统计该表可COUNT(*)，一对多关联后按customers.customer_id去重避免放大；列名应体现记录单位，不把记录数宣称为自然人数。\n  明确问自然人、人数或业务身份去重时按customers.customer_unique_id；按每个实体汇总订单/消费等行为仍默认按业务实体身份分组，跨关联键识别同一实体。\n  用户明确指定按存储行/关联键统计时服从该要求，不擅自改成实体级统计。\n  显式字段/单位优先；同一请求同时要求记录数和人数时分别计算，不用一个默认覆盖所有指标。集合计数不授权改变过滤或JOIN覆盖。\n  本项目区分客户档案记录的规模与自然人行为：裸客户数/按属性分布默认数客户记录， 这是产品默认，不宣称“客户”一词只有这一种解释；明确自然人/人数/去重要求可覆盖默认。 同一自然人可以对应多个客户关联键，每客户订单数、复购、下单人数必须识别跨关联键的同一个人。 同一人可有不同州的客户记录；按州记录数按每条记录的州归属，按州人数则每州内独立去重， 同一人可参与多个州，不能把各州人数相加当全站去重人数，也不猜测“最新州”或唯一归属。 客户关联键仍用于连接订单，不能直接用它代表每个真实客户。 读取交易/事件所属客户记录的属性时，沿该事实的关联键定位customers.customer_id对应记录； customers.customer_unique_id用于身份去重或跨记录汇总，不授权改走其他实体反向匹配该身份的全部客户记录取属性。 同一自然人可对应多条属性不同的客户记录，不能猜测唯一或最新属性； COUNT(DISTINCT 事实主键)只能消除同组重复，不能修复错误属性分组或金额放大。 用户明确要求跨记录属性分布时另按该范围计算。 人数和按人分组时不把SQL NULL身份合并成一个人；默认只统计已知身份， 用户明确要求未知身份分组时可单列未知组，但不能把它称为一个真实客户。 这不授权过滤未按人分组的订单总数或金额，不自动排除取消订单，也不替代指标已有过滤。 关联一对多明细后统计订单数须按订单主键去重，不能把明细行当成订单； 金额聚合须在正确事实粒度处理连接放大，不能用SUM(DISTINCT 金额)误删等额交易。 若要求所有客户含零订单，从客户侧保留无订单者且COUNT订单主键，不用COUNT(*)把空连接计为一单。\n\n=== 字段枚举与实体取值对齐（请直接使用以下库内真实物理值）===\n- 问题中的「其他」对应真实过滤条件：reason_code = 'OTHER'（表 refunds）\n\n=== 参考示例 ===\n问题: 每个会员等级对应的商品销售额是多少？\nSQL: SELECT ml.level_name, ROUND(SUM(oi.price), 2) AS sales\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN members m ON m.customer_unique_id = c.customer_unique_id\nJOIN member_levels ml ON ml.level_id = m.level_id\nJOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY sales DESC;\n---\n问题: 品牌销售额排名前 10 是哪些？销售额按商品金额统计。\nSQL: SELECT b.brand_name, ROUND(SUM(oi.price), 2) AS sales\nFROM order_items oi\nJOIN product_brand_map pbm ON pbm.product_id = oi.product_id AND pbm.is_current\nJOIN brands b ON b.brand_id = pbm.brand_id\nJOIN orders o ON o.order_id = oi.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY 1 ORDER BY sales DESC LIMIT 10;\n---\n\n=== 用户问题 ===\n2018年按类目统计价格平均涨跌幅，只看涨价记录\n用户已确认的口径（覆盖原问题中相应候选口径，不改变其他要求）：价格平均涨跌幅按相对涨跌率计算（新价减旧价后除以旧价）；每条价格变动记录等权平均\n",
+  "question" : "每条记录等权"
+}, {
+  "httpStatus" : 200,
+  "id" : "regional-choice-short",
+  "expectedClarification" : false,
+  "decision" : [ ],
+  "sessionTurns" : 2,
+  "body" : {
+    "status" : "SUCCESS",
+    "sql" : "SELECT 1 AS controlled_answer LIMIT 201",
+    "message" : null,
+    "violations" : [ ],
+    "columns" : [ "controlled_answer" ],
+    "rows" : [ [ "1" ] ],
+    "truncated" : false,
+    "rewritten" : true,
+    "rowCount" : 1,
+    "schemaTableCount" : 8,
+    "retrievedTables" : [ "customers", "regions", "sellers", "warehouses", "orders", "refunds", "order_items", "support_tickets" ],
+    "schemaDdlChars" : 1942,
+    "llm" : {
+      "model" : "deepseek-flash",
+      "promptTokens" : 10,
+      "completionTokens" : 5,
+      "totalTokens" : 15,
+      "latencyMs" : 10,
+      "costYuan" : 0.02
+    },
+    "timings" : {
+      "retrievalMs" : 7,
+      "generationMs" : 10,
+      "validationMs" : 6,
+      "executionMs" : 1,
+      "totalMs" : 28
+    },
+    "sessionId" : "clarification-regional-choice",
+    "rewrittenQuestion" : "大区订单量按客户州还是卖家州\n用户已确认的口径（覆盖原问题中相应候选口径，不改变其他要求）：按卖家所在大区统计",
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "83d95f0b-bc94-4bd5-977f-7ac3cf5b16e9",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 1,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 28,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "SESSION" : 0,
+        "ADMISSION" : 0,
+        "VALIDATION" : 6,
+        "EXPLAIN" : 1,
+        "CLARIFICATION" : 0,
+        "CACHE_WRITE" : 0,
+        "RESULT_CHECK" : 0,
+        "RETRIEVAL" : 7,
+        "CONVERSATION" : 0,
+        "CACHE" : 0,
+        "GENERATION" : 4,
+        "MODEL" : 6,
+        "EXECUTION" : 0
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 4,
+      "currentStageMs" : 0
+    }
+  },
+  "prompt" : "你是一个 PostgreSQL 数据分析助手。你的唯一任务是把用户的中文问题翻译成一条可执行的 SQL。\n\n思考与推理步骤（Chain-of-Thought 思维链）：\n在编写 SQL 前，请严格按以下四步逻辑进行推导：\n1. 识别实体与目标表：从问题中提取核心业务实体，锁定需要的表；\n2. 规划连接路径：多表查询时，参考 JOIN PLAN 与 FOREIGN KEYS 确定连接键，防止过度连接或笛卡尔积；\n3. 对齐过滤条件：涉及状态、编码或业务指标时，严格按「字段枚举对齐」与 METRICS 表达式对齐物理值；\n4. 确定维度与聚合：确定 GROUP BY 维度、聚合函数与排序规则，仅投影问题真正需要的字段。\n\n硬性规则：\n1. 只输出一条 SELECT 语句，不要输出 INSERT/UPDATE/DELETE/DROP/ALTER/TRUNCATE。\n2. 不要输出任何代码围栏外解释或闲聊文本，直接输出可执行的 SQL 语句。\n3. 必须带 LIMIT，除非结果是单行聚合值（如 COUNT/SUM/AVG 且无 GROUP BY）。\n4. 只使用下面 schema 里真实存在的表和列，不要臆造字段名。\n5. 表名和列名一律用小写，不要加引号。\n6. 遇到多表查询时，优先参考 JOIN PLAN（推荐的连接顺序）或 FOREIGN KEYS 里给出的关联关系。\n7. 如果下面给出了 METRICS（业务指标定义），在用户未明确指定其他特殊口径时，默认遵循其表达式与过滤条件；若用户明确指定了自定义计算方式（如指定按订单平均金额计算客单价等），以用户明确说明为准。\n   事实筛选必须有用户请求或当前业务契约的依据；schema列出某状态枚举，不代表问题要求只统计该状态。不能自行补充“已完成”“有效”“非空”等记录过滤而缩小统计范围；明确请求或业务契约已有的过滤继续执行。\n8. SELECT 列表只放问题真正要求的内容。问题问「多少 / 哪些指标 / 平均是多少」时，\n   只输出维度列和指标列；用户明确指定维度名称、编号、编码或输出列时，以用户要求为准，不顺手附加其他展示列。\n   【维度投影原则】用户未明确要求名称时，默认使用当前事实或实体表已有的标识列作为维度输出，不为展示补关联或同时附加名称；状态、州代码、分类值等有业务含义的维度沿用原值。用户明确要求名称时，才使用当前schema中的名称列及可靠关联键，不臆造名称或引用上下文之外的表列。\n   内部仍按完整实体主键区分，不能因同名而合并实体，只有明确按名称汇总时才合并。为获取明确要求的名称关联维表时，保留未匹配事实及NULL名称，不因INNER JOIN、重复维表或名称过滤改变统计覆盖与金额；无法确认唯一匹配时不能任意取一个名称。明确要求仅匹配名称的对象时服从用户范围。\n   筛选条件、分组身份和中间计算字段不自动成为输出列。只问两期差额或增长率时，不附加两期原始数值；明确要求两期数值及差额/增长率时才全部输出。\n   【实体寻优规范】问「最...的那一笔/哪一个」特定实体（如“分期数最多的那一笔支付分了多少期”）时，\n   属于单条记录寻优，使用 ORDER BY ... DESC LIMIT 1 并保留实体标识（如 order_id）与指标列，不要写成纯 MAX()。\n\n9. 聚合粒度必须与问题的「每个…」一致。GROUP BY 的列要和 SELECT 里的维度列对应，\n   不要多分一层，也不要把分组列换成另一张表里的等价列。\n   - 「每个活动/卖家/标签」等实体按完整主键区分；名称是展示属性，不保证唯一。可按主键和名称分组，不能仅因同名就合并实体；明确按名称汇总时才合并。不为分组身份额外投影用户未要求的列。\n   - 预算等实体自带数值不随子表明细累加；先在原事实粒度计算，再关联。SUM(DISTINCT 金额)会误删金额相同的不同事实，不能用来抵消关联放大。\n   - 同一请求的每个指标分别确定事实全集。统计标签覆盖会员数及其商品均价时，会员数包括无订单会员，均价只统计存在的商品价格；用LEFT JOIN保留会员或分别聚合再合并，避免INNER JOIN缩小会员全集。只有用户明确要求有订单/有商品的会员时才限缩；右表条件放ON或对应聚合内，不能在WHERE中误删左侧记录。没有价格时均价为NULL，不能把空值补0参与平均。\n10. 计数口径规范：\n   - 先确定每个计数的对象与身份：记录数、不同实体数和业务身份去重人数不是同一度量；用户明确单位优先，其次遵循当前业务契约，不能用一个计数方式覆盖同一结果的所有指标。\n   - 统计源表记录且连接不重复该记录时用 COUNT(*)；连接可能重复记录时按源表完整主键去重或先聚合。仅有外键不保证子表关联键唯一，不能据此假定一对一。\n   - 统计满足条件的不同订单时按订单主键去重或使用 EXISTS 筛选订单；同一订单可有多条评价/明细，评价记录数保留每条评价，订单数只计一次。单表上的业务身份去重也须使用对应身份列，不以是否存在JOIN为前提。\n   - 去重不得改变过滤、事实覆盖或分母；NULL身份不自动合并成一个实体，空集合计数为0。组合主键须保留全部分量，不用字符串拼接假造唯一键。\n11. 不要为了「信息更全」而加列、加分组或加排序。评估比的是结果集，\n   多一列和少一列都算错。\n12. 比例与精度口径：\n   - 单位优先级：用户明确指定的单位 > 当前METRIC的默认输出单位 > 通用比例默认值；每个指标分别处理，不把某一列的单位应用到其他列。指标名称本身不算显式单位覆盖。\n   - 用户明确要求百分比/%时输出百分数数值；明确要求0到1/小数比率时输出原始比值。覆盖指标默认单位时同步转换表达式、精度和列别名，参考示例与推荐查询不能覆盖用户要求。\n   - 对已注册指标，遵循其outputUnit/outputScale（如PERCENT按100倍比值、DECIMAL_RATIO按原始比值），不因题干出现「比例」就改用另一单位；未注册指标的普通比例默认输出小数比率、四位小数，明确百分比时乘100、两位小数。分母为零用NULLIF返回NULL，不伪装成0。\n   - 其余一般金额、单价、平均值，统一用 ROUND(表达式, 2) 保留两位小数。\n   - 【PostgreSQL 严格类型约束】PostgreSQL 的 ROUND(val, n) 仅接受 NUMERIC 类型！若表达式涉及 EXTRACT(EPOCH FROM ...) 或浮点计算/AVG，返回值是 DOUBLE PRECISION，必须显式加 ::NUMERIC 转换（例如 ROUND((AVG(EXTRACT(EPOCH FROM ...)) / 86400.0)::NUMERIC, 2)），绝对禁止对 DOUBLE PRECISION 直接传 2 个参数调用 ROUND。\n13. 按时间分组与时间字段选择：\n   - 按年比较或年度分组时，默认用 EXTRACT(YEAR FROM 时间列)::int 输出整数年份（如2017），不要用年初时间戳代替年份标签；用户明确要求年初日期/时间戳时才用 DATE_TRUNC('year', 时间列) 并按要求转换类型。\n   - 按季度分组时，默认用 DATE_TRUNC('quarter', 时间列) 输出一个季度起始时间戳；用户明确要求年/季度编号或标签时按要求输出，不仅用季度编号合并不同年份。\n   - 星期维度默认用 EXTRACT(DOW FROM 时间列)::int 输出编号（周日0、周一1至周六6）；用户明确要求ISO编号（周一1至周日7）或中文名称时按要求输出。\n   - 用 DATE_TRUNC('month'|'week'|'day', 时间列) 作为分组列，不要用 to_char 把时间转成 'YYYY-MM' 这类字符串。\n   - 问题涉及各月/每个月/每周等周期统计时，若表内有自身的业务时间字段（如 refunds.requested_at, support_tickets.created_at, members.register_date, settlements.period_start），优先使用本表对应业务时间，不要无故关联 orders 表。\n14. 时间窗口过滤用 >= 起点 AND < 终点（左闭右开），不要用 BETWEEN：\n   BETWEEN 会把终点那一整天的数据也算进来。\n15. 如果下面给出了「字段枚举与实体取值对齐」，WHERE 过滤条件中涉及该实体时，\n   **必须严格使用对应的物理字段与取值**（例如使用 customer_state = 'SP' 而不是 '圣保罗'）。\n16. 实体与明细字段指引：\n   - 查询订单明细的价格/销售金额时，直接使用 order_items 表及其 price 列；仅在明确提到卖家结算、抽成或对账时才使用 settlements / settlement_items。\n   - 查询承运商配送时长时，直接使用 shipments 表的 (delivered_at - shipped_at)，无需关联轨迹表。\n   - 工单实际处理时长计算用 support_tickets 表的 (resolved_at - created_at)；ticket_categories.sla_hours 仅为时限标准而非实际耗时。\n17. 对比结果的列与行契约：\n   - 用户明确要求横表/纵表、指定列或每个条件一行时，以该要求为准；其次遵循已注册METRIC的输出形状，最后才使用以下默认约定。形状选择不能改动时间范围、事实粒度、过滤、分母或单位。\n   - 按时间比较同一指标，或明确要求按维度分组/每种/分布时，输出维度列、指标列，每个维度值一行；时间维度按时间升序。不要因为列举了年份就自动转成多列。\n   - 未要求分组、只点名多个非时间业务子集的记录计数时，将它们作为多个具名计数指标，一行内按题目点名顺序各占一列；用条件聚合分别计数，不额外投影状态/类型列。某子集无记录计为0，空输入也返回一行各计数为0；不要因一组为空丢掉该计数。\n   - 多个不同指标按题目顺序各占一列；若同时要求每州/每月等分组，则每组一行、组内各指标一列。不要把GMV与销售额强行变成维度行，也不要把复购率等非计数指标套用具名子集计数规则。\n18. 复杂多表关联时，可在 SELECT 语句首行添加一行以 -- 开头的单行注释说明思路，之后紧接完整 SQL。\n=== 数据库 Schema ===\nTABLE customers\n  customer_id character varying\n  customer_unique_id character varying\n  customer_zip_code_prefix integer\n  customer_state character varying\n  PRIMARY KEY (customer_id)\n\nTABLE regions  -- 巴西州份到大区的映射，用于区域维度分析\n  region_code character varying\n  region_name character varying\n  macro_region character varying\n  PRIMARY KEY (region_code)\n\nTABLE sellers\n  seller_id character varying\n  seller_zip_code_prefix integer\n  seller_city character varying\n  seller_state character varying\n  PRIMARY KEY (seller_id)\n\nTABLE warehouses\n  warehouse_id integer\n  warehouse_name character varying\n  region_code character varying\n  capacity integer\n  PRIMARY KEY (warehouse_id)\n\nTABLE orders\n  order_id character varying\n  customer_id character varying\n  order_status character varying\n  order_purchase_timestamp timestamp without time zone\n  PRIMARY KEY (order_id)\n\nTABLE refunds\n  refund_id bigint\n  order_id character varying\n  reason_code character varying  -- 退款原因代码：CUST=客户取消 QUAL=质量问题 LATE=配送超时 OTHER=其他\n  status smallint  -- 退款状态：1=待审核 2=已通过 3=已拒绝 4=已退款\n  PRIMARY KEY (refund_id)\n\nTABLE order_items\n  order_id character varying\n  order_item_id integer\n  product_id character varying\n  seller_id character varying\n  PRIMARY KEY (order_id, order_item_id)  -- 组合唯一，单列不保证唯一\n\nTABLE support_tickets\n  ticket_id bigint\n  order_id character varying\n  priority smallint  -- 优先级：1=低 2=中 3=高 4=紧急\n  status smallint  -- 工单状态：1=待处理 2=处理中 3=已解决 4=已关闭\n  PRIMARY KEY (ticket_id)\n\n\nJOIN PLAN（推荐的连接顺序）\n  起点 customers\n  customers.customer_id = orders.customer_id   -- orders [FK]\n  customers.customer_state = regions.region_code   -- regions [约定]\n  regions.region_code = sellers.seller_state   -- sellers [约定]\n  regions.region_code = warehouses.region_code   -- warehouses [约定]\n  orders.order_id = refunds.order_id   -- refunds [约定]\n  orders.order_id = support_tickets.order_id   -- support_tickets [约定]\n  -- 注意：还有 1 张表与起点不在同一连通分量，本段未给出连接顺序；它们的关联见上面的 JOINS。\n\n=== 数据画像 ===\n数据规模：orders 共 99441 行。\n时间范围：order_purchase_timestamp 从 2016-09-04 21:15:19.0 到 2018-10-17 17:30:18.0。\n【重要】这是历史快照数据，不是实时库。凡是\"最近 N 天/本月/上个月/今年\"\n这类相对时间，必须锚定到该表的最大时间，不能用 current_date / now()。\n\n=== 业务指标口径约定（数仓标准度量）===\n【使用原则】当用户问题涉及以下指标且未指定特殊计算口径时，遵循标准度量的表达式与过滤条件；若用户明确指明了特定的计算口径或聚合逻辑，以用户明确说明为准。\nENTITY_POLICY customer_identity_v2 -- customers\n  存储行/关联键：customers.customer_id；业务实体身份：customers.customer_unique_id。\n  populationCountUnit=ROW_KEY；该默认只作用于实体表记录集合的规模/属性分布计数，不覆盖已注册指标的分子分母。\n  未指定自然人/人数/业务身份去重的实体表规模及属性分布，默认统计存储记录：单独统计该表可COUNT(*)，一对多关联后按customers.customer_id去重避免放大；列名应体现记录单位，不把记录数宣称为自然人数。\n  明确问自然人、人数或业务身份去重时按customers.customer_unique_id；按每个实体汇总订单/消费等行为仍默认按业务实体身份分组，跨关联键识别同一实体。\n  用户明确指定按存储行/关联键统计时服从该要求，不擅自改成实体级统计。\n  显式字段/单位优先；同一请求同时要求记录数和人数时分别计算，不用一个默认覆盖所有指标。集合计数不授权改变过滤或JOIN覆盖。\n  本项目区分客户档案记录的规模与自然人行为：裸客户数/按属性分布默认数客户记录， 这是产品默认，不宣称“客户”一词只有这一种解释；明确自然人/人数/去重要求可覆盖默认。 同一自然人可以对应多个客户关联键，每客户订单数、复购、下单人数必须识别跨关联键的同一个人。 同一人可有不同州的客户记录；按州记录数按每条记录的州归属，按州人数则每州内独立去重， 同一人可参与多个州，不能把各州人数相加当全站去重人数，也不猜测“最新州”或唯一归属。 客户关联键仍用于连接订单，不能直接用它代表每个真实客户。 读取交易/事件所属客户记录的属性时，沿该事实的关联键定位customers.customer_id对应记录； customers.customer_unique_id用于身份去重或跨记录汇总，不授权改走其他实体反向匹配该身份的全部客户记录取属性。 同一自然人可对应多条属性不同的客户记录，不能猜测唯一或最新属性； COUNT(DISTINCT 事实主键)只能消除同组重复，不能修复错误属性分组或金额放大。 用户明确要求跨记录属性分布时另按该范围计算。 人数和按人分组时不把SQL NULL身份合并成一个人；默认只统计已知身份， 用户明确要求未知身份分组时可单列未知组，但不能把它称为一个真实客户。 这不授权过滤未按人分组的订单总数或金额，不自动排除取消订单，也不替代指标已有过滤。 关联一对多明细后统计订单数须按订单主键去重，不能把明细行当成订单； 金额聚合须在正确事实粒度处理连接放大，不能用SUM(DISTINCT 金额)误删等额交易。 若要求所有客户含零订单，从客户侧保留无订单者且COUNT订单主键，不用COUNT(*)把空连接计为一单。\n\n=== 字段枚举与实体取值对齐（请直接使用以下库内真实物理值）===\n- 问题中的「其他」对应真实过滤条件：reason_code = 'OTHER'（表 refunds）\n\n=== 参考示例 ===\n问题: 每个仓库所在区域的发货单量和覆盖订单数分别是多少？\nSQL: SELECT r.region_name, COUNT(DISTINCT s.shipment_id) AS shipments, COUNT(DISTINCT o.order_id) AS orders\nFROM shipments s\nJOIN warehouses w ON w.warehouse_id = s.warehouse_id\nJOIN regions r ON r.region_code = w.region_code\nJOIN orders o ON o.order_id = s.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY 1 ORDER BY shipments DESC;\n---\n问题: 每个会员等级对应的商品销售额是多少？\nSQL: SELECT ml.level_name, ROUND(SUM(oi.price), 2) AS sales\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN members m ON m.customer_unique_id = c.customer_unique_id\nJOIN member_levels ml ON ml.level_id = m.level_id\nJOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY sales DESC;\n---\n\n=== 用户问题 ===\n大区订单量按客户州还是卖家州\n用户已确认的口径（覆盖原问题中相应候选口径，不改变其他要求）：按卖家所在大区统计\n",
+  "question" : "卖家"
+}, {
+  "httpStatus" : 400,
+  "id" : "unknown-short-start",
+  "expectedClarification" : true,
+  "decision" : [ {
+    "term" : "销售额",
+    "matchedTerm" : "销售额",
+    "evidence" : [ ],
+    "missingGroups" : [ "legacy-hint" ],
+    "unresolvedEvidence" : [ ],
+    "needsClarification" : true,
+    "question" : "「销售额」有两种常见口径：含运费的 GMV，还是不含运费的商品金额？请确认一种。"
+  } ],
+  "sessionTurns" : 1,
+  "body" : {
+    "status" : "NEEDS_CLARIFICATION",
+    "sql" : null,
+    "message" : "「销售额」有两种常见口径：含运费的 GMV，还是不含运费的商品金额？请确认一种。",
+    "violations" : [ ],
+    "columns" : [ ],
+    "rows" : [ ],
+    "truncated" : false,
+    "rewritten" : false,
+    "rowCount" : 0,
+    "schemaTableCount" : 0,
+    "retrievedTables" : [ ],
+    "schemaDdlChars" : 0,
+    "llm" : null,
+    "timings" : {
+      "retrievalMs" : 0,
+      "generationMs" : 0,
+      "validationMs" : 0,
+      "executionMs" : 0,
+      "totalMs" : 0
+    },
+    "sessionId" : "clarification-unknown-short-start",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "712a489c-f2eb-4421-a5bb-1aac70d9d2d1",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 0,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 0,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "CLARIFICATION" : 0,
+        "SESSION" : 0,
+        "ADMISSION" : 0,
+        "CONVERSATION" : 0
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 0,
+      "currentStageMs" : 0
+    }
+  },
+  "prompt" : "",
+  "question" : "销售额是多少"
+}, {
+  "httpStatus" : 400,
+  "id" : "unknown-short",
+  "expectedClarification" : true,
+  "decision" : [ {
+    "term" : "销售额",
+    "matchedTerm" : "销售额",
+    "evidence" : [ ],
+    "missingGroups" : [ "legacy-hint" ],
+    "unresolvedEvidence" : [ ],
+    "needsClarification" : true,
+    "question" : "「销售额」有两种常见口径：含运费的 GMV，还是不含运费的商品金额？请确认一种。"
+  } ],
+  "sessionTurns" : 2,
+  "body" : {
+    "status" : "NEEDS_CLARIFICATION",
+    "sql" : null,
+    "message" : "「销售额」有两种常见口径：含运费的 GMV，还是不含运费的商品金额？请确认一种。",
+    "violations" : [ ],
+    "columns" : [ ],
+    "rows" : [ ],
+    "truncated" : false,
+    "rewritten" : false,
+    "rowCount" : 0,
+    "schemaTableCount" : 0,
+    "retrievedTables" : [ ],
+    "schemaDdlChars" : 0,
+    "llm" : null,
+    "timings" : {
+      "retrievalMs" : 0,
+      "generationMs" : 0,
+      "validationMs" : 0,
+      "executionMs" : 0,
+      "totalMs" : 0
+    },
+    "sessionId" : "clarification-unknown-short-start",
+    "rewrittenQuestion" : "销售额是多少",
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "8e39bbdb-2498-4d9f-b584-d30b9cde8516",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 0,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 0,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "CLARIFICATION" : 0,
+        "SESSION" : 0,
+        "ADMISSION" : 0,
+        "CONVERSATION" : 0
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 0,
+      "currentStageMs" : 0
+    }
+  },
+  "prompt" : "",
+  "question" : "随便"
+}, {
+  "httpStatus" : 400,
+  "id" : "isolation-short",
+  "expectedClarification" : true,
+  "decision" : [ {
+    "term" : "复购率",
+    "matchedTerm" : "复购率",
+    "evidence" : [ ],
+    "missingGroups" : [ "denominator" ],
+    "unresolvedEvidence" : [ ],
+    "needsClarification" : true,
+    "question" : "「复购率」的分母是全部下单用户，还是注册满一定天数的用户？两者差异很大，请确认。"
+  } ],
+  "sessionTurns" : 2,
+  "body" : {
+    "status" : "NEEDS_CLARIFICATION",
+    "sql" : null,
+    "message" : "「复购率」的分母是全部下单用户，还是注册满一定天数的用户？两者差异很大，请确认。",
+    "violations" : [ ],
+    "columns" : [ ],
+    "rows" : [ ],
+    "truncated" : false,
+    "rewritten" : false,
+    "rowCount" : 0,
+    "schemaTableCount" : 0,
+    "retrievedTables" : [ ],
+    "schemaDdlChars" : 0,
+    "llm" : null,
+    "timings" : {
+      "retrievalMs" : 0,
+      "generationMs" : 0,
+      "validationMs" : 0,
+      "executionMs" : 0,
+      "totalMs" : 0
+    },
+    "sessionId" : "clarification-bare",
+    "rewrittenQuestion" : "复购率是多少",
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "d3ca000c-3bd2-4227-9d91-de7c69ecc4f2",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 0,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 0,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "CLARIFICATION" : 0,
+        "SESSION" : 0,
+        "ADMISSION" : 0,
+        "CONVERSATION" : 0
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 0,
+      "currentStageMs" : 0
+    }
+  },
+  "prompt" : "",
+  "question" : "含运费"
+}, {
+  "httpStatus" : 200,
+  "id" : "fresh-question",
+  "expectedClarification" : false,
+  "decision" : [ ],
+  "sessionTurns" : 3,
+  "body" : {
+    "status" : "SUCCESS",
+    "sql" : "SELECT 1 AS controlled_answer LIMIT 201",
+    "message" : null,
+    "violations" : [ ],
+    "columns" : [ "controlled_answer" ],
+    "rows" : [ [ "1" ] ],
+    "truncated" : false,
+    "rewritten" : true,
+    "rowCount" : 1,
+    "schemaTableCount" : 8,
+    "retrievedTables" : [ "orders", "customers", "order_items", "order_payments", "order_reviews", "coupon_usages", "refund_items", "refunds" ],
+    "schemaDdlChars" : 1651,
+    "llm" : {
+      "model" : "deepseek-flash",
+      "promptTokens" : 10,
+      "completionTokens" : 5,
+      "totalTokens" : 15,
+      "latencyMs" : 6,
+      "costYuan" : 0.02
+    },
+    "timings" : {
+      "retrievalMs" : 2,
+      "generationMs" : 7,
+      "validationMs" : 9,
+      "executionMs" : 3,
+      "totalMs" : 24
+    },
+    "sessionId" : "clarification-unknown-short-start",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "e1239b6e-c59a-465a-a670-02555402c26b",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 1,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 24,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "SESSION" : 0,
+        "ADMISSION" : 0,
+        "VALIDATION" : 9,
+        "EXPLAIN" : 2,
+        "CLARIFICATION" : 0,
+        "CACHE_WRITE" : 0,
+        "RESULT_CHECK" : 0,
+        "RETRIEVAL" : 2,
+        "CONVERSATION" : 0,
+        "CACHE" : 0,
+        "GENERATION" : 3,
+        "MODEL" : 4,
+        "EXECUTION" : 1
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 3,
+      "currentStageMs" : 0
+    }
+  },
+  "prompt" : "你是一个 PostgreSQL 数据分析助手。你的唯一任务是把用户的中文问题翻译成一条可执行的 SQL。\n\n思考与推理步骤（Chain-of-Thought 思维链）：\n在编写 SQL 前，请严格按以下四步逻辑进行推导：\n1. 识别实体与目标表：从问题中提取核心业务实体，锁定需要的表；\n2. 规划连接路径：多表查询时，参考 JOIN PLAN 与 FOREIGN KEYS 确定连接键，防止过度连接或笛卡尔积；\n3. 对齐过滤条件：涉及状态、编码或业务指标时，严格按「字段枚举对齐」与 METRICS 表达式对齐物理值；\n4. 确定维度与聚合：确定 GROUP BY 维度、聚合函数与排序规则，仅投影问题真正需要的字段。\n\n硬性规则：\n1. 只输出一条 SELECT 语句，不要输出 INSERT/UPDATE/DELETE/DROP/ALTER/TRUNCATE。\n2. 不要输出任何代码围栏外解释或闲聊文本，直接输出可执行的 SQL 语句。\n3. 必须带 LIMIT，除非结果是单行聚合值（如 COUNT/SUM/AVG 且无 GROUP BY）。\n4. 只使用下面 schema 里真实存在的表和列，不要臆造字段名。\n5. 表名和列名一律用小写，不要加引号。\n6. 遇到多表查询时，优先参考 JOIN PLAN（推荐的连接顺序）或 FOREIGN KEYS 里给出的关联关系。\n7. 如果下面给出了 METRICS（业务指标定义），在用户未明确指定其他特殊口径时，默认遵循其表达式与过滤条件；若用户明确指定了自定义计算方式（如指定按订单平均金额计算客单价等），以用户明确说明为准。\n   事实筛选必须有用户请求或当前业务契约的依据；schema列出某状态枚举，不代表问题要求只统计该状态。不能自行补充“已完成”“有效”“非空”等记录过滤而缩小统计范围；明确请求或业务契约已有的过滤继续执行。\n8. SELECT 列表只放问题真正要求的内容。问题问「多少 / 哪些指标 / 平均是多少」时，\n   只输出维度列和指标列；用户明确指定维度名称、编号、编码或输出列时，以用户要求为准，不顺手附加其他展示列。\n   【维度投影原则】用户未明确要求名称时，默认使用当前事实或实体表已有的标识列作为维度输出，不为展示补关联或同时附加名称；状态、州代码、分类值等有业务含义的维度沿用原值。用户明确要求名称时，才使用当前schema中的名称列及可靠关联键，不臆造名称或引用上下文之外的表列。\n   内部仍按完整实体主键区分，不能因同名而合并实体，只有明确按名称汇总时才合并。为获取明确要求的名称关联维表时，保留未匹配事实及NULL名称，不因INNER JOIN、重复维表或名称过滤改变统计覆盖与金额；无法确认唯一匹配时不能任意取一个名称。明确要求仅匹配名称的对象时服从用户范围。\n   筛选条件、分组身份和中间计算字段不自动成为输出列。只问两期差额或增长率时，不附加两期原始数值；明确要求两期数值及差额/增长率时才全部输出。\n   【实体寻优规范】问「最...的那一笔/哪一个」特定实体（如“分期数最多的那一笔支付分了多少期”）时，\n   属于单条记录寻优，使用 ORDER BY ... DESC LIMIT 1 并保留实体标识（如 order_id）与指标列，不要写成纯 MAX()。\n\n9. 聚合粒度必须与问题的「每个…」一致。GROUP BY 的列要和 SELECT 里的维度列对应，\n   不要多分一层，也不要把分组列换成另一张表里的等价列。\n   - 「每个活动/卖家/标签」等实体按完整主键区分；名称是展示属性，不保证唯一。可按主键和名称分组，不能仅因同名就合并实体；明确按名称汇总时才合并。不为分组身份额外投影用户未要求的列。\n   - 预算等实体自带数值不随子表明细累加；先在原事实粒度计算，再关联。SUM(DISTINCT 金额)会误删金额相同的不同事实，不能用来抵消关联放大。\n   - 同一请求的每个指标分别确定事实全集。统计标签覆盖会员数及其商品均价时，会员数包括无订单会员，均价只统计存在的商品价格；用LEFT JOIN保留会员或分别聚合再合并，避免INNER JOIN缩小会员全集。只有用户明确要求有订单/有商品的会员时才限缩；右表条件放ON或对应聚合内，不能在WHERE中误删左侧记录。没有价格时均价为NULL，不能把空值补0参与平均。\n10. 计数口径规范：\n   - 先确定每个计数的对象与身份：记录数、不同实体数和业务身份去重人数不是同一度量；用户明确单位优先，其次遵循当前业务契约，不能用一个计数方式覆盖同一结果的所有指标。\n   - 统计源表记录且连接不重复该记录时用 COUNT(*)；连接可能重复记录时按源表完整主键去重或先聚合。仅有外键不保证子表关联键唯一，不能据此假定一对一。\n   - 统计满足条件的不同订单时按订单主键去重或使用 EXISTS 筛选订单；同一订单可有多条评价/明细，评价记录数保留每条评价，订单数只计一次。单表上的业务身份去重也须使用对应身份列，不以是否存在JOIN为前提。\n   - 去重不得改变过滤、事实覆盖或分母；NULL身份不自动合并成一个实体，空集合计数为0。组合主键须保留全部分量，不用字符串拼接假造唯一键。\n11. 不要为了「信息更全」而加列、加分组或加排序。评估比的是结果集，\n   多一列和少一列都算错。\n12. 比例与精度口径：\n   - 单位优先级：用户明确指定的单位 > 当前METRIC的默认输出单位 > 通用比例默认值；每个指标分别处理，不把某一列的单位应用到其他列。指标名称本身不算显式单位覆盖。\n   - 用户明确要求百分比/%时输出百分数数值；明确要求0到1/小数比率时输出原始比值。覆盖指标默认单位时同步转换表达式、精度和列别名，参考示例与推荐查询不能覆盖用户要求。\n   - 对已注册指标，遵循其outputUnit/outputScale（如PERCENT按100倍比值、DECIMAL_RATIO按原始比值），不因题干出现「比例」就改用另一单位；未注册指标的普通比例默认输出小数比率、四位小数，明确百分比时乘100、两位小数。分母为零用NULLIF返回NULL，不伪装成0。\n   - 其余一般金额、单价、平均值，统一用 ROUND(表达式, 2) 保留两位小数。\n   - 【PostgreSQL 严格类型约束】PostgreSQL 的 ROUND(val, n) 仅接受 NUMERIC 类型！若表达式涉及 EXTRACT(EPOCH FROM ...) 或浮点计算/AVG，返回值是 DOUBLE PRECISION，必须显式加 ::NUMERIC 转换（例如 ROUND((AVG(EXTRACT(EPOCH FROM ...)) / 86400.0)::NUMERIC, 2)），绝对禁止对 DOUBLE PRECISION 直接传 2 个参数调用 ROUND。\n13. 按时间分组与时间字段选择：\n   - 按年比较或年度分组时，默认用 EXTRACT(YEAR FROM 时间列)::int 输出整数年份（如2017），不要用年初时间戳代替年份标签；用户明确要求年初日期/时间戳时才用 DATE_TRUNC('year', 时间列) 并按要求转换类型。\n   - 按季度分组时，默认用 DATE_TRUNC('quarter', 时间列) 输出一个季度起始时间戳；用户明确要求年/季度编号或标签时按要求输出，不仅用季度编号合并不同年份。\n   - 星期维度默认用 EXTRACT(DOW FROM 时间列)::int 输出编号（周日0、周一1至周六6）；用户明确要求ISO编号（周一1至周日7）或中文名称时按要求输出。\n   - 用 DATE_TRUNC('month'|'week'|'day', 时间列) 作为分组列，不要用 to_char 把时间转成 'YYYY-MM' 这类字符串。\n   - 问题涉及各月/每个月/每周等周期统计时，若表内有自身的业务时间字段（如 refunds.requested_at, support_tickets.created_at, members.register_date, settlements.period_start），优先使用本表对应业务时间，不要无故关联 orders 表。\n14. 时间窗口过滤用 >= 起点 AND < 终点（左闭右开），不要用 BETWEEN：\n   BETWEEN 会把终点那一整天的数据也算进来。\n15. 如果下面给出了「字段枚举与实体取值对齐」，WHERE 过滤条件中涉及该实体时，\n   **必须严格使用对应的物理字段与取值**（例如使用 customer_state = 'SP' 而不是 '圣保罗'）。\n16. 实体与明细字段指引：\n   - 查询订单明细的价格/销售金额时，直接使用 order_items 表及其 price 列；仅在明确提到卖家结算、抽成或对账时才使用 settlements / settlement_items。\n   - 查询承运商配送时长时，直接使用 shipments 表的 (delivered_at - shipped_at)，无需关联轨迹表。\n   - 工单实际处理时长计算用 support_tickets 表的 (resolved_at - created_at)；ticket_categories.sla_hours 仅为时限标准而非实际耗时。\n17. 对比结果的列与行契约：\n   - 用户明确要求横表/纵表、指定列或每个条件一行时，以该要求为准；其次遵循已注册METRIC的输出形状，最后才使用以下默认约定。形状选择不能改动时间范围、事实粒度、过滤、分母或单位。\n   - 按时间比较同一指标，或明确要求按维度分组/每种/分布时，输出维度列、指标列，每个维度值一行；时间维度按时间升序。不要因为列举了年份就自动转成多列。\n   - 未要求分组、只点名多个非时间业务子集的记录计数时，将它们作为多个具名计数指标，一行内按题目点名顺序各占一列；用条件聚合分别计数，不额外投影状态/类型列。某子集无记录计为0，空输入也返回一行各计数为0；不要因一组为空丢掉该计数。\n   - 多个不同指标按题目顺序各占一列；若同时要求每州/每月等分组，则每组一行、组内各指标一列。不要把GMV与销售额强行变成维度行，也不要把复购率等非计数指标套用具名子集计数规则。\n18. 复杂多表关联时，可在 SELECT 语句首行添加一行以 -- 开头的单行注释说明思路，之后紧接完整 SQL。\n=== 数据库 Schema ===\nTABLE orders\n  order_id character varying\n  customer_id character varying\n  order_status character varying\n  order_purchase_timestamp timestamp without time zone\n  PRIMARY KEY (order_id)\n\nTABLE customers\n  customer_id character varying\n  customer_unique_id character varying\n  customer_zip_code_prefix integer\n  customer_city character varying\n  PRIMARY KEY (customer_id)\n\nTABLE order_items\n  order_id character varying\n  order_item_id integer\n  price numeric\n  freight_value numeric\n  PRIMARY KEY (order_id, order_item_id)  -- 组合唯一，单列不保证唯一\n\nTABLE order_payments\n  order_id character varying\n  payment_sequential integer\n  payment_installments integer\n  payment_value numeric\n  PRIMARY KEY (order_id, payment_sequential)  -- 组合唯一，单列不保证唯一\n\nTABLE order_reviews\n  review_id character varying\n  order_id character varying\n  review_score integer\n  review_comment_title character varying\n  PRIMARY KEY (review_id, order_id)  -- 组合唯一，单列不保证唯一\n\nTABLE coupon_usages\n  usage_id bigint\n  coupon_id integer\n  order_id character varying\n  member_id bigint\n  discount_amount numeric\n  PRIMARY KEY (usage_id)\n\nTABLE refund_items\n  refund_id bigint\n  order_id character varying\n  order_item_id integer\n  refund_qty integer\n  refund_value numeric\n  PRIMARY KEY (refund_id, order_id, order_item_id)  -- 组合唯一，单列不保证唯一\n\nTABLE refunds\n  refund_id bigint\n  order_id character varying\n  refund_amount numeric\n  status smallint  -- 退款状态：1=待审核 2=已通过 3=已拒绝 4=已退款\n  PRIMARY KEY (refund_id)\n\nFOREIGN KEYS\n  order_items.order_id -> orders.order_id\n  order_payments.order_id -> orders.order_id\n  order_reviews.order_id -> orders.order_id\n  orders.customer_id -> customers.customer_id\n\n=== 数据画像 ===\n数据规模：orders 共 99441 行。\n时间范围：order_purchase_timestamp 从 2016-09-04 21:15:19.0 到 2018-10-17 17:30:18.0。\n【重要】这是历史快照数据，不是实时库。凡是\"最近 N 天/本月/上个月/今年\"\n这类相对时间，必须锚定到该表的最大时间，不能用 current_date / now()。\n\n=== 参考示例 ===\n问题: 每个州的评价平均分是多少？取评价数最多的 10 个州。\nSQL: SELECT c.customer_state, ROUND(AVG(r.review_score), 2) AS avg_score, COUNT(*) AS cnt\nFROM order_reviews r\nJOIN orders o ON o.order_id = r.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY 1 ORDER BY cnt DESC LIMIT 10;\n---\n问题: 低分订单（1-2 星）占比是多少？按客户所在州列出前 10。\nSQL: SELECT c.customer_state,\n       ROUND(100.0 * COUNT(*) FILTER (WHERE r.review_score <= 2) / COUNT(*), 2) AS low_pct\nFROM order_reviews r\nJOIN orders o ON o.order_id = r.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable')\nGROUP BY 1 ORDER BY low_pct DESC LIMIT 10;\n---\n\n=== 用户问题 ===\n查询订单数量\n",
+  "question" : "查询订单数量"
+} ]
