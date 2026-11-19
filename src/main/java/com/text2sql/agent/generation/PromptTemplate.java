@@ -37,8 +37,8 @@ public class PromptTemplate {
      * （比如加一句「优先使用高置信度的表」），那才需要 +1，
      * 并且要重跑阶段 1 的 baseline 才能对比。
      */
-    public static final String VERSION = "p19-request-scope-v19";
-    public static final String NO_EXPLICIT_STEPS_VERSION = "p19-request-scope-v19-no-explicit-steps-v1";
+    public static final String VERSION = "p20-calendar-window-v20";
+    public static final String NO_EXPLICIT_STEPS_VERSION = "p20-calendar-window-v20-no-explicit-steps-v1";
 
     private final AgentProperties properties;
 
@@ -111,8 +111,11 @@ public class PromptTemplate {
                    - 星期维度默认用 EXTRACT(DOW FROM 时间列)::int 输出编号（周日0、周一1至周六6）；用户明确要求ISO编号（周一1至周日7）或中文名称时按要求输出。
                    - 用 DATE_TRUNC('month'|'week'|'day', 时间列) 作为分组列，不要用 to_char 把时间转成 'YYYY-MM' 这类字符串。
                    - 问题涉及各月/每个月/每周等周期统计时，若表内有自身的业务时间字段（如 refunds.requested_at, support_tickets.created_at, members.register_date, settlements.period_start），优先使用本表对应业务时间，不要无故关联 orders 表。
-                14. 时间窗口过滤用 >= 起点 AND < 终点（左闭右开），不要用 BETWEEN：
-                   BETWEEN 会把终点那一整天的数据也算进来。
+                14. 时间窗口先确定参照值与边界，再写比较条件：
+                   - 用户明确的起止、参照日期/时刻、时区及开闭边界优先于默认值；不要把明确时刻截成日期。
+                   - 未指定时长口径时，“最近/近/最后N天”（N为正整数）默认最近N个自然日，包含参照日D：时间列 >= D-(N-1)天 AND 时间列 < D+1天；D由参照值取日期，时间戳边界为当天零点。N=1只包含参照日，不能从D-N天起算成N+1个日期。
+                   - 明确要求滚动N×24小时或从参照时刻A回溯N天时，按连续时长计算：时间列 > A-N*INTERVAL '24 hours' AND 时间列 <= A；明确边界另行服从用户要求，不套用自然日规则。
+                   - 月/年及整日区间通常用 >= 起点 AND < 下一周期起点，避免漏掉末日非零时刻。BETWEEN只包含给定的两个端点，不会自动扩展到终点当天结束；不能将所有窗口机械改成同一种开闭方式。
                 15. 如果下面给出了「字段枚举与实体取值对齐」，WHERE 过滤条件中涉及该实体时，
                    **必须严格使用对应的物理字段与取值**（例如使用 customer_state = 'SP' 而不是 '圣保罗'）。
                 16. 实体与明细字段指引：

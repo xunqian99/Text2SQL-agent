@@ -172,12 +172,9 @@ public class DatabaseSchemaReader {
     /**
      * 数据画像：行数 + 时间范围。
      *
-     * <p>这不是可有可无的装饰。Olist 数据截止 2018-10-17，而模型默认认为
-     * 「最近 30 天」= 相对今天。不给这个事实，T3 时间层会整层归零，
-     * 得到的 baseline 会低到失真，阶段 2 的「提升」也就失去意义。
-     *
-     * <p>这里硬编码了 orders 表的时间列，因为它是全库唯一的时间锚点。
-     * 更通用的做法是从 schema 里猜哪个是时间列——那属于阶段 2 的枚举值 linking。
+     * <p>只展示 orders 的实际范围，不把它冒充其他业务事件的时间锚点。
+     * 相对窗口默认从所查询事件的源事实时间列取最大值；显式参照优先。
+     * 这些是模型输入约定，不是对生成 SQL 的确定性时间边界校验。
      */
     public String readDataProfile() {
         Long orderCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM orders", Long.class);
@@ -186,8 +183,9 @@ public class DatabaseSchemaReader {
         return """
                 数据规模：orders 共 %s 行。
                 时间范围：order_purchase_timestamp 从 %s 到 %s。
-                【重要】这是历史快照数据，不是实时库。凡是"最近 N 天/本月/上个月/今年"
-                这类相对时间，必须锚定到该表的最大时间，不能用 current_date / now()。
+                【重要】这是历史快照数据，不是实时库。上列范围仅属于orders.order_purchase_timestamp。
+                未明确参照的相对时间（最近N天/本月/上个月/今年等），以所查业务事件的源事实时间列全表MAX为参照；会员登录用members.last_login_date，不借用订单时间或current_date/now()。先取全表参照，再筛业务子集，避免每组窗口漂移；用户明确限定参照范围或日期/时刻（包括今天/现在）时以用户要求为准。
+                全表时间均为NULL时不伪造参照、不退回今天；窗口内无可匹配事实，COUNT为0，其他聚合保留各自空集语义。
                 """
                 .formatted(orderCount, range.get("min_ts"), range.get("max_ts"))
                 .strip();

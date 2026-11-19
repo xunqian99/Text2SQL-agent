@@ -53,6 +53,30 @@ class DatabaseSchemaReaderIntegrationTest {
 
     @Test
     @EnabledIf("databaseAvailable")
+    void historicalAnchorContractReachesBothProvidersWithoutMetrics() {
+        var props = new com.text2sql.agent.config.AgentProperties();
+        props.getSemantic().setEnabled(false);
+        props.getFewshot().setEnabled(false);
+        var catalog = new SchemaCatalog(reader(), props);
+        var glossary = new com.text2sql.agent.retrieval.glossary.GlossaryLoader(catalog);
+        var fullProvider = new FullSchemaProvider(catalog, null, props);
+        var hybridProvider = new HybridSchemaProvider(catalog,
+                new LexicalSchemaRetriever(glossary, catalog, props), glossary, props, null, null,
+                new ValueRetriever(glossary), new ColumnPruner(glossary));
+        for (SchemaProvider provider : List.of(fullProvider, hybridProvider)) {
+            var context = provider.provide("最近30天登录的会员数");
+            assertThat(context.hasMetrics()).isFalse();
+            assertThat(new com.text2sql.agent.generation.PromptTemplate(props)
+                    .userPrompt(context, "最近30天登录的会员数"))
+                    .contains("上列范围仅属于orders.order_purchase_timestamp",
+                            "会员登录用members.last_login_date", "先取全表参照，再筛业务子集",
+                            "用户明确限定参照范围", "不伪造参照、不退回今天")
+                    .endsWith("最近30天登录的会员数\n");
+        }
+    }
+
+    @Test
+    @EnabledIf("databaseAvailable")
     void compositeKeysReachBothProvidersAndFinalModelInput() {
         var props = new com.text2sql.agent.config.AgentProperties();
         props.getSemantic().setEnabled(false);
