@@ -76,7 +76,6 @@ class BudgetOrchestratorTest {
         var schema = new SchemaContext(List.of(new SchemaContext.Table("orders", null,
                 List.of(new SchemaContext.Column("order_id", "text", false, null)))), List.of(), "", "orders");
         when(schemas.provide(anyString())).thenAnswer(i -> { Thread.sleep(30); return schema; });
-        when(schemas.fullSchema()).thenReturn(schema);
         when(validator.validate(anyString(), any())).thenAnswer(i -> ValidationResult.ok(i.getArgument(0)));
         when(model.call(any(Prompt.class))).thenReturn(sqlResponse());
         when(executor.execute(anyString())).thenAnswer(i -> {

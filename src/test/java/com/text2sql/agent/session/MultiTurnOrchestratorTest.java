@@ -54,7 +54,6 @@ class MultiTurnOrchestratorTest {
                         new SchemaContext.Column("order_id", "text", false, null)))),
                 List.of(), "", "CREATE TABLE orders(order_id text);");
         when(schemaProvider.provide(anyString())).thenReturn(mockSchema);
-        when(schemaProvider.fullSchema()).thenReturn(mockSchema);
 
         when(validator.validate(anyString(), any())).thenAnswer(inv ->
                 ValidationResult.ok(inv.getArgument(0)));

@@ -33,8 +33,6 @@ public record ValidationResult(String sql, List<Violation> violations, boolean r
         MULTIPLE_STATEMENTS,
         /** 没有 LIMIT，且配置为拒绝模式。 */
         MISSING_LIMIT,
-        /** 完整业务目录不可用；禁止执行，且不交给模型修复环境故障。 */
-        SCHEMA_UNAVAILABLE,
         /** 引用了 schema 里不存在的表。 */
         UNKNOWN_TABLE,
         /** 引用了 schema 里不存在的列。 */

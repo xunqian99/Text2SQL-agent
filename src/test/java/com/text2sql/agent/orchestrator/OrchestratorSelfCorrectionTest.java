@@ -60,12 +60,10 @@ class OrchestratorSelfCorrectionTest {
         properties = new AgentProperties();
         cache = new com.text2sql.agent.cache.SemanticCache(properties);
 
-        var fullFixture = new SchemaContext(
+        when(schemaProvider.provide(anyString())).thenReturn(new SchemaContext(
                 List.of(new SchemaContext.Table("orders", null, List.of(
                         new SchemaContext.Column("order_id", "text", false, null)))),
-                List.of(), "", "CREATE TABLE orders(order_id text)");
-        when(schemaProvider.provide(anyString())).thenReturn(fullFixture);
-        when(schemaProvider.fullSchema()).thenReturn(fullFixture);
+                List.of(), "", "CREATE TABLE orders(order_id text)"));
     }
 
     private Text2SqlOrchestrator orchestrator() {

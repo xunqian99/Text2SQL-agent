@@ -10,19 +10,13 @@ import java.util.List;
  * @param columns 列名（若有）
  * @param rows 样例数据（若有）
  */
-public record ToolResult(boolean success, String output, List<String> columns, List<List<String>> rows,
-                         boolean schemaUnavailable) {
+public record ToolResult(boolean success, String output, List<String> columns, List<List<String>> rows) {
 
     public static ToolResult ok(String output, List<String> columns, List<List<String>> rows) {
-        return new ToolResult(true, output, columns, rows, false);
+        return new ToolResult(true, output, columns, rows);
     }
 
     public static ToolResult error(String errorMsg) {
-        return new ToolResult(false, "工具执行失败：" + errorMsg, List.of(), List.of(), false);
-    }
-
-    public static ToolResult catalogUnavailable() {
-        return new ToolResult(false, "[SCHEMA_UNAVAILABLE] 完整业务 Schema 不可用，未执行 SQL",
-                List.of(), List.of(), true);
+        return new ToolResult(false, "工具执行失败：" + errorMsg, List.of(), List.of());
     }
 }

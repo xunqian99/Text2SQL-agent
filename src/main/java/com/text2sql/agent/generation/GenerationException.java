@@ -17,8 +17,6 @@ public class GenerationException extends RuntimeException {
         NOT_CONFIGURED,
         /** Local pricing-window policy refused the request before transport. */
         OFF_PEAK_REQUIRED,
-        /** A tool could not acquire its authorized catalog; no retry/finalization call. */
-        SCHEMA_UNAVAILABLE,
         /** 调用失败（网络、超时、限流、鉴权）。属于基础设施问题。 */
         CALL_FAILED,
         /** 调用成功但返回内容里提不出合法 SQL。属于模型质量问题。 */
