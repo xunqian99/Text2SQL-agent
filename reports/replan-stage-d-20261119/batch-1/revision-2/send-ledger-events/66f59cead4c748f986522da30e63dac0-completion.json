@@ -1,0 +1,77 @@
+{
+  "token": "66f59cead4c748f986522da30e63dac0",
+  "round": "DEV_F",
+  "questionId": "T3-022",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2154443.7104017,
+  "admittedAt": "2026-11-19T13:39:06.966956+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-19T13:39:06.966835+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "b72d73e9d7e69a52a452556f42cbcc65267e7884a106958091a161148be2ad7d",
+  "requestBytes": 10694,
+  "inputTokenEstimate": 11718,
+  "promptChars": 5495,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00150484",
+  "result": {
+    "startedAtUtc": "2026-11-19T13:39:06.977Z",
+    "finishedAtUtc": "2026-11-19T13:39:08.175Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "f7e9e98c-58ce-4b84-84d0-6a9fb13a4e27",
+      "object": "chat.completion",
+      "created": 1795095538,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT DATE_TRUNC('month', requested_at) AS month,\n       ROUND(SUM(refund_amount), 2) AS refund_amount\nFROM refunds\nGROUP BY 1\nORDER BY 1;",
+            "reasoning_content": "Simple: monthly refund amount sum from refunds, using requested_at? The refund amount by month — which time column? Refunds table has requested_at and completed_at. Typically refund amount by month based on requested_at. Use refunds table only.\n\nSELECT DATE_TRUNC('month', requested_at) AS month, ROUND(SUM(refund_amount),2) AS refund_amount FROM refunds GROUP BY 1 ORDER BY 1;\n\nShould we filter status? Rule says don't add filters not requested. Keep all."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2665,
+        "completion_tokens": 149,
+        "total_tokens": 2814,
+        "prompt_tokens_details": {
+          "cached_tokens": 1792
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 105
+        },
+        "prompt_cache_hit_tokens": 1792,
+        "prompt_cache_miss_tokens": 873
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseBodySha256": "6c1176ddea83809ccf03423270577aafe2052af1608a3031ba96f71297df3906",
+    "responseBytes": 1146,
+    "error": null,
+    "upstreamAttempted": true,
+    "responseComplete": true,
+    "responseBodyFile": "66f59cead4c748f986522da30e63dac0-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 2665,
+    "completion_tokens": 149,
+    "total_tokens": 2814,
+    "prompt_tokens_details": {
+      "cached_tokens": 1792
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 105
+    },
+    "prompt_cache_hit_tokens": 1792,
+    "prompt_cache_miss_tokens": 873
+  }
+}

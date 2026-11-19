@@ -1,0 +1,77 @@
+{
+  "token": "c500e967f505497c8171555ebfc56c42",
+  "round": "DEV_F",
+  "questionId": "T1-019",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2154318.697126,
+  "admittedAt": "2026-11-19T13:37:01.957841+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-19T13:37:01.957745+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "943cccfce51a21b7002d4fe14e164dd7373b189ae4a5057403fec7d9ae80718c",
+  "requestBytes": 14819,
+  "inputTokenEstimate": 15843,
+  "promptChars": 7744,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00255684",
+  "result": {
+    "startedAtUtc": "2026-11-19T13:37:01.966Z",
+    "finishedAtUtc": "2026-11-19T13:37:03.562Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "c2ee0d48-a5fd-4097-bf9f-e725196d168b",
+      "object": "chat.completion",
+      "created": 1795095413,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT COUNT(*) AS undelivered_orders_count\nFROM orders\nWHERE order_delivered_customer_date IS NULL;",
+            "reasoning_content": "用户问：还没有送达客户的订单有多少笔？\n\n即 orders.order_delivered_customer_date IS NULL 的订单数。计数按订单主键去重（单表，COUNT(*) 即可）。\n\n需要 LIMIT? 硬性规则3：单行无GROUP BY的COUNT除外，不需LIMIT。\n\n输出：SELECT COUNT(*) AS ... FROM orders WHERE order_delivered_customer_date IS NULL;\n\n不要加额外过滤（不排除取消订单）。就是送达时间为空。\n\n别名用中文？用英文吧。用 not_delivered_orders 或 cnt。用 AS undelivered_orders_count。中文别名也可，但保持简单。\n\n是否需要考虑 order_status？规则7：不得擅加过滤。所以只按 delivered_customer_date IS NULL。"
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 3573,
+        "completion_tokens": 185,
+        "total_tokens": 3758,
+        "prompt_tokens_details": {
+          "cached_tokens": 1792
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 159
+        },
+        "prompt_cache_hit_tokens": 1792,
+        "prompt_cache_miss_tokens": 1781
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseBodySha256": "ba012008ababcd40247b54b543cb7589cafa0178941697fbd77688d1e7fc1dcf",
+    "responseBytes": 1346,
+    "error": null,
+    "upstreamAttempted": true,
+    "responseComplete": true,
+    "responseBodyFile": "c500e967f505497c8171555ebfc56c42-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 3573,
+    "completion_tokens": 185,
+    "total_tokens": 3758,
+    "prompt_tokens_details": {
+      "cached_tokens": 1792
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 159
+    },
+    "prompt_cache_hit_tokens": 1792,
+    "prompt_cache_miss_tokens": 1781
+  }
+}

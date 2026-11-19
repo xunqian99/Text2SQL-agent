@@ -1,0 +1,77 @@
+{
+  "token": "75c7e54c2f054c73a54102d318754f01",
+  "round": "DEV_F",
+  "questionId": "T2-036",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2154386.1219026,
+  "admittedAt": "2026-11-19T13:38:09.386857+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-19T13:38:09.386721+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "6296b8aa97ae5e6e70ec7c993ce40ebba92d1e23dea707e62d21c73782a8d574",
+  "requestBytes": 12276,
+  "inputTokenEstimate": 13300,
+  "promptChars": 6437,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00623332",
+  "result": {
+    "startedAtUtc": "2026-11-19T13:38:09.395Z",
+    "finishedAtUtc": "2026-11-19T13:38:18.841Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "9f09766e-ab85-4ac0-9c6a-df25b96961ce",
+      "object": "chat.completion",
+      "created": 1795095480,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT p.product_category_name\nFROM products p\nWHERE p.product_category_name IS NOT NULL\nGROUP BY p.product_category_name\nHAVING COUNT(*) > 1500\nORDER BY COUNT(*) DESC, p.product_category_name ASC\nLIMIT 100;",
+            "reasoning_content": "We need answer SQL only. Need parse Chinese: \"商品数量超过 1500 个的类目有哪些？\" Which product count per category >1500. Tables products, category translation maybe need category names. Need decide display English or original? \"类目有哪些\" likely product_category_name. Schema has products.product_category_name and translation. Need count products per category. \"商品数量\" count products. Need categories with >1500 products. Use products grouped by product_category_name. Dimension policy: when grouping dimension product_category_name, exclude NULL, add IS NOT NULL. Count product rows. product_id primary key one per product. Could output category. Do we need English name? User asks categories, no explicit English; use current entity existing identifier. Could use product_category_name. Maybe need category names? Schema products has product_category_name, translation English. No request English. So select product_category_name, COUNT(*) product_count. HAVING COUNT(*) > 1500. ORDER BY product_count DESC. Limit. Need \"有哪些\" maybe only category names, but likely include count? Rule: SELECT only required dimensions and metrics; \"商品数量超过1500的类目有哪些\" asks categories, but threshold metric maybe not output? It asks categories whose product count over 1500. Could output just category? But to substantiate maybe include count? Rule 8 \"未要求名称，用当前事实/实体表已有标识，不补展示关联或名称；状态、州代码、分类值沿用原值。要求名称才用schema名称列...\" For \"类目\" means category identifier. \"商品数量超过 1500 个的类目有哪些\" They may expect category names and perhaps product count? The phrase includes metric threshold, not necessarily output. Hard rule 11 not add columns. But reference example for per category order count outputs category and count because question asks count. Here asks \"which categories have count over 1500\" Maybe output category only. However SQL needs count for HAVING. Can select category only, group by, having count >1500. But \"商品数量超过1500\" maybe if showing count useful, but not requested. Need careful.\n\nQuestion: \"商品数量超过 1500 个的类目有哪些？\" = Which categories have more than 1500 products? It's asking entities (categories), not counts. Per rule \"问最值实体...\" Here threshold filter. I should select product_category_name only. Use HAVING COUNT(*) > 1500. ORDER BY? No requested; could order category or count. If only category, ORDER BY COUNT(*) DESC LIMIT maybe deterministic? Rule 11 no add sorting unless needed. But LIMIT mandatory. Need limit. Could LIMIT 100? TopN default? \"有哪些\" no N. Need LIMIT. Could choose LIMIT 100? Hard rule must LIMIT. If more than 100 categories? likely categories under 71, so LIMIT 100. But need not overthink? Usually output all categories with >1500 maybe no TopN. But must LIMIT. Could LIMIT 50 maybe. Need count? If just categories, order maybe count descending to meaningful limit; but if limit potentially truncate. We can set LIMIT 1000 to effectively all. Rule says default TopN at most N rows. No N. Reference examples include LIMIT? They don't, but hard rule says must limit. Use LIMIT 100 maybe. Number of product categories ~73; >1500 likely few. Fine.\n\nNeed include product_category_name IS NOT NULL because dimension policy applies. Count products. Since products PK product_id unique. Count(*) okay. Group by product_category_name. HAVING COUNT(*) > 1500.\n\nNeed maybe category translation if \"类目\" could be English? No, use original.\n\nPotential issue: \"商品数量\" could mean order_items quantity? There is no quantity in order_items. It's products count. \"商品数量超过1500个的类目\" in product catalog. Use products table. Yes.\n\nOutput SQL only. No code fences. Could include comment? Not needed.\n\nNeed decide select count too. Let's inspect rules: SELECT only required dimensions, metrics; clear names/IDs/codes/output columns priority. If question asks \"商品数量超过1500个的类目有哪些\" the required dimension categories; count is filter condition. Output should be category only. However many BI queries would output category and count. The phrase \"超过1500个\" might ask count threshold, but \"有哪些\" asks categories. The metric isn't explicitly requested to display. Rule 11 says don't add columns for completeness. So just category. But if category only, HAVING. Should order? Could ORDER BY product_category_name. But sorting not requested. However LIMIT with no order nondeterministic. We can order by COUNT(*) DESC to get largest categories. But if output only category, ordering by unselected aggregate allowed. Does that violate add sorting? Maybe not. Need LIMIT. Could use ORDER BY COUNT(*) DESC, product_category_name LIMIT 100. If more than 100, truncates top. But categories >1500 likely less than 100. Fine.\n\nAlternatively output count because it is a metric necessary? Let's examine \"商品数量超过 1500 个的类目有哪些？\" If we output only category, user cannot verify counts. But they asked which. The reference example \"每个商品类目的订单数量是多少？\" outputs count because asks count. Here not \"数量是多少\". I lean category only. However \"商品数量超过1500个\" might imply need show product quantity. Many such tasks in text-to-SQL expect SELECT category, COUNT(*) as product_count HAVING >1500. The default metrics shape? The metric is count. If question asks \"有哪些\" not \"有多少\". Rule 8/11 says only needed fields. The \"商品数量超过1500\" is a predicate, not output. But sometimes \"超过\" requires output metric to show. Hmm.\n\nNeed maybe use translation English? \"类目\" in Olist schema product_category_name is Portuguese. The table translation provides English. If asking \"what categories\" maybe should output English category names? They didn't specify. Rule: use existing identifier no join unless name requested. \"类目\" itself is a name/category label; product_category_name is the category identifier/label. Use it.\n\nNeed include NULL? Dimension policy default exclude null. Yes.\n\nSQL:\nSELECT p.product_category_name\nFROM products p\nWHERE p.product_category_name IS NOT NULL\nGROUP BY p.product_category_name\nHAVING COUNT(*) > 1500\nORDER BY COUNT(*) DESC, p.product_category_name ASC\nLIMIT 100;\n\nCould aggregate count distinct product_id? Since products PK unique, count* is fine. For product count per category, count product_id. Count(*) counts rows one per product. Good.\n\nNeed maybe English translation if category names? No.\n\nLet's final only SQL."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2981,
+        "completion_tokens": 1503,
+        "total_tokens": 4484,
+        "prompt_tokens_details": {
+          "cached_tokens": 2816
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 1449
+        },
+        "prompt_cache_hit_tokens": 2816,
+        "prompt_cache_miss_tokens": 165
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseBodySha256": "1861ea9043d2b25774eca4eeb4eedb2d60eb26a0c83fb3d8fb6f050ba9160bba",
+    "responseBytes": 7470,
+    "error": null,
+    "upstreamAttempted": true,
+    "responseComplete": true,
+    "responseBodyFile": "75c7e54c2f054c73a54102d318754f01-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 2981,
+    "completion_tokens": 1503,
+    "total_tokens": 4484,
+    "prompt_tokens_details": {
+      "cached_tokens": 2816
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 1449
+    },
+    "prompt_cache_hit_tokens": 2816,
+    "prompt_cache_miss_tokens": 165
+  }
+}

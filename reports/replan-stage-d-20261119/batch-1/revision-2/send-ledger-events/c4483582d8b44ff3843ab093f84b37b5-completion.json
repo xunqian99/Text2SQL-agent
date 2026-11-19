@@ -1,0 +1,77 @@
+{
+  "token": "c4483582d8b44ff3843ab093f84b37b5",
+  "round": "DEV_F",
+  "questionId": "T4-012",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2154479.7182953,
+  "admittedAt": "2026-11-19T13:39:42.968799+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-19T13:39:42.968660+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "95a42f1969b0fd93c2f85817ced0e0c8cf97e5c00f5bc947430ee22201614542",
+  "requestBytes": 14552,
+  "inputTokenEstimate": 15576,
+  "promptChars": 7436,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00342884",
+  "result": {
+    "startedAtUtc": "2026-11-19T13:39:42.977Z",
+    "finishedAtUtc": "2026-11-19T13:39:45.420Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "23f690f7-49d6-4ef4-b591-7d48ddcb38fa",
+      "object": "chat.completion",
+      "created": 1795095574,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT c.customer_state, ROUND(AVG(r.review_score), 2) AS avg_score\nFROM order_reviews r\nJOIN orders o ON o.order_id = r.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY c.customer_state\nORDER BY COUNT(*) DESC, c.customer_state ASC\nLIMIT 10;",
+            "reasoning_content": "We need answer SQL only. Need parse question. Need craft query.\n\nQuestion Chinese: \"按订单客户档案所在州统计每条评价等权的平均分两位，按评价记录数取前10州，仅输出州和平均分，同数按州升序。\"\n\nNeed compute average review score per state (customer_state) where each review record equal weight (i.e., average over order_reviews rows). Group by customer state via orders customer. Output state and avg score rounded 2. Order by count reviews desc top 10 states; ties by state asc. Only output state and avg. Need likely SELECT c.customer_state, ROUND(AVG(r.review_score),2) AS avg_score FROM order_reviews r JOIN orders o ON o.order_id=r.order_id JOIN customers c ON c.customer_id=o.customer_id GROUP BY c.customer_state ORDER BY COUNT(*) DESC, c.customer_state ASC LIMIT 10.\n\nCheck \"按评价记录数取前10州\" means rank states by review count, return top 10. Same count sort state asc. We don't output count. Limit 10. Good. Need no comments? Could output SQL only. Need ensure each review record equal weight: avg(r.review_score) counts each review row. order_reviews PK review_id, order_id, multiple reviews per order possible, but each review row equal. Join orders one-to-one? orders primary key, each review joined to one order. Customer one-to-one on customer_id. Fine. Filter? No status filter. Use all reviews. Good.\n\nNeed only one SELECT. Output no code fences."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 3525,
+        "completion_tokens": 415,
+        "total_tokens": 3940,
+        "prompt_tokens_details": {
+          "cached_tokens": 1792
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 334
+        },
+        "prompt_cache_hit_tokens": 1792,
+        "prompt_cache_miss_tokens": 1733
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseBodySha256": "1d7459fabb7d074b0a75439ea83d03a716a5216c17d5d322044e7f49e76985fd",
+    "responseBytes": 2242,
+    "error": null,
+    "upstreamAttempted": true,
+    "responseComplete": true,
+    "responseBodyFile": "c4483582d8b44ff3843ab093f84b37b5-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 3525,
+    "completion_tokens": 415,
+    "total_tokens": 3940,
+    "prompt_tokens_details": {
+      "cached_tokens": 1792
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 334
+    },
+    "prompt_cache_hit_tokens": 1792,
+    "prompt_cache_miss_tokens": 1733
+  }
+}

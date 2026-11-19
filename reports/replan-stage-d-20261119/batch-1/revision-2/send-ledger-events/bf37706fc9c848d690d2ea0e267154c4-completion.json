@@ -1,0 +1,77 @@
+{
+  "token": "bf37706fc9c848d690d2ea0e267154c4",
+  "round": "DEV_F",
+  "questionId": "T1-008",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2154307.1232883,
+  "admittedAt": "2026-11-19T13:36:50.404808+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-19T13:36:50.404686+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "81e6a30c3639fb99596e46a338493acaa94777bc0003c302853700302c6467be",
+  "requestBytes": 14675,
+  "inputTokenEstimate": 15699,
+  "promptChars": 7584,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00238184",
+  "result": {
+    "startedAtUtc": "2026-11-19T13:36:50.412Z",
+    "finishedAtUtc": "2026-11-19T13:36:51.829Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "3426e056-5b06-4f66-be9e-21478d38710b",
+      "object": "chat.completion",
+      "created": 1795095401,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT COUNT(DISTINCT customer_city) AS city_count\nFROM customers;",
+            "reasoning_content": "We need answer SQL only. Need interpret: \"客户档案中出现过多少个不同的customer_city城市名称值？同名城市跨州合并统计。\" Customers table. Count distinct customer_city, merging same city across states. Need consider NULL? \"出现过多少个不同的...名称值\" likely COUNT(DISTINCT customer_city), excludes NULL. Need maybe all customer records. Single aggregate, no LIMIT required per rule. SELECT COUNT(DISTINCT customer_city) AS city_count FROM customers; Need maybe alias. Ensure lowercase. Could maybe use customer_state? no, merge cross-state by distinct city only. final only SQL."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 3562,
+        "completion_tokens": 144,
+        "total_tokens": 3706,
+        "prompt_tokens_details": {
+          "cached_tokens": 1792
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 127
+        },
+        "prompt_cache_hit_tokens": 1792,
+        "prompt_cache_miss_tokens": 1770
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseBodySha256": "8540de11ed39629198adf722421957f4eecf8adc7fcba51b2642be961248e963",
+    "responseBytes": 1232,
+    "error": null,
+    "upstreamAttempted": true,
+    "responseComplete": true,
+    "responseBodyFile": "bf37706fc9c848d690d2ea0e267154c4-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 3562,
+    "completion_tokens": 144,
+    "total_tokens": 3706,
+    "prompt_tokens_details": {
+      "cached_tokens": 1792
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 127
+    },
+    "prompt_cache_hit_tokens": 1792,
+    "prompt_cache_miss_tokens": 1770
+  }
+}

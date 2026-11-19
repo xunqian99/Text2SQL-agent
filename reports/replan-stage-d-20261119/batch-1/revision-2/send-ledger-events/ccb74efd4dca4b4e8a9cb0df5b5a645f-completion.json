@@ -1,0 +1,77 @@
+{
+  "token": "ccb74efd4dca4b4e8a9cb0df5b5a645f",
+  "round": "DEV_F",
+  "questionId": "T3-019",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2154439.4797302,
+  "admittedAt": "2026-11-19T13:39:02.751634+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-19T13:39:02.751474+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "4d5284215a785fd9c0537b532f8227e139d34c38b609b2e94ce5527b3869c03b",
+  "requestBytes": 11636,
+  "inputTokenEstimate": 12660,
+  "promptChars": 6364,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00144396",
+  "result": {
+    "startedAtUtc": "2026-11-19T13:39:02.760Z",
+    "finishedAtUtc": "2026-11-19T13:39:04.303Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "ac51d9d2-6161-43e6-b87c-d9e2e726d069",
+      "object": "chat.completion",
+      "created": 1795095534,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT COUNT(*) AS late_order_count\nFROM orders\nWHERE order_delivered_customer_date > order_estimated_delivery_date;",
+            "reasoning_content": "We need answer SQL only. Need interpret: orders where order_delivered_customer_date > order_estimated_delivery_date. Count orders distinct order_id likely one row per order. Need only count. Need consider delivered date null? Actual late requires both nonnull, comparison excludes null. No extra filters. SQL SELECT COUNT(*) AS late_order_count FROM orders WHERE order_delivered_customer_date > order_estimated_delivery_date; No LIMIT exception aggregate single row no group allowed. Need only SELECT. Ensure column names exist. Final no explanation."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2879,
+        "completion_tokens": 143,
+        "total_tokens": 3022,
+        "prompt_tokens_details": {
+          "cached_tokens": 2048
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 114
+        },
+        "prompt_cache_hit_tokens": 2048,
+        "prompt_cache_miss_tokens": 831
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseBodySha256": "5c70a6297f386ce852730bed79d1d2876a85ec0b4f21fb3f557f4683439db4f6",
+    "responseBytes": 1209,
+    "error": null,
+    "upstreamAttempted": true,
+    "responseComplete": true,
+    "responseBodyFile": "ccb74efd4dca4b4e8a9cb0df5b5a645f-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 2879,
+    "completion_tokens": 143,
+    "total_tokens": 3022,
+    "prompt_tokens_details": {
+      "cached_tokens": 2048
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 114
+    },
+    "prompt_cache_hit_tokens": 2048,
+    "prompt_cache_miss_tokens": 831
+  }
+}

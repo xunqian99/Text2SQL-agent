@@ -1,0 +1,77 @@
+{
+  "token": "85c7c1d1f1c749c380387e3c58ad5b50",
+  "round": "DEV_F",
+  "questionId": "T1-013",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2154311.37463,
+  "admittedAt": "2026-11-19T13:36:54.655810+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-19T13:36:54.655718+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "2d76852c7d0dc81e5026ba77b3754b807886b992706ade7c0d61df9b051495bf",
+  "requestBytes": 11414,
+  "inputTokenEstimate": 12438,
+  "promptChars": 6169,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00288784",
+  "result": {
+    "startedAtUtc": "2026-11-19T13:36:54.663Z",
+    "finishedAtUtc": "2026-11-19T13:36:57.380Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "46f5501f-5eba-4e69-a724-21da68ced9b4",
+      "object": "chat.completion",
+      "created": 1795095406,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT order_id, order_item_id, freight_value\nFROM order_items\nWHERE freight_value IS NOT NULL\nORDER BY freight_value DESC, order_id ASC, order_item_id ASC\nLIMIT 5;",
+            "reasoning_content": "We need answer only SQL. Need parse: \"运费最高的 5 条订单明细是哪几条？\" Table order_items has freight_value, order_id, order_item_id. Need top 5 order item records by freight highest. Need output identifiers and metric? User asks which order items. We should include order_id, order_item_id, freight_value likely. Order by freight_value desc limit 5. Need handle ties? Default TopN at most N rows,不足不补. \"最高的5条\" likely ORDER BY DESC LIMIT 5. If ties? Rule mentions含并列前N名用RANK<=N if explicit? It says 默认TopN至多N行, 不足不补. 按最终展示精度排名/判等... 含并列前N名用RANK<=N. Not explicitly \"并列\"; simple top 5. Use ORDER BY freight_value DESC, maybe tie breakers full identity ascending. Need include only order_id, order_item_id, freight_value. Could use ORDER BY freight_value DESC, order_id ASC, order_item_id ASC LIMIT 5. Need not filter null? Highest non-null. If freight_value NULL, they sort last by DESC NULLS LAST implicitly in PostgreSQL DESC puts NULLS FIRST by default! Important. For max entity only non-NULL participate. We should add WHERE freight_value IS NOT NULL? Rule \"仅该属性非NULL者参与最值\". Yes. \"运费最高\" means only freight_value non-null. Need avoid NULL as highest. Use WHERE freight_value IS NOT NULL ORDER BY freight_value DESC, order_id ASC, order_item_id ASC LIMIT 5. Output. No code fence. Only SELECT. \nNeed maybe item ID integer. SQL:\nSELECT order_id, order_item_id, freight_value\nFROM order_items\nWHERE freight_value IS NOT NULL\nORDER BY freight_value DESC, order_id ASC, order_item_id ASC\nLIMIT 5;\nThat's it. Ensure no explanation."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2840,
+        "completion_tokens": 451,
+        "total_tokens": 3291,
+        "prompt_tokens_details": {
+          "cached_tokens": 1792
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 408
+        },
+        "prompt_cache_hit_tokens": 1792,
+        "prompt_cache_miss_tokens": 1048
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseBodySha256": "87263eb3ed4b3adf76e58db4245a68ff564dc61224263c46d62ebec12681bae3",
+    "responseBytes": 2382,
+    "error": null,
+    "upstreamAttempted": true,
+    "responseComplete": true,
+    "responseBodyFile": "85c7c1d1f1c749c380387e3c58ad5b50-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 2840,
+    "completion_tokens": 451,
+    "total_tokens": 3291,
+    "prompt_tokens_details": {
+      "cached_tokens": 1792
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 408
+    },
+    "prompt_cache_hit_tokens": 1792,
+    "prompt_cache_miss_tokens": 1048
+  }
+}

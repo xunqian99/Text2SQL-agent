@@ -1,0 +1,77 @@
+{
+  "token": "a5603d94fc514e31b74a56e05b56bbef",
+  "round": "DEV_F",
+  "questionId": "T3-020",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2154441.5949337,
+  "admittedAt": "2026-11-19T13:39:04.860482+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-19T13:39:04.860356+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "c5a05e071dea190e840fd2515a1c8dc376aa0f87cf68676933fdf870bf45c2de",
+  "requestBytes": 13596,
+  "inputTokenEstimate": 14620,
+  "promptChars": 7521,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00225884",
+  "result": {
+    "startedAtUtc": "2026-11-19T13:39:04.871Z",
+    "finishedAtUtc": "2026-11-19T13:39:06.410Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "345c63ec-2fa8-4bfd-ab14-51b23a2f25fa",
+      "object": "chat.completion",
+      "created": 1795095536,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT ROUND(COUNT(*) FILTER (\n    WHERE order_delivered_customer_date IS NOT NULL\n      AND order_delivered_customer_date > order_estimated_delivery_date\n  )::numeric / NULLIF(COUNT(*) FILTER (\n    WHERE order_delivered_customer_date IS NOT NULL\n  ), 0), 4) AS late_delivery_rate\nFROM orders;",
+            "reasoning_content": "Compute late_delivery_rate. No grouping. Single row aggregate, no LIMIT needed (aggregate exception). Use orders table.\n\nExpression: ROUND(COUNT(*) FILTER (WHERE order_delivered_customer_date IS NOT NULL AND > estimated)::numeric / NULLIF(COUNT(*) FILTER (WHERE delivered not null),0),4)\n\nAlias maybe late_delivery_rate."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 3351,
+        "completion_tokens": 166,
+        "total_tokens": 3517,
+        "prompt_tokens_details": {
+          "cached_tokens": 1792
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 81
+        },
+        "prompt_cache_hit_tokens": 1792,
+        "prompt_cache_miss_tokens": 1559
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseBodySha256": "8ed611ada09605cda7fd9da15725e69083c29e70a03cf5e230ff4e4c04558729",
+    "responseBytes": 1164,
+    "error": null,
+    "upstreamAttempted": true,
+    "responseComplete": true,
+    "responseBodyFile": "a5603d94fc514e31b74a56e05b56bbef-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 3351,
+    "completion_tokens": 166,
+    "total_tokens": 3517,
+    "prompt_tokens_details": {
+      "cached_tokens": 1792
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 81
+    },
+    "prompt_cache_hit_tokens": 1792,
+    "prompt_cache_miss_tokens": 1559
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "token": "535accacc3e04878bcda306a66a207c0",
+  "round": "DEV_F",
+  "questionId": "T2-034",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2154383.7865507,
+  "admittedAt": "2026-11-19T13:38:07.049282+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-19T13:38:07.049099+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "2faaa15d0f6659bb114b1dafef0c1273b3e167f83d5cfd7a06ef2bfb0f24d764",
+  "requestBytes": 10356,
+  "inputTokenEstimate": 11380,
+  "promptChars": 5126,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00199384",
+  "result": {
+    "startedAtUtc": "2026-11-19T13:38:07.058Z",
+    "finishedAtUtc": "2026-11-19T13:38:09.097Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "5af40518-f12e-4d70-836d-41fe1f771de7",
+      "object": "chat.completion",
+      "created": 1795095478,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT ROUND(SUM(commission), 2) AS total_commission FROM settlements;",
+            "reasoning_content": "We need answer SQL only. Need infer platform commission total. Schema has settlements.commission likely platform from seller. Question: 平台从卖家那里收取的佣金总额是多少？ Need SELECT SUM(commission) FROM settlements? Or settlement_items commission_amount? Need determine metrics? No METRICS section provided. \"平台从卖家那里收取的佣金总额\" likely settlements.commission total. Need consider status filter? Rule says no arbitrary filter completed/valid. User didn't specify status. So sum commission from settlements all. Need round? Amount total: aggregate SUM(commission) maybe ROUND(SUM(commission), 2). Reference says sum price no round? It has SUM(price). For money default ROUND two. Rule 12: 其余金额/单价/均值 ROUND 两位. Total sum is amount, so ROUND(SUM(commission),2). Single row aggregate no LIMIT. Need output SQL only, no code fences. Ensure no explanation.\n\nCheck if commission in settlements vs settlement_items.commission_amount. \"平台从卖家那里收取的佣金总额\" = settlements commission field. Use SUM(commission). Could status filter by 已结算? No explicit. \"收取\" could imply collected? But schema status includes paid etc; no explicit. Hard rule no add valid/completed filter. So all settlements. Maybe commission is platform's commission. Yes.\n\nNeed direct."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2546,
+        "completion_tokens": 301,
+        "total_tokens": 2847,
+        "prompt_tokens_details": {
+          "cached_tokens": 1792
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 282
+        },
+        "prompt_cache_hit_tokens": 1792,
+        "prompt_cache_miss_tokens": 754
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseBodySha256": "e89eedd75f9383081cb15f224d9b0c1562b2bb509081e2da5b84f332b2b8dd0f",
+    "responseBytes": 1960,
+    "error": null,
+    "upstreamAttempted": true,
+    "responseComplete": true,
+    "responseBodyFile": "535accacc3e04878bcda306a66a207c0-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 2546,
+    "completion_tokens": 301,
+    "total_tokens": 2847,
+    "prompt_tokens_details": {
+      "cached_tokens": 1792
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 282
+    },
+    "prompt_cache_hit_tokens": 1792,
+    "prompt_cache_miss_tokens": 754
+  }
+}

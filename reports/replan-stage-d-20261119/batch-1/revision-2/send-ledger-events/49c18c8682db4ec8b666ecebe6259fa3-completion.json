@@ -1,0 +1,77 @@
+{
+  "token": "49c18c8682db4ec8b666ecebe6259fa3",
+  "round": "DEV_F",
+  "questionId": "T3-017",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2154436.0440005,
+  "admittedAt": "2026-11-19T13:38:59.293698+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-19T13:38:59.293579+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "ff66c309736aa817ae77fc3b6b4c0f750f30ee275b1cc18ac6c7854a2005fc30",
+  "requestBytes": 11762,
+  "inputTokenEstimate": 12786,
+  "promptChars": 6565,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.0029374",
+  "result": {
+    "startedAtUtc": "2026-11-19T13:38:59.303Z",
+    "finishedAtUtc": "2026-11-19T13:39:02.414Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "629c1589-9d8a-4dfc-864d-6d4f2c65fea5",
+      "object": "chat.completion",
+      "created": 1795095530,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT ROUND(AVG(EXTRACT(EPOCH FROM (order_delivered_customer_date - order_purchase_timestamp)) / 86400)::numeric, 2) AS avg_delivery_days\nFROM orders\nWHERE order_delivered_customer_date IS NOT NULL\n  AND order_purchase_timestamp IS NOT NULL;",
+            "reasoning_content": "We need answer SQL only. Need compute average delivery time order_purchase_timestamp to order_delivered_customer_date. Need likely only delivered (non-null). User asks average days from order to delivered. Use orders. Need expression EXTRACT(EPOCH FROM (delivered - purchase))/86400 average, round 2. Need filter delivered not null and purchase not null. Since unknown delivery ignored. Could use AVG(EXTRACT(EPOCH...)/86400) but double precision round needs cast numeric. Query SELECT ROUND(AVG(EXTRACT(EPOCH FROM (order_delivered_customer_date - order_purchase_timestamp)) / 86400)::numeric, 2) AS avg_delivery_days FROM orders WHERE order_delivered_customer_date IS NOT NULL AND order_purchase_timestamp IS NOT NULL LIMIT 1? Single-row aggregate exception doesn't need LIMIT. Rule only SELECT, no limit needed for aggregate single row. Need output alias maybe avg_days. Make sure EXTRACT returns numeric? PostgreSQL EXTRACT returns numeric in modern? It can be numeric. Dividing numeric by 86400 numeric, avg numeric. Could simply ROUND(AVG(EXTRACT(EPOCH FROM ...)/86400.0),2). But if double? EXTRACT(EPOCH) returns numeric in PG 14? Actually EXTRACT returns numeric. Use ::numeric safe. No need join. Could count? Only asked avg. Output one column. Final only SQL. \nNeed think if average per order; orders unique. Delivered non-null. Should we exclude canceled/unavailable? Question says from order to delivered; only delivered records naturally. No status column actually schema doesn't show status. So no. Use order_delivered_customer_date - order_purchase_timestamp. Average days. Need cast interval to seconds. Final.\n\nNeed no code fence. Ensure SELECT only. \n"
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2927,
+        "completion_tokens": 473,
+        "total_tokens": 3400,
+        "prompt_tokens_details": {
+          "cached_tokens": 1920
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 399
+        },
+        "prompt_cache_hit_tokens": 1920,
+        "prompt_cache_miss_tokens": 1007
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseBodySha256": "708bc7d0c44e7e156f91f560fe92f9b7b57f65d9899dd667a5d178f06a71d71b",
+    "responseBytes": 2459,
+    "error": null,
+    "upstreamAttempted": true,
+    "responseComplete": true,
+    "responseBodyFile": "49c18c8682db4ec8b666ecebe6259fa3-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 2927,
+    "completion_tokens": 473,
+    "total_tokens": 3400,
+    "prompt_tokens_details": {
+      "cached_tokens": 1920
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 399
+    },
+    "prompt_cache_hit_tokens": 1920,
+    "prompt_cache_miss_tokens": 1007
+  }
+}

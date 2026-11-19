@@ -1,0 +1,77 @@
+{
+  "token": "1ee8d5a3cd994b5fb5e210c69bacb08f",
+  "round": "DEV_F",
+  "questionId": "T4-009",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2154470.6445867,
+  "admittedAt": "2026-11-19T13:39:33.888826+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-19T13:39:33.888635+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "6e55ed62778b408b74b37055790b6320a08ef53aa422e4c5c7df7f1987ade181",
+  "requestBytes": 9679,
+  "inputTokenEstimate": 10703,
+  "promptChars": 4619,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00311084",
+  "result": {
+    "startedAtUtc": "2026-11-19T13:39:33.899Z",
+    "finishedAtUtc": "2026-11-19T13:39:37.592Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "cdc2916f-2995-4a9c-aa3e-708cfef15da5",
+      "object": "chat.completion",
+      "created": 1795095565,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT payment_type, ROUND(AVG(payment_value), 2) AS avg_payment_value\nFROM order_payments\nGROUP BY payment_type\nLIMIT 100;",
+            "reasoning_content": "We need answer SQL only. Need parse. Table order_payments. Need group by payment_type original value, average payment amount per payment record equal weight. Unknown method retained as NULL group. Average payment_value? \"平均支付金额\" likely AVG(payment_value). Group by payment_type. Each payment record equal weight: AVG(payment_value), not weighted by installments etc. Unknown payment_type NULL retained group. Amount two decimals. Need output payment_type and avg amount rounded 2. Need ORDER? Not specified; maybe group by payment_type. Need LIMIT? Aggregated group query still needs LIMIT? Hard rule: must LIMIT except single-row no GROUP BY COUNT/SUM/AVG. Here GROUP BY, so must LIMIT. Could LIMIT large? Need no arbitrary? We can ORDER BY payment_type NULLS LAST maybe? Not requested sorting. But must LIMIT. Need choose LIMIT maybe 100. But if more groups? payment types likely few. Need include NULL group. Need SQL:\nSELECT payment_type, ROUND(AVG(payment_value)::numeric, 2) AS avg_payment_value\nFROM order_payments\nGROUP BY payment_type\nORDER BY payment_type NULLS LAST\nLIMIT 100;\n\nBut issue payment_type character varying; NULL group. AVG numeric returns numeric, ROUND okay. Alias? \"平均支付金额\" maybe avg_payment_amount. Need two decimals. No filter. \"每条支付记录等权\" just AVG. Unknown方式保留为NULL组; group by includes null. We may need not coalesce. Good. Use LIMIT. Could order by payment_type, but the problem didn't ask order. Yet limit requires deterministic maybe. \"不为信息更全加排序\"? Rule 11 says don't add sorting for info. But limit needs some order? Not necessarily. However adding ORDER BY payment_type may be considered extra. But no explicit order; SQL can LIMIT without ORDER BY. Still we can use LIMIT 100 no order. But output order undefined. Should we avoid ORDER BY to obey no extra? The hard rule must LIMIT. If no ORDER, arbitrary but acceptable. Could use LIMIT 100. But \"未知方式保留为NULL组\" no coalesce. Need likely answer:\nSELECT payment_type, ROUND(AVG(payment_value), 2) AS avg_payment_value\nFROM order_payments\nGROUP BY payment_type\nLIMIT 100;\nPostgres ROUND numeric okay. avg(payment_value) numeric. Good.\n\nNeed consider \"支付方式原值\" maybe payment_type. \"每条支付记录等权\" payment record unique by order_id, payment_sequential. AVG over rows. Perfect.\n\nNeed include no code fence. Final only SQL. Could include comment? Not needed. Ensure LIMIT."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2399,
+        "completion_tokens": 617,
+        "total_tokens": 3016,
+        "prompt_tokens_details": {
+          "cached_tokens": 1792
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 580
+        },
+        "prompt_cache_hit_tokens": 1792,
+        "prompt_cache_miss_tokens": 607
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseBodySha256": "89fdeb0400b3e71a1ce67cdee782dc4309e03cef961637b2ca3f5fd7397b4181",
+    "responseBytes": 3153,
+    "error": null,
+    "upstreamAttempted": true,
+    "responseComplete": true,
+    "responseBodyFile": "1ee8d5a3cd994b5fb5e210c69bacb08f-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 2399,
+    "completion_tokens": 617,
+    "total_tokens": 3016,
+    "prompt_tokens_details": {
+      "cached_tokens": 1792
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 580
+    },
+    "prompt_cache_hit_tokens": 1792,
+    "prompt_cache_miss_tokens": 607
+  }
+}

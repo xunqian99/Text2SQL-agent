@@ -1,0 +1,77 @@
+{
+  "token": "a39d2091afb2461cacc2ed6bd034cc3c",
+  "round": "DEV_F",
+  "questionId": "T4-021",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2154514.4541929,
+  "admittedAt": "2026-11-19T13:40:17.722239+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-19T13:40:17.722070+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "36fb947f79b6972e8c3975a0c22c576a8da22f23c47cc793842b887294d2856f",
+  "requestBytes": 11476,
+  "inputTokenEstimate": 12500,
+  "promptChars": 6176,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00528584",
+  "result": {
+    "startedAtUtc": "2026-11-19T13:40:17.732Z",
+    "finishedAtUtc": "2026-11-19T13:40:23.545Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "5b19eca5-2189-4ea3-a840-2da3c3bcf3cc",
+      "object": "chat.completion",
+      "created": 1795095609,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT ca.campaign_id, COUNT(cu.usage_id) AS usage_count\nFROM campaigns ca\nJOIN coupons c ON c.campaign_id = ca.campaign_id\nJOIN coupon_usages cu ON cu.coupon_id = c.coupon_id\nGROUP BY ca.campaign_id\nLIMIT 1000;",
+            "reasoning_content": "我们需要回答中文问题转SQL。需要只输出一条SELECT，无解释。需要根据schema。问题：按活动ID统计其关联优惠券的使用记录数，仅列有使用记录的活动，输出活动ID与次数。\n\n需要表 campaigns, coupons, coupon_usages。按活动ID统计其关联优惠券的使用记录数。优惠券使用记录数：coupon_usages 记录数，按 campaign_id。关联：campaigns.campaign_id = coupons.campaign_id, coupons.coupon_id = coupon_usages.coupon_id。仅列有使用记录的活动，即 INNER JOIN 自然排除无使用。输出活动ID与次数。活动ID campaigns.campaign_id。计数 usage 记录数，可能每 usage_id 唯一，COUNT(*) 或 COUNT(cu.usage_id)。需要按活动ID分组。COUNT(*) 在 join 后每个 usage 一行。需要注意 coupon_usages coupon_id 可能多，coupons 每 coupon_id 唯一主键，campaign 与 coupons 一对多。没有重复 usage 因为每个 usage 一行。用 COUNT(*) 即可。排序未指定，可 ORDER BY campaign_id? 不要求。需要 LIMIT。仅列有使用记录，INNER JOIN。SELECT ca.campaign_id, COUNT(*) AS usage_count FROM campaigns ca JOIN coupons c ON ... JOIN coupon_usages cu ON ... GROUP BY ca.campaign_id; 需要 LIMIT? 有 GROUP BY 但必须 LIMIT unless single row aggregate. 规则3：必须LIMIT，单行无GROUP BY的COUNT/SUM/AVG等聚合除外。所以加 LIMIT 比如 100? 默认TopN? 未指定取多少，但必须LIMIT。也许 LIMIT 1000? 通常 LIMIT 10? 这里\"仅列有使用记录的活动\"没有TopN，但硬性必须LIMIT，任意合理比如 LIMIT 100。但输出所有有使用的活动可能很多，LIMIT 会截断。规则要求必须LIMIT，所以加 LIMIT 1000? 最好 LIMIT 100? 需要遵守。没有排序，LIMIT 无意义但必须。可以 ORDER BY usage_count DESC? 问题未要求排序，规则11不加排序；但 LIMIT 需要。也许可以 LIMIT 100。参考示例取前10明确。未指定，可以 LIMIT 1000。但输出完整? 必须LIMIT。选择 LIMIT 1000 减少截断。常用 LIMIT 10 可能不合适。我们只输出SQL。\n\n需要处理活动ID可能 campaigns 有活动但没有 coupons。INNER JOIN 只保留有使用的活动。也可以从 coupons 开始。输出 campaign_id 和 count。计数使用记录数，COUNT(*) 是 usage 记录数。如果 coupon_usages 中 usage_id 主键唯一，COUNT(*) 没问题。如果有同一 usage 对应多个? 不，usage_id unique. JOIN coupons 每个 coupon_id 唯一。所以不会重复。可 COUNT(cu.usage_id) 更明确。COUNT(*) 也简单。使用 COUNT(cu.usage_id) AS usage_count。NULL usage_id? 主键非空。好。\n\nSQL:\nSELECT ca.campaign_id, COUNT(cu.usage_id) AS usage_count\nFROM campaigns ca\nJOIN coupons c ON c.campaign_id = ca.campaign_id\nJOIN coupon_usages cu ON cu.coupon_id = c.coupon_id\nGROUP BY ca.campaign_id\nORDER BY ca.campaign_id\nLIMIT 1000;\n\n规则11：\"不为信息更全加列、分组或排序；多列少列均违约。\" 排序不是要求不应加。但 LIMIT 需要排序? 不必须。可以不加 ORDER BY，LIMIT 1000。输出列正确。没有排序。SQL:\nSELECT ca.campaign_id, COUNT(cu.usage_id) AS usage_count\nFROM campaigns ca\nJOIN coupons c ON c.campaign_id = ca.campaign_id\nJOIN coupon_usages cu ON cu.coupon_id = c.coupon_id\nGROUP BY ca.campaign_id\nLIMIT 1000;\n这里没有排序。LIMIT 1000。可以吗？必须LIMIT。无排序。好。\n\n但 LIMIT 1000 可能不是用户要求。也许用 LIMIT 100。但都不指定。 SQL是否必须使用别名？可以。\n\n注意 \"仅列有使用记录的活动\" 内连接自然。如果某活动有优惠券使用记录多次，计数记录数。正确。\n\n输出只需SQL，不要代码围栏。最终。"
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2874,
+        "completion_tokens": 1042,
+        "total_tokens": 3916,
+        "prompt_tokens_details": {
+          "cached_tokens": 1792
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 973
+        },
+        "prompt_cache_hit_tokens": 1792,
+        "prompt_cache_miss_tokens": 1082
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseBodySha256": "bc5679cd28fc25a9f68231fc80baf8212d09bd30b605adbeeb1e49643c4fa8a6",
+    "responseBytes": 4494,
+    "error": null,
+    "upstreamAttempted": true,
+    "responseComplete": true,
+    "responseBodyFile": "a39d2091afb2461cacc2ed6bd034cc3c-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 2874,
+    "completion_tokens": 1042,
+    "total_tokens": 3916,
+    "prompt_tokens_details": {
+      "cached_tokens": 1792
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 973
+    },
+    "prompt_cache_hit_tokens": 1792,
+    "prompt_cache_miss_tokens": 1082
+  }
+}

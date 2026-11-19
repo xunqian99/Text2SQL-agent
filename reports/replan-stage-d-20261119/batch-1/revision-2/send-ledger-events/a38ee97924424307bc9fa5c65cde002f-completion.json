@@ -1,0 +1,77 @@
+{
+  "token": "a38ee97924424307bc9fa5c65cde002f",
+  "round": "DEV_F",
+  "questionId": "T2-003",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2154346.5460267,
+  "admittedAt": "2026-11-19T13:37:29.802053+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-19T13:37:29.801956+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "2880d1cd4a5f506eb4f31ee0f14aef8fdb4065a9e01c85664994d54ed5e6422e",
+  "requestBytes": 10889,
+  "inputTokenEstimate": 11913,
+  "promptChars": 5786,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.0007042",
+  "result": {
+    "startedAtUtc": "2026-11-19T13:37:29.810Z",
+    "finishedAtUtc": "2026-11-19T13:37:31.187Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "b56a9559-2a7c-40fe-8959-5271297a63d9",
+      "object": "chat.completion",
+      "created": 1795095441,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT ROUND(AVG(price), 2) AS avg_product_price\nFROM order_items;",
+            "reasoning_content": "We need answer SQL only. Need interpret: average product price across order items. Need one SELECT, aggregate single row no limit needed (aggregate exception). Use order_items.price. Average rounded two. Need consider no filter. SQL: SELECT ROUND(AVG(oi.price), 2) AS avg_product_price FROM order_items oi; PostgreSQL AVG(numeric) returns numeric, okay. Could alias average_item_price. Need Chinese? column alias maybe avg_product_price. Direct output. No code fence. Need ensure only SELECT."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2697,
+        "completion_tokens": 129,
+        "total_tokens": 2826,
+        "prompt_tokens_details": {
+          "cached_tokens": 2560
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 108
+        },
+        "prompt_cache_hit_tokens": 2560,
+        "prompt_cache_miss_tokens": 137
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseBodySha256": "b6f41100ca064ab181482b29e2495d96f12954797312b596f0a70fafe48c48b2",
+    "responseBytes": 1100,
+    "error": null,
+    "upstreamAttempted": true,
+    "responseComplete": true,
+    "responseBodyFile": "a38ee97924424307bc9fa5c65cde002f-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 2697,
+    "completion_tokens": 129,
+    "total_tokens": 2826,
+    "prompt_tokens_details": {
+      "cached_tokens": 2560
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 108
+    },
+    "prompt_cache_hit_tokens": 2560,
+    "prompt_cache_miss_tokens": 137
+  }
+}

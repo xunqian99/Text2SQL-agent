@@ -1,0 +1,77 @@
+{
+  "token": "b9c09aec60354aed84fe0a230b9a2a87",
+  "round": "DEV_F",
+  "questionId": "T2-027",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2154374.8672115,
+  "admittedAt": "2026-11-19T13:37:58.130175+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-19T13:37:58.130068+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "5b5c8f1ceb0f956f21d3bd5517439590ec77f1267f269b5ceab141cf4ef071d7",
+  "requestBytes": 9489,
+  "inputTokenEstimate": 10513,
+  "promptChars": 4499,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00142784",
+  "result": {
+    "startedAtUtc": "2026-11-19T13:37:58.138Z",
+    "finishedAtUtc": "2026-11-19T13:37:59.960Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "dd37fb92-537e-4cf5-bf17-1c8950feca8a",
+      "object": "chat.completion",
+      "created": 1795095469,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT movement_type, COUNT(*) AS record_count\nFROM inventory_movements\nGROUP BY movement_type\nORDER BY movement_type\nLIMIT 100;",
+            "reasoning_content": "We need answer SQL only. Need interpret: each inventory_movements.movement_type count records. Need maybe output movement_type and count. One SELECT. No filter. GROUP BY movement_type. Order? Not specified. Could order by movement_type asc. Need LIMIT? Hard rule 3 must LIMIT except single-row aggregate. Group by query must LIMIT. Use LIMIT maybe 100? Default TopN? No N. But rule says must LIMIT. Use LIMIT 100 perhaps. Count records per type. Should we decode types? User asks \"每种库存变动类型\" maybe output type raw values per rule statuses codes use raw value. Could use movement_type. SQL:\n\nSELECT movement_type, COUNT(*) AS record_count\nFROM inventory_movements\nGROUP BY movement_type\nORDER BY movement_type\nLIMIT 100;\n\nNeed no code fence."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2348,
+        "completion_tokens": 209,
+        "total_tokens": 2557,
+        "prompt_tokens_details": {
+          "cached_tokens": 1792
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 177
+        },
+        "prompt_cache_hit_tokens": 1792,
+        "prompt_cache_miss_tokens": 556
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseBodySha256": "c6dea5420f79b4e694cccff8bf0d61318c236af5a46a08444715f0828a065a09",
+    "responseBytes": 1438,
+    "error": null,
+    "upstreamAttempted": true,
+    "responseComplete": true,
+    "responseBodyFile": "b9c09aec60354aed84fe0a230b9a2a87-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 2348,
+    "completion_tokens": 209,
+    "total_tokens": 2557,
+    "prompt_tokens_details": {
+      "cached_tokens": 1792
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 177
+    },
+    "prompt_cache_hit_tokens": 1792,
+    "prompt_cache_miss_tokens": 556
+  }
+}

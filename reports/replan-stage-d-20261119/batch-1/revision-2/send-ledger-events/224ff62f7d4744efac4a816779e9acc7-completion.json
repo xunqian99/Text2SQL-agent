@@ -1,0 +1,77 @@
+{
+  "token": "224ff62f7d4744efac4a816779e9acc7",
+  "round": "DEV_F",
+  "questionId": "T2-021",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2154368.4560038,
+  "admittedAt": "2026-11-19T13:37:51.717772+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-19T13:37:51.717592+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "6b9c23c9b197561c41d974dc135da22ba61ca749727a50fa4a944c3d16f2602e",
+  "requestBytes": 10060,
+  "inputTokenEstimate": 11084,
+  "promptChars": 4978,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00113584",
+  "result": {
+    "startedAtUtc": "2026-11-19T13:37:51.760Z",
+    "finishedAtUtc": "2026-11-19T13:37:53.120Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "957e9614-cb14-414c-bc0f-ddb1098134d9",
+      "object": "chat.completion",
+      "created": 1795095463,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT reason_code, COUNT(*) AS refund_count\nFROM refunds\nGROUP BY reason_code\nORDER BY refund_count DESC\nLIMIT 100;",
+            "reasoning_content": "简单：按 reason_code 分组计数退款。计数单位：每个退款原因各有多少笔退款。refunds 表每行一个退款，用 COUNT(*)。输出 reason_code 和计数，按计数降序或原因排序。按原因排序即可。加 LIMIT。"
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2536,
+        "completion_tokens": 89,
+        "total_tokens": 2625,
+        "prompt_tokens_details": {
+          "cached_tokens": 1792
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 58
+        },
+        "prompt_cache_hit_tokens": 1792,
+        "prompt_cache_miss_tokens": 744
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseBodySha256": "23abdde693edaf0bfb8ca7faf2ef61a870a390b1f7fcf6ae2d81375200cb195a",
+    "responseBytes": 909,
+    "error": null,
+    "upstreamAttempted": true,
+    "responseComplete": true,
+    "responseBodyFile": "224ff62f7d4744efac4a816779e9acc7-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 2536,
+    "completion_tokens": 89,
+    "total_tokens": 2625,
+    "prompt_tokens_details": {
+      "cached_tokens": 1792
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 58
+    },
+    "prompt_cache_hit_tokens": 1792,
+    "prompt_cache_miss_tokens": 744
+  }
+}

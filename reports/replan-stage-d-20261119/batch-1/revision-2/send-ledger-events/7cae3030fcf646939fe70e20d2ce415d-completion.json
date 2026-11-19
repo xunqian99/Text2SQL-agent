@@ -1,0 +1,77 @@
+{
+  "token": "7cae3030fcf646939fe70e20d2ce415d",
+  "round": "DEV_F",
+  "questionId": "T4-014",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2154482.653317,
+  "admittedAt": "2026-11-19T13:39:45.909667+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-19T13:39:45.909432+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "d14eb1909173f9216311e51d5b9bd64ade91d54d0136e3489165deb9ce7835c9",
+  "requestBytes": 11621,
+  "inputTokenEstimate": 12645,
+  "promptChars": 6242,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00335584",
+  "result": {
+    "startedAtUtc": "2026-11-19T13:39:45.922Z",
+    "finishedAtUtc": "2026-11-19T13:39:49.139Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "f02a3ca5-63ae-495f-ac3c-8d5dd8b50834",
+      "object": "chat.completion",
+      "created": 1795095577,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT payment_type, ROUND(AVG(review_score), 2) AS avg_review_score\nFROM (\n  SELECT DISTINCT r.review_id, r.order_id, p.payment_type, r.review_score\n  FROM order_reviews r\n  JOIN order_payments p ON p.order_id = r.order_id\n) t\nGROUP BY payment_type\nORDER BY payment_type\nLIMIT 100;",
+            "reasoning_content": "Need SQL: average review score by payment type, each review counted once per distinct payment type used in its order, even if multiple payment records of same type. So join order_reviews to orders, then to order_payments; need distinct (review_id, order_id? review composite) per payment_type. Approach: use EXISTS or distinct subquery.\n\nSelect p.payment_type, round(avg(review_score),2). Need each review counted once per payment type. Use subquery: SELECT DISTINCT r.review_id, r.order_id, r.review_score, p.payment_type FROM order_reviews r JOIN order_payments p ON p.order_id=r.order_id. But review_id+order_id is PK, so distinct over review_id, order_id, payment_type. Then average review_score grouped by payment_type. But if review_score part of distinct doesn't matter; PK unique pair. Could select DISTINCT r.review_id, r.order_id, p.payment_type, r.review_score. Then aggregate.\n\nNo filters. Order? Not requested. Maybe order by payment_type. LIMIT required. output two decimals. AVG integer -> numeric? AVG(integer) returns numeric in Postgres, so ROUND(AVG(review_score),2) works. But in subquery review_score integer.\n\nNeed LIMIT. Use LIMIT 100? Just LIMIT 10? No specified TopN. LIMIT some e.g. LIMIT 100. Payment types few. SQL:\n\nSELECT payment_type, ROUND(AVG(review_score), 2) AS avg_review_score\nFROM (\n  SELECT DISTINCT r.review_id, r.order_id, p.payment_type, r.review_score\n  FROM order_reviews r\n  JOIN order_payments p ON p.order_id = r.order_id\n) t\nGROUP BY payment_type\nORDER BY payment_type\nLIMIT 100;\n\nNote review may join orders? Not needed; order_payments order_id. Need only orders perhaps for validity? No.\n\nCould instead use EXISTS per payment type but not needed.\n\nEnsure \"每条评价在其订单使用的每种支付方式下各计一次\" yes distinct review per type.\n\nShould we include no review? Average score only reviews.\n\nFinal only SQL no fences."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2900,
+        "completion_tokens": 553,
+        "total_tokens": 3453,
+        "prompt_tokens_details": {
+          "cached_tokens": 1792
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 466
+        },
+        "prompt_cache_hit_tokens": 1792,
+        "prompt_cache_miss_tokens": 1108
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseBodySha256": "8bc472f994322c454c1b1dcd58eaa3fb46e9091d3c8feb236fac9fcc6d2d9e7f",
+    "responseBytes": 2748,
+    "error": null,
+    "upstreamAttempted": true,
+    "responseComplete": true,
+    "responseBodyFile": "7cae3030fcf646939fe70e20d2ce415d-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 2900,
+    "completion_tokens": 553,
+    "total_tokens": 3453,
+    "prompt_tokens_details": {
+      "cached_tokens": 1792
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 466
+    },
+    "prompt_cache_hit_tokens": 1792,
+    "prompt_cache_miss_tokens": 1108
+  }
+}

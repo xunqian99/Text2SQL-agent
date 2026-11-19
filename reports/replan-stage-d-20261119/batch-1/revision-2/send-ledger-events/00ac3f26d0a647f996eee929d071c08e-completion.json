@@ -1,0 +1,77 @@
+{
+  "token": "00ac3f26d0a647f996eee929d071c08e",
+  "round": "DEV_F",
+  "questionId": "T3-024",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2154445.8542636,
+  "admittedAt": "2026-11-19T13:39:09.119051+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-19T13:39:09.118885+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "087347ff202d57c6edc276c58ed2e587c2be9b7746a86a1814a73f40e67043d5",
+  "requestBytes": 11512,
+  "inputTokenEstimate": 12536,
+  "promptChars": 6359,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00263484",
+  "result": {
+    "startedAtUtc": "2026-11-19T13:39:09.130Z",
+    "finishedAtUtc": "2026-11-19T13:39:11.392Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "9f787a49-5a79-4fab-9d8e-78da69d3849f",
+      "object": "chat.completion",
+      "created": 1795095540,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT ROUND(AVG(EXTRACT(EPOCH FROM (resolved_at - created_at)) / 3600.0), 2) AS avg_resolution_hours\nFROM support_tickets\nWHERE resolved_at IS NOT NULL;",
+            "reasoning_content": "We need answer SQL only. Need interpret: average hours from created_at to resolved_at for support tickets. Need likely resolved_at non-null because duration from creation to resolution. Use AVG(EXTRACT(EPOCH FROM (resolved_at - created_at))/3600). Need ROUND numeric: EXTRACT EPOCH returns numeric? In PostgreSQL, EXTRACT returns numeric? Actually EXTRACT(EPOCH FROM interval) returns numeric? It returns numeric in recent? Docs: extract returns numeric. But subtraction timestamp returns interval, extract epoch numeric. AVG numeric returns numeric, ROUND okay. Need only resolved tickets, actual duration per rule 16. Could include NULL automatically excluded by AVG. Should filter resolved_at IS NOT NULL? The question asks average from creation to resolution, unresolved no resolution. Filter is business contract, yes. Need single aggregate no LIMIT exception. Output alias avg_resolution_hours. ROUND(...,2). Direct.\n\nNeed be careful whether status only resolved? We have resolved_at. Actual time use resolved_at-created_at. \"从创建到解决平均需要多少小时\" Use all with resolved_at. No extra status. SQL:\n\nSELECT ROUND(AVG(EXTRACT(EPOCH FROM (resolved_at - created_at)) / 3600.0), 2) AS avg_resolution_hours\nFROM support_tickets\nWHERE resolved_at IS NOT NULL;\n\nEXTRACT returns numeric, division by 3600.0 numeric? numeric/numeric = numeric. AVG numeric. Good.\n\nNeed no code fence. Final only SQL. \n"
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2883,
+        "completion_tokens": 377,
+        "total_tokens": 3260,
+        "prompt_tokens_details": {
+          "cached_tokens": 1792
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 326
+        },
+        "prompt_cache_hit_tokens": 1792,
+        "prompt_cache_miss_tokens": 1091
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseBodySha256": "68120dd2eb7de9e97d78afbf44c94a86e86575f2311cc86d597c1e72e01831fe",
+    "responseBytes": 2127,
+    "error": null,
+    "upstreamAttempted": true,
+    "responseComplete": true,
+    "responseBodyFile": "00ac3f26d0a647f996eee929d071c08e-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 2883,
+    "completion_tokens": 377,
+    "total_tokens": 3260,
+    "prompt_tokens_details": {
+      "cached_tokens": 1792
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 326
+    },
+    "prompt_cache_hit_tokens": 1792,
+    "prompt_cache_miss_tokens": 1091
+  }
+}

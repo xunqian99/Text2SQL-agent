@@ -1,0 +1,77 @@
+{
+  "token": "ab7d404a52e542d88a95f011707509f9",
+  "round": "DEV_F",
+  "questionId": "T2-029",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2154376.9960223,
+  "admittedAt": "2026-11-19T13:38:00.289863+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-19T13:38:00.289682+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "24e975547aa3ec5ee9d2b52224f30ad17d99b15e671ec5534c14091e5138f9ce",
+  "requestBytes": 10466,
+  "inputTokenEstimate": 11490,
+  "promptChars": 5426,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00116784",
+  "result": {
+    "startedAtUtc": "2026-11-19T13:38:00.299Z",
+    "finishedAtUtc": "2026-11-19T13:38:01.468Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "709f5c1d-08dc-4af6-9bf3-c61617b9cc5e",
+      "object": "chat.completion",
+      "created": 1795095471,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT status, COUNT(*) AS shipment_count\nFROM shipments\nGROUP BY status\nORDER BY status\nLIMIT 100;",
+            "reasoning_content": "Simple: group by status count. Need status smallint. Output status and count. Limit? GROUP BY count, one row per status, no need limit? Rule 3: must LIMIT unless single-row aggregate without GROUP BY. So add LIMIT. Count shipments."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2600,
+        "completion_tokens": 81,
+        "total_tokens": 2681,
+        "prompt_tokens_details": {
+          "cached_tokens": 1792
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 55
+        },
+        "prompt_cache_hit_tokens": 1792,
+        "prompt_cache_miss_tokens": 808
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseBodySha256": "b1d4ed411129662a07599d41553a9f7d1d26e5e0b03d5699116b2530717b5393",
+    "responseBytes": 873,
+    "error": null,
+    "upstreamAttempted": true,
+    "responseComplete": true,
+    "responseBodyFile": "ab7d404a52e542d88a95f011707509f9-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 2600,
+    "completion_tokens": 81,
+    "total_tokens": 2681,
+    "prompt_tokens_details": {
+      "cached_tokens": 1792
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 55
+    },
+    "prompt_cache_hit_tokens": 1792,
+    "prompt_cache_miss_tokens": 808
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "token": "10c3556fe69d484ea0d929a6c5787ca0",
+  "round": "DEV_F",
+  "questionId": "T2-012",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2154359.5403185,
+  "admittedAt": "2026-11-19T13:37:42.829046+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-19T13:37:42.828905+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "f12468c9c76074d35630f9ef46047edfc64e450ddd649d77a947560feceb62cb",
+  "requestBytes": 11655,
+  "inputTokenEstimate": 12679,
+  "promptChars": 6328,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00172884",
+  "result": {
+    "startedAtUtc": "2026-11-19T13:37:42.838Z",
+    "finishedAtUtc": "2026-11-19T13:37:44.122Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "89b73c9d-6499-4c0c-b64e-020d75750cbb",
+      "object": "chat.completion",
+      "created": 1795095454,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT seller_id,\n       ROUND(SUM(freight_value), 2) AS freight_revenue\nFROM order_items\nGROUP BY seller_id\nORDER BY freight_revenue DESC NULLS LAST, seller_id ASC\nLIMIT 10;",
+            "reasoning_content": "Simple: sum freight_value by seller from order_items, order desc limit 10. Need seller identifier. \"每个卖家\" output seller_id and total. Use order_items only.\n\nRule about ties: Top 10 highest. \"取最高的10个\" default TopN at most N rows. If ties? Use ORDER BY DESC LIMIT 10 is acceptable unless 含并列. No mention ties. So LIMIT 10.\n\nRounding: freight sum ROUND 2."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2897,
+        "completion_tokens": 147,
+        "total_tokens": 3044,
+        "prompt_tokens_details": {
+          "cached_tokens": 1792
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 96
+        },
+        "prompt_cache_hit_tokens": 1792,
+        "prompt_cache_miss_tokens": 1105
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseBodySha256": "111beee3aa3c383e1c3237c1c4754d5931a1e89e35f46e97670c8d7577248653",
+    "responseBytes": 1104,
+    "error": null,
+    "upstreamAttempted": true,
+    "responseComplete": true,
+    "responseBodyFile": "10c3556fe69d484ea0d929a6c5787ca0-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 2897,
+    "completion_tokens": 147,
+    "total_tokens": 3044,
+    "prompt_tokens_details": {
+      "cached_tokens": 1792
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 96
+    },
+    "prompt_cache_hit_tokens": 1792,
+    "prompt_cache_miss_tokens": 1105
+  }
+}

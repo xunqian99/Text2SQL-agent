@@ -1,0 +1,77 @@
+{
+  "token": "85039b9e0e1c4e2c99631ae60ae0e9dd",
+  "round": "DEV_F",
+  "questionId": "T3-013",
+  "attempt": 2,
+  "upstreamDeadlineMonotonic": 2154428.9649547,
+  "admittedAt": "2026-11-19T13:38:55.001359+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-19T13:38:55.001133+00:00",
+    "guardSeconds": 133
+  },
+  "requestBodySha256": "ac534792776e545e6cec84fd76871937a49ac06c0f01a2c4fcee1e51ff274c61",
+  "requestBytes": 13367,
+  "inputTokenEstimate": 14391,
+  "promptChars": 7516,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00120732",
+  "result": {
+    "startedAtUtc": "2026-11-19T13:38:55.009Z",
+    "finishedAtUtc": "2026-11-19T13:38:56.269Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "48410b9e-acc1-4023-a41d-8e4e0214392d",
+      "object": "chat.completion",
+      "created": 1795095526,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT COUNT(*) AS order_count\nFROM orders\nWHERE order_purchase_timestamp >= (SELECT MAX(order_purchase_timestamp)::date - INTERVAL '89 days' FROM orders)\n  AND order_purchase_timestamp < (SELECT MAX(order_purchase_timestamp)::date + INTERVAL '1 day' FROM orders);",
+            "reasoning_content": "Need to avoid CROSS JOIN flagged. Use scalar subquery for reference date.\n\nSELECT COUNT(*) AS order_count FROM orders WHERE order_purchase_timestamp >= (SELECT MAX(order_purchase_timestamp)::date - INTERVAL '89 days' FROM orders) AND order_purchase_timestamp < (SELECT MAX(order_purchase_timestamp)::date + INTERVAL '1 day' FROM orders);\n\nNeed LIMIT? aggregate single row exempt. Output one column count. Fine."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 3311,
+        "completion_tokens": 164,
+        "total_tokens": 3475,
+        "prompt_tokens_details": {
+          "cached_tokens": 2816
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 96
+        },
+        "prompt_cache_hit_tokens": 2816,
+        "prompt_cache_miss_tokens": 495
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseBodySha256": "204cfc00ace2beaf7e27f70d21d16a6be179e8dc57c58b5d3807ea1ef82b49a9",
+    "responseBytes": 1221,
+    "error": null,
+    "upstreamAttempted": true,
+    "responseComplete": true,
+    "responseBodyFile": "85039b9e0e1c4e2c99631ae60ae0e9dd-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 3311,
+    "completion_tokens": 164,
+    "total_tokens": 3475,
+    "prompt_tokens_details": {
+      "cached_tokens": 2816
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 96
+    },
+    "prompt_cache_hit_tokens": 2816,
+    "prompt_cache_miss_tokens": 495
+  }
+}

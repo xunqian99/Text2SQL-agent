@@ -1,0 +1,77 @@
+{
+  "token": "93cd7934097243099b9f7616fff6575e",
+  "round": "DEV_F",
+  "questionId": "T3-026",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2154448.4458809,
+  "admittedAt": "2026-11-19T13:39:11.716330+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-19T13:39:11.716203+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "2ceb0ef5962a13741518fd109ae69a24949a926cdb6d2ddd8181e5952f95684a",
+  "requestBytes": 10179,
+  "inputTokenEstimate": 11203,
+  "promptChars": 5146,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00198384",
+  "result": {
+    "startedAtUtc": "2026-11-19T13:39:11.726Z",
+    "finishedAtUtc": "2026-11-19T13:39:13.783Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "dd0ec42f-a6a6-49dd-82b6-c0573c0f2158",
+      "object": "chat.completion",
+      "created": 1795095543,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT DATE_TRUNC('month', review_creation_date) AS month,\n       ROUND(AVG(review_score), 2) AS avg_score\nFROM order_reviews\nGROUP BY 1\nORDER BY 1\nLIMIT 100;",
+            "reasoning_content": "We need answer SQL only. Need interpret: monthly average review score. Use order_reviews review_creation_date likely source business time. Need group by month. Schema only order_reviews and orders. Question \"每个月的评价平均分\" per month average review_score. Need output month and avg score. Should use review_creation_date, since reviews' month. Count? User asks average only, not count. Need use DATE_TRUNC('month', review_creation_date) as month. ROUND(AVG(review_score),2). Order by month. Must LIMIT. No filter. Need decide month display type: DATE_TRUNC timestamp. SQL:\n\nSELECT DATE_TRUNC('month', review_creation_date) AS month, ROUND(AVG(review_score),2) AS avg_score\nFROM order_reviews\nGROUP BY 1\nORDER BY 1\nLIMIT 100;\n\nNeed ensure AVG integer yields numeric? AVG(integer) returns numeric in Postgres. Round numeric works. Good.\n\nPotential concern review_creation_date may be null? Group null month. Every month. Fine. Limit maybe 100 enough to cover. Use only review table. Need no code fence."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2556,
+        "completion_tokens": 296,
+        "total_tokens": 2852,
+        "prompt_tokens_details": {
+          "cached_tokens": 1792
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 244
+        },
+        "prompt_cache_hit_tokens": 1792,
+        "prompt_cache_miss_tokens": 764
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseBodySha256": "6ce1dd63e550c742b8033aecdfcba2f70d410fc536b263071146481548991014",
+    "responseBytes": 1729,
+    "error": null,
+    "upstreamAttempted": true,
+    "responseComplete": true,
+    "responseBodyFile": "93cd7934097243099b9f7616fff6575e-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 2556,
+    "completion_tokens": 296,
+    "total_tokens": 2852,
+    "prompt_tokens_details": {
+      "cached_tokens": 1792
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 244
+    },
+    "prompt_cache_hit_tokens": 1792,
+    "prompt_cache_miss_tokens": 764
+  }
+}

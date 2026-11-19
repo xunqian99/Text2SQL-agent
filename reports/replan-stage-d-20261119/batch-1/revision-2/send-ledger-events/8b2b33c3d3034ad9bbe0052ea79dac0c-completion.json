@@ -1,0 +1,77 @@
+{
+  "token": "8b2b33c3d3034ad9bbe0052ea79dac0c",
+  "round": "DEV_F",
+  "questionId": "T1-024",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2154325.1069084,
+  "admittedAt": "2026-11-19T13:37:08.379779+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-19T13:37:08.379673+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "9c5946e9984286f43a1e4eb16fc6351607dfb79cc543223e2797df3879dcf685",
+  "requestBytes": 10393,
+  "inputTokenEstimate": 11417,
+  "promptChars": 5238,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00138884",
+  "result": {
+    "startedAtUtc": "2026-11-19T13:37:08.387Z",
+    "finishedAtUtc": "2026-11-19T13:37:09.456Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "3e78ed79-42dd-4eb4-b38a-81f8f1b5e3d4",
+      "object": "chat.completion",
+      "created": 1795095419,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT COUNT(*) AS member_count\nFROM members m\nJOIN member_levels ml ON ml.level_id = m.level_id\nWHERE ml.level_name = '黄金会员';",
+            "reasoning_content": "Count members with level_name '黄金会员'. Need join members to member_levels. Count distinct members? \"有多少人\" - members rows. Use COUNT(*) from members joined. Should we filter status? No, don't add filters. Just count members with that level.\n\nSELECT COUNT(*) AS member_count FROM members m JOIN member_levels ml ON ml.level_id = m.level_id WHERE ml.level_name = '黄金会员';\n\nAggregate single row, no LIMIT needed."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2617,
+        "completion_tokens": 132,
+        "total_tokens": 2749,
+        "prompt_tokens_details": {
+          "cached_tokens": 1792
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 96
+        },
+        "prompt_cache_hit_tokens": 1792,
+        "prompt_cache_miss_tokens": 825
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseBodySha256": "9586b8cd76bea77b4d2860585cbe8c86e8f987fc8268088b84a792b3f159e47f",
+    "responseBytes": 1113,
+    "error": null,
+    "upstreamAttempted": true,
+    "responseComplete": true,
+    "responseBodyFile": "8b2b33c3d3034ad9bbe0052ea79dac0c-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 2617,
+    "completion_tokens": 132,
+    "total_tokens": 2749,
+    "prompt_tokens_details": {
+      "cached_tokens": 1792
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 96
+    },
+    "prompt_cache_hit_tokens": 1792,
+    "prompt_cache_miss_tokens": 825
+  }
+}

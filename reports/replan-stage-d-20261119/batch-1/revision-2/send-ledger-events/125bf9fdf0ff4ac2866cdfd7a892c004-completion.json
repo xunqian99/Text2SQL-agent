@@ -1,0 +1,77 @@
+{
+  "token": "125bf9fdf0ff4ac2866cdfd7a892c004",
+  "round": "DEV_F",
+  "questionId": "T2-018",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2154366.0216994,
+  "admittedAt": "2026-11-19T13:37:49.273643+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-19T13:37:49.273540+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "fb592c31c1313e9cfb80792edd1d6b52f9d0a741a7b3bf126ac992874313fac3",
+  "requestBytes": 10073,
+  "inputTokenEstimate": 11097,
+  "promptChars": 5001,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00107108",
+  "result": {
+    "startedAtUtc": "2026-11-19T13:37:49.281Z",
+    "finishedAtUtc": "2026-11-19T13:37:51.380Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "426afe88-95a8-44aa-8910-1619b6322cf4",
+      "object": "chat.completion",
+      "created": 1795095460,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT campaign_type, COUNT(*) AS campaign_count\nFROM campaigns\nGROUP BY campaign_type\nORDER BY campaign_type\nLIMIT 1000;",
+            "reasoning_content": "We need answer SQL only. Need parse: \"每种营销活动类型各有多少个活动？\" Table campaigns, count activities per campaign_type. Need output campaign_type and count. Use COUNT(*) maybe campaign_id. No filter. Group by campaign_type. Limit? Group query not necessarily need limit? Rules必须有LIMIT，单行无GROUP BY的聚合除外。Grouped query should LIMIT. TopN? \"每种\" all types; can use LIMIT maybe 1000? Need comply must LIMIT. Could use LIMIT 1000. But if all types small. Need order? no specified. Could order by campaign_type. SQL SELECT campaign_type, COUNT(*) AS campaign_count FROM campaigns GROUP BY campaign_type ORDER BY campaign_type LIMIT 1000; Need ensure naming maybe 活动数. Only output SQL."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2533,
+        "completion_tokens": 199,
+        "total_tokens": 2732,
+        "prompt_tokens_details": {
+          "cached_tokens": 2304
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 169
+        },
+        "prompt_cache_hit_tokens": 2304,
+        "prompt_cache_miss_tokens": 229
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseBodySha256": "69141ad6c6fcdd1aa9d043894ad012b3171c04a90e99d65717272f32ef82e672",
+    "responseBytes": 1403,
+    "error": null,
+    "upstreamAttempted": true,
+    "responseComplete": true,
+    "responseBodyFile": "125bf9fdf0ff4ac2866cdfd7a892c004-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 2533,
+    "completion_tokens": 199,
+    "total_tokens": 2732,
+    "prompt_tokens_details": {
+      "cached_tokens": 2304
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 169
+    },
+    "prompt_cache_hit_tokens": 2304,
+    "prompt_cache_miss_tokens": 229
+  }
+}
