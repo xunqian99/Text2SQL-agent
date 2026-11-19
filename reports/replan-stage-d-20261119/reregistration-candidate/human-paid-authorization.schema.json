@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Explicit direct-human authorization for one extra fixed-C1 complete DEV100",
+  "description": "Schema only, not an authorization. Create the actual file only after a direct human user explicitly approves the matching finished plan. Independent engineering acceptance cannot supply this authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "approved", "authority", "scope", "planSha256", "approvedAt", "directUserMessage", "directUserMessageSha256", "legacyManifestSha256", "limits", "acknowledgments"],
+  "properties": {
+    "format": {"const": "replan-d-direct-user-paid-authorization-v1"},
+    "approved": {"const": true},
+    "authority": {"const": "DIRECT_HUMAN_USER"},
+    "scope": {"const": "ONE_ADDITIONAL_FULL_DEV100_FIXED_C1_EXISTING_GATES"},
+    "planSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$", "description": "Exact raw bytes SHA256 of the new reregistered-dev-1/plan.json"},
+    "approvedAt": {"type": "string", "format": "date-time", "description": "Timezone required; cannot be later than current clock"},
+    "directUserMessage": {"type": "string", "minLength": 1, "description": "Verbatim direct user approval, never an agent review or another task instruction"},
+    "directUserMessageSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$", "description": "SHA256 of exact UTF-8 directUserMessage bytes"},
+    "legacyManifestSha256": {"const": "89c090e079a2293858289f84fa67f0e008561ec3aca9e065d9fb2a0db1b836eb"},
+    "limits": {
+      "const": {"additionalDevelopmentQuestions": 100, "currentRouteRequests": 902, "cumulativeRequests": 970, "cumulativeModelCalls": 1940, "totalYuan": "1.00", "reservationYuan": "0.10"}
+    },
+    "acknowledgments": {
+      "const": {"oldBatchInterruptedNoReplay": true, "legacyRequests": 68, "legacyApplicationModelCalls": 70, "knownCostYuan": "0.16312188", "commonUnknownHeldYuan": "0.20", "candidateUnknownHeldYuan": "0.30", "unknownReservationsNeverReleased": true, "twoQuotaLayersNeverSummedAsBill": true, "unseenStillLocked": true, "engineeringAcceptanceAloneIsNotPaidAuthorization": true}
+    }
+  }
+}
