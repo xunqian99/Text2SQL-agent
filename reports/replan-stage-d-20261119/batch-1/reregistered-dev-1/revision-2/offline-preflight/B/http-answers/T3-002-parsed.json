@@ -1,0 +1,84 @@
+{
+  "id": "T3-002",
+  "httpStatus": 200,
+  "body": {
+    "status": "SUCCESS",
+    "sql": "SELECT EXTRACT(YEAR FROM order_purchase_timestamp)::INT AS yr, COUNT(*) AS cnt FROM orders WHERE EXTRACT(YEAR FROM order_purchase_timestamp) IN (2017, 2018) GROUP BY 1 ORDER BY 1 LIMIT 201",
+    "message": null,
+    "violations": [],
+    "columns": [
+      "yr",
+      "cnt"
+    ],
+    "rows": [
+      [
+        "2017",
+        "45101"
+      ],
+      [
+        "2018",
+        "54011"
+      ]
+    ],
+    "truncated": false,
+    "rewritten": true,
+    "rowCount": 2,
+    "schemaTableCount": 8,
+    "retrievedTables": [
+      "orders",
+      "customers",
+      "order_items",
+      "order_payments",
+      "order_reviews",
+      "coupon_usages",
+      "refund_items",
+      "refunds"
+    ],
+    "schemaDdlChars": 1573,
+    "llm": {
+      "model": "deepseek-flash",
+      "promptTokens": 10,
+      "completionTokens": 10,
+      "totalTokens": 20,
+      "latencyMs": 42,
+      "costYuan": 5e-05
+    },
+    "timings": {
+      "retrievalMs": 4,
+      "generationMs": 45,
+      "validationMs": 6,
+      "executionMs": 33,
+      "totalMs": 91
+    },
+    "sessionId": null,
+    "rewrittenQuestion": null,
+    "schemaReused": false,
+    "budget": {
+      "requestId": "b9d46090-1335-472b-9b05-446cb7180535",
+      "timeoutMs": 15000,
+      "maxModelCalls": 2,
+      "modelCalls": 1,
+      "unknownUsageCalls": 0,
+      "elapsedMs": 91,
+      "termination": "COMPLETE",
+      "stage": "CACHE_WRITE",
+      "retrySkippedReason": null,
+      "stageMs": {
+        "CLARIFICATION": 0,
+        "RESULT_CHECK": 0,
+        "CACHE_WRITE": 0,
+        "EXECUTION": 33,
+        "MODEL": 44,
+        "CACHE": 0,
+        "SESSION": 0,
+        "ADMISSION": 0,
+        "RETRIEVAL": 4,
+        "VALIDATION": 6
+      },
+      "cancellationRejected": 0
+    }
+  },
+  "wallLatencyMs": 163.11389999464154,
+  "returnedAt": "2026-11-19T14:22:00.291966+00:00",
+  "httpEvidence": "reports/replan-stage-d-20261119/batch-1/reregistered-dev-1/revision-2/offline-preflight/B/http-answers/T3-002.json"
+}
