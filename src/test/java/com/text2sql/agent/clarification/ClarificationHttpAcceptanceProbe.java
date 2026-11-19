@@ -39,7 +39,11 @@ import static org.mockito.Mockito.*;
 /** Production HTTP/clarification/session flow. Only ChatModel is synthetic; no accuracy claim. */
 public final class ClarificationHttpAcceptanceProbe {
     private static final ObjectMapper JSON = new ObjectMapper().findAndRegisterModules();
-    record Case(String id, String question, boolean needsClarification) { }
+    record Case(String id, String question, boolean needsClarification, String session, int expectedTurns) {
+        Case(String id, String question, boolean needsClarification) {
+            this(id, question, needsClarification, id, 1);
+        }
+    }
     public static void main(String[] args) throws Exception {
         Path dir = Path.of(args[0]).toAbsolutePath(); Files.createDirectory(dir);
         String token = UUID.randomUUID().toString() + UUID.randomUUID();
@@ -77,9 +81,11 @@ public final class ClarificationHttpAcceptanceProbe {
                     new Case("region-dictionary", "每个大区包含多少个州", false),
                     new Case("price-bare", "价格平均涨跌幅是多少", true),
                     new Case("price-unit-only", "价格平均涨幅用百分比输出", true),
-                    new Case("price-explicit", "价格平均涨幅用百分比输出，每条变动记录等权", false));
+                    new Case("price-explicit", "价格平均涨幅用百分比输出，每条变动记录等权", false),
+                    new Case("regional-resubmitted", "商品销售额按客户所在大区统计", false, "regional-bare", 2),
+                    new Case("price-resubmitted", "价格平均涨幅用金额差计算，每条变动记录等权", false, "price-bare", 2));
             for (var item : cases) {
-                int before = calls.get(); String session = "clarification-" + item.id();
+                int before = calls.get(); String session = "clarification-" + item.session();
                 var request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/api/ask"))
                         .timeout(Duration.ofSeconds(8)).header("Authorization", auth).header("Content-Type", "application/json")
                         .POST(HttpRequest.BodyPublishers.ofString(JSON.writeValueAsString(Map.of("question", item.question(), "sessionId", session)))).build();
@@ -90,10 +96,11 @@ public final class ClarificationHttpAcceptanceProbe {
                 assertThat(calls.get() - before).isEqualTo(expectedCalls);
                 assertThat(body.path("budget").path("modelCalls").asInt()).isEqualTo(expectedCalls);
                 assertThat(body.path("budget").path("unknownUsageCalls").asInt()).isZero();
-                assertThat(context.getBean(SessionStore.class).get(session).orElseThrow().turns()).hasSize(1);
+                int turns = context.getBean(SessionStore.class).get(session).orElseThrow().turns().size();
+                assertThat(turns).isEqualTo(item.expectedTurns());
                 evidence.add(Map.of("id", item.id(), "question", item.question(), "expectedClarification", item.needsClarification(),
                         "httpStatus", response.statusCode(), "body", body,
-                        "decision", context.getBean(AmbiguityDetector.class).decisionsFor(item.question())));
+                        "sessionTurns", turns, "decision", context.getBean(AmbiguityDetector.class).decisionsFor(item.question())));
             }
             assertThat(calls).hasValue((int) cases.stream().filter(c -> !c.needsClarification()).count());
         }
