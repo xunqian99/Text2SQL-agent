@@ -59,7 +59,23 @@ def now(): return datetime.now(timezone.utc)
 def stamp(): return now().isoformat()
 def sha(path): return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 def digest(value): return hashlib.sha256(json.dumps(value,sort_keys=True,ensure_ascii=False,separators=(",",":")).encode()).hexdigest()
-def read(path): return json.loads(Path(path).read_text(encoding="utf-8-sig"))
+def strict_json(raw):
+    def pairs(items):
+        result={}
+        for key,value in items:
+            if key in result: raise ValueError("Duplicate JSON key: "+key)
+            result[key]=value
+        return result
+    def constant(value): raise ValueError("Non-finite JSON constant: "+value)
+    return json.loads(raw,object_pairs_hook=pairs,parse_constant=constant)
+
+
+def read(path): return strict_json(Path(path).read_text(encoding="utf-8-sig"))
+
+
+def write_bytes(path,data):
+    path=Path(path);path.parent.mkdir(parents=True,exist_ok=True)
+    with path.open("xb") as f: f.write(data);f.flush();os.fsync(f.fileno())
 
 
 def write(path,value,*,replace=False):
@@ -138,7 +154,11 @@ def dataset_files():
 def tool_files():
     return [Path(__file__),ROOT/"scripts/replan_stage_d_proxy.py",ROOT/"scripts/replan/StageDScoringBridge.java",PROTOCOL,
             ROOT/"reports/replan-stage-a-20261119/ReferenceContractScorer.java",
+            ROOT/"reports/replan-stage-a-20261119/output-column-schema-attempt2.json",
             ROOT/"reports/replan-stage-a-20261119/original-target-preregistration.json",
+            ROOT/"src/main/java/com/text2sql/agent/execution/ResultNormalizer.java",
+            ROOT/"reports/replan-stage-b-20261119/b0-identity.json",
+            ROOT/"reports/replan-stage-c-20261119/c1-submission-1/candidate-identity.json",
             ROOT/"reports/replan-stage-c-20261119/checkpoint.json",
             ROOT/"reports/replan-stage-c-20261119/official-pricing-check.json",
             ROOT/"reports/replan-stage-c-20261119/independent-review/c1-submission-1/decision.json"]
@@ -256,6 +276,9 @@ class SendGate:
         expected=set()
         for call in self.data["calls"]:
             permit=self.events/(call["token"]+"-permit.json"); expected.add(permit.name)
+            admitted={k:v for k,v in call.items() if k not in ("usageKnown","costYuan","result","usage")}
+            admitted.update(usageKnown=False,costYuan=None,result=None)
+            if not permit.is_file() or read(permit)!=admitted: raise Refused("Send permit admission drift")
             final=self.events/(call["token"]+"-completion.json")
             if call.get("result") is not None: expected.add(final.name)
             source=final if call.get("result") is not None else permit
@@ -342,10 +365,42 @@ class SendGate:
             write(self.events/(call["token"]+"-completion.json"),call)
             self.save()  # Unknown/incomplete usage keeps the full reservation.
 
-    def summary(self,round_name=None):
+    def reconcile(self,rows):
+        ids=[r["id"] for r in rows]
+        if len(ids)!=len(set(ids)): raise Refused("Duplicate HTTP question identity")
+        calls=[c for c in self.data["calls"] if c["round"]==self.round]
+        if any(c["questionId"] not in ids for c in calls): raise Refused("Send has no returned HTTP question")
+        questions=[]
+        for row in rows:
+            budget=row["body"].get("budget") or {}
+            count=budget.get("modelCalls")
+            local=[c for c in calls if c["questionId"]==row["id"]]
+            if (budget.get("timeoutMs")!=15000 or budget.get("maxModelCalls")!=2
+                or type(count) is not int or not 0<=count<=2 or len(local)>count
+                or [c["attempt"] for c in local]!=list(range(1,len(local)+1))):
+                raise Refused("HTTP budget/send reconciliation failed: "+row["id"])
+            returned=datetime.fromisoformat(row["returnedAt"])
+            late=[c for c in local if (c.get("result") or {}).get("finishedAtUtc")
+                  and datetime.fromisoformat(c["result"]["finishedAtUtc"])>returned]
+            known=[c for c in local if c["usageKnown"]]
+            questions.append(dict(id=row["id"],runtimeModelCalls=count,sendReservations=len(local),
+                firstAnswerCalls=sum(c["attempt"]==1 for c in local),correctionCalls=sum(c["attempt"]==2 for c in local),
+                runtimeUnknownUsageCalls=budget.get("unknownUsageCalls"),proxyKnownUsageCalls=len(known),
+                proxyUnknownUsageCalls=len(local)-len(known),lateCompletions=len(late),
+                lateKnownUsageCalls=sum(c["usageKnown"] for c in late),
+                lateKnownCostYuan=str(sum((Decimal(c["costYuan"]) for c in late if c["usageKnown"]),Decimal(0))),
+                tokens=[c["token"] for c in local],httpEvidence=row.get("httpEvidence")))
+        return dict(passed=True,questions=questions,scope="send reservations <= runtime modelCalls <= 2; no assumption that reserved means received by provider")
+
+    def summary(self,round_name=None,reconciliation=None):
         calls=[c for c in self.data["calls"] if round_name is None or c["round"]==round_name]
         known=[c for c in calls if c["usageKnown"]]
+        questions=(reconciliation or {}).get("questions",[])
         return dict(sendReservations=len(calls),transportAttempts=sum(bool((c.get("result") or {}).get("upstreamAttempted")) for c in calls),
+           firstAnswerCalls=sum(c["attempt"]==1 for c in calls),correctionCalls=sum(c["attempt"]==2 for c in calls),
+           lateCompletions=sum(q["lateCompletions"] for q in questions),
+           lateKnownUsageCalls=sum(q["lateKnownUsageCalls"] for q in questions),
+           lateKnownCostYuan=str(sum((Decimal(q["lateKnownCostYuan"]) for q in questions),Decimal(0))),
            confirmedResponses=sum((c.get("result") or {}).get("httpStatus") is not None for c in calls),
            knownUsageCalls=len(known),unknownUsageCalls=len(calls)-len(known),
            knownCostYuan=str(sum(Decimal(c["costYuan"]) for c in known)),unknownHeldYuan=str(RESERVE*(len(calls)-len(known))),
@@ -385,14 +440,37 @@ def app_command(side,port,base_url,out,*,offline=False):
     return [str(JAVA),"-Duser.timezone=Asia/Shanghai","-jar",str(ROOT/SYSTEMS[side]["jar"]),*["--"+k+"="+str(v) for k,v in values.items()]]
 
 
-def http_json(url,*,data=None,token=None,timeout=20):
+def http_json(url,*,data=None,token=None,timeout=20,evidence=None):
     headers={"Content-Type":"application/json"}
     if token: headers["Authorization"]="Bearer "+token
     request=urllib.request.Request(url,data=None if data is None else json.dumps(data,ensure_ascii=False).encode(),headers=headers)
     opener=urllib.request.build_opener(urllib.request.ProxyHandler({}))
+    status=None;raw=b"";meta=dict(startedAt=stamp(),responseComplete=False)
     try:
-        with opener.open(request,timeout=timeout) as response: return response.status,json.loads(response.read())
-    except urllib.error.HTTPError as error: return error.code,json.loads(error.read())
+        try: response=opener.open(request,timeout=timeout)
+        except urllib.error.HTTPError as error: response=error
+        with response:
+            status=response.code
+            raw=response.read(16*1024*1024+1)
+            meta.update(httpStatus=status,responseComplete=True,returnedAt=stamp(),responseBytes=len(raw),
+                        responseBodySha256=hashlib.sha256(raw).hexdigest())
+        if evidence: write_bytes(Path(evidence).with_suffix(".body.bin"),raw)
+        if len(raw)>16*1024*1024:
+            meta["responseComplete"]=False
+            raise Refused("HTTP response size bound")
+        body=strict_json(raw)
+        if not isinstance(body,dict): raise Refused("HTTP answer is not a JSON object")
+        return status,body
+    except BaseException as error:
+        if isinstance(getattr(error,"partial",None),bytes): raw=error.partial
+        meta.update(error=type(error).__name__+": "+str(error),returnedAt=stamp())
+        raise
+    finally:
+        if evidence:
+            raw_path=Path(evidence).with_suffix(".body.bin")
+            if not raw_path.exists(): write_bytes(raw_path,raw)
+            meta.update(responseBytes=len(raw),responseBodySha256=hashlib.sha256(raw).hexdigest())
+            write(evidence,meta)
 
 
 @contextmanager
@@ -486,15 +564,20 @@ def offline_preflight(plan,output):
                 with application(side,proxy,out,offline=True) as (url,token):
                     for item in chosen:
                         current["question"]=item["question"]; started=time.monotonic();gate.begin(item,started+15)
-                        try: code,body=http_json(url+"/api/ask",data={"question":item["question"]},token=token,timeout=20)
+                        evidence=out/"http-answers"/(item["id"]+".json")
+                        try: code,body=http_json(url+"/api/ask",data={"question":item["question"]},token=token,timeout=20,evidence=evidence)
                         finally: gate.end()
-                        rows[item["id"]]=dict(id=item["id"],httpStatus=code,body=body,wallLatencyMs=(time.monotonic()-started)*1000)
+                        rows[item["id"]]=dict(id=item["id"],httpStatus=code,body=body,wallLatencyMs=(time.monotonic()-started)*1000,
+                            returnedAt=read(evidence)["returnedAt"],httpEvidence=evidence.relative_to(ROOT).as_posix())
+                        write(out/"http-answers"/(item["id"]+"-parsed.json"),rows[item["id"]])
                         if code!=200 or body.get("status")!="SUCCESS": raise Refused("Offline actual HTTP smoke failed: "+side+" "+item["id"])
                         budget=body.get("budget") or {}
                         if budget.get("timeoutMs")!=15000 or budget.get("maxModelCalls")!=2 or budget.get("modelCalls",3)>2:
                             raise Refused("Offline runtime budget fields/config missing: "+side)
                 proxy.drain(timeout_seconds=30)
                 if proxy.errors or gate.data["rejections"]: raise Refused("Offline proxy/gate failed")
+            reconciliation=gate.reconcile(list(rows.values()))
+            write(out/"http-reconciliation.json",reconciliation)
             mixed=[]
             for item in prepared["items"]:
                 mixed.append(rows.get(item["id"],dict(id=item["id"],httpStatus=200,body={"status":"SUCCESS",**item["gold"]})))
@@ -502,7 +585,7 @@ def offline_preflight(plan,output):
             bridge(plan["classpath"],"score",BATCH/"dev-reference.json",out/"responses.json",out/"score.json")
             score=read(out/"score.json")
             if score["total"]!=100 or score["correct"]!=100: raise Refused("Common score integration failed")
-            results.append(dict(side=side,actualHttp=2,syntheticRows=98,scored=100,correct=100,proxySyntheticUsage=gate.summary()))
+            results.append(dict(side=side,actualHttp=2,syntheticRows=98,scored=100,correct=100,proxySyntheticUsage=gate.summary(reconciliation=reconciliation)))
         result=dict(passed=True,planSha256=sha(BATCH/"plan.json"),systems=results,localModelRequests=len(received),
           externalProviderCalls=0,providerTokens=0,providerCostYuan=0,notModelAccuracy=True)
         write(output/"result.json",result)
@@ -559,14 +642,16 @@ def run_next():
                             require_window(SEND_GUARD)
                             state["requestsStarted"]+=1; write(BATCH/"state.json",state,replace=True)
                             started=time.monotonic(); last_start=started; gate.begin(item,started+15)
-                            try: status,body=http_json(url+"/api/ask",data={"question":item["question"]},token=access_token,timeout=20)
+                            evidence=out/"http-answers"/(item["id"]+".json")
+                            try: status,body=http_json(url+"/api/ask",data={"question":item["question"]},token=access_token,timeout=20,evidence=evidence)
                             finally: gate.end()
                             wall=(time.monotonic()-started)*1000
+                            row=dict(id=item["id"],httpStatus=status,body=body,wallLatencyMs=wall,
+                                returnedAt=read(evidence)["returnedAt"],httpEvidence=evidence.relative_to(ROOT).as_posix())
+                            responses.append(row);journal.write((json.dumps(row,ensure_ascii=False)+"\n").encode());journal.flush();os.fsync(journal.fileno())
                             budget=body.get("budget")
                             if not isinstance(budget,dict) or budget.get("timeoutMs")!=15000 or budget.get("maxModelCalls")!=2 or budget.get("modelCalls",3)>2:
                                 raise Refused("Runtime request budget drift")
-                            row=dict(id=item["id"],httpStatus=status,body=body,wallLatencyMs=wall,returnedAt=stamp())
-                            responses.append(row);journal.write((json.dumps(row,ensure_ascii=False)+"\n").encode());journal.flush();os.fsync(journal.fileno())
                             if status in (401,403,429) or body.get("status")=="RESOURCE_LIMITED": raise Refused("Protected runtime local admission stop")
                             if len(responses)%10==0: print(name,"HTTP answers",len(responses),"/",len(items),flush=True)
                 proxy.drain(timeout_seconds=120)
@@ -575,7 +660,9 @@ def run_next():
             verify(plan)
             write(out/"responses.json",dict(items=responses))
             bridge(plan["classpath"],"score",BATCH/(dataset+"-reference.json"),out/"responses.json",out/"score.json")
-            score=read(out/"score.json"); costs=gate.summary(name)
+            score=read(out/"score.json")
+            reconciliation=gate.reconcile(responses);write(out/"http-reconciliation.json",reconciliation)
+            costs=gate.summary(name,reconciliation)
             summary={k:score[k] for k in ("total","correct","byLayer")}
             summary.update(wallP95Ms=percentile([r["wallLatencyMs"] for r in responses]),
                 wallMeanMs=sum(r["wallLatencyMs"] for r in responses)/len(responses),

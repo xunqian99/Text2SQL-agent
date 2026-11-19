@@ -2,6 +2,9 @@
 from datetime import datetime,timezone,timedelta
 from decimal import Decimal
 import json
+import io
+import hashlib
+import urllib.error
 from pathlib import Path
 import tempfile
 import unittest
@@ -108,6 +111,28 @@ class SendGateTest(unittest.TestCase):
         self.gate.before(*payload());data=d.read(self.path);data["calls"]=[];d.write(self.path,data,replace=True)
         with self.assertRaisesRegex(d.Refused,"Orphan/missing"): d.SendGate(self.path,"plan","B1")
 
+    def test_completed_permit_cannot_be_rewritten_behind_completion(self):
+        permit=self.gate.before(*payload());self.gate.after(permit,result())
+        path=self.gate.events/(permit["token"]+"-permit.json")
+        value=d.read(path);value["requestBodySha256"]="changed";d.write(path,value,replace=True)
+        with self.assertRaisesRegex(d.Refused,"permit admission drift"): d.SendGate(self.path,"plan","B1")
+
+    def test_http_budget_reconciliation_and_late_known_cost(self):
+        permit=self.gate.before(*payload());self.gate.after(permit,result())
+        row=dict(id="Q1",body=dict(budget=dict(timeoutMs=15000,maxModelCalls=2,modelCalls=1,unknownUsageCalls=1)),
+                 returnedAt="2026-11-21T12:00:00.5+00:00")
+        reconciled=self.gate.reconcile([row]);totals=self.gate.summary(reconciliation=reconciled)
+        self.assertEqual(totals["firstAnswerCalls"],1);self.assertEqual(totals["correctionCalls"],0)
+        self.assertEqual(totals["lateKnownUsageCalls"],1)
+        self.assertEqual(totals["lateKnownCostYuan"],"0.00008706")
+        self.assertEqual(reconciled["questions"][0]["runtimeUnknownUsageCalls"],1)
+        row["body"]["budget"]["modelCalls"]=0
+        with self.assertRaisesRegex(d.Refused,"budget/send reconciliation"): self.gate.reconcile([row])
+
+    def test_strict_json_rejects_nested_duplicate_and_non_finite(self):
+        for raw in ('{"usage":{"tokens":1,"tokens":2}}','{"value":NaN}'):
+            with self.subTest(raw=raw),self.assertRaises(ValueError): d.strict_json(raw)
+
     def test_options_that_change_model_or_charge_are_rejected(self):
         value,raw=payload();value["tools"]=[dict(type="web_search")]
         with self.assertRaisesRegex(d.Refused,"UNREGISTERED_MODEL_OPTION"): self.gate.before(value,json.dumps(value).encode())
@@ -159,6 +184,23 @@ class StageStateTest(unittest.TestCase):
         rounds={"DEV_F":dict(status="COMPLETED",gate=dict(passed=True)),"TARGETS":dict(status="COMPLETED",gate=dict(passed=True)),
                 **{n:dict(status="COMPLETED",summary=summary) for n in d.FORMAL}}
         with self.assertRaisesRegex(d.Refused,"INDEPENDENT_UNSEEN"): d.next_round(dict(rounds=rounds,terminal=None))
+
+
+class HttpEvidenceTest(unittest.TestCase):
+    def test_raw_error_response_survives_parse_rejection(self):
+        raw=b'{"budget":{"modelCalls":0,"modelCalls":1}}'
+        error=urllib.error.HTTPError("http://127.0.0.1",400,"bad",{},io.BytesIO(raw))
+        with tempfile.TemporaryDirectory() as temp,patch.object(d.urllib.request,"build_opener") as opener:
+            opener.return_value.open.side_effect=error
+            evidence=Path(temp)/"answer.json"
+            with self.assertRaisesRegex(ValueError,"Duplicate JSON key"):
+                d.http_json("http://127.0.0.1",evidence=evidence)
+            self.assertEqual(evidence.with_suffix(".body.bin").read_bytes(),raw)
+            meta=d.read(evidence)
+            self.assertEqual(meta["httpStatus"],400)
+            self.assertEqual(meta["responseBodySha256"],hashlib.sha256(raw).hexdigest())
+            self.assertTrue(meta["responseComplete"])
+            self.assertIn("Duplicate JSON key",meta["error"])
 
 
 if __name__=="__main__": unittest.main(verbosity=2)
