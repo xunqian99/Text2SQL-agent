@@ -79,7 +79,8 @@ public class AmbiguityDetector {
                     groups.put(group.name(), group.patterns().stream().map(Pattern::compile).toList());
                 }
                 compiled.add(new CompiledRule(ambiguity, Map.copyOf(groups),
-                        ambiguity.unresolvedPatterns().stream().map(Pattern::compile).toList()));
+                        ambiguity.unresolvedPatterns().stream().map(Pattern::compile).toList(),
+                        ambiguity.triggerPatterns().stream().map(Pattern::compile).toList()));
             }
             this.ambiguities = loaded;
             this.rules = List.copyOf(compiled);
@@ -117,10 +118,20 @@ public class AmbiguityDetector {
                     .filter(t -> text.contains(normalize(t))).findFirst().orElse(null);
             if (matchedTerm == null) continue;
             var evidence = new ArrayList<Evidence>(); var missing = new ArrayList<String>();
+            // A trigger is an applicability gate, not evidence that the business choice is resolved.
+            // Old rules with no gate retain their exact behavior.
+            if (!rule.triggers().isEmpty()) {
+                for (var pattern : rule.triggers()) {
+                    var match = pattern.matcher(text);
+                    if (match.find()) evidence.add(new Evidence("trigger-pattern", "applicability", match.group()));
+                }
+                if (evidence.isEmpty()) continue;
+            }
             if (rule.groups().isEmpty()) {
+                int found = evidence.size();
                 for (var hint : ambiguity.hints()) if (hint != null && !hint.isBlank() && text.contains(normalize(hint)))
                     evidence.add(new Evidence("legacy-hint", "hint", normalize(hint)));
-                if (evidence.isEmpty()) missing.add("legacy-hint");
+                if (found == evidence.size()) missing.add("legacy-hint");
             } else {
                 // AND across required groups, OR across patterns within each group. No score threshold.
                 for (var group : ambiguity.requiredEvidence()) {
@@ -156,15 +167,17 @@ public class AmbiguityDetector {
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Ambiguity(String term, List<String> hints, String question, List<String> aliases,
-                            List<EvidenceGroup> requiredEvidence, List<String> unresolvedPatterns) {
+                            List<EvidenceGroup> requiredEvidence, List<String> unresolvedPatterns,
+                            List<String> triggerPatterns) {
         public Ambiguity(String term, List<String> hints, String question) {
-            this(term, hints, question, List.of(), List.of(), List.of());
+            this(term, hints, question, List.of(), List.of(), List.of(), List.of());
         }
         public Ambiguity {
             hints = hints == null ? List.of() : List.copyOf(hints);
             aliases = aliases == null ? List.of() : List.copyOf(aliases);
             requiredEvidence = requiredEvidence == null ? List.of() : List.copyOf(requiredEvidence);
             unresolvedPatterns = unresolvedPatterns == null ? List.of() : List.copyOf(unresolvedPatterns);
+            triggerPatterns = triggerPatterns == null ? List.of() : List.copyOf(triggerPatterns);
         }
     }
 
@@ -174,7 +187,8 @@ public class AmbiguityDetector {
     public record Evidence(String source, String group, String matchedText) { }
     public record Decision(String term, String matchedTerm, List<Evidence> evidence, List<String> missingGroups,
                            List<String> unresolvedEvidence, boolean needsClarification, String question) { }
-    private record CompiledRule(Ambiguity definition, Map<String, List<Pattern>> groups, List<Pattern> unresolved) { }
+    private record CompiledRule(Ambiguity definition, Map<String, List<Pattern>> groups,
+                                List<Pattern> unresolved, List<Pattern> triggers) { }
 
     /** YAML 根结构。 */
     @JsonIgnoreProperties(ignoreUnknown = true)

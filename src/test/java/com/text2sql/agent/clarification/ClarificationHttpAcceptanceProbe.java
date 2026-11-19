@@ -62,7 +62,7 @@ public final class ClarificationHttpAcceptanceProbe {
             });
             ReflectionTestUtils.setField(context.getBean(LlmSqlGenerator.class), "chatModel", model);
             var http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build();
-            for (var item : List.of(
+            var cases = List.of(
                     new Case("original-explicit", "复购率是多少？（下单 2 次及以上的用户占全部下单用户的比例）", false),
                     new Case("alias-explicit", "回购率以全部下单用户为分母", false),
                     new Case("bare", "复购率是多少", true),
@@ -70,7 +70,15 @@ public final class ClarificationHttpAcceptanceProbe {
                     new Case("filter-only", "复购率只统计有效订单", true),
                     new Case("choice", "复购率分母是全部下单用户还是注册满30天的用户？", true),
                     new Case("negative", "复购率不要以全部下单用户为分母", true),
-                    new Case("legacy-sales", "销售额是多少", true))) {
+                    new Case("legacy-sales", "销售额是多少", true),
+                    new Case("regional-bare", "按大区统计商品销售额", true),
+                    new Case("regional-explicit", "按客户所在大区统计商品销售额", false),
+                    new Case("regional-choice", "大区订单量按客户州还是卖家州", true),
+                    new Case("region-dictionary", "每个大区包含多少个州", false),
+                    new Case("price-bare", "价格平均涨跌幅是多少", true),
+                    new Case("price-unit-only", "价格平均涨幅用百分比输出", true),
+                    new Case("price-explicit", "价格平均涨幅用百分比输出，每条变动记录等权", false));
+            for (var item : cases) {
                 int before = calls.get(); String session = "clarification-" + item.id();
                 var request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/api/ask"))
                         .timeout(Duration.ofSeconds(8)).header("Authorization", auth).header("Content-Type", "application/json")
@@ -87,13 +95,13 @@ public final class ClarificationHttpAcceptanceProbe {
                         "httpStatus", response.statusCode(), "body", body,
                         "decision", context.getBean(AmbiguityDetector.class).decisionsFor(item.question())));
             }
-            assertThat(calls).hasValue(2);
+            assertThat(calls).hasValue((int) cases.stream().filter(c -> !c.needsClarification()).count());
         }
         write(dir.resolve("requests.json"), evidence);
-        write(dir.resolve("summary.json"), Map.of("passed", true, "cases", 8, "syntheticModelCalls", calls.get(),
+        write(dir.resolve("summary.json"), Map.of("passed", true, "cases", evidence.size(), "syntheticModelCalls", calls.get(),
                 "externalProviderCalls", 0, "providerCostYuan", 0, "port", port, "pid", ProcessHandle.current().pid(),
                 "contextClosed", true, "scope", "Real protected HTTP/clarification/session/PostgreSQL; synthetic SELECT 1 only proves admission, not SQL generation accuracy."));
-        System.out.println("CLARIFICATION_HTTP passed=8 syntheticCalls=2 providerCalls=0 port=" + port);
+        System.out.println("CLARIFICATION_HTTP passed=" + evidence.size() + " syntheticCalls=" + calls.get() + " providerCalls=0 port=" + port);
     }
     private static void write(Path path, Object value) throws Exception { Files.writeString(path, JSON.writerWithDefaultPrettyPrinter().writeValueAsString(value) + "\n", StandardOpenOption.CREATE_NEW); }
 }
