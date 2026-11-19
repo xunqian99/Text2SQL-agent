@@ -112,7 +112,7 @@ def gold():
 
 
 if __name__ == "__main__":
-    attempt_args = [a for a in sys.argv if re.fullmatch(r"--attempt-[2-9][0-9]*", a)]
+    attempt_args = [a for a in sys.argv if re.fullmatch(r"--attempt-(?:[2-9]|[1-9][0-9]+)", a)]
     if len(attempt_args)>1: raise ValueError("One submission per invocation")
     if attempt_args:
         attempt=attempt_args[0]; sys.argv.remove(attempt)

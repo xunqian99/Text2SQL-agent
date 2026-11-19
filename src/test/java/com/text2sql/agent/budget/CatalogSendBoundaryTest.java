@@ -320,4 +320,60 @@ class CatalogSendBoundaryTest {
             verifyNoInteractions(f.db, f.plans);
         }
     }
+
+    static Stream<Arguments> receivedResponseFailures() {
+        var cases = new ArrayList<Arguments>();
+        for (String path : List.of("generate", "correction", "rewrite", "tool"))
+            for (String shape : List.of("empty-choices-known", "empty-choices-unknown", "null-response", "null-message-known"))
+                for (String config : List.of("no-budget", "budget", "quota", "byok", "byok-budget"))
+                    cases.add(Arguments.of(path, shape, config));
+        return cases.stream();
+    }
+
+    @ParameterizedTest @MethodSource("receivedResponseFailures")
+    void contentFailurePreservesReceivedUsageBeforeDirectoryTermination(String path, String shape, String config) throws Exception {
+        boolean budgetOn = List.of("budget", "quota", "byok-budget").contains(config);
+        boolean quotaOn = config.equals("quota"), byok = config.startsWith("byok");
+        boolean known = shape.endsWith("-known");
+        try (var f = new Fixture(budgetOn, quotaOn, byok);
+             var trace = com.text2sql.agent.observability.EvaluationTrace.open()) {
+            when(f.model.call(any(Prompt.class))).thenAnswer(i -> {
+                f.sends.incrementAndGet(); f.fault.set("null");
+                var meta = ChatResponseMetadata.builder().usage(new DefaultUsage(10, 5)).build();
+                return switch (shape) {
+                    case "empty-choices-known" -> new ChatResponse(List.of(), meta);
+                    case "empty-choices-unknown" -> new ChatResponse(List.of());
+                    case "null-message-known" -> new ChatResponse(List.of(mock(Generation.class)), meta);
+                    default -> null;
+                };
+            });
+            var budget = new RequestBudget(f.p.getRequestBudget());
+            try (var scope = RequestBudget.bind(budgetOn ? budget : null)) {
+                var failure = catchThrowableOfType(GenerationException.class,
+                        () -> f.entry(path, byok ? "local-fixture-key" : null));
+                assertThat(failure.getReason()).isEqualTo(GenerationException.Reason.CALL_FAILED);
+                if (known) {
+                    assertThat(failure.getCallRecord().totalTokens()).isEqualTo(15);
+                    assertThat(failure.getCallRecord().costYuan()).isCloseTo(0.02, within(0.000000001));
+                } else {
+                    assertThat(failure.getCallRecord() == null || failure.getCallRecord().totalTokens() == 0).isTrue();
+                }
+                assertThatThrownBy(() -> f.entry(path, byok ? "local-fixture-key" : null))
+                        .isInstanceOfSatisfying(GenerationException.class, e ->
+                                assertThat(e.getReason()).isEqualTo(GenerationException.Reason.SCHEMA_UNAVAILABLE));
+            }
+            assertThat(f.sends).hasValue(1); assertThat(trace.calls()).hasSize(1);
+            if (known) assertThat(trace.calls().getFirst().usage().totalTokens()).isEqualTo(15);
+            else assertThat(trace.calls().getFirst().status()).contains("UNKNOWN_USAGE");
+            if (budgetOn) {
+                assertThat(budget.snapshot("CHECK").modelCalls()).isEqualTo(1);
+                assertThat(budget.snapshot("CHECK").unknownUsageCalls()).isEqualTo(known ? 0 : 1);
+            }
+            if (quotaOn) {
+                assertThat(f.quota.snapshot()).containsEntry("knownCalls", known ? 1L : 0L)
+                        .containsEntry("unknownCalls", known ? 0L : 1L).containsEntry("pendingCalls", 0L);
+            }
+            verifyNoInteractions(f.db, f.plans);
+        }
+    }
 }

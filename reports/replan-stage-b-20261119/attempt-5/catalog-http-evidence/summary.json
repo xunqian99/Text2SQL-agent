@@ -1,0 +1,429 @@
+{
+  "mockCalls" : 5,
+  "activeRequests" : 0,
+  "cases" : [ {
+    "modelCalls" : 0,
+    "http" : 401,
+    "case" : "unauthenticated"
+  }, {
+    "response" : {
+      "http" : 200,
+      "body" : {
+        "status" : "SUCCESS",
+        "sql" : "SELECT st.ticket_id, tc.category_name FROM support_tickets st JOIN ticket_categories tc ON st.category_id=tc.category_id LIMIT 5",
+        "message" : null,
+        "violations" : [ ],
+        "columns" : [ "ticket_id", "category_name" ],
+        "rows" : [ [ "7923", "商品质量问题" ], [ "7924", "商品质量问题" ], [ "7925", "退款咨询" ], [ "7926", "发票问题" ], [ "7927", "退款咨询" ] ],
+        "truncated" : false,
+        "rewritten" : false,
+        "rowCount" : 5,
+        "schemaTableCount" : 1,
+        "retrievedTables" : [ "support_tickets" ],
+        "schemaDdlChars" : 45,
+        "llm" : {
+          "model" : "synthetic-catalog-probe",
+          "promptTokens" : 10,
+          "completionTokens" : 5,
+          "totalTokens" : 15,
+          "latencyMs" : 53,
+          "costYuan" : 0.02
+        },
+        "timings" : {
+          "retrievalMs" : 1,
+          "generationMs" : 68,
+          "validationMs" : 42,
+          "executionMs" : 81,
+          "totalMs" : 212
+        },
+        "sessionId" : "catalog-positive",
+        "rewrittenQuestion" : null,
+        "schemaReused" : false,
+        "budget" : {
+          "requestId" : "cbb796d0-32b2-4fb4-8d36-4f3373499e10",
+          "timeoutMs" : 15000,
+          "maxModelCalls" : 2,
+          "modelCalls" : 1,
+          "unknownUsageCalls" : 0,
+          "elapsedMs" : 212,
+          "termination" : "COMPLETE",
+          "stage" : "SESSION_PERSIST",
+          "retrySkippedReason" : null,
+          "stageMs" : {
+            "CACHE" : 0,
+            "EXECUTION" : 12,
+            "CLARIFICATION" : 2,
+            "RESULT_CHECK" : 1,
+            "SESSION" : 0,
+            "GENERATION" : 33,
+            "MODEL" : 35,
+            "CONVERSATION" : 9,
+            "ADMISSION" : 4,
+            "CACHE_WRITE" : 0,
+            "RETRIEVAL" : 1,
+            "VALIDATION" : 41,
+            "SESSION_PERSIST" : 0,
+            "EXPLAIN" : 69
+          },
+          "cancellationRejected" : 0,
+          "timingsVersion" : "request-budget-exclusive-v1",
+          "otherMs" : 20,
+          "currentStageMs" : 0
+        }
+      }
+    },
+    "case" : "omitted-table-pruned-column",
+    "generationTables" : 1,
+    "fullTables" : 37
+  }, {
+    "case" : "real-db-SAMPLE_QUERY",
+    "success" : true
+  }, {
+    "case" : "real-db-CHECK_JOIN",
+    "success" : true
+  }, {
+    "case" : "real-db-EXPLAIN_QUERY",
+    "success" : true
+  }, {
+    "case" : "reject-SELECT x.missing FROM ticket_categories x LIMIT 5",
+    "businessExecutions" : 0,
+    "response" : {
+      "http" : 422,
+      "body" : {
+        "status" : "REJECTED",
+        "sql" : "SELECT x.missing FROM ticket_categories x LIMIT 5",
+        "message" : "[UNKNOWN_COLUMN] 表 ticket_categories 没有列 missing",
+        "violations" : [ "[UNKNOWN_COLUMN] 表 ticket_categories 没有列 missing" ],
+        "columns" : [ ],
+        "rows" : [ ],
+        "truncated" : false,
+        "rewritten" : false,
+        "rowCount" : 0,
+        "schemaTableCount" : 1,
+        "retrievedTables" : [ "support_tickets" ],
+        "schemaDdlChars" : 45,
+        "llm" : {
+          "model" : "synthetic-catalog-probe",
+          "promptTokens" : 10,
+          "completionTokens" : 5,
+          "totalTokens" : 15,
+          "latencyMs" : 18,
+          "costYuan" : 0.02
+        },
+        "timings" : {
+          "retrievalMs" : 0,
+          "generationMs" : 19,
+          "validationMs" : 9,
+          "executionMs" : 0,
+          "totalMs" : 30
+        },
+        "sessionId" : "catalog-negative",
+        "rewrittenQuestion" : null,
+        "schemaReused" : false,
+        "budget" : {
+          "requestId" : "ba656456-45ae-43a9-b5d9-ba8628642a7b",
+          "timeoutMs" : 15000,
+          "maxModelCalls" : 2,
+          "modelCalls" : 1,
+          "unknownUsageCalls" : 0,
+          "elapsedMs" : 30,
+          "termination" : "COMPLETE",
+          "stage" : "CONVERSATION",
+          "retrySkippedReason" : null,
+          "stageMs" : {
+            "VALIDATION" : 9,
+            "GENERATION" : 10,
+            "CACHE_WRITE" : 0,
+            "RETRIEVAL" : 0,
+            "CLARIFICATION" : 0,
+            "ADMISSION" : 0,
+            "SESSION" : 0,
+            "CONVERSATION" : 0,
+            "RESULT_CHECK" : 0,
+            "CACHE" : 0,
+            "MODEL" : 9
+          },
+          "cancellationRejected" : 0,
+          "timingsVersion" : "request-budget-exclusive-v1",
+          "otherMs" : 2,
+          "currentStageMs" : 0
+        }
+      }
+    }
+  }, {
+    "case" : "reject-SELECT * FROM semantic_cache LIMIT 5",
+    "businessExecutions" : 0,
+    "response" : {
+      "http" : 422,
+      "body" : {
+        "status" : "REJECTED",
+        "sql" : "SELECT * FROM semantic_cache LIMIT 5",
+        "message" : "[UNKNOWN_TABLE] 引用了不存在的表：semantic_cache",
+        "violations" : [ "[UNKNOWN_TABLE] 引用了不存在的表：semantic_cache" ],
+        "columns" : [ ],
+        "rows" : [ ],
+        "truncated" : false,
+        "rewritten" : false,
+        "rowCount" : 0,
+        "schemaTableCount" : 1,
+        "retrievedTables" : [ "support_tickets" ],
+        "schemaDdlChars" : 45,
+        "llm" : {
+          "model" : "synthetic-catalog-probe",
+          "promptTokens" : 10,
+          "completionTokens" : 5,
+          "totalTokens" : 15,
+          "latencyMs" : 14,
+          "costYuan" : 0.02
+        },
+        "timings" : {
+          "retrievalMs" : 0,
+          "generationMs" : 18,
+          "validationMs" : 4,
+          "executionMs" : 0,
+          "totalMs" : 24
+        },
+        "sessionId" : "catalog-negative",
+        "rewrittenQuestion" : null,
+        "schemaReused" : false,
+        "budget" : {
+          "requestId" : "80da2695-4c30-45d8-9a6e-d5049b76e1e1",
+          "timeoutMs" : 15000,
+          "maxModelCalls" : 2,
+          "modelCalls" : 1,
+          "unknownUsageCalls" : 0,
+          "elapsedMs" : 24,
+          "termination" : "COMPLETE",
+          "stage" : "CONVERSATION",
+          "retrySkippedReason" : null,
+          "stageMs" : {
+            "VALIDATION" : 4,
+            "GENERATION" : 11,
+            "CACHE_WRITE" : 0,
+            "RETRIEVAL" : 0,
+            "CLARIFICATION" : 0,
+            "ADMISSION" : 0,
+            "SESSION" : 0,
+            "CONVERSATION" : 0,
+            "RESULT_CHECK" : 0,
+            "CACHE" : 0,
+            "MODEL" : 7
+          },
+          "cancellationRejected" : 0,
+          "timingsVersion" : "request-budget-exclusive-v1",
+          "otherMs" : 2,
+          "currentStageMs" : 0
+        }
+      }
+    }
+  }, {
+    "case" : "reject-SELECT * FROM archive.ticket_categories LIMIT 5",
+    "businessExecutions" : 0,
+    "response" : {
+      "http" : 422,
+      "body" : {
+        "status" : "REJECTED",
+        "sql" : "SELECT * FROM archive.ticket_categories LIMIT 5",
+        "message" : "[UNKNOWN_TABLE] 引用了不存在的表：archive.ticket_categories",
+        "violations" : [ "[UNKNOWN_TABLE] 引用了不存在的表：archive.ticket_categories" ],
+        "columns" : [ ],
+        "rows" : [ ],
+        "truncated" : false,
+        "rewritten" : false,
+        "rowCount" : 0,
+        "schemaTableCount" : 1,
+        "retrievedTables" : [ "support_tickets" ],
+        "schemaDdlChars" : 45,
+        "llm" : {
+          "model" : "synthetic-catalog-probe",
+          "promptTokens" : 10,
+          "completionTokens" : 5,
+          "totalTokens" : 15,
+          "latencyMs" : 13,
+          "costYuan" : 0.02
+        },
+        "timings" : {
+          "retrievalMs" : 0,
+          "generationMs" : 17,
+          "validationMs" : 4,
+          "executionMs" : 0,
+          "totalMs" : 23
+        },
+        "sessionId" : "catalog-negative",
+        "rewrittenQuestion" : null,
+        "schemaReused" : false,
+        "budget" : {
+          "requestId" : "46606b01-915f-47f6-8626-17d934a99882",
+          "timeoutMs" : 15000,
+          "maxModelCalls" : 2,
+          "modelCalls" : 1,
+          "unknownUsageCalls" : 0,
+          "elapsedMs" : 23,
+          "termination" : "COMPLETE",
+          "stage" : "CONVERSATION",
+          "retrySkippedReason" : null,
+          "stageMs" : {
+            "VALIDATION" : 4,
+            "GENERATION" : 11,
+            "CACHE_WRITE" : 0,
+            "RETRIEVAL" : 0,
+            "CLARIFICATION" : 0,
+            "ADMISSION" : 0,
+            "SESSION" : 0,
+            "CONVERSATION" : 0,
+            "RESULT_CHECK" : 0,
+            "CACHE" : 0,
+            "MODEL" : 6
+          },
+          "cancellationRejected" : 0,
+          "timingsVersion" : "request-budget-exclusive-v1",
+          "otherMs" : 2,
+          "currentStageMs" : 0
+        }
+      }
+    }
+  }, {
+    "case" : "reject-SELECT * FROM invented LIMIT 5",
+    "businessExecutions" : 0,
+    "response" : {
+      "http" : 422,
+      "body" : {
+        "status" : "REJECTED",
+        "sql" : "SELECT * FROM invented LIMIT 5",
+        "message" : "[UNKNOWN_TABLE] 引用了不存在的表：invented",
+        "violations" : [ "[UNKNOWN_TABLE] 引用了不存在的表：invented" ],
+        "columns" : [ ],
+        "rows" : [ ],
+        "truncated" : false,
+        "rewritten" : false,
+        "rowCount" : 0,
+        "schemaTableCount" : 1,
+        "retrievedTables" : [ "support_tickets" ],
+        "schemaDdlChars" : 45,
+        "llm" : {
+          "model" : "synthetic-catalog-probe",
+          "promptTokens" : 10,
+          "completionTokens" : 5,
+          "totalTokens" : 15,
+          "latencyMs" : 13,
+          "costYuan" : 0.02
+        },
+        "timings" : {
+          "retrievalMs" : 0,
+          "generationMs" : 18,
+          "validationMs" : 4,
+          "executionMs" : 0,
+          "totalMs" : 22
+        },
+        "sessionId" : "catalog-negative",
+        "rewrittenQuestion" : null,
+        "schemaReused" : false,
+        "budget" : {
+          "requestId" : "2de6ac99-bc8a-4bf6-8a5b-ffb60570405f",
+          "timeoutMs" : 15000,
+          "maxModelCalls" : 2,
+          "modelCalls" : 1,
+          "unknownUsageCalls" : 0,
+          "elapsedMs" : 22,
+          "termination" : "COMPLETE",
+          "stage" : "CONVERSATION",
+          "retrySkippedReason" : null,
+          "stageMs" : {
+            "VALIDATION" : 4,
+            "GENERATION" : 11,
+            "CACHE_WRITE" : 0,
+            "RETRIEVAL" : 0,
+            "CLARIFICATION" : 0,
+            "ADMISSION" : 0,
+            "SESSION" : 0,
+            "CONVERSATION" : 0,
+            "RESULT_CHECK" : 0,
+            "CACHE" : 0,
+            "MODEL" : 7
+          },
+          "cancellationRejected" : 0,
+          "timingsVersion" : "request-budget-exclusive-v1",
+          "otherMs" : 0,
+          "currentStageMs" : 0
+        }
+      }
+    }
+  }, {
+    "response" : {
+      "http" : 422,
+      "body" : {
+        "status" : "REJECTED",
+        "sql" : null,
+        "message" : "[SCHEMA_UNAVAILABLE] 完整业务 Schema 不可用，未执行 SQL",
+        "violations" : [ "[SCHEMA_UNAVAILABLE] 完整业务 Schema 不可用，未执行 SQL" ],
+        "columns" : [ ],
+        "rows" : [ ],
+        "truncated" : false,
+        "rewritten" : false,
+        "rowCount" : 0,
+        "schemaTableCount" : 0,
+        "retrievedTables" : [ ],
+        "schemaDdlChars" : 0,
+        "llm" : null,
+        "timings" : {
+          "retrievalMs" : 0,
+          "generationMs" : 0,
+          "validationMs" : 0,
+          "executionMs" : 0,
+          "totalMs" : 0
+        },
+        "sessionId" : "catalog-unavailable",
+        "rewrittenQuestion" : null,
+        "schemaReused" : false,
+        "budget" : {
+          "requestId" : "db83abda-18b6-403f-88db-5d3530b1bacd",
+          "timeoutMs" : 15000,
+          "maxModelCalls" : 2,
+          "modelCalls" : 0,
+          "unknownUsageCalls" : 0,
+          "elapsedMs" : 0,
+          "termination" : "COMPLETE",
+          "stage" : "SESSION_PERSIST",
+          "retrySkippedReason" : null,
+          "stageMs" : {
+            "SESSION" : 0,
+            "VALIDATION" : 0,
+            "ADMISSION" : 0,
+            "CONVERSATION" : 0,
+            "CLARIFICATION" : 0,
+            "SESSION_PERSIST" : 0
+          },
+          "cancellationRejected" : 0,
+          "timingsVersion" : "request-budget-exclusive-v1",
+          "otherMs" : 0,
+          "currentStageMs" : 0
+        }
+      }
+    },
+    "case" : "unavailable-terminal-with-session-close",
+    "businessExecutions" : 0,
+    "mockCalls" : 0
+  }, {
+    "snapshot" : {
+      "meaning" : "durable-configured-price-admission-not-provider-billing-cap",
+      "knownCostYuan" : 0.1000,
+      "enabled" : true,
+      "pendingCalls" : 0,
+      "availableYuan" : 9.9000,
+      "limitYuan" : 10,
+      "reservationPerCallYuan" : 0.10,
+      "knownCalls" : 5,
+      "budgetId" : "6ef6b3b6-a061-43e7-b11f-f9d40d8caa08",
+      "canAdmitCall" : true,
+      "heldYuan" : 0.00,
+      "reservationBreached" : false,
+      "unknownCalls" : 0,
+      "committedYuan" : 0.1000,
+      "ledgerAvailable" : true
+    },
+    "case" : "cost-reservations-settled",
+    "syntheticPricingOnly" : true
+  } ],
+  "providerCalls" : 0,
+  "passed" : 11
+}

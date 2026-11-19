@@ -1,0 +1,2300 @@
+--- /dev/null
++++ b/scripts/replan_stage_b.py
+@@ -0,0 +1,134 @@
++"""Offline-only B verification. Public data whitelist, loopback model endpoint, no key resolution."""
++from pathlib import Path
++import hashlib
++import json
++import re
++import shutil
++import subprocess
++import sys
++import time
++
++sys.stdout.reconfigure(encoding="utf-8", errors="backslashreplace")
++
++ROOT = Path(__file__).resolve().parent.parent
++OUT = ROOT / "reports/replan-stage-b-20261119"
++sys.path.insert(0, str(ROOT / "scripts"))
++import run_stage2_v3_comparison as frozen
++
++
++def write(path, value):
++    with Path(path).open("x", encoding="utf-8", newline="\n") as f:
++        json.dump(value, f, indent=2, ensure_ascii=False)
++        f.write("\n")
++
++
++def run(name, command, timeout=240):
++    path = OUT / name
++    path.mkdir(exist_ok=False)
++    started = time.monotonic()
++    with (path / "process-output.txt").open("x", encoding="utf-8") as log:
++        result = subprocess.run(command, cwd=ROOT, env=frozen.clean_environment(),
++                                stdout=log, stderr=subprocess.STDOUT, timeout=timeout)
++    write(path / "execution.json", dict(command=command, exitCode=result.returncode,
++          wallSeconds=round(time.monotonic()-started, 3), providerCalls=0,
++          scope="local-only; credentials absent, loopback model endpoint or mock model"))
++    print(name, "exit=", result.returncode, flush=True)
++    if result.returncode:
++        print((path / "process-output.txt").read_text(encoding="utf-8")[-6500:], flush=True)
++        raise SystemExit(result.returncode)
++
++
++def classpath(frozen_classes=False):
++    libs = (ROOT / "target/replan-b-classpath.txt").read_text(encoding="utf-8").strip()
++    classes = ROOT / ("target/replan-stage-a-frozen/BOOT-INF/classes" if frozen_classes else "target/classes")
++    return str(classes) + ";" + str(ROOT / "target/test-classes") + ";" + libs
++
++
++def probes():
++    cp = classpath()
++    for name, cls in [
++        ("catalog-http", "orchestrator.CatalogHttpAcceptanceProbe"),
++        ("access-http", "access.AccessHttpAcceptanceProbe"),
++        ("cost-http", "cost.CostHttpAcceptanceProbe"),
++        ("session-http", "session.SessionOutcomeAcceptanceProbe"),
++        ("timings-http", "budget.BudgetTimingsAcceptanceProbe"),
++    ]:
++        run(name, ["java", "-cp", cp, "com.text2sql.agent." + cls, str(OUT / (name + "-evidence"))])
++
++
++def captures():
++    for name, directory in [("original200", "data/eval"),
++            ("development100", "data/benchmarks/olist-v4-development-20261119"),
++            ("formal100", "data/benchmarks/olist-v4-formal-20261119")]:
++        for system in ("p21", "B"):
++            if system == "p21" and OUT.name.startswith("attempt-"):
++                source = OUT.parent / ("messages-p21-"+name+".json")
++                manifest = json.loads((OUT.parent / "submission-1-manifest.json").read_text(encoding="utf-8"))
++                if hashlib.sha256(source.read_bytes()).hexdigest() != manifest["files"][source.relative_to(ROOT).as_posix()]:
++                    raise ValueError("Frozen baseline capture drift")
++                shutil.copyfile(source, OUT / source.name)
++                continue
++            run("first-call-"+system+"-"+name, ["java", "-cp", classpath(system=="p21"),
++                "com.text2sql.agent.retrieval.CatalogFirstCallCapture", directory,
++                str(OUT / ("messages-"+system+"-"+name+".json"))])
++    comparisons = []
++    for name in ("original200", "development100", "formal100"):
++        old = json.loads((OUT / ("messages-p21-"+name+".json")).read_text(encoding="utf-8"))
++        new = json.loads((OUT / ("messages-B-"+name+".json")).read_text(encoding="utf-8"))
++        if old != new:
++            raise ValueError("Actual first-call message/context drift: " + name)
++        comparisons.append(dict(dataset=name, equal=len(new["items"]), total=len(new["items"])))
++    write(OUT / "first-call-invariance.json", dict(comparisons=comparisons,
++          exactMessagesAndRetrievalEqual=True, providerCalls=0,
++          mockCalls=400 if OUT.name.startswith("attempt-") else 800,
++          reusedFrozenBaselineMockCalls=400 if OUT.name.startswith("attempt-") else 0,
++          boundary="Actual first ChatModel.call via ask; synthetic response, not provider transport"))
++
++
++def gold():
++    jar = ROOT / "target/text2sql-agent-0.1.0-SNAPSHOT.jar"
++    reports = []
++    for name, directory, count in [("original200", "data/eval", 200),
++            ("development100", "data/benchmarks/olist-v4-development-20261119", 100),
++            ("formal100", "data/benchmarks/olist-v4-formal-20261119", 100)]:
++        evidence = OUT / ("gold-"+name+"-evidence")
++        evidence.mkdir(exist_ok=False)
++        plan=dict(systems={"C":dict(repo=str(ROOT),jar=str(jar))},
++                  datasets={"public":dict(directory=directory,javaSuiteManifest="")},port=18091)
++        cmd=frozen.build_command(plan,"C","public",str(evidence.relative_to(ROOT)),True)
++        overrides={"server.address":"127.0.0.1","agent.llm.base-url":"http://127.0.0.1:1",
++                   "agent.llm.api-key":"","agent.persistence.enabled":"false"}
++        cmd=[a for a in cmd if not any(a.startswith("--"+key+"=") for key in overrides)]
++        cmd += ["--"+k+"="+v for k,v in overrides.items()]
++        run("gold-"+name,cmd)
++        files=list(evidence.glob("eval-*-dryrun.json"))
++        if len(files)!=1: raise ValueError("Missing dry report")
++        data=json.loads(files[0].read_text(encoding="utf-8-sig"))
++        if data["overall"]["correct"]!=count or data["overall"]["total"]!=count:
++            raise ValueError("Gold execution failed")
++        if any(r["calls"] for r in data["itemEvidence"]): raise ValueError("Unexpected model call")
++        reports.append(dict(name=name,correct=count,total=count,report=str(files[0].relative_to(ROOT))))
++    write(OUT / "gold-execution.json",dict(runs=reports,providerCalls=0,officialV4RuntimeAdmitted=False))
++
++
++if __name__ == "__main__":
++    attempt_args = [a for a in sys.argv if re.fullmatch(r"--attempt-(?:[2-9]|[1-9][0-9]+)", a)]
++    if len(attempt_args)>1: raise ValueError("One submission per invocation")
++    if attempt_args:
++        attempt=attempt_args[0]; sys.argv.remove(attempt)
++        OUT=OUT/attempt.removeprefix("--"); OUT.mkdir(exist_ok=True)
++    action=sys.argv[1]
++    if action in ("focused", "targeted", "build"):
++        command=[shutil.which("mvn.cmd"),"-q"]
++        if action=="targeted": command += ["-Dtest=CatalogSendBoundaryTest,AgentLoopTest,OrchestratorSelfCorrectionTest", "test"]
++        elif action=="focused": command += ["-Dtest=CatalogSendBoundaryTest,CatalogValidationBoundaryTest,SqlValidatorTest,ToolExecutorTest,AgentLoopTest,OrchestratorSelfCorrectionTest,MultiTurnOrchestratorTest,SessionOutcomeFinalizationTest,ClarificationReplyTest,BudgetOrchestratorTest,SqlExtractionPipelineTest", "test"]
++        else: command += (["clean"] if OUT.name.startswith("attempt-") and OUT.name != "attempt-2" else []) + ["package", "dependency:build-classpath", "-Dmdep.outputFile=target/replan-b-classpath.txt"]
++        try:
++            run(sys.argv[2],command,300)
++        finally:
++            source=ROOT / "target/surefire-reports"
++            if source.exists(): shutil.copytree(source,OUT / sys.argv[2] / "surefire",dirs_exist_ok=False)
++    elif action=="probes": probes()
++    elif action=="captures": captures()
++    elif action=="gold": gold()
++    else: raise ValueError("Unsupported offline action")
+--- a/src/main/java/com/text2sql/agent/generation/GenerationException.java
++++ b/src/main/java/com/text2sql/agent/generation/GenerationException.java
+@@ -17,6 +17,8 @@
+         NOT_CONFIGURED,
+         /** Local pricing-window policy refused the request before transport. */
+         OFF_PEAK_REQUIRED,
++        /** A tool could not acquire its authorized catalog; no retry/finalization call. */
++        SCHEMA_UNAVAILABLE,
+         /** 调用失败（网络、超时、限流、鉴权）。属于基础设施问题。 */
+         CALL_FAILED,
+         /** 调用成功但返回内容里提不出合法 SQL。属于模型质量问题。 */
+--- a/src/main/java/com/text2sql/agent/generation/LlmSqlGenerator.java
++++ b/src/main/java/com/text2sql/agent/generation/LlmSqlGenerator.java
+@@ -3,6 +3,8 @@
+ import com.text2sql.agent.config.AgentProperties;
+ import com.text2sql.agent.observability.LlmCallRecord;
+ import com.text2sql.agent.retrieval.SchemaContext;
++import com.text2sql.agent.retrieval.AuthorizedSchemaCatalog;
++import com.text2sql.agent.retrieval.BusinessSchemaUnavailableException;
+ import org.slf4j.Logger;
+ import org.slf4j.LoggerFactory;
+ import org.springframework.ai.chat.messages.AssistantMessage;
+@@ -55,6 +57,7 @@
+     private final PromptTemplate promptTemplate;
+     private final com.text2sql.agent.observability.LlmCallLog callLog;
+     private final com.text2sql.agent.cost.CostQuota costQuota;
++    private final AuthorizedSchemaCatalog authorizedCatalog;
+     private final com.text2sql.agent.budget.DeepSeekOffPeakPolicy offPeak =
+             new com.text2sql.agent.budget.DeepSeekOffPeakPolicy(java.time.Clock.systemUTC());
+ 
+@@ -83,17 +86,20 @@
+             });
+ 
+     public LlmSqlGenerator(AgentProperties properties, PromptTemplate promptTemplate,
+-                           com.text2sql.agent.observability.LlmCallLog callLog) {
+-        this(properties, promptTemplate, callLog, com.text2sql.agent.cost.CostQuota.disabled());
++                           com.text2sql.agent.observability.LlmCallLog callLog,
++                           AuthorizedSchemaCatalog authorizedCatalog) {
++        this(properties, promptTemplate, callLog, com.text2sql.agent.cost.CostQuota.disabled(), authorizedCatalog);
+     }
+ 
+     @org.springframework.beans.factory.annotation.Autowired
+     public LlmSqlGenerator(AgentProperties properties, PromptTemplate promptTemplate,
+-                           com.text2sql.agent.observability.LlmCallLog callLog, com.text2sql.agent.cost.CostQuota costQuota) {
++                           com.text2sql.agent.observability.LlmCallLog callLog, com.text2sql.agent.cost.CostQuota costQuota,
++                           AuthorizedSchemaCatalog authorizedCatalog) {
+         this.properties = properties;
+         this.promptTemplate = promptTemplate;
+         this.callLog = callLog;
+         this.costQuota = costQuota;
++        this.authorizedCatalog = java.util.Objects.requireNonNull(authorizedCatalog, "Authorized catalog is required");
+         this.chatModel = buildChatModel(properties, properties.getLlm().getApiKey());
+         if (this.chatModel == null) {
+             log.warn("未配置全局 agent.llm.api-key，进入 BYOK（用户自带密钥）模式；用户可在前端输入个人 API Key 体验。");
+@@ -196,6 +202,8 @@
+         try {
+             response = invoke(targetModel, new Prompt(messages, options), promptSha256);
+         } catch (Exception e) {
++            if (e instanceof GenerationException failure
++                    && failure.getReason() == GenerationException.Reason.SCHEMA_UNAVAILABLE) throw failure;
+             if (e instanceof RequestBudget.Exceeded expired) throw expired;
+             if (e instanceof com.text2sql.agent.budget.DeepSeekOffPeakPolicy.Rejected rejected) throw rejected;
+             com.text2sql.agent.observability.EvaluationTrace.call(null, "CALL_FAILED", promptSha256);
+@@ -205,18 +213,21 @@
+         long latencyMs = (System.nanoTime() - started) / 1_000_000;
+ 
+         //获取模型的output
+-        String raw = extractText(response);
+-        LlmCallRecord record = buildRecord(response, promptChars, latencyMs, model);
++        // Receipt/usage and content validity are independent. An empty choices array
++        // can still carry known billed usage; save that record before inspecting text.
++        LlmCallRecord record = response == null ? null : buildRecord(response, promptChars, latencyMs, model);
++        String raw = null;
+         String sql;
+         try {
++            raw = extractText(response);
+             requireComplete(response, record);
+             sql = SqlExtractor.extract(raw);
+         } catch (GenerationException e) {
+-            log.warn("LLM 返回内容无法提取 SQL：{}", record.summary());
++            log.warn("LLM 返回内容无法提取 SQL：{}", record == null ? "用量未知" : record.summary());
+             callLog.record(record, e.getReason().name(), user, raw, promptSha256);
+             throw new GenerationException(e.getReason(), e.getMessage(), record, e);
+         }
+-        log.info("LLM 调用完成：{}", record.summary());
++        log.info("LLM 调用完成：{}", record == null ? "用量未知" : record.summary());
+         callLog.record(record, "OK", user, raw, promptSha256);
+         return new GeneratedSql(sql, raw, record);
+     }
+@@ -268,6 +279,8 @@
+         try {
+             response = invoke(targetModel, new Prompt(messages, options), promptSha256);
+         } catch (Exception e) {
++            if (e instanceof GenerationException failure
++                    && failure.getReason() == GenerationException.Reason.SCHEMA_UNAVAILABLE) throw failure;
+             if (e instanceof RequestBudget.Exceeded expired) throw expired;
+             if (e instanceof com.text2sql.agent.budget.DeepSeekOffPeakPolicy.Rejected rejected) throw rejected;
+             com.text2sql.agent.observability.EvaluationTrace.call(null, "CALL_FAILED_CORRECTION", promptSha256);
+@@ -275,18 +288,21 @@
+                     "模型纠错调用失败，请核对服务配置或稍后重试。", e);
+         }
+         long latencyMs = (System.nanoTime() - started) / 1_000_000;
+-        String raw = extractText(response);
+-        LlmCallRecord record = buildRecord(response, promptChars, latencyMs, model);
++        // Receipt/usage and content validity are independent. An empty choices array
++        // can still carry known billed usage; save that record before inspecting text.
++        LlmCallRecord record = response == null ? null : buildRecord(response, promptChars, latencyMs, model);
++        String raw = null;
+         String sql;
+         try {
++            raw = extractText(response);
+             requireComplete(response, record);
+             sql = SqlExtractor.extract(raw);
+         } catch (GenerationException e) {
+-            log.warn("LLM 自纠错返回内容无法提取 SQL：{}", record.summary());
++            log.warn("LLM 自纠错返回内容无法提取 SQL：{}", record == null ? "用量未知" : record.summary());
+             callLog.record(record, e.getReason().name() + "_CORRECTION", user, raw, promptSha256);
+             throw new GenerationException(e.getReason(), e.getMessage(), record, e);
+         }
+-        log.info("LLM 自纠错完成：{}", record.summary());
++        log.info("LLM 自纠错完成：{}", record == null ? "用量未知" : record.summary());
+         callLog.record(record, "CORRECTION", user, raw, promptSha256);
+         return new GeneratedSql(sql, raw, record);
+     }
+@@ -320,6 +336,8 @@
+         try {
+             response = invoke(targetModel, new Prompt(messages, options), promptSha256);
+         } catch (Exception e) {
++            if (e instanceof GenerationException failure
++                    && failure.getReason() == GenerationException.Reason.SCHEMA_UNAVAILABLE) throw failure;
+             if (e instanceof RequestBudget.Exceeded expired) throw expired;
+             if (e instanceof com.text2sql.agent.budget.DeepSeekOffPeakPolicy.Rejected rejected) throw rejected;
+             com.text2sql.agent.observability.EvaluationTrace.call(null, "CALL_FAILED_" + logTag, promptSha256);
+@@ -327,18 +345,21 @@
+                     "模型服务调用失败，请核对服务配置或稍后重试。", e);
+         }
+         long latencyMs = (System.nanoTime() - started) / 1_000_000;
+-        String raw = extractText(response);
+-        LlmCallRecord record = buildRecord(response, promptChars, latencyMs, model);
++        // Receipt/usage and content validity are independent. An empty choices array
++        // can still carry known billed usage; save that record before inspecting text.
++        LlmCallRecord record = response == null ? null : buildRecord(response, promptChars, latencyMs, model);
++        String raw = null;
+         String sql;
+         try {
++            raw = extractText(response);
+             requireComplete(response, record);
+             sql = SqlExtractor.extract(raw);
+         } catch (GenerationException e) {
+-            log.warn("LLM [{}] 返回内容无法提取 SQL：{}", logTag, record.summary());
++            log.warn("LLM [{}] 返回内容无法提取 SQL：{}", logTag, record == null ? "用量未知" : record.summary());
+             callLog.record(record, e.getReason().name() + "_" + logTag, "messages[" + messages.size() + "]", raw, promptSha256);
+             throw new GenerationException(e.getReason(), e.getMessage(), record, e);
+         }
+-        log.info("LLM [{}] 调用完成：{}", logTag, record.summary());
++        log.info("LLM [{}] 调用完成：{}", logTag, record == null ? "用量未知" : record.summary());
+         callLog.record(record, logTag, "messages[" + messages.size() + "]", raw, promptSha256);
+         return new GeneratedSql(sql, raw, record);
+     }
+@@ -386,6 +407,8 @@
+         try {
+             response = invoke(targetModel, new Prompt(messages, optionsBuilder.build()), promptSha256);
+         } catch (Exception e) {
++            if (e instanceof GenerationException failure
++                    && failure.getReason() == GenerationException.Reason.SCHEMA_UNAVAILABLE) throw failure;
+             if (e instanceof RequestBudget.Exceeded expired) throw expired;
+             if (e instanceof com.text2sql.agent.budget.DeepSeekOffPeakPolicy.Rejected rejected) throw rejected;
+             com.text2sql.agent.observability.EvaluationTrace.call(null, "CALL_FAILED_" + logTag, promptSha256);
+@@ -394,16 +417,19 @@
+         }
+         long latencyMs = (System.nanoTime() - started) / 1_000_000;
+ 
+-        String raw = extractText(response);
+-        LlmCallRecord record = buildRecord(response, promptChars, latencyMs, model);
+-        try {
++        // Receipt/usage and content validity are independent. An empty choices array
++        // can still carry known billed usage; save that record before inspecting text.
++        LlmCallRecord record = response == null ? null : buildRecord(response, promptChars, latencyMs, model);
++        String raw = null;
++        try {
++            raw = extractText(response);
+             requireComplete(response, record);
+         } catch (GenerationException e) {
+             callLog.record(record, e.getReason().name() + "_" + logTag,
+                     "messages[" + messages.size() + "]", raw, promptSha256);
+-            throw e;
+-        }
+-        log.info("LLM [{}] 调用完成：{}", logTag, record.summary());
++            throw new GenerationException(e.getReason(), e.getMessage(), record, e);
++        }
++        log.info("LLM [{}] 调用完成：{}", logTag, record == null ? "用量未知" : record.summary());
+         callLog.record(record, logTag, "messages[" + messages.size() + "]", raw, promptSha256);
+         return new AgentTurn(response, record, raw);
+     }
+@@ -448,7 +474,7 @@
+         }
+         AssistantMessage output = response.getResult().getOutput();
+         if (output == null) {
+-            return null;
++            throw new GenerationException(GenerationException.Reason.CALL_FAILED, "LLM 返回空消息");
+         }
+         String text = output.getText();
+         if ((text == null || text.isBlank()) && output.getMetadata() != null) {
+@@ -501,6 +527,15 @@
+      * 失败就记一次失败，继续下一条。
+      */
+     private ChatResponse invoke(ChatModel model, Prompt prompt, String hash) {
++        // All model paths converge here, including failures before a tool callback runs.
++        // An unsent catalog failure must create neither a cost reservation nor a call.
++        // Keep this independent of RequestBudget/CostQuota switches and BYOK resolution.
++        try {
++            authorizedCatalog.require();
++        } catch (BusinessSchemaUnavailableException unavailable) {
++            throw new GenerationException(GenerationException.Reason.SCHEMA_UNAVAILABLE,
++                    unavailable.getMessage(), unavailable);
++        }
+         boolean guarded = model instanceof OpenAiChatModel
+                 && com.text2sql.agent.budget.DeepSeekOffPeakPolicy.appliesTo(
+                 java.net.URI.create(properties.getLlm().getBaseUrl()), prompt.getOptions().getModel());
+--- a/src/main/java/com/text2sql/agent/orchestrator/Text2SqlOrchestrator.java
++++ b/src/main/java/com/text2sql/agent/orchestrator/Text2SqlOrchestrator.java
+@@ -11,6 +11,7 @@
+ import com.text2sql.agent.observability.LlmCallRecord;
+ import com.text2sql.agent.observability.EvaluationTrace;
+ import com.text2sql.agent.retrieval.SchemaContext;
++import com.text2sql.agent.retrieval.BusinessSchemaUnavailableException;
+ import com.text2sql.agent.retrieval.SchemaProvider;
+ import com.text2sql.agent.validation.CheckResult;
+ import com.text2sql.agent.validation.SqlValidator;
+@@ -55,6 +56,7 @@
+     private static final Logger log = LoggerFactory.getLogger(Text2SqlOrchestrator.class);
+ 
+     private final SchemaProvider schemaProvider;
++    private final com.text2sql.agent.retrieval.AuthorizedSchemaCatalog authorizedCatalog;
+     private final LlmSqlGenerator generator;
+     private final SqlValidator validator;
+     private final SqlExecutor executor;
+@@ -69,7 +71,9 @@
+     private final com.text2sql.agent.config.AgentProperties properties;
+ 
+     @org.springframework.beans.factory.annotation.Autowired
+-    public Text2SqlOrchestrator(SchemaProvider schemaProvider, LlmSqlGenerator generator,
++    public Text2SqlOrchestrator(SchemaProvider schemaProvider,
++                                com.text2sql.agent.retrieval.AuthorizedSchemaCatalog authorizedCatalog,
++                                LlmSqlGenerator generator,
+                                 SqlValidator validator, SqlExecutor executor,
+                                 com.text2sql.agent.clarification.AmbiguityDetector ambiguityDetector,
+                                 com.text2sql.agent.cache.SemanticCache cache,
+@@ -80,6 +84,7 @@
+                                 com.text2sql.agent.execution.QueryPlanAnalyzer queryPlanAnalyzer,
+                                 com.text2sql.agent.config.AgentProperties properties) {
+         this.schemaProvider = schemaProvider;
++        this.authorizedCatalog = java.util.Objects.requireNonNull(authorizedCatalog, "Authorized catalog is required");
+         this.generator = generator;
+         this.validator = validator;
+         this.executor = executor;
+@@ -93,7 +98,9 @@
+         this.properties = properties;
+     }
+ 
+-    public Text2SqlOrchestrator(SchemaProvider schemaProvider, LlmSqlGenerator generator,
++    public Text2SqlOrchestrator(SchemaProvider schemaProvider,
++                                com.text2sql.agent.retrieval.AuthorizedSchemaCatalog authorizedCatalog,
++                                LlmSqlGenerator generator,
+                                 SqlValidator validator, SqlExecutor executor,
+                                 com.text2sql.agent.clarification.AmbiguityDetector ambiguityDetector,
+                                 com.text2sql.agent.cache.SemanticCache cache,
+@@ -102,18 +109,20 @@
+                                 com.text2sql.agent.session.SessionStore sessionStore,
+                                 com.text2sql.agent.session.QuestionRewriter questionRewriter,
+                                 com.text2sql.agent.config.AgentProperties properties) {
+-        this(schemaProvider, generator, validator, executor, ambiguityDetector, cache,
++        this(schemaProvider, authorizedCatalog, generator, validator, executor, ambiguityDetector, cache,
+                 resultChecker, agentLoop, sessionStore, questionRewriter, null, properties);
+     }
+ 
+-    public Text2SqlOrchestrator(SchemaProvider schemaProvider, LlmSqlGenerator generator,
++    public Text2SqlOrchestrator(SchemaProvider schemaProvider,
++                                com.text2sql.agent.retrieval.AuthorizedSchemaCatalog authorizedCatalog,
++                                LlmSqlGenerator generator,
+                                 SqlValidator validator, SqlExecutor executor,
+                                 com.text2sql.agent.clarification.AmbiguityDetector ambiguityDetector,
+                                 com.text2sql.agent.cache.SemanticCache cache,
+                                 com.text2sql.agent.validation.ResultChecker resultChecker,
+                                 com.text2sql.agent.tool.AgentLoop agentLoop,
+                                 com.text2sql.agent.config.AgentProperties properties) {
+-        this(schemaProvider, generator, validator, executor, ambiguityDetector, cache,
++        this(schemaProvider, authorizedCatalog, generator, validator, executor, ambiguityDetector, cache,
+                 resultChecker, agentLoop, new com.text2sql.agent.session.SessionStore(properties),
+                 new com.text2sql.agent.session.QuestionRewriter(generator, properties), null, properties);
+     }
+@@ -211,7 +220,15 @@
+ 
+         if (convEnabled && !pendingContext && questionRewriter.isFollowUp(question, session)) {
+             RequestBudget.stage("REWRITE");
+-            var rewriteOutcome = questionRewriter.rewriteWithOutcome(question, session);
++            com.text2sql.agent.session.QuestionRewriter.RewriteOutcome rewriteOutcome;
++            long rewriteStarted = System.nanoTime();
++            try {
++                rewriteOutcome = questionRewriter.rewriteWithOutcome(question, session);
++            } catch (GenerationException failure) {
++                if (failure.getReason() != GenerationException.Reason.SCHEMA_UNAVAILABLE) throw failure;
++                return catalogUnavailable(question, null, failure.getCallRecord(), 0, List.of(), 0,
++                        0, elapsedMs(rewriteStarted), 0, totalStarted);
++            }
+             rewrittenQuestion = rewriteOutcome.question();
+             effectiveQuestion = rewrittenQuestion;
+             rewriteCall = rewriteOutcome.call();
+@@ -244,6 +261,16 @@
+         }
+         if (pendingContext) conversation.metadata = new ConversationMetadata(rewrittenQuestion, false, null);
+ 
++        // A production retriever also reads SchemaCatalog. Diagnose a missing snapshot
++        // before retrieval can fail with an unrelated NPE/connection exception.
++        RequestBudget.stage("VALIDATION");
++        long catalogStarted = System.nanoTime();
++        try {
++            authorizedCatalog.require();
++        } catch (BusinessSchemaUnavailableException unavailable) {
++            return catalogUnavailable(question, null, rewriteCall, 0, List.of(), 0,
++                    0, rewriteMs, elapsedMs(catalogStarted), totalStarted);
++        }
+         if (schema == null) {
+             RequestBudget.stage("RETRIEVAL");
+             long retrievalStarted = System.nanoTime();
+@@ -269,7 +296,7 @@
+                 boolean suspicious = hit.success() && properties.getResultChecker().isEnabled()
+                         && resultChecker.check(effectiveQuestion, hit.sql(),
+                         new QueryResult(hit.columns(), hit.rows(), hit.truncated(), 0L)).suspicious();
+-                if (hit.success() && !suspicious) {
++                if (isSchemaUnavailable(hit) || (hit.success() && !suspicious)) {
+                     EvaluationTrace.attempt("CACHE_SQL", hit);
+                     RequestBudget.checkpoint(hit);
+                     if (convEnabled) {
+@@ -309,9 +336,27 @@
+             }
+         } catch (GenerationException e) {
+             EvaluationTrace.generationFailure(question, e);
++            if (e.getReason() == GenerationException.Reason.SCHEMA_UNAVAILABLE) {
++                return catalogUnavailable(question, null, LlmCallRecord.combine(rewriteCall, e.getCallRecord()),
++                        tableCount, retrievedTables, ddlChars, retrievalMs,
++                        elapsedMs(generationStarted) + rewriteMs, 0, totalStarted);
++            }
+             if (properties.getSelfCorrection().isEnabled() && properties.getSelfCorrection().getMaxAttempts() > 1
+                     && e.getReason() != GenerationException.Reason.NOT_CONFIGURED
+                     && e.getReason() != GenerationException.Reason.OFF_PEAK_REQUIRED && RequestBudget.allowRetry()) {
++                // Generation failed before final validation. A missing catalog must be discovered
++                // before spending the optional second call, not after that call returns SQL.
++                long failedGenerationMs = elapsedMs(generationStarted) + rewriteMs;
++                RequestBudget.stage("VALIDATION");
++                long admissionStarted = System.nanoTime();
++                try {
++                    authorizedCatalog.require();
++                } catch (BusinessSchemaUnavailableException unavailable) {
++                    return catalogUnavailable(question, null, LlmCallRecord.combine(rewriteCall, e.getCallRecord()),
++                            tableCount, retrievedTables, ddlChars, retrievalMs,
++                            failedGenerationMs, elapsedMs(admissionStarted), totalStarted);
++                }
++                RequestBudget.stage("GENERATION");
+                 generationRetried = true;
+                 EvaluationTrace.trigger("GENERATION_" + e.getReason().name());
+                 log.warn("首次生成异常（{}：{}），尝试重试一次生成", e.getReason(), e.getMessage());
+@@ -321,6 +366,12 @@
+                             : generator.generate(generationQuestion, schema);
+                     retryGenerationCall = e.getCallRecord();
+                 } catch (GenerationException e2) {
++                    if (e2.getReason() == GenerationException.Reason.SCHEMA_UNAVAILABLE) {
++                        return catalogUnavailable(question, null,
++                                LlmCallRecord.combine(rewriteCall, LlmCallRecord.combine(e.getCallRecord(), e2.getCallRecord())),
++                                tableCount, retrievedTables, ddlChars, retrievalMs,
++                                elapsedMs(generationStarted) + rewriteMs, 0, totalStarted);
++                    }
+                     EvaluationTrace.generationFailure(question, e2);
+                     EvaluationTrace.select(2);
+                     long generationMs = elapsedMs(generationStarted);
+@@ -557,6 +608,8 @@
+      */
+     private AgentResponse retryIfFailed(String question, String contractQuestion, AgentResponse first, String apiKey) {
+         RequestBudget.stage("RESULT_CHECK");
++        // 目录缺失是环境故障，改 SQL 无法修复；禁止额外调用模型。
++        if (isSchemaUnavailable(first)) return first;
+         var config = properties.getSelfCorrection();
+         var routing = properties.getRouting();
+         boolean escalate = routing.isEnabled() && !routing.getEscalationModel().isBlank();
+@@ -589,6 +642,18 @@
+         if (!shouldRetry || !RequestBudget.allowRetry()) {
+             return first;
+         }
++        long admissionStarted = System.nanoTime();
++        try {
++            authorizedCatalog.require();
++        } catch (BusinessSchemaUnavailableException unavailable) {
++            var blocked = catalogUnavailable(first.question(), first.sql(), null,
++                    first.schemaTableCount(), first.retrievedTables(), first.schemaDdlChars(),
++                    0, 0, elapsedMs(admissionStarted), admissionStarted);
++            EvaluationTrace.trigger("SCHEMA_UNAVAILABLE");
++            EvaluationTrace.attempt("CORRECTION_ADMISSION", blocked);
++            EvaluationTrace.select(2);
++            return AgentResponse.combineAttempts(first, blocked);
++        }
+         EvaluationTrace.trigger(firstSuspicion == null ? first.status().name() : firstSuspicion);
+ 
+         // 阶段 6：路由开启时换强模型重试。两个开关的作用不同——
+@@ -601,6 +666,11 @@
+                 ? askWithCorrection(question, first.sql(), feedback, model, apiKey)
+                 : askWithCorrection(question, first.sql(), feedback, model);
+         EvaluationTrace.attempt("CORRECTION_SQL", second);
++        if (isSchemaUnavailable(second)) {
++            // Catalog failure is terminal even if the first SQL had a suspicious successful result.
++            EvaluationTrace.select(2);
++            return AgentResponse.combineAttempts(first, second);
++        }
+         if (second.success()) {
+             // 择优而非覆盖：首次是「成功但可疑」时，第二次也必须通过同一套校验才配替换。
+             // 否则会出现「首次正确、被规则误判 → 重试 → 第二次也能跑但答错 → 采用第二次」，
+@@ -651,6 +721,11 @@
+         return sb.toString();
+     }
+ 
++    private static boolean isSchemaUnavailable(AgentResponse response) {
++        return response.violations().stream().anyMatch(v -> v.startsWith(
++                "[" + ValidationResult.Code.SCHEMA_UNAVAILABLE + "]"));
++    }
++
+     /** 把首次失败的真实原因整理成反馈。**只包含模型自己能观察到的信息，不含标准答案。** */
+     private static String retryFeedback(AgentResponse first) {
+         StringBuilder sb = new StringBuilder();
+@@ -682,14 +757,16 @@
+     public AgentResponse askWithFixedSql(String question, String sql, LlmCallRecord llmCall) {
+         long totalStarted = System.nanoTime();
+         long retrievalStarted = System.nanoTime();
++        try {
++            authorizedCatalog.require();
++        } catch (BusinessSchemaUnavailableException unavailable) {
++            return catalogUnavailable(question, sql, llmCall, 0, List.of(), 0,
++                    elapsedMs(retrievalStarted), 0, 0, totalStarted);
++        }
+         SchemaContext retrieved = schemaProvider.provide(question);
+         long retrievalMs = elapsedMs(retrievalStarted);
+-        // dry-run 的输入是 trusted gold SQL：校验用全量 schema，避免把
+-        // gold 里「不产出列、只起过滤作用」的 join 误判成检索漏表。
+-        // 检索指标仍按 retrieved 记录，召回率不会因此虚高。
+-        SchemaContext validationSchema = properties.getEval().isDryRun()
+-                ? schemaProvider.fullSchema() : retrieved;
+-        return validateAndExecute(question, sql, llmCall, validationSchema,
++        // 固定 SQL 与模型 SQL 共用同一目录校验边界；指标仍记录原始检索子集。
++        return validateAndExecute(question, sql, llmCall, retrieved,
+                 retrieved.tables().size(), retrieved.tableNames(),
+                 retrieved.ddlText() == null ? 0 : retrieved.ddlText().length(),
+                 retrievalMs, 0, totalStarted);
+@@ -725,6 +802,12 @@
+         long totalStarted = System.nanoTime();
+         RequestBudget.stage("RETRIEVAL");
+         long retrievalStarted = System.nanoTime();
++        try {
++            authorizedCatalog.require();
++        } catch (BusinessSchemaUnavailableException unavailable) {
++            return catalogUnavailable(question, previousSql, null, 0, List.of(), 0,
++                    elapsedMs(retrievalStarted), 0, 0, totalStarted);
++        }
+         SchemaContext schema = schemaProvider.provide(question);
+         RequestBudget.schema(schema);
+         long retrievalMs = elapsedMs(retrievalStarted);
+@@ -732,6 +815,15 @@
+         List<String> retrievedTables = schema.tableNames();
+         int ddlChars = schema.ddlText() == null ? 0 : schema.ddlText().length();
+ 
++        // Explicit correction entry points also need admission before calling the model.
++        RequestBudget.stage("VALIDATION");
++        long admissionStarted = System.nanoTime();
++        try {
++            authorizedCatalog.require();
++        } catch (BusinessSchemaUnavailableException unavailable) {
++            return catalogUnavailable(question, previousSql, null, tableCount, retrievedTables, ddlChars,
++                    retrievalMs, 0, elapsedMs(admissionStarted), totalStarted);
++        }
+         RequestBudget.stage("GENERATION");
+         long generationStarted = System.nanoTime();
+         GeneratedSql generated;
+@@ -741,6 +833,10 @@
+                     : generator.generateCorrection(question, schema, previousSql, feedback, modelOverride);
+         } catch (GenerationException e) {
+             long generationMs = elapsedMs(generationStarted);
++            if (e.getReason() == GenerationException.Reason.SCHEMA_UNAVAILABLE) {
++                return catalogUnavailable(question, null, e.getCallRecord(), tableCount, retrievedTables,
++                        ddlChars, retrievalMs, generationMs, 0, totalStarted);
++            }
+             AgentResponse.Status status = e.getReason() == GenerationException.Reason.NOT_CONFIGURED
+                     ? AgentResponse.Status.NOT_CONFIGURED
+                     : AgentResponse.Status.GENERATION_FAILED;
+@@ -760,7 +856,17 @@
+                                              long retrievalMs, long generationMs, long totalStarted) {
+         RequestBudget.stage("VALIDATION");
+         long validationStarted = System.nanoTime();
+-        ValidationResult validation = validator.validate(sql, schema);
++        // schema 是模型实际看到的检索/剪枝结果，不能冒充数据库对象白名单。
++        // 与发送入口及工具共享授权目录，直接依赖同一个 SchemaCatalog，含完整业务列。
++        // 此对象只交给本地校验器，不写回 schema、RequestBudget、会话或检索统计。
++        SchemaContext validationSchema;
++        try {
++            validationSchema = authorizedCatalog.require();
++        } catch (BusinessSchemaUnavailableException unavailable) {
++            return catalogUnavailable(question, sql, llmCall, tableCount, retrievedTables, ddlChars,
++                    retrievalMs, generationMs, elapsedMs(validationStarted), totalStarted);
++        }
++        ValidationResult validation = validator.validate(sql, validationSchema);
+         long validationMs = elapsedMs(validationStarted);
+ 
+         if (!validation.valid()) {
+@@ -817,6 +923,16 @@
+                 llmCall, tableCount, retrievedTables, ddlChars, timings);
+     }
+ 
++    private static AgentResponse catalogUnavailable(String question, String sql, LlmCallRecord call,
++                                                    int tableCount, List<String> retrievedTables, int ddlChars,
++                                                    long retrievalMs, long generationMs, long validationMs,
++                                                    long totalStarted) {
++        return AgentResponse.rejected(question, sql,
++                List.of("[" + ValidationResult.Code.SCHEMA_UNAVAILABLE + "] 完整业务 Schema 不可用，未执行 SQL"),
++                call, tableCount, retrievedTables, ddlChars,
++                timings(retrievalMs, generationMs, validationMs, 0, elapsedMs(totalStarted)));
++    }
++
+     private static AgentResponse.Timings timings(long retrieval, long generation, long validation,
+                                                  long execution, long total) {
+         return new AgentResponse.Timings(retrieval, generation, validation, execution, total);
+--- /dev/null
++++ b/src/main/java/com/text2sql/agent/retrieval/AuthorizedSchemaCatalog.java
+@@ -0,0 +1,53 @@
++package com.text2sql.agent.retrieval;
++
++import org.springframework.stereotype.Component;
++import java.util.HashSet;
++import java.util.Locale;
++import java.util.Objects;
++
++/**
++ * Shared execution/send prerequisite, independent of retrieval and prompt construction.
++ * SchemaCatalog is the process snapshot read through the application's DB role, limited
++ * to public business base tables by DatabaseSchemaReader. This is not a live DB health
++ * check or an online DDL/permission refresh.
++ */
++@Component
++public final class AuthorizedSchemaCatalog {
++    private static final java.util.regex.Pattern IDENTIFIER = java.util.regex.Pattern.compile("[A-Za-z_][A-Za-z_0-9]*");
++    private final SchemaCatalog catalog;
++
++    public AuthorizedSchemaCatalog(SchemaCatalog catalog) {
++        this.catalog = Objects.requireNonNull(catalog, "SchemaCatalog is required");
++    }
++
++    public SchemaContext require() {
++        return BusinessSchemaUnavailableException.require(() -> {
++            SchemaContext schema = catalog.full();
++            // Validate identity as well as structure. Never promote a malformed/internal
++            // entry to an executable identifier, including the direct INSPECT tools.
++            if (schema != null && schema.tables() != null) {
++                var names = new HashSet<String>();
++                for (var table : schema.tables()) {
++                    if (table == null || !DatabaseSchemaReader.isBusinessTableName(table.name())
++                            || !names.add(table.name().toLowerCase(Locale.ROOT))) {
++                        throw new BusinessSchemaUnavailableException();
++                    }
++                    if (table.columns() != null) {
++                        var columns = new HashSet<String>();
++                        for (var column : table.columns()) {
++                            if (column == null || !identifier(column.name())
++                                    || !columns.add(column.name().toLowerCase(Locale.ROOT))) {
++                                throw new BusinessSchemaUnavailableException();
++                            }
++                        }
++                    }
++                }
++            }
++            return schema;
++        });
++    }
++
++    static boolean identifier(String name) {
++        return name != null && IDENTIFIER.matcher(name).matches();
++    }
++}
+--- /dev/null
++++ b/src/main/java/com/text2sql/agent/retrieval/BusinessSchemaUnavailableException.java
+@@ -0,0 +1,29 @@
++package com.text2sql.agent.retrieval;
++
++import com.text2sql.agent.budget.RequestBudget;
++import java.util.function.Supplier;
++
++/** A catalog failure is an environment failure, never model repair feedback. */
++public final class BusinessSchemaUnavailableException extends RuntimeException {
++    public BusinessSchemaUnavailableException() {
++        super("完整业务 Schema 不可用，未执行 SQL");
++    }
++
++    public static SchemaContext require(Supplier<SchemaContext> source) {
++        try {
++            SchemaContext schema = source.get();
++            if (schema == null || schema.tables() == null || schema.tables().isEmpty()
++                    || schema.tables().stream().anyMatch(t -> t == null || t.name() == null
++                    || t.name().isBlank() || t.columns() == null || t.columns().isEmpty()
++                    || t.columns().stream().anyMatch(c -> c == null || c.name() == null || c.name().isBlank()))) {
++                throw new BusinessSchemaUnavailableException();
++            }
++            return schema;
++        } catch (RequestBudget.Exceeded exceeded) {
++            throw exceeded;
++        } catch (RuntimeException unavailable) {
++            // Do not leak connection details or turn catalog faults into SQL correction feedback.
++            throw new BusinessSchemaUnavailableException();
++        }
++    }
++}
+--- a/src/main/java/com/text2sql/agent/retrieval/DatabaseSchemaReader.java
++++ b/src/main/java/com/text2sql/agent/retrieval/DatabaseSchemaReader.java
+@@ -55,6 +55,11 @@
+ 
+     public DatabaseSchemaReader(JdbcTemplate jdbcTemplate) {
+         this.jdbcTemplate = jdbcTemplate;
++    }
++
++    static boolean isBusinessTableName(String name) {
++        return AuthorizedSchemaCatalog.identifier(name)
++                && !INTERNAL_TABLES.contains(name.toLowerCase(java.util.Locale.ROOT));
+     }
+ 
+     /**
+--- a/src/main/java/com/text2sql/agent/retrieval/SchemaProvider.java
++++ b/src/main/java/com/text2sql/agent/retrieval/SchemaProvider.java
+@@ -12,13 +12,13 @@
+     SchemaContext provide(String question);
+ 
+     /**
+-     * 全量 schema，供 dry-run 的 trusted gold SQL 校验使用。
++     * 同一 SchemaCatalog 的完整公开业务 schema，供执行前校验使用。
+      *
+-     * <p>dry-run 的目的是验证评估器/校验器/执行器自身没坏，输入是 gold SQL，
+-     * 不是模型生成结果。此时不应该用检索子集去卡 gold 里那些「不产出列、
+-     * 只起过滤作用」的 join；检索召回率由 retrieval 指标单独报告。
++     * <p>必须保留完整列，且不能包含内部持久化表或其他 schema。
++     * 生成、会话复用与检索指标仍使用 provide(question) 的原始检索子集。
++     * 空问题检索不能保证完整，未实现时必须明确失败，禁止伪装成全量目录。
+      */
+     default SchemaContext fullSchema() {
+-        return provide("");
++        throw new UnsupportedOperationException("SchemaProvider must expose its shared full business catalog");
+     }
+ }
+--- a/src/main/java/com/text2sql/agent/session/QuestionRewriter.java
++++ b/src/main/java/com/text2sql/agent/session/QuestionRewriter.java
+@@ -143,26 +143,39 @@
+                 ? lastTurn.rewrittenQuestion()
+                 : lastTurn.question();
+ 
++        // A rule fallback does not refund an already sent rewrite. Retain its known
++        // usage/elapsed time if the following catalog gate terminates the request.
++        com.text2sql.agent.observability.LlmCallRecord attemptedCall = null;
++        long attemptedMs = 0;
+         // 优先使用 LLM 改写
+         if (properties.getConversation().isRewriteWithLlm() && generator.isConfigured()) {
+             long rewriteStarted = System.nanoTime();
+             try {
+                 GeneratedSql result = rewriteWithLlm(prevQuestion, lastTurn.sql(), question);
+                 long rewriteMs = (System.nanoTime() - rewriteStarted) / 1_000_000;
++                attemptedCall = result == null ? null : result.call();
+                 String llmRewritten = result == null ? null : cleanRewriteText(result.rawOutput());
+                 if (llmRewritten != null && !llmRewritten.isBlank() && llmRewritten.length() < 300) {
+                     log.info("LLM 意图补全改写: '{}' -> '{}'", question, llmRewritten);
+                     return new RewriteOutcome(llmRewritten, result.call(), rewriteMs);
+                 }
+             } catch (Exception e) {
++                if (e instanceof com.text2sql.agent.generation.GenerationException failure
++                        && failure.getReason() == com.text2sql.agent.generation.GenerationException.Reason.SCHEMA_UNAVAILABLE) {
++                    throw failure;
++                }
++                if (e instanceof com.text2sql.agent.generation.GenerationException failure) {
++                    attemptedCall = failure.getCallRecord();
++                }
+                 log.warn("LLM 改写失败，降级为规则改写：{}", e.getMessage());
+             }
++            attemptedMs = (System.nanoTime() - rewriteStarted) / 1_000_000;
+         }
+ 
+         // 规则补全降级
+         String ruleRewritten = rewriteWithRules(prevQuestion, question);
+         log.info("规则意图补全改写: '{}' -> '{}'", question, ruleRewritten);
+-        return RewriteOutcome.withoutLlm(ruleRewritten);
++        return new RewriteOutcome(ruleRewritten, attemptedCall, attemptedMs);
+     }
+ 
+     /** 清理模型改写结果里可能混进来的引号、前缀与空白。 */
+--- a/src/main/java/com/text2sql/agent/tool/AgentLoop.java
++++ b/src/main/java/com/text2sql/agent/tool/AgentLoop.java
+@@ -80,10 +80,10 @@
+         history.add(new SystemMessage(systemPrompt));
+         history.add(new UserMessage(userPrompt));
+ 
+-        // 工具需要当前请求的 schema（表白名单/列白名单都从它来），所以每请求新建一份，
++        // 工具保留当前请求的生成上下文；执行白名单另取完整业务目录。每请求新建一份，
+         // 不能做成单例 Bean——否则上一个请求的 schema 会串到下一个请求。
+-        List<ToolCallback> callbacks = List.of(
+-                ToolCallbacks.from(new AgentToolFunctions(toolExecutor, schema)));
++        var functions = new AgentToolFunctions(toolExecutor, schema);
++        List<ToolCallback> callbacks = List.of(ToolCallbacks.from(functions));
+         Map<String, ToolCallback> byName = new LinkedHashMap<>();
+         for (ToolCallback cb : callbacks) {
+             byName.put(cb.getToolDefinition().name(), cb);
+@@ -93,78 +93,92 @@
+         String lastRaw = "";
+         String finalSql = null;
+ 
+-        for (int round = 1; round <= maxRounds; round++) {
+-            boolean finalRound = (round == maxRounds);
+-            // 最后一轮**仍然给工具**。
+-            //
+-            // 早期版本在最后一轮把 tools 置空，想用「协议层没有工具可调」强制收口。
+-            // 实测 DeepSeek 思考模式在这种情况下不会乖乖给 SQL，而是把它想调的工具
+-            // 以内部 DSML 文本形式吐出来（`<｜｜DSML｜｜ calls>...`），被当成 SQL
+-            // 送进校验层直接 REJECTED。所以收口改成「轮次用完后再要一次」，
+-            // 而不是靠抽掉工具。
+-            List<ToolCallback> available = callbacks;
+-
+-            // 第一轮追加一次性指令，逼模型先侦察。
+-            //
+-            // 为什么需要：实测模型即使手里有工具，也会直接凭 schema 猜——
+-            // 问"加州"时它没查 customer_state，直接断言"加州 = 'CA'"（实际是巴西州），
+-            // 自信地给出 0 行。DeepSeek 思考模式不支持 tool_choice（400），
+-            // 协议层强制不了，只能在第一轮明确要求。
+-            //
+-            // 这条指令放在临时列表里、不写进 history：否则它会在后续轮次继续生效，
+-            // 模型会一直侦察不肯定稿。
+-            List<Message> roundMessages = history;
+-            if (round == 1 && maxRounds > 1 && properties.getToolUse().isForceFirstInvestigation()) {
+-                roundMessages = new ArrayList<>(history);
+-                roundMessages.add(new UserMessage(
+-                        "【第一轮要求】这一轮先不要写 SQL。请调用工具确认你写这条 SQL 之前最不确定的一件事："
+-                                + "某个字段的实际取值、两张表该怎么连、或者数据的时间范围。"
+-                                + "只调用工具，不要输出 SQL。"));
++        try {
++            for (int round = 1; round <= maxRounds; round++) {
++                boolean finalRound = (round == maxRounds);
++                // 最后一轮**仍然给工具**。
++                //
++                // 早期版本在最后一轮把 tools 置空，想用「协议层没有工具可调」强制收口。
++                // 实测 DeepSeek 思考模式在这种情况下不会乖乖给 SQL，而是把它想调的工具
++                // 以内部 DSML 文本形式吐出来（`<｜｜DSML｜｜ calls>...`），被当成 SQL
++                // 送进校验层直接 REJECTED。所以收口改成「轮次用完后再要一次」，
++                // 而不是靠抽掉工具。
++                List<ToolCallback> available = callbacks;
++
++                // 第一轮追加一次性指令，逼模型先侦察。
++                //
++                // 为什么需要：实测模型即使手里有工具，也会直接凭 schema 猜——
++                // 问"加州"时它没查 customer_state，直接断言"加州 = 'CA'"（实际是巴西州），
++                // 自信地给出 0 行。DeepSeek 思考模式不支持 tool_choice（400），
++                // 协议层强制不了，只能在第一轮明确要求。
++                //
++                // 这条指令放在临时列表里、不写进 history：否则它会在后续轮次继续生效，
++                // 模型会一直侦察不肯定稿。
++                List<Message> roundMessages = history;
++                if (round == 1 && maxRounds > 1 && properties.getToolUse().isForceFirstInvestigation()) {
++                    roundMessages = new ArrayList<>(history);
++                    roundMessages.add(new UserMessage(
++                            "【第一轮要求】这一轮先不要写 SQL。请调用工具确认你写这条 SQL 之前最不确定的一件事："
++                                    + "某个字段的实际取值、两张表该怎么连、或者数据的时间范围。"
++                                    + "只调用工具，不要输出 SQL。"));
++                }
++
++                LlmSqlGenerator.AgentTurn turn = generator.callWithTools(
++                        roundMessages, available, "AGENT_ROUND_" + round, modelOverride, apiKeyOverride);
++                combinedRecord = LlmCallRecord.combine(combinedRecord, turn.call());
++                lastRaw = turn.raw();
++
++                AssistantMessage output = turn.response().getResult().getOutput();
++                if (!output.hasToolCalls()) {
++                    finalSql = SqlExtractor.extract(stripToolMarkup(output.getText()));
++                    log.info("Agent 第 {} 轮直接给出最终 SQL：{}", round, finalSql);
++                    break;
++                }
++
++                log.info("Agent 第 {} 轮请求 {} 个工具：{}", round, output.getToolCalls().size(),
++                        output.getToolCalls().stream().map(AssistantMessage.ToolCall::name).toList());
++
++                history.add(output);
++                List<ToolResponseMessage.ToolResponse> responses = new ArrayList<>();
++                for (AssistantMessage.ToolCall toolCall : output.getToolCalls()) {
++                    responses.add(new ToolResponseMessage.ToolResponse(
++                            toolCall.id(), toolCall.name(), invoke(byName, toolCall)));
++                    if (functions.schemaUnavailable()) {
++                        throw new GenerationException(GenerationException.Reason.SCHEMA_UNAVAILABLE,
++                                ToolResult.catalogUnavailable().output());
++                    }
++                }
++                history.add(ToolResponseMessage.builder().responses(responses).build());
++
++                if (finalRound) {
++                    // 轮次用完还在侦察：这批工具结果已经执行，再要一次，这次明确禁止调用。
++                    log.warn("Agent {} 轮用尽仍在调用工具，发起一次强制收口", maxRounds);
++                    history.add(new UserMessage(
++                            "工具调用轮次已用完，现在没有工具可用了。不要再输出任何工具调用或标记，"
++                                    + "直接根据已有信息输出最终 SQL 语句。"));
++                    LlmSqlGenerator.AgentTurn finish = generator.callWithTools(
++                            history, List.of(), "AGENT_FINALIZE", modelOverride, apiKeyOverride);
++                    combinedRecord = LlmCallRecord.combine(combinedRecord, finish.call());
++                    lastRaw = finish.raw();
++                    finalSql = SqlExtractor.extract(stripToolMarkup(finish.response().getResult().getOutput().getText()));
++                    log.info("Agent 强制收口产出：{}", finalSql);
++                }
+             }
+ 
+-            LlmSqlGenerator.AgentTurn turn = generator.callWithTools(
+-                    roundMessages, available, "AGENT_ROUND_" + round, modelOverride, apiKeyOverride);
+-            combinedRecord = LlmCallRecord.combine(combinedRecord, turn.call());
+-            lastRaw = turn.raw();
+-
+-            AssistantMessage output = turn.response().getResult().getOutput();
+-            if (!output.hasToolCalls()) {
+-                finalSql = SqlExtractor.extract(stripToolMarkup(output.getText()));
+-                log.info("Agent 第 {} 轮直接给出最终 SQL：{}", round, finalSql);
+-                break;
++            if (finalSql == null || finalSql.isBlank()) {
++                throw new GenerationException(GenerationException.Reason.UNPARSEABLE,
++                        "Agent 在 " + maxRounds + " 轮内未产出可解析的 SQL");
+             }
+-
+-            log.info("Agent 第 {} 轮请求 {} 个工具：{}", round, output.getToolCalls().size(),
+-                    output.getToolCalls().stream().map(AssistantMessage.ToolCall::name).toList());
+-
+-            history.add(output);
+-            List<ToolResponseMessage.ToolResponse> responses = new ArrayList<>();
+-            for (AssistantMessage.ToolCall toolCall : output.getToolCalls()) {
+-                responses.add(new ToolResponseMessage.ToolResponse(
+-                        toolCall.id(), toolCall.name(), invoke(byName, toolCall)));
+-            }
+-            history.add(ToolResponseMessage.builder().responses(responses).build());
+-
+-            if (finalRound) {
+-                // 轮次用完还在侦察：这批工具结果已经执行，再要一次，这次明确禁止调用。
+-                log.warn("Agent {} 轮用尽仍在调用工具，发起一次强制收口", maxRounds);
+-                history.add(new UserMessage(
+-                        "工具调用轮次已用完，现在没有工具可用了。不要再输出任何工具调用或标记，"
+-                                + "直接根据已有信息输出最终 SQL 语句。"));
+-                LlmSqlGenerator.AgentTurn finish = generator.callWithTools(
+-                        history, List.of(), "AGENT_FINALIZE", modelOverride, apiKeyOverride);
+-                combinedRecord = LlmCallRecord.combine(combinedRecord, finish.call());
+-                lastRaw = finish.raw();
+-                finalSql = SqlExtractor.extract(stripToolMarkup(finish.response().getResult().getOutput().getText()));
+-                log.info("Agent 强制收口产出：{}", finalSql);
+-            }
+-        }
+-
+-        if (finalSql == null || finalSql.isBlank()) {
+-            throw new GenerationException(GenerationException.Reason.UNPARSEABLE,
+-                    "Agent 在 " + maxRounds + " 轮内未产出可解析的 SQL");
+-        }
+-        return new GeneratedSql(finalSql, lastRaw, combinedRecord);
++            return new GeneratedSql(finalSql, lastRaw, combinedRecord);
++        } catch (GenerationException failure) {
++            // The generator owns the current failed turn's record; the loop owns all
++            // earlier completed turns. Parsing happens after a turn is already added
++            // to combinedRecord, so extraction exceptions carry no additional record.
++            // Merge once here for EVERY failure reason, including length/empty output,
++            // before an upstream catalog gate can turn it into a terminal rejection.
++            throw new GenerationException(failure.getReason(), failure.getMessage(),
++                    LlmCallRecord.combine(combinedRecord, failure.getCallRecord()), failure);
++        }
+     }
+ 
+     /**
+--- a/src/main/java/com/text2sql/agent/tool/AgentToolFunctions.java
++++ b/src/main/java/com/text2sql/agent/tool/AgentToolFunctions.java
+@@ -14,7 +14,7 @@
+  * 结构化 {@code tool_calls} 数组，上面三类问题在协议层就不存在了。
+  *
+  * <p><b>为什么不是 Spring Bean</b>：工具执行需要当前请求的 {@link SchemaContext}
+- * （表白名单、列白名单都从它来），是**每请求一份**的状态。做成单例 Bean 会把
++ * 以及不可恢复的目录故障标记，是**每请求一份**的状态。执行白名单来自共享业务目录。做成单例 Bean 会把
+  * 上一个请求的 schema 串到下一个请求里。
+  *
+  * <p><b>description 是给模型看的</b>：模型选不选这个工具，几乎完全取决于 description
+@@ -24,6 +24,10 @@
+ 
+     private final ToolExecutor executor;
+     private final SchemaContext schema;
++    // Per loop, sticky control signal; never infer fatality from model-visible error text.
++    private boolean schemaUnavailable;
++
++    boolean schemaUnavailable() { return schemaUnavailable; }
+ 
+     public AgentToolFunctions(ToolExecutor executor, SchemaContext schema) {
+         this.executor = executor;
+@@ -83,8 +87,12 @@
+      */
+     private String run(ToolType type, String argument) {
+         try {
++            if (schemaUnavailable) return ToolResult.catalogUnavailable().output();
+             ToolResult result = executor.execute(new ToolCall(type, argument, ""), schema);
++            schemaUnavailable |= result.schemaUnavailable();
+             return result.output();
++        } catch (com.text2sql.agent.budget.RequestBudget.Exceeded exceeded) {
++            throw exceeded;
+         } catch (Exception e) {
+             return "工具执行失败：" + e.getMessage();
+         }
+--- a/src/main/java/com/text2sql/agent/tool/ToolExecutor.java
++++ b/src/main/java/com/text2sql/agent/tool/ToolExecutor.java
+@@ -2,8 +2,10 @@
+ 
+ import com.text2sql.agent.execution.QueryResult;
+ import com.text2sql.agent.execution.SqlExecutor;
+-import com.text2sql.agent.retrieval.SchemaCatalog;
++import com.text2sql.agent.retrieval.AuthorizedSchemaCatalog;
+ import com.text2sql.agent.retrieval.SchemaContext;
++import com.text2sql.agent.retrieval.BusinessSchemaUnavailableException;
++import com.text2sql.agent.budget.RequestBudget;
+ import com.text2sql.agent.validation.SqlValidator;
+ import org.slf4j.Logger;
+ import org.slf4j.LoggerFactory;
+@@ -23,14 +25,14 @@
+ 
+     private static final Logger log = LoggerFactory.getLogger(ToolExecutor.class);
+ 
+-    private final SchemaCatalog catalog;
++    private final AuthorizedSchemaCatalog catalog;
+     private final SqlExecutor sqlExecutor;
+     private final SqlValidator sqlValidator;
+     private final com.text2sql.agent.execution.QueryPlanAnalyzer planAnalyzer;
+ 
+-    public ToolExecutor(SchemaCatalog catalog, SqlExecutor sqlExecutor, SqlValidator sqlValidator,
++    public ToolExecutor(AuthorizedSchemaCatalog catalog, SqlExecutor sqlExecutor, SqlValidator sqlValidator,
+                         com.text2sql.agent.execution.QueryPlanAnalyzer planAnalyzer) {
+-        this.catalog = catalog;
++        this.catalog = java.util.Objects.requireNonNull(catalog, "Authorized catalog is required");
+         this.sqlExecutor = sqlExecutor;
+         this.sqlValidator = sqlValidator;
+         this.planAnalyzer = planAnalyzer;
+@@ -46,14 +48,22 @@
+         }
+ 
+         try {
++            // The supplied schema is generation context, not an authorization boundary.
++            // Take one complete authorized snapshot for the entire tool invocation.
++            SchemaContext authorized = call.type() == ToolType.FINAL_SQL ? null
++                    : catalog.require();
+             return switch (call.type()) {
+-                case INSPECT_TABLE -> inspectTable(call.argument());
+-                case INSPECT_COLUMN -> inspectColumn(call.argument());
+-                case SAMPLE_QUERY -> sampleQuery(call.argument(), schema);
+-                case CHECK_JOIN -> checkJoin(call.argument(), schema);
+-                case EXPLAIN_QUERY -> explainQuery(call.argument(), schema);
++                case INSPECT_TABLE -> inspectTable(call.argument(), authorized);
++                case INSPECT_COLUMN -> inspectColumn(call.argument(), authorized);
++                case SAMPLE_QUERY -> sampleQuery(call.argument(), authorized);
++                case CHECK_JOIN -> checkJoin(call.argument(), authorized);
++                case EXPLAIN_QUERY -> explainQuery(call.argument(), authorized);
+                 case FINAL_SQL -> ToolResult.ok(call.argument(), List.of(), List.of());
+             };
++        } catch (RequestBudget.Exceeded exceeded) {
++            throw exceeded;
++        } catch (BusinessSchemaUnavailableException unavailable) {
++            return ToolResult.catalogUnavailable();
+         } catch (Exception e) {
+             log.warn("工具 {} 执行异常：{}", call.type(), e.getMessage());
+             return ToolResult.error(e.getMessage());
+@@ -63,12 +73,12 @@
+     /**
+      * 工具 1：查看指定表的前 5 行真实数据。
+      */
+-    private ToolResult inspectTable(String tableName) {
++    private ToolResult inspectTable(String tableName, SchemaContext schema) {
+         if (tableName == null || tableName.isBlank()) {
+             return ToolResult.error("缺少表名参数");
+         }
+         String cleanTable = tableName.strip().toLowerCase(Locale.ROOT);
+-        var tableOpt = catalog.full().tables().stream()
++        var tableOpt = schema.tables().stream()
+                 .filter(t -> t.name().equalsIgnoreCase(cleanTable))
+                 .findFirst();
+ 
+@@ -89,7 +99,7 @@
+      * 工具 2：查看指定列的值分布与常见枚举。
+      * 参数格式：table.column 或 table column
+      */
+-    private ToolResult inspectColumn(String tableColumn) {
++    private ToolResult inspectColumn(String tableColumn, SchemaContext schema) {
+         if (tableColumn == null || tableColumn.isBlank()) {
+             return ToolResult.error("缺少列名参数，格式如: orders.order_status");
+         }
+@@ -108,7 +118,7 @@
+         // 一个注入面——而且这里是五个工具里唯一一个既拼接、又不过 SQL 校验器的
+         // （sampleQuery / checkJoin / explainQuery 都会走 SqlValidator）。
+         // 用 catalog 里的规范名回填，既堵住注入，也顺手纠正大小写。
+-        var tableOpt = catalog.full().tables().stream()
++        var tableOpt = schema.tables().stream()
+                 .filter(t -> t.name().equalsIgnoreCase(table))
+                 .findFirst();
+         if (tableOpt.isEmpty()) {
+@@ -174,13 +184,13 @@
+ 
+         // 表名必须命中 catalog：用规范名回填，防止模型给出不存在的表，
+         // 也避免表名被直接拼进语句。
+-        var t1Opt = catalog.full().tables().stream()
++        var t1Opt = schema.tables().stream()
+                 .filter(t -> t.name().equalsIgnoreCase(t1))
+                 .findFirst();
+         if (t1Opt.isEmpty()) {
+             return ToolResult.error("表 " + t1 + " 不存在");
+         }
+-        var t2Opt = catalog.full().tables().stream()
++        var t2Opt = schema.tables().stream()
+                 .filter(t -> t.name().equalsIgnoreCase(t2))
+                 .findFirst();
+         if (t2Opt.isEmpty()) {
+--- a/src/main/java/com/text2sql/agent/tool/ToolResult.java
++++ b/src/main/java/com/text2sql/agent/tool/ToolResult.java
+@@ -10,13 +10,19 @@
+  * @param columns 列名（若有）
+  * @param rows 样例数据（若有）
+  */
+-public record ToolResult(boolean success, String output, List<String> columns, List<List<String>> rows) {
++public record ToolResult(boolean success, String output, List<String> columns, List<List<String>> rows,
++                         boolean schemaUnavailable) {
+ 
+     public static ToolResult ok(String output, List<String> columns, List<List<String>> rows) {
+-        return new ToolResult(true, output, columns, rows);
++        return new ToolResult(true, output, columns, rows, false);
+     }
+ 
+     public static ToolResult error(String errorMsg) {
+-        return new ToolResult(false, "工具执行失败：" + errorMsg, List.of(), List.of());
++        return new ToolResult(false, "工具执行失败：" + errorMsg, List.of(), List.of(), false);
++    }
++
++    public static ToolResult catalogUnavailable() {
++        return new ToolResult(false, "[SCHEMA_UNAVAILABLE] 完整业务 Schema 不可用，未执行 SQL",
++                List.of(), List.of(), true);
+     }
+ }
+--- a/src/main/java/com/text2sql/agent/validation/SqlValidator.java
++++ b/src/main/java/com/text2sql/agent/validation/SqlValidator.java
+@@ -69,7 +69,7 @@
+      * 校验 SQL。
+      *
+      * @param sql    模型生成的 SQL
+-     * @param schema 本次请求的 schema 上下文，用于表白名单校验
++     * @param schema 完整受授权的业务目录；调用者不得传生成用的检索/剪枝子集
+      */
+     public ValidationResult validate(String sql, SchemaContext schema) {
+         List<ValidationResult.Violation> violations = new ArrayList<>();
+--- a/src/main/java/com/text2sql/agent/validation/ValidationResult.java
++++ b/src/main/java/com/text2sql/agent/validation/ValidationResult.java
+@@ -33,6 +33,8 @@
+         MULTIPLE_STATEMENTS,
+         /** 没有 LIMIT，且配置为拒绝模式。 */
+         MISSING_LIMIT,
++        /** 完整业务目录不可用；禁止执行，且不交给模型修复环境故障。 */
++        SCHEMA_UNAVAILABLE,
+         /** 引用了 schema 里不存在的表。 */
+         UNKNOWN_TABLE,
+         /** 引用了 schema 里不存在的列。 */
+--- a/src/test/java/com/text2sql/agent/budget/BudgetOrchestratorTest.java
++++ b/src/test/java/com/text2sql/agent/budget/BudgetOrchestratorTest.java
+@@ -45,7 +45,7 @@
+         when(model.call(any(Prompt.class))).thenReturn(new ChatResponse(List.of(
+                 new Generation(new AssistantMessage("SELECT 1")))));
+         try (var logs = new LlmCallLog(props); var trace = EvaluationTrace.open()) {
+-            var generator = new LlmSqlGenerator(props, new PromptTemplate(), logs);
++            var generator = new LlmSqlGenerator(props, new PromptTemplate(), logs, com.text2sql.agent.retrieval.CatalogFixture.healthy());
+             ReflectionTestUtils.setField(generator, "chatModel", model);
+             var result = RequestBudgetRunner.run("orders", null, RequestBudgetTest.config(3000), () -> {
+                 generator.generate("orders", new SchemaContext(List.of(), List.of(), "", "orders"));
+@@ -76,6 +76,7 @@
+         var schema = new SchemaContext(List.of(new SchemaContext.Table("orders", null,
+                 List.of(new SchemaContext.Column("order_id", "text", false, null)))), List.of(), "", "orders");
+         when(schemas.provide(anyString())).thenAnswer(i -> { Thread.sleep(30); return schema; });
++        when(schemas.fullSchema()).thenReturn(schema);
+         when(validator.validate(anyString(), any())).thenAnswer(i -> ValidationResult.ok(i.getArgument(0)));
+         when(model.call(any(Prompt.class))).thenReturn(sqlResponse());
+         when(executor.execute(anyString())).thenAnswer(i -> {
+@@ -85,9 +86,9 @@
+             return null;
+         });
+         try (var logs = new LlmCallLog(props); var trace = EvaluationTrace.open()) {
+-            var generator = new LlmSqlGenerator(props, new PromptTemplate(), logs);
++            var generator = new LlmSqlGenerator(props, new PromptTemplate(), logs, com.text2sql.agent.retrieval.CatalogFixture.healthy());
+             ReflectionTestUtils.setField(generator, "chatModel", model);
+-            var orchestrator = new Text2SqlOrchestrator(schemas, generator, validator, executor,
++            var orchestrator = new Text2SqlOrchestrator(schemas, com.text2sql.agent.retrieval.CatalogFixture.from(schemas::fullSchema), generator, validator, executor,
+                     mock(AmbiguityDetector.class), new SemanticCache(props), new ResultChecker(),
+                     mock(com.text2sql.agent.tool.AgentLoop.class), props);
+             long started = System.nanoTime();
+@@ -112,7 +113,7 @@
+         var model = mock(ChatModel.class);
+         when(model.call(any(Prompt.class))).thenReturn(sqlResponse());
+         try (var logs = new LlmCallLog(props); var trace = EvaluationTrace.open()) {
+-            var generator = new LlmSqlGenerator(props, new PromptTemplate(), logs);
++            var generator = new LlmSqlGenerator(props, new PromptTemplate(), logs, com.text2sql.agent.retrieval.CatalogFixture.healthy());
+             ReflectionTestUtils.setField(generator, "chatModel", model);
+             var schema = new SchemaContext(List.of(), List.of(), "", "orders");
+             var options = RequestBudgetTest.config(3000);
+--- a/src/test/java/com/text2sql/agent/budget/BudgetTimingsAcceptanceProbe.java
++++ b/src/test/java/com/text2sql/agent/budget/BudgetTimingsAcceptanceProbe.java
+@@ -73,6 +73,7 @@
+                 List.of(new SchemaContext.Column("order_id", "text", false, null)))), List.of(), "", "orders");
+         var schemas = mock(SchemaProvider.class);
+         when(schemas.provide(anyString())).thenAnswer(i -> { Thread.sleep(30); return schema; });
++        when(schemas.fullSchema()).thenReturn(schema);
+         var validator = mock(SqlValidator.class);
+         when(validator.validate(anyString(), any())).thenAnswer(i -> ValidationResult.ok(i.getArgument(0)));
+         var executor = mock(SqlExecutor.class);
+@@ -93,9 +94,9 @@
+             return BudgetOrchestratorTest.sqlResponse();
+         });
+         try (var logs = new LlmCallLog(props); var trace = EvaluationTrace.open()) {
+-            var generator = new LlmSqlGenerator(props, new PromptTemplate(), logs);
++            var generator = new LlmSqlGenerator(props, new PromptTemplate(), logs, com.text2sql.agent.retrieval.CatalogFixture.healthy());
+             ReflectionTestUtils.setField(generator, "chatModel", model);
+-            var orchestrator = new Text2SqlOrchestrator(schemas, generator, validator, executor,
++            var orchestrator = new Text2SqlOrchestrator(schemas, com.text2sql.agent.retrieval.CatalogFixture.from(schemas::fullSchema), generator, validator, executor,
+                     mock(AmbiguityDetector.class), new SemanticCache(props), checker,
+                     mock(com.text2sql.agent.tool.AgentLoop.class), props);
+             long started = System.nanoTime();
+--- a/src/test/java/com/text2sql/agent/budget/BudgetTransportTest.java
++++ b/src/test/java/com/text2sql/agent/budget/BudgetTransportTest.java
+@@ -49,7 +49,7 @@
+             props.getLlm().setApiKey("local-fixture-only");
+             props.getObservability().setEnabled(false);
+             try (var logs = new LlmCallLog(props); var trace = EvaluationTrace.open()) {
+-                var generator = new LlmSqlGenerator(props, new PromptTemplate(), logs);
++                var generator = new LlmSqlGenerator(props, new PromptTemplate(), logs, com.text2sql.agent.retrieval.CatalogFixture.healthy());
+                 long started = System.nanoTime();
+                 AgentResponse result = RequestBudgetRunner.run("count orders", null, RequestBudgetTest.config(1200), () -> {
+                     generator.generate("count orders", new SchemaContext(List.of(), List.of(), "", ""));
+--- /dev/null
++++ b/src/test/java/com/text2sql/agent/budget/CatalogSendBoundaryTest.java
+@@ -0,0 +1,379 @@
++package com.text2sql.agent.budget;
++
++import com.text2sql.agent.generation.*;
++
++import com.text2sql.agent.budget.RequestBudget;
++import com.text2sql.agent.cache.SemanticCache;
++import com.text2sql.agent.clarification.AmbiguityDetector;
++import com.text2sql.agent.config.AgentProperties;
++import com.text2sql.agent.cost.*;
++import com.text2sql.agent.execution.*;
++import com.text2sql.agent.observability.LlmCallLog;
++import com.text2sql.agent.orchestrator.*;
++import com.text2sql.agent.retrieval.*;
++import com.text2sql.agent.session.*;
++import com.text2sql.agent.tool.*;
++import com.text2sql.agent.validation.*;
++import org.junit.jupiter.api.Test;
++import org.junit.jupiter.api.io.TempDir;
++import org.junit.jupiter.params.ParameterizedTest;
++import org.junit.jupiter.params.provider.Arguments;
++import org.junit.jupiter.params.provider.MethodSource;
++import org.junit.jupiter.params.provider.ValueSource;
++import org.springframework.ai.chat.messages.*;
++import org.springframework.ai.chat.metadata.*;
++import org.springframework.ai.chat.model.*;
++import org.springframework.ai.chat.prompt.Prompt;
++import org.springframework.test.util.ReflectionTestUtils;
++import java.math.BigDecimal;
++import java.nio.file.Path;
++import java.util.*;
++import java.util.concurrent.atomic.*;
++import java.util.stream.Stream;
++import static org.assertj.core.api.Assertions.*;
++import static org.mockito.ArgumentMatchers.*;
++import static org.mockito.Mockito.*;
++
++/** Count real LlmSqlGenerator -> ChatModel.call, never mock the generator itself. */
++class CatalogSendBoundaryTest {
++    @TempDir Path temp;
++    static final SchemaContext FULL = new SchemaContext(List.of(new SchemaContext.Table("orders", null,
++            List.of(new SchemaContext.Column("order_id", "text", false, null)))), List.of(), "", "FULL");
++    static final SchemaContext PRUNED = new SchemaContext(List.of(new SchemaContext.Table("orders", null,
++            List.of(new SchemaContext.Column("order_id", "text", false, null)))), List.of(), "", "PRUNED");
++    static final String SQL = "SELECT order_id FROM orders LIMIT 5";
++    static ChatResponse response(String text, boolean known) {
++        return new ChatResponse(List.of(new Generation(new AssistantMessage(text))), known
++                ? ChatResponseMetadata.builder().usage(new DefaultUsage(10, 5)).build()
++                : ChatResponseMetadata.builder().build());
++    }
++
++    final class Fixture implements AutoCloseable {
++        final AgentProperties p = new AgentProperties();
++        final AtomicReference<String> fault = new AtomicReference<>("healthy");
++        final AtomicInteger sends = new AtomicInteger();
++        final SchemaCatalog source = mock(SchemaCatalog.class);
++        final AuthorizedSchemaCatalog catalog = new AuthorizedSchemaCatalog(source);
++        final ChatModel model = mock(ChatModel.class);
++        final SqlExecutor db = mock(SqlExecutor.class);
++        final QueryPlanAnalyzer plans = mock(QueryPlanAnalyzer.class);
++        final LlmCallLog logs;
++        final CostQuota quota;
++        final LlmSqlGenerator gen;
++        final ToolExecutor tools;
++        final AgentLoop loop;
++        final SessionStore sessions;
++        final Text2SqlOrchestrator orch;
++
++        Fixture(boolean requestBudget, boolean costQuota, boolean byok) {
++            p.getRequestBudget().setEnabled(requestBudget);
++            p.getRequestBudget().setTimeoutMs(5000); p.getRequestBudget().setMinRetryRemainingMs(0);
++            p.getSelfCorrection().setEnabled(true); p.getSelfCorrection().setMaxAttempts(2);
++            p.getClarification().setEnabled(false); p.getResultChecker().setEnabled(false);
++            p.getObservability().setEnabled(false); p.getLlm().setBaseUrl("http://127.0.0.1:1");
++            p.getLlm().setApiKey(""); p.getLlm().setInputPricePer1k(1); p.getLlm().setOutputPricePer1k(2);
++            when(source.full()).thenAnswer(i -> switch (fault.get()) {
++                case "null" -> null;
++                case "empty" -> new SchemaContext(List.of(), List.of(), "", "");
++                case "throws" -> throw new IllegalStateException("secret-db-detail");
++                case "unimplemented" -> throw new UnsupportedOperationException("not implemented");
++                case "malformed" -> new SchemaContext(List.of(new SchemaContext.Table("orders", null, List.of())), List.of(), "", "");
++                default -> FULL;
++            });
++            var q = new CostQuotaProperties(); q.setEnabled(costQuota);
++            q.setTotalYuan(new BigDecimal("10")); q.setStateFile(temp.resolve(UUID.randomUUID()+".json").toString());
++            quota = new CostQuota(q, p); logs = new LlmCallLog(p);
++            gen = new LlmSqlGenerator(p, new PromptTemplate(p), logs, quota, catalog);
++            ReflectionTestUtils.setField(gen, "chatModel", model);
++            if (byok) {
++                @SuppressWarnings("unchecked") var pool = (Map<String, ChatModel>)ReflectionTestUtils.getField(gen, "dynamicChatModels");
++                pool.put("local-fixture-key", model);
++            }
++            when(model.call(any(Prompt.class))).thenAnswer(i -> { sends.incrementAndGet(); return response(SQL, true); });
++            when(db.execute(anyString())).thenReturn(new QueryResult(List.of("order_id"), List.of(List.of("o1")), false, 1));
++            when(plans.analyze(anyString())).thenReturn(QueryPlanAnalyzer.PlanAnalysis.safe(1, 1, "{}"));
++            var validator = new SqlValidator(p);
++            tools = new ToolExecutor(catalog, db, validator, plans);
++            loop = new AgentLoop(gen, new PromptTemplate(p), tools, p);
++            sessions = new SessionStore(p);
++            SchemaProvider retrieval = question -> PRUNED; // fullSchema intentionally unimplemented: execution never asks retrieval for authority.
++            orch = new Text2SqlOrchestrator(retrieval, catalog, gen, validator, db, mock(AmbiguityDetector.class),
++                    new SemanticCache(p), new ResultChecker(), loop, sessions, new QuestionRewriter(gen, p), plans, p);
++        }
++        void entry(String path, String key) {
++            switch (path) {
++                case "generate" -> gen.generate("orders", PRUNED, null, key);
++                case "correction" -> gen.generateCorrection("orders", PRUNED, "SELECT wrong", "fix", null, key);
++                case "rewrite" -> gen.callMessages(List.of(new UserMessage("rewrite")), "REWRITE", null, key);
++                case "tool" -> gen.callWithTools(List.of(new UserMessage("tools")), List.of(), "AGENT_FINALIZE", null, key);
++                default -> throw new AssertionError(path);
++            }
++        }
++        public void close() { logs.close(); quota.close(); }
++    }
++
++    static Stream<Arguments> unavailableEntries() {
++        var cases = new ArrayList<Arguments>();
++        for (String path : List.of("generate", "correction", "rewrite", "tool"))
++            for (String fault : List.of("null", "empty", "throws", "unimplemented", "malformed"))
++                for (String config : List.of("no-budget", "budget", "quota", "both", "byok", "byok-budget"))
++                    cases.add(Arguments.of(path, fault, config));
++        return cases.stream();
++    }
++
++    @ParameterizedTest @MethodSource("unavailableEntries")
++    void everyEntryRejectsBeforeSendReservationAndCallCount(String path, String fault, String config) throws Exception {
++        boolean budgetOn = List.of("budget", "both", "byok-budget").contains(config);
++        boolean quotaOn = List.of("quota", "both").contains(config);
++        boolean byok = config.startsWith("byok");
++        try (var f = new Fixture(budgetOn || quotaOn, quotaOn, byok)) {
++            f.fault.set(fault);
++            var budget = new RequestBudget(f.p.getRequestBudget());
++            try (var scope = RequestBudget.bind(budgetOn ? budget : null)) {
++                assertThatThrownBy(() -> f.entry(path, byok ? "local-fixture-key" : null))
++                        .isInstanceOfSatisfying(GenerationException.class, e ->
++                                assertThat(e.getReason()).isEqualTo(GenerationException.Reason.SCHEMA_UNAVAILABLE))
++                        .hasMessageNotContaining("secret-db-detail");
++            }
++            assertThat(f.sends).hasValue(0); verifyNoInteractions(f.model, f.db, f.plans);
++            assertThat(budget.snapshot("CHECK").modelCalls()).isZero();
++            if (quotaOn) {
++                assertThat(f.quota.snapshot()).containsEntry("knownCalls", 0L).containsEntry("unknownCalls", 0L).containsEntry("pendingCalls", 0L);
++                assertThat((BigDecimal)f.quota.snapshot().get("heldYuan")).isEqualByComparingTo("0");
++            }
++        }
++    }
++
++    static void unavailable(AgentResponse result) {
++        assertThat(result.status()).isEqualTo(AgentResponse.Status.REJECTED);
++        assertThat(result.violations()).anyMatch(v -> v.startsWith("[SCHEMA_UNAVAILABLE]"));
++    }
++
++    @ParameterizedTest @ValueSource(booleans={false, true})
++    void firstGenerationFailureKeepsKnownOrUnknownUsageWithoutRetry(boolean known) {
++        try (var f = new Fixture(true, true, false)) {
++            when(f.model.call(any(Prompt.class))).thenAnswer(i -> {
++                f.sends.incrementAndGet(); f.fault.set("null");
++                if (!known) throw new IllegalStateException("synthetic transport failed after start");
++                return response("", true);
++            });
++            var r = f.orch.ask("列出订单"); unavailable(r);
++            assertThat(f.sends).hasValue(1); assertThat(r.budget().modelCalls()).isEqualTo(1);
++            assertThat(r.budget().unknownUsageCalls()).isEqualTo(known ? 0 : 1);
++            assertThat(f.quota.snapshot()).containsEntry("knownCalls", known ? 1L : 0L)
++                    .containsEntry("unknownCalls", known ? 0L : 1L).containsEntry("pendingCalls", 0L);
++            if (known) assertThat(r.llmCall().totalTokens()).isEqualTo(15);
++            verifyNoInteractions(f.db, f.plans);
++        }
++    }
++
++    @ParameterizedTest @ValueSource(booleans={false, true})
++    void automaticCorrectionStopsAfterFirstResponseAndPreservesItsUsage(boolean budgetOn) {
++        try (var f = new Fixture(budgetOn, budgetOn, false)) {
++            when(f.model.call(any(Prompt.class))).thenAnswer(i -> {
++                f.sends.incrementAndGet(); f.fault.set("null"); return response(SQL, true);
++            });
++            var r = f.orch.ask("列出订单"); unavailable(r);
++            assertThat(f.sends).hasValue(1); assertThat(r.llmCall().totalTokens()).isEqualTo(15);
++            verifyNoInteractions(f.db, f.plans);
++        }
++    }
++
++    static Stream<Arguments> toolTransitions() {
++        var cases = new ArrayList<Arguments>();
++        for (String tool : List.of("SAMPLE_QUERY", "UNKNOWN_TOOL"))
++            for (boolean budget : List.of(false, true))
++                for (int rounds : List.of(1, 2))
++                    for (boolean failAfterSend : List.of(false, true))
++                        cases.add(Arguments.of(tool, budget, rounds, failAfterSend));
++        return cases.stream();
++    }
++
++    @ParameterizedTest @MethodSource("toolTransitions")
++    void malformedAndUnknownToolsCannotBypassSendGate(String tool, boolean budgetOn, int rounds, boolean failAfterSend) throws Exception {
++        try (var f = new Fixture(budgetOn, budgetOn, false)) {
++            when(f.model.call(any(Prompt.class))).thenAnswer(i -> {
++                int n = f.sends.incrementAndGet();
++                if (n > 1) return response(SQL, true);
++                if (failAfterSend) f.fault.set("null");
++                var output = AssistantMessage.builder().content("").toolCalls(List.of(
++                        new AssistantMessage.ToolCall("a", "function", tool, "{broken-json"))).build();
++                return new ChatResponse(List.of(new Generation(output)),
++                        ChatResponseMetadata.builder().usage(new DefaultUsage(10,5)).build());
++            });
++            var budget = new RequestBudget(f.p.getRequestBudget());
++            try (var scope = RequestBudget.bind(budgetOn ? budget : null)) {
++                if (failAfterSend) {
++                    assertThatThrownBy(() -> f.loop.run("orders", PRUNED, rounds, null))
++                            .isInstanceOfSatisfying(GenerationException.class, e -> {
++                                assertThat(e.getReason()).isEqualTo(GenerationException.Reason.SCHEMA_UNAVAILABLE);
++                                assertThat(e.getCallRecord().totalTokens()).isEqualTo(15);
++                            });
++                    assertThat(f.sends).hasValue(1);
++                } else {
++                    var r = f.loop.run("orders", PRUNED, rounds, null);
++                    assertThat(r.sql()).isEqualTo(SQL); assertThat(r.call().totalTokens()).isEqualTo(30);
++                    assertThat(f.sends).hasValue(2);
++                }
++            }
++            if (f.quota.enabled()) assertThat(f.quota.snapshot()).containsEntry("pendingCalls", 0L).containsEntry("unknownCalls", 0L);
++            verifyNoInteractions(f.db, f.plans);
++        }
++    }
++
++    @Test void unimplementedRetrievalFullSchemaDoesNotReplaceSharedCatalogAuthority() {
++        try (var f = new Fixture(true, false, false)) {
++            assertThat(f.orch.ask("列出订单").success()).isTrue();
++            assertThat(f.sends).hasValue(1); verify(f.db).execute(SQL);
++        }
++    }
++
++    @ParameterizedTest @ValueSource(booleans={false, true})
++    void explicitCorrectionRevalidatesAndKeepsAlreadySentUsage(boolean budgetOn) {
++        try (var f = new Fixture(budgetOn, budgetOn, false)) {
++            when(f.model.call(any(Prompt.class))).thenAnswer(i -> {
++                f.sends.incrementAndGet(); f.fault.set("null"); return response(SQL, true);
++            });
++            var result = f.orch.askWithCorrection("列出订单", "SELECT bad", "feedback");
++            unavailable(result); assertThat(f.sends).hasValue(1);
++            assertThat(result.llmCall().totalTokens()).isEqualTo(15); verifyNoInteractions(f.db, f.plans);
++        }
++    }
++
++    @ParameterizedTest @ValueSource(booleans={false, true})
++    void rewriteFallbackRetainsItsUsageWhenCatalogFailsAfterFirstCall(boolean budgetOn) {
++        try (var f = new Fixture(budgetOn, budgetOn, false)) {
++            f.p.getConversation().setEnabled(true); f.p.getConversation().setRewriteWithLlm(true);
++            var session = f.sessions.getOrCreate("rewrite-test");
++            session.addTurn(ConversationTurn.of(1, "2018年有多少订单", "2018年有多少订单", SQL, "SUCCESS", "1 row"), 5);
++            when(f.model.call(any(Prompt.class))).thenAnswer(i -> {
++                f.sends.incrementAndGet(); f.fault.set("null");
++                // Existing callMessages SQL extraction fails on prose; rule fallback
++                // must retain this paid record before the next catalog gate terminates.
++                return response("2017年有多少订单", true);
++            });
++            var result = f.orch.ask("那2017年的呢？", "rewrite-test");
++            unavailable(result); assertThat(f.sends).hasValue(1);
++            assertThat(result.llmCall().totalTokens()).isEqualTo(15); verifyNoInteractions(f.db, f.plans);
++        }
++    }
++
++    @Test void rewriteCatalogFailureIsTerminalWithoutRuleFallbackOrGeneration() {
++        try (var f = new Fixture(true, true, false)) {
++            f.p.getConversation().setEnabled(true); f.p.getConversation().setRewriteWithLlm(true);
++            var session = f.sessions.getOrCreate("rewrite-unavailable");
++            session.addTurn(ConversationTurn.of(1, "2018年有多少订单", "2018年有多少订单", SQL, "SUCCESS", "1 row"), 5);
++            f.fault.set("null");
++            var result = f.orch.ask("那2017年的呢？", "rewrite-unavailable");
++            unavailable(result); assertThat(result.budget().modelCalls()).isZero();
++            verifyNoInteractions(f.model, f.db, f.plans);
++            assertThat(f.quota.snapshot()).containsEntry("knownCalls", 0L).containsEntry("unknownCalls", 0L).containsEntry("pendingCalls", 0L);
++        }
++    }
++
++    static Stream<Arguments> failedToolTurns() {
++        var cases = new ArrayList<Arguments>();
++        for (int rounds : List.of(1, 2))
++            for (int failOn = 1; failOn <= rounds + 1; failOn++)
++                for (String failure : List.of("empty", "length"))
++                    for (boolean budget : List.of(false, true))
++                        cases.add(Arguments.of(rounds, failOn, failure, budget));
++        return cases.stream();
++    }
++
++    @ParameterizedTest @MethodSource("failedToolTurns")
++    void everyFailedTurnKeepsAllEarlierUsageBeforeCatalogTermination(int rounds, int failOn,
++                                                                    String failure, boolean budgetOn) {
++        try (var f = new Fixture(budgetOn, budgetOn, false);
++             var trace = com.text2sql.agent.observability.EvaluationTrace.open()) {
++            f.p.getRequestBudget().setMaxModelCalls(4);
++            f.p.getToolUse().setEnabled(true); f.p.getToolUse().setTableThreshold(1);
++            f.p.getToolUse().setMaxRounds(rounds);
++            when(f.model.call(any(Prompt.class))).thenAnswer(i -> {
++                int n = f.sends.incrementAndGet();
++                var usage = ChatResponseMetadata.builder().usage(new DefaultUsage(10*n, 5*n)).build();
++                if (n == failOn) {
++                    f.fault.set("null");
++                    if (failure.equals("empty")) return new ChatResponse(List.of(new Generation(new AssistantMessage(""))), usage);
++                    var meta = mock(ChatGenerationMetadata.class);
++                    when(meta.getFinishReason()).thenReturn("length");
++                    return new ChatResponse(List.of(new Generation(new AssistantMessage(SQL), meta)), usage);
++                }
++                var output = AssistantMessage.builder().content("").toolCalls(List.of(
++                        new AssistantMessage.ToolCall("t"+n, "function", "UNKNOWN_TOOL", "{}"))).build();
++                return new ChatResponse(List.of(new Generation(output)), usage);
++            });
++            var result = f.orch.ask("列出订单"); unavailable(result);
++            int sum = failOn*(failOn+1)/2;
++            assertThat(f.sends).hasValue(failOn);
++            assertThat(result.llmCall().promptTokens()).isEqualTo(10*sum);
++            assertThat(result.llmCall().completionTokens()).isEqualTo(5*sum);
++            assertThat(result.llmCall().totalTokens()).isEqualTo(15*sum);
++            assertThat(result.llmCall().costYuan()).isCloseTo(0.02*sum, within(0.000000001));
++            assertThat(trace.calls()).hasSize(failOn);
++            if (budgetOn) {
++                assertThat(result.budget().modelCalls()).isEqualTo(failOn);
++                assertThat(result.budget().unknownUsageCalls()).isZero();
++                assertThat(f.quota.snapshot()).containsEntry("knownCalls", (long)failOn)
++                        .containsEntry("unknownCalls", 0L).containsEntry("pendingCalls", 0L);
++            }
++            verifyNoInteractions(f.db, f.plans);
++        }
++    }
++
++    static Stream<Arguments> receivedResponseFailures() {
++        var cases = new ArrayList<Arguments>();
++        for (String path : List.of("generate", "correction", "rewrite", "tool"))
++            for (String shape : List.of("empty-choices-known", "empty-choices-unknown", "null-response", "null-message-known"))
++                for (String config : List.of("no-budget", "budget", "quota", "byok", "byok-budget"))
++                    cases.add(Arguments.of(path, shape, config));
++        return cases.stream();
++    }
++
++    @ParameterizedTest @MethodSource("receivedResponseFailures")
++    void contentFailurePreservesReceivedUsageBeforeDirectoryTermination(String path, String shape, String config) throws Exception {
++        boolean budgetOn = List.of("budget", "quota", "byok-budget").contains(config);
++        boolean quotaOn = config.equals("quota"), byok = config.startsWith("byok");
++        boolean known = shape.endsWith("-known");
++        try (var f = new Fixture(budgetOn, quotaOn, byok);
++             var trace = com.text2sql.agent.observability.EvaluationTrace.open()) {
++            when(f.model.call(any(Prompt.class))).thenAnswer(i -> {
++                f.sends.incrementAndGet(); f.fault.set("null");
++                var meta = ChatResponseMetadata.builder().usage(new DefaultUsage(10, 5)).build();
++                return switch (shape) {
++                    case "empty-choices-known" -> new ChatResponse(List.of(), meta);
++                    case "empty-choices-unknown" -> new ChatResponse(List.of());
++                    case "null-message-known" -> new ChatResponse(List.of(mock(Generation.class)), meta);
++                    default -> null;
++                };
++            });
++            var budget = new RequestBudget(f.p.getRequestBudget());
++            try (var scope = RequestBudget.bind(budgetOn ? budget : null)) {
++                var failure = catchThrowableOfType(GenerationException.class,
++                        () -> f.entry(path, byok ? "local-fixture-key" : null));
++                assertThat(failure.getReason()).isEqualTo(GenerationException.Reason.CALL_FAILED);
++                if (known) {
++                    assertThat(failure.getCallRecord().totalTokens()).isEqualTo(15);
++                    assertThat(failure.getCallRecord().costYuan()).isCloseTo(0.02, within(0.000000001));
++                } else {
++                    assertThat(failure.getCallRecord() == null || failure.getCallRecord().totalTokens() == 0).isTrue();
++                }
++                assertThatThrownBy(() -> f.entry(path, byok ? "local-fixture-key" : null))
++                        .isInstanceOfSatisfying(GenerationException.class, e ->
++                                assertThat(e.getReason()).isEqualTo(GenerationException.Reason.SCHEMA_UNAVAILABLE));
++            }
++            assertThat(f.sends).hasValue(1); assertThat(trace.calls()).hasSize(1);
++            if (known) assertThat(trace.calls().getFirst().usage().totalTokens()).isEqualTo(15);
++            else assertThat(trace.calls().getFirst().status()).contains("UNKNOWN_USAGE");
++            if (budgetOn) {
++                assertThat(budget.snapshot("CHECK").modelCalls()).isEqualTo(1);
++                assertThat(budget.snapshot("CHECK").unknownUsageCalls()).isEqualTo(known ? 0 : 1);
++            }
++            if (quotaOn) {
++                assertThat(f.quota.snapshot()).containsEntry("knownCalls", known ? 1L : 0L)
++                        .containsEntry("unknownCalls", known ? 0L : 1L).containsEntry("pendingCalls", 0L);
++            }
++            verifyNoInteractions(f.db, f.plans);
++        }
++    }
++}
+--- a/src/test/java/com/text2sql/agent/clarification/ClarificationReplyTest.java
++++ b/src/test/java/com/text2sql/agent/clarification/ClarificationReplyTest.java
+@@ -104,11 +104,12 @@
+             var schema = new SchemaContext(List.of(new SchemaContext.Table("orders", null,
+                     List.of(new SchemaContext.Column("order_id", "text", false, null)))), List.of(), "", "orders");
+             when(schemas.provide(anyString())).thenReturn(schema);
++            when(schemas.fullSchema()).thenReturn(schema);
+             when(generator.generate(anyString(), any())).thenReturn(new GeneratedSql("SELECT 1", "",
+                     LlmCallRecord.of("synthetic", 10, 5, 15, 1, 0, 0)));
+             when(validator.validate(anyString(), any())).thenReturn(ValidationResult.ok("SELECT 1"));
+             when(executor.execute(anyString())).thenReturn(new QueryResult(List.of("n"), List.of(List.of("1")), false, 1));
+-            orchestrator = new Text2SqlOrchestrator(schemas, generator, validator, executor, detector,
++            orchestrator = new Text2SqlOrchestrator(schemas, com.text2sql.agent.retrieval.CatalogFixture.from(schemas::fullSchema), generator, validator, executor, detector,
+                     new SemanticCache(properties), new ResultChecker(), mock(AgentLoop.class), store, rewriter, properties);
+         }
+     }
+--- a/src/test/java/com/text2sql/agent/clarification/RegionalPriceClarificationTest.java
++++ b/src/test/java/com/text2sql/agent/clarification/RegionalPriceClarificationTest.java
+@@ -103,7 +103,7 @@
+         var properties = new AgentProperties(); properties.getClarification().setEnabled(true);
+         var provider=mock(SchemaProvider.class); var generator=mock(LlmSqlGenerator.class);
+         var validator=mock(SqlValidator.class); var executor=mock(SqlExecutor.class); var loop=mock(AgentLoop.class);
+-        var orchestrator=new Text2SqlOrchestrator(provider,generator,validator,executor,
++        var orchestrator=new Text2SqlOrchestrator(provider, com.text2sql.agent.retrieval.CatalogFixture.from(provider::fullSchema),generator,validator,executor,
+                 RepurchaseClarificationTest.loaded(),new SemanticCache(properties),new ResultChecker(),loop,properties);
+         for (String question : java.util.List.of("按大区统计商品销售额", "价格平均涨跌幅是多少")) {
+             var response=orchestrator.ask(question);
+--- a/src/test/java/com/text2sql/agent/clarification/SalesClarificationTest.java
++++ b/src/test/java/com/text2sql/agent/clarification/SalesClarificationTest.java
+@@ -65,7 +65,7 @@
+         var validator = mock(SqlValidator.class);
+         var executor = mock(SqlExecutor.class);
+         var loop = mock(AgentLoop.class);
+-        var orchestrator = new Text2SqlOrchestrator(provider, generator, validator, executor,
++        var orchestrator = new Text2SqlOrchestrator(provider, com.text2sql.agent.retrieval.CatalogFixture.from(provider::fullSchema), generator, validator, executor,
+                 RepurchaseClarificationTest.loaded(), new SemanticCache(props), new ResultChecker(), loop, props);
+         var response = orchestrator.ask("销售额按含运费还是不含运费统计？");
+         assertThat(response.status()).isEqualTo(AgentResponse.Status.NEEDS_CLARIFICATION);
+--- a/src/test/java/com/text2sql/agent/cost/CostQuotaGenerationTest.java
++++ b/src/test/java/com/text2sql/agent/cost/CostQuotaGenerationTest.java
+@@ -53,7 +53,7 @@
+             cfg.setTotalYuan(new BigDecimal(total)); cfg.setStateFile(temp.resolve("ledger.json").toString());
+             quota = new CostQuota(cfg, agent);
+             logs = new LlmCallLog(agent);
+-            generator = new LlmSqlGenerator(agent, new PromptTemplate(agent), logs, quota);
++            generator = new LlmSqlGenerator(agent, new PromptTemplate(agent), logs, quota, com.text2sql.agent.retrieval.CatalogFixture.healthy());
+             ReflectionTestUtils.setField(generator, "chatModel", model);
+             when(model.call(any(Prompt.class))).thenReturn(sql());
+         }
+--- a/src/test/java/com/text2sql/agent/generation/DeepSeekOffPeakGenerationTest.java
++++ b/src/test/java/com/text2sql/agent/generation/DeepSeekOffPeakGenerationTest.java
+@@ -26,7 +26,7 @@
+         agent.getObservability().setEnabled(false);
+         var quota = mock(CostQuota.class);
+         try (var log = new LlmCallLog(agent); var trace = EvaluationTrace.open()) {
+-            var generator = new LlmSqlGenerator(agent, new PromptTemplate(agent), log, quota);
++            var generator = new LlmSqlGenerator(agent, new PromptTemplate(agent), log, quota, com.text2sql.agent.retrieval.CatalogFixture.healthy());
+             ReflectionTestUtils.setField(generator, "offPeak", new DeepSeekOffPeakPolicy(
+                     Clock.fixed(Instant.parse("2026-11-17T07:00:00Z"), ZoneOffset.UTC)));
+             var schema = new SchemaContext(List.of(), List.of(), "", "fixture");
+--- a/src/test/java/com/text2sql/agent/generation/LlmGenerationModeTest.java
++++ b/src/test/java/com/text2sql/agent/generation/LlmGenerationModeTest.java
+@@ -93,7 +93,7 @@
+         props.getObservability().setIncludeContent(false);
+         var template = new PromptTemplate(props);
+         try (var log = new LlmCallLog(props)) {
+-            var generator = new LlmSqlGenerator(props, template, log);
++            var generator = new LlmSqlGenerator(props, template, log, com.text2sql.agent.retrieval.CatalogFixture.healthy());
+             String overrideKey = byok ? "fixture-byok-key" : null;
+             String overrideModel = "fixture-override";
+             var schema = new SchemaContext(List.of(), List.of(), "", "fixture schema");
+--- a/src/test/java/com/text2sql/agent/generation/LlmSqlGeneratorLoggingTest.java
++++ b/src/test/java/com/text2sql/agent/generation/LlmSqlGeneratorLoggingTest.java
+@@ -34,7 +34,7 @@
+         var props = new AgentProperties();
+         var logs = mock(LlmCallLog.class);
+         var model = mock(ChatModel.class);
+-        var generator = new LlmSqlGenerator(props, new PromptTemplate(), logs);
++        var generator = new LlmSqlGenerator(props, new PromptTemplate(), logs, com.text2sql.agent.retrieval.CatalogFixture.healthy());
+         ReflectionTestUtils.setField(generator, "chatModel", model);
+         var complete = response("stop");
+         var truncated = response("length");
+--- /dev/null
++++ b/src/test/java/com/text2sql/agent/orchestrator/CatalogHttpAcceptanceProbe.java
+@@ -0,0 +1,110 @@
++package com.text2sql.agent.orchestrator;
++
++import com.fasterxml.jackson.databind.*;
++import com.text2sql.agent.Text2SqlAgentApplication;
++import com.text2sql.agent.access.ApiAdmissionGate;
++import com.text2sql.agent.generation.LlmSqlGenerator;
++import com.text2sql.agent.retrieval.*;
++import com.text2sql.agent.execution.SqlExecutor;
++import com.text2sql.agent.session.SessionStore;
++import com.text2sql.agent.tool.*;
++import org.springframework.boot.SpringApplication;
++import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
++import org.springframework.core.env.MapPropertySource;
++import org.springframework.ai.chat.model.*;
++import org.springframework.ai.chat.messages.AssistantMessage;
++import org.springframework.ai.chat.metadata.*;
++import org.springframework.ai.chat.prompt.Prompt;
++import org.springframework.test.util.ReflectionTestUtils;
++import java.net.*;
++import java.net.http.*;
++import java.nio.charset.StandardCharsets;
++import java.nio.file.*;
++import java.util.*;
++import java.util.concurrent.atomic.*;
++import static org.assertj.core.api.Assertions.*;
++import static org.mockito.Mockito.*;
++import static org.mockito.ArgumentMatchers.*;
++
++/** Real protected HTTP + real read-only SQL, synthetic ChatModel, no provider endpoint. */
++public final class CatalogHttpAcceptanceProbe {
++    static final ObjectMapper JSON=new ObjectMapper().findAndRegisterModules();
++    static final HttpClient HTTP=HttpClient.newHttpClient();
++    static final String SQL="SELECT st.ticket_id, tc.category_name FROM support_tickets st JOIN ticket_categories tc ON st.category_id=tc.category_id LIMIT 5";
++    public static void main(String[] args) throws Exception {
++        Path dir=Path.of(args[0]); Files.createDirectory(dir);
++        String token=UUID.randomUUID().toString();
++        String auth="Basic "+Base64.getEncoder().encodeToString(("demo:"+token).getBytes(StandardCharsets.UTF_8));
++        var app=new SpringApplication(Text2SqlAgentApplication.class);
++        app.addInitializers(c -> c.getEnvironment().getPropertySources().addFirst(new MapPropertySource("probe-token",Map.of("agent.access.token",token))));
++        var calls=new AtomicInteger(); var sql=new AtomicReference<>(SQL); var evidence=new ArrayList<Object>();
++        try(var c=(ServletWebServerApplicationContext)app.run("--spring.profiles.active=local,demo,protected","--server.port=0",
++                "--server.address=127.0.0.1","--agent.eval.enabled=false","--agent.observability.enabled=false",
++                "--agent.llm.api-key=","--agent.llm.base-url=http://127.0.0.1:1","--agent.llm.model=synthetic-catalog-probe",
++                "--agent.llm.input-price-per-1k=1","--agent.llm.output-price-per-1k=2","--agent.llm.cache-hit-price-per-1k=0.1",
++                "--agent.access.burst=100","--agent.access.requests-per-minute=60000",
++                "--agent.cost-quota.state-file="+dir.resolve("cost-ledger.json"),"--agent.cost-quota.total-yuan=10",
++                "--agent.cost-quota.reservation-yuan=0.10","--agent.self-correction.enabled=false","--agent.result-checker.enabled=false")) {
++            String base="http://127.0.0.1:"+c.getWebServer().getPort();
++            var model=mock(ChatModel.class);
++            when(model.call(any(Prompt.class))).thenAnswer(i -> { calls.incrementAndGet(); return new ChatResponse(List.of(new Generation(
++                    new AssistantMessage(sql.get()))),ChatResponseMetadata.builder().usage(new DefaultUsage(10,5)).build()); });
++            ReflectionTestUtils.setField(c.getBean(LlmSqlGenerator.class),"chatModel",model);
++            var orch=c.getBean(Text2SqlOrchestrator.class); var full=c.getBean(SchemaCatalog.class).full();
++            assertThat(full.tables()).hasSize(37);
++            var t=full.tables().stream().filter(x->x.name().equals("support_tickets")).findFirst().orElseThrow();
++            var pruned=new SchemaContext(List.of(new SchemaContext.Table(t.name(),t.comment(),t.columns().stream()
++                    .filter(x->x.name().equals("ticket_id")).toList())),List.of(),"","CREATE TABLE support_tickets(ticket_id text);");
++            var unavailable=new AtomicBoolean();
++            var catalogSource=mock(SchemaCatalog.class);
++            when(catalogSource.full()).thenAnswer(i -> unavailable.get()?null:full);
++            ReflectionTestUtils.setField(c.getBean(AuthorizedSchemaCatalog.class), "catalog", catalogSource);
++            SchemaProvider provider=new SchemaProvider() {
++                public SchemaContext provide(String q) { return pruned; }
++                public SchemaContext fullSchema() { return unavailable.get()?null:full; }
++            };
++            ReflectionTestUtils.setField(orch,"schemaProvider",provider);
++            var db=spy(c.getBean(SqlExecutor.class)); ReflectionTestUtils.setField(orch,"executor",db);
++            var tools=c.getBean(ToolExecutor.class); ReflectionTestUtils.setField(tools,"sqlExecutor",db);
++            var body=Map.of("question","列出工单与类别","sessionId","catalog-positive","endSession",true);
++            var denied=send(base,null,body); assertThat(denied.path("http").asInt()).isEqualTo(401); assertThat(calls).hasValue(0);
++            evidence.add(Map.of("case","unauthenticated","http",401,"modelCalls",0));
++            var positive=send(base,auth,body); assertThat(positive.path("http").asInt()).isEqualTo(200);
++            assertThat(positive.path("body").path("rows").size()).isEqualTo(5); assertThat(positive.path("body").path("schemaTableCount").asInt()).isEqualTo(1);
++            verify(db).execute(SQL); assertThat(c.getBean(SessionStore.class).get("catalog-positive").orElseThrow().isClosed()).isTrue();
++            evidence.add(Map.of("case","omitted-table-pruned-column","response",positive,"fullTables",37,"generationTables",1));
++            for(var type:List.of(ToolType.SAMPLE_QUERY,ToolType.CHECK_JOIN,ToolType.EXPLAIN_QUERY)) {
++                String arg=type==ToolType.CHECK_JOIN ? "support_tickets, ticket_categories, support_tickets.category_id=ticket_categories.category_id":SQL;
++                var r=tools.execute(new ToolCall(type,arg,""),pruned); assertThat(r.success()).as(type.toString()).isTrue();
++                evidence.add(Map.of("case","real-db-"+type,"success",true));
++            }
++            for(String bad:List.of("SELECT x.missing FROM ticket_categories x LIMIT 5","SELECT * FROM semantic_cache LIMIT 5",
++                    "SELECT * FROM archive.ticket_categories LIMIT 5","SELECT * FROM invented LIMIT 5")) {
++                clearInvocations(db); sql.set(bad); var r=send(base,auth,Map.of("question","列出工单类别","sessionId","catalog-negative"));
++                assertThat(r.path("http").asInt()).isEqualTo(422); verifyNoInteractions(db); evidence.add(Map.of("case","reject-"+bad,"response",r,"businessExecutions",0));
++            }
++            clearInvocations(db); unavailable.set(true); sql.set(SQL); int before=calls.get();
++            var r=send(base,auth,Map.of("question","列出工单类别","sessionId","catalog-unavailable","endSession",true));
++            assertThat(r.path("http").asInt()).isEqualTo(422); assertThat(r.toString()).contains("SCHEMA_UNAVAILABLE");
++            assertThat(calls.get()-before).isZero(); verifyNoInteractions(db);
++            assertThat(c.getBean(SessionStore.class).get("catalog-unavailable").orElseThrow().isClosed()).isTrue();
++            assertThat(c.getBean(ApiAdmissionGate.class).activeRequests()).isZero();
++            evidence.add(Map.of("case","unavailable-terminal-with-session-close","response",r,"mockCalls",0,"businessExecutions",0));
++            var quota=c.getBean(com.text2sql.agent.cost.CostQuota.class).snapshot();
++            assertThat(quota.get("pendingCalls")).isEqualTo(0L);
++            assertThat(quota.get("unknownCalls")).isEqualTo(0L);
++            assertThat(((Number)quota.get("knownCalls")).intValue()).isEqualTo(calls.get());
++            evidence.add(Map.of("case","cost-reservations-settled","snapshot",quota,"syntheticPricingOnly",true));
++            Files.writeString(dir.resolve("summary.json"),JSON.writerWithDefaultPrettyPrinter().writeValueAsString(Map.of(
++                    "passed",evidence.size(),"cases",evidence,"providerCalls",0,"mockCalls",calls.get(),"activeRequests",0)),StandardOpenOption.CREATE_NEW);
++        }
++        System.out.println("CATALOG_HTTP passed="+evidence.size()+" providerCalls=0");
++    }
++    static JsonNode send(String base,String auth,Object body) throws Exception {
++        var b=HttpRequest.newBuilder(URI.create(base+"/api/ask")).header("Content-Type","application/json")
++                .timeout(java.time.Duration.ofSeconds(20)).POST(HttpRequest.BodyPublishers.ofString(JSON.writeValueAsString(body)));
++        if(auth!=null)b.header("Authorization",auth);
++        var r=HTTP.send(b.build(),HttpResponse.BodyHandlers.ofString());
++        return JSON.valueToTree(Map.of("http",r.statusCode(),"body",JSON.readTree(r.body())));
++    }
++}
+--- /dev/null
++++ b/src/test/java/com/text2sql/agent/orchestrator/CatalogValidationBoundaryTest.java
+@@ -0,0 +1,225 @@
++package com.text2sql.agent.orchestrator;
++
++import com.text2sql.agent.cache.SemanticCache;
++import com.text2sql.agent.clarification.AmbiguityDetector;
++import com.text2sql.agent.config.AgentProperties;
++import com.text2sql.agent.execution.*;
++import com.text2sql.agent.generation.*;
++import com.text2sql.agent.observability.LlmCallRecord;
++import com.text2sql.agent.retrieval.*;
++import com.text2sql.agent.tool.*;
++import com.text2sql.agent.validation.*;
++import org.junit.jupiter.api.Test;
++import org.junit.jupiter.params.ParameterizedTest;
++import org.junit.jupiter.params.provider.ValueSource;
++import org.springframework.ai.chat.messages.AssistantMessage;
++import org.springframework.ai.chat.model.ChatResponse;
++import org.springframework.ai.chat.model.Generation;
++import java.util.List;
++import static org.assertj.core.api.Assertions.*;
++import static org.mockito.ArgumentMatchers.*;
++import static org.mockito.Mockito.*;
++
++/** Executable B contract: actual validator and tool callbacks, synthetic model/execution only. */
++class CatalogValidationBoundaryTest {
++    static final String Q = "列出订单的客户城市";
++    static final String SQL = "SELECT o.order_id, c.city FROM orders o JOIN customers c ON o.customer_id=c.customer_id LIMIT 5";
++    static final LlmCallRecord CALL = LlmCallRecord.of("synthetic", 100, 20, 120, 1, 0, 0);
++    static SchemaContext.Table table(String name, String... cols) {
++        return new SchemaContext.Table(name, null, java.util.Arrays.stream(cols)
++                .map(c -> new SchemaContext.Column(c, "text", false, null)).toList());
++    }
++    static final SchemaContext RETRIEVED = new SchemaContext(List.of(table("orders", "order_id")), List.of(), "", "DDL_RETRIEVED_ONLY");
++    static final SchemaContext FULL = new SchemaContext(List.of(table("orders", "order_id", "customer_id"),
++            table("customers", "customer_id", "city")), List.of(), "", "DDL_FULL_MUST_NOT_REACH_PROMPT");
++    static class Fixture {
++        final AgentProperties p = new AgentProperties();
++        final SchemaProvider provider = mock(SchemaProvider.class);
++        final LlmSqlGenerator gen = mock(LlmSqlGenerator.class);
++        final SqlExecutor db = mock(SqlExecutor.class);
++        final SchemaCatalog catalog = mock(SchemaCatalog.class);
++        final QueryPlanAnalyzer plans = mock(QueryPlanAnalyzer.class);
++        final SqlValidator validator = new SqlValidator(p);
++        final SemanticCache cache = new SemanticCache(p);
++        final ToolExecutor tools = new ToolExecutor(new com.text2sql.agent.retrieval.AuthorizedSchemaCatalog(catalog), db, validator, plans);
++        final AgentLoop loop = new AgentLoop(gen, new PromptTemplate(p), tools, p);
++        Fixture() {
++            p.getSelfCorrection().setEnabled(true); p.getSelfCorrection().setMaxAttempts(2);
++            p.getClarification().setEnabled(false); p.getResultChecker().setEnabled(false);
++            when(provider.provide(anyString())).thenReturn(RETRIEVED);
++            when(provider.fullSchema()).thenReturn(FULL); when(catalog.full()).thenReturn(FULL);
++            when(gen.generate(anyString(), any())).thenReturn(new GeneratedSql(SQL, SQL, CALL));
++            when(gen.generateCorrection(anyString(), any(), anyString(), anyString(), any()))
++                    .thenReturn(new GeneratedSql(SQL, SQL, CALL));
++            when(db.execute(anyString())).thenReturn(new QueryResult(List.of("order_id", "city"), List.of(List.of("o1", "city1")), false, 1));
++            when(plans.analyze(anyString())).thenReturn(QueryPlanAnalyzer.PlanAnalysis.safe(1, 1, "{}"));
++        }
++        Text2SqlOrchestrator orch() { return orch(provider); }
++        Text2SqlOrchestrator orch(SchemaProvider source) {
++            return new Text2SqlOrchestrator(source, com.text2sql.agent.retrieval.CatalogFixture.from(source::fullSchema), gen, validator, db, mock(AmbiguityDetector.class),
++                    cache, new ResultChecker(), loop, p);
++        }
++        void unavailable(String mode) {
++            switch(mode) {
++                case "null" -> { when(provider.fullSchema()).thenReturn(null); when(catalog.full()).thenReturn(null); }
++                case "empty" -> { var empty = new SchemaContext(List.of(), List.of(), "", "");
++                    when(provider.fullSchema()).thenReturn(empty); when(catalog.full()).thenReturn(empty); }
++                case "throws" -> { when(provider.fullSchema()).thenThrow(new IllegalStateException("secret-db-detail"));
++                    when(catalog.full()).thenThrow(new IllegalStateException("secret-db-detail")); }
++                default -> throw new IllegalArgumentException(mode);
++            }
++        }
++    }
++    static void unavailable(AgentResponse r) {
++        assertThat(r.status()).isEqualTo(AgentResponse.Status.REJECTED);
++        assertThat(r.violations()).anyMatch(v -> v.startsWith("[SCHEMA_UNAVAILABLE]"));
++        assertThat(r.message()).doesNotContain("secret-db-detail");
++    }
++    @Test void omittedTableAndPrunedColumnPassWithoutExpandingGenerationContext() {
++        var f = new Fixture();
++        assertThat(f.validator.validate(SQL, RETRIEVED).valid()).isFalse();
++        var r = f.orch().ask(Q); assertThat(r.success()).isTrue();
++        assertThat(r.schemaTableCount()).isEqualTo(1); assertThat(r.retrievedTables()).containsExactly("orders");
++        assertThat(r.schemaDdlChars()).isEqualTo(RETRIEVED.ddlText().length());
++        verify(f.gen).generate(Q, RETRIEVED); verify(f.gen, never()).generateCorrection(anyString(), any(), anyString(), anyString(), any());
++        verify(f.db).execute(SQL);
++    }
++    @ParameterizedTest @ValueSource(strings={"normal", "dry-run", "correction", "cache"})
++    void everyExecutionEntryUsesFullCatalog(String path) {
++        var f = new Fixture(); var o = f.orch(); AgentResponse r;
++        switch(path) {
++            case "cache" -> { f.p.getCache().setEnabled(true); f.cache.put(f.cache.key(Q,o.cacheSignature()),SQL); r=o.ask(Q); verifyNoInteractions(f.gen); }
++            case "correction" -> r=o.askWithCorrection(Q,"SELECT invalid", "feedback");
++            default -> { f.p.getEval().setDryRun(path.equals("dry-run")); r=o.askWithFixedSql(Q,SQL,null); verifyNoInteractions(f.gen); }
++        }
++        assertThat(r.success()).isTrue(); assertThat(r.retrievedTables()).containsExactly("orders"); verify(f.db).execute(SQL);
++    }
++    @ParameterizedTest @ValueSource(strings={"null", "empty", "throws", "unimplemented"})
++    void unavailableCatalogCannotTriggerCorrectionOrCacheFallback(String mode) {
++        var f=new Fixture(); SchemaProvider source=f.provider;
++        if(mode.equals("unimplemented")) source=q -> RETRIEVED; else f.unavailable(mode);
++        var o=f.orch(source); var first=o.ask(Q); unavailable(first);
++        verify(f.gen, never()).generate(Q,RETRIEVED);
++        verify(f.gen,never()).generateCorrection(anyString(),any(),anyString(),anyString(),any());
++        clearInvocations(f.gen); f.p.getCache().setEnabled(true); f.cache.put(f.cache.key(Q,o.cacheSignature()),SQL);
++        unavailable(o.ask(Q)); verifyNoInteractions(f.gen); verifyNoInteractions(f.db,f.plans);
++        unavailable(o.askWithFixedSql(Q,SQL,null)); verifyNoInteractions(f.db);
++    }
++    @Test void correctionCatalogFailureIsTerminalRatherThanReturningEarlierSuccess() {
++        var f=new Fixture(); f.p.getResultChecker().setEnabled(true);
++        var checker=mock(ResultChecker.class);
++        when(checker.check(anyString(),anyString(),any())).thenReturn(CheckResult.suspicious("test", "retry"));
++        when(f.gen.generateCorrection(anyString(), any(), anyString(), anyString(), any())).thenAnswer(i -> {
++            when(f.provider.fullSchema()).thenReturn(null);
++            return new GeneratedSql(SQL, SQL, CALL);
++        });
++        var o=new Text2SqlOrchestrator(f.provider, com.text2sql.agent.retrieval.CatalogFixture.from(f.provider::fullSchema),f.gen,f.validator,f.db,mock(AmbiguityDetector.class),f.cache,checker,f.loop,f.p);
++        var r=o.ask(Q); unavailable(r); verify(f.db,times(1)).execute(SQL);
++        assertThat(r.llmCall().promptTokens()).isEqualTo(200);
++    }
++    @ParameterizedTest @ValueSource(strings={"null", "empty", "throws", "unimplemented"})
++    void unavailableCatalogBlocksAllRepairableGenerationFailureRetries(String mode) {
++        for(var reason:List.of(GenerationException.Reason.CALL_FAILED,GenerationException.Reason.UNPARSEABLE,
++                GenerationException.Reason.OUTPUT_TRUNCATED)) {
++            var f=new Fixture(); SchemaProvider source=f.provider;
++            if(mode.equals("unimplemented"))source=q->RETRIEVED; else f.unavailable(mode);
++            when(f.gen.generate(anyString(),any())).thenThrow(new GenerationException(reason,"synthetic failed call",CALL))
++                    .thenReturn(new GeneratedSql(SQL,SQL,CALL));
++            var r=f.orch(source).ask(Q); unavailable(r); assertThat(r.llmCall()).isNull();
++            verify(f.gen,never()).generate(Q,RETRIEVED); verifyNoInteractions(f.db,f.plans);
++            verify(f.gen,never()).generateCorrection(anyString(),any(),anyString(),anyString(),any());
++        }
++    }
++    @ParameterizedTest @ValueSource(strings={"null", "empty", "throws", "unimplemented"})
++    void explicitCorrectionRejectsUnavailableCatalogBeforeModelCall(String mode) {
++        var f=new Fixture(); SchemaProvider source=f.provider;
++        if(mode.equals("unimplemented"))source=q->RETRIEVED; else f.unavailable(mode);
++        unavailable(f.orch(source).askWithCorrection(Q,"SELECT bad", "synthetic-feedback"));
++        verifyNoInteractions(f.gen,f.db,f.plans);
++    }
++    @Test void catalogFailureBeforeAutomaticCorrectionKeepsFirstUsageAndSkipsSecondCall() {
++        var f=new Fixture();
++        when(f.gen.generate(anyString(),any())).thenAnswer(i -> {
++            when(f.provider.fullSchema()).thenReturn(null);
++            return new GeneratedSql("SELECT c.invented FROM customers c LIMIT 5","",CALL);
++        });
++        var r=f.orch().ask(Q); unavailable(r); assertThat(r.llmCall()).isEqualTo(CALL);
++        verify(f.gen,times(1)).generate(Q,RETRIEVED); verifyNoInteractions(f.db,f.plans);
++        verify(f.gen,never()).generateCorrection(anyString(),any(),anyString(),anyString(),any());
++    }
++    @Test void availableCatalogStillAllowsRecoverableGenerationRetryWithinExistingLimit() {
++        var f=new Fixture(); when(f.gen.generate(anyString(),any()))
++                .thenThrow(new GenerationException(GenerationException.Reason.UNPARSEABLE,"synthetic-first",CALL))
++                .thenReturn(new GeneratedSql(SQL,SQL,CALL));
++        var r=f.orch().ask(Q); assertThat(r.success()).isTrue(); assertThat(r.llmCall().promptTokens()).isEqualTo(200);
++        verify(f.gen,times(2)).generate(Q,RETRIEVED); verify(f.db).execute(SQL);
++    }
++    @ParameterizedTest @ValueSource(strings={"null-tables", "null-table", "blank-table", "empty-columns", "null-column", "blank-column"})
++    void malformedCatalogIsAnEnvironmentFailure(String kind) {
++        var f=new Fixture();
++        List<SchemaContext.Table> tables=switch(kind) {
++            case "null-tables" -> null;
++            case "null-table" -> java.util.Collections.singletonList(null);
++            case "blank-table" -> List.of(table(" ","id"));
++            case "empty-columns" -> List.of(table("orders"));
++            case "null-column" -> List.of(new SchemaContext.Table("orders",null,java.util.Collections.singletonList(null)));
++            default -> List.of(table("orders"," "));
++        };
++        var broken=new SchemaContext(tables,List.of(),"","");
++        when(f.provider.fullSchema()).thenReturn(broken); when(f.catalog.full()).thenReturn(broken);
++        unavailable(f.orch().ask(Q)); verifyNoInteractions(f.db,f.plans);
++        assertThat(f.tools.execute(new ToolCall(ToolType.SAMPLE_QUERY,SQL,""),RETRIEVED).schemaUnavailable()).isTrue();
++    }
++    @Test void rejectedCacheFallsBackThroughSameFullCatalogBoundary() {
++        var f=new Fixture(); f.p.getCache().setEnabled(true); var o=f.orch();
++        f.cache.put(f.cache.key(Q,o.cacheSignature()),"SELECT c.invented FROM customers c LIMIT 5");
++        var r=o.ask(Q); assertThat(r.success()).isTrue(); verify(f.gen).generate(Q,RETRIEVED); verify(f.db).execute(SQL);
++    }
++    @ParameterizedTest @ValueSource(strings={
++            "SELECT x.id FROM invented x LIMIT 5",
++            "SELECT c.invented FROM customers c LIMIT 5",
++            "SELECT x.id FROM semantic_cache x LIMIT 5",
++            "SELECT x.id FROM llm_call_log x LIMIT 5",
++            "SELECT x.id FROM conversation_session x LIMIT 5",
++            "SELECT x.id FROM conversation_turn x LIMIT 5",
++            "SELECT x.id FROM schema_chunks x LIMIT 5",
++            "SELECT c.city FROM archive.customers c LIMIT 5",
++            "SELECT c.city FROM public.customers c LIMIT 5",
++            "SELECT * FROM pg_catalog.pg_class LIMIT 5",
++            "SELECT * FROM information_schema.tables LIMIT 5",
++            "DELETE FROM customers", "SELECT pg_sleep(1) FROM orders LIMIT 5"})
++    void fullCatalogDoesNotAuthorizeUnsafeObjects(String sql) {
++        var f=new Fixture(); assertThat(f.orch().askWithFixedSql(Q,sql,null).success()).isFalse(); verifyNoInteractions(f.db,f.plans);
++        for(var type:List.of(ToolType.SAMPLE_QUERY,ToolType.EXPLAIN_QUERY)) {
++            assertThat(f.tools.execute(new ToolCall(type,sql,""),RETRIEVED).success()).as(type.toString()).isFalse();
++        }
++        verifyNoInteractions(f.db,f.plans);
++    }
++    @ParameterizedTest @ValueSource(strings={"SAMPLE_QUERY", "CHECK_JOIN", "EXPLAIN_QUERY"})
++    void toolsUseCompleteColumnsAndOmittedTables(String name) {
++        var f=new Fixture(); ToolType type=ToolType.valueOf(name);
++        String arg=type==ToolType.CHECK_JOIN ? "orders, customers, orders.customer_id=customers.customer_id" : SQL;
++        assertThat(f.tools.execute(new ToolCall(type,arg,""),RETRIEVED).success()).isTrue();
++        verify(f.catalog,times(1)).full();
++    }
++    @ParameterizedTest @ValueSource(strings={"null", "empty", "throws"})
++    void allDatabaseToolsFailClosed(String mode) {
++        var f=new Fixture(); f.unavailable(mode);
++        for(var type:List.of(ToolType.INSPECT_TABLE,ToolType.INSPECT_COLUMN,ToolType.SAMPLE_QUERY,ToolType.CHECK_JOIN,ToolType.EXPLAIN_QUERY)) {
++            var r=f.tools.execute(new ToolCall(type,SQL,""),RETRIEVED);
++            assertThat(r.schemaUnavailable()).as(type.toString()).isTrue(); assertThat(r.output()).doesNotContain("secret-db-detail");
++        }
++        verifyNoInteractions(f.db,f.plans);
++    }
++    @Test void realToolCallbackStopsLoopBeforeOtherToolsOrFinalizationAndKeepsUsage() {
++        var f=new Fixture(); f.p.getToolUse().setEnabled(true); f.p.getToolUse().setTableThreshold(1);
++        var response=new ChatResponse(List.of(new Generation(AssistantMessage.builder().content("")
++                .toolCalls(List.of(new AssistantMessage.ToolCall("a","function","SAMPLE_QUERY","{\"sql\":\"SELECT order_id FROM orders\"}"),
++                        new AssistantMessage.ToolCall("b","function","INSPECT_TABLE","{\"table\":\"orders\"}"))).build())));
++        when(f.gen.callWithTools(anyList(),anyList(),anyString(),any(),any()))
++                .thenAnswer(i -> { f.unavailable("empty"); return new LlmSqlGenerator.AgentTurn(response,CALL,""); });
++        unavailable(f.orch().ask(Q)); verify(f.gen,times(1)).callWithTools(anyList(),anyList(),anyString(),any(),any());
++        verify(f.catalog,times(1)).full(); verifyNoInteractions(f.db,f.plans);
++        verify(f.gen,never()).generate(anyString(),any()); verify(f.gen,never()).generateCorrection(anyString(),any(),anyString(),anyString(),any());
++    }
++}
+--- a/src/test/java/com/text2sql/agent/orchestrator/OrchestratorSelfCorrectionTest.java
++++ b/src/test/java/com/text2sql/agent/orchestrator/OrchestratorSelfCorrectionTest.java
+@@ -60,14 +60,16 @@
+         properties = new AgentProperties();
+         cache = new com.text2sql.agent.cache.SemanticCache(properties);
+ 
+-        when(schemaProvider.provide(anyString())).thenReturn(new SchemaContext(
++        var fullFixture = new SchemaContext(
+                 List.of(new SchemaContext.Table("orders", null, List.of(
+                         new SchemaContext.Column("order_id", "text", false, null)))),
+-                List.of(), "", "CREATE TABLE orders(order_id text)"));
++                List.of(), "", "CREATE TABLE orders(order_id text)");
++        when(schemaProvider.provide(anyString())).thenReturn(fullFixture);
++        when(schemaProvider.fullSchema()).thenReturn(fullFixture);
+     }
+ 
+     private Text2SqlOrchestrator orchestrator() {
+-        return new Text2SqlOrchestrator(schemaProvider, generator, validator, executor,
++        return new Text2SqlOrchestrator(schemaProvider, com.text2sql.agent.retrieval.CatalogFixture.from(schemaProvider::fullSchema), generator, validator, executor,
+                 mock(AmbiguityDetector.class), cache, new com.text2sql.agent.validation.ResultChecker(),
+                 mock(com.text2sql.agent.tool.AgentLoop.class), properties);
+     }
+@@ -441,7 +443,7 @@
+         properties.getGuard().setExplainCostGuardEnabled(true);
+ 
+         com.text2sql.agent.execution.QueryPlanAnalyzer planAnalyzer = mock(com.text2sql.agent.execution.QueryPlanAnalyzer.class);
+-        Text2SqlOrchestrator orch = new Text2SqlOrchestrator(schemaProvider, generator, validator, executor,
++        Text2SqlOrchestrator orch = new Text2SqlOrchestrator(schemaProvider, com.text2sql.agent.retrieval.CatalogFixture.from(schemaProvider::fullSchema), generator, validator, executor,
+                 mock(AmbiguityDetector.class), cache, new com.text2sql.agent.validation.ResultChecker(),
+                 mock(com.text2sql.agent.tool.AgentLoop.class),
+                 new com.text2sql.agent.session.SessionStore(properties),
+--- a/src/test/java/com/text2sql/agent/orchestrator/SqlExtractionPipelineTest.java
++++ b/src/test/java/com/text2sql/agent/orchestrator/SqlExtractionPipelineTest.java
+@@ -48,6 +48,7 @@
+                 new SchemaContext.Column("order_status", "text", false, null)))), List.of(), "", "");
+         var provider = mock(SchemaProvider.class);
+         when(provider.provide("订单状态有多少种？")).thenReturn(schema);
++        when(provider.fullSchema()).thenReturn(schema);
+         var model = mock(ChatModel.class);
+         when(model.call(any(Prompt.class))).thenReturn(new ChatResponse(List.of(
+                 new Generation(new AssistantMessage(sql + "\n```"))),
+@@ -57,9 +58,9 @@
+         when(executor.execute(sql)).thenReturn(new QueryResult(
+                 List.of("status_count"), List.of(List.of("8")), false, 1));
+         try (var logs = new LlmCallLog(properties)) {
+-            var generator = new LlmSqlGenerator(properties, new PromptTemplate(), logs);
++            var generator = new LlmSqlGenerator(properties, new PromptTemplate(), logs, com.text2sql.agent.retrieval.CatalogFixture.healthy());
+             ReflectionTestUtils.setField(generator, "chatModel", model);
+-            var pipeline = new Text2SqlOrchestrator(provider, generator, new SqlValidator(properties), executor,
++            var pipeline = new Text2SqlOrchestrator(provider, com.text2sql.agent.retrieval.CatalogFixture.from(provider::fullSchema), generator, new SqlValidator(properties), executor,
+                     mock(AmbiguityDetector.class), new SemanticCache(properties), new ResultChecker(),
+                     mock(AgentLoop.class), properties);
+             try (var trace = EvaluationTrace.open()) {
+--- /dev/null
++++ b/src/test/java/com/text2sql/agent/retrieval/CatalogFirstCallCapture.java
+@@ -0,0 +1,76 @@
++package com.text2sql.agent.retrieval;
++
++import com.fasterxml.jackson.databind.ObjectMapper;
++import com.text2sql.agent.config.AgentProperties;
++import com.text2sql.agent.evaluation.EvalItemLoader;
++import com.text2sql.agent.fewshot.*;
++import com.text2sql.agent.generation.*;
++import com.text2sql.agent.observability.LlmCallLog;
++import com.text2sql.agent.orchestrator.Text2SqlOrchestrator;
++import com.text2sql.agent.retrieval.glossary.GlossaryLoader;
++import com.text2sql.agent.semantic.MetricRegistry;
++import com.text2sql.agent.execution.*;
++import com.text2sql.agent.cache.SemanticCache;
++import com.text2sql.agent.clarification.AmbiguityDetector;
++import com.text2sql.agent.tool.AgentLoop;
++import com.text2sql.agent.validation.*;
++import org.springframework.ai.chat.model.*;
++import org.springframework.ai.chat.messages.AssistantMessage;
++import org.springframework.ai.chat.prompt.Prompt;
++import org.springframework.jdbc.core.JdbcTemplate;
++import org.springframework.jdbc.datasource.DriverManagerDataSource;
++import org.springframework.test.util.ReflectionTestUtils;
++import java.nio.file.*;
++import java.util.*;
++import static org.mockito.Mockito.*;
++import static org.mockito.ArgumentMatchers.*;
++
++/** Captures actual first ChatModel.call messages through ask(), with an in-process fake model. */
++public final class CatalogFirstCallCapture {
++    public static void main(String[] args) throws Exception {
++        var allowed=Map.of("data/eval",200,"data/benchmarks/olist-v4-development-20261119",100,
++                "data/benchmarks/olist-v4-formal-20261119",100);
++        if(args.length!=2 || !allowed.containsKey(args[0])) throw new IllegalArgumentException("Public dataset only");
++        Path output=Path.of(args[1]); if(Files.exists(output)) throw new IllegalStateException("Never overwrite captures");
++        var p=new AgentProperties(); p.getEval().setDir(args[0]); p.getEval().setSplit("all");
++        p.getRetrieval().setEnabled(true); p.getRetrieval().setColumnPruningEnabled(true);
++        p.getRetrieval().setJoinHintsEnabled(true); p.getRetrieval().setJoinListEnabled(false); p.getRetrieval().setJoinPlanEnabled(true);
++        p.getSemantic().setEnabled(true); p.getFewshot().setEnabled(true); p.getFewshot().setMaxExamples(2);
++        p.getLlm().setBaseUrl("http://127.0.0.1:1"); p.getLlm().setApiKey(""); p.getLlm().setModel("synthetic-capture");
++        p.getObservability().setEnabled(false); p.getSelfCorrection().setEnabled(false);
++        p.getClarification().setEnabled(false); p.getResultChecker().setEnabled(false);
++        p.getCache().setEnabled(false); p.getToolUse().setEnabled(false); p.getRouting().setEnabled(false);
++        var jdbc=new JdbcTemplate(new DriverManagerDataSource("jdbc:postgresql://localhost:5432/olist","text2sql_ro","text2sql_ro"));
++        var catalog=new SchemaCatalog(new DatabaseSchemaReader(jdbc),p); var full=catalog.full();
++        if(full.tables().size()!=37) throw new IllegalStateException("Catalog identity changed");
++        var glossary=new GlossaryLoader(catalog); var registry=new MetricRegistry(); ReflectionTestUtils.invokeMethod(registry,"load");
++        var examples=new ExampleLoader(); examples.init();
++        var provider=new HybridSchemaProvider(catalog,new LexicalSchemaRetriever(glossary,catalog,p),glossary,p,registry,
++                new ExampleSelector(examples),new ValueRetriever(glossary),new ColumnPruner(glossary));
++        var model=mock(ChatModel.class); var db=mock(SqlExecutor.class);
++        when(db.execute(anyString())).thenReturn(new QueryResult(List.of("order_id"),List.of(List.of("synthetic")),false,0));
++        var captures=new ArrayList<Object>(); var current=new ArrayList<Object>();
++        when(model.call(any(Prompt.class))).thenAnswer(inv -> {
++            Prompt prompt=inv.getArgument(0);
++            current.add(prompt.getInstructions().stream().map(m -> Map.of("role",m.getMessageType().name(),"text",m.getText())).toList());
++            return new ChatResponse(List.of(new Generation(new AssistantMessage("SELECT order_id FROM orders LIMIT 1"))));
++        });
++        try(var logs=new LlmCallLog(p)) {
++            var generator=new LlmSqlGenerator(p,new PromptTemplate(p),logs, new AuthorizedSchemaCatalog(catalog)); ReflectionTestUtils.setField(generator,"chatModel",model);
++            var o=new Text2SqlOrchestrator(provider, new AuthorizedSchemaCatalog(catalog),generator,new SqlValidator(p),db,mock(AmbiguityDetector.class),
++                    new SemanticCache(p),new ResultChecker(),mock(AgentLoop.class),p);
++            var items=new EvalItemLoader(p).load(); if(items.size()!=allowed.get(args[0])) throw new AssertionError("Wrong count");
++            for(var item:items) {
++                current.clear(); var response=o.ask(item.question());
++                if(current.size()!=1) throw new AssertionError("Expected exactly one synthetic first call: "+item.id());
++                captures.add(Map.of("id",item.id(),"question",item.question(),"messages",current.getFirst(),
++                        "retrievedTables",response.retrievedTables(),"schemaDdlChars",response.schemaDdlChars()));
++            }
++        }
++        Files.createDirectories(output.toAbsolutePath().getParent());
++        Files.writeString(output,new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(Map.of(
++                "dataset",args[0],"items",captures,"mockFirstCalls",captures.size(),"providerCalls",0,
++                "boundary","actual ask -> generator -> in-process ChatModel; not provider transport")),StandardOpenOption.CREATE_NEW);
++        System.out.println("FIRST_CALL_CAPTURE "+captures.size()+" providerCalls=0");
++    }
++}
+--- /dev/null
++++ b/src/test/java/com/text2sql/agent/retrieval/CatalogFixture.java
+@@ -0,0 +1,21 @@
++package com.text2sql.agent.retrieval;
++
++import java.util.List;
++import java.util.function.Supplier;
++import static org.mockito.Mockito.*;
++
++/** Explicit test-only metadata sources; no optional production catalog or prompt fallback. */
++public final class CatalogFixture {
++    private CatalogFixture() { }
++
++    public static AuthorizedSchemaCatalog from(Supplier<SchemaContext> source) {
++        var catalog = mock(SchemaCatalog.class);
++        when(catalog.full()).thenAnswer(i -> source.get());
++        return new AuthorizedSchemaCatalog(catalog);
++    }
++
++    public static AuthorizedSchemaCatalog healthy() {
++        return from(() -> new SchemaContext(List.of(new SchemaContext.Table("orders", null,
++                List.of(new SchemaContext.Column("order_id", "text", false, null)))), List.of(), "", "fixture"));
++    }
++}
+--- a/src/test/java/com/text2sql/agent/session/MultiTurnOrchestratorTest.java
++++ b/src/test/java/com/text2sql/agent/session/MultiTurnOrchestratorTest.java
+@@ -54,6 +54,7 @@
+                         new SchemaContext.Column("order_id", "text", false, null)))),
+                 List.of(), "", "CREATE TABLE orders(order_id text);");
+         when(schemaProvider.provide(anyString())).thenReturn(mockSchema);
++        when(schemaProvider.fullSchema()).thenReturn(mockSchema);
+ 
+         when(validator.validate(anyString(), any())).thenAnswer(inv ->
+                 ValidationResult.ok(inv.getArgument(0)));
+@@ -62,7 +63,7 @@
+                 new QueryResult(List.of("cnt"), List.of(List.of("100")), false, 10));
+ 
+         orchestrator = new Text2SqlOrchestrator(
+-                schemaProvider, generator, validator, executor,
++                schemaProvider, com.text2sql.agent.retrieval.CatalogFixture.from(schemaProvider::fullSchema), generator, validator, executor,
+                 mock(AmbiguityDetector.class),
+                 new com.text2sql.agent.cache.SemanticCache(properties),
+                 new ResultChecker(),
+--- a/src/test/java/com/text2sql/agent/session/SessionOutcomeFinalizationTest.java
++++ b/src/test/java/com/text2sql/agent/session/SessionOutcomeFinalizationTest.java
+@@ -61,14 +61,15 @@
+             properties.getObservability().setEnabled(false);
+             store = spy(new SessionStore(properties));
+             logs = new LlmCallLog(properties);
+-            var generator = new LlmSqlGenerator(properties, new PromptTemplate(properties), logs);
++            var generator = new LlmSqlGenerator(properties, new PromptTemplate(properties), logs, com.text2sql.agent.retrieval.CatalogFixture.healthy());
+             ReflectionTestUtils.setField(generator, "chatModel", model);
+             when(model.call(any(Prompt.class))).thenReturn(sql());
+             when(schemas.provide(anyString())).thenReturn(schema);
++            when(schemas.fullSchema()).thenReturn(schema);
+             when(validator.validate(anyString(), any())).thenAnswer(i -> ValidationResult.ok(i.getArgument(0)));
+             when(executor.execute(anyString())).thenReturn(new QueryResult(List.of("order_id"), List.of(List.of("fixture")), false, 1));
+             when(checker.check(anyString(), anyString(), any())).thenReturn(CheckResult.NORMAL);
+-            orchestrator = new Text2SqlOrchestrator(schemas, generator, validator, executor,
++            orchestrator = new Text2SqlOrchestrator(schemas, com.text2sql.agent.retrieval.CatalogFixture.from(schemas::fullSchema), generator, validator, executor,
+                     mock(AmbiguityDetector.class), new SemanticCache(properties), checker, mock(AgentLoop.class),
+                     store, new QuestionRewriter(generator, properties), properties);
+         }
+--- a/src/test/java/com/text2sql/agent/tool/ToolExecutorTest.java
++++ b/src/test/java/com/text2sql/agent/tool/ToolExecutorTest.java
+@@ -33,7 +33,7 @@
+         sqlExecutor = mock(SqlExecutor.class);
+         sqlValidator = mock(SqlValidator.class);
+         planAnalyzer = mock(QueryPlanAnalyzer.class);
+-        executor = new ToolExecutor(catalog, sqlExecutor, sqlValidator, planAnalyzer);
++        executor = new ToolExecutor(new com.text2sql.agent.retrieval.AuthorizedSchemaCatalog(catalog), sqlExecutor, sqlValidator, planAnalyzer);
+ 
+         mockSchema = new SchemaContext(
+                 List.of(
+--- a/src/test/java/com/text2sql/agent/validation/ExtremumCorrectionPipelineTest.java
++++ b/src/test/java/com/text2sql/agent/validation/ExtremumCorrectionPipelineTest.java
+@@ -49,13 +49,14 @@
+         var checker = new ResultChecker(new ExtremumProjectionChecker(() -> glossary, () -> schema));
+         var provider = mock(SchemaProvider.class);
+         when(provider.provide(anyString())).thenReturn(schema);
++        when(provider.fullSchema()).thenReturn(schema);
+         var validator = mock(SqlValidator.class);
+         when(validator.validate(anyString(), any())).thenAnswer(i -> ValidationResult.ok(i.getArgument(0)));
+         when(generator.generate(anyString(), any())).thenReturn(generated(OMITTED, 100));
+         when(generator.generateCorrection(anyString(), any(), anyString(), anyString(), any())).thenReturn(generated(FIXED, 200));
+         when(executor.execute(OMITTED)).thenReturn(new QueryResult(List.of("warehouse_id"), List.of(List.of("1")), false, 1));
+         when(executor.execute(FIXED)).thenReturn(new QueryResult(List.of("warehouse_id", "volume"), List.of(List.of("1", "50000")), false, 1));
+-        orchestrator = new Text2SqlOrchestrator(provider, generator, validator, executor,
++        orchestrator = new Text2SqlOrchestrator(provider, com.text2sql.agent.retrieval.CatalogFixture.from(provider::fullSchema), generator, validator, executor,
+                 mock(AmbiguityDetector.class), cache, checker, mock(AgentLoop.class), properties);
+     }
+ 
