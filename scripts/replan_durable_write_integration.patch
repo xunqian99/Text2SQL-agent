@@ -1,0 +1,19 @@
+--- a/scripts/run_replan_stage_d.py
++++ b/scripts/run_replan_stage_d.py
+@@ -27,6 +27,7 @@
+ import urllib.request
+ import uuid
+ import zipfile
++from replan_durable_write import replace_with_retry
+ 
+ ROOT=Path(__file__).resolve().parent.parent
+ BASE=ROOT/"reports/replan-stage-d-20261119"
+@@ -90,7 +91,7 @@
+     if replace:
+         temp=path.with_name(path.name+".tmp-"+uuid.uuid4().hex)
+         with temp.open("xb") as f: f.write(data); f.flush(); os.fsync(f.fileno())
+-        os.replace(temp,path)
++        replace_with_retry(temp,path)
+     else:
+         with path.open("xb") as f: f.write(data); f.flush(); os.fsync(f.fileno())
+ 
