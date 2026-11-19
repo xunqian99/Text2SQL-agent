@@ -1,0 +1,173 @@
+{
+  "format": "clarification-contracts-original200-impact-v1",
+  "datasetSha256": "c3f290e0fa0be1bd7432ddd2e5a319883e4d9d8cfbc9b58e856b4a807f2f2d19",
+  "originalItems": 200,
+  "existingRuleDecisionsUnchanged": true,
+  "beforeClarification": 5,
+  "afterClarification": 10,
+  "newlyClarified": [
+    "T4-015",
+    "T4-016",
+    "T5-001",
+    "T5-019",
+    "T6-011"
+  ],
+  "changes": [
+    {
+      "decisions": [
+        {
+          "term": "大区",
+          "matchedTerm": "大区",
+          "evidence": [
+            {
+              "source": "trigger-pattern",
+              "group": "applicability",
+              "matchedText": "大区的订单"
+            }
+          ],
+          "missingGroups": [
+            "regional-subject"
+          ],
+          "unresolvedEvidence": [],
+          "needsClarification": true,
+          "question": "交易指标按哪一方的地域归属统计大区：客户收货地、卖家所在地，还是仓库所在地？请明确来源。"
+        }
+      ],
+      "id": "T4-015",
+      "question": "每个大区的订单数量是多少？",
+      "needsClarification": true
+    },
+    {
+      "decisions": [
+        {
+          "term": "销售额",
+          "matchedTerm": "销售额",
+          "evidence": [
+            {
+              "source": "legacy-hint",
+              "group": "hint",
+              "matchedText": "商品销售额"
+            }
+          ],
+          "missingGroups": [],
+          "unresolvedEvidence": [],
+          "needsClarification": false,
+          "question": "「销售额」有两种常见口径：含运费的 GMV，还是不含运费的商品金额？请确认一种。"
+        },
+        {
+          "term": "大区",
+          "matchedTerm": "大区",
+          "evidence": [
+            {
+              "source": "trigger-pattern",
+              "group": "applicability",
+              "matchedText": "大区的商品销售额"
+            }
+          ],
+          "missingGroups": [
+            "regional-subject"
+          ],
+          "unresolvedEvidence": [],
+          "needsClarification": true,
+          "question": "交易指标按哪一方的地域归属统计大区：客户收货地、卖家所在地，还是仓库所在地？请明确来源。"
+        }
+      ],
+      "id": "T4-016",
+      "question": "每个大区的商品销售额是多少？",
+      "needsClarification": true
+    },
+    {
+      "decisions": [
+        {
+          "term": "销售额",
+          "matchedTerm": "销售额",
+          "evidence": [
+            {
+              "source": "legacy-hint",
+              "group": "hint",
+              "matchedText": "商品销售额"
+            }
+          ],
+          "missingGroups": [],
+          "unresolvedEvidence": [],
+          "needsClarification": false,
+          "question": "「销售额」有两种常见口径：含运费的 GMV，还是不含运费的商品金额？请确认一种。"
+        },
+        {
+          "term": "大区",
+          "matchedTerm": "宏观区域",
+          "evidence": [
+            {
+              "source": "trigger-pattern",
+              "group": "applicability",
+              "matchedText": "宏观区域下,各会员等级(按等级名称)的商品销售额分别是多少?按销售额"
+            }
+          ],
+          "missingGroups": [
+            "regional-subject"
+          ],
+          "unresolvedEvidence": [],
+          "needsClarification": true,
+          "question": "交易指标按哪一方的地域归属统计大区：客户收货地、卖家所在地，还是仓库所在地？请明确来源。"
+        }
+      ],
+      "id": "T5-001",
+      "question": "每个宏观区域下，各会员等级（按等级名称）的商品销售额分别是多少？按销售额从高到低排序。",
+      "needsClarification": true
+    },
+    {
+      "decisions": [
+        {
+          "term": "平均涨跌幅",
+          "matchedTerm": "平均涨跌幅",
+          "evidence": [
+            {
+              "source": "trigger-pattern",
+              "group": "applicability",
+              "matchedText": "价格变动的商品,按类目统计平均涨跌幅"
+            }
+          ],
+          "missingGroups": [
+            "price-change-unit",
+            "averaging-grain"
+          ],
+          "unresolvedEvidence": [],
+          "needsClarification": true,
+          "question": "价格平均涨跌幅按新价减旧价的金额差，还是除以旧价的比例？平均按每条变动记录等权、先按商品平均，还是按销量加权？请明确两项。"
+        }
+      ],
+      "id": "T5-019",
+      "question": "发生过价格变动的商品，按类目统计平均涨跌幅和关联订单数，取订单数前 20。",
+      "needsClarification": true
+    },
+    {
+      "decisions": [
+        {
+          "term": "大区",
+          "matchedTerm": "宏观区域",
+          "evidence": [
+            {
+              "source": "trigger-pattern",
+              "group": "applicability",
+              "matchedText": "运费占gmv的比例是多少?按宏观区域"
+            }
+          ],
+          "missingGroups": [
+            "regional-subject"
+          ],
+          "unresolvedEvidence": [],
+          "needsClarification": true,
+          "question": "交易指标按哪一方的地域归属统计大区：客户收货地、卖家所在地，还是仓库所在地？请明确来源。"
+        }
+      ],
+      "id": "T6-011",
+      "question": "运费占 GMV 的比例是多少？按宏观区域拆解。",
+      "needsClarification": true
+    }
+  ],
+  "modelCalls": 0,
+  "limits": [
+    "Offline admission decisions; not accuracy results.",
+    "New clarifications remain failures under the original strict benchmark."
+  ]
+}

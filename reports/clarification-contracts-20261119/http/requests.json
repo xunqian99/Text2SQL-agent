@@ -1,0 +1,1069 @@
+[ {
+  "id" : "original-explicit",
+  "question" : "复购率是多少？（下单 2 次及以上的用户占全部下单用户的比例）",
+  "body" : {
+    "status" : "SUCCESS",
+    "sql" : "SELECT 1 AS controlled_answer LIMIT 201",
+    "message" : null,
+    "violations" : [ ],
+    "columns" : [ "controlled_answer" ],
+    "rows" : [ [ "1" ] ],
+    "truncated" : false,
+    "rewritten" : true,
+    "rowCount" : 1,
+    "schemaTableCount" : 8,
+    "retrievedTables" : [ "customers", "orders", "order_items", "order_payments", "order_reviews", "coupon_usages", "members", "refund_items" ],
+    "schemaDdlChars" : 1589,
+    "llm" : {
+      "model" : "deepseek-flash",
+      "promptTokens" : 10,
+      "completionTokens" : 5,
+      "totalTokens" : 15,
+      "latencyMs" : 44,
+      "costYuan" : 0.02
+    },
+    "timings" : {
+      "retrievalMs" : 144,
+      "generationMs" : 59,
+      "validationMs" : 20,
+      "executionMs" : 63,
+      "totalMs" : 308
+    },
+    "sessionId" : "clarification-original-explicit",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "06051c34-9c98-4f3c-9d74-3706d1a3af8e",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 1,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 308,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "VALIDATION" : 15,
+        "EXPLAIN" : 56,
+        "CLARIFICATION" : 5,
+        "CACHE_WRITE" : 0,
+        "RESULT_CHECK" : 5,
+        "RETRIEVAL" : 144,
+        "CONVERSATION" : 6,
+        "CACHE" : 0,
+        "GENERATION" : 29,
+        "MODEL" : 30,
+        "EXECUTION" : 7,
+        "SESSION" : 0,
+        "ADMISSION" : 6
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 22,
+      "currentStageMs" : 6
+    }
+  },
+  "httpStatus" : 200,
+  "expectedClarification" : false,
+  "decision" : [ {
+    "term" : "复购率",
+    "matchedTerm" : "复购率",
+    "evidence" : [ {
+      "source" : "required-pattern",
+      "group" : "denominator",
+      "matchedText" : "占全部下单用户"
+    } ],
+    "missingGroups" : [ ],
+    "unresolvedEvidence" : [ ],
+    "needsClarification" : false,
+    "question" : "「复购率」的分母是全部下单用户，还是注册满一定天数的用户？两者差异很大，请确认。"
+  } ]
+}, {
+  "id" : "alias-explicit",
+  "question" : "回购率以全部下单用户为分母",
+  "body" : {
+    "status" : "SUCCESS",
+    "sql" : "SELECT 1 AS controlled_answer LIMIT 201",
+    "message" : null,
+    "violations" : [ ],
+    "columns" : [ "controlled_answer" ],
+    "rows" : [ [ "1" ] ],
+    "truncated" : false,
+    "rewritten" : true,
+    "rowCount" : 1,
+    "schemaTableCount" : 8,
+    "retrievedTables" : [ "orders", "customers", "order_items", "order_payments", "order_reviews", "coupon_usages", "refund_items", "refunds" ],
+    "schemaDdlChars" : 1651,
+    "llm" : {
+      "model" : "deepseek-flash",
+      "promptTokens" : 10,
+      "completionTokens" : 5,
+      "totalTokens" : 15,
+      "latencyMs" : 26,
+      "costYuan" : 0.02
+    },
+    "timings" : {
+      "retrievalMs" : 9,
+      "generationMs" : 27,
+      "validationMs" : 3,
+      "executionMs" : 3,
+      "totalMs" : 45
+    },
+    "sessionId" : "clarification-alias-explicit",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "84df4a5b-f6ff-496f-b2f8-1149bf554eed",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 1,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 45,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "VALIDATION" : 3,
+        "EXPLAIN" : 2,
+        "CLARIFICATION" : 0,
+        "CACHE_WRITE" : 0,
+        "RESULT_CHECK" : 0,
+        "RETRIEVAL" : 9,
+        "CONVERSATION" : 0,
+        "CACHE" : 0,
+        "GENERATION" : 23,
+        "MODEL" : 4,
+        "EXECUTION" : 1,
+        "SESSION" : 0,
+        "ADMISSION" : 0
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 3,
+      "currentStageMs" : 0
+    }
+  },
+  "httpStatus" : 200,
+  "expectedClarification" : false,
+  "decision" : [ {
+    "term" : "复购率",
+    "matchedTerm" : "回购率",
+    "evidence" : [ {
+      "source" : "required-pattern",
+      "group" : "denominator",
+      "matchedText" : "全部下单用户为分母"
+    } ],
+    "missingGroups" : [ ],
+    "unresolvedEvidence" : [ ],
+    "needsClarification" : false,
+    "question" : "「复购率」的分母是全部下单用户，还是注册满一定天数的用户？两者差异很大，请确认。"
+  } ]
+}, {
+  "id" : "bare",
+  "question" : "复购率是多少",
+  "body" : {
+    "status" : "NEEDS_CLARIFICATION",
+    "sql" : null,
+    "message" : "「复购率」的分母是全部下单用户，还是注册满一定天数的用户？两者差异很大，请确认。",
+    "violations" : [ ],
+    "columns" : [ ],
+    "rows" : [ ],
+    "truncated" : false,
+    "rewritten" : false,
+    "rowCount" : 0,
+    "schemaTableCount" : 0,
+    "retrievedTables" : [ ],
+    "schemaDdlChars" : 0,
+    "llm" : null,
+    "timings" : {
+      "retrievalMs" : 0,
+      "generationMs" : 0,
+      "validationMs" : 0,
+      "executionMs" : 0,
+      "totalMs" : 0
+    },
+    "sessionId" : "clarification-bare",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "643bc630-0e6b-4f00-9a3f-a3032c77380c",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 0,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 0,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "SESSION" : 0,
+        "ADMISSION" : 0,
+        "CONVERSATION" : 0,
+        "CLARIFICATION" : 0
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 0,
+      "currentStageMs" : 0
+    }
+  },
+  "httpStatus" : 400,
+  "expectedClarification" : true,
+  "decision" : [ {
+    "term" : "复购率",
+    "matchedTerm" : "复购率",
+    "evidence" : [ ],
+    "missingGroups" : [ "denominator" ],
+    "unresolvedEvidence" : [ ],
+    "needsClarification" : true,
+    "question" : "「复购率」的分母是全部下单用户，还是注册满一定天数的用户？两者差异很大，请确认。"
+  } ]
+}, {
+  "id" : "numerator-only",
+  "question" : "复购率只看下单两次及以上的用户",
+  "body" : {
+    "status" : "NEEDS_CLARIFICATION",
+    "sql" : null,
+    "message" : "「复购率」的分母是全部下单用户，还是注册满一定天数的用户？两者差异很大，请确认。",
+    "violations" : [ ],
+    "columns" : [ ],
+    "rows" : [ ],
+    "truncated" : false,
+    "rewritten" : false,
+    "rowCount" : 0,
+    "schemaTableCount" : 0,
+    "retrievedTables" : [ ],
+    "schemaDdlChars" : 0,
+    "llm" : null,
+    "timings" : {
+      "retrievalMs" : 0,
+      "generationMs" : 0,
+      "validationMs" : 0,
+      "executionMs" : 0,
+      "totalMs" : 0
+    },
+    "sessionId" : "clarification-numerator-only",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "7f24969a-29d9-4435-a27c-4ca23741a0ed",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 0,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 0,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "SESSION" : 0,
+        "ADMISSION" : 0,
+        "CONVERSATION" : 0,
+        "CLARIFICATION" : 0
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 0,
+      "currentStageMs" : 0
+    }
+  },
+  "httpStatus" : 400,
+  "expectedClarification" : true,
+  "decision" : [ {
+    "term" : "复购率",
+    "matchedTerm" : "复购率",
+    "evidence" : [ ],
+    "missingGroups" : [ "denominator" ],
+    "unresolvedEvidence" : [ ],
+    "needsClarification" : true,
+    "question" : "「复购率」的分母是全部下单用户，还是注册满一定天数的用户？两者差异很大，请确认。"
+  } ]
+}, {
+  "id" : "filter-only",
+  "question" : "复购率只统计有效订单",
+  "body" : {
+    "status" : "NEEDS_CLARIFICATION",
+    "sql" : null,
+    "message" : "「复购率」的分母是全部下单用户，还是注册满一定天数的用户？两者差异很大，请确认。",
+    "violations" : [ ],
+    "columns" : [ ],
+    "rows" : [ ],
+    "truncated" : false,
+    "rewritten" : false,
+    "rowCount" : 0,
+    "schemaTableCount" : 0,
+    "retrievedTables" : [ ],
+    "schemaDdlChars" : 0,
+    "llm" : null,
+    "timings" : {
+      "retrievalMs" : 0,
+      "generationMs" : 0,
+      "validationMs" : 0,
+      "executionMs" : 0,
+      "totalMs" : 0
+    },
+    "sessionId" : "clarification-filter-only",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "36a8d2de-7ecd-4e95-bc42-be9a5e95fc6c",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 0,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 0,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "SESSION" : 0,
+        "ADMISSION" : 0,
+        "CONVERSATION" : 0,
+        "CLARIFICATION" : 0
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 0,
+      "currentStageMs" : 0
+    }
+  },
+  "httpStatus" : 400,
+  "expectedClarification" : true,
+  "decision" : [ {
+    "term" : "复购率",
+    "matchedTerm" : "复购率",
+    "evidence" : [ ],
+    "missingGroups" : [ "denominator" ],
+    "unresolvedEvidence" : [ ],
+    "needsClarification" : true,
+    "question" : "「复购率」的分母是全部下单用户，还是注册满一定天数的用户？两者差异很大，请确认。"
+  } ]
+}, {
+  "id" : "choice",
+  "question" : "复购率分母是全部下单用户还是注册满30天的用户？",
+  "body" : {
+    "status" : "NEEDS_CLARIFICATION",
+    "sql" : null,
+    "message" : "「复购率」的分母是全部下单用户，还是注册满一定天数的用户？两者差异很大，请确认。",
+    "violations" : [ ],
+    "columns" : [ ],
+    "rows" : [ ],
+    "truncated" : false,
+    "rewritten" : false,
+    "rowCount" : 0,
+    "schemaTableCount" : 0,
+    "retrievedTables" : [ ],
+    "schemaDdlChars" : 0,
+    "llm" : null,
+    "timings" : {
+      "retrievalMs" : 0,
+      "generationMs" : 0,
+      "validationMs" : 0,
+      "executionMs" : 0,
+      "totalMs" : 0
+    },
+    "sessionId" : "clarification-choice",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "995a77aa-bf68-4134-9e68-a163333f2a98",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 0,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 0,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "SESSION" : 0,
+        "ADMISSION" : 0,
+        "CONVERSATION" : 0,
+        "CLARIFICATION" : 0
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 0,
+      "currentStageMs" : 0
+    }
+  },
+  "httpStatus" : 400,
+  "expectedClarification" : true,
+  "decision" : [ {
+    "term" : "复购率",
+    "matchedTerm" : "复购率",
+    "evidence" : [ {
+      "source" : "required-pattern",
+      "group" : "denominator",
+      "matchedText" : "分母是全部下单用户"
+    } ],
+    "missingGroups" : [ ],
+    "unresolvedEvidence" : [ "还是" ],
+    "needsClarification" : true,
+    "question" : "「复购率」的分母是全部下单用户，还是注册满一定天数的用户？两者差异很大，请确认。"
+  } ]
+}, {
+  "id" : "negative",
+  "question" : "复购率不要以全部下单用户为分母",
+  "body" : {
+    "status" : "NEEDS_CLARIFICATION",
+    "sql" : null,
+    "message" : "「复购率」的分母是全部下单用户，还是注册满一定天数的用户？两者差异很大，请确认。",
+    "violations" : [ ],
+    "columns" : [ ],
+    "rows" : [ ],
+    "truncated" : false,
+    "rewritten" : false,
+    "rowCount" : 0,
+    "schemaTableCount" : 0,
+    "retrievedTables" : [ ],
+    "schemaDdlChars" : 0,
+    "llm" : null,
+    "timings" : {
+      "retrievalMs" : 0,
+      "generationMs" : 0,
+      "validationMs" : 0,
+      "executionMs" : 0,
+      "totalMs" : 0
+    },
+    "sessionId" : "clarification-negative",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "724b9996-0e79-40e5-9969-6d54e684d2e6",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 0,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 0,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "SESSION" : 0,
+        "ADMISSION" : 0,
+        "CONVERSATION" : 0,
+        "CLARIFICATION" : 0
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 0,
+      "currentStageMs" : 0
+    }
+  },
+  "httpStatus" : 400,
+  "expectedClarification" : true,
+  "decision" : [ {
+    "term" : "复购率",
+    "matchedTerm" : "复购率",
+    "evidence" : [ {
+      "source" : "required-pattern",
+      "group" : "denominator",
+      "matchedText" : "全部下单用户为分母"
+    } ],
+    "missingGroups" : [ ],
+    "unresolvedEvidence" : [ "不要以全部下单用户为分母" ],
+    "needsClarification" : true,
+    "question" : "「复购率」的分母是全部下单用户，还是注册满一定天数的用户？两者差异很大，请确认。"
+  } ]
+}, {
+  "id" : "legacy-sales",
+  "question" : "销售额是多少",
+  "body" : {
+    "status" : "NEEDS_CLARIFICATION",
+    "sql" : null,
+    "message" : "「销售额」有两种常见口径：含运费的 GMV，还是不含运费的商品金额？请确认一种。",
+    "violations" : [ ],
+    "columns" : [ ],
+    "rows" : [ ],
+    "truncated" : false,
+    "rewritten" : false,
+    "rowCount" : 0,
+    "schemaTableCount" : 0,
+    "retrievedTables" : [ ],
+    "schemaDdlChars" : 0,
+    "llm" : null,
+    "timings" : {
+      "retrievalMs" : 0,
+      "generationMs" : 0,
+      "validationMs" : 0,
+      "executionMs" : 0,
+      "totalMs" : 0
+    },
+    "sessionId" : "clarification-legacy-sales",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "d1da24b4-ff87-420f-bd41-3ff261d12f8d",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 0,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 0,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "SESSION" : 0,
+        "ADMISSION" : 0,
+        "CONVERSATION" : 0,
+        "CLARIFICATION" : 0
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 0,
+      "currentStageMs" : 0
+    }
+  },
+  "httpStatus" : 400,
+  "expectedClarification" : true,
+  "decision" : [ {
+    "term" : "销售额",
+    "matchedTerm" : "销售额",
+    "evidence" : [ ],
+    "missingGroups" : [ "legacy-hint" ],
+    "unresolvedEvidence" : [ ],
+    "needsClarification" : true,
+    "question" : "「销售额」有两种常见口径：含运费的 GMV，还是不含运费的商品金额？请确认一种。"
+  } ]
+}, {
+  "id" : "regional-bare",
+  "question" : "按大区统计商品销售额",
+  "body" : {
+    "status" : "NEEDS_CLARIFICATION",
+    "sql" : null,
+    "message" : "交易指标按哪一方的地域归属统计大区：客户收货地、卖家所在地，还是仓库所在地？请明确来源。",
+    "violations" : [ ],
+    "columns" : [ ],
+    "rows" : [ ],
+    "truncated" : false,
+    "rewritten" : false,
+    "rowCount" : 0,
+    "schemaTableCount" : 0,
+    "retrievedTables" : [ ],
+    "schemaDdlChars" : 0,
+    "llm" : null,
+    "timings" : {
+      "retrievalMs" : 0,
+      "generationMs" : 0,
+      "validationMs" : 0,
+      "executionMs" : 0,
+      "totalMs" : 0
+    },
+    "sessionId" : "clarification-regional-bare",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "ca3f4b4a-d9cf-40f4-b4b9-e9c2e0a0c830",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 0,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 0,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "SESSION" : 0,
+        "ADMISSION" : 0,
+        "CONVERSATION" : 0,
+        "CLARIFICATION" : 0
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 0,
+      "currentStageMs" : 0
+    }
+  },
+  "httpStatus" : 400,
+  "expectedClarification" : true,
+  "decision" : [ {
+    "term" : "销售额",
+    "matchedTerm" : "销售额",
+    "evidence" : [ {
+      "source" : "legacy-hint",
+      "group" : "hint",
+      "matchedText" : "商品销售额"
+    } ],
+    "missingGroups" : [ ],
+    "unresolvedEvidence" : [ ],
+    "needsClarification" : false,
+    "question" : "「销售额」有两种常见口径：含运费的 GMV，还是不含运费的商品金额？请确认一种。"
+  }, {
+    "term" : "大区",
+    "matchedTerm" : "大区",
+    "evidence" : [ {
+      "source" : "trigger-pattern",
+      "group" : "applicability",
+      "matchedText" : "大区统计商品销售额"
+    } ],
+    "missingGroups" : [ "regional-subject" ],
+    "unresolvedEvidence" : [ ],
+    "needsClarification" : true,
+    "question" : "交易指标按哪一方的地域归属统计大区：客户收货地、卖家所在地，还是仓库所在地？请明确来源。"
+  } ]
+}, {
+  "id" : "regional-explicit",
+  "question" : "按客户所在大区统计商品销售额",
+  "body" : {
+    "status" : "SUCCESS",
+    "sql" : "SELECT 1 AS controlled_answer LIMIT 201",
+    "message" : null,
+    "violations" : [ ],
+    "columns" : [ "controlled_answer" ],
+    "rows" : [ [ "1" ] ],
+    "truncated" : false,
+    "rewritten" : true,
+    "rowCount" : 1,
+    "schemaTableCount" : 8,
+    "retrievedTables" : [ "customers", "order_items", "regions", "warehouses", "orders", "products", "sellers", "members" ],
+    "schemaDdlChars" : 1760,
+    "llm" : {
+      "model" : "deepseek-flash",
+      "promptTokens" : 10,
+      "completionTokens" : 5,
+      "totalTokens" : 15,
+      "latencyMs" : 9,
+      "costYuan" : 0.02
+    },
+    "timings" : {
+      "retrievalMs" : 6,
+      "generationMs" : 10,
+      "validationMs" : 8,
+      "executionMs" : 3,
+      "totalMs" : 31
+    },
+    "sessionId" : "clarification-regional-explicit",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "4db90eac-5dac-4b7c-925a-95123b1b46e6",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 1,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 31,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "VALIDATION" : 8,
+        "EXPLAIN" : 2,
+        "CLARIFICATION" : 0,
+        "CACHE_WRITE" : 0,
+        "RESULT_CHECK" : 0,
+        "RETRIEVAL" : 6,
+        "CONVERSATION" : 0,
+        "CACHE" : 0,
+        "GENERATION" : 6,
+        "MODEL" : 4,
+        "EXECUTION" : 1,
+        "SESSION" : 0,
+        "ADMISSION" : 0
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 4,
+      "currentStageMs" : 0
+    }
+  },
+  "httpStatus" : 200,
+  "expectedClarification" : false,
+  "decision" : [ {
+    "term" : "销售额",
+    "matchedTerm" : "销售额",
+    "evidence" : [ {
+      "source" : "legacy-hint",
+      "group" : "hint",
+      "matchedText" : "商品销售额"
+    } ],
+    "missingGroups" : [ ],
+    "unresolvedEvidence" : [ ],
+    "needsClarification" : false,
+    "question" : "「销售额」有两种常见口径：含运费的 GMV，还是不含运费的商品金额？请确认一种。"
+  }, {
+    "term" : "大区",
+    "matchedTerm" : "大区",
+    "evidence" : [ {
+      "source" : "trigger-pattern",
+      "group" : "applicability",
+      "matchedText" : "大区统计商品销售额"
+    }, {
+      "source" : "required-pattern",
+      "group" : "regional-subject",
+      "matchedText" : "客户所在大区"
+    }, {
+      "source" : "required-pattern",
+      "group" : "regional-subject",
+      "matchedText" : "按客户所在大区"
+    } ],
+    "missingGroups" : [ ],
+    "unresolvedEvidence" : [ ],
+    "needsClarification" : false,
+    "question" : "交易指标按哪一方的地域归属统计大区：客户收货地、卖家所在地，还是仓库所在地？请明确来源。"
+  } ]
+}, {
+  "id" : "regional-choice",
+  "question" : "大区订单量按客户州还是卖家州",
+  "body" : {
+    "status" : "NEEDS_CLARIFICATION",
+    "sql" : null,
+    "message" : "交易指标按哪一方的地域归属统计大区：客户收货地、卖家所在地，还是仓库所在地？请明确来源。",
+    "violations" : [ ],
+    "columns" : [ ],
+    "rows" : [ ],
+    "truncated" : false,
+    "rewritten" : false,
+    "rowCount" : 0,
+    "schemaTableCount" : 0,
+    "retrievedTables" : [ ],
+    "schemaDdlChars" : 0,
+    "llm" : null,
+    "timings" : {
+      "retrievalMs" : 0,
+      "generationMs" : 0,
+      "validationMs" : 0,
+      "executionMs" : 0,
+      "totalMs" : 0
+    },
+    "sessionId" : "clarification-regional-choice",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "4833302f-b49a-406d-b02e-bcda18c006f5",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 0,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 0,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "SESSION" : 0,
+        "ADMISSION" : 0,
+        "CONVERSATION" : 0,
+        "CLARIFICATION" : 0
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 0,
+      "currentStageMs" : 0
+    }
+  },
+  "httpStatus" : 400,
+  "expectedClarification" : true,
+  "decision" : [ {
+    "term" : "大区",
+    "matchedTerm" : "大区",
+    "evidence" : [ {
+      "source" : "trigger-pattern",
+      "group" : "applicability",
+      "matchedText" : "大区订单"
+    }, {
+      "source" : "required-pattern",
+      "group" : "regional-subject",
+      "matchedText" : "按客户州"
+    } ],
+    "missingGroups" : [ ],
+    "unresolvedEvidence" : [ "客户州还是卖家" ],
+    "needsClarification" : true,
+    "question" : "交易指标按哪一方的地域归属统计大区：客户收货地、卖家所在地，还是仓库所在地？请明确来源。"
+  } ]
+}, {
+  "id" : "region-dictionary",
+  "question" : "每个大区包含多少个州",
+  "body" : {
+    "status" : "SUCCESS",
+    "sql" : "SELECT 1 AS controlled_answer LIMIT 201",
+    "message" : null,
+    "violations" : [ ],
+    "columns" : [ "controlled_answer" ],
+    "rows" : [ [ "1" ] ],
+    "truncated" : false,
+    "rewritten" : true,
+    "rowCount" : 1,
+    "schemaTableCount" : 8,
+    "retrievedTables" : [ "regions", "warehouses", "customers", "geolocation", "shipping_addresses", "shipments", "inventory", "inventory_movements" ],
+    "schemaDdlChars" : 1645,
+    "llm" : {
+      "model" : "deepseek-flash",
+      "promptTokens" : 10,
+      "completionTokens" : 5,
+      "totalTokens" : 15,
+      "latencyMs" : 7,
+      "costYuan" : 0.02
+    },
+    "timings" : {
+      "retrievalMs" : 5,
+      "generationMs" : 8,
+      "validationMs" : 2,
+      "executionMs" : 3,
+      "totalMs" : 21
+    },
+    "sessionId" : "clarification-region-dictionary",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "c114e1ce-85cc-4d8b-b679-5e58c1382e3c",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 1,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 21,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "VALIDATION" : 2,
+        "EXPLAIN" : 2,
+        "CLARIFICATION" : 0,
+        "CACHE_WRITE" : 0,
+        "RESULT_CHECK" : 0,
+        "RETRIEVAL" : 5,
+        "CONVERSATION" : 0,
+        "CACHE" : 0,
+        "GENERATION" : 4,
+        "MODEL" : 4,
+        "EXECUTION" : 1,
+        "SESSION" : 0,
+        "ADMISSION" : 0
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 3,
+      "currentStageMs" : 0
+    }
+  },
+  "httpStatus" : 200,
+  "expectedClarification" : false,
+  "decision" : [ ]
+}, {
+  "id" : "price-bare",
+  "question" : "价格平均涨跌幅是多少",
+  "body" : {
+    "status" : "NEEDS_CLARIFICATION",
+    "sql" : null,
+    "message" : "价格平均涨跌幅按新价减旧价的金额差，还是除以旧价的比例？平均按每条变动记录等权、先按商品平均，还是按销量加权？请明确两项。",
+    "violations" : [ ],
+    "columns" : [ ],
+    "rows" : [ ],
+    "truncated" : false,
+    "rewritten" : false,
+    "rowCount" : 0,
+    "schemaTableCount" : 0,
+    "retrievedTables" : [ ],
+    "schemaDdlChars" : 0,
+    "llm" : null,
+    "timings" : {
+      "retrievalMs" : 0,
+      "generationMs" : 0,
+      "validationMs" : 0,
+      "executionMs" : 0,
+      "totalMs" : 0
+    },
+    "sessionId" : "clarification-price-bare",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "1b73f1a3-4864-4831-bac9-7fd6fde5d782",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 0,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 0,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "SESSION" : 0,
+        "ADMISSION" : 0,
+        "CONVERSATION" : 0,
+        "CLARIFICATION" : 0
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 0,
+      "currentStageMs" : 0
+    }
+  },
+  "httpStatus" : 400,
+  "expectedClarification" : true,
+  "decision" : [ {
+    "term" : "平均涨跌幅",
+    "matchedTerm" : "平均涨跌幅",
+    "evidence" : [ {
+      "source" : "trigger-pattern",
+      "group" : "applicability",
+      "matchedText" : "价格平均涨跌幅"
+    } ],
+    "missingGroups" : [ "price-change-unit", "averaging-grain" ],
+    "unresolvedEvidence" : [ ],
+    "needsClarification" : true,
+    "question" : "价格平均涨跌幅按新价减旧价的金额差，还是除以旧价的比例？平均按每条变动记录等权、先按商品平均，还是按销量加权？请明确两项。"
+  } ]
+}, {
+  "id" : "price-unit-only",
+  "question" : "价格平均涨幅用百分比输出",
+  "body" : {
+    "status" : "NEEDS_CLARIFICATION",
+    "sql" : null,
+    "message" : "价格平均涨跌幅按新价减旧价的金额差，还是除以旧价的比例？平均按每条变动记录等权、先按商品平均，还是按销量加权？请明确两项。",
+    "violations" : [ ],
+    "columns" : [ ],
+    "rows" : [ ],
+    "truncated" : false,
+    "rewritten" : false,
+    "rowCount" : 0,
+    "schemaTableCount" : 0,
+    "retrievedTables" : [ ],
+    "schemaDdlChars" : 0,
+    "llm" : null,
+    "timings" : {
+      "retrievalMs" : 0,
+      "generationMs" : 0,
+      "validationMs" : 0,
+      "executionMs" : 0,
+      "totalMs" : 0
+    },
+    "sessionId" : "clarification-price-unit-only",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "ffde7296-d0ea-47de-9415-9e5992448c55",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 0,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 0,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "SESSION" : 0,
+        "ADMISSION" : 0,
+        "CONVERSATION" : 0,
+        "CLARIFICATION" : 0
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 0,
+      "currentStageMs" : 0
+    }
+  },
+  "httpStatus" : 400,
+  "expectedClarification" : true,
+  "decision" : [ {
+    "term" : "平均涨跌幅",
+    "matchedTerm" : "平均涨幅",
+    "evidence" : [ {
+      "source" : "trigger-pattern",
+      "group" : "applicability",
+      "matchedText" : "价格平均涨幅"
+    }, {
+      "source" : "required-pattern",
+      "group" : "price-change-unit",
+      "matchedText" : "平均涨幅用百分比"
+    }, {
+      "source" : "required-pattern",
+      "group" : "price-change-unit",
+      "matchedText" : "平均涨幅用百分比输出"
+    } ],
+    "missingGroups" : [ "averaging-grain" ],
+    "unresolvedEvidence" : [ ],
+    "needsClarification" : true,
+    "question" : "价格平均涨跌幅按新价减旧价的金额差，还是除以旧价的比例？平均按每条变动记录等权、先按商品平均，还是按销量加权？请明确两项。"
+  } ]
+}, {
+  "id" : "price-explicit",
+  "question" : "价格平均涨幅用百分比输出，每条变动记录等权",
+  "body" : {
+    "status" : "SUCCESS",
+    "sql" : "SELECT 1 AS controlled_answer LIMIT 201",
+    "message" : null,
+    "violations" : [ ],
+    "columns" : [ "controlled_answer" ],
+    "rows" : [ [ "1" ] ],
+    "truncated" : false,
+    "rewritten" : true,
+    "rowCount" : 1,
+    "schemaTableCount" : 6,
+    "retrievedTables" : [ "order_items", "orders", "products", "sellers", "refund_items", "settlement_items" ],
+    "schemaDdlChars" : 1467,
+    "llm" : {
+      "model" : "deepseek-flash",
+      "promptTokens" : 10,
+      "completionTokens" : 5,
+      "totalTokens" : 15,
+      "latencyMs" : 7,
+      "costYuan" : 0.02
+    },
+    "timings" : {
+      "retrievalMs" : 5,
+      "generationMs" : 8,
+      "validationMs" : 2,
+      "executionMs" : 2,
+      "totalMs" : 21
+    },
+    "sessionId" : "clarification-price-explicit",
+    "rewrittenQuestion" : null,
+    "schemaReused" : false,
+    "budget" : {
+      "requestId" : "c76b6c20-b9b2-4532-bcc8-3a05d2f2196b",
+      "timeoutMs" : 15000,
+      "maxModelCalls" : 2,
+      "modelCalls" : 1,
+      "unknownUsageCalls" : 0,
+      "elapsedMs" : 21,
+      "termination" : "COMPLETE",
+      "stage" : "CONVERSATION",
+      "retrySkippedReason" : null,
+      "stageMs" : {
+        "VALIDATION" : 2,
+        "EXPLAIN" : 2,
+        "CLARIFICATION" : 0,
+        "CACHE_WRITE" : 0,
+        "RESULT_CHECK" : 0,
+        "RETRIEVAL" : 5,
+        "CONVERSATION" : 0,
+        "CACHE" : 0,
+        "GENERATION" : 4,
+        "MODEL" : 4,
+        "EXECUTION" : 0,
+        "SESSION" : 0,
+        "ADMISSION" : 0
+      },
+      "cancellationRejected" : 0,
+      "timingsVersion" : "request-budget-exclusive-v1",
+      "otherMs" : 4,
+      "currentStageMs" : 0
+    }
+  },
+  "httpStatus" : 200,
+  "expectedClarification" : false,
+  "decision" : [ {
+    "term" : "平均涨跌幅",
+    "matchedTerm" : "平均涨幅",
+    "evidence" : [ {
+      "source" : "trigger-pattern",
+      "group" : "applicability",
+      "matchedText" : "价格平均涨幅"
+    }, {
+      "source" : "required-pattern",
+      "group" : "price-change-unit",
+      "matchedText" : "平均涨幅用百分比"
+    }, {
+      "source" : "required-pattern",
+      "group" : "price-change-unit",
+      "matchedText" : "平均涨幅用百分比输出"
+    }, {
+      "source" : "required-pattern",
+      "group" : "averaging-grain",
+      "matchedText" : "每条变动记录等权"
+    } ],
+    "missingGroups" : [ ],
+    "unresolvedEvidence" : [ ],
+    "needsClarification" : false,
+    "question" : "价格平均涨跌幅按新价减旧价的金额差，还是除以旧价的比例？平均按每条变动记录等权、先按商品平均，还是按销量加权？请明确两项。"
+  } ]
+} ]
