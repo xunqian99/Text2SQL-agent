@@ -170,8 +170,14 @@ class ProxyTests(unittest.TestCase):
         self.assertEqual(complete, result["responseComplete"])
         self.assertIsNotNone(result["startedAtUtc"])
         self.assertIsNotNone(result["finishedAtUtc"])
-        self.assertNotIn(KEY, json.dumps(result))
-        self.assertNotIn("Authorization", json.dumps(result))
+        raw_body = result["responseBodyRaw"]
+        self.assertIsInstance(raw_body, bytes)
+        self.assertEqual(len(raw_body), result["responseBytes"])
+        self.assertEqual(hashlib.sha256(raw_body).hexdigest(), result["responseBodySha256"])
+        self.assertNotIn(KEY.encode(), raw_body)
+        metadata = {key:value for key, value in result.items() if key != "responseBodyRaw"}
+        self.assertNotIn(KEY, json.dumps(metadata))
+        self.assertNotIn("Authorization", json.dumps(metadata))
         return result
 
     def test_peak_gate_rejection_has_zero_upstream_attempts(self):
@@ -269,7 +275,7 @@ class ProxyTests(unittest.TestCase):
             dict(raw=b"{broken", status=400),
             dict(raw=b"", headers={"Content-Length": str(MAX_BODY_BYTES + 1)}, status=413),
             dict(raw=b"", headers={"Content-Length": "-1"}, status=400),
-            dict(raw=b"", headers={"Transfer-Encoding": "chunked"}, status=400),
+            dict(raw=b"", headers={"Transfer-Encoding": "gzip"}, status=400),
         ]
         with LocalUpstream() as stub, proxy_for(stub, recorder) as proxy:
             for case in cases:
@@ -768,6 +774,81 @@ class ProxyTests(unittest.TestCase):
                     self.assertIn("D_LOCAL_RESPONSE:duplicate JSON object member; usage is unknown", result["error"])
                     self.assertEqual(hashlib.sha256(raw).hexdigest(), result["responseBodySha256"])
                     self.assertEqual(1, len(stub.requests))
+
+    def test_raw_response_success_and_duplicate_json_preserve_exact_bytes(self):
+        bodies = [BODY, b'{ "usage": { "total_tokens": 22, "total_tokens": 0 } }\n']
+        for raw in bodies:
+            with self.subTest(duplicate=raw != BODY):
+                recorder = Recorder()
+                with LocalUpstream(body=raw) as stub, proxy_for(stub, recorder) as proxy:
+                    self.assertEqual((200, raw), request(proxy.base_url))
+                    proxy.drain(1)
+                    result = self.assert_record(recorder, True, 200, True)
+                    self.assertEqual(raw, result["responseBodyRaw"])
+                    if raw == BODY:
+                        self.assertEqual(22, result["responseJson"]["usage"]["total_tokens"])
+                        self.assertIsNone(result["error"])
+                    else:
+                        self.assertIsNone(result["responseJson"])
+                        self.assertIn("usage is unknown", result["error"])
+                    # Callbacks now must extract bytes before JSON encoding.
+                    metadata = dict(result)
+                    captured = metadata.pop("responseBodyRaw")
+                    self.assertEqual(raw, captured)
+                    self.assertIsInstance(json.dumps(metadata), str)
+                    self.assertEqual(1, len(stub.requests))
+                    self.assertEqual([], proxy.errors)
+
+    def test_raw_response_partial_timeout_preserves_received_prefix(self):
+        recorder = Recorder(budget=.13)
+        with LocalUpstream(mode="body_trickle") as stub, proxy_for(stub, recorder) as proxy:
+            self.assertEqual(504, request(proxy.base_url)[0])
+            proxy.drain(1)
+            result = self.assert_record(recorder, True, 200, False)
+            self.assertGreater(len(result["responseBodyRaw"]), 0)
+            self.assertLess(len(result["responseBodyRaw"]), len(BODY))
+            self.assertEqual(BODY[:result["responseBytes"]], result["responseBodyRaw"])
+            self.assertIsNone(result["responseJson"])
+            self.assertIn("TimeoutError", result["error"])
+            self.assertEqual(1, len(stub.requests))
+
+    def test_raw_response_client_abandonment_still_reaches_after_once(self):
+        recorder = Recorder()
+        with LocalUpstream(mode="wait") as stub, proxy_for(stub, recorder) as proxy:
+            parsed = urlsplit(proxy.base_url)
+            client = socket.create_connection((parsed.hostname, parsed.port), timeout=2)
+            raw = json.dumps(REQUEST).encode()
+            try:
+                client.sendall(b"POST /v1/chat/completions HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Length: "
+                               + str(len(raw)).encode() + b"\r\n\r\n" + raw)
+                self.assertTrue(stub.received.wait(1))
+            finally:
+                client.close()
+                stub.release.set()
+            proxy.drain(2)
+            result = self.assert_record(recorder, True, 200, True)
+            self.assertEqual(BODY, result["responseBodyRaw"])
+            self.assertEqual(22, result["responseJson"]["usage"]["total_tokens"])
+            self.assertEqual(1, len(stub.requests))
+            self.assertEqual([], proxy.errors)
+
+    def test_raw_response_empty_for_unsent_and_missing_upstream_response(self):
+        cases = [("expired", 503, False, 0), ("drop", 502, True, 1), ("wait", 504, True, 1)]
+        for mode, status, attempted, received in cases:
+            with self.subTest(mode=mode):
+                recorder = Recorder(budget=.12)
+                overrides = {}
+                if mode == "expired":
+                    overrides["before_send"] = lambda p,b:{"token": "local-permit-1",
+                        "upstreamDeadlineMonotonic": time.monotonic() - 1}
+                with LocalUpstream(mode=mode) as stub, proxy_for(stub, recorder, **overrides) as proxy:
+                    self.assertEqual(status, request(proxy.base_url)[0])
+                    proxy.drain(1)
+                    result = self.assert_record(recorder, attempted, None, False)
+                    self.assertEqual(b"", result["responseBodyRaw"])
+                    self.assertIsNone(result["responseJson"])
+                    self.assertNotIn("usage", result)
+                    self.assertEqual(received, len(stub.requests))
 
 
 class EvidenceResult(unittest.TextTestResult):

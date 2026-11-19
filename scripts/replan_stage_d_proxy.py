@@ -468,7 +468,10 @@ class ModelProxy:
     Once it returns a permit, ``after_send(permit, result)`` runs exactly once,
     even for an invalid/expired permit, cancellation or a disconnected client.
     Callback failures are redacted and exposed in ``errors``; callers must check
-    that list after ``drain``. Callbacks must be bounded local operations.
+    that list after ``drain``. ``result["responseBodyRaw"]`` contains immutable
+    bytes, including partial or empty responses; the controller must persist
+    those bytes before replacing them with a reference for JSON evidence.
+    Callbacks must be bounded local operations.
     """
 
     def __init__(self, key: str, before_send: Callable, after_send: Callable,
@@ -648,6 +651,7 @@ class ModelProxy:
                     self._connections.discard(connection)
             body = bytes(response_body)
             result["finishedAtUtc"] = _utc_now()
+            result["responseBodyRaw"] = body
             result["responseBodySha256"] = hashlib.sha256(body).hexdigest()
             result["responseBytes"] = len(body)
             try:
