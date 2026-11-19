@@ -1,0 +1,54 @@
+{
+  "status": "PREREGISTRATION_RECOMMENDATION",
+  "threshold": "at least 2/3 strictly",
+  "targets": [
+    {
+      "id": "T4-001",
+      "dimension": "身份",
+      "originalQuestion": "每个客户的订单数量是多少？取订单最多的 10 个客户。",
+      "originalGoldSql": "SELECT c.customer_unique_id, COUNT(*) AS cnt\nFROM orders o JOIN customers c ON c.customer_id = o.customer_id\nGROUP BY 1 ORDER BY cnt DESC LIMIT 10;\n",
+      "originalQuestionSha256": "ed8a7feba19735620ade7877e3293ad373b59c8aff40b25bd545784ea5cf3972",
+      "originalGoldSha256": "33952307a409c50cc2520338689db6e16410384405ae69ec9cb533aa5667d873",
+      "devQuestionSha256": "530b7f5ab2d4ed97afe731755b89e89aa58f3a70d601b34bb1e39618adfd5ef6",
+      "devGoldSha256": "678b508bec3838e1c9493a3e8c6a72f256169d48c731a134dda6ef014cd41d24",
+      "questionBytesEqual": false,
+      "goldSqlBytesEqual": false,
+      "recommendedConfirmation": "ONE_SEPARATE_ORIGINAL_REQUEST_REQUIRED; V4 question explicitly changes identity/tie policy. Preserve old strict verdict even when disagreement is only old tie membership.",
+      "conflict": "Old Gold has no stable boundary tie key; current product and V3 request require natural-person ID ASC. New contract cannot retroactively alter old strict score or make V3 success equal original target success.",
+      "responseSelection": "FINAL_SELECTED_CANDIDATE_UNIQUE_DEVELOPMENT_RESPONSE_OR_ONE_PREREGISTERED_ORIGINAL_RESPONSE; NEVER_FORMAL_BEST_OF_THREE",
+      "strictOldCriterionPreserved": true
+    },
+    {
+      "id": "T3-002",
+      "dimension": "形状",
+      "originalQuestion": "2017 年和 2018 年各有多少笔订单？",
+      "originalGoldSql": "SELECT EXTRACT(YEAR FROM order_purchase_timestamp)::INT AS yr, COUNT(*) AS cnt\nFROM orders\nWHERE EXTRACT(YEAR FROM order_purchase_timestamp) IN (2017, 2018)\nGROUP BY 1 ORDER BY 1;\n",
+      "originalQuestionSha256": "878342b946b7fb292f7e030d276e3e80bf5371b50b0240857bee9e4ae3d37de2",
+      "originalGoldSha256": "00ab301c7a617c31690c829fbc5b3dc01141fe0a1425612837f9495edd169ff0",
+      "devQuestionSha256": "878342b946b7fb292f7e030d276e3e80bf5371b50b0240857bee9e4ae3d37de2",
+      "devGoldSha256": "00ab301c7a617c31690c829fbc5b3dc01141fe0a1425612837f9495edd169ff0",
+      "questionBytesEqual": true,
+      "goldSqlBytesEqual": true,
+      "recommendedConfirmation": "REUSE_UNIQUE_FINAL_DEVELOPMENT_RESPONSE; execute original Gold and original strict shape/unit/order criterion separately, never copy the V4 verdict.",
+      "conflict": "No substantive contract conflict. Two rows (year,count), integer year, chronological order; no pivot or extra columns.",
+      "responseSelection": "FINAL_SELECTED_CANDIDATE_UNIQUE_DEVELOPMENT_RESPONSE_OR_ONE_PREREGISTERED_ORIGINAL_RESPONSE; NEVER_FORMAL_BEST_OF_THREE",
+      "strictOldCriterionPreserved": true
+    },
+    {
+      "id": "T6-003",
+      "dimension": "单位",
+      "originalQuestion": "复购率是多少？（下单 2 次及以上的用户占全部下单用户的比例）",
+      "originalGoldSql": "WITH per_user AS (\n  SELECT c.customer_unique_id, COUNT(DISTINCT o.order_id) AS order_cnt\n  FROM orders o\n  JOIN customers c ON c.customer_id = o.customer_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n  GROUP BY 1\n)\nSELECT ROUND(100.0 * COUNT(*) FILTER (WHERE order_cnt >= 2) / COUNT(*), 2) AS repeat_rate_pct\nFROM per_user;\n",
+      "originalQuestionSha256": "a3ce99824ec17df7aadb54b0a266a089ad8c949af6a5e7344113ff022147fdf8",
+      "originalGoldSha256": "0466797cdf5690c9e57b4d1107806bcf9b1d0d1ae95d311b68cfc87a7415322d",
+      "devQuestionSha256": "a3ce99824ec17df7aadb54b0a266a089ad8c949af6a5e7344113ff022147fdf8",
+      "devGoldSha256": "bbd17de0c65ec2391c6daf0ed6cf9071fea51f5375f26f1629862c0c20cfbac9",
+      "questionBytesEqual": true,
+      "goldSqlBytesEqual": false,
+      "recommendedConfirmation": "QUESTION_UNCHANGED_BUT_GOLD_TEXT_CHANGED_NULLIF_AND_FORMAT; preregister reuse only if the ORIGINAL strict adjudicator/Gold is independently retained and applied to the unique response. If A protocol defines byte-identical Gold as mandatory, use ONE separate original request. Resolve this before freezing; never choose after observing the answer.",
+      "conflict": "Registered repeat_rate is PERCENT, scale 2. Generic word 比例 does not override registered units. Old Gold lacks NULLIF, V3 adds it; empty-denominator boundary differs, so byte equality is false and must be disclosed.",
+      "responseSelection": "FINAL_SELECTED_CANDIDATE_UNIQUE_DEVELOPMENT_RESPONSE_OR_ONE_PREREGISTERED_ORIGINAL_RESPONSE; NEVER_FORMAL_BEST_OF_THREE",
+      "strictOldCriterionPreserved": true
+    }
+  ]
+}

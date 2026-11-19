@@ -1,0 +1,141 @@
+{
+  "format" : "independent-a-attempt1-scorer-probes-v1",
+  "checks" : [ {
+    "id" : "text_identity_leading_zero",
+    "expectedCorrect" : false,
+    "observedCorrect" : true,
+    "exception" : null,
+    "passed" : false,
+    "goldRows" : [ [ "001", "10" ] ],
+    "actualRows" : [ [ "1", "10" ] ]
+  }, {
+    "id" : "sql_null_vs_literal_NULL",
+    "expectedCorrect" : false,
+    "observedCorrect" : true,
+    "exception" : null,
+    "passed" : false,
+    "goldRows" : [ [ null, "10" ] ],
+    "actualRows" : [ [ "NULL", "10" ] ]
+  }, {
+    "id" : "text_group_key_whitespace",
+    "expectedCorrect" : false,
+    "observedCorrect" : true,
+    "exception" : null,
+    "passed" : false,
+    "goldRows" : [ [ " x ", "10" ] ],
+    "actualRows" : [ [ "x", "10" ] ]
+  }, {
+    "id" : "text_group_key_date_string",
+    "expectedCorrect" : false,
+    "observedCorrect" : true,
+    "exception" : null,
+    "passed" : false,
+    "goldRows" : [ [ "2018-01-01", "10" ] ],
+    "actualRows" : [ [ "2018-01-01 00:00:00", "10" ] ]
+  }, {
+    "id" : "partial_allows_same_key_block",
+    "expectedCorrect" : true,
+    "observedCorrect" : true,
+    "exception" : null,
+    "passed" : true,
+    "goldRows" : [ [ "A", "10" ], [ "B", "10" ], [ "C", "5" ] ],
+    "actualRows" : [ [ "B", "10" ], [ "A", "10" ], [ "C", "5" ] ]
+  }, {
+    "id" : "partial_rejects_wrong_key_block",
+    "expectedCorrect" : false,
+    "observedCorrect" : false,
+    "exception" : null,
+    "passed" : true,
+    "goldRows" : [ [ "A", "10" ], [ "B", "10" ], [ "C", "5" ] ],
+    "actualRows" : [ [ "B", "10" ], [ "C", "5" ], [ "A", "10" ] ]
+  }, {
+    "id" : "partial_rejects_identity_mutation",
+    "expectedCorrect" : false,
+    "observedCorrect" : false,
+    "exception" : null,
+    "passed" : true,
+    "goldRows" : [ [ "A", "10" ], [ "B", "10" ], [ "C", "5" ] ],
+    "actualRows" : [ [ "X", "10" ], [ "B", "10" ], [ "C", "5" ] ]
+  }, {
+    "id" : "formal_T5_001_column2_tie",
+    "expectedCorrect" : true,
+    "observedCorrect" : true,
+    "exception" : null,
+    "passed" : true,
+    "goldRows" : [ [ "R1", "L1", "10" ], [ "R2", "L2", "10" ], [ "R3", "L3", "5" ] ],
+    "actualRows" : [ [ "R2", "L2", "10" ], [ "R1", "L1", "10" ], [ "R3", "L3", "5" ] ]
+  }, {
+    "id" : "formal_T5_001_column2_reverse",
+    "expectedCorrect" : false,
+    "observedCorrect" : false,
+    "exception" : null,
+    "passed" : true,
+    "goldRows" : [ [ "R1", "L1", "10" ], [ "R2", "L2", "5" ] ],
+    "actualRows" : [ [ "R2", "L2", "5" ], [ "R1", "L1", "10" ] ]
+  }, {
+    "id" : "time_rejects_reverse",
+    "expectedCorrect" : false,
+    "observedCorrect" : false,
+    "exception" : null,
+    "passed" : true,
+    "goldRows" : [ [ "2018-01-01", "1" ], [ "2018-02-01", "2" ] ],
+    "actualRows" : [ [ "2018-02-01", "2" ], [ "2018-01-01", "1" ] ]
+  }, {
+    "id" : "topn_hidden_metric_still_strict",
+    "expectedCorrect" : false,
+    "observedCorrect" : false,
+    "exception" : null,
+    "passed" : true,
+    "goldRows" : [ [ "A", "3.5" ], [ "B", "4.5" ] ],
+    "actualRows" : [ [ "B", "4.5" ], [ "A", "3.5" ] ]
+  }, {
+    "id" : "topn_boundary_identity_substitution",
+    "expectedCorrect" : false,
+    "observedCorrect" : false,
+    "exception" : null,
+    "passed" : true,
+    "goldRows" : [ [ "A", "10" ], [ "B", "5" ] ],
+    "actualRows" : [ [ "A", "10" ], [ "C", "5" ] ]
+  }, {
+    "id" : "unordered_keeps_duplicate_multiplicity",
+    "expectedCorrect" : false,
+    "observedCorrect" : false,
+    "exception" : null,
+    "passed" : true,
+    "goldRows" : [ [ "A", "1" ], [ "A", "1" ] ],
+    "actualRows" : [ [ "A", "1" ] ]
+  }, {
+    "id" : "numeric_tolerance_preserved",
+    "expectedCorrect" : true,
+    "observedCorrect" : true,
+    "exception" : null,
+    "passed" : true,
+    "goldRows" : [ [ "A", "10.00001" ] ],
+    "actualRows" : [ [ "A", "10" ] ]
+  }, {
+    "id" : "date_midnight_compatibility_preserved",
+    "expectedCorrect" : true,
+    "observedCorrect" : true,
+    "exception" : null,
+    "passed" : true,
+    "goldRows" : [ [ "2018-01-01", "1" ] ],
+    "actualRows" : [ [ "2018-01-01 00:00:00", "1" ] ]
+  }, {
+    "id" : "topn_overlong_actual_is_wrong_answer",
+    "expectedCorrect" : false,
+    "observedCorrect" : null,
+    "exception" : "IllegalArgumentException: Results violate registered TopN contract",
+    "passed" : false,
+    "goldRows" : [ [ "A", "10" ], [ "B", "5" ] ],
+    "actualRows" : [ [ "A", "10" ], [ "B", "5" ], [ "C", "1" ] ]
+  } ],
+  "pass" : 11,
+  "total" : 16,
+  "providerCalls" : 0,
+  "databaseCalls" : 0,
+  "legacyOriginalComparatorDiagnostic" : {
+    "meaning" : "The p21 class name alone does not pin the original strict algorithm; its overloads disagree about tied boundary membership.",
+    "strictNormalizedListEquality" : false,
+    "sqlAwareP21Comparator" : true
+  }
+}

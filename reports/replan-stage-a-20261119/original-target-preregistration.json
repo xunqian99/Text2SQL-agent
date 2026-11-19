@@ -1,0 +1,68 @@
+{
+  "format": "original-target-confirmation-v1",
+  "targets": [
+    {
+      "id": "T4-001",
+      "failureLayer": "identity",
+      "originalQuestion": "每个客户的订单数量是多少？取订单最多的 10 个客户。",
+      "originalGoldSql": "SELECT c.customer_unique_id, COUNT(*) AS cnt\nFROM orders o JOIN customers c ON c.customer_id = o.customer_id\nGROUP BY 1 ORDER BY cnt DESC LIMIT 10;\n",
+      "originalQuestionSha256": "ed8a7feba19735620ade7877e3293ad373b59c8aff40b25bd545784ea5cf3972",
+      "originalGoldSqlSha256": "33952307a409c50cc2520338689db6e16410384405ae69ec9cb533aa5667d873",
+      "sameQuestion": false,
+      "sameGoldSql": false,
+      "confirmation": "ONE_ORIGINAL_REQUEST_AFTER_DEV_BEFORE_FORMAL",
+      "originalScorer": "HTTP200 + SUCCESS + !truncated + ResultNormalizer.normalize(actual,false).equals(expectedRows); exact original Gold; never SQL-aware tie comparison",
+      "requestLimit": 1,
+      "contractBoundary": "T4 original unspecified Top10 tie membership may conflict with stable identity default; strict failure remains failure. T6 original uses valid-order population; no changed denominator or unit is accepted."
+    },
+    {
+      "id": "T3-002",
+      "failureLayer": "shape",
+      "originalQuestion": "2017 年和 2018 年各有多少笔订单？",
+      "originalGoldSql": "SELECT EXTRACT(YEAR FROM order_purchase_timestamp)::INT AS yr, COUNT(*) AS cnt\nFROM orders\nWHERE EXTRACT(YEAR FROM order_purchase_timestamp) IN (2017, 2018)\nGROUP BY 1 ORDER BY 1;\n",
+      "originalQuestionSha256": "878342b946b7fb292f7e030d276e3e80bf5371b50b0240857bee9e4ae3d37de2",
+      "originalGoldSqlSha256": "00ab301c7a617c31690c829fbc5b3dc01141fe0a1425612837f9495edd169ff0",
+      "sameQuestion": true,
+      "sameGoldSql": true,
+      "confirmation": "REUSE_FINAL_CANDIDATE_UNIQUE_DEV_RESPONSE",
+      "originalScorer": "HTTP200 + SUCCESS + !truncated + ResultNormalizer.normalize(actual,false).equals(expectedRows); exact original Gold; never SQL-aware tie comparison",
+      "requestLimit": 0,
+      "contractBoundary": "T4 original unspecified Top10 tie membership may conflict with stable identity default; strict failure remains failure. T6 original uses valid-order population; no changed denominator or unit is accepted."
+    },
+    {
+      "id": "T6-003",
+      "failureLayer": "unit",
+      "originalQuestion": "复购率是多少？（下单 2 次及以上的用户占全部下单用户的比例）",
+      "originalGoldSql": "WITH per_user AS (\n  SELECT c.customer_unique_id, COUNT(DISTINCT o.order_id) AS order_cnt\n  FROM orders o\n  JOIN customers c ON c.customer_id = o.customer_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n  GROUP BY 1\n)\nSELECT ROUND(100.0 * COUNT(*) FILTER (WHERE order_cnt >= 2) / COUNT(*), 2) AS repeat_rate_pct\nFROM per_user;\n",
+      "originalQuestionSha256": "a3ce99824ec17df7aadb54b0a266a089ad8c949af6a5e7344113ff022147fdf8",
+      "originalGoldSqlSha256": "0466797cdf5690c9e57b4d1107806bcf9b1d0d1ae95d311b68cfc87a7415322d",
+      "sameQuestion": true,
+      "sameGoldSql": false,
+      "confirmation": "ONE_ORIGINAL_REQUEST_AFTER_DEV_BEFORE_FORMAL",
+      "originalScorer": "HTTP200 + SUCCESS + !truncated + ResultNormalizer.normalize(actual,false).equals(expectedRows); exact original Gold; never SQL-aware tie comparison",
+      "requestLimit": 1,
+      "contractBoundary": "T4 original unspecified Top10 tie membership may conflict with stable identity default; strict failure remains failure. T6 original uses valid-order population; no changed denominator or unit is accepted."
+    }
+  ],
+  "threshold": "AT_LEAST_2_OF_3_STRICTLY",
+  "extraRequestsMax": 2,
+  "actualModelCallsMax": 4,
+  "newBatchQuestionRequestMax": 1002,
+  "newBatchModelCallMax": 2004,
+  "sameQuestionAndGoldBytesRequiredToReuse": true,
+  "historicalEvidenceNotInherited": true,
+  "failureStopsBeforeFormal": true,
+  "selectedCandidateOnly": true,
+  "originalScorerIdentity": {
+    "probe": "src/test/java/com/text2sql/agent/semantic/CustomerIdentityHttpProbe.java",
+    "probeSourceSha256": "50a8ab2fc4b58b473d7bb901d682d7e54a3b6445b74ae2029a3e826110d14457",
+    "outputProbe": "src/test/java/com/text2sql/agent/semantic/OutputContractHttpProbe.java",
+    "outputProbeSha256": "b3faf0ab2cab74d673c2c28c7f4df3f4a174b1dd3e19d2626e721b738196e568",
+    "normalizeSource": "src/main/java/com/text2sql/agent/execution/ResultNormalizer.java",
+    "normalizeSourceSha256": "336bfa4a18320e0d550acd9d09d5d2469ab794ceaaf7f4e85a32c8d2249338ef",
+    "method": "normalize(QueryResult,false).equals(expectedRows)",
+    "rowOrderMatters": false,
+    "boundaryMembershipExact": true,
+    "sqlAwareTiesProhibited": true
+  }
+}

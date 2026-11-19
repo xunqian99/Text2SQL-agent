@@ -1,0 +1,163 @@
+- id: T3-002
+  difficulty: time_window
+  tags:
+  - 时间
+  - 按年
+  question: 2017 年和 2018 年各有多少笔订单？
+  gold_sql: 'SELECT EXTRACT(YEAR FROM order_purchase_timestamp)::INT AS yr, COUNT(*) AS cnt
+
+    FROM orders
+
+    WHERE EXTRACT(YEAR FROM order_purchase_timestamp) IN (2017, 2018)
+
+    GROUP BY 1 ORDER BY 1;
+
+    '
+  notes: ''
+- id: T3-004
+  difficulty: time_window
+  tags:
+  - 时间
+  - 过滤
+  question: 2017 年 11 月的订单有多少笔？
+  gold_sql: "SELECT COUNT(*) FROM orders\nWHERE order_purchase_timestamp >= '2017-11-01'\n  AND order_purchase_timestamp\
+    \ < '2017-12-01';\n"
+  notes: ''
+- id: T3-006
+  difficulty: time_window
+  tags:
+  - 时间
+  - 按月
+  - 求和
+  question: 按有商品明细的下单月份，统计该月全部状态订单明细的不含运费商品金额合计两位，仅列有明细的月份，不补缺月。
+  gold_sql: "SELECT DATE_TRUNC('month', o.order_purchase_timestamp) AS month,\n       ROUND(SUM(oi.price), 2) AS\
+    \ sales\nFROM orders o JOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY 1;\n"
+  notes: V3开发参考，题面已明确本题定义。
+- id: T3-008
+  difficulty: time_window
+  tags:
+  - 时间
+  - 平均
+  question: 每个有商品明细的月份，按有商品明细的订单等权，计算每单明细商品金额合计的平均值；无明细订单不参与均值。
+  gold_sql: "SELECT DATE_TRUNC('month', o.order_purchase_timestamp) AS month,\n       ROUND(SUM(oi.price) / COUNT(DISTINCT\
+    \ o.order_id), 2) AS avg_order_value\nFROM orders o JOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY\
+    \ 1 ORDER BY 1;\n"
+  notes: V3开发参考，题面已明确本题定义。
+- id: T3-011
+  difficulty: time_window
+  tags:
+  - 时间
+  - 环比
+  - 比率
+  question: 从最早到最晚下单月份逐自然月输出订单量环比增长率（小数四位），仅输出月份和增长率；缺月订单量未知，当前月或上个自然月未知、或基期为0时增长率为NULL。
+  gold_sql: 'WITH monthly AS(SELECT DATE_TRUNC(''month'',order_purchase_timestamp) AS m,COUNT(*) AS cnt FROM orders
+    WHERE order_purchase_timestamp IS NOT NULL GROUP BY 1),calendar AS(SELECT generate_series(MIN(m),MAX(m),INTERVAL
+    ''1 month'') AS m FROM monthly),aligned AS(SELECT c.m,m.cnt FROM calendar c LEFT JOIN monthly m USING(m)) SELECT
+    m AS month,ROUND((cnt-LAG(cnt) OVER(ORDER BY m))::numeric/NULLIF(LAG(cnt) OVER(ORDER BY m),0),4) AS mom_rate
+    FROM aligned ORDER BY m;
+
+    '
+  notes: V3开发参考，题面已明确本题定义。
+- id: T3-013
+  difficulty: time_window
+  tags:
+  - 时间
+  - 近 N 天
+  question: 以库内最大下单日期为参考日，含参考日在内最近90个自然日的订单有多少笔？
+  gold_sql: 'WITH anchor AS(SELECT MAX(order_purchase_timestamp) AS mx FROM orders) SELECT COUNT(*) FROM orders
+    o CROSS JOIN anchor a WHERE o.order_purchase_timestamp>=a.mx::date-INTERVAL ''89 days'' AND o.order_purchase_timestamp<a.mx::date+INTERVAL
+    ''1 day'';
+
+    '
+  notes: V3开发参考，题面已明确本题定义。
+- id: T3-015
+  difficulty: time_window
+  tags:
+  - 时间
+  - 按小时
+  question: 一天中哪个小时的订单最多？
+  gold_sql: 'SELECT EXTRACT(HOUR FROM order_purchase_timestamp)::INT AS hr, COUNT(*) AS cnt
+
+    FROM orders GROUP BY 1 ORDER BY cnt DESC,hr ASC NULLS LAST LIMIT 1;
+
+    '
+  notes: ''
+- id: T3-017
+  difficulty: time_window
+  tags:
+  - 时间
+  - 日期差
+  question: 订单从下单到送达平均需要多少天？
+  gold_sql: 'SELECT ROUND(AVG(EXTRACT(EPOCH FROM (order_delivered_customer_date - order_purchase_timestamp)) / 86400),
+    2)
+
+    FROM orders WHERE order_delivered_customer_date IS NOT NULL;
+
+    '
+  notes: ''
+- id: T3-019
+  difficulty: time_window
+  tags:
+  - 时间
+  - 日期差
+  question: 实际送达时间晚于预计送达时间的订单有多少笔？
+  gold_sql: 'SELECT COUNT(*) FROM orders
+
+    WHERE order_delivered_customer_date > order_estimated_delivery_date;
+
+    '
+  notes: ''
+- id: T3-020
+  difficulty: time_window
+  tags:
+  - 时间
+  - 日期差
+  - 比率
+  question: 超时送达的订单占已送达订单的比例是多少？
+  gold_sql: "SELECT ROUND(\n  COUNT(*) FILTER (WHERE order_delivered_customer_date > order_estimated_delivery_date)::NUMERIC\n\
+    \  / NULLIF(COUNT(*) FILTER (WHERE order_delivered_customer_date IS NOT NULL), 0), 4) AS late_rate\nFROM orders;\n"
+  notes: ''
+- id: T3-022
+  difficulty: time_window
+  tags:
+  - 时间
+  - 按月
+  - 求和
+  question: 每个月的退款金额合计是多少？
+  gold_sql: "SELECT DATE_TRUNC('month', requested_at) AS month,\n       ROUND(SUM(refund_amount), 2) AS total\n\
+    FROM refunds GROUP BY 1 ORDER BY 1;\n"
+  notes: ''
+- id: T3-024
+  difficulty: time_window
+  tags:
+  - 时间
+  - 日期差
+  question: 客服工单从创建到解决平均需要多少小时？
+  gold_sql: 'SELECT ROUND(AVG(EXTRACT(EPOCH FROM (resolved_at - created_at)) / 3600), 2)
+
+    FROM support_tickets WHERE resolved_at IS NOT NULL;
+
+    '
+  notes: ''
+- id: T3-026
+  difficulty: time_window
+  tags:
+  - 时间
+  - 按月
+  - 分组
+  question: 每个月的评价平均分是多少？
+  gold_sql: "SELECT DATE_TRUNC('month', review_creation_date) AS month,\n       ROUND(AVG(review_score), 2) AS avg_score\n\
+    FROM order_reviews GROUP BY 1 ORDER BY 1;\n"
+  notes: ''
+- id: T3-028
+  difficulty: time_window
+  tags:
+  - 时间
+  - 活跃
+  question: 以会员表最大最近登录日期为参考日，含参考日在内最近30个自然日登录过的会员有多少人？
+  gold_sql: 'SELECT COUNT(*) FROM members
+
+    WHERE last_login_date > (SELECT MAX(last_login_date) FROM members) - 30;
+
+    '
+  notes: V3开发参考，题面已明确本题定义。

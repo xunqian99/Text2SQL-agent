@@ -1,0 +1,26 @@
+{
+  "status": "PUBLIC_SYNTHETIC_ACCEPTANCE_SPECIFICATION_NOT_DB_EXECUTION",
+  "provenance": "Independent public-contract examples; no candidate response, blind question, holdout or unseen output was used.",
+  "cases": [
+    {"id":"C01_UNREQUESTED_ORDER","input":"题面只问各州计数；完整两行SP=10、RJ=5。","mustAccept":"相同行、相同重复度、相同列数的RJ/SP与SP/RJ两种次序。","mustReject":"少一州、多一列、错误计数、把两条相同行去重。","proves":"无请求排序不成为隐形判据；不是全局忽略行序。"},
+    {"id":"C02_UNREQUESTED_CUTOFF","input":"无TopN请求，共101个DDL允许的合法分组；接口最多200行。","mustAccept":"101个完整分组。","mustReject":"只因Gold旧LIMIT100而只返回100组；任何truncated=true冒充完整结果。","proves":"安全上限与业务TopN分开。该合成反例不声称巴西现实有101个州。"},
+    {"id":"C03_ORDERED_NO_LIMIT","input":"题面要求月份升序；两行2017-01与2017-02，SQL无LIMIT。","mustAccept":"2017-01在2017-02前。","mustReject":"两行倒序，哪怕集合相同、SQL执行成功。","proves":"评分不能依赖ORDER BY+LIMIT同时出现才检查排序。"},
+    {"id":"C04_STABLE_TOP_N","input":"A=11、B=10、C=10，取最多2行；相同指标按身份升序。","mustAccept":"A、B，且A在B前。","mustReject":"A、C；A、B、C；或B先于A。","proves":"稳定身份键只裁决相同主指标；不任意替换边界并列，不扩大行数。"},
+    {"id":"C05_DISPLAY_PRECISION","input":"A的未舍入均值10.001，B为10.004；均显示10.00，取1，身份A<B。","mustAccept":"A；若用户明确按未舍入数排名，则必须选B。","mustReject":"默认展示精度契约下偷偷用原始精度选B，或用户明确原始精度时仍选A。","proves":"精度先决定主排序，显式请求可覆盖默认。"},
+    {"id":"C06_HIDDEN_ORDER_KEY","input":"按评价记录数选前2州，输出州和均分；SP有10评价均分2，RJ有9评价均分5，MG有8评价均分5。","mustAccept":"SP/2、RJ/5，按评价数排列，只有两列。","mustReject":"RJ、MG；为检查排序强迫额外输出评价数；把均分当排名指标。","proves":"排名键可隐藏；评分需冻结来源/排名身份，不能靠输出值猜排名。"},
+    {"id":"C07_NULL_LIST_VS_EXTREMA","input":"活动A预算NULL，B预算10；分别问全部预算列表、预算最大的活动。","mustAccept":"完整列表保留A，展示倒序时B在A前；最大活动只选B。全预算未知时最大活动无可确认行。","mustReject":"完整列表删A；把NULL视为最大；全未知补0伪造最大。","proves":"NULLS LAST只是展示，不能代替最值候选过滤，更不能扩散为全部指标过滤。"},
+    {"id":"C08_WEEK_GAP","input":"同一90日窗口触及3个示意周，只有第1和第3周有明细；无连续历请求。","mustAccept":"新V4事实周请求只输出第1和第3周；若显式连续历请求则输出3周且缺金额NULL。","mustReject":"把两种不同请求使用同一行集；把无事实周金额默补0。","proves":"事实周与连续周都合法，必须由新题面固定，不能看候选输出选择。"},
+    {"id":"C09_PARTIAL_WEEK","input":"D为周三，90日窗口从某周五开始；同周四与周五各一笔商品金额100。","mustAccept":"首周只累计窗口内周五的100，周身份仍为该周周一。","mustReject":"因按周分组而把窗口外周四100也加进去，或只取完整周丢掉首尾。","proves":"先按[D-89,D+1)过滤，再DATE_TRUNC周；分组不扩大事实窗口。"},
+    {"id":"C10_EMPTY_ANCHOR","input":"orders为空，或全部下单时间NULL，MAX时间为NULL。","mustAccept":"事实周问题无可归周事实，输出空行集；不能凭current_date造参考日。","mustReject":"自动改锚点到明细或系统时钟；对未知范围补90天日历或0金额。","proves":"参照事件身份与空锚点保底。"},
+    {"id":"C11_UNKNOWN_REGISTRATION","input":"会员M1注册于2018-01-01；M2的register_date=NULL。","mustAccept":"新V4只统计已知注册月时仅2018-01数量1；明确要求未知组的另一请求应额外NULL月份数量1。","mustReject":"把M2并入2018-01、猜测注册日，或在显式要求未知组时排掉M2。","proves":"原题不能唯一决定1行或2行；只对本指标明示范围。"},
+    {"id":"C12_NO_DEFAULT","input":"客户C有订单O，但无is_default=true地址。","mustAccept":"新V4仅有默认地址关系的请求中不计O；明确全订单覆盖的另一请求必须保留NULL地址州中的O。","mustReject":"声称当前INNER覆盖就是全订单；默选非默认地址。","proves":"V4范围选择不是原题语义唯一证明。"},
+    {"id":"C13_MULTIPLE_DEFAULT_STATES","input":"订单O所属客户C登记州SP，有默认地址州RJ和MG各一条。","mustAccept":"(RJ,SP)=1，(MG,SP)=1；公开说明组间可重叠，不能相加为2笔全站订单。","mustReject":"任意取一条默认地址；以组内COUNT DISTINCT声称O只归一个组。","proves":"组内去重不能修复跨组多重归属。"},
+    {"id":"C14_DUPLICATE_DEFAULT_STATE","input":"同一个客户有两条默认地址，state都为RJ；该客户订单O一笔。","mustAccept":"(RJ,登记州)=1。","mustReject":"COUNT(*)给出2；SUM(DISTINCT金额)作为订单身份替代。","proves":"address_id区分地址事实；order_id定义订单计数，不能扁平化身份。"},
+    {"id":"C15_DEFAULT_NULL_STATE","input":"客户C有一条is_default=true但state=NULL的地址，有订单O。","mustAccept":"新V4保留(NULL,登记州)=1。","mustReject":"把地址州非空作为额外事实过滤，或把没有默认地址和未知州自动当成同一种数据来源。","proves":"覆盖依据is_default而非州是否已知；输出可以合并未知标签，内部来源仍不同。"},
+    {"id":"C16_FACT_RECORD_ADDRESS","input":"同一自然人有C1、C2两条档案；O关联C1，C1默认RJ，C2默认MG。","mustAccept":"O只沿order.customer_id=C1使用C1的默认地址与登记州。","mustReject":"通过自然人ID反向匹配C2，把O也计入MG。","proves":"身份去重键与事实属性关联键不同；跨档案不能借值。"},
+    {"id":"C17_PRODUCT_POPULATION","input":"products有P1、P2，P1有一条明细，P2没有。","mustAccept":"新V4动销候选只P1销量1；若请求每个商品且包括零销量，应P1=1、P2=0。","mustReject":"用当前商品恰好全动销证明INNER覆盖等价于商品全集；向零销量商品COUNT(*)补成1。","proves":"V4显式改变候选域，不能隐藏成SQL等价修复。"},
+    {"id":"C18_ORIGINAL_SHAPE","input":"2017年1单、2018年2单；原T3-002。","mustAccept":"两行、两列(year,count)，年份整数，依次2017/1、2018/2。","mustReject":"一行两个计数列；年初时间戳替代整数年；额外年度或中间列。","proves":"数值一样不代表原输出形状修复。"},
+    {"id":"C19_ORIGINAL_UNIT","input":"有效下单自然人A有2单、B有1单；原T6-003命中注册repeat_rate。","mustAccept":"50.00百分数数值，一列；显式要求0到1时另一请求应0.5000。","mustReject":"原题输出0.5000并靠评分器乘100补救；按customer_id计算为0。空分母新契约NULL，原无NULLIF Gold的执行边界另存。","proves":"命名指标单位与显式覆盖分开，原严格单位不松绑。"},
+    {"id":"C20_EXPLICIT_SCORE_RANGE","input":"同一州3条有效订单评价，review_score为0、1、3；DDL无1—5约束。题面明确1到2星。","mustAccept":"分子1，分母3，低分百分数33.33；用IN(1,2)。","mustReject":"<=2得到分子2、66.67；为追数自行把0从分母也删掉。","proves":"显式值域优先，当前快照没有0不能充当DDL约束。"}
+  ]
+}

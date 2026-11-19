@@ -1,0 +1,143 @@
+- id: T5-002
+  difficulty: multi_join_deep
+  tags:
+  - join
+  - 会员
+  - 求和
+  question: 按当前会员等级ID统计其会员订单明细商品金额，不含运费，包含全部订单状态；输出等级ID和金额两位。
+  gold_sql: 'SELECT m.level_id,ROUND(SUM(oi.price),2) AS sales FROM orders o JOIN customers c ON c.customer_id=o.customer_id
+    JOIN members m ON m.customer_unique_id=c.customer_unique_id JOIN order_items oi ON oi.order_id=o.order_id GROUP
+    BY m.level_id ORDER BY sales DESC NULLS LAST,m.level_id ASC NULLS LAST;
+
+    '
+  notes: V3开发参考，题面已明确本题定义。
+- id: T5-004
+  difficulty: multi_join_deep
+  tags:
+  - join
+  - 物流
+  - 分组
+  question: 按发货仓库的区域编码统计发货单量和不同订单数，输出区域编码及两项计数，无法确定区域的发货单保留NULL组。
+  gold_sql: 'SELECT w.region_code,COUNT(*) AS shipments,COUNT(DISTINCT s.order_id) AS orders FROM shipments s LEFT
+    JOIN warehouses w ON w.warehouse_id=s.warehouse_id GROUP BY w.region_code ORDER BY shipments DESC,w.region_code
+    ASC NULLS LAST;
+
+    '
+  notes: V3开发参考，题面已明确本题定义。
+- id: T5-006
+  difficulty: multi_join_deep
+  tags:
+  - join
+  - 客服
+  - 会员
+  question: 物流延迟类工单按关联订单客户所在州、工单会员的当前等级ID组合统计工单数；未知属性保留NULL，按工单数取20，同数按州和等级ID升序NULL最后。
+  gold_sql: 'SELECT c.customer_state,m.level_id,COUNT(*) AS tickets FROM support_tickets st JOIN ticket_categories
+    tc ON tc.category_id=st.category_id LEFT JOIN orders o ON o.order_id=st.order_id LEFT JOIN customers c ON c.customer_id=o.customer_id
+    LEFT JOIN members m ON m.member_id=st.member_id WHERE tc.category_name=''物流延迟'' GROUP BY c.customer_state,m.level_id
+    ORDER BY tickets DESC,c.customer_state ASC NULLS LAST,m.level_id ASC NULLS LAST LIMIT 20;
+
+    '
+  notes: V3开发参考，题面已明确本题定义。
+- id: T5-008
+  difficulty: multi_join_deep
+  tags:
+  - join
+  - 自连接
+  - 推荐
+  question: 按推荐人和被推荐人的当前会员等级ID组合，统计全部推荐记录数和奖励金额两位；未知等级保留NULL，输出两个等级ID和两项指标。
+  gold_sql: 'SELECT mr.level_id AS referrer_level,mii.level_id AS invitee_level,COUNT(*) AS referrals,ROUND(SUM(rf.reward_amount),2)
+    AS reward FROM referrals rf LEFT JOIN members mr ON mr.member_id=rf.referrer_member_id LEFT JOIN members mii
+    ON mii.member_id=rf.invitee_member_id GROUP BY mr.level_id,mii.level_id ORDER BY referrals DESC,mr.level_id
+    ASC NULLS LAST,mii.level_id ASC NULLS LAST;
+
+    '
+  notes: V3开发参考，题面已明确本题定义。
+- id: T5-011
+  difficulty: multi_join_deep
+  tags:
+  - join
+  - 品牌
+  - 销售额
+  question: 只统计商品当前is_current=true已关联品牌的全部订单明细，按品牌ID汇总不含运费商品金额两位，输出前10品牌ID和金额；同金额按品牌ID升序，严格最多10。
+  gold_sql: 'SELECT bm.brand_id,ROUND(SUM(oi.price),2) AS sales FROM order_items oi JOIN product_brand_map bm ON
+    bm.product_id=oi.product_id AND bm.is_current IS TRUE GROUP BY bm.brand_id ORDER BY sales DESC NULLS LAST,bm.brand_id
+    ASC LIMIT 10;
+
+    '
+  notes: V3开发参考，题面已明确本题定义。
+- id: T5-013
+  difficulty: multi_join_deep
+  tags:
+  - join
+  - 活动
+  - 商品
+  question: 按活动ID，统计其关联商品在全部历史订单中的不同订单数与不含运费商品金额，非因果归因；同商品可分别归入多个活动，按商品金额倒序取10。
+  gold_sql: 'SELECT cp.campaign_id,COUNT(DISTINCT oi.order_id) AS orders,ROUND(SUM(oi.price),2) AS sales
+
+    FROM campaign_products cp JOIN order_items oi ON oi.product_id=cp.product_id
+
+    GROUP BY cp.campaign_id ORDER BY sales DESC NULLS LAST,cp.campaign_id ASC LIMIT 10;
+
+    '
+  notes: V3开发参考，题面已明确本题定义。
+- id: T5-015
+  difficulty: multi_join_deep
+  tags:
+  - join
+  - 物流轨迹
+  - 分组
+  question: 全部物流轨迹按事件代码和订单客户档案所在州分组，统计轨迹中不同发货单ID数；不要求订单或明细存在，未知州保留NULL，按发货单数取20，同数按事件代码和州升序。
+  gold_sql: 'SELECT st.event_code,c.customer_state,COUNT(DISTINCT st.shipment_id) AS shipments
+
+    FROM shipment_tracking st LEFT JOIN shipments s ON s.shipment_id=st.shipment_id
+
+    LEFT JOIN orders o ON o.order_id=s.order_id LEFT JOIN customers c ON c.customer_id=o.customer_id
+
+    GROUP BY st.event_code,c.customer_state
+
+    ORDER BY shipments DESC,st.event_code ASC NULLS LAST,c.customer_state ASC NULLS LAST LIMIT 20;
+
+    '
+  notes: V3开发参考，题面已明确本题定义。
+- id: T5-017
+  difficulty: multi_join_deep
+  tags:
+  - join
+  - 客服
+  - 优先级
+  question: 按工单category_id、priority组合统计全部工单数和消息条数，包含零消息工单及未知属性，不限制会员资格；输出两个维度和两项计数。
+  gold_sql: 'SELECT st.category_id,st.priority,COUNT(DISTINCT st.ticket_id) AS tickets,COUNT(tm.message_id) AS messages
+    FROM support_tickets st LEFT JOIN ticket_messages tm ON tm.ticket_id=st.ticket_id GROUP BY st.category_id,st.priority
+    ORDER BY tickets DESC,st.category_id ASC NULLS LAST,st.priority ASC NULLS LAST;
+
+    '
+  notes: V3开发参考，题面已明确本题定义。
+- id: T5-019
+  difficulty: multi_join_deep
+  tags:
+  - join
+  - 价格变动
+  - 商品
+  question: 对发生过价格变动的商品，按非NULL类目统计每条调价记录等权的平均金额差new_price-old_price，以及这些商品关联的不同订单数；按订单数取20，金额差与订单数分别聚合后合并。
+  gold_sql: "WITH changed AS(\n SELECT p.product_category_name,pph.product_id,pph.new_price-pph.old_price AS delta\n\
+    \ FROM product_price_history pph JOIN products p ON p.product_id=pph.product_id\n WHERE p.product_category_name\
+    \ IS NOT NULL),\nmeans AS(SELECT product_category_name,ROUND(AVG(delta),2) AS avg_price_change FROM changed\
+    \ GROUP BY 1),\norder_counts AS(SELECT x.product_category_name,COUNT(DISTINCT oi.order_id) AS orders\n FROM(SELECT\
+    \ DISTINCT product_category_name,product_id FROM changed)x\n LEFT JOIN order_items oi ON oi.product_id=x.product_id\
+    \ GROUP BY 1)\nSELECT m.product_category_name,m.avg_price_change,o.orders FROM means m JOIN order_counts o USING(product_category_name)\n\
+    ORDER BY o.orders DESC,m.product_category_name ASC LIMIT 20;\n"
+  notes: V3开发参考，题面已明确本题定义。
+- id: T5-020
+  difficulty: multi_join_deep
+  tags:
+  - join
+  - 库存
+  - 出入库
+  question: 按流水所属仓库映射的宏观区域及出入库类型，统计全部库存变动记录数和数量合计；不要求当前库存仍有记录，未知大区保留NULL。
+  gold_sql: 'SELECT r.macro_region,im.movement_type,COUNT(*) AS movements,SUM(im.quantity) AS qty FROM inventory_movements
+    im LEFT JOIN warehouses w ON w.warehouse_id=im.warehouse_id LEFT JOIN regions r ON r.region_code=w.region_code
+    GROUP BY r.macro_region,im.movement_type ORDER BY movements DESC,r.macro_region ASC NULLS LAST,im.movement_type
+    ASC NULLS LAST;
+
+    '
+  notes: V3开发参考，题面已明确本题定义。

@@ -1,0 +1,195 @@
+- id: T1-002
+  difficulty: single_table_basic
+  tags:
+  - 过滤
+  - 时间
+  question: 2018 年下单的订单有多少笔？
+  gold_sql: "SELECT COUNT(*) FROM orders\nWHERE order_purchase_timestamp >= '2018-01-01'\n  AND order_purchase_timestamp\
+    \ < '2019-01-01';\n"
+  notes: 时间口径取 order_purchase_timestamp（下单时间），非支付或送达时间。
+- id: T1-004
+  difficulty: single_table_basic
+  tags:
+  - 计数
+  - 去重
+  question: 一共有多少个不同的客户（按自然人统计，同一人多次下单只算一个）？
+  gold_sql: 'SELECT COUNT(DISTINCT customer_unique_id) FROM customers;
+
+    '
+  notes: 客户表 99441 行是「订单级」客户，customer_unique_id 去重后是 96096 个自然人。这是 customer_id 与 customer_unique_id 的经典区别。
+- id: T1-006
+  difficulty: single_table_basic
+  tags:
+  - 计数
+  question: 商品表里有多少个商品？
+  gold_sql: 'SELECT COUNT(*) FROM products;
+
+    '
+  notes: ''
+- id: T1-008
+  difficulty: single_table_basic
+  tags:
+  - 去重
+  question: 客户档案中出现过多少个不同的customer_city城市名称值？同名城市跨州合并统计。
+  gold_sql: 'SELECT COUNT(DISTINCT customer_city) FROM customers;
+
+    '
+  notes: V3开发参考，题面已明确本题定义。
+- id: T1-011
+  difficulty: single_table_basic
+  tags:
+  - 去重
+  question: 商品类目一共有多少个？
+  gold_sql: 'SELECT COUNT(DISTINCT product_category_name) FROM products;
+
+    '
+  notes: ''
+- id: T1-013
+  difficulty: single_table_basic
+  tags:
+  - 排序
+  - 限制
+  question: 运费最高的 5 条订单明细是哪几条？
+  gold_sql: 'SELECT order_id, order_item_id, freight_value
+
+    FROM order_items ORDER BY freight_value DESC,order_id ASC,order_item_id ASC LIMIT 5;
+
+    '
+  notes: ''
+- id: T1-015
+  difficulty: single_table_basic
+  tags:
+  - 过滤
+  - 枚举
+  question: 使用信用卡支付的记录有多少条？
+  gold_sql: 'SELECT COUNT(*) FROM order_payments WHERE payment_type = ''credit_card'';
+
+    '
+  notes: ''
+- id: T1-017
+  difficulty: single_table_basic
+  tags:
+  - 过滤
+  - 数值
+  question: 重量超过 5000 克的商品有多少个？
+  gold_sql: 'SELECT COUNT(*) FROM products WHERE product_weight_g > 5000;
+
+    '
+  notes: ''
+- id: T1-019
+  difficulty: single_table_basic
+  tags:
+  - NULL 判断
+  question: 还没有送达客户的订单有多少笔？
+  gold_sql: 'SELECT COUNT(*) FROM orders WHERE order_delivered_customer_date IS NULL;
+
+    '
+  notes: 包含已取消、处理中等所有未送达状态。
+- id: T1-020
+  difficulty: single_table_basic
+  tags:
+  - NULL 判断
+  question: 带文字标题的评价有多少条？标题去首尾空格后为空的不算。
+  gold_sql: 'SELECT COUNT(*) FROM order_reviews WHERE review_comment_title IS NOT NULL AND BTRIM(review_comment_title)<>'''';
+
+    '
+  notes: V3开发参考，题面已明确本题定义。
+- id: T1-022
+  difficulty: single_table_basic
+  tags:
+  - 过滤
+  - 数值
+  question: 价格低于 10 元的订单明细有多少条？
+  gold_sql: 'SELECT COUNT(*) FROM order_items WHERE price < 10;
+
+    '
+  notes: ''
+- id: T1-024
+  difficulty: single_table_basic
+  tags:
+  - 过滤
+  - 枚举
+  question: 黄金会员有多少人？
+  gold_sql: 'SELECT COUNT(*) FROM members m JOIN member_levels l ON l.level_id=m.level_id WHERE l.level_name=''黄金会员'';
+
+    '
+  notes: member_levels 表定义 level_id=3 为 GOLD（黄金会员）。
+- id: T1-026
+  difficulty: single_table_basic
+  tags:
+  - 排序
+  - 限制
+  question: 积分最高的10个会员是谁？只考虑已知积分，输出会员ID和积分，同分按会员ID升序严格取10人。
+  gold_sql: 'SELECT member_id,points FROM members WHERE points IS NOT NULL ORDER BY points DESC,member_id ASC LIMIT
+    10;
+
+    '
+  notes: V3开发参考，题面已明确本题定义。
+- id: T1-028
+  difficulty: single_table_basic
+  tags:
+  - 排序
+  - 限制
+  question: 已知容量最大的仓库是哪一个？输出仓库ID和容量，并列按仓库ID升序取1个。
+  gold_sql: 'SELECT warehouse_id,capacity FROM warehouses WHERE capacity IS NOT NULL ORDER BY capacity DESC,warehouse_id
+    ASC LIMIT 1;
+
+    '
+  notes: V3开发参考，题面已明确本题定义。
+- id: T1-031
+  difficulty: single_table_basic
+  tags:
+  - 计数
+  question: 一共有多少张优惠券？
+  gold_sql: 'SELECT COUNT(*) FROM coupons;
+
+    '
+  notes: ''
+- id: T1-033
+  difficulty: single_table_basic
+  tags:
+  - 过滤
+  - 枚举
+  question: 紧急优先级的客服工单有多少个？
+  gold_sql: 'SELECT COUNT(*) FROM support_tickets WHERE priority = 4;
+
+    '
+  notes: support_tickets.priority：1=低 2=中 3=高 4=紧急。
+- id: T1-035
+  difficulty: single_table_basic
+  tags:
+  - 过滤
+  - 比较
+  question: 库存数量低于安全库存的记录有多少条？
+  gold_sql: 'SELECT COUNT(*) FROM inventory WHERE quantity < safety_stock;
+
+    '
+  notes: ''
+- id: T1-037
+  difficulty: single_table_basic
+  tags:
+  - 去重
+  question: 搜索日志里一共出现过多少个不同的搜索关键词？
+  gold_sql: 'SELECT COUNT(DISTINCT keyword) FROM search_logs;
+
+    '
+  notes: ''
+- id: T1-039
+  difficulty: single_table_basic
+  tags:
+  - 过滤
+  - 枚举
+  question: 已经结束的营销活动有多少个？
+  gold_sql: 'SELECT COUNT(*) FROM campaigns WHERE status = 3;
+
+    '
+  notes: campaigns.status：1=草稿 2=进行中 3=已结束 4=已取消。
+- id: T1-040
+  difficulty: single_table_basic
+  tags:
+  - 去重
+  question: 发生过价格调整的商品有多少个？
+  gold_sql: 'SELECT COUNT(DISTINCT product_id) FROM product_price_history;
+
+    '
+  notes: ''

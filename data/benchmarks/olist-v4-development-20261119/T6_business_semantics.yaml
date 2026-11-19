@@ -1,0 +1,177 @@
+- id: T6-001
+  difficulty: business_semantics
+  tags:
+  - 口径
+  - GMV
+  question: 统计 2018 年全站 GMV（含运费），以及不含运费的销售额，两者分别是多少？
+  gold_sql: "SELECT ROUND(SUM(oi.price + oi.freight_value), 2) AS gmv_with_freight,\n       ROUND(SUM(oi.price), 2) AS sales_without_freight\n\
+    FROM orders o\nJOIN order_items oi ON oi.order_id = o.order_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable')\n\
+    \  AND o.order_purchase_timestamp >= DATE '2018-01-01'\n  AND o.order_purchase_timestamp < DATE '2019-01-01';\n"
+  notes: 【需确认】 GMV 口径假设为「商品金额+运费，且排除已取消/不可用订单」。若贵司 GMV 不含运费，此条口径需调整。
+- id: T6-003
+  difficulty: business_semantics
+  tags:
+  - 口径
+  - 复购率
+  question: 复购率是多少？（下单 2 次及以上的用户占全部下单用户的比例）
+  gold_sql: 'WITH per_user AS(SELECT c.customer_unique_id,COUNT(DISTINCT o.order_id) AS order_cnt FROM orders o JOIN customers
+    c ON c.customer_id=o.customer_id WHERE o.order_status NOT IN(''canceled'',''unavailable'') GROUP BY c.customer_unique_id)
+    SELECT ROUND(100.0*COUNT(*) FILTER(WHERE order_cnt>=2)/NULLIF(COUNT(*),0),2) AS repeat_rate_pct FROM per_user;
+
+    '
+  notes: 【需确认】 复购率分母假设为「有过有效订单的全部用户」。另一种口径是「分母只算注册满 N 天的用户」，会显著抬高复购率。
+- id: T6-005
+  difficulty: business_semantics
+  tags:
+  - 口径
+  - 会员渗透
+  question: 会员用户贡献的订单占比是多少？（会员渗透率）
+  gold_sql: 'SELECT ROUND(100.0*COUNT(DISTINCT o.order_id) FILTER(WHERE m.member_id IS NOT NULL)/NULLIF(COUNT(DISTINCT o.order_id),0),2)
+    AS penetration_pct FROM orders o LEFT JOIN customers c ON c.customer_id=o.customer_id LEFT JOIN members m ON m.customer_unique_id=c.customer_unique_id
+    WHERE o.order_status NOT IN(''canceled'',''unavailable'');
+
+    '
+  notes: 【需确认】 会员渗透率分母假设为「全部有效订单」。另一种口径是「会员数/总用户数」，是人数渗透率而不是订单渗透率。
+- id: T6-007
+  difficulty: business_semantics
+  tags:
+  - 口径
+  - 退款率
+  question: 退款率是多少？（退款订单数 / 有效订单数）
+  gold_sql: 'SELECT ROUND(100.0*COUNT(DISTINCT o.order_id) FILTER(WHERE EXISTS(SELECT 1 FROM refunds r WHERE r.order_id=o.order_id))/NULLIF(COUNT(DISTINCT
+    o.order_id),0),2) AS refund_rate_pct FROM orders o WHERE o.order_status NOT IN(''canceled'',''unavailable'');
+
+    '
+  notes: 【需确认】 退款率分母假设为「有效订单数」。分母若用「全部订单」会把取消单也算进去，口径更宽松。
+- id: T6-009
+  difficulty: business_semantics
+  tags:
+  - 口径
+  - 评分
+  question: 按订单客户档案所在州统计有效订单评价记录中1到2星评价占比百分数两位，每条评价等权；按比例取前10，同值按州升序，仅输出州和比例。
+  gold_sql: "SELECT c.customer_state,\n       ROUND(100.0 * COUNT(*) FILTER (WHERE r.review_score IN (1,2)) / COUNT(*), 2)\
+    \ AS low_pct\nFROM order_reviews r\nJOIN orders o ON o.order_id = r.order_id\nJOIN customers c ON c.customer_id = o.customer_id\n\
+    WHERE o.order_status NOT IN ('canceled', 'unavailable')\nGROUP BY 1 ORDER BY low_pct DESC,c.customer_state ASC NULLS LAST\
+    \ LIMIT 10;\n"
+  notes: V3开发参考，题面已明确本题定义。
+- id: T6-010
+  difficulty: business_semantics
+  tags:
+  - 口径
+  - 转化
+  question: 搜索转化率是多少？（有点击的搜索记录 / 全部搜索记录）
+  gold_sql: 'SELECT ROUND(100.0*COUNT(*) FILTER(WHERE clicked_product_id IS NOT NULL)/NULLIF(COUNT(*),0),2) AS ctr_pct FROM
+    search_logs;
+
+    '
+  notes: 【需确认】 转化口径假设为「点击率 CTR」而非「下单转化率」。真正下单转化需要把 search_logs 与 orders 通过 member_id 关联到同一会话，本数据集没有会话字段。
+- id: T6-012
+  difficulty: business_semantics
+  tags:
+  - 口径
+  - 活跃用户
+  question: 2018年按自然月统计有效下单自然人数（MAU），输出全部12个月；无事实月份覆盖未知，人数保留NULL。
+  gold_sql: 'WITH monthly AS(SELECT DATE_TRUNC(''month'',o.order_purchase_timestamp)::date AS month,COUNT(DISTINCT c.customer_unique_id)
+    AS mau FROM orders o JOIN customers c ON c.customer_id=o.customer_id WHERE o.order_status NOT IN(''canceled'',''unavailable'')
+    AND o.order_purchase_timestamp>=DATE ''2018-01-01'' AND o.order_purchase_timestamp<DATE ''2019-01-01'' GROUP BY 1),calendar
+    AS(SELECT generate_series(DATE ''2018-01-01'',DATE ''2018-12-01'',INTERVAL ''1 month'')::date AS month) SELECT c.month,m.mau
+    FROM calendar c LEFT JOIN monthly m USING(month) ORDER BY c.month;
+
+    '
+  notes: V3开发参考，题面已明确本题定义。
+- id: T6-014
+  difficulty: business_semantics
+  tags:
+  - 口径
+  - 会员
+  - 分层
+  question: 按会员等级ID统计全部会员数（含无有效订单）、人均有效订单数；同时统计会员已知含运费GMV的平均值，无商品金额事实为NULL不参与GMV均值，不把未知金额当0。
+  gold_sql: 'WITH per_member AS(SELECT m.member_id,m.level_id,COUNT(DISTINCT o.order_id) AS order_cnt,SUM(oi.price+oi.freight_value)
+    AS gmv FROM members m LEFT JOIN customers c ON c.customer_unique_id=m.customer_unique_id LEFT JOIN orders o ON o.customer_id=c.customer_id
+    AND o.order_status NOT IN(''canceled'',''unavailable'') LEFT JOIN order_items oi ON oi.order_id=o.order_id GROUP BY m.member_id,m.level_id)
+    SELECT level_id,COUNT(*) AS users,ROUND(AVG(order_cnt),2) AS orders_per_user,ROUND(AVG(gmv),2) AS gmv_per_user FROM per_member
+    GROUP BY level_id ORDER BY gmv_per_user DESC NULLS LAST,level_id ASC NULLS LAST;
+
+    '
+  notes: V3开发参考，题面已明确本题定义。
+- id: T6-016
+  difficulty: business_semantics
+  tags:
+  - 口径
+  - 品牌
+  question: 按当前品牌ID统计商品总数、有效订单中动销商品数、不含运费商品销售额两位和动销率百分数两位；仅在销售额已知的品牌中取前10，同额按品牌ID升序，严格最多10。
+  gold_sql: "WITH bp AS(SELECT b.brand_id,p.product_id FROM brands b\n LEFT JOIN product_brand_map bm ON bm.brand_id=b.brand_id\
+    \ AND bm.is_current IS TRUE\n LEFT JOIN products p ON p.product_id=bm.product_id),\ntotals AS(SELECT brand_id,COUNT(DISTINCT\
+    \ product_id) AS product_cnt FROM bp GROUP BY 1),\nsales AS(SELECT bp.brand_id,COUNT(DISTINCT oi.product_id) AS sold_products,SUM(oi.price)\
+    \ AS sales\n FROM bp JOIN order_items oi ON oi.product_id=bp.product_id JOIN orders o ON o.order_id=oi.order_id\n WHERE\
+    \ o.order_status NOT IN('canceled','unavailable') GROUP BY 1)\nSELECT t.brand_id,t.product_cnt,COALESCE(s.sold_products,0)\
+    \ AS sold_products,ROUND(s.sales,2) AS sales,\n ROUND(100.0*COALESCE(s.sold_products,0)/NULLIF(t.product_cnt,0),2) AS\
+    \ sell_through_pct\nFROM totals t JOIN sales s USING(brand_id) WHERE s.sales IS NOT NULL\nORDER BY sales DESC,t.brand_id\
+    \ ASC LIMIT 10;\n"
+  notes: V3开发参考，题面已明确本题定义。
+- id: T6-018
+  difficulty: business_semantics
+  tags:
+  - 口径
+  - 复购
+  - 会员
+  question: 按当前会员身份分会员和非会员两组，复购率分母为各组全部有效下单自然人，分子为有效订单数至少2的自然人；输出两组百分数两位，某组无人时该组仍显示且比例NULL。
+  gold_sql: "WITH user_orders AS(SELECT c.customer_unique_id,\n BOOL_OR(m.member_id IS NOT NULL) AS is_member,COUNT(DISTINCT\
+    \ o.order_id) AS order_cnt\n FROM orders o JOIN customers c ON c.customer_id=o.customer_id\n LEFT JOIN members m ON m.customer_unique_id=c.customer_unique_id\n\
+    \ WHERE o.order_status NOT IN('canceled','unavailable') GROUP BY 1),\ngroups(is_member,user_type) AS(VALUES(TRUE,'member'),(FALSE,'non_member'))\n\
+    SELECT g.user_type,ROUND(100.0*COUNT(u.customer_unique_id) FILTER(WHERE u.order_cnt>=2)\n /NULLIF(COUNT(u.customer_unique_id),0),2)\
+    \ AS repeat_rate_pct\nFROM groups g LEFT JOIN user_orders u ON u.is_member=g.is_member\nGROUP BY g.user_type ORDER BY\
+    \ g.user_type;\n"
+  notes: V3开发参考，题面已明确本题定义。
+- id: T6-021
+  difficulty: business_semantics
+  tags:
+  - 口径
+  - 用户分层
+  - 帕累托
+  question: 在有已知有效订单含运费GMV的自然人中，按累计GMV两位展示值倒序、自然人ID升序取前CEIL(人数*0.2)人（不扩并列），仅输出其占总GMV的小数比率，保留四位。
+  gold_sql: 'WITH user_gmv AS(SELECT c.customer_unique_id,SUM(oi.price+oi.freight_value) AS gmv FROM orders o JOIN customers
+    c ON c.customer_id=o.customer_id JOIN order_items oi ON oi.order_id=o.order_id WHERE o.order_status NOT IN(''canceled'',''unavailable'')
+    GROUP BY c.customer_unique_id),ranked AS(SELECT gmv,ROW_NUMBER() OVER(ORDER BY ROUND(gmv,2) DESC,customer_unique_id ASC)
+    AS rn,COUNT(*) OVER() AS n FROM user_gmv) SELECT ROUND(SUM(gmv) FILTER(WHERE rn<=CEIL(n*0.2))/NULLIF(SUM(gmv),0),4) AS
+    top20_gmv_ratio FROM ranked;
+
+    '
+  notes: V3开发参考，题面已明确本题定义。
+- id: T6-023
+  difficulty: business_semantics
+  tags:
+  - 口径
+  - 库存
+  - 周转
+  question: 按仓库ID列出全部仓库当前库存量、最近90个自然日出库数量和库存周转天数一位；参考日取全部库存流水最大日期且含当日，无出库记0，未有参考日期时未知；周转天数=90*当前库存/出库量，出库为0时NULL。
+  gold_sql: 'WITH anchor AS(SELECT MAX(moved_at) AS mx FROM inventory_movements),outbound AS(SELECT im.warehouse_id,SUM(im.quantity)
+    AS out_qty,COUNT(*) AS records FROM inventory_movements im CROSS JOIN anchor a WHERE im.movement_type=2 AND im.moved_at>=a.mx::date-INTERVAL
+    ''89 days'' AND im.moved_at<a.mx::date+INTERVAL ''1 day'' GROUP BY im.warehouse_id),stock AS(SELECT warehouse_id,SUM(quantity)
+    AS stock_qty FROM inventory GROUP BY warehouse_id),combined AS(SELECT w.warehouse_id,s.stock_qty,CASE WHEN a.mx IS NULL
+    THEN NULL WHEN o.records IS NULL THEN 0 ELSE o.out_qty END AS out_qty FROM warehouses w CROSS JOIN anchor a LEFT JOIN
+    stock s ON s.warehouse_id=w.warehouse_id LEFT JOIN outbound o ON o.warehouse_id=w.warehouse_id) SELECT warehouse_id,stock_qty,out_qty
+    AS out_qty_90d,ROUND(90.0*stock_qty/NULLIF(out_qty,0),1) AS turnover_days FROM combined ORDER BY turnover_days DESC NULLS
+    LAST,warehouse_id ASC;
+
+    '
+  notes: V3开发参考，题面已明确本题定义。
+- id: T6-025
+  difficulty: business_semantics
+  tags:
+  - 口径
+  - 增长
+  - 新老客
+  question: 2018年逐自然月输出有效订单含运费GMV两位，按自然人全部历史首次有效下单月区分新老客；输出月份、新客GMV、老客GMV全部12个月，缺金额事实为NULL。
+  gold_sql: 'WITH first_order AS(SELECT c.customer_unique_id,DATE_TRUNC(''month'',MIN(o.order_purchase_timestamp))::date AS
+    first_month FROM orders o JOIN customers c ON c.customer_id=o.customer_id WHERE o.order_status NOT IN(''canceled'',''unavailable'')
+    GROUP BY c.customer_unique_id),monthly AS(SELECT DATE_TRUNC(''month'',o.order_purchase_timestamp)::date AS month,c.customer_unique_id,SUM(oi.price+oi.freight_value)
+    AS gmv FROM orders o JOIN customers c ON c.customer_id=o.customer_id JOIN order_items oi ON oi.order_id=o.order_id WHERE
+    o.order_status NOT IN(''canceled'',''unavailable'') AND o.order_purchase_timestamp>=DATE ''2018-01-01'' AND o.order_purchase_timestamp<DATE
+    ''2019-01-01'' GROUP BY 1,2),summed AS(SELECT m.month,ROUND(SUM(m.gmv) FILTER(WHERE f.first_month=m.month),2) AS new_customer_gmv,ROUND(SUM(m.gmv)
+    FILTER(WHERE f.first_month<m.month),2) AS returning_gmv FROM monthly m JOIN first_order f ON f.customer_unique_id=m.customer_unique_id
+    GROUP BY m.month),calendar AS(SELECT generate_series(DATE ''2018-01-01'',DATE ''2018-12-01'',INTERVAL ''1 month'')::date
+    AS month) SELECT c.month,s.new_customer_gmv,s.returning_gmv FROM calendar c LEFT JOIN summed s USING(month) ORDER BY c.month;
+
+    '
+  notes: V3开发参考，题面已明确本题定义。

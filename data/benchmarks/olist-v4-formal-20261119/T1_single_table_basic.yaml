@@ -1,0 +1,145 @@
+- id: T1-001
+  difficulty: single_table_basic
+  tags:
+  - 计数
+  question: 一共有多少笔订单？
+  gold_sql: SELECT COUNT(*) FROM orders;
+- id: T1-003
+  difficulty: single_table_basic
+  tags:
+  - 过滤
+  - 枚举
+  question: 已取消的订单有多少笔？
+  gold_sql: SELECT COUNT(*) FROM orders WHERE order_status = 'canceled';
+- id: T1-005
+  difficulty: single_table_basic
+  tags:
+  - 过滤
+  - 数值
+  question: 单价超过 1000 的订单明细有多少条？
+  gold_sql: SELECT COUNT(*) FROM order_items WHERE price > 1000;
+  notes: 价格口径取 order_items.price（商品单价，不含运费），不是 freight_value，也不是订单总价 payment_value。
+- id: T1-007
+  difficulty: single_table_basic
+  tags:
+  - 计数
+  question: 一共有多少个卖家？
+  gold_sql: SELECT COUNT(*) FROM sellers;
+- id: T1-009
+  difficulty: single_table_basic
+  tags:
+  - 过滤
+  question: 圣保罗州（SP）的客户有多少个？
+  gold_sql: SELECT COUNT(*) FROM customers WHERE customer_state = 'SP';
+- id: T1-010
+  difficulty: single_table_basic
+  tags:
+  - 去重
+  - 枚举
+  question: 订单状态一共有几种？
+  gold_sql: SELECT COUNT(DISTINCT order_status) FROM orders;
+- id: T1-012
+  difficulty: single_table_basic
+  tags:
+  - 排序
+  - 限制
+  question: 价格最高的 10 条订单明细是哪些？
+  gold_sql: 'SELECT order_id, order_item_id, price
+
+    FROM order_items ORDER BY price DESC NULLS LAST,order_id,order_item_id LIMIT 10;'
+- id: T1-014
+  difficulty: single_table_basic
+  tags:
+  - 过滤
+  question: 评价分数为 1 分的评价有多少条？
+  gold_sql: SELECT COUNT(*) FROM order_reviews WHERE review_score = 1;
+- id: T1-016
+  difficulty: single_table_basic
+  tags:
+  - 排序
+  - 限制
+  question: 仅考虑分期数已知的支付，找出分期数最多的一笔；并列时按订单编号、支付顺序号升序取第一笔，输出订单编号、支付顺序号和分期期数。
+  gold_sql: 'SELECT order_id,payment_sequential,payment_installments
+
+    FROM order_payments WHERE payment_installments IS NOT NULL
+
+    ORDER BY payment_installments DESC,order_id,payment_sequential LIMIT 1;'
+- id: T1-018
+  difficulty: single_table_basic
+  tags:
+  - 过滤
+  - 数值
+  question: 订单明细里运费超过 50 的有多少条？
+  gold_sql: SELECT COUNT(*) FROM order_items WHERE freight_value > 50;
+  notes: 运费字段是 freight_value，与商品价格 price 分开统计。运费的 NULL 判断和数值过滤是两回事，这里考的是数值过滤。
+- id: T1-021
+  difficulty: single_table_basic
+  tags:
+  - 过滤
+  question: 里约热内卢州（RJ）的卖家有多少个？
+  gold_sql: SELECT COUNT(*) FROM sellers WHERE seller_state = 'RJ';
+- id: T1-023
+  difficulty: single_table_basic
+  tags:
+  - NULL 判断
+  question: 没有填写类目的商品有多少个？
+  gold_sql: SELECT COUNT(*) FROM products WHERE product_category_name IS NULL;
+- id: T1-025
+  difficulty: single_table_basic
+  tags:
+  - 过滤
+  - 枚举
+  question: 状态为冻结的会员有多少人？
+  gold_sql: SELECT COUNT(*) FROM members WHERE status = 2;
+  notes: members.status 是数字代码：1=正常 2=冻结 3=注销，模型必须知道映射才能写对。
+- id: T1-027
+  difficulty: single_table_basic
+  tags:
+  - 计数
+  question: 一共有几个仓库？
+  gold_sql: SELECT COUNT(*) FROM warehouses;
+- id: T1-029
+  difficulty: single_table_basic
+  tags:
+  - 过滤
+  - 枚举
+  question: 已经完成退款的退款单有多少笔？
+  gold_sql: SELECT COUNT(*) FROM refunds WHERE status = 4;
+  notes: refunds.status：1=待审核 2=已通过 3=已拒绝 4=已退款。
+- id: T1-030
+  difficulty: single_table_basic
+  tags:
+  - 过滤
+  - 枚举
+  question: 因为质量问题发起的退款有多少笔？
+  gold_sql: SELECT COUNT(*) FROM refunds WHERE reason_code = 'QUAL';
+  notes: reason_code 是缩写代码，QUAL=质量问题，模型需要靠注释或语义层才能理解。
+- id: T1-032
+  difficulty: single_table_basic
+  tags:
+  - 过滤
+  - 枚举
+  question: 满减类型的优惠券有多少张？
+  gold_sql: SELECT COUNT(*) FROM coupons WHERE discount_type = 'fixed';
+- id: T1-034
+  difficulty: single_table_basic
+  tags:
+  - 计数
+  question: 客服工单一共有几个分类？
+  gold_sql: SELECT COUNT(*) FROM ticket_categories;
+- id: T1-036
+  difficulty: single_table_basic
+  tags:
+  - 过滤
+  - 枚举
+  question: 出库类型的库存变动记录有多少条？
+  gold_sql: SELECT COUNT(*) FROM inventory_movements WHERE movement_type = 2;
+  notes: inventory_movements.movement_type：1=入库 2=出库 3=退货入库 4=盘亏。
+- id: T1-038
+  difficulty: single_table_basic
+  tags:
+  - 去重
+  - 过滤
+  question: 有多少个州属于「Sudeste」这个大区？
+  gold_sql: SELECT COUNT(*) FROM regions WHERE macro_region = 'Sudeste';
+  notes: 巴西 27 个州分布在 5 个大区，Sudeste 是其中之一。
