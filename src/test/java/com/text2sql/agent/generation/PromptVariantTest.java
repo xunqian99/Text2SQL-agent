@@ -36,7 +36,7 @@ class PromptVariantTest {
 
     @Test void archivedP14PreservesUnaffectedRulesFromP9() throws Exception {
         var template = new PromptTemplate();
-        assertThat(template.version()).isEqualTo("p21-period-ranking-v21");
+        assertThat(template.version()).isEqualTo("p22-c1-consolidated-v22");
         try (var in = getClass().getResourceAsStream("/prompts/p9-system.txt")) {
             assertThat(in).isNotNull();
             String archived = new String(in.readAllBytes(), StandardCharsets.UTF_8);
@@ -91,7 +91,7 @@ class PromptVariantTest {
         assertThat(shortened).isEqualTo(full.replace(full.substring(full.indexOf("思考与推理步骤"), full.indexOf("硬性规则")), ""));
         assertThat(shortened.substring(shortened.indexOf("硬性规则")))
                 .isEqualTo(full.substring(full.indexOf("硬性规则")));
-        assertThat(candidate.version()).isEqualTo("p21-period-ranking-v21-no-explicit-steps-v1");
+        assertThat(candidate.version()).isEqualTo("p22-c1-consolidated-v22-no-explicit-steps-v1");
         var schema = new SchemaContext(List.of(), List.of(), "画像", "CREATE TABLE orders(order_id text);");
         assertThat(candidate.userPrompt(schema, "订单有多少？")).isEqualTo(new PromptTemplate().userPrompt(schema, "订单有多少？"));
         assertThat(candidate.correctionPrompt(schema, "订单有多少？", "SELECT 0", "请修正"))
@@ -180,18 +180,36 @@ class PromptVariantTest {
     }
 
     @Test void periodAndRankingBatchChangesOnlyRules8And13() throws Exception {
-        String current = new PromptTemplate().systemPrompt(), before = frozenP20();
+        String current = frozenP21(), before = frozenP20();
         assertThat(withoutTimeRule(withoutProjectionRule(current)))
                 .isEqualTo(withoutTimeRule(withoutProjectionRule(before)));
-        assertThat(new PromptTemplate().version()).isEqualTo("p21-period-ranking-v21");
+        assertThat(current).contains("前N档不同指标值时用DENSE_RANK<=N", "不能把稀疏结果的上一行当上一周期");
     }
 
     @Test void timeDimensionDefaultsAreDistinctFromExplicitDisplayOverrides() {
         String prompt = new PromptTemplate().systemPrompt();
         String rule = prompt.substring(prompt.indexOf("13. 按时间"), prompt.indexOf("14. 时间窗口"));
-        assertThat(rule).contains("DATE_TRUNC('quarter', 时间列)", "不仅用季度编号合并不同年份",
+        assertThat(rule).contains("DATE_TRUNC('quarter', 时间列)", "不得仅季度号合并跨年",
                 "EXTRACT(DOW FROM 时间列)::int", "周日0、周一1至周六6",
-                "用户明确要求ISO编号", "或中文名称时按要求输出", "用户明确要求年/季度编号或标签时按要求输出");
+                "明确ISO（周一1至周日7）", "或中文名称则服从", "明确年/季度编号或标签按要求");
+    }
+
+    @Test void consolidationPreservesReasoningModeAndMetricApplicability() throws Exception {
+        String old = frozenP21(), current = new PromptTemplate().systemPrompt();
+        assertThat(current.substring(current.indexOf("思考与推理步骤"), current.indexOf("硬性规则")))
+                .isEqualTo(old.substring(old.indexOf("思考与推理步骤"), old.indexOf("硬性规则")));
+        assertThat(current).contains("仅问题涉及该指标且未另定口径时采用其定义",
+                "参考示例与推荐查询不能覆盖用户要求", "已有合法过滤仍执行");
+    }
+
+    private static String frozenP21() throws Exception {
+        try (var in = PromptVariantTest.class.getResourceAsStream("/prompts/p21-system.txt")) {
+            assertThat(in).isNotNull();
+            byte[] bytes = in.readAllBytes();
+            assertThat(HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes)))
+                    .isEqualTo("79583b71433808b1a4034ed09f3eca59a2bdb7ff5d77261a9bb429e64fb4764d");
+            return new String(bytes, StandardCharsets.UTF_8);
+        }
     }
 
     private static String frozenP15() throws Exception {
