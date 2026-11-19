@@ -1,0 +1,42 @@
+{
+  "submission": 5,
+  "decision": "ACCEPT_B0_ONLY",
+  "stageBAccepted": true,
+  "b0EstablishedForFixedCandidate": true,
+  "paidEvaluationAdmitted": false,
+  "candidateSourceCommit": "37017182d67a1fba7d16b399cc616565a784aac0",
+  "candidateJarSha256": "e90b29251a8afa2a6af9ec3586a846ab137f84ef4511a62812c31d775e525a9f",
+  "acceptedScope": "B local engineering baseline only: complete authorized catalog is separate from retrieval context; send, final validation, cache and tools fail closed on catalog fault; observed sent usage survives content failures; all required B probes and fixed implementation evidence pass",
+  "batches": [
+    {"name":"original-101-adapted","total":101,"passed":101,"failed":0,"path":"original-101-results-first.json"},
+    {"name":"complete-real-send-matrix","total":338,"passed":338,"failed":0,"path":"real-send-results-first.json"},
+    {"name":"supplemental-entry-and-accounting","total":30,"passed":30,"failed":0,"path":"supplemental/supplemental-results-first.json"},
+    {"name":"mandatory-dependency-construction","total":4,"passed":4,"failed":0,"path":"supplemental/supplemental-results-first.json"},
+    {"name":"actual-empty-tool-output","total":4,"passed":4,"failed":0,"path":"empty-tool-output/empty-tool-output-results-first.json"},
+    {"name":"empty-choices-known-usage","total":2,"passed":2,"failed":0,"path":"empty-choices/empty-choices-results-first.json"},
+    {"name":"four-entry-response-usage","total":80,"passed":80,"failed":0,"path":"four-entry-usage/four-entry-usage-results-first.json"}
+  ],
+  "independentAssertions": {"total":559,"passed":559,"failed":0,"reruns":0,"notBusinessAccuracy":true},
+  "knownLimitationObservations": {"total":2,"matched":2,"countedAsPassingBAssertions":false,"path":"real-send-results-first.json","note":"Bare unknown column still reaches mock SAMPLE_QUERY under a derived-table wrapper. Separate qualified-column controls reject. The same preexisting behavior is demonstrated in p21, and actual readonly PostgreSQL rejects both unknown-column SELECTs."},
+  "historicalBlockingRegressions": {"submission1And2SendAdmissionFailures":"closed by real send-boundary matrix","submission3AccountingFailures":3,"submission3AccountingFailuresPassed":3,"submission4KnownUsageFailures":2,"submission4KnownUsageFailuresPassed":2,"duplicateUsageObserved":false},
+  "fourEntryUsage": {"total":80,"knownCases":40,"knownPromptTokensPerCase":19,"knownCompletionTokensPerCase":7,"knownTotalTokensPerCase":26,"knownCacheHitPerCase":5,"knownCacheMissPerCase":14,"syntheticKnownCostYuanPerCase":0.0351,"unknownCases":40,"allTraceExactlyOne":true,"allUnknownTraceExplicitlyMarked":true,"configurationCount":5,"responseShapes":["empty-choices-known","empty-choices-unknown","null-response","null-message-known"]},
+  "newDangerousObjectAllowancesObserved":0,
+  "identityVerification": {"manifestFiles":525,"sourceAndResourceFiles":255,"compiledFiles":431,"packagedProductionFiles":240,"dependenciesComparedWithP21":79,"drift":0,"finalCompiledDrift":0,"actualFirstMessagesExactlyEqual":400,"submission1EvidenceDrift":0,"submission2EvidenceChecked":396,"submission2EvidenceDrift":0,"submission3ReviewFiles":669,"submission3ReviewDrift":0,"submission4ReviewFiles":361,"submission4ReviewDrift":0,"preservedCompiledSubmissions3And4":{"filesEach":431,"driftEach":0}},
+  "implementationEvidenceVerifiedNotIndependentlyRerun": {"finalMavenSuites":100,"finalMavenTests":1479,"failures":0,"errors":0,"skipped":0,"catalogSendBoundaryTests":246,"catalogValidationTests":47,"goldExecutable":400,"protectedHttpProbeGroups":5,"catalogHttpChecks":11,"accessHttpChecks":36,"costHttpScenarios":4,"sessionHttpScenarios":3,"timingHttpScenarios":4},
+  "preexistingBareColumnControl": {"p21AndCandidateSameBehavior":true,"readonlySelectAttempts":2,"sqlStates":["42703","42703"],"returnedRows":0,"databaseConnections":1,"paths":["bare-column-baseline-first.json","bare-column-candidate-first.json","local-readonly-sqlstate-first.json"]},
+  "limitations": [
+    "This decision establishes only the fixed local B0 engineering baseline. It does not prove model accuracy, original target-case improvement, real provider P95, provider cost improvement, full stage2 completion or paid evaluation admission.",
+    "Bare columns, derived relation typing and cross-scope aliases retain documented preexisting static-analysis limitations; not every unknown column is rejected before the database.",
+    "Authorized catalog remains a process snapshot, not live DB availability or DDL/authorization refresh.",
+    "Full Maven, Gold400 and protected HTTP evidence were verified as fixed implementation evidence, not independently rerun by this reviewer.",
+    "Unknown usage remains explicitly unknown; synthetic prices and reservations do not establish provider billing."
+  ],
+  "providerCalls":0,
+  "providerTokens":0,
+  "providerCostYuan":0,
+  "readBlindOrHoldout":false,
+  "modifiedProductionSourcesOrExistingTests":false,
+  "modifiedReferencesScoringOrThresholds":false,
+  "gitCommitPerformed":false,
+  "priorRejectionsPreserved":true
+}

@@ -1,0 +1,28 @@
+{
+  "validatorClassLocation" : "file:/C:/Users/xunqian/Desktop/agent/reports/replan-stage-b-20261119/independent-review/submission-3/baseline-p21-classes/",
+  "label" : "p21",
+  "rows" : [ {
+    "validation" : {
+      "sql" : "SELECT * FROM (SELECT invented FROM orders LIMIT 1) AS sample_subq LIMIT 5",
+      "violations" : [ ],
+      "rewritten" : false
+    },
+    "inner" : "SELECT invented FROM orders LIMIT 1",
+    "wrapped" : "SELECT * FROM (SELECT invented FROM orders LIMIT 1) AS sample_subq LIMIT 5",
+    "valid" : true
+  }, {
+    "validation" : {
+      "sql" : "SELECT * FROM (SELECT o.invented FROM orders o LIMIT 1) AS sample_subq LIMIT 5",
+      "violations" : [ {
+        "code" : "UNKNOWN_COLUMN",
+        "message" : "表 orders 没有列 invented"
+      } ],
+      "rewritten" : false
+    },
+    "inner" : "SELECT o.invented FROM orders o LIMIT 1",
+    "wrapped" : "SELECT * FROM (SELECT o.invented FROM orders o LIMIT 1) AS sample_subq LIMIT 5",
+    "valid" : false
+  } ],
+  "providerCalls" : 0,
+  "databaseConnections" : 0
+}

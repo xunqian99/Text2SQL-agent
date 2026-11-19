@@ -1,0 +1,115 @@
+diff --git a/src/main/java/com/text2sql/agent/generation/LlmSqlGenerator.java b/src/main/java/com/text2sql/agent/generation/LlmSqlGenerator.java
+index e6dc758..d8a3427 100644
+--- a/src/main/java/com/text2sql/agent/generation/LlmSqlGenerator.java
++++ b/src/main/java/com/text2sql/agent/generation/LlmSqlGenerator.java
+@@ -213,18 +213,21 @@ public class LlmSqlGenerator {
+         long latencyMs = (System.nanoTime() - started) / 1_000_000;
+ 
+         //获取模型的output
+-        String raw = extractText(response);
+-        LlmCallRecord record = buildRecord(response, promptChars, latencyMs, model);
++        // Receipt/usage and content validity are independent. An empty choices array
++        // can still carry known billed usage; save that record before inspecting text.
++        LlmCallRecord record = response == null ? null : buildRecord(response, promptChars, latencyMs, model);
++        String raw = null;
+         String sql;
+         try {
++            raw = extractText(response);
+             requireComplete(response, record);
+             sql = SqlExtractor.extract(raw);
+         } catch (GenerationException e) {
+-            log.warn("LLM 返回内容无法提取 SQL：{}", record.summary());
++            log.warn("LLM 返回内容无法提取 SQL：{}", record == null ? "用量未知" : record.summary());
+             callLog.record(record, e.getReason().name(), user, raw, promptSha256);
+             throw new GenerationException(e.getReason(), e.getMessage(), record, e);
+         }
+-        log.info("LLM 调用完成：{}", record.summary());
++        log.info("LLM 调用完成：{}", record == null ? "用量未知" : record.summary());
+         callLog.record(record, "OK", user, raw, promptSha256);
+         return new GeneratedSql(sql, raw, record);
+     }
+@@ -285,18 +288,21 @@ public class LlmSqlGenerator {
+                     "模型纠错调用失败，请核对服务配置或稍后重试。", e);
+         }
+         long latencyMs = (System.nanoTime() - started) / 1_000_000;
+-        String raw = extractText(response);
+-        LlmCallRecord record = buildRecord(response, promptChars, latencyMs, model);
++        // Receipt/usage and content validity are independent. An empty choices array
++        // can still carry known billed usage; save that record before inspecting text.
++        LlmCallRecord record = response == null ? null : buildRecord(response, promptChars, latencyMs, model);
++        String raw = null;
+         String sql;
+         try {
++            raw = extractText(response);
+             requireComplete(response, record);
+             sql = SqlExtractor.extract(raw);
+         } catch (GenerationException e) {
+-            log.warn("LLM 自纠错返回内容无法提取 SQL：{}", record.summary());
++            log.warn("LLM 自纠错返回内容无法提取 SQL：{}", record == null ? "用量未知" : record.summary());
+             callLog.record(record, e.getReason().name() + "_CORRECTION", user, raw, promptSha256);
+             throw new GenerationException(e.getReason(), e.getMessage(), record, e);
+         }
+-        log.info("LLM 自纠错完成：{}", record.summary());
++        log.info("LLM 自纠错完成：{}", record == null ? "用量未知" : record.summary());
+         callLog.record(record, "CORRECTION", user, raw, promptSha256);
+         return new GeneratedSql(sql, raw, record);
+     }
+@@ -339,18 +345,21 @@ public class LlmSqlGenerator {
+                     "模型服务调用失败，请核对服务配置或稍后重试。", e);
+         }
+         long latencyMs = (System.nanoTime() - started) / 1_000_000;
+-        String raw = extractText(response);
+-        LlmCallRecord record = buildRecord(response, promptChars, latencyMs, model);
++        // Receipt/usage and content validity are independent. An empty choices array
++        // can still carry known billed usage; save that record before inspecting text.
++        LlmCallRecord record = response == null ? null : buildRecord(response, promptChars, latencyMs, model);
++        String raw = null;
+         String sql;
+         try {
++            raw = extractText(response);
+             requireComplete(response, record);
+             sql = SqlExtractor.extract(raw);
+         } catch (GenerationException e) {
+-            log.warn("LLM [{}] 返回内容无法提取 SQL：{}", logTag, record.summary());
++            log.warn("LLM [{}] 返回内容无法提取 SQL：{}", logTag, record == null ? "用量未知" : record.summary());
+             callLog.record(record, e.getReason().name() + "_" + logTag, "messages[" + messages.size() + "]", raw, promptSha256);
+             throw new GenerationException(e.getReason(), e.getMessage(), record, e);
+         }
+-        log.info("LLM [{}] 调用完成：{}", logTag, record.summary());
++        log.info("LLM [{}] 调用完成：{}", logTag, record == null ? "用量未知" : record.summary());
+         callLog.record(record, logTag, "messages[" + messages.size() + "]", raw, promptSha256);
+         return new GeneratedSql(sql, raw, record);
+     }
+@@ -408,16 +417,19 @@ public class LlmSqlGenerator {
+         }
+         long latencyMs = (System.nanoTime() - started) / 1_000_000;
+ 
+-        String raw = extractText(response);
+-        LlmCallRecord record = buildRecord(response, promptChars, latencyMs, model);
++        // Receipt/usage and content validity are independent. An empty choices array
++        // can still carry known billed usage; save that record before inspecting text.
++        LlmCallRecord record = response == null ? null : buildRecord(response, promptChars, latencyMs, model);
++        String raw = null;
+         try {
++            raw = extractText(response);
+             requireComplete(response, record);
+         } catch (GenerationException e) {
+             callLog.record(record, e.getReason().name() + "_" + logTag,
+                     "messages[" + messages.size() + "]", raw, promptSha256);
+-            throw e;
++            throw new GenerationException(e.getReason(), e.getMessage(), record, e);
+         }
+-        log.info("LLM [{}] 调用完成：{}", logTag, record.summary());
++        log.info("LLM [{}] 调用完成：{}", logTag, record == null ? "用量未知" : record.summary());
+         callLog.record(record, logTag, "messages[" + messages.size() + "]", raw, promptSha256);
+         return new AgentTurn(response, record, raw);
+     }
+@@ -462,7 +474,7 @@ public class LlmSqlGenerator {
+         }
+         AssistantMessage output = response.getResult().getOutput();
+         if (output == null) {
+-            return null;
++            throw new GenerationException(GenerationException.Reason.CALL_FAILED, "LLM 返回空消息");
+         }
+         String text = output.getText();
+         if ((text == null || text.isBlank()) && output.getMetadata() != null) {
