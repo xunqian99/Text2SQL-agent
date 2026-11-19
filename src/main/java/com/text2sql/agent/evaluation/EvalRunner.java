@@ -250,6 +250,7 @@ public class EvalRunner implements ApplicationRunner {
         config.put("sdkMaxAttempts", 1);
         config.put("clarificationEnabled", properties.getClarification().isEnabled());
         config.put("resultCheckerEnabled", properties.getResultChecker().isEnabled());
+        config.put("resultCheckerPolicyVersion", com.text2sql.agent.validation.ResultChecker.POLICY_VERSION);
         config.put("columnPruningEnabled", retrieval.isColumnPruningEnabled());
         config.put("joinPlanEnabled", retrieval.isJoinPlanEnabled());
         config.put("joinListEnabled", retrieval.isJoinListEnabled());

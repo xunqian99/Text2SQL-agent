@@ -131,8 +131,8 @@ class OrchestratorSelfCorrectionTest {
         var orch = orchestrator();
         String currentSignature = orch.cacheSignature();
         String schemaSuffix = "|schema=" + com.text2sql.agent.retrieval.SchemaDdlRenderer.FORMAT_VERSION;
-        assertThat(currentSignature).endsWith(schemaSuffix);
-        String legacySignature = currentSignature.substring(0, currentSignature.length() - schemaSuffix.length());
+        assertThat(currentSignature).contains(schemaSuffix + "|rc=");
+        String legacySignature = currentSignature.replace(schemaSuffix, "");
         cache.put(cache.key("按评价记录统计", legacySignature), "SELECT old_partial_key_sql");
         assertThat(cache.get(cache.key("按评价记录统计", currentSignature))).isEmpty();
         assertThat(cache.get(cache.key("按评价记录统计", legacySignature))).contains("SELECT old_partial_key_sql");

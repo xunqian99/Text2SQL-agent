@@ -2,6 +2,7 @@ package com.text2sql.agent.validation;
 
 import com.text2sql.agent.execution.QueryResult;
 import org.springframework.stereotype.Component;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -15,6 +16,29 @@ import java.util.Locale;
  */
 @Component
 public class ResultChecker {
+    public static final String POLICY_VERSION = "output-value-and-entity-extremum-v2";
+
+    private final ExtremumProjectionChecker extremumProjectionChecker;
+
+    /** Existing isolated fixtures can use only the original value heuristics. */
+    public ResultChecker() { this.extremumProjectionChecker = null; }
+
+    @Autowired
+    public ResultChecker(ExtremumProjectionChecker extremumProjectionChecker) {
+        this.extremumProjectionChecker = java.util.Objects.requireNonNull(extremumProjectionChecker);
+    }
+
+    /** After a proven omission, an unresolvable correction cannot silently count as a repair. */
+    public CheckResult checkCorrection(String question, String sql, QueryResult result, String initialRule) {
+        CheckResult check = check(question, sql, result);
+        if (check.suspicious()) return check;
+        if (ExtremumProjectionChecker.RULE.equals(initialRule) && extremumProjectionChecker != null
+                && extremumProjectionChecker.inspect(question, sql).status() != ExtremumProjectionChecker.Status.PRESENT) {
+            return CheckResult.suspicious("UNVERIFIED_EXTREMUM_CORRECTION",
+                    "首次已证实缺少实体寻优属性，但本次无法确认该属性原值已进入最外层输出；保留首次结果。");
+        }
+        return check;
+    }
 
     /**
      * 对查询结果与执行的 SQL 进行多维度启发式检查。
@@ -108,7 +132,8 @@ public class ResultChecker {
             );
         }
 
-        return CheckResult.NORMAL;
+        return extremumProjectionChecker == null ? CheckResult.NORMAL
+                : extremumProjectionChecker.check(question, sql);
     }
 
     private static CheckResult checkNumericColumns(QueryResult result, List<ResultColumnPolicy> policies,

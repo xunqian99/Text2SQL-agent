@@ -266,7 +266,10 @@ public class Text2SqlOrchestrator {
                 log.info("语义缓存命中，跳过模型调用");
                 AgentResponse hit = validateAndExecute(question, cachedSql.get(), rewriteCall, schema,
                         tableCount, retrievedTables, ddlChars, retrievalMs, rewriteMs, totalStarted);
-                if (hit.success()) {
+                boolean suspicious = hit.success() && properties.getResultChecker().isEnabled()
+                        && resultChecker.check(effectiveQuestion, hit.sql(),
+                        new QueryResult(hit.columns(), hit.rows(), hit.truncated(), 0L)).suspicious();
+                if (hit.success() && !suspicious) {
                     EvaluationTrace.attempt("CACHE_SQL", hit);
                     RequestBudget.checkpoint(hit);
                     if (convEnabled) {
@@ -274,7 +277,7 @@ public class Text2SqlOrchestrator {
                     }
                     return hit;
                 }
-                log.warn("缓存中的 SQL 这次没跑通（{}），回退到重新生成", hit.status());
+                log.warn("缓存中的 SQL 未通过当前执行/结果检查（{}，suspicious={}），回退到重新生成", hit.status(), suspicious);
             }
         }
 
@@ -362,10 +365,12 @@ public class Text2SqlOrchestrator {
         EvaluationTrace.attempt("INITIAL_SQL", first);
         RequestBudget.checkpoint(first);
         if (generationRetried) EvaluationTrace.select(2);
-        AgentResponse result = generationRetried ? first : retryIfFailed(generationQuestion, first, apiKey);
+        AgentResponse result = generationRetried ? first : retryIfFailed(generationQuestion, effectiveQuestion, first, apiKey);
 
         RequestBudget.stage("CACHE_WRITE");
-        if (cacheKey != null && result.success()) {
+        if (cacheKey != null && result.success() && (!properties.getResultChecker().isEnabled()
+                || !resultChecker.check(effectiveQuestion, result.sql(),
+                new QueryResult(result.columns(), result.rows(), result.truncated(), 0L)).suspicious())) {
             cache.put(cacheKey, result.sql());
         }
 
@@ -498,7 +503,7 @@ public class Text2SqlOrchestrator {
         var toolUse = properties.getToolUse();
         var guard = properties.getGuard();
         var routing = properties.getRouting();
-        return "%s|%s|r=%b:%d:%b:%b:%b:%b|prune=%b|s=%b|metrics=%s|fs=%b:%d:%s|dp=%b|fk=%b|tu=%b|limit=%s:%d|esc=%s|values=%s|schema=%s"
+        return "%s|%s|r=%b:%d:%b:%b:%b:%b|prune=%b|s=%b|metrics=%s|fs=%b:%d:%s|dp=%b|fk=%b|tu=%b|limit=%s:%d|esc=%s|values=%s|schema=%s|rc=%b:%s"
                 .formatted(
                         properties.getLlm().getModel(),
                         com.text2sql.agent.generation.PromptTemplate.versionFor(properties),
@@ -526,7 +531,9 @@ public class Text2SqlOrchestrator {
                         properties.getDb().getMaxRows(),
                         routing.isEnabled() ? routing.getEscalationModel() : "-",
                         com.text2sql.agent.retrieval.ValueRetriever.MATCH_POLICY_VERSION,
-                        com.text2sql.agent.retrieval.SchemaDdlRenderer.FORMAT_VERSION);
+                        com.text2sql.agent.retrieval.SchemaDdlRenderer.FORMAT_VERSION,
+                        properties.getResultChecker().isEnabled(),
+                        com.text2sql.agent.validation.ResultChecker.POLICY_VERSION);
     }
 
     /**
@@ -548,7 +555,7 @@ public class Text2SqlOrchestrator {
      * <p>代价必须可查：{@code combineAttempts} 会把两次调用的 token 和延迟相加，
      * 这样「每次调用花了多少」这个数字不会被重试悄悄稀释。
      */
-    private AgentResponse retryIfFailed(String question, AgentResponse first, String apiKey) {
+    private AgentResponse retryIfFailed(String question, String contractQuestion, AgentResponse first, String apiKey) {
         RequestBudget.stage("RESULT_CHECK");
         var config = properties.getSelfCorrection();
         var routing = properties.getRouting();
@@ -568,7 +575,8 @@ public class Text2SqlOrchestrator {
             } else if (properties.getResultChecker().isEnabled()) {
                 // 阶段 B：启发式结果校验
                 QueryResult qr = new QueryResult(first.columns(), first.rows(), first.truncated(), 0L);
-                var check = resultChecker.check(question, first.sql(), qr);
+                // A condensed history is model context, not a new explicit output request.
+                var check = resultChecker.check(contractQuestion, first.sql(), qr);
                 if (check.suspicious()) {
                     shouldRetry = true;
                     firstSuspicion = check.rule();
@@ -600,7 +608,7 @@ public class Text2SqlOrchestrator {
             if (firstSuspicion != null) {
                 RequestBudget.stage("RESULT_CHECK");
                 QueryResult qr2 = new QueryResult(second.columns(), second.rows(), second.truncated(), 0L);
-                var secondCheck = resultChecker.check(question, second.sql(), qr2);
+                var secondCheck = resultChecker.checkCorrection(contractQuestion, second.sql(), qr2, firstSuspicion);
                 if (secondCheck.suspicious()) {
                     log.info("重试结果仍被判定可疑（本次规则：{}，首次规则：{}），保留首次结果",
                             secondCheck.rule(), firstSuspicion);
