@@ -20,16 +20,21 @@ from decimal import Decimal
 from datetime import datetime
 
 from replan_durable_write import replace_with_retry
+from replan_stable_proxy import StableModelProxy, BASE_URL as STABLE_PROXY_URL
 
 ROOT = Path(__file__).resolve().parent.parent
 BASE = ROOT / "reports/replan-stage-d-20261119"
 OLD_BATCH = BASE / "batch-1/revision-2"
-BATCH = BASE / "batch-1/reregistered-dev-1"
-REVIEW_ROOT = BASE / "independent-review/reregistered-dev-1"
+FIRST_FREE_BATCH = BASE / "batch-1/reregistered-dev-1"
+BATCH = FIRST_FREE_BATCH / "revision-2"
+REVIEW_ROOT = BASE / "independent-review/reregistered-dev-1/revision-2"
 CANDIDATE = BASE / "reregistration-candidate"
 AUTH_SCHEMA = CANDIDATE / "human-paid-authorization.schema.json"
 AUTH_NAME = "human-paid-authorization.json"
 NEW_FORMAT = "replan-d-reregistered-c1-v1"
+REGISTRATION = "batch-1/reregistered-dev-1/revision-2"
+FIRST_FREE_PLAN_SHA = "c5ee4606b41f88f9933f69a423b10fa9eb2edab604e3460658194dc87d8d2c2f"
+FIRST_FREE_MANIFEST_SHA = "b2f872984fdaf7e42aec9858bae51b6640136c8a21fe30cd487c2a6b2f9e7ce1"
 OLD_PLAN_SHA = "de6c10f1365f53345a37d238efafd1c00afadb506bab75d102b36f050d601016"
 OLD_CONTROLLER_SHA = "079ec048dc29348cc032e05b592dfbf2540f3b3480fe078c461a8a10e344e4b8"
 PINNED = {
@@ -191,8 +196,31 @@ def check_candidate_quota():
     return quota
 
 
+def first_free_facts():
+    """The failed free draft is superseded without changing or replaying it."""
+    manifest_path = BASE / "reregistration-first-free-failure.json"
+    require(sha(manifest_path) == FIRST_FREE_MANIFEST_SHA, "First free failure manifest drift")
+    manifest = d.read(manifest_path)
+    require(manifest.get("planSha256") == FIRST_FREE_PLAN_SHA and manifest.get("addedProviderCalls") == 0
+            and manifest.get("actualHumanAuthorizationAbsent") is True and len(manifest["files"]) == 33,
+            "First free failure identity changed")
+    bound_files(manifest["files"])
+    require(sha(FIRST_FREE_BATCH / "plan.json") == FIRST_FREE_PLAN_SHA, "First free plan drift")
+    state = d.read(FIRST_FREE_BATCH / "state.json")
+    ledger = d.read(FIRST_FREE_BATCH / "send-ledger.json")
+    require(state == manifest["state"] and state.get("requestsStarted") == 0 and state.get("rounds") == {}
+            and state.get("terminal") is None and not ledger["calls"] and not ledger["rejections"]
+            and not ledger["breaches"] and ledger.get("planSha256") == FIRST_FREE_PLAN_SHA
+            and not (FIRST_FREE_BATCH / AUTH_NAME).exists() and not (FIRST_FREE_BATCH / "preflight.json").exists(),
+            "Only the unchanged never-paid first free draft may be superseded")
+    return dict(planSha256=FIRST_FREE_PLAN_SHA, manifestSha256=FIRST_FREE_MANIFEST_SHA,
+                addedProviderCalls=0, requestsStarted=0, reason="F failed before readiness: inherited quota identity included random proxy port")
+
+
 def tool_files():
     paths = _old_tool_files() + [Path(__file__), ROOT / "scripts/replan_durable_write.py",
+        ROOT / "scripts/replan_stable_proxy.py", BASE / "reregistration-first-free-failure.json",
+        FIRST_FREE_BATCH / "plan.json", FIRST_FREE_BATCH / "state.json", FIRST_FREE_BATCH / "send-ledger.json",
         ROOT / "docs/REPLAN_STAGE_D_INTERRUPTION_20261119.md", AUTH_SCHEMA,
         BASE / "paid-interruption-manifest.json", OLD_BATCH / "plan.json", OLD_BATCH / "state.json",
         OLD_BATCH / "send-ledger.json", OLD_BATCH / "candidate-cost-quota.json"]
@@ -203,6 +231,7 @@ def tool_files():
 def prepare():
     require(not d.BATCH.exists(), "New registration directory already exists; never reset, resume or overwrite")
     legacy = legacy_facts()  # Verify old terminal, audit and every original SHA before creating anything.
+    superseded_free = first_free_facts()
     for side in d.SYSTEMS.values():
         require(sha(ROOT / side["jar"]) == side["sha256"], "Frozen JAR drift")
     decision = d.read(ROOT / "reports/replan-stage-c-20261119/independent-review/c1-submission-1/decision.json")
@@ -222,7 +251,8 @@ def prepare():
     files.append(d.BATCH / "candidate-quota-initial-snapshot.json")
     files.extend(p for p in (d.BATCH / "tool-runtime").rglob("*") if p.is_file())
     plan = dict(format=NEW_FORMAT, createdAt=d.stamp(), systems=d.SYSTEMS, order=list(d.ORDER),
-        registration="batch-1/reregistered-dev-1", statusAtRegistration="DRAFT_REQUIRES_DIRECT_USER_PAID_AUTHORIZATION",
+        registration=REGISTRATION, freeRevision=2, supersededFreeDraft=superseded_free,
+        statusAtRegistration="DRAFT_REQUIRES_DIRECT_USER_PAID_AUTHORIZATION",
         selectedCandidate="C1 only; unchanged candidate and gates; C2 not admitted", legacy=legacy,
         limits=dict(requests=CURRENT_REQUESTS, calls=CURRENT_CALLS,
             cumulativeRequests=CUMULATIVE_REQUESTS, cumulativeCalls=CUMULATIVE_CALLS,
@@ -236,6 +266,9 @@ def prepare():
                           synchronousReplaceAbsoluteWallBoundGuaranteed=False),
         humanAuthorization=dict(file=AUTH_NAME, schema=AUTH_SCHEMA.relative_to(ROOT).as_posix(),
             requiredBeforeRealKey=True, engineeringReviewIsNotHumanPaidAuthorization=True),
+        stableProxy=dict(baseUrl=STABLE_PROXY_URL, exclusiveWindowsAddress=True, reuseAddress=False,
+            inheritedQuotaPricingIdentityPreserved=True, randomPortFallback=False,
+            unchangedHandlerTransportAndShutdown=True),
         commonScorer="unchanged frozen A scorer on actual saved HTTP body rows; never candidate SQL replay",
         classpath=cp, database=database, files={p.relative_to(ROOT).as_posix(): sha(p) for p in sorted(set(files))},
         unseen="LOCKED; independent custodian only after every original formal/safety gate passes",
@@ -253,9 +286,10 @@ def old_database():
 
 
 def verify(plan, *, database=True):
-    require(plan.get("format") == NEW_FORMAT and plan.get("registration") == "batch-1/reregistered-dev-1",
+    require(plan.get("format") == NEW_FORMAT and plan.get("registration") == REGISTRATION,
             "Wrong new registration identity")
     require(plan.get("legacy") == legacy_facts(), "New plan does not preserve full legacy accounting")
+    require(plan.get("supersededFreeDraft") == first_free_facts(), "First free failure was not preserved")
     limits = plan.get("limits", {})
     for key, value in dict(requests=902, calls=1870, cumulativeRequests=970, cumulativeCalls=1940,
                            legacyRequestsCharged=68, legacyApplicationCallsCharged=70,
@@ -323,6 +357,7 @@ def guarded_real_key():
 
 
 def app_command(side, port, base_url, out, *, offline=False):
+    require(base_url == STABLE_PROXY_URL, "Proxy address differs from preserved candidate quota pricing identity")
     if offline and side == "F":
         seed = d.BATCH / "candidate-quota-initial-snapshot.json"
         original = OLD_BATCH / "candidate-cost-quota.json"
@@ -337,9 +372,13 @@ def app_command(side, port, base_url, out, *, offline=False):
 
 @contextmanager
 def application(side, proxy, out, *, offline=False):
+    reached_ready = False
+    body_completed = False
     try:
         with _old_application(side, proxy, out, offline=offline) as endpoint:
+            reached_ready = True
             yield endpoint
+            body_completed = True
     finally:
         if offline and side == "F" and (Path(out) / "offline-cost-quota.json").is_file():
             seed = d.read(d.BATCH / "candidate-quota-initial-snapshot.json")
@@ -350,15 +389,19 @@ def application(side, proxy, out, *, offline=False):
                     and restored["knownCalls"] >= seed["knownCalls"]
                     and Decimal(str(restored["knownCostYuan"])) >= Decimal(str(seed["knownCostYuan"])),
                     "Actual offline JAR lost legacy UNKNOWN/known quota")
-            write(Path(out) / "inherited-quota-after-load.json", dict(passed=True,
+            write(Path(out) / "inherited-quota-after-load.json", dict(passed=reached_ready and body_completed,
+                applicationReachedReady=reached_ready, applicationBodyCompleted=body_completed,
+                inheritedQuotaDataPreserved=True,
                 budgetId=restored["budgetId"], pricingIdentity=restored["pricingIdentity"], legacyUnknownHoldsPreserved=3,
                 legacyKnownCostYuan=LEGACY["knownCostYuan"], legacyUnknownHeldYuan="0.30",
                 afterKnownCostYuan=str(restored["knownCostYuan"]), afterKnownCalls=restored["knownCalls"],
-                scope="Actual JAR local synthetic preflight only; no additional external charge"))
+                scope=("Actual JAR reached readiness and local preflight body completed; no additional external charge"
+                       if reached_ready and body_completed else "Seed/UNKNOWN data preserved; application load or preflight not verified")))
 
 
 def offline_preflight(plan, output):
-    result = _old_offline_preflight(plan, output)
+    with fixed_proxy_runtime():
+        result = _old_offline_preflight(plan, output)
     result.update(scope="This free preflight adds zero external calls/cost; legacy paid history remains charged separately",
         addedExternalProviderCalls=0, addedProviderCostYuan="0", legacyAccounting=copy.deepcopy(LEGACY),
         syntheticUsageNotAddedToHistoricalRealBill=True)
@@ -405,7 +448,20 @@ class SendGate(_old_send_gate):
 
 def run_next():
     require_human_authorization()  # Entry barrier: even an accepted engineering decision cannot bypass it.
-    return d.run_next()
+    with fixed_proxy_runtime():
+        return d.run_next()
+
+
+@contextmanager
+def fixed_proxy_runtime():
+    """Limit the proxy-class binding to this new controller's active call."""
+    import replan_stage_d_proxy
+    previous = replan_stage_d_proxy.ModelProxy
+    replan_stage_d_proxy.ModelProxy = StableModelProxy
+    try:
+        yield
+    finally:
+        replan_stage_d_proxy.ModelProxy = previous
 
 
 def install():

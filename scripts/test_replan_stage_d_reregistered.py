@@ -17,7 +17,7 @@ from unittest.mock import patch
 
 import run_replan_stage_d_reregistered as n
 
-EVIDENCE = n.CANDIDATE / "directed-tests-1"
+EVIDENCE = n.CANDIDATE / "directed-tests-2"
 
 
 def dump(path, value):
@@ -309,7 +309,7 @@ class DirectedChecks(unittest.TestCase):
         out = self.directory / "offline-F"; out.mkdir()
         before = n.sha(self.directory / "candidate-cost-quota.json")
         with patch.object(n, "_old_app_command", return_value=["synthetic-command"]):
-            command = n.app_command("F", 12345, "http://127.0.0.1:1", out, offline=True)
+            command = n.app_command("F", 12345, n.STABLE_PROXY_URL, out, offline=True)
         self.assertEqual(command, ["synthetic-command"])
         self.assertEqual(n.sha(out / "offline-cost-quota.json"), n.sha(seed))
         self.assertEqual(n.sha(self.directory / "candidate-cost-quota.json"), before)
@@ -325,6 +325,43 @@ class DirectedChecks(unittest.TestCase):
         with patch.object(n, "_old_application", side_effect=local_context):
             with n.application("F", None, out, offline=True): pass
         self.assertEqual(n.d.read(out / "inherited-quota-after-load.json")["legacyUnknownHoldsPreserved"], 3)
+
+    def test_failed_application_start_never_claims_actual_jar_loaded_quota(self):
+        seed = n.OLD_BATCH / "candidate-cost-quota.json"
+        n.write_bytes(self.directory / "candidate-quota-initial-snapshot.json", seed.read_bytes())
+        out = self.directory / "offline-F"; out.mkdir()
+        n.write_bytes(out / "offline-cost-quota.json", seed.read_bytes())
+        @contextmanager
+        def failed_context(*args, **kwargs):
+            raise n.Refused("Application exited before readiness")
+            yield
+        with patch.object(n, "_old_application", side_effect=failed_context):
+            with self.assertRaises(n.Refused):
+                with n.application("F", None, out, offline=True): pass
+        report = n.d.read(out / "inherited-quota-after-load.json")
+        self.assertFalse(report["passed"])
+        self.assertFalse(report["applicationReachedReady"])
+        self.assertTrue(report["inheritedQuotaDataPreserved"])
+
+    def test_random_proxy_port_is_rejected_before_quota_copy_or_process(self):
+        with self.assertRaises(n.Refused):
+            n.app_command("F", 12345, "http://127.0.0.1:12345", self.directory, offline=True)
+        self.assertFalse((self.directory / "offline-cost-quota.json").exists())
+
+    def test_first_failed_free_draft_is_bound_and_unpaid(self):
+        facts = n.first_free_facts()
+        self.assertEqual(facts["planSha256"], n.FIRST_FREE_PLAN_SHA)
+        self.assertEqual(facts["requestsStarted"], 0)
+        self.assertEqual(facts["addedProviderCalls"], 0)
+
+    def test_stable_proxy_binding_is_scoped_and_restored_on_failure(self):
+        import replan_stage_d_proxy as proxy
+        original = proxy.ModelProxy
+        with self.assertRaises(RuntimeError):
+            with n.fixed_proxy_runtime():
+                self.assertIs(proxy.ModelProxy, n.StableModelProxy)
+                raise RuntimeError("fixture")
+        self.assertIs(proxy.ModelProxy, original)
 
     def test_offline_synthetic_usage_is_not_summed_into_real_history(self):
         gate = n.SendGate(self.empty_ledger(), "fixture-plan", "OFFLINE_F",
@@ -349,6 +386,9 @@ if __name__ == "__main__":
     protected = {str(n.ROOT / "scripts/run_replan_stage_d.py"): n.OLD_CONTROLLER_SHA}
     manifest = n.d.read(n.BASE / "paid-interruption-manifest.json")
     protected.update({str(n.ROOT / p): value for p, value in manifest["files"].items()})
+    first = n.d.read(n.BASE / "reregistration-first-free-failure.json")
+    protected.update({str(n.ROOT / p): value for p, value in first["files"].items()})
+    protected[str(n.BASE / "reregistration-first-free-failure.json")] = n.FIRST_FREE_MANIFEST_SHA
     result = unittest.TestResult()
     suite = unittest.defaultTestLoader.loadTestsFromTestCase(DirectedChecks)
     suite.run(result)
