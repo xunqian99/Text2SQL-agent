@@ -1,0 +1,277 @@
+{
+  "format": "independent-baseline-safety-backport-review-v1",
+  "reviewer": "/root/review_joins",
+  "provenance": {
+    "participatedInBackport": false,
+    "participatedInProductionTuning": false,
+    "providerCalls": 0,
+    "externalModelCalls": 0,
+    "userKeyRead": false,
+    "sourceModifiedByReviewer": false,
+    "gitCommitByReviewer": false
+  },
+  "startedAtUtc": "2026-11-19T02:48:50Z",
+  "source": {
+    "worktree": "C:/Users/xunqian/.codex/worktrees/stage2-v3-baseline/agent",
+    "originalSourceCommit": "1e3a11f92e70ef76230fe0e5d36f0a9f7f2e894f",
+    "reviewedCommit": "7cc2efe1df34754836ec4690c604edf1dec9cff2",
+    "headAtInitialRead": "1e3a11f92e70ef76230fe0e5d36f0a9f7f2e894f",
+    "note": "Review began against uncommitted edits. Another actor committed the reviewed source during inspection. This report pins 7cc2efe and does not review later modifications.",
+    "reviewDiffSha256": "ecf7ff96c3f7227e035cda08a2878bcd71eb9278d2b60a708617ff790bf6c2a7",
+    "reviewedTree": "0f79af2d7f5d7cbf12a51b4c8a09a096aeeca313"
+  },
+  "boundaries": {
+    "oldPromptChanged": false,
+    "retrievalChanged": false,
+    "metricsOrGlossaryChanged": false,
+    "originalGoldOrHoldoutChanged": false,
+    "resultComparatorChanged": false,
+    "gradingChanged": false,
+    "budgetParametersChanged": false,
+    "tokenTemperatureOrReasoningOptionsChanged": false,
+    "sdkRetryCountChanged": false,
+    "dependenciesChanged": false,
+    "nonAdmissionSemanticChangesFound": false,
+    "qualification": "New refusal behavior and its handling change operational failures and call-ledger interpretation. Unchanged inference logic is not evidence of identical historical model outputs."
+  },
+  "callPathReview": {
+    "productionHttpPath": "LlmSqlGenerator.buildChatModel -> OpenAiApi RestClient -> BudgetHttpRequestFactory -> JdkClientHttpRequestFactory",
+    "routes": [
+      "generate",
+      "generateCorrection",
+      "callMessages",
+      "callWithTools",
+      "global configured key and BYOK share buildChatModel"
+    ],
+    "positiveCoverage": [
+      "Official deepseek.com and *.deepseek.com are guarded from actual request URI even when configured model is not named DeepSeek.",
+      "Remote proxy with default configured model starting deepseek receives forceOffPeak=true.",
+      "Time is checked in createRequest and immediately before delegate.execute, covering queued requests crossing peak boundaries on recognized endpoints.",
+      "SDK maxAttempts stays 1; no production streaming path found, all current calls use model.call.",
+      "EvalRunner refuses matching real evaluation before item loop. Dry-run skips admission and does not invoke provider."
+    ],
+    "negativeCoverage": "A remote proxy with non-DeepSeek default model and a DeepSeek modelOverride or escalation remains unguarded. Factory classification is computed from default configuration and never receives the effective request model.",
+    "localFixtures": "localhost, 127.0.0.1 and IPv6 loopback are exempt from proxy model classification. This exemption is appropriate only for known fake providers; it cannot prove a local forwarding proxy does not reach a real service.",
+    "timePolicy": "Asia/Shanghai weekday [09:00,12:00) and [14:00,18:00) peak windows; weekday holidays are conservatively refused. Reserve=max(120,timeoutSeconds+10) seconds; touching the next peak start is refused. Code logic was reviewed, not current provider tariff accuracy or eventual provider billing timestamp."
+  },
+  "findings": [
+    {
+      "id": "B1",
+      "priority": "P1",
+      "classification": "BLOCKING_COVERAGE_GAP",
+      "title": "Remote proxy can override non-DeepSeek default to DeepSeek without execution gate",
+      "locations": [
+        {
+          "path": "src/main/java/com/text2sql/agent/generation/LlmSqlGenerator.java",
+          "line": 488
+        },
+        {
+          "path": "src/main/java/com/text2sql/agent/generation/LlmSqlGenerator.java",
+          "line": 171
+        },
+        {
+          "path": "src/main/java/com/text2sql/agent/generation/LlmSqlGenerator.java",
+          "line": 242
+        },
+        {
+          "path": "src/main/java/com/text2sql/agent/budget/BudgetHttpRequestFactory.java",
+          "line": 42
+        }
+      ],
+      "trigger": "baseUrl=https://proxy.invalid, default model=gpt-test, actual modelOverride=deepseek-flash during Beijing peak. No real request was made.",
+      "mechanism": "buildChatModel computes forceOffPeak=false from default model. Four public invocation paths later replace OpenAiChatOptions.model. HTTP layer calls appliesTo(uri,null), so nonofficial proxy cannot be identified from its URI and neither HTTP check executes.",
+      "evidence": "Fake-transport runtime probe: defaultIdentity=false, effectiveOverrideIdentity=true, peakAllowed=false, unguarded factory reached injected mock execute once. Official endpoint and force=true proxy were rejected with OFF_PEAK_REQUIRED without further mock sends.",
+      "effect": "Cannot claim all real DeepSeek and remote-proxy sends are guarded. Fixed official-DeepSeek/default-model evaluation path is protected; broader supported override paths are not.",
+      "remediation": "Revise actual request identity propagation, or conservatively gate every non-local model destination in this isolated evaluation copy. Do not misrepresent a broader local conservative rule as an official pricing requirement for every vendor.",
+      "requiredVerification": [
+        "Remote non-DeepSeek default plus effective DeepSeek override rejected during peak.",
+        "Same remote-proxy request created off-peak but queued into peak rejected immediately before fake execute.",
+        "Global and BYOK plus escalation and tool routes use protected transport.",
+        "Known local fake provider remains operational.",
+        "Protected Prompt, retrieval, metric, Gold, comparator, budget and inference options remain byte-identical to historical baseline."
+      ]
+    },
+    {
+      "id": "B2",
+      "priority": "P2",
+      "classification": "KNOWN_NONBLOCKING_ACCOUNTING_LIMIT",
+      "title": "Local refusal becomes CALL_FAILED and can appear as unknown usage",
+      "locations": [
+        {
+          "path": "src/main/java/com/text2sql/agent/generation/LlmSqlGenerator.java",
+          "line": 180
+        },
+        {
+          "path": "src/main/java/com/text2sql/agent/generation/LlmSqlGenerator.java",
+          "line": 251
+        },
+        {
+          "path": "src/main/java/com/text2sql/agent/generation/LlmSqlGenerator.java",
+          "line": 302
+        },
+        {
+          "path": "src/main/java/com/text2sql/agent/generation/LlmSqlGenerator.java",
+          "line": 367
+        },
+        {
+          "path": "src/main/java/com/text2sql/agent/generation/LlmSqlGenerator.java",
+          "line": 480
+        },
+        {
+          "path": "src/main/java/com/text2sql/agent/orchestrator/Text2SqlOrchestrator.java",
+          "line": 279
+        }
+      ],
+      "mechanism": "invoke reserves startModelCall before model.call. Existing catches preserve RequestBudget.Exceeded only; transport Rejected is wrapped as GenerationException.CALL_FAILED. Trace stores null-usage failure and existing self-correction can retry while gate continues to refuse.",
+      "effect": "A blocked request has no proven provider send or billed usage, even if budget/modelCalls and unknownUsageCalls increment. A long batch crossing peak can accumulate generation failures that reflect local admission, not model quality. Entry check covers pre-batch peak only.",
+      "recommendation": "Retain as explicit operational limit without changing baseline budget behavior. Gate-interrupted batches are incomplete and unsuitable as comparison accuracy. Do not call refused ledger attempts actual billed model calls."
+    },
+    {
+      "id": "B3",
+      "priority": "P3",
+      "classification": "POLICY_LIMIT",
+      "title": "Local admission does not guarantee provider billing completion time",
+      "locations": [
+        {
+          "path": "src/main/java/com/text2sql/agent/budget/DeepSeekOffPeakPolicy.java",
+          "line": 21
+        }
+      ],
+      "detail": "Bounded reserve cannot make process suspension after check, clock changes or provider queue duration impossible. Source URL in code is not current tariff verification. No pricing or current official schedule claim was made."
+    }
+  ],
+  "checks": {
+    "gitDiffCheck": "PASS for pinned review; no whitespace error",
+    "formalTestSuiteRunByReviewer": false,
+    "reason": "Read-only review; only JSON/Markdown report files added. No Maven run or model evaluation. Existing test source inspected. Minimal JShell probe loaded pre-existing target/classes with injected Java Proxy transport only; static source is authoritative.",
+    "existingTestSource": "DeepSeekOffPeakPolicyTest contains 15 time-boundary rows, 8 identity rows, 3 invalid-duration rows, and 5 standalone tests (31 parameter-expanded invocations). Covers recognized endpoints, queued send recheck, timezone, weekends, conservative holiday and local fake. Missing non-DeepSeek default/effective DeepSeek override integration case.",
+    "mockProbe": {
+      "kind": "local-existing-compiled-artifact-mock-probe",
+      "providerCalls": 0,
+      "realHttpSendCalls": 0,
+      "sourceCommit": "7cc2efe1df34754836ec4690c604edf1dec9cff2",
+      "note": "Loaded existing target/classes, used injected Java Proxy transport only. Static source review remains authoritative; no user key read.",
+      "output": "jshell> jshell> jshell> jshell> jshell> jshell> jshell> jshell> jshell> jshell> PROBE defaultIdentity=false effectiveOverrideIdentity=true peakAllowed=false\r\njshell> jshell> jshell> jshell> jshell> jshell> jshell> $17 ==> null\r\njshell> PROBE remoteProxyDefaultNonDeepSeekMockSendCount=1\r\njshell> jshell> PROBE guardedProxyRejection=OFF_PEAK_REQUIRED mockSendCount=1\r\njshell> PROBE officialRejection=OFF_PEAK_REQUIRED mockSendCount=1\r\njshell> PROBE providerCalls=0 transportIsJavaProxy=true\r\njshell> \r\n"
+    }
+  },
+  "verdict": {
+    "canTreatAsUnqualifiedSafetyBackport": false,
+    "canTreatAsScopedOfficialDeepSeekAdmissionBackport": true,
+    "status": "REQUIRES_TRANSPORT_COVERAGE_FIX_BEFORE_FINAL_ADMISSION",
+    "qualification": "7cc2efe retains protected historical inference and evaluation logic and guards fixed official DeepSeek/default-model sends, but fails the all-remote-DeepSeek override requirement. Do not start paid comparison as an unqualified safe baseline.",
+    "historicalOutputsEquivalentClaim": false,
+    "followup": "Root agent acknowledged B1 and plans separate non-local transport revision. Later source requires supplemental verification; preserve this initial report."
+  },
+  "completedAtUtc": "2026-11-19T02:58:14.176Z",
+  "fullPinnedDiff": "diff --git a/docs/STAGE2_V3_BASELINE_SAFETY_20261119.md b/docs/STAGE2_V3_BASELINE_SAFETY_20261119.md\nnew file mode 100644\nindex 0000000..1918e56\n--- /dev/null\n+++ b/docs/STAGE2_V3_BASELINE_SAFETY_20261119.md\n@@ -0,0 +1,11 @@\n+# 历史基线的空闲时段安全回补\n+\n+该隔离副本基于`1e3a11f`，用于将来在同一修订参考上建立可比基线，不覆盖历史91/90/92。原基线没有DeepSeek时间门禁，因此禁止直接用它跑付费评测。\n+\n+本次仅回补：`DeepSeekOffPeakPolicy`、实际HTTP创建/发送前检查、模型客户端对远程DeepSeek代理的识别、评测入口拒绝以及对应异常原因。北京时间工作日09—12、14—18拒绝，至少120秒边界余量；不靠启动时的一次检查放行整轮。Prompt、检索、指标、Gold、评分、模型参数及原请求预算不在改动范围。\n+\n+请求例子：上午10点要求运行DeepSeek评测，在进入逐题循环前抛出`OFF_PEAK_REQUIRED`；即便请求对象在13:55创建后排队到14点，真正发送前再次检查并拒绝。空闲时段仍使用原JDK传输及预算取消钩子。新增31项门禁测试与原459项测试合计490/490通过，供应商调用0；这是本地测试，不是新模型准确率。\n+\n+替代方案是原样运行历史客户端，或者只由外层脚本看一次时间，两者都无法守住跨时段发送，因此否决。面试答辩应区分“门禁回补版本”与原始历史二进制；安全回补不证明供应商模型响应与历史完全相同，后续对照必须登记实际代码/配置版本。\n+\n+这份副本的目的仅是安全评测准备，尚未通过参考冻结或实际模型验收，不会因为测试通过立即调用API。真实高峰拒绝、独立范围审查与完整证据另行归档。用户无须额外操作，用户Key不会进入提交。\ndiff --git a/src/main/java/com/text2sql/agent/budget/BudgetHttpRequestFactory.java b/src/main/java/com/text2sql/agent/budget/BudgetHttpRequestFactory.java\nindex 163d262..47908cb 100644\n--- a/src/main/java/com/text2sql/agent/budget/BudgetHttpRequestFactory.java\n+++ b/src/main/java/com/text2sql/agent/budget/BudgetHttpRequestFactory.java\n@@ -20,25 +20,47 @@ import java.time.Duration;\n public final class BudgetHttpRequestFactory implements ClientHttpRequestFactory {\n     private static final HttpClient CLIENT = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();\n     private final int timeoutSeconds;\n+    private final DeepSeekOffPeakPolicy offPeak;\n+    private final boolean forceOffPeak;\n+    private final ClientHttpRequestFactory testDelegate;\n \n-    public BudgetHttpRequestFactory(int timeoutSeconds) { this.timeoutSeconds = timeoutSeconds; }\n+    public BudgetHttpRequestFactory(int timeoutSeconds) { this(timeoutSeconds, false); }\n+\n+    public BudgetHttpRequestFactory(int timeoutSeconds, boolean forceOffPeak) {\n+        this(timeoutSeconds, forceOffPeak, java.time.Clock.systemUTC(), null);\n+    }\n+\n+    BudgetHttpRequestFactory(int timeoutSeconds, boolean forceOffPeak, java.time.Clock clock,\n+                             ClientHttpRequestFactory testDelegate) {\n+        this.timeoutSeconds = timeoutSeconds;\n+        this.forceOffPeak = forceOffPeak;\n+        this.offPeak = new DeepSeekOffPeakPolicy(clock);\n+        this.testDelegate = testDelegate;\n+    }\n \n     @Override public ClientHttpRequest createRequest(URI uri, HttpMethod method) throws IOException {\n+        boolean guarded = forceOffPeak || DeepSeekOffPeakPolicy.appliesTo(uri, null);\n+        if (guarded) offPeak.requireAllowed(DeepSeekOffPeakPolicy.horizon(timeoutSeconds));\n         RequestBudget budget = RequestBudget.current();\n         JdkClientHttpRequestFactory factory = new JdkClientHttpRequestFactory(CLIENT);\n         factory.setReadTimeout(Duration.ofMillis(budget == null ? timeoutSeconds * 1000L\n                 : Math.min(timeoutSeconds * 1000L, budget.remainingMillis())));\n-        return new Request(factory.createRequest(uri, method), budget);\n+        return new Request((testDelegate == null ? factory : testDelegate).createRequest(uri, method), budget,\n+                guarded ? offPeak : null, DeepSeekOffPeakPolicy.horizon(timeoutSeconds));\n     }\n \n     private static final class Request extends HttpRequestWrapper implements ClientHttpRequest {\n         private final ClientHttpRequest delegate;\n         private final RequestBudget budget;\n-        private Request(ClientHttpRequest delegate, RequestBudget budget) {\n+        private final DeepSeekOffPeakPolicy offPeak;\n+        private final Duration horizon;\n+        private Request(ClientHttpRequest delegate, RequestBudget budget, DeepSeekOffPeakPolicy offPeak, Duration horizon) {\n             super(delegate); this.delegate = delegate; this.budget = budget;\n+            this.offPeak = offPeak; this.horizon = horizon;\n         }\n         @Override public OutputStream getBody() throws IOException { return delegate.getBody(); }\n         @Override public ClientHttpResponse execute() throws IOException {\n+            if (offPeak != null) offPeak.requireAllowed(horizon);\n             if (budget != null) budget.check();\n             ClientHttpResponse response = delegate.execute();\n             if (budget == null) return response;\ndiff --git a/src/main/java/com/text2sql/agent/budget/DeepSeekOffPeakPolicy.java b/src/main/java/com/text2sql/agent/budget/DeepSeekOffPeakPolicy.java\nnew file mode 100644\nindex 0000000..537ea70\n--- /dev/null\n+++ b/src/main/java/com/text2sql/agent/budget/DeepSeekOffPeakPolicy.java\n@@ -0,0 +1,73 @@\n+package com.text2sql.agent.budget;\n+\n+import com.text2sql.agent.generation.GenerationException;\n+\n+import java.net.URI;\n+import java.time.*;\n+import java.util.Locale;\n+\n+/** Local admission rule, not a promise about the provider's eventual billing timestamp. */\n+public final class DeepSeekOffPeakPolicy {\n+    public static final String VERSION = \"deepseek-off-peak-weekday-conservative-v1\";\n+    public static final String SOURCE = \"https://api-docs.deepseek.com/zh-cn/quick_start/pricing/\";\n+    public static final ZoneId BEIJING = ZoneId.of(\"Asia/Shanghai\");\n+    private final Clock clock;\n+\n+    public DeepSeekOffPeakPolicy(Clock clock) { this.clock = java.util.Objects.requireNonNull(clock); }\n+\n+    public record Decision(String policy, Instant checkedAt, String beijingTime, boolean allowed,\n+                           String reason, Instant nextAllowedAt, long guardSeconds) { }\n+\n+    public static Duration horizon(int timeoutSeconds) {\n+        return Duration.ofSeconds(Math.max(120L, timeoutSeconds + 10L));\n+    }\n+\n+    /** Official hosts always qualify. Remote proxies qualify when configured with a DeepSeek model. */\n+    public static boolean appliesTo(URI endpoint, String model) {\n+        String host = endpoint.getHost();\n+        if (host == null) throw new IllegalArgumentException(\"Model endpoint must have a host\");\n+        host = host.toLowerCase(Locale.ROOT).replaceFirst(\"\\\\.$\", \"\");\n+        if (host.equals(\"deepseek.com\") || host.endsWith(\".deepseek.com\")) return true;\n+        boolean local = host.equals(\"localhost\") || host.equals(\"127.0.0.1\")\n+                || host.equals(\"[::1]\") || host.equals(\"::1\");\n+        return !local && model != null && model.toLowerCase(Locale.ROOT).startsWith(\"deepseek\");\n+    }\n+\n+    public Decision evaluate(Duration guard) {\n+        if (guard.isNegative() || guard.isZero() || guard.compareTo(Duration.ofDays(1)) > 0)\n+            throw new IllegalArgumentException(\"Off-peak guard must be positive and at most one day\");\n+        Instant now = clock.instant();\n+        Instant end = now.plus(guard);\n+        ZonedDateTime local = now.atZone(BEIJING);\n+        // No unverified holiday allowlist: weekday holidays are conservatively refused too.\n+        for (LocalDate day = local.toLocalDate(); !day.isAfter(end.atZone(BEIJING).toLocalDate()); day = day.plusDays(1)) {\n+            if (day.getDayOfWeek() == DayOfWeek.SATURDAY || day.getDayOfWeek() == DayOfWeek.SUNDAY) continue;\n+            for (int[] hours : new int[][]{{9, 12}, {14, 18}}) {\n+                Instant peakStart = day.atTime(hours[0], 0).atZone(BEIJING).toInstant();\n+                Instant peakEnd = day.atTime(hours[1], 0).atZone(BEIJING).toInstant();\n+                if (now.isBefore(peakEnd) && !end.isBefore(peakStart)) {\n+                    String reason = now.isBefore(peakStart) ? \"PEAK_BOUNDARY_RESERVE\" : \"PEAK_HOURS\";\n+                    return new Decision(VERSION, now, local.toString(), false, reason, peakEnd, guard.toSeconds());\n+                }\n+            }\n+        }\n+        return new Decision(VERSION, now, local.toString(), true, \"OFF_PEAK\", now, guard.toSeconds());\n+    }\n+\n+    public void requireAllowed() { requireAllowed(Duration.ofMinutes(2)); }\n+\n+    public void requireAllowed(Duration guard) {\n+        Decision decision = evaluate(guard);\n+        if (!decision.allowed()) throw new Rejected(decision);\n+    }\n+\n+    public static final class Rejected extends GenerationException {\n+        private final Decision decision;\n+        public Rejected(Decision decision) {\n+            super(Reason.OFF_PEAK_REQUIRED, \"DeepSeek评测仅允许空闲时段调用；本次未发送。原因=\"\n+                    + decision.reason() + \"，最早接续=\" + decision.nextAllowedAt().atZone(BEIJING));\n+            this.decision = decision;\n+        }\n+        public Decision decision() { return decision; }\n+    }\n+}\ndiff --git a/src/main/java/com/text2sql/agent/evaluation/EvalRunner.java b/src/main/java/com/text2sql/agent/evaluation/EvalRunner.java\nindex 36d0667..f579e18 100644\n--- a/src/main/java/com/text2sql/agent/evaluation/EvalRunner.java\n+++ b/src/main/java/com/text2sql/agent/evaluation/EvalRunner.java\n@@ -115,6 +115,12 @@ public class EvalRunner implements ApplicationRunner {\n         List<EvalItem> items = loader.load();\n         suiteIdentity = EvalSuiteGuard.verify(properties, loader, items, exampleLoader.getExamples());\n         boolean dryRun = properties.getEval().isDryRun();\n+        if (!dryRun && com.text2sql.agent.budget.DeepSeekOffPeakPolicy.appliesTo(\n+                java.net.URI.create(properties.getLlm().getBaseUrl()), properties.getLlm().getModel())) {\n+            new com.text2sql.agent.budget.DeepSeekOffPeakPolicy(java.time.Clock.systemUTC())\n+                    .requireAllowed(com.text2sql.agent.budget.DeepSeekOffPeakPolicy.horizon(properties.getLlm().getTimeoutSeconds()));\n+        }\n+\n \n         if (!dryRun && properties.getLlm().getApiKey().isBlank()) {\n             throw new IllegalStateException(\"真实评测缺少 agent.llm.api-key，已在模型调用前终止；请配置环境变量或使用 dry-run\");\ndiff --git a/src/main/java/com/text2sql/agent/generation/GenerationException.java b/src/main/java/com/text2sql/agent/generation/GenerationException.java\nindex 46d02bd..4ba8331 100644\n--- a/src/main/java/com/text2sql/agent/generation/GenerationException.java\n+++ b/src/main/java/com/text2sql/agent/generation/GenerationException.java\n@@ -20,7 +20,9 @@ public class GenerationException extends RuntimeException {\n         /** 调用成功但返回内容里提不出合法 SQL。属于模型质量问题。 */\n         UNPARSEABLE,\n         /** 服务端明确报告输出预算用尽；不能把半条 SQL 当完整回答执行。 */\n-        OUTPUT_TRUNCATED\n+        OUTPUT_TRUNCATED,\n+        /** Paid evaluation is refused outside the provider off-peak window. */\n+        OFF_PEAK_REQUIRED\n     }\n \n     private final Reason reason;\ndiff --git a/src/main/java/com/text2sql/agent/generation/LlmSqlGenerator.java b/src/main/java/com/text2sql/agent/generation/LlmSqlGenerator.java\nindex fbc4853..42aa5e9 100644\n--- a/src/main/java/com/text2sql/agent/generation/LlmSqlGenerator.java\n+++ b/src/main/java/com/text2sql/agent/generation/LlmSqlGenerator.java\n@@ -485,7 +485,9 @@ public class LlmSqlGenerator {\n         if (!StringUtils.hasText(apiKey)) {\n             return null;\n         }\n-        var requestFactory = new BudgetHttpRequestFactory(properties.getLlm().getTimeoutSeconds());\n+        var requestFactory = new BudgetHttpRequestFactory(properties.getLlm().getTimeoutSeconds(),\n+                com.text2sql.agent.budget.DeepSeekOffPeakPolicy.appliesTo(\n+                        java.net.URI.create(properties.getLlm().getBaseUrl()), properties.getLlm().getModel()));\n \n         OpenAiApi api = OpenAiApi.builder()\n                 .baseUrl(properties.getLlm().getBaseUrl())\ndiff --git a/src/test/java/com/text2sql/agent/budget/DeepSeekOffPeakPolicyTest.java b/src/test/java/com/text2sql/agent/budget/DeepSeekOffPeakPolicyTest.java\nnew file mode 100644\nindex 0000000..a356e98\n--- /dev/null\n+++ b/src/test/java/com/text2sql/agent/budget/DeepSeekOffPeakPolicyTest.java\n@@ -0,0 +1,119 @@\n+package com.text2sql.agent.budget;\n+\n+import org.junit.jupiter.api.Test;\n+import org.junit.jupiter.params.ParameterizedTest;\n+import org.junit.jupiter.params.provider.CsvSource;\n+import org.springframework.http.HttpMethod;\n+import org.springframework.http.client.ClientHttpRequest;\n+import org.springframework.http.client.ClientHttpRequestFactory;\n+import org.springframework.http.client.ClientHttpResponse;\n+\n+import java.net.URI;\n+import java.time.*;\n+import java.util.concurrent.atomic.AtomicReference;\n+\n+import static org.assertj.core.api.Assertions.*;\n+import static org.mockito.Mockito.*;\n+\n+class DeepSeekOffPeakPolicyTest {\n+    static Instant at(String local) { return LocalDateTime.parse(local).atZone(DeepSeekOffPeakPolicy.BEIJING).toInstant(); }\n+    static DeepSeekOffPeakPolicy policy(String local) {\n+        return new DeepSeekOffPeakPolicy(Clock.fixed(at(local), ZoneOffset.UTC));\n+    }\n+\n+    @ParameterizedTest\n+    @CsvSource({\n+            \"2026-11-17T08:57:59,true,OFF_PEAK\", \"2026-11-17T08:58:00,false,PEAK_BOUNDARY_RESERVE\",\n+            \"2026-11-17T09:00:00,false,PEAK_HOURS\", \"2026-11-17T11:59:59,false,PEAK_HOURS\",\n+            \"2026-11-17T12:00:00,true,OFF_PEAK\", \"2026-11-17T13:57:59,true,OFF_PEAK\",\n+            \"2026-11-17T13:58:00,false,PEAK_BOUNDARY_RESERVE\", \"2026-11-17T14:00:00,false,PEAK_HOURS\",\n+            \"2026-11-17T17:59:59,false,PEAK_HOURS\", \"2026-11-17T18:00:00,true,OFF_PEAK\",\n+            \"2026-11-21T09:30:00,true,OFF_PEAK\", \"2026-11-22T15:30:00,true,OFF_PEAK\",\n+            \"2026-11-20T23:59:59,true,OFF_PEAK\", \"2026-11-23T08:58:00,false,PEAK_BOUNDARY_RESERVE\",\n+            \"2026-10-01T10:00:00,false,PEAK_HOURS\"})\n+    void exactBeijingBoundariesAndConservativeHoliday(String time, boolean allowed, String reason) {\n+        var decision = policy(time).evaluate(Duration.ofMinutes(2));\n+        assertThat(decision.allowed()).isEqualTo(allowed);\n+        assertThat(decision.reason()).isEqualTo(reason);\n+        assertThat(decision.policy()).isEqualTo(DeepSeekOffPeakPolicy.VERSION);\n+        assertThat(decision.checkedAt()).isEqualTo(at(time));\n+    }\n+\n+    @Test void hostTimezoneCannotChangeTheBeijingDecision() {\n+        var instant = at(\"2026-11-17T14:01:00\");\n+        var utc = new DeepSeekOffPeakPolicy(Clock.fixed(instant, ZoneOffset.UTC));\n+        var la = new DeepSeekOffPeakPolicy(Clock.fixed(instant, ZoneId.of(\"America/Los_Angeles\")));\n+        assertThat(utc.evaluate(Duration.ofMinutes(2))).isEqualTo(la.evaluate(Duration.ofMinutes(2)));\n+    }\n+\n+    @Test void futurePeakAndLongTimeoutsCannotBeHiddenByAnOffPeakStart() {\n+        assertThat(policy(\"2026-11-17T13:50:00\").evaluate(DeepSeekOffPeakPolicy.horizon(600)).allowed()).isFalse();\n+        assertThat(policy(\"2026-11-17T09:00:00\").evaluate(Duration.ofMinutes(2)).nextAllowedAt())\n+                .isEqualTo(at(\"2026-11-17T12:00:00\"));\n+        assertThat(policy(\"2026-11-17T13:58:00\").evaluate(Duration.ofMinutes(2)).nextAllowedAt())\n+                .isEqualTo(at(\"2026-11-17T18:00:00\"));\n+    }\n+\n+    @ParameterizedTest @CsvSource({\n+            \"https://api.deepseek.com,other,true\", \"https://API.DEEPSEEK.COM.,other,true\",\n+            \"https://api.deepseek.com.attacker.invalid,other,false\", \"https://proxy.invalid,deepseek-flash,true\",\n+            \"https://api.openai.com,gpt-test,false\", \"http://127.0.0.1:1234,deepseek-flash,false\",\n+            \"http://localhost:1234,deepseek-flash,false\", \"http://[::1]:1234,deepseek-flash,false\"})\n+    void destinationIdentitySeparatesRealEndpointsFromLocalFixtures(String url, String model, boolean expected) {\n+        assertThat(DeepSeekOffPeakPolicy.appliesTo(URI.create(url), model)).isEqualTo(expected);\n+    }\n+\n+    @Test void requestCreatedOffPeakIsCheckedAgainBeforeSending() throws Exception {\n+        var time = new AtomicReference<>(at(\"2026-11-17T13:55:00\"));\n+        Clock clock = new Clock() {\n+            public ZoneId getZone() { return ZoneOffset.UTC; }\n+            public Clock withZone(ZoneId zone) { return this; }\n+            public Instant instant() { return time.get(); }\n+        };\n+        var delegate = mock(ClientHttpRequestFactory.class);\n+        var wire = mock(ClientHttpRequest.class);\n+        var uri = URI.create(\"https://api.deepseek.com/v1/chat/completions\");\n+        when(delegate.createRequest(uri, HttpMethod.POST)).thenReturn(wire);\n+        var factory = new BudgetHttpRequestFactory(60, false, clock, delegate);\n+        var request = factory.createRequest(uri, HttpMethod.POST);\n+        time.set(at(\"2026-11-17T14:00:00\"));\n+        assertThatThrownBy(request::execute).isInstanceOf(DeepSeekOffPeakPolicy.Rejected.class);\n+        verify(wire, never()).execute();\n+    }\n+\n+    @Test void peakIsRefusedBeforeConstructingTransportButFixturesStillWork() throws Exception {\n+        var delegate = mock(ClientHttpRequestFactory.class);\n+        var wire = mock(ClientHttpRequest.class);\n+        var response = mock(ClientHttpResponse.class);\n+        when(wire.execute()).thenReturn(response);\n+        when(delegate.createRequest(any(), any())).thenReturn(wire);\n+        var factory = new BudgetHttpRequestFactory(60, false,\n+                Clock.fixed(at(\"2026-11-17T15:00:00\"), ZoneOffset.UTC), delegate);\n+        assertThatThrownBy(() -> factory.createRequest(URI.create(\"https://api.deepseek.com/v1/chat/completions\"), HttpMethod.POST))\n+                .isInstanceOf(DeepSeekOffPeakPolicy.Rejected.class);\n+        verifyNoInteractions(delegate);\n+        assertThat(factory.createRequest(URI.create(\"http://127.0.0.1:1234/model\"), HttpMethod.POST).execute()).isSameAs(response);\n+        verify(wire).execute();\n+    }\n+\n+    @Test void offPeakTransportAndRemoteProxyEnforcementAreBothCovered() throws Exception {\n+        var delegate = mock(ClientHttpRequestFactory.class);\n+        var wire = mock(ClientHttpRequest.class);\n+        when(delegate.createRequest(any(), any())).thenReturn(wire);\n+        var offPeak = new BudgetHttpRequestFactory(60, false,\n+                Clock.fixed(at(\"2026-11-17T18:00:00\"), ZoneOffset.UTC), delegate);\n+        offPeak.createRequest(URI.create(\"https://api.deepseek.com/v1/chat/completions\"), HttpMethod.POST).execute();\n+        verify(wire).execute();\n+        var peakProxy = new BudgetHttpRequestFactory(60, true,\n+                Clock.fixed(at(\"2026-11-17T15:00:00\"), ZoneOffset.UTC), delegate);\n+        assertThatThrownBy(() -> peakProxy.createRequest(URI.create(\"https://proxy.invalid/model\"), HttpMethod.POST))\n+                .isInstanceOf(DeepSeekOffPeakPolicy.Rejected.class);\n+        verify(delegate, times(1)).createRequest(any(), any());\n+    }\n+\n+    @ParameterizedTest @CsvSource({\"0\", \"-1\", \"86401\"})\n+    void invalidGuardCannotDisableThePolicy(long seconds) {\n+        assertThatThrownBy(() -> policy(\"2026-11-17T18:00:00\").evaluate(Duration.ofSeconds(seconds)))\n+                .isInstanceOf(IllegalArgumentException.class);\n+    }\n+}\n",
+  "changedFiles": [
+    {
+      "path": "docs/STAGE2_V3_BASELINE_SAFETY_20261119.md",
+      "sha256": "7f62db08d25e284fee2dc32e6c4a863d390cbac50bc10af1b7e40bbf443ef21d"
+    },
+    {
+      "path": "src/main/java/com/text2sql/agent/budget/BudgetHttpRequestFactory.java",
+      "sha256": "6542113f0cf94444fb4dac1d9001d1acd88bd48251c93af925b74542e6ebeeec"
+    },
+    {
+      "path": "src/main/java/com/text2sql/agent/budget/DeepSeekOffPeakPolicy.java",
+      "sha256": "2b101f7dd59863713a5c7355975f0eff156a7e8b49dadbc7fdbbe4137c520936"
+    },
+    {
+      "path": "src/main/java/com/text2sql/agent/evaluation/EvalRunner.java",
+      "sha256": "0d58c5dae18006bf17de1265f85c3d2621989b9d449fda73f8d87a184d34976d"
+    },
+    {
+      "path": "src/main/java/com/text2sql/agent/generation/GenerationException.java",
+      "sha256": "dd255d1d2fbb6f47c8222025cd89d4dd578e6663540ca361e71d56c256b5e5e0"
+    },
+    {
+      "path": "src/main/java/com/text2sql/agent/generation/LlmSqlGenerator.java",
+      "sha256": "2f298111d2a5264054f46ac6f726feb881ecc49476acd7b2949037456a9ac11c"
+    },
+    {
+      "path": "src/test/java/com/text2sql/agent/budget/DeepSeekOffPeakPolicyTest.java",
+      "sha256": "8a1641dde05af7c46c6988200880f918b6027e5e3e6a186c6cf077f0a94eb673"
+    }
+  ],
+  "protectedComponents": [
+    {
+      "path": "src/main/java/com/text2sql/agent/generation/PromptTemplate.java",
+      "oldGitObject": "65040cd679fd1cd11374b777662012000c05e1e5",
+      "reviewedGitObject": "65040cd679fd1cd11374b777662012000c05e1e5",
+      "unchanged": true
+    },
+    {
+      "path": "src/main/java/com/text2sql/agent/retrieval",
+      "oldGitObject": "e90bfc3eb69f233d069e6cef236aae870986a3bb",
+      "reviewedGitObject": "e90bfc3eb69f233d069e6cef236aae870986a3bb",
+      "unchanged": true
+    },
+    {
+      "path": "src/main/java/com/text2sql/agent/semantic",
+      "oldGitObject": "39e27459b740fdce2921ebc6dfdfe4e0292345f1",
+      "reviewedGitObject": "39e27459b740fdce2921ebc6dfdfe4e0292345f1",
+      "unchanged": true
+    },
+    {
+      "path": "src/main/resources/schema",
+      "oldGitObject": "e8ab84e2fb258d3cb4165529bda9de59d05ab83b",
+      "reviewedGitObject": "e8ab84e2fb258d3cb4165529bda9de59d05ab83b",
+      "unchanged": true
+    },
+    {
+      "path": "data/eval",
+      "oldGitObject": "b407453b89da68aa1f0160d6d5ea24bb4638511f",
+      "reviewedGitObject": "b407453b89da68aa1f0160d6d5ea24bb4638511f",
+      "unchanged": true
+    },
+    {
+      "path": "data/holdout",
+      "oldGitObject": "4e54bdfd47fe841ec93391e94f8ce00d4687581b",
+      "reviewedGitObject": "4e54bdfd47fe841ec93391e94f8ce00d4687581b",
+      "unchanged": true
+    },
+    {
+      "path": "src/main/java/com/text2sql/agent/execution",
+      "oldGitObject": "fad91c892fc03c52902af15b8334f0be7611d873",
+      "reviewedGitObject": "fad91c892fc03c52902af15b8334f0be7611d873",
+      "unchanged": true
+    },
+    {
+      "path": "src/main/java/com/text2sql/agent/validation",
+      "oldGitObject": "a79a6a69b8a7ab4df48ea35ad12fbf33b3c285da",
+      "reviewedGitObject": "a79a6a69b8a7ab4df48ea35ad12fbf33b3c285da",
+      "unchanged": true
+    },
+    {
+      "path": "src/main/java/com/text2sql/agent/budget/RequestBudget.java",
+      "oldGitObject": "5867de7c3124ba11ccd8f5a568504a3180873323",
+      "reviewedGitObject": "5867de7c3124ba11ccd8f5a568504a3180873323",
+      "unchanged": true
+    },
+    {
+      "path": "src/main/java/com/text2sql/agent/budget/RequestBudgetRunner.java",
+      "oldGitObject": "e37aa0159ffe813a20e7f442856db240e32d84d4",
+      "reviewedGitObject": "e37aa0159ffe813a20e7f442856db240e32d84d4",
+      "unchanged": true
+    },
+    {
+      "path": "src/main/java/com/text2sql/agent/config/AgentProperties.java",
+      "oldGitObject": "200fa0560cb0e1d66aeac5e844e5aaedcaf67c91",
+      "reviewedGitObject": "200fa0560cb0e1d66aeac5e844e5aaedcaf67c91",
+      "unchanged": true
+    },
+    {
+      "path": "src/main/resources/application.yml",
+      "oldGitObject": "8b4789f1e3258a9ab8e8992593cc69a754ef1475",
+      "reviewedGitObject": "8b4789f1e3258a9ab8e8992593cc69a754ef1475",
+      "unchanged": true
+    },
+    {
+      "path": "pom.xml",
+      "oldGitObject": "eb4e33c5ed4cf28fd85ea9fd4953658b96ccf276",
+      "reviewedGitObject": "eb4e33c5ed4cf28fd85ea9fd4953658b96ccf276",
+      "unchanged": true
+    }
+  ]
+}
