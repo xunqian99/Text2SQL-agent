@@ -3,6 +3,7 @@ import hashlib
 import json
 from pathlib import Path
 import subprocess
+import zipfile
 
 ROOT = Path(__file__).resolve().parents[2]
 FOLDER = Path(__file__).resolve().parent
@@ -11,12 +12,17 @@ sha = lambda p: hashlib.sha256(p.read_bytes()).hexdigest()
 manifest = read(FOLDER / 'verification.json')
 for name, expected in manifest['artifactSha256'].items():
     assert sha(FOLDER / name) == expected, name
+with zipfile.ZipFile(FOLDER / 'raw-review-artifacts.zip') as archive:
+    for name, expected in manifest['rawArchiveArtifactSha256'].items():
+        assert hashlib.sha256(archive.read(name)).hexdigest() == expected, name
 for name, expected in manifest['originalDataSha256'].items():
     assert sha(ROOT / name) == expected, name
 source = subprocess.check_output(
     ['git', 'rev-parse', manifest['sourceCommit'] + ':src'], cwd=ROOT, text=True).strip()
 assert source == manifest['sourceGitTree']
 summary = read(FOLDER / 'summary.json')
+for reviewer in summary['reviewers']:
+    assert manifest['rawArchiveArtifactSha256'][reviewer['reviewFile']] == reviewer['reviewSha256']
 adjudication = read(FOLDER / 'adjudication.json')
 assert sha(FOLDER / 'summary.json') == adjudication['sourceSummarySha256']
 assert len(summary['reconciliation']) == 100

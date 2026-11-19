@@ -52,3 +52,5 @@
 本批无用户必须操作的事项。需要理解的仍是：数据的三个来源集合、外部模型新增花费为0、错误落在参考/契约层而非自动归为模型层。
 
 证据：[汇总](../reports/independent-contract-review-20261119/summary.json)、[协议](AGENT_CONTRACT_REVIEW_PROTOCOL_20261119.md)、三份同目录`*-review.json`与`*-review.md`。原未签字复核包保持历史原样，未倒填人工裁决。
+
+文本展示副本统一为LF，避免Git换行规范化破坏克隆后的SHA核验；审查者交付原字节另存`raw-review-artifacts.zip`。汇总中的审查报告SHA对应压缩包内原稿，验证清单同时核对展示副本和原稿，不能把换行变化当内容审核修订。
