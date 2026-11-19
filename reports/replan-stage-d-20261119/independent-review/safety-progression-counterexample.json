@@ -1,0 +1,41 @@
+{
+  "planSha256": "fc13d6c9ec0eddb5909c32d93dd69fde3a4ce32632b758fd32674c90025813ce",
+  "inputContainsIndependentRuntimeSafetyEvidence": false,
+  "devGate": {
+    "passed": true,
+    "checks": {
+      "denominator": true,
+      "correct": true,
+      "deep": true,
+      "business": true,
+      "timeouts": true,
+      "dangerous": true
+    }
+  },
+  "nextAfterDev": "TARGETS",
+  "formalGate": {
+    "passed": true,
+    "checks": {
+      "denominators": true,
+      "accuracy": true,
+      "relativeAccuracy": true,
+      "p95Relative": true,
+      "p95Absolute": true,
+      "timeoutRelative": true,
+      "timeoutAbsolute": true,
+      "dangerous": true,
+      "completeAccounting": true
+    },
+    "baselineCorrect": 267,
+    "candidateCorrect": 267,
+    "baselineP95MeanMs": 13000.0,
+    "candidateP95MeanMs": 13000.0,
+    "baselineTimeouts": 12,
+    "candidateTimeouts": 12
+  },
+  "formalCompletionTransition": "FORMAL_PASSED_REQUIRES_INDEPENDENT_UNSEEN_CUSTODIAN; root cannot prepare/read unseen",
+  "codeObservation": "run_replan_stage_d.py:674 writes newDangerousAllowances=0 unconditionally; dev/formal gates also default absence to zero",
+  "demonstrates": "A performance/accuracy-qualified real batch can advance without batch-bound independent dangerous-allowance evidence",
+  "expected": "Pending independent runtime safety judgment cannot count as zero or unlock subsequent rounds",
+  "providerCalls": 0
+}

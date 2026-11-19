@@ -1,0 +1,62 @@
+{
+  "format": "replan-d-independent-decision-v1",
+  "submission": 1,
+  "accepted": false,
+  "decision": "REJECT_D_PAID_ADMISSION",
+  "planSha256": "fc13d6c9ec0eddb5909c32d93dd69fde3a4ce32632b758fd32674c90025813ce",
+  "scope": "Fixed D controller, shared forwarding/accounting, HTTP result scoring; no candidate implementation or tuning",
+  "findings": [
+    {
+      "id": "D1-SAFETY-DEFAULT-ZERO",
+      "priority": 1,
+      "blocking": true,
+      "file": "scripts/run_replan_stage_d.py",
+      "line": 674,
+      "finding": "Real paid rounds are assigned newDangerousAllowances=0 unconditionally; dev_gate and formal_gate also interpret absent independent safety evidence as zero. Accuracy/performance-qualified output advances without a batch-bound independent safety judgment.",
+      "evidence": "safety-progression-counterexample.json"
+    },
+    {
+      "id": "D1-UPSTREAM-BYTES-NOT-PRESERVED",
+      "priority": 2,
+      "blocking": true,
+      "file": "scripts/replan_stage_d_proxy.py",
+      "line": 649,
+      "finding": "The proxy forwards the original supplier bytes to the local client but persists only responseBodySha256/responseBytes and parsed JSON. For duplicate JSON keys responseJson is null, so original upstream bytes cannot be recovered from implementation evidence despite the frozen protocol promising their preservation.",
+      "evidence": "duplicate-upstream-retention-counterexample.json"
+    },
+    {
+      "id": "D1-FINAL-SUPPLIED-SUITE-INCOMPLETE",
+      "priority": 2,
+      "blocking": true,
+      "file": "scripts/test_replan_stage_d_proxy.py",
+      "line": 278,
+      "finding": "The final fixed code does not pass its combined supplied suite: 57 run, 56 passed, 1 error. The old bad-local-request chunked fixture times out waiting for response; it predates newly accepted chunked framing. Retain this failure and reconcile the test with the final supported protocol before claiming a complete final regression.",
+      "evidence": "supplied-suite.log"
+    }
+  ],
+  "verified": {
+    "boundFiles": 356,
+    "gitOriginalBytesMatches": 32,
+    "runtimeFiles": 324,
+    "preflightEvidenceFiles": 37,
+    "actualJarsCorrectionPathsPassed": 2,
+    "actualLocalAskResponses": 2,
+    "localModelRequestsForCorrection": 4,
+    "localModelRequestsForDuplicateBodyCounterexample": 1,
+    "suppliedTestsRun": 57,
+    "suppliedTestsPassed": 56,
+    "suppliedTestErrors": 1
+  },
+  "limitations": [
+    "No supplier endpoint or key was accessed.",
+    "No unseen, blind, holdout, or old U_B/U_C individual results were read.",
+    "Local substitutes and synthetic safety inputs are interface/counterexample evidence, not model accuracy.",
+    "The configured byte estimate is not a mathematically proven token or supplier invoice cap.",
+    "The current controller keeps unseen locked even after formal_gate returns passed; that does not repair missing safety evidence in the formal decision."
+  ],
+  "providerCalls": 0,
+  "providerTokens": 0,
+  "providerCostYuan": 0,
+  "paidEvaluationAdmitted": false,
+  "stage2Accepted": false
+}
