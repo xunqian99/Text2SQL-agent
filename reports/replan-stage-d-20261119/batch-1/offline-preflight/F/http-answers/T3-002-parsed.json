@@ -1,0 +1,89 @@
+{
+  "id": "T3-002",
+  "httpStatus": 200,
+  "body": {
+    "status": "SUCCESS",
+    "sql": "SELECT EXTRACT(YEAR FROM order_purchase_timestamp)::INT AS yr, COUNT(*) AS cnt FROM orders WHERE EXTRACT(YEAR FROM order_purchase_timestamp) IN (2017, 2018) GROUP BY 1 ORDER BY 1 LIMIT 201",
+    "message": null,
+    "violations": [],
+    "columns": [
+      "yr",
+      "cnt"
+    ],
+    "rows": [
+      [
+        "2017",
+        "45101"
+      ],
+      [
+        "2018",
+        "54011"
+      ]
+    ],
+    "truncated": false,
+    "rewritten": true,
+    "rowCount": 2,
+    "schemaTableCount": 8,
+    "retrievedTables": [
+      "orders",
+      "customers",
+      "order_items",
+      "order_payments",
+      "order_reviews",
+      "coupon_usages",
+      "refund_items",
+      "refunds"
+    ],
+    "schemaDdlChars": 1917,
+    "llm": {
+      "model": "deepseek-flash",
+      "promptTokens": 10,
+      "completionTokens": 10,
+      "totalTokens": 20,
+      "latencyMs": 52,
+      "costYuan": 5e-05
+    },
+    "timings": {
+      "retrievalMs": 6,
+      "generationMs": 53,
+      "validationMs": 7,
+      "executionMs": 27,
+      "totalMs": 97
+    },
+    "sessionId": null,
+    "rewrittenQuestion": null,
+    "schemaReused": false,
+    "budget": {
+      "requestId": "d9ae32f4-bb55-4e70-81f7-f315ae081897",
+      "timeoutMs": 15000,
+      "maxModelCalls": 2,
+      "modelCalls": 1,
+      "unknownUsageCalls": 0,
+      "elapsedMs": 97,
+      "termination": "COMPLETE",
+      "stage": "CONVERSATION",
+      "retrySkippedReason": null,
+      "stageMs": {
+        "CACHE": 0,
+        "MODEL": 28,
+        "EXECUTION": 27,
+        "SESSION": 0,
+        "CONVERSATION": 0,
+        "RETRIEVAL": 6,
+        "VALIDATION": 7,
+        "CACHE_WRITE": 0,
+        "CLARIFICATION": 0,
+        "RESULT_CHECK": 0,
+        "GENERATION": 25,
+        "ADMISSION": 0
+      },
+      "cancellationRejected": 0,
+      "timingsVersion": "request-budget-exclusive-v1",
+      "otherMs": 4,
+      "currentStageMs": 0
+    }
+  },
+  "wallLatencyMs": 168.99910010397434,
+  "returnedAt": "2026-11-19T13:10:12.911218+00:00",
+  "httpEvidence": "reports/replan-stage-d-20261119/batch-1/offline-preflight/F/http-answers/T3-002.json"
+}
