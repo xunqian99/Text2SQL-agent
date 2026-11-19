@@ -1,0 +1,194 @@
+[
+  {
+    "id": "B2-T3-001",
+    "difficulty": "time_window",
+    "tags": [
+      "orders",
+      "month",
+      "coverage"
+    ],
+    "question": "统计2017年9月1日（含）至2018年3月1日（不含）每个自然月的全部订单数及有审核时间的订单数，输出月份（YYYY-MM）、订单数、已审核时间数；包含取消和不可用状态，只输出实际有订单的月份，月份升序，不补0。",
+    "gold_sql": "SELECT TO_CHAR(DATE_TRUNC('month',order_purchase_timestamp),'YYYY-MM') AS month,COUNT(*) AS order_count,COUNT(order_approved_at) AS approved_time_count FROM orders WHERE order_purchase_timestamp>='2017-09-01' AND order_purchase_timestamp<'2018-03-01' GROUP BY DATE_TRUNC('month',order_purchase_timestamp) ORDER BY DATE_TRUNC('month',order_purchase_timestamp);",
+    "notes": "月份基于下单时间；未知下单时间不属于给定窗口，不用状态代替审核时间。"
+  },
+  {
+    "id": "B2-T3-002",
+    "difficulty": "time_window",
+    "tags": [
+      "orders",
+      "calendar_comparison",
+      "null"
+    ],
+    "question": "比较2018年1月至6月与2017年同月的有效订单数。只输出两年该月都实际有有效订单的月份（01至06）、2018订单数、2017订单数和数量差（2018减2017），月份升序；有效订单排除canceled和unavailable，不补缺月。",
+    "gold_sql": "WITH m AS (SELECT EXTRACT(YEAR FROM order_purchase_timestamp)::int AS yr,EXTRACT(MONTH FROM order_purchase_timestamp)::int AS mo,COUNT(*) AS n FROM orders WHERE order_status NOT IN ('canceled','unavailable') AND ((order_purchase_timestamp>='2017-01-01' AND order_purchase_timestamp<'2017-07-01') OR (order_purchase_timestamp>='2018-01-01' AND order_purchase_timestamp<'2018-07-01')) GROUP BY 1,2) SELECT LPAD(a.mo::text,2,'0') AS month,a.n AS orders_2018,b.n AS orders_2017,a.n-b.n AS order_delta FROM m a JOIN m b ON b.mo=a.mo AND b.yr=2017 WHERE a.yr=2018 ORDER BY a.mo;",
+    "notes": "真实相同自然月对齐，不以相邻记录代替同期；只取两期交集。"
+  },
+  {
+    "id": "B2-T3-003",
+    "difficulty": "time_window",
+    "tags": [
+      "search_logs",
+      "hour",
+      "window"
+    ],
+    "question": "在2018年5月10日00:00（含）至2018年5月17日00:00（不含）的搜索日志中，按一天中的小时0至23汇总搜索条数和有点击条数。只输出实际出现的小时、两个条数，小时升序；点击以clicked_product_id非NULL判断，不按会员去重。",
+    "gold_sql": "SELECT EXTRACT(HOUR FROM searched_at)::int AS hour_of_day,COUNT(*) AS search_count,COUNT(clicked_product_id) AS clicked_count FROM search_logs WHERE searched_at>='2018-05-10' AND searched_at<'2018-05-17' GROUP BY 1 ORDER BY 1;",
+    "notes": "时间按数据库无时区原始时间，窗口左闭右开；没出现的小时不补0。"
+  },
+  {
+    "id": "B2-T3-004",
+    "difficulty": "time_window",
+    "tags": [
+      "refunds",
+      "quarter",
+      "completion"
+    ],
+    "question": "按退款完成月份统计2018年第二季度已退款（status=4）的退款单数和退款单金额合计，只输出月份YYYY-MM、退款单数、金额，月份升序。完成时间范围为4月1日含至7月1日不含，不按申请日期筛选，不加运费、不筛订单状态，不补缺月。",
+    "gold_sql": "SELECT TO_CHAR(DATE_TRUNC('month',completed_at),'YYYY-MM') AS month,COUNT(*) AS refund_count,SUM(refund_amount) AS refund_amount FROM refunds WHERE status=4 AND completed_at>='2018-04-01' AND completed_at<'2018-07-01' GROUP BY DATE_TRUNC('month',completed_at) ORDER BY DATE_TRUNC('month',completed_at);",
+    "notes": "时间归属为completed_at；金额NULL忽略，单数按refund_id。"
+  },
+  {
+    "id": "B2-T3-005",
+    "difficulty": "time_window",
+    "tags": [
+      "product_price_history",
+      "latest",
+      "pk"
+    ],
+    "question": "截至2018年7月1日00:00（不含），对每个曾有已知变更时间的商品取最后一次调价；同一时间取history_id最大的记录。只保留最后记录的新价、旧价均已知且新价高于旧价的商品，按涨价金额降序、商品ID升序取前30个。输出商品ID、历史记录ID、变更时间、涨价金额。",
+    "gold_sql": "WITH ranked AS (SELECT h.*,ROW_NUMBER() OVER(PARTITION BY product_id ORDER BY changed_at DESC,history_id DESC) AS rn FROM product_price_history h WHERE changed_at<'2018-07-01' AND product_id IS NOT NULL) SELECT product_id,history_id,changed_at,new_price-old_price AS increase_amount FROM ranked WHERE rn=1 AND new_price IS NOT NULL AND old_price IS NOT NULL AND new_price>old_price ORDER BY increase_amount DESC,product_id LIMIT 30;",
+    "notes": "先取真实最后记录再筛价格，不能先挑涨价再称为最后；history_id是真主键。"
+  },
+  {
+    "id": "B2-T3-006",
+    "difficulty": "time_window",
+    "tags": [
+      "member_snapshot",
+      "latest",
+      "pk"
+    ],
+    "question": "截至2018年6月30日（含），取每位会员最新一条会员快照；同一天取snapshot_id最大者。仅保留该快照积分已知且在2000至4000之间（含两端）的会员，按会员ID升序取前40位。只输出会员ID、快照日期、等级ID、积分；未知会员ID不参与。",
+    "gold_sql": "WITH s AS (SELECT x.*,ROW_NUMBER() OVER(PARTITION BY member_id ORDER BY snapshot_date DESC,snapshot_id DESC) AS rn FROM member_snapshot x WHERE snapshot_date<='2018-06-30' AND member_id IS NOT NULL) SELECT member_id,snapshot_date,level_id,points FROM s WHERE rn=1 AND points BETWEEN 2000 AND 4000 ORDER BY member_id LIMIT 40;",
+    "notes": "快照身份snapshot_id；先确定最新快照再筛积分，不回退至更早满足积分的快照。"
+  },
+  {
+    "id": "B2-T3-007",
+    "difficulty": "time_window",
+    "tags": [
+      "inventory_movements",
+      "month",
+      "window"
+    ],
+    "question": "统计2018年3月1日（含）至6月1日（不含）每个自然月的出库流水（movement_type=2）数量合计和流水条数。只输出月份YYYY-MM、出库数量、流水条数，月份升序；数量按原值相加、NULL忽略，不补没有出库记录的月份。",
+    "gold_sql": "SELECT TO_CHAR(DATE_TRUNC('month',moved_at),'YYYY-MM') AS month,SUM(quantity) AS outbound_quantity,COUNT(*) AS movement_count FROM inventory_movements WHERE movement_type=2 AND moved_at>='2018-03-01' AND moved_at<'2018-06-01' GROUP BY DATE_TRUNC('month',moved_at) ORDER BY DATE_TRUNC('month',moved_at);",
+    "notes": "计量单位为movement_id，不是不同商品数；出库不再反转正负号。"
+  },
+  {
+    "id": "B2-T3-008",
+    "difficulty": "time_window",
+    "tags": [
+      "support_tickets",
+      "elapsed",
+      "window"
+    ],
+    "question": "统计2018年4月1日含至7月1日不含创建的工单，按创建自然月输出工单数，以及创建和解决时间均已知工单的平均处理小时数（小数小时，2位）。未解决工单仍计入工单数但不计平均；只列实际有工单月份，月份YYYY-MM升序。",
+    "gold_sql": "SELECT TO_CHAR(DATE_TRUNC('month',created_at),'YYYY-MM') AS month,COUNT(*) AS ticket_count,ROUND(AVG(EXTRACT(EPOCH FROM(resolved_at-created_at))/3600.0),2) AS avg_resolution_hours FROM support_tickets WHERE created_at>='2018-04-01' AND created_at<'2018-07-01' GROUP BY DATE_TRUNC('month',created_at) ORDER BY DATE_TRUNC('month',created_at);",
+    "notes": "用完整秒数换小时，不取interval小时分量；不额外过滤工单status。"
+  },
+  {
+    "id": "B2-T3-009",
+    "difficulty": "time_window",
+    "tags": [
+      "campaigns",
+      "overlap",
+      "dates"
+    ],
+    "question": "查找与2018年6月这个自然月有至少一天重叠的活动，活动的起止日都必须已知、开始日不得晚于结束日，且起止日视为包含当天。只输出活动ID、名称、开始日、结束日，按开始日、活动ID升序；覆盖全部状态，不补缺失日期。",
+    "gold_sql": "SELECT campaign_id,campaign_name,start_date,end_date FROM campaigns WHERE start_date IS NOT NULL AND end_date IS NOT NULL AND start_date<=end_date AND start_date<DATE '2018-07-01' AND end_date>=DATE '2018-06-01' ORDER BY start_date,campaign_id;",
+    "notes": "仅合法起止区间参与重叠判断，条件为start<=end、start<下月初且end>=本月初；数据中活动总数小于500，返回完整集合。"
+  },
+  {
+    "id": "B2-T3-010",
+    "difficulty": "time_window",
+    "tags": [
+      "settlements",
+      "paid_time",
+      "month"
+    ],
+    "question": "按实际打款月份统计2018年1月1日含至9月1日不含的结算单数及应结净额合计，只输出月份YYYY-MM、结算单数、净额，月份升序。不按结算账期筛选，也不额外要求状态=3；不补缺月，净额NULL忽略。",
+    "gold_sql": "SELECT TO_CHAR(DATE_TRUNC('month',paid_at),'YYYY-MM') AS month,COUNT(*) AS settlement_count,SUM(net_amount) AS net_total FROM settlements WHERE paid_at>='2018-01-01' AND paid_at<'2018-09-01' GROUP BY DATE_TRUNC('month',paid_at) ORDER BY DATE_TRUNC('month',paid_at);",
+    "notes": "以真实paid_at而非状态或period_start判断打款归属；一结算单一次。"
+  },
+  {
+    "id": "B2-T3-011",
+    "difficulty": "time_window",
+    "tags": [
+      "members",
+      "register",
+      "last_login"
+    ],
+    "question": "查找2018年第一季度注册，且最后登录日期不早于2018年7月1日的会员，按注册日期、会员ID升序取前35位。只输出会员ID、注册日期、最后登录日期；未知日期自然排除，会员状态不限。",
+    "gold_sql": "SELECT member_id,register_date,last_login_date FROM members WHERE register_date>='2018-01-01' AND register_date<'2018-04-01' AND last_login_date>='2018-07-01' ORDER BY register_date,member_id LIMIT 35;",
+    "notes": "注册窗口为左闭右开，末次登录只有下界；不把会员快照日期当登录日期。"
+  },
+  {
+    "id": "B2-T3-012",
+    "difficulty": "time_window",
+    "tags": [
+      "referrals",
+      "window",
+      "elapsed"
+    ],
+    "question": "对2018年2月1日含至5月1日不含创建的推荐，按创建月输出推荐条数和创建后7天内完成转化的条数；7天内定义为转化时间大于等于创建时间且小于等于创建时间加7天。月份YYYY-MM升序，不补缺月，不限转化发生的月份。",
+    "gold_sql": "SELECT TO_CHAR(DATE_TRUNC('month',created_at),'YYYY-MM') AS month,COUNT(*) AS referral_count,COUNT(*) FILTER(WHERE converted_at>=created_at AND converted_at<=created_at+INTERVAL '7 days') AS converted_within_7d FROM referrals WHERE created_at>='2018-02-01' AND created_at<'2018-05-01' GROUP BY DATE_TRUNC('month',created_at) ORDER BY DATE_TRUNC('month',created_at);",
+    "notes": "单位推荐记录，NULL或早于创建的转化不算7日内；分母保留全部创建记录。"
+  },
+  {
+    "id": "B2-T3-013",
+    "difficulty": "time_window",
+    "tags": [
+      "order_items",
+      "shipping_deadline",
+      "day"
+    ],
+    "question": "按发货截止日期统计2018年8月20日含至8月27日不含的订单商品行数及商品金额（不含运费）合计，只输出日期YYYY-MM-DD、商品行数、金额。按截止日升序，包含全部订单状态，不以购买日期筛选，不补缺日。",
+    "gold_sql": "SELECT TO_CHAR(shipping_limit_date::date,'YYYY-MM-DD') AS deadline_date,COUNT(*) AS item_rows,SUM(price) AS product_amount FROM order_items WHERE shipping_limit_date>='2018-08-20' AND shipping_limit_date<'2018-08-27' GROUP BY shipping_limit_date::date ORDER BY shipping_limit_date::date;",
+    "notes": "物理明细一行一件；price未知忽略，截止时间归属日期不变时区。"
+  },
+  {
+    "id": "B2-T3-014",
+    "difficulty": "time_window",
+    "tags": [
+      "shipments",
+      "elapsed",
+      "window"
+    ],
+    "question": "统计2018年6月1日含至8月1日不含发货的运输记录，按发货自然月输出有完整发货与签收时间的记录数和平均发货至签收天数（2位小数）。只纳入签收时间已知记录，跨月签收也计入原发货月；月份YYYY-MM升序，不筛订单或运输状态、不补缺月。",
+    "gold_sql": "SELECT TO_CHAR(DATE_TRUNC('month',shipped_at),'YYYY-MM') AS month,COUNT(*) AS completed_shipments,ROUND(AVG(EXTRACT(EPOCH FROM(delivered_at-shipped_at))/86400.0),2) AS avg_days FROM shipments WHERE shipped_at>='2018-06-01' AND shipped_at<'2018-08-01' AND delivered_at IS NOT NULL GROUP BY DATE_TRUNC('month',shipped_at) ORDER BY DATE_TRUNC('month',shipped_at);",
+    "notes": "事实来源shipments.shipped_at/delivered_at，用EPOCH保留不足一天部分。"
+  },
+  {
+    "id": "B2-T3-015",
+    "difficulty": "time_window",
+    "tags": [
+      "order_reviews",
+      "latest",
+      "complete_pk"
+    ],
+    "question": "在2018年5月1日含至2018年6月1日不含创建过评价的订单中，每单只取该窗口内创建时间最后的一条评价；同一时间按评价ID降序裁决（完整主键为评价ID加订单号）。找出这条评价评分为1的前30单，按订单号升序；输出订单号、评价ID、创建时间，不筛订单状态。",
+    "gold_sql": "WITH r AS (SELECT x.*,ROW_NUMBER() OVER(PARTITION BY order_id ORDER BY review_creation_date DESC,review_id DESC,order_id DESC) AS rn FROM order_reviews x WHERE review_creation_date>='2018-05-01' AND review_creation_date<'2018-06-01') SELECT order_id,review_id,review_creation_date FROM r WHERE rn=1 AND review_score=1 ORDER BY order_id LIMIT 30;",
+    "notes": "范围内最后评价再筛分数，不选择窗口外最新评价，不先过滤1分。"
+  },
+  {
+    "id": "B2-T3-016",
+    "difficulty": "time_window",
+    "tags": [
+      "orders",
+      "adjacent_calendar_month",
+      "coverage"
+    ],
+    "question": "在2017年11月到2018年4月的有效订单中，按自然月计算订单数相对上一个自然月的数量差。只输出本月和上一个自然月在该范围内都实际有有效订单的月份YYYY-MM与数量差，月份升序；有效订单排除取消和不可用，不补0，不用相邻非空记录冒充上月。",
+    "gold_sql": "WITH m AS (SELECT DATE_TRUNC('month',order_purchase_timestamp) AS month,COUNT(*) AS n FROM orders WHERE order_status NOT IN ('canceled','unavailable') AND order_purchase_timestamp>='2017-11-01' AND order_purchase_timestamp<'2018-05-01' GROUP BY 1) SELECT TO_CHAR(a.month,'YYYY-MM') AS month,a.n-b.n AS order_delta FROM m a JOIN m b ON b.month=a.month-INTERVAL '1 month' ORDER BY a.month;",
+    "notes": "月份用真实日期间隔连接，首月没有范围内上月所以不输出。"
+  }
+]

@@ -1,0 +1,146 @@
+[
+  {
+    "id": "B2-T6-001",
+    "difficulty": "business_semantics",
+    "tags": [
+      "repeat_rate",
+      "identity",
+      "denominator"
+    ],
+    "question": "计算2018年2月1日含至8月1日不含期间，订单所关联客户记录州为MG的有效订单买家复购率。按已知customer_unique_id识别自然人，同一人在该范围内至少2笔有效订单算复购买家，分母是该范围全部下过有效订单的已知自然人。只输出复购率，单位0至100百分数保留2位；无买家返回NULL，有效订单排除取消和不可用。",
+    "gold_sql": "WITH p AS (SELECT c.customer_unique_id,COUNT(*) AS n FROM orders o JOIN customers c ON c.customer_id=o.customer_id WHERE o.order_status NOT IN ('canceled','unavailable') AND c.customer_unique_id IS NOT NULL AND c.customer_state='MG' AND o.order_purchase_timestamp>='2018-02-01' AND o.order_purchase_timestamp<'2018-08-01' GROUP BY c.customer_unique_id) SELECT ROUND(100.0*COUNT(*) FILTER(WHERE n>=2)/NULLIF(COUNT(*),0),2) AS repeat_pct FROM p;",
+    "notes": "地域按各笔订单的客户关联键，先限定集合再按自然人聚合；未知身份不当一个人。"
+  },
+  {
+    "id": "B2-T6-002",
+    "difficulty": "business_semantics",
+    "tags": [
+      "aov",
+      "gmv",
+      "freight"
+    ],
+    "question": "计算2018年5月的有效订单客单价，范围仅限至少有一行商品明细的订单；GMV按商品金额加运费合计，分母是这些有效订单的订单数，不是人数或商品行数。只输出客单价金额，2位小数；无订单返回NULL，有效订单排除取消与不可用。",
+    "gold_sql": "WITH ot AS (SELECT order_id,SUM(price+freight_value) AS gmv FROM order_items GROUP BY order_id) SELECT ROUND(SUM(ot.gmv)/NULLIF(COUNT(*),0),2) AS aov FROM orders o JOIN ot ON ot.order_id=o.order_id WHERE o.order_status NOT IN ('canceled','unavailable') AND o.order_purchase_timestamp>='2018-05-01' AND o.order_purchase_timestamp<'2018-06-01';",
+    "notes": "先一单一金额再计订单；金额未知不补0，含运费表达式每行price+freight_value。"
+  },
+  {
+    "id": "B2-T6-003",
+    "difficulty": "business_semantics",
+    "tags": [
+      "member_penetration",
+      "current_members",
+      "region"
+    ],
+    "question": "按订单客户所在州计算2018年第一季度的会员订单渗透率，只输出客户州、会员订单占比，州升序NULL最后。分母为各州全部有效订单，分子为其中自然人存在当前会员记录的有效订单，不限会员状态，订单客户或身份未知仍在分母。单位0至100百分数2位，无有效订单不输出州；排除取消和不可用，不把当前会员身份说成历史入会身份。",
+    "gold_sql": "SELECT c.customer_state,ROUND(100.0*COUNT(*) FILTER(WHERE EXISTS(SELECT 1 FROM members m WHERE m.customer_unique_id=c.customer_unique_id))/NULLIF(COUNT(*),0),2) AS member_order_pct FROM orders o LEFT JOIN customers c ON c.customer_id=o.customer_id WHERE o.order_status NOT IN ('canceled','unavailable') AND o.order_purchase_timestamp>='2018-01-01' AND o.order_purchase_timestamp<'2018-04-01' GROUP BY c.customer_state ORDER BY c.customer_state NULLS LAST;",
+    "notes": "会员EXISTS身份标记不删除非会员；一行一订单，州来自该订单客户档案。"
+  },
+  {
+    "id": "B2-T6-004",
+    "difficulty": "business_semantics",
+    "tags": [
+      "on_time_rate",
+      "timestamp_denominator",
+      "percent"
+    ],
+    "question": "计算2018年4月1日含至7月1日不含下单的全部订单的准时送达率，只输出准时率，0至100百分数保留2位。分母为实际签收时间非NULL的订单，分子为实际签收不晚于预计送达的订单；预计时间未知的已签收订单留在分母但不入分子。包含取消和不可用状态，不用order_status判断签收；分母为0返回NULL。",
+    "gold_sql": "SELECT ROUND(100.0*COUNT(*) FILTER(WHERE order_delivered_customer_date IS NOT NULL AND order_delivered_customer_date<=order_estimated_delivery_date)/NULLIF(COUNT(*) FILTER(WHERE order_delivered_customer_date IS NOT NULL),0),2) AS on_time_pct FROM orders WHERE order_purchase_timestamp>='2018-04-01' AND order_purchase_timestamp<'2018-07-01';",
+    "notes": "按真实时间事实一订单一次；未知预计时间不当迟到或准时，不做1减逾期比例。"
+  },
+  {
+    "id": "B2-T6-005",
+    "difficulty": "business_semantics",
+    "tags": [
+      "freight_ratio",
+      "gmv",
+      "seller_region"
+    ],
+    "question": "按卖家所在地大区计算2018年上半年有效订单商品行的运费占GMV比例，GMV含运费。只输出大区和运费占比，0至100百分数2位，大区升序NULL最后。大区未知保留，分母是同组商品金额加运费合计，分子是同组运费合计，分母为0或未知返回NULL；有效订单排除取消和不可用。",
+    "gold_sql": "SELECT r.macro_region,ROUND(100.0*SUM(oi.freight_value)/NULLIF(SUM(oi.price+oi.freight_value),0),2) AS freight_pct FROM orders o JOIN order_items oi ON oi.order_id=o.order_id LEFT JOIN sellers s ON s.seller_id=oi.seller_id LEFT JOIN regions r ON r.region_code=s.seller_state WHERE o.order_status NOT IN ('canceled','unavailable') AND o.order_purchase_timestamp>='2018-01-01' AND o.order_purchase_timestamp<'2018-07-01' GROUP BY r.macro_region ORDER BY r.macro_region NULLS LAST;",
+    "notes": "商品行粒度沿卖家州归属，非客户州；采用总运费/总GMV而非行比例平均。"
+  },
+  {
+    "id": "B2-T6-006",
+    "difficulty": "business_semantics",
+    "tags": [
+      "discount_rate",
+      "preaggregate",
+      "multi_fact"
+    ],
+    "question": "计算2018年6月下单、至少有一条用券记录且至少有一行商品明细的有效订单的用券折扣率。每单所有核销优惠金额先合计，GMV为该单所有商品金额加运费合计，再用入选订单总优惠除以总GMV。只输出折扣率，0至100百分数2位，分母为0或未知返回NULL；核销时间不限，排除取消和不可用订单，不按商品行复制优惠。",
+    "gold_sql": "WITH u AS (SELECT order_id,SUM(discount_amount) AS discount_total FROM coupon_usages GROUP BY order_id), it AS (SELECT order_id,SUM(price+freight_value) AS gmv FROM order_items GROUP BY order_id) SELECT ROUND(100.0*SUM(u.discount_total)/NULLIF(SUM(it.gmv),0),2) AS discount_pct FROM orders o JOIN u ON u.order_id=o.order_id JOIN it ON it.order_id=o.order_id WHERE o.order_status NOT IN ('canceled','unavailable') AND o.order_purchase_timestamp>='2018-06-01' AND o.order_purchase_timestamp<'2018-07-01';",
+    "notes": "两种一对多事实先各自一单一行再join；金额NULL忽略，不以SUM(DISTINCT金额)消重。"
+  },
+  {
+    "id": "B2-T6-007",
+    "difficulty": "business_semantics",
+    "tags": [
+      "retention_rate",
+      "cohort",
+      "calendar"
+    ],
+    "question": "计算首次有效下单自然月为2017年11月的已知自然人买家，在2018年1月是否再次下有效订单的留存率。首单从全历史有效订单判定，回访窗口为2018年1月1日含至2月1日不含；分母为整个2017年11月首单人群，分子为该人群中至少回访一次的人数。只输出留存率，0至100百分数2位，空人群返回NULL；有效订单排除取消和不可用，不按customer_id当人。",
+    "gold_sql": "WITH v AS (SELECT c.customer_unique_id,o.order_purchase_timestamp AS t FROM orders o JOIN customers c ON c.customer_id=o.customer_id WHERE o.order_status NOT IN ('canceled','unavailable') AND c.customer_unique_id IS NOT NULL AND o.order_purchase_timestamp IS NOT NULL), f AS (SELECT customer_unique_id,MIN(t) AS first_t FROM v GROUP BY customer_unique_id), cohort AS (SELECT customer_unique_id FROM f WHERE first_t>='2017-11-01' AND first_t<'2017-12-01'), returned AS (SELECT DISTINCT customer_unique_id FROM v WHERE t>='2018-01-01' AND t<'2018-02-01') SELECT ROUND(100.0*COUNT(returned.customer_unique_id)/NULLIF(COUNT(*),0),2) AS retention_pct FROM cohort LEFT JOIN returned ON returned.customer_unique_id=cohort.customer_unique_id;",
+    "notes": "这是指定隔月窗口，不是次月留存；去重回访身份集合标记回访，未回访者留作分母。"
+  },
+  {
+    "id": "B2-T6-008",
+    "difficulty": "business_semantics",
+    "tags": [
+      "customer_cohort",
+      "dynamic",
+      "gmv"
+    ],
+    "question": "统计2018年3月至5月每个自然月按动态新老客贡献的有效订单数和含运费GMV，输出月份YYYY-MM、新老客类别NEW或RETURNING或NULL、订单数、GMV；月份升序，再类别升序NULL最后。动态分类按全历史该自然人首次有效下单月：同月所有有效订单为NEW，后续月为RETURNING；身份或首月未知单列NULL组，不用NEW_USER静态标签。保留无商品明细订单计数，此类订单对GMV贡献0；存在明细但金额全未知不补0。",
+    "gold_sql": "WITH f AS (SELECT c.customer_unique_id,DATE_TRUNC('month',MIN(o.order_purchase_timestamp)) AS first_month FROM orders o JOIN customers c ON c.customer_id=o.customer_id WHERE o.order_status NOT IN ('canceled','unavailable') AND c.customer_unique_id IS NOT NULL AND o.order_purchase_timestamp IS NOT NULL GROUP BY c.customer_unique_id), it AS (SELECT order_id,SUM(price+freight_value) AS gmv FROM order_items GROUP BY order_id), x AS (SELECT DATE_TRUNC('month',o.order_purchase_timestamp) AS month,CASE WHEN c.customer_unique_id IS NULL OR f.first_month IS NULL THEN NULL WHEN DATE_TRUNC('month',o.order_purchase_timestamp)=f.first_month THEN 'NEW' WHEN DATE_TRUNC('month',o.order_purchase_timestamp)>f.first_month THEN 'RETURNING' ELSE NULL END AS cohort,CASE WHEN it.order_id IS NULL THEN 0 ELSE it.gmv END AS gmv FROM orders o LEFT JOIN customers c ON c.customer_id=o.customer_id LEFT JOIN f ON f.customer_unique_id=c.customer_unique_id LEFT JOIN it ON it.order_id=o.order_id WHERE o.order_status NOT IN ('canceled','unavailable') AND o.order_purchase_timestamp>='2018-03-01' AND o.order_purchase_timestamp<'2018-06-01') SELECT TO_CHAR(month,'YYYY-MM') AS month,cohort,COUNT(*) AS order_count,SUM(gmv) AS gmv FROM x GROUP BY month,cohort ORDER BY month,cohort NULLS LAST;",
+    "notes": "首月由全历史确定，报告期只过滤输出事实；金额和订单先统一一单一行；不补不存在的月份或类别组合。"
+  },
+  {
+    "id": "B2-T6-009",
+    "difficulty": "business_semantics",
+    "tags": [
+      "sla_rate",
+      "categories",
+      "all_tickets"
+    ],
+    "question": "按工单分类计算2018年第二季度创建工单的SLA达成率，只计能匹配分类定义的工单。只输出分类ID、名称、达成率，分类ID升序；分母为该分类全部入选工单，未解决也在分母；已解决且完整处理小时不超过分类sla_hours才入分子。单位0至100百分数2位，未知sla_hours不能判达成，不补没有工单的分类。",
+    "gold_sql": "SELECT tc.category_id,tc.category_name,ROUND(100.0*COUNT(*) FILTER(WHERE st.resolved_at IS NOT NULL AND EXTRACT(EPOCH FROM(st.resolved_at-st.created_at))/3600.0<=tc.sla_hours)/NULLIF(COUNT(*),0),2) AS sla_pct FROM support_tickets st JOIN ticket_categories tc ON tc.category_id=st.category_id WHERE st.created_at>='2018-04-01' AND st.created_at<'2018-07-01' GROUP BY tc.category_id,tc.category_name ORDER BY tc.category_id;",
+    "notes": "一工单一次；没有消息连接加权，不以status=3替代真实resolved_at。"
+  },
+  {
+    "id": "B2-T6-010",
+    "difficulty": "business_semantics",
+    "tags": [
+      "commission_rate",
+      "weighted_ratio",
+      "settlements"
+    ],
+    "question": "计算2018年5月至7月开始账期的结算明细，按卖家州统计整体佣金率。分子用结算明细commission_amount合计，分母用同集合gross_amount合计，不平均单行佣金率。只输出卖家州与佣金率，单位0至1小数比率保留4位，州升序NULL最后；结算状态不限，卖家缺失保留NULL组，分母为0或未知返回NULL。",
+    "gold_sql": "SELECT s.seller_state,ROUND(SUM(si.commission_amount)/NULLIF(SUM(si.gross_amount),0),4) AS commission_ratio FROM settlement_items si JOIN settlements st ON st.settlement_id=si.settlement_id LEFT JOIN sellers s ON s.seller_id=st.seller_id WHERE st.period_start>='2018-05-01' AND st.period_start<'2018-08-01' GROUP BY s.seller_state ORDER BY s.seller_state NULLS LAST;",
+    "notes": "佣金率DECIMAL_RATIO而非百分数；金额是财务明细，不用settlements头金额乘明细行数。"
+  },
+  {
+    "id": "B2-T6-011",
+    "difficulty": "business_semantics",
+    "tags": [
+      "search_ctr",
+      "member_levels",
+      "percent"
+    ],
+    "question": "按搜索会员当前等级计算2018年9月搜索点击率，分母为该等级所有搜索日志，分子为clicked_product_id非NULL的日志。只计能匹配会员及等级定义的日志，不限会员状态；只输出等级ID、等级名称、点击率，0至100百分数2位，等级ID升序。不按人去重，也不要求点击商品存在，未出现搜索的等级不补0。",
+    "gold_sql": "SELECT l.level_id,l.level_name,ROUND(100.0*COUNT(*) FILTER(WHERE sl.clicked_product_id IS NOT NULL)/NULLIF(COUNT(*),0),2) AS click_pct FROM search_logs sl JOIN members m ON m.member_id=sl.member_id JOIN member_levels l ON l.level_id=m.level_id WHERE sl.searched_at>='2018-09-01' AND sl.searched_at<'2018-10-01' GROUP BY l.level_id,l.level_name ORDER BY l.level_id;",
+    "notes": "搜索事实log_id，点击证据是非NULL字段；不join products改变点击分母。"
+  },
+  {
+    "id": "B2-T6-012",
+    "difficulty": "business_semantics",
+    "tags": [
+      "inventory_turnover",
+      "anchor",
+      "preaggregate"
+    ],
+    "question": "按库存表的仓库ID计算库存周转天数，以全库库存流水最大moved_at为锚点，近90天定义为大于锚点减90天且小于等于锚点。分子为该仓当前quantity合计乘90，分母为该仓近90天movement_type=2的原始数量合计；库存和流水先分别按仓汇总。输出仓库ID和周转天数（1位小数），仓库ID升序；仅覆盖库存表出现的仓库，无出库、出库合计为0或未知均返回NULL，不使用今天日期，不把库存NULL补0。",
+    "gold_sql": "WITH a AS (SELECT MAX(moved_at) AS t FROM inventory_movements), st AS (SELECT warehouse_id,SUM(quantity) AS qty FROM inventory GROUP BY warehouse_id), mv AS (SELECT warehouse_id,SUM(quantity) AS qty FROM inventory_movements CROSS JOIN a WHERE movement_type=2 AND moved_at>a.t-INTERVAL '90 days' AND moved_at<=a.t GROUP BY warehouse_id) SELECT st.warehouse_id,ROUND(90.0*st.qty/NULLIF(mv.qty,0),1) AS turnover_days FROM st LEFT JOIN mv ON mv.warehouse_id=st.warehouse_id ORDER BY st.warehouse_id;",
+    "notes": "锚点全库统一，不每仓自取最大时间；两个事实先按仓聚合，避免库存项×流水放大。"
+  }
+]

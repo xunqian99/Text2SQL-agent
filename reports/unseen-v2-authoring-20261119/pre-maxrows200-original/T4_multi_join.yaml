@@ -1,0 +1,269 @@
+[
+  {
+    "id": "B2-T4-001",
+    "difficulty": "multi_join",
+    "tags": [
+      "orders",
+      "customers",
+      "regions"
+    ],
+    "question": "统计2018年2月1日含至5月1日不含下单的有效订单，按该订单customer_id对应客户记录所在大区汇总订单数。只输出大区和订单数，未知州或没有地区映射的大区保留NULL组，大区升序NULL最后；有效订单排除取消和不可用，不按自然人重选地址。",
+    "gold_sql": "SELECT r.macro_region,COUNT(*) AS order_count FROM orders o LEFT JOIN customers c ON c.customer_id=o.customer_id LEFT JOIN regions r ON r.region_code=c.customer_state WHERE o.order_status NOT IN ('canceled','unavailable') AND o.order_purchase_timestamp>='2018-02-01' AND o.order_purchase_timestamp<'2018-05-01' GROUP BY r.macro_region ORDER BY r.macro_region NULLS LAST;",
+    "notes": "归属链orders.customer_id→customers.customer_state→regions；订单完整保留，不使用自然人反向匹配全部档案。"
+  },
+  {
+    "id": "B2-T4-002",
+    "difficulty": "multi_join",
+    "tags": [
+      "order_items",
+      "sellers",
+      "regions"
+    ],
+    "question": "按卖家所在地大区统计全部订单明细的商品行数和商品金额合计（不含运费），只输出大区及两个指标，大区升序NULL最后。卖家或地区映射缺失保留NULL组，不筛订单状态，不以客户大区归属。",
+    "gold_sql": "SELECT r.macro_region,COUNT(*) AS item_rows,SUM(oi.price) AS product_amount FROM order_items oi LEFT JOIN sellers s ON s.seller_id=oi.seller_id LEFT JOIN regions r ON r.region_code=s.seller_state GROUP BY r.macro_region ORDER BY r.macro_region NULLS LAST;",
+    "notes": "金额单位明细原始price，NULL忽略；一条商品行只沿卖家归属链进入一组。"
+  },
+  {
+    "id": "B2-T4-003",
+    "difficulty": "multi_join",
+    "tags": [
+      "inventory",
+      "products",
+      "translation"
+    ],
+    "question": "按库存商品的英文类目统计当前库存数量，取库存合计已知且为正的最高15组，金额无关。只输出英文类目和库存量，库存量降序、英文类目升序NULL最后；保留原始类目未知或无翻译的NULL英文组，库存表每个仓库商品项的quantity直接相加。",
+    "gold_sql": "SELECT t.product_category_name_english,SUM(i.quantity) AS stock_quantity FROM inventory i LEFT JOIN products p ON p.product_id=i.product_id LEFT JOIN product_category_translation t ON t.product_category_name=p.product_category_name GROUP BY t.product_category_name_english HAVING SUM(i.quantity)>0 ORDER BY stock_quantity DESC,t.product_category_name_english NULLS LAST LIMIT 15;",
+    "notes": "跨仓合并数量但不重复商品品牌；翻译缺失与原始类目NULL都按输出维度为NULL归组。"
+  },
+  {
+    "id": "B2-T4-004",
+    "difficulty": "multi_join",
+    "tags": [
+      "members",
+      "member_levels",
+      "zero"
+    ],
+    "question": "列出所有会员等级定义，按等级ID输出等级ID、等级名称以及当前冻结会员（status=2）的会员记录数。没有冻结会员的等级显示0；会员level_id为空或不在等级表的记录不归入任一等级，不输出额外未知等级。",
+    "gold_sql": "SELECT l.level_id,l.level_name,COUNT(m.member_id) AS frozen_members FROM member_levels l LEFT JOIN members m ON m.level_id=l.level_id AND m.status=2 GROUP BY l.level_id,l.level_name ORDER BY l.level_id;",
+    "notes": "维度全集来自等级定义，因此可证明零值；COUNT会员主键而非COUNT(*)。"
+  },
+  {
+    "id": "B2-T4-005",
+    "difficulty": "multi_join",
+    "tags": [
+      "campaigns",
+      "coupons",
+      "zero"
+    ],
+    "question": "列出状态为已结束（3）的每个活动及其满减券（discount_type=fixed）数量，输出活动ID、活动名称、满减券数，活动ID升序。没有满减券的活动显示0；同名活动分开，不按券有效期筛选。",
+    "gold_sql": "SELECT c.campaign_id,c.campaign_name,COUNT(cp.coupon_id) AS fixed_coupon_count FROM campaigns c LEFT JOIN coupons cp ON cp.campaign_id=c.campaign_id AND cp.discount_type='fixed' WHERE c.status=3 GROUP BY c.campaign_id,c.campaign_name ORDER BY c.campaign_id;",
+    "notes": "活动ID为维度身份，左连接条件保留零券活动；不补不存在的活动。"
+  },
+  {
+    "id": "B2-T4-006",
+    "difficulty": "multi_join",
+    "tags": [
+      "coupon_usages",
+      "coupons",
+      "campaigns"
+    ],
+    "question": "在2018年3月1日含至6月1日不含核销的用券记录中，按券所属活动统计优惠金额合计及核销条数，取优惠金额最高12个活动（只比较已知合计）。输出活动ID、活动名称、优惠金额、核销条数；只计能匹配券和活动的记录，不筛订单状态，金额降序再活动ID升序。",
+    "gold_sql": "SELECT c.campaign_id,c.campaign_name,SUM(u.discount_amount) AS discount_total,COUNT(*) AS usage_count FROM coupon_usages u JOIN coupons cp ON cp.coupon_id=u.coupon_id JOIN campaigns c ON c.campaign_id=cp.campaign_id WHERE u.used_at>='2018-03-01' AND u.used_at<'2018-06-01' GROUP BY c.campaign_id,c.campaign_name HAVING SUM(u.discount_amount) IS NOT NULL ORDER BY discount_total DESC,c.campaign_id LIMIT 12;",
+    "notes": "一条usage_id一次，discount_amount为优惠事实；不按订单明细行复制金额。"
+  },
+  {
+    "id": "B2-T4-007",
+    "difficulty": "multi_join",
+    "tags": [
+      "refund_items",
+      "order_items",
+      "products"
+    ],
+    "question": "对能按订单号加明细序号匹配到商品明细的退款明细，按商品原始类目汇总退款件数和退款明细金额，取退款件数最多的前18类。输出类目、退款件数、退款金额；类目NULL保留，件数合计未知不参与排名，并列按类目升序NULL最后。不筛退款或订单状态，不加运费。",
+    "gold_sql": "SELECT p.product_category_name,SUM(ri.refund_qty) AS refund_units,SUM(ri.refund_value) AS refund_value FROM refund_items ri JOIN order_items oi ON oi.order_id=ri.order_id AND oi.order_item_id=ri.order_item_id LEFT JOIN products p ON p.product_id=oi.product_id GROUP BY p.product_category_name HAVING SUM(ri.refund_qty) IS NOT NULL ORDER BY refund_units DESC,p.product_category_name NULLS LAST LIMIT 18;",
+    "notes": "退款明细完整主键(refund_id,order_id,order_item_id)；匹配order_items必须同时使用order_id和order_item_id。"
+  },
+  {
+    "id": "B2-T4-008",
+    "difficulty": "multi_join",
+    "tags": [
+      "shipments",
+      "shipment_tracking",
+      "warehouses",
+      "regions"
+    ],
+    "question": "按仓库所在地大区统计已有发货时间、且至少存在一条地点非NULL物流轨迹的运输记录数和其中未签收记录数。只输出大区和两个数量，大区升序NULL最后；同一运输记录多条轨迹只计一次，仓库缺失、州未映射保留NULL组，订单状态和运输状态不限，不以客户或卖家大区代替。",
+    "gold_sql": "SELECT r.macro_region,COUNT(*) AS shipped_records,COUNT(*) FILTER(WHERE s.delivered_at IS NULL) AS unsigned_records FROM shipments s LEFT JOIN warehouses w ON w.warehouse_id=s.warehouse_id LEFT JOIN regions r ON r.region_code=w.region_code WHERE s.shipped_at IS NOT NULL AND EXISTS(SELECT 1 FROM shipment_tracking tr WHERE tr.shipment_id=s.shipment_id AND tr.location IS NOT NULL) GROUP BY r.macro_region ORDER BY r.macro_region NULLS LAST;",
+    "notes": "一行一shipment_id；轨迹用EXISTS防扩行，空字符串地点属于非NULL；仓库归属来自warehouses.region_code，签收只看shipments.delivered_at。"
+  },
+  {
+    "id": "B2-T4-009",
+    "difficulty": "multi_join",
+    "tags": [
+      "support_tickets",
+      "ticket_categories",
+      "elapsed"
+    ],
+    "question": "对2018年1月1日含至4月1日不含创建的工单，按工单分类ID及名称统计工单数和已解决工单平均处理小时数（2位小数）。输出分类ID、名称、工单数、平均小时，分类ID升序NULL最后；分类缺失保留未知组，解决时间为空者只不参与平均，不筛status。",
+    "gold_sql": "SELECT tc.category_id,tc.category_name,COUNT(*) AS ticket_count,ROUND(AVG(EXTRACT(EPOCH FROM(st.resolved_at-st.created_at))/3600.0),2) AS avg_hours FROM support_tickets st LEFT JOIN ticket_categories tc ON tc.category_id=st.category_id WHERE st.created_at>='2018-01-01' AND st.created_at<'2018-04-01' GROUP BY tc.category_id,tc.category_name ORDER BY tc.category_id NULLS LAST;",
+    "notes": "工单事实不可被消息表放大；EPOCH换算完整小数小时。"
+  },
+  {
+    "id": "B2-T4-010",
+    "difficulty": "multi_join",
+    "tags": [
+      "ticket_messages",
+      "support_tickets",
+      "zero"
+    ],
+    "question": "在优先级为紧急（4）的工单中，取customer发送消息最多的前25张工单，零条也参与排序。只输出工单ID、订单号和customer消息数，消息数降序、工单ID升序；发送方按原始值精确匹配，不筛工单状态或日期。",
+    "gold_sql": "SELECT st.ticket_id,st.order_id,COUNT(tm.message_id) AS customer_message_count FROM support_tickets st LEFT JOIN ticket_messages tm ON tm.ticket_id=st.ticket_id AND tm.sender_type='customer' WHERE st.priority=4 GROUP BY st.ticket_id,st.order_id ORDER BY customer_message_count DESC,st.ticket_id LIMIT 25;",
+    "notes": "工单ID为输出身份，COUNT消息主键保留无消息工单为0。"
+  },
+  {
+    "id": "B2-T4-011",
+    "difficulty": "multi_join",
+    "tags": [
+      "brands",
+      "product_brand_map",
+      "products"
+    ],
+    "question": "列出全部品牌及其当前归属商品数量，仅is_current=true的关联算当前，且商品必须真实存在。输出品牌ID、品牌名称、商品数，品牌ID升序；没有当前商品的品牌显示0，同一商品在多个品牌存在当前关联时分别计入各品牌，不猜唯一品牌。",
+    "gold_sql": "SELECT b.brand_id,b.brand_name,COUNT(p.product_id) AS current_product_count FROM brands b LEFT JOIN product_brand_map pb ON pb.brand_id=b.brand_id AND pb.is_current IS TRUE LEFT JOIN products p ON p.product_id=pb.product_id GROUP BY b.brand_id,b.brand_name ORDER BY b.brand_id;",
+    "notes": "关联主键(product_id,brand_id)防同一品牌重复项；不把历史品牌算当前。"
+  },
+  {
+    "id": "B2-T4-012",
+    "difficulty": "multi_join",
+    "tags": [
+      "products",
+      "product_price_history",
+      "category"
+    ],
+    "question": "在原始类目已知的商品中，按类目统计2018年4月1日含至7月1日不含的调价次数，以及每条已知新旧价格调价的平均金额差（新价减旧价，2位小数）。只输出有调价的类目、调价次数、平均差，类目升序；每次变动等权，不先按商品平均，不输出百分比。",
+    "gold_sql": "SELECT p.product_category_name,COUNT(*) AS change_count,ROUND(AVG(h.new_price-h.old_price),2) AS avg_price_delta FROM product_price_history h JOIN products p ON p.product_id=h.product_id WHERE p.product_category_name IS NOT NULL AND h.changed_at>='2018-04-01' AND h.changed_at<'2018-07-01' GROUP BY p.product_category_name ORDER BY p.product_category_name;",
+    "notes": "COUNT含新旧价缺失的调价事实，平均值只含两价已知；粒度history_id。"
+  },
+  {
+    "id": "B2-T4-013",
+    "difficulty": "multi_join",
+    "tags": [
+      "orders",
+      "shipping_addresses",
+      "exists"
+    ],
+    "question": "按订单customer_id对应的客户档案州统计2018年5月的全部订单数，但只计该customer_id至少存在一条默认收货地址且地址州与客户档案州相同的订单。输出客户档案州、订单数，州升序；包含取消和不可用状态，不按自然人扩大匹配，同一订单只计一次，NULL州不视为相同。",
+    "gold_sql": "SELECT c.customer_state,COUNT(*) AS order_count FROM orders o JOIN customers c ON c.customer_id=o.customer_id WHERE o.order_purchase_timestamp>='2018-05-01' AND o.order_purchase_timestamp<'2018-06-01' AND EXISTS(SELECT 1 FROM shipping_addresses a WHERE a.customer_id=o.customer_id AND a.is_default IS TRUE AND a.state=c.customer_state) GROUP BY c.customer_state ORDER BY c.customer_state;",
+    "notes": "EXISTS避免同一客户多个默认地址复制订单；地址和客户属性按事实customer_id准确归属。"
+  },
+  {
+    "id": "B2-T4-014",
+    "difficulty": "multi_join",
+    "tags": [
+      "members",
+      "user_tag_map",
+      "user_tags"
+    ],
+    "question": "统计各用户标签对应的当前正常会员（status=1）人数，输出标签ID、标签编码、标签名称和会员数，标签ID升序。列出全部标签，没有正常会员的标签显示0；计量单位member_id，一个会员有多个标签可分别计入各标签。",
+    "gold_sql": "SELECT t.tag_id,t.tag_code,t.tag_name,COUNT(m.member_id) AS normal_member_count FROM user_tags t LEFT JOIN user_tag_map tm ON tm.tag_id=t.tag_id LEFT JOIN members m ON m.member_id=tm.member_id AND m.status=1 GROUP BY t.tag_id,t.tag_code,t.tag_name ORDER BY t.tag_id;",
+    "notes": "静态标签事实，不用首单月替代NEW_USER；user_tag_map主键防重复打标行。"
+  },
+  {
+    "id": "B2-T4-015",
+    "difficulty": "multi_join",
+    "tags": [
+      "referrals",
+      "members",
+      "member_levels"
+    ],
+    "question": "按推荐人的当前会员等级统计推荐条数和已转化条数，只计能匹配到推荐人会员及等级定义的记录。输出等级ID、等级名称和两个条数，等级ID升序；转化看converted_at非NULL，不按被推荐人等级分组，不限制会员状态或订单状态。",
+    "gold_sql": "SELECT l.level_id,l.level_name,COUNT(*) AS referral_count,COUNT(r.converted_at) AS converted_count FROM referrals r JOIN members m ON m.member_id=r.referrer_member_id JOIN member_levels l ON l.level_id=m.level_id GROUP BY l.level_id,l.level_name ORDER BY l.level_id;",
+    "notes": "推荐人链referrer_member_id→members→member_levels，一条推荐计一次。"
+  },
+  {
+    "id": "B2-T4-016",
+    "difficulty": "multi_join",
+    "tags": [
+      "settlements",
+      "sellers",
+      "region"
+    ],
+    "question": "按卖家州汇总2018年3月1日含至6月1日不含开始账期、且已打款（status=3）的结算单应结净额及结算单数，输出卖家州、净额、单数，州升序NULL最后；卖家匹配缺失保留NULL组，按period_start选账期，不按paid_at筛选。",
+    "gold_sql": "SELECT s.seller_state,SUM(st.net_amount) AS net_total,COUNT(*) AS settlement_count FROM settlements st LEFT JOIN sellers s ON s.seller_id=st.seller_id WHERE st.status=3 AND st.period_start>='2018-03-01' AND st.period_start<'2018-06-01' GROUP BY s.seller_state ORDER BY s.seller_state NULLS LAST;",
+    "notes": "使用结算单净额，不连接明细复制金额，也不再次扣佣金/运费。"
+  },
+  {
+    "id": "B2-T4-017",
+    "difficulty": "multi_join",
+    "tags": [
+      "settlement_items",
+      "order_items",
+      "products"
+    ],
+    "question": "按商品原始类目汇总结算明细的毛额和佣金金额，取已知毛额合计最高16组。只计能按订单号和明细序号匹配的结算明细，商品类目未知保留NULL组。输出类目、毛额、佣金，毛额降序、类目升序NULL最后；不筛订单或结算状态，不重算佣金。",
+    "gold_sql": "SELECT p.product_category_name,SUM(si.gross_amount) AS gross_total,SUM(si.commission_amount) AS commission_total FROM settlement_items si JOIN order_items oi ON oi.order_id=si.order_id AND oi.order_item_id=si.order_item_id LEFT JOIN products p ON p.product_id=oi.product_id GROUP BY p.product_category_name HAVING SUM(si.gross_amount) IS NOT NULL ORDER BY gross_total DESC,p.product_category_name NULLS LAST LIMIT 16;",
+    "notes": "结算明细完整主键(settlement_id,order_id,order_item_id)，毛额和佣金是已有财务事实。"
+  },
+  {
+    "id": "B2-T4-018",
+    "difficulty": "multi_join",
+    "tags": [
+      "search_logs",
+      "products",
+      "translation"
+    ],
+    "question": "在2018年7月的有点击搜索日志中，按点击商品的英文类目统计日志条数，取最多的前15组。输出英文类目、日志条数，条数降序、英文类目升序NULL最后；商品匹配缺失、原始类目NULL或无翻译均保留在NULL英文组，不按会员或商品去重。",
+    "gold_sql": "SELECT t.product_category_name_english,COUNT(*) AS clicked_searches FROM search_logs sl LEFT JOIN products p ON p.product_id=sl.clicked_product_id LEFT JOIN product_category_translation t ON t.product_category_name=p.product_category_name WHERE sl.clicked_product_id IS NOT NULL AND sl.searched_at>='2018-07-01' AND sl.searched_at<'2018-08-01' GROUP BY t.product_category_name_english ORDER BY clicked_searches DESC,t.product_category_name_english NULLS LAST LIMIT 15;",
+    "notes": "事实身份log_id；英文缺失不排除点击日志，不用内连接吞未知事实。"
+  },
+  {
+    "id": "B2-T4-019",
+    "difficulty": "multi_join",
+    "tags": [
+      "inventory_movements",
+      "warehouses",
+      "products"
+    ],
+    "question": "统计2018年8月仓库所在州为SP的退货入库流水（movement_type=3），按商品原始类目汇总数量和流水条数。输出类目、数量、条数，类目升序NULL最后；仓库必须匹配，商品缺失或类目NULL保留未知组，数量按原始值相加，不按订单状态筛选。",
+    "gold_sql": "SELECT p.product_category_name,SUM(im.quantity) AS returned_quantity,COUNT(*) AS movement_count FROM inventory_movements im JOIN warehouses w ON w.warehouse_id=im.warehouse_id LEFT JOIN products p ON p.product_id=im.product_id WHERE w.region_code='SP' AND im.movement_type=3 AND im.moved_at>='2018-08-01' AND im.moved_at<'2018-09-01' GROUP BY p.product_category_name ORDER BY p.product_category_name NULLS LAST;",
+    "notes": "仓库州来源warehouses.region_code；一行一movement_id，不从退货订单猜库存流水。"
+  },
+  {
+    "id": "B2-T4-020",
+    "difficulty": "multi_join",
+    "tags": [
+      "order_payments",
+      "orders",
+      "customers"
+    ],
+    "question": "对2018年第一季度下单的全部订单，按该订单customer_id对应客户记录的州汇总借记卡付款金额及借记卡支付记录条数。输出客户州、付款金额、支付条数，州升序NULL最后；包含取消和不可用订单，未知客户州保留，金额用payment_value，不加运费。",
+    "gold_sql": "SELECT c.customer_state,SUM(op.payment_value) AS paid_amount,COUNT(*) AS payment_count FROM order_payments op JOIN orders o ON o.order_id=op.order_id LEFT JOIN customers c ON c.customer_id=o.customer_id WHERE op.payment_type='debit_card' AND o.order_purchase_timestamp>='2018-01-01' AND o.order_purchase_timestamp<'2018-04-01' GROUP BY c.customer_state ORDER BY c.customer_state NULLS LAST;",
+    "notes": "支付主键(order_id,payment_sequential)一次；州沿订单客户键归属，不跨自然人多档案匹配。"
+  },
+  {
+    "id": "B2-T4-021",
+    "difficulty": "multi_join",
+    "tags": [
+      "order_reviews",
+      "order_items",
+      "products",
+      "grain"
+    ],
+    "question": "对全部订单状态的评价，按订单包含的原始商品类目统计评价记录数和评分不高于2的评价记录数。排除原始NULL类目；同一条评价在同一类目只计一次，跨多个类目可分别计入。只输出类目和两个数量，类目升序，不计算百分比。",
+    "gold_sql": "WITH x AS (SELECT DISTINCT r.review_id,r.order_id,r.review_score,p.product_category_name FROM order_reviews r JOIN order_items oi ON oi.order_id=r.order_id JOIN products p ON p.product_id=oi.product_id WHERE p.product_category_name IS NOT NULL) SELECT product_category_name,COUNT(*) AS review_count,COUNT(*) FILTER(WHERE review_score<=2) AS low_score_count FROM x GROUP BY product_category_name ORDER BY product_category_name;",
+    "notes": "评价去重身份(review_id,order_id)加类目；不是按review_id单键，也不是按商品行给评价加权。"
+  },
+  {
+    "id": "B2-T4-022",
+    "difficulty": "multi_join",
+    "tags": [
+      "campaigns",
+      "campaign_products",
+      "orders",
+      "items"
+    ],
+    "question": "对2018年开始的各营销活动，统计活动商品在该活动开始日至结束日（两端含整日）内下单的有效订单商品行数和商品金额（不含运费）。只输出有匹配商品行的活动ID、名称、商品行数、金额，活动ID升序；有效订单排除取消和不可用，同一商品属于多个活动时各活动独立计入。",
+    "gold_sql": "SELECT c.campaign_id,c.campaign_name,COUNT(*) AS item_rows,SUM(oi.price) AS product_amount FROM campaigns c JOIN campaign_products cp ON cp.campaign_id=c.campaign_id JOIN order_items oi ON oi.product_id=cp.product_id JOIN orders o ON o.order_id=oi.order_id WHERE c.start_date>='2018-01-01' AND c.start_date<'2019-01-01' AND c.end_date IS NOT NULL AND o.order_status NOT IN ('canceled','unavailable') AND o.order_purchase_timestamp>=c.start_date AND o.order_purchase_timestamp<c.end_date+INTERVAL '1 day' GROUP BY c.campaign_id,c.campaign_name ORDER BY c.campaign_id;",
+    "notes": "活动维度身份campaign_id，活动商品主键防同活动重复产品；不声称销售归因是独占因果效果。"
+  }
+]

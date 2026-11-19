@@ -1,0 +1,65 @@
+{"probe" : "execution_identity", "user" : "text2sql_ro", "transactionReadOnly" : "on", "statementTimeout" : "8s"}
+{"probe" : "business_keys", "rows" : [{"table_name":"brands","conname":"brands_pkey","contype":"p","definition":"PRIMARY KEY (brand_id)"}, 
+ {"table_name":"campaign_products","conname":"campaign_products_campaign_id_fkey","contype":"f","definition":"FOREIGN KEY (campaign_id) REFERENCES campaigns(campaign_id)"}, 
+ {"table_name":"campaign_products","conname":"campaign_products_pkey","contype":"p","definition":"PRIMARY KEY (campaign_id, product_id)"}, 
+ {"table_name":"campaigns","conname":"campaigns_pkey","contype":"p","definition":"PRIMARY KEY (campaign_id)"}, 
+ {"table_name":"coupon_usages","conname":"coupon_usages_coupon_id_fkey","contype":"f","definition":"FOREIGN KEY (coupon_id) REFERENCES coupons(coupon_id)"}, 
+ {"table_name":"coupon_usages","conname":"coupon_usages_pkey","contype":"p","definition":"PRIMARY KEY (usage_id)"}, 
+ {"table_name":"coupons","conname":"coupons_campaign_id_fkey","contype":"f","definition":"FOREIGN KEY (campaign_id) REFERENCES campaigns(campaign_id)"}, 
+ {"table_name":"coupons","conname":"coupons_coupon_code_key","contype":"u","definition":"UNIQUE (coupon_code)"}, 
+ {"table_name":"coupons","conname":"coupons_pkey","contype":"p","definition":"PRIMARY KEY (coupon_id)"}, 
+ {"table_name":"customers","conname":"customers_pkey","contype":"p","definition":"PRIMARY KEY (customer_id)"}, 
+ {"table_name":"inventory","conname":"inventory_pkey","contype":"p","definition":"PRIMARY KEY (warehouse_id, product_id)"}, 
+ {"table_name":"inventory_movements","conname":"inventory_movements_pkey","contype":"p","definition":"PRIMARY KEY (movement_id)"}, 
+ {"table_name":"member_levels","conname":"member_levels_pkey","contype":"p","definition":"PRIMARY KEY (level_id)"}, 
+ {"table_name":"member_snapshot","conname":"member_snapshot_pkey","contype":"p","definition":"PRIMARY KEY (snapshot_id)"}, 
+ {"table_name":"members","conname":"members_customer_unique_id_key","contype":"u","definition":"UNIQUE (customer_unique_id)"}, 
+ {"table_name":"members","conname":"members_level_id_fkey","contype":"f","definition":"FOREIGN KEY (level_id) REFERENCES member_levels(level_id)"}, 
+ {"table_name":"members","conname":"members_pkey","contype":"p","definition":"PRIMARY KEY (member_id)"}, 
+ {"table_name":"order_items","conname":"order_items_order_id_fkey","contype":"f","definition":"FOREIGN KEY (order_id) REFERENCES orders(order_id)"}, 
+ {"table_name":"order_items","conname":"order_items_pkey","contype":"p","definition":"PRIMARY KEY (order_id, order_item_id)"}, 
+ {"table_name":"order_items","conname":"order_items_product_id_fkey","contype":"f","definition":"FOREIGN KEY (product_id) REFERENCES products(product_id)"}, 
+ {"table_name":"order_items","conname":"order_items_seller_id_fkey","contype":"f","definition":"FOREIGN KEY (seller_id) REFERENCES sellers(seller_id)"}, 
+ {"table_name":"order_payments","conname":"order_payments_order_id_fkey","contype":"f","definition":"FOREIGN KEY (order_id) REFERENCES orders(order_id)"}, 
+ {"table_name":"order_payments","conname":"order_payments_pkey","contype":"p","definition":"PRIMARY KEY (order_id, payment_sequential)"}, 
+ {"table_name":"order_reviews","conname":"order_reviews_order_id_fkey","contype":"f","definition":"FOREIGN KEY (order_id) REFERENCES orders(order_id)"}, 
+ {"table_name":"order_reviews","conname":"order_reviews_pkey","contype":"p","definition":"PRIMARY KEY (review_id, order_id)"}, 
+ {"table_name":"orders","conname":"orders_customer_id_fkey","contype":"f","definition":"FOREIGN KEY (customer_id) REFERENCES customers(customer_id)"}, 
+ {"table_name":"orders","conname":"orders_pkey","contype":"p","definition":"PRIMARY KEY (order_id)"}, 
+ {"table_name":"product_brand_map","conname":"product_brand_map_brand_id_fkey","contype":"f","definition":"FOREIGN KEY (brand_id) REFERENCES brands(brand_id)"}, 
+ {"table_name":"product_brand_map","conname":"product_brand_map_pkey","contype":"p","definition":"PRIMARY KEY (product_id, brand_id)"}, 
+ {"table_name":"product_category_translation","conname":"product_category_translation_pkey","contype":"p","definition":"PRIMARY KEY (product_category_name)"}, 
+ {"table_name":"product_price_history","conname":"product_price_history_pkey","contype":"p","definition":"PRIMARY KEY (history_id)"}, 
+ {"table_name":"products","conname":"products_pkey","contype":"p","definition":"PRIMARY KEY (product_id)"}, 
+ {"table_name":"referrals","conname":"referrals_pkey","contype":"p","definition":"PRIMARY KEY (referral_id)"}, 
+ {"table_name":"refund_items","conname":"refund_items_pkey","contype":"p","definition":"PRIMARY KEY (refund_id, order_id, order_item_id)"}, 
+ {"table_name":"refunds","conname":"refunds_pkey","contype":"p","definition":"PRIMARY KEY (refund_id)"}, 
+ {"table_name":"regions","conname":"regions_pkey","contype":"p","definition":"PRIMARY KEY (region_code)"}, 
+ {"table_name":"search_logs","conname":"search_logs_pkey","contype":"p","definition":"PRIMARY KEY (log_id)"}, 
+ {"table_name":"sellers","conname":"sellers_pkey","contype":"p","definition":"PRIMARY KEY (seller_id)"}, 
+ {"table_name":"settlement_items","conname":"settlement_items_pkey","contype":"p","definition":"PRIMARY KEY (settlement_id, order_id, order_item_id)"}, 
+ {"table_name":"settlements","conname":"settlements_pkey","contype":"p","definition":"PRIMARY KEY (settlement_id)"}, 
+ {"table_name":"shipment_tracking","conname":"shipment_tracking_pkey","contype":"p","definition":"PRIMARY KEY (tracking_id)"}, 
+ {"table_name":"shipments","conname":"shipments_pkey","contype":"p","definition":"PRIMARY KEY (shipment_id)"}, 
+ {"table_name":"shipments","conname":"shipments_warehouse_id_fkey","contype":"f","definition":"FOREIGN KEY (warehouse_id) REFERENCES warehouses(warehouse_id)"}, 
+ {"table_name":"shipping_addresses","conname":"shipping_addresses_pkey","contype":"p","definition":"PRIMARY KEY (address_id)"}, 
+ {"table_name":"support_tickets","conname":"support_tickets_category_id_fkey","contype":"f","definition":"FOREIGN KEY (category_id) REFERENCES ticket_categories(category_id)"}, 
+ {"table_name":"support_tickets","conname":"support_tickets_pkey","contype":"p","definition":"PRIMARY KEY (ticket_id)"}, 
+ {"table_name":"ticket_categories","conname":"ticket_categories_pkey","contype":"p","definition":"PRIMARY KEY (category_id)"}, 
+ {"table_name":"ticket_messages","conname":"ticket_messages_pkey","contype":"p","definition":"PRIMARY KEY (message_id)"}, 
+ {"table_name":"user_tag_map","conname":"user_tag_map_pkey","contype":"p","definition":"PRIMARY KEY (member_id, tag_id)"}, 
+ {"table_name":"user_tags","conname":"user_tags_pkey","contype":"p","definition":"PRIMARY KEY (tag_id)"}, 
+ {"table_name":"warehouses","conname":"warehouses_pkey","contype":"p","definition":"PRIMARY KEY (warehouse_id)"}]}
+{"probe" : "reversed_activity_interval", "count" : 0}
+{"probe" : "refund_header_line_order_mismatch", "count" : 0}
+{"probe" : "customer_person_multiple_profiles", "count" : 2997}
+{"probe" : "customer_person_multiple_states", "count" : 39}
+{"probe" : "review_id_multiple_order_id", "count" : 789}
+{"probe" : "multiple_payments_per_order", "count" : 2961}
+{"probe" : "multiple_refunds_per_order", "count" : 0}
+{"probe" : "multiple_items_per_order", "count" : 9803}
+{"probe" : "multiple_current_brands", "count" : 0}
+{"probe" : "tracking_fanout", "count" : 97583}
+{"probe" : "missing_translation_categories", "count" : 13}
+{"probe" : "negative_ticket_durations", "count" : 2556}
+{"probe" : "maximum_dimensions", "campaigns" : 52, "brands" : 60, "warehouses" : 5, "memberLevels" : 4, "tags" : 6}

@@ -1,0 +1,242 @@
+[
+  {
+    "id": "B2-T1-001",
+    "difficulty": "single_table_basic",
+    "tags": [
+      "orders",
+      "status",
+      "null"
+    ],
+    "question": "查看全部状态中，已审核但仍未交给承运商的订单，取审核时间最早的30笔；审核时间必须已知。只输出订单号、状态和审核时间，时间相同按订单号升序。",
+    "gold_sql": "SELECT order_id, order_status, order_approved_at FROM orders WHERE order_approved_at IS NOT NULL AND order_delivered_carrier_date IS NULL ORDER BY order_approved_at, order_id LIMIT 30;",
+    "notes": "物理粒度为orders一行一订单；包括取消和不可用状态；不推断发货状态。"
+  },
+  {
+    "id": "B2-T1-002",
+    "difficulty": "single_table_basic",
+    "tags": [
+      "products",
+      "dimensions",
+      "topk"
+    ],
+    "question": "找出长度、高度、宽度均已知且三边都至少40厘米的商品，按重量从重到轻取前25个；重量未知的不参加。只输出商品ID、重量克数和三边厘米数，重量相同按商品ID升序。",
+    "gold_sql": "SELECT product_id, product_weight_g, product_length_cm, product_height_cm, product_width_cm FROM products WHERE product_length_cm >= 40 AND product_height_cm >= 40 AND product_width_cm >= 40 AND product_weight_g IS NOT NULL ORDER BY product_weight_g DESC, product_id LIMIT 25;",
+    "notes": "数量单位是商品记录，不是订单销量；最重候选排除NULL重量。"
+  },
+  {
+    "id": "B2-T1-003",
+    "difficulty": "single_table_basic",
+    "tags": [
+      "members",
+      "status",
+      "topk"
+    ],
+    "question": "在冻结会员（status=2）中，列出积分已知且不少于1500的前40名，按积分降序、会员ID升序。只输出会员ID、自然人标识和积分，不按自然人再合并。",
+    "gold_sql": "SELECT member_id, customer_unique_id, points FROM members WHERE status=2 AND points>=1500 ORDER BY points DESC,member_id LIMIT 40;",
+    "notes": "物理身份为member_id；状态2是冻结；积分未知不入候选。"
+  },
+  {
+    "id": "B2-T1-004",
+    "difficulty": "single_table_basic",
+    "tags": [
+      "coupons",
+      "discount",
+      "bounds"
+    ],
+    "question": "列出满减券中最低订单金额已知且在100至300之间（两端都含）的券，按最低订单金额升序、券ID升序取前35条。只输出券ID、券码、优惠额度和最低订单金额。",
+    "gold_sql": "SELECT coupon_id,coupon_code,discount_value,min_order_amount FROM coupons WHERE discount_type='fixed' AND min_order_amount BETWEEN 100 AND 300 ORDER BY min_order_amount,coupon_id LIMIT 35;",
+    "notes": "按券记录；fixed为满减，不混入percent券；未知门槛排除。"
+  },
+  {
+    "id": "B2-T1-005",
+    "difficulty": "single_table_basic",
+    "tags": [
+      "shipments",
+      "state",
+      "null"
+    ],
+    "question": "从运输中记录（status=2）中找出已有发货时间但尚无签收时间的记录，按发货时间升序、运输记录ID升序取前40条。只输出运输记录ID、订单号、承运商和发货时间。",
+    "gold_sql": "SELECT shipment_id,order_id,carrier,shipped_at FROM shipments WHERE status=2 AND shipped_at IS NOT NULL AND delivered_at IS NULL ORDER BY shipped_at,shipment_id LIMIT 40;",
+    "notes": "一行一shipment_id；不借用订单表签收时间，不额外过滤订单状态。"
+  },
+  {
+    "id": "B2-T1-006",
+    "difficulty": "single_table_basic",
+    "tags": [
+      "refunds",
+      "status",
+      "topk"
+    ],
+    "question": "在已通过退款（status=2）中，取退款金额已知且大于150的最高30笔。只输出退款ID、订单号、申请金额和原因编码，金额降序、退款ID升序；申请金额按退款单字段，不加运费。",
+    "gold_sql": "SELECT refund_id,order_id,refund_amount,reason_code FROM refunds WHERE status=2 AND refund_amount>150 ORDER BY refund_amount DESC,refund_id LIMIT 30;",
+    "notes": "粒度refund_id；不把refund_items金额混入申请金额，不筛订单状态。"
+  },
+  {
+    "id": "B2-T1-007",
+    "difficulty": "single_table_basic",
+    "tags": [
+      "support_tickets",
+      "priority",
+      "null"
+    ],
+    "question": "列出优先级为紧急（4）、解决时间仍为空的工单，按创建时间从早到晚取前30条，创建时间未知者不入选。只输出工单ID、订单号、创建时间；并列按工单ID升序。",
+    "gold_sql": "SELECT ticket_id,order_id,created_at FROM support_tickets WHERE priority=4 AND resolved_at IS NULL AND created_at IS NOT NULL ORDER BY created_at,ticket_id LIMIT 30;",
+    "notes": "按解决时间是否为空判断，不用工单status替代；一行一工单。"
+  },
+  {
+    "id": "B2-T1-008",
+    "difficulty": "single_table_basic",
+    "tags": [
+      "search_logs",
+      "zero_results",
+      "topk"
+    ],
+    "question": "查看有点击商品但搜索结果数为0的搜索日志，按搜索时间降序、日志ID降序取最近30条，搜索时间未知不参与。只输出日志ID、搜索词、点击商品ID和搜索时间。",
+    "gold_sql": "SELECT log_id,keyword,clicked_product_id,searched_at FROM search_logs WHERE result_count=0 AND clicked_product_id IS NOT NULL AND searched_at IS NOT NULL ORDER BY searched_at DESC,log_id DESC LIMIT 30;",
+    "notes": "不纠正可能矛盾的原始事实；一条日志计一次。"
+  },
+  {
+    "id": "B2-T1-009",
+    "difficulty": "single_table_basic",
+    "tags": [
+      "inventory",
+      "safety_stock",
+      "topk"
+    ],
+    "question": "按仓库商品库存记录查找库存量低于安全库存的项，两项数量都要已知。按缺口（安全库存减库存量）降序取前40项，并列按仓库ID、商品ID升序。只输出仓库ID、商品ID和缺口。",
+    "gold_sql": "SELECT warehouse_id,product_id,safety_stock-quantity AS shortage FROM inventory WHERE quantity IS NOT NULL AND safety_stock IS NOT NULL AND quantity<safety_stock ORDER BY shortage DESC,warehouse_id,product_id LIMIT 40;",
+    "notes": "库存身份是(warehouse_id,product_id)；不合并跨仓库存。"
+  },
+  {
+    "id": "B2-T1-010",
+    "difficulty": "single_table_basic",
+    "tags": [
+      "product_price_history",
+      "absolute_delta",
+      "topk"
+    ],
+    "question": "查找新旧价格均已知且新价比旧价至少下降50的调价记录，按绝对降价金额降序取前30次；并列按历史记录ID升序。只输出历史记录ID、商品ID和降价金额，不计算百分比。",
+    "gold_sql": "SELECT history_id,product_id,old_price-new_price AS decrease_amount FROM product_price_history WHERE old_price IS NOT NULL AND new_price IS NOT NULL AND old_price-new_price>=50 ORDER BY decrease_amount DESC,history_id LIMIT 30;",
+    "notes": "一行一次价格变更；金额差为old_price-new_price，允许原价为0。"
+  },
+  {
+    "id": "B2-T1-011",
+    "difficulty": "single_table_basic",
+    "tags": [
+      "order_reviews",
+      "comment",
+      "topk"
+    ],
+    "question": "查看评分为3且评价正文为空（SQL NULL）的评价，按评价创建时间降序取最近20条；时间未知排除，并列按评价ID、订单号升序。只输出评价ID、订单号和评价创建时间。",
+    "gold_sql": "SELECT review_id,order_id,review_creation_date FROM order_reviews WHERE review_score=3 AND review_comment_message IS NULL AND review_creation_date IS NOT NULL ORDER BY review_creation_date DESC,review_id,order_id LIMIT 20;",
+    "notes": "评价完整主键是(review_id,order_id)，不按review_id单独去重；空字符串不等于NULL。"
+  },
+  {
+    "id": "B2-T1-012",
+    "difficulty": "single_table_basic",
+    "tags": [
+      "order_payments",
+      "installments",
+      "topk"
+    ],
+    "question": "从信用卡支付记录中取分期期数已知且至少8期的最高25笔支付金额；支付金额未知不入选。只输出订单号、支付序号、期数和支付金额，金额降序，再按订单号、支付序号升序；包含全部订单状态。",
+    "gold_sql": "SELECT order_id,payment_sequential,payment_installments,payment_value FROM order_payments WHERE payment_type='credit_card' AND payment_installments>=8 AND payment_value IS NOT NULL ORDER BY payment_value DESC,order_id,payment_sequential LIMIT 25;",
+    "notes": "支付身份为(order_id,payment_sequential)；付款金额不是商品金额，不加运费。"
+  },
+  {
+    "id": "B2-T1-013",
+    "difficulty": "single_table_basic",
+    "tags": [
+      "settlements",
+      "status",
+      "topk"
+    ],
+    "question": "列出已结算（status=2）且应结净额大于1000的结算单，按净额降序取前30张，并列按结算ID升序。只输出结算ID、卖家ID、账期开始日和应结净额，不重新扣佣金。",
+    "gold_sql": "SELECT settlement_id,seller_id,period_start,net_amount FROM settlements WHERE status=2 AND net_amount>1000 ORDER BY net_amount DESC,settlement_id LIMIT 30;",
+    "notes": "直接读取net_amount；一张结算单计一次，不关联结算明细。"
+  },
+  {
+    "id": "B2-T1-014",
+    "difficulty": "single_table_basic",
+    "tags": [
+      "shipping_addresses",
+      "default",
+      "records"
+    ],
+    "question": "查看默认收货地址中州代码为RJ且城市已知的记录，按城市、地址ID升序取前40条。只输出地址ID、客户关联键customer_id、城市；不将客户关联键当自然人，也不筛选订单。",
+    "gold_sql": "SELECT address_id,customer_id,city FROM shipping_addresses WHERE is_default IS TRUE AND state='RJ' AND city IS NOT NULL ORDER BY city,address_id LIMIT 40;",
+    "notes": "按address_id读取地址记录；不以customers里的城市代替地址城市。"
+  },
+  {
+    "id": "B2-T1-015",
+    "difficulty": "single_table_basic",
+    "tags": [
+      "referrals",
+      "null",
+      "topk"
+    ],
+    "question": "查看推荐人和被推荐人都已知、尚未转化且已记录正奖励金额的推荐，按创建时间升序取最早20条；创建时间未知排除，并列按推荐ID升序。只输出推荐ID、两端会员ID和奖励金额。",
+    "gold_sql": "SELECT referral_id,referrer_member_id,invitee_member_id,reward_amount FROM referrals WHERE referrer_member_id IS NOT NULL AND invitee_member_id IS NOT NULL AND converted_at IS NULL AND reward_amount>0 AND created_at IS NOT NULL ORDER BY created_at,referral_id LIMIT 20;",
+    "notes": "不因未转化就强制把已有奖励改成0；物理粒度referral_id。"
+  },
+  {
+    "id": "B2-T1-016",
+    "difficulty": "single_table_basic",
+    "tags": [
+      "campaigns",
+      "budget",
+      "topk"
+    ],
+    "question": "在状态为已结束（3）的营销活动中，找出预算已知且为正的预算最低12个。只输出活动ID、活动名称、活动类型和预算，预算升序、活动ID升序；不把同名活动合并。",
+    "gold_sql": "SELECT campaign_id,campaign_name,campaign_type,budget FROM campaigns WHERE status=3 AND budget>0 ORDER BY budget,campaign_id LIMIT 12;",
+    "notes": "活动身份为campaign_id，最低值只从已知正预算候选选择。"
+  },
+  {
+    "id": "B2-T1-017",
+    "difficulty": "single_table_basic",
+    "tags": [
+      "brands",
+      "country",
+      "records"
+    ],
+    "question": "列出品牌国家原始代码为BR的前25个品牌，按品牌名称升序（名称未知排末）、品牌ID升序。只输出品牌ID和品牌名称，国家值按原文精确匹配。",
+    "gold_sql": "SELECT brand_id,brand_name FROM brands WHERE country='BR' ORDER BY brand_name NULLS LAST,brand_id LIMIT 25;",
+    "notes": "品牌名不是唯一身份；不做国家名翻译或模糊匹配。"
+  },
+  {
+    "id": "B2-T1-018",
+    "difficulty": "single_table_basic",
+    "tags": [
+      "geolocation",
+      "coordinates",
+      "distinct"
+    ],
+    "question": "在地理坐标表中找出州代码为SC、纬度和经度都已知的不同邮编前缀，按邮编前缀升序取前40个；邮编前缀未知排除。只输出邮编前缀，不输出或选择某一个坐标点。",
+    "gold_sql": "SELECT DISTINCT geolocation_zip_code_prefix FROM geolocation WHERE geolocation_state='SC' AND geolocation_lat IS NOT NULL AND geolocation_lng IS NOT NULL AND geolocation_zip_code_prefix IS NOT NULL ORDER BY geolocation_zip_code_prefix LIMIT 40;",
+    "notes": "同一邮编可有多坐标行，此题只去重邮编，不与交易事实连接。"
+  },
+  {
+    "id": "B2-T1-019",
+    "difficulty": "single_table_basic",
+    "tags": [
+      "ticket_messages",
+      "sender",
+      "topk"
+    ],
+    "question": "列出发送方原始值为customer且正文不是SQL NULL的最近35条工单消息；创建时间未知不参与，按创建时间降序、消息ID降序。只输出消息ID、工单ID、创建时间；空字符串正文仍算存在。",
+    "gold_sql": "SELECT message_id,ticket_id,created_at FROM ticket_messages WHERE sender_type='customer' AND content IS NOT NULL AND created_at IS NOT NULL ORDER BY created_at DESC,message_id DESC LIMIT 35;",
+    "notes": "消息身份message_id；不把多个消息合并成工单数。"
+  },
+  {
+    "id": "B2-T1-020",
+    "difficulty": "single_table_basic",
+    "tags": [
+      "warehouses",
+      "capacity",
+      "topk"
+    ],
+    "question": "取容量已知且大于0的容量最小8座仓库，按容量升序、仓库ID升序。只输出仓库ID、仓库名称、州代码和容量；同名仓库分别保留。",
+    "gold_sql": "SELECT warehouse_id,warehouse_name,region_code,capacity FROM warehouses WHERE capacity>0 ORDER BY capacity,warehouse_id LIMIT 8;",
+    "notes": "单位是仓库记录，不计算当前库存；最小候选排除未知/非正容量。"
+  }
+]

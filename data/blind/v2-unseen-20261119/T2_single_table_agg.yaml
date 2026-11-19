@@ -1,0 +1,242 @@
+[
+  {
+    "id": "B2-T2-001",
+    "difficulty": "single_table_agg",
+    "tags": [
+      "orders",
+      "timestamps",
+      "group"
+    ],
+    "question": "按原始订单状态统计全部订单中“已有发货时间但签收时间为空”的订单数，只输出状态和订单数，状态升序、NULL状态最后；没有符合记录的状态不补0。",
+    "gold_sql": "SELECT order_status,COUNT(*) AS order_count FROM orders WHERE order_delivered_carrier_date IS NOT NULL AND order_delivered_customer_date IS NULL GROUP BY order_status ORDER BY order_status NULLS LAST;",
+    "notes": "一行一订单；所有状态参与，不用状态推断时间事实。"
+  },
+  {
+    "id": "B2-T2-002",
+    "difficulty": "single_table_agg",
+    "tags": [
+      "customers",
+      "identity",
+      "group"
+    ],
+    "question": "按客户记录所在州统计客户档案行数和已知自然人标识的去重人数，输出州代码、档案行数、人数；保留NULL州，按档案行数降序、州代码升序且NULL最后。同一自然人在多个州可分别计数。",
+    "gold_sql": "SELECT customer_state,COUNT(*) AS profile_count,COUNT(DISTINCT customer_unique_id) AS people_count FROM customers GROUP BY customer_state ORDER BY profile_count DESC,customer_state NULLS LAST;",
+    "notes": "档案单位customer_id；人数单位customer_unique_id，NULL身份不计作人。"
+  },
+  {
+    "id": "B2-T2-003",
+    "difficulty": "single_table_agg",
+    "tags": [
+      "products",
+      "category",
+      "null"
+    ],
+    "question": "按商品原始类目统计商品数，以及重量已知商品的平均克重（2位小数），只保留至少80个商品的类目。类目NULL单独保留，输出类目、商品数、平均克重，类目升序NULL最后，不给未知重量补0。",
+    "gold_sql": "SELECT product_category_name,COUNT(*) AS product_count,ROUND(AVG(product_weight_g),2) AS avg_weight_g FROM products GROUP BY product_category_name HAVING COUNT(*)>=80 ORDER BY product_category_name NULLS LAST;",
+    "notes": "题目明确覆盖原始NULL类目；平均数仅已知重量，数量仍含未知重量商品。"
+  },
+  {
+    "id": "B2-T2-004",
+    "difficulty": "single_table_agg",
+    "tags": [
+      "order_payments",
+      "payment_grain",
+      "aggregate"
+    ],
+    "question": "按支付方式统计分期期数为1的支付记录条数、支付金额合计及平均金额（2位小数）。只输出这四列，包含全部订单状态；支付方式NULL单列，未知金额忽略且全未知不补0，方式升序NULL最后。",
+    "gold_sql": "SELECT payment_type,COUNT(*) AS payment_count,SUM(payment_value) AS paid_amount,ROUND(AVG(payment_value),2) AS avg_paid_amount FROM order_payments WHERE payment_installments=1 GROUP BY payment_type ORDER BY payment_type NULLS LAST;",
+    "notes": "每笔支付一行，非订单数；payment_value是付款事实。"
+  },
+  {
+    "id": "B2-T2-005",
+    "difficulty": "single_table_agg",
+    "tags": [
+      "order_items",
+      "seller",
+      "aggregate"
+    ],
+    "question": "只按订单明细统计每位卖家的商品行数和商品金额合计（不含运费），取商品行数最多的前18位；并列按卖家ID升序。只输出卖家ID、商品行数、商品金额，不筛订单状态；未知卖家排除，商品金额NULL忽略。",
+    "gold_sql": "SELECT seller_id,COUNT(*) AS item_rows,SUM(price) AS product_amount FROM order_items WHERE seller_id IS NOT NULL GROUP BY seller_id ORDER BY item_rows DESC,seller_id LIMIT 18;",
+    "notes": "销量以订单明细行数计；金额不是SUM(DISTINCT price)，不关联订单状态。"
+  },
+  {
+    "id": "B2-T2-006",
+    "difficulty": "single_table_agg",
+    "tags": [
+      "members",
+      "status",
+      "points"
+    ],
+    "question": "按会员状态统计会员记录数、积分已知记录数和已知积分平均值（2位小数），仅输出这四列；NULL状态保留，状态升序NULL最后，未知积分不当0。",
+    "gold_sql": "SELECT status,COUNT(*) AS member_count,COUNT(points) AS known_points_count,ROUND(AVG(points),2) AS avg_points FROM members GROUP BY status ORDER BY status NULLS LAST;",
+    "notes": "member_id为计数单位，不混入会员快照历史。"
+  },
+  {
+    "id": "B2-T2-007",
+    "difficulty": "single_table_agg",
+    "tags": [
+      "search_logs",
+      "keyword",
+      "aggregate"
+    ],
+    "question": "按非NULL搜索词统计结果数为0的搜索记录条数，取条数最多的前22个搜索词，输出搜索词和条数，条数降序、词升序。不按会员去重，空字符串搜索词保留。",
+    "gold_sql": "SELECT keyword,COUNT(*) AS zero_result_searches FROM search_logs WHERE result_count=0 AND keyword IS NOT NULL GROUP BY keyword ORDER BY zero_result_searches DESC,keyword LIMIT 22;",
+    "notes": "计数单位log_id；只统计result_count=0，不把NULL结果数视为0。"
+  },
+  {
+    "id": "B2-T2-008",
+    "difficulty": "single_table_agg",
+    "tags": [
+      "shipments",
+      "carrier",
+      "timestamps"
+    ],
+    "question": "按承运商统计全部运输记录数和发货、签收时间都已知的记录数，只输出承运商及这两个数量，承运商升序NULL最后；未知承运商单列，不因订单状态删运输记录。",
+    "gold_sql": "SELECT carrier,COUNT(*) AS shipment_count,COUNT(*) FILTER(WHERE shipped_at IS NOT NULL AND delivered_at IS NOT NULL) AS timed_count FROM shipments GROUP BY carrier ORDER BY carrier NULLS LAST;",
+    "notes": "shipment_id为事实身份；不要求签收时间一定晚于发货。"
+  },
+  {
+    "id": "B2-T2-009",
+    "difficulty": "single_table_agg",
+    "tags": [
+      "refunds",
+      "reason",
+      "status"
+    ],
+    "question": "按退款原因编码统计已退款（status=4）的退款单数量和退款金额合计，只输出原因编码、退款单数、金额；原因NULL单列，原因升序NULL最后。金额取退款单refund_amount，不加运费，未知金额忽略，不筛订单状态。",
+    "gold_sql": "SELECT reason_code,COUNT(*) AS refund_count,SUM(refund_amount) AS refund_amount FROM refunds WHERE status=4 GROUP BY reason_code ORDER BY reason_code NULLS LAST;",
+    "notes": "单位refund_id，不是去重订单数或退款明细行数。"
+  },
+  {
+    "id": "B2-T2-010",
+    "difficulty": "single_table_agg",
+    "tags": [
+      "support_tickets",
+      "priority",
+      "group"
+    ],
+    "question": "按工单优先级统计全部工单数，以及解决时间为空的工单数，输出优先级和两个数量；优先级NULL单列，按优先级升序NULL最后，不用工单状态替代解决时间。",
+    "gold_sql": "SELECT priority,COUNT(*) AS ticket_count,COUNT(*) FILTER(WHERE resolved_at IS NULL) AS unresolved_count FROM support_tickets GROUP BY priority ORDER BY priority NULLS LAST;",
+    "notes": "每个ticket_id一次；状态不参与筛选。"
+  },
+  {
+    "id": "B2-T2-011",
+    "difficulty": "single_table_agg",
+    "tags": [
+      "inventory",
+      "warehouse",
+      "aggregate"
+    ],
+    "question": "按仓库ID统计库存表中商品项数、已知库存量合计、低于安全库存的商品项数。输出仓库ID及三个指标，仓库ID升序；仅覆盖库存表实际出现的仓库，未知库存不补0。",
+    "gold_sql": "SELECT warehouse_id,COUNT(*) AS product_slots,SUM(quantity) AS quantity_total,COUNT(*) FILTER(WHERE quantity<safety_stock) AS below_safety_slots FROM inventory GROUP BY warehouse_id ORDER BY warehouse_id;",
+    "notes": "一项为仓库商品主键；比较任一值NULL时不认定低库存。"
+  },
+  {
+    "id": "B2-T2-012",
+    "difficulty": "single_table_agg",
+    "tags": [
+      "inventory_movements",
+      "type",
+      "aggregate"
+    ],
+    "question": "按出入库类型统计库存流水记录数与变动数量合计，只输出类型、记录数、数量合计，类型升序NULL最后；所有时间参与，数量使用原始正负值，不把出库自动改为负数。",
+    "gold_sql": "SELECT movement_type,COUNT(*) AS movement_count,SUM(quantity) AS quantity_total FROM inventory_movements GROUP BY movement_type ORDER BY movement_type NULLS LAST;",
+    "notes": "流水身份movement_id，数量正负不推断；未知数量忽略。"
+  },
+  {
+    "id": "B2-T2-013",
+    "difficulty": "single_table_agg",
+    "tags": [
+      "coupon_usages",
+      "member",
+      "topk"
+    ],
+    "question": "按用券记录上的会员ID汇总优惠金额，取优惠金额已知且合计为正的最高20名，输出会员ID、核销记录数和优惠金额合计。未知会员排除，金额降序、会员ID升序；不去重订单、不筛订单状态。",
+    "gold_sql": "SELECT member_id,COUNT(*) AS usage_count,SUM(discount_amount) AS discount_total FROM coupon_usages WHERE member_id IS NOT NULL GROUP BY member_id HAVING SUM(discount_amount)>0 ORDER BY discount_total DESC,member_id LIMIT 20;",
+    "notes": "物理计量单位usage_id；同订单多次核销分别计入金额。"
+  },
+  {
+    "id": "B2-T2-014",
+    "difficulty": "single_table_agg",
+    "tags": [
+      "settlements",
+      "period",
+      "status"
+    ],
+    "question": "按结算状态统计结算单数、应结净额合计及净额已知的结算单平均净额（2位小数），只输出状态和这三个指标；状态升序NULL最后，不追加或扣减运费、佣金。",
+    "gold_sql": "SELECT status,COUNT(*) AS settlement_count,SUM(net_amount) AS net_total,ROUND(AVG(net_amount),2) AS avg_net FROM settlements GROUP BY status ORDER BY status NULLS LAST;",
+    "notes": "只使用结算单net_amount，一单一次；NULL金额不补0。"
+  },
+  {
+    "id": "B2-T2-015",
+    "difficulty": "single_table_agg",
+    "tags": [
+      "product_price_history",
+      "delta",
+      "group"
+    ],
+    "question": "将每条新旧价格均已知的调价记录分为上涨、下跌、持平三类，按每次新价减旧价判断。输出变动方向和记录数，按方向文字升序；不存在的方向不补0，不按商品去重。",
+    "gold_sql": "SELECT CASE WHEN new_price>old_price THEN '上涨' WHEN new_price<old_price THEN '下跌' ELSE '持平' END AS direction,COUNT(*) AS change_count FROM product_price_history WHERE old_price IS NOT NULL AND new_price IS NOT NULL GROUP BY 1 ORDER BY direction;",
+    "notes": "单位history_id；不把任一未知价格当持平。"
+  },
+  {
+    "id": "B2-T2-016",
+    "difficulty": "single_table_agg",
+    "tags": [
+      "referrals",
+      "reward_buckets",
+      "aggregate"
+    ],
+    "question": "将推荐记录按奖励金额分为“未知”“非正”“0到10”“10到20”“超过20”五档：非正含0和负数，0到10为大于0且不超过10，10到20为大于10且不超过20。输出奖励档、推荐条数、已转化条数和原始奖励总额，按奖励档文字升序；只列实际出现的档，未知档金额合计保持NULL，不因未转化删除奖励。",
+    "gold_sql": "SELECT CASE WHEN reward_amount IS NULL THEN '未知' WHEN reward_amount<=0 THEN '非正' WHEN reward_amount<=10 THEN '0到10' WHEN reward_amount<=20 THEN '10到20' ELSE '超过20' END AS reward_bucket,COUNT(*) AS referral_count,COUNT(converted_at) AS converted_count,SUM(reward_amount) AS reward_total FROM referrals GROUP BY 1 ORDER BY reward_bucket;",
+    "notes": "一条referral_id计一次，分桶边界不重叠；转化以converted_at非空判断，不把奖励金额当转化证据。"
+  },
+  {
+    "id": "B2-T2-017",
+    "difficulty": "single_table_agg",
+    "tags": [
+      "order_reviews",
+      "score",
+      "comments"
+    ],
+    "question": "按评分统计评价记录数，以及正文为SQL NULL的评价记录数，输出评分和两个数量；包括未知评分组，评分升序NULL最后，空字符串正文不当作NULL。",
+    "gold_sql": "SELECT review_score,COUNT(*) AS review_count,COUNT(*) FILTER(WHERE review_comment_message IS NULL) AS null_body_count FROM order_reviews GROUP BY review_score ORDER BY review_score NULLS LAST;",
+    "notes": "完整评价主键为(review_id,order_id)，此题每物理行计一次，不按订单去重。"
+  },
+  {
+    "id": "B2-T2-018",
+    "difficulty": "single_table_agg",
+    "tags": [
+      "campaigns",
+      "type",
+      "budget"
+    ],
+    "question": "按活动类型统计预算已知活动数和预算平均金额（2位小数），输出活动类型、活动数、平均预算；只纳入预算大于0的活动，未知类型单列，类型升序NULL最后，不将活动名称当分组ID。",
+    "gold_sql": "SELECT campaign_type,COUNT(*) AS campaign_count,ROUND(AVG(budget),2) AS avg_budget FROM campaigns WHERE budget>0 GROUP BY campaign_type ORDER BY campaign_type NULLS LAST;",
+    "notes": "同名活动分开计数；没有正预算的类型不补行。"
+  },
+  {
+    "id": "B2-T2-019",
+    "difficulty": "single_table_agg",
+    "tags": [
+      "shipping_addresses",
+      "state",
+      "aggregate"
+    ],
+    "question": "按收货地址自己的州代码统计地址条数、默认地址条数和不同客户关联键customer_id的数量，输出州和三个数量；NULL州保留，州升序NULL最后，未知customer_id不算一个客户关联键，不统计自然人人数。",
+    "gold_sql": "SELECT state,COUNT(*) AS address_count,COUNT(*) FILTER(WHERE is_default IS TRUE) AS default_count,COUNT(DISTINCT customer_id) AS customer_key_count FROM shipping_addresses GROUP BY state ORDER BY state NULLS LAST;",
+    "notes": "地址属性来自shipping_addresses，customer_id为关联键计数，不借用customers州。"
+  },
+  {
+    "id": "B2-T2-020",
+    "difficulty": "single_table_agg",
+    "tags": [
+      "brands",
+      "country",
+      "aggregate"
+    ],
+    "question": "按品牌表原始国家字段统计品牌个数，输出国家和品牌数，按品牌数降序、国家升序且NULL最后。保留NULL国家组，同名品牌按不同品牌ID分别计入，不做国家归一化。",
+    "gold_sql": "SELECT country,COUNT(*) AS brand_count FROM brands GROUP BY country ORDER BY brand_count DESC,country NULLS LAST;",
+    "notes": "一品牌ID一次，国家原样分组；没有品牌的国家不凭空补行。"
+  }
+]
