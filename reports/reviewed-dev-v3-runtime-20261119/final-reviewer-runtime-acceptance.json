@@ -1,0 +1,1096 @@
+{
+  "metadata": {
+    "reviewer": "independent_runtime_compatibility_reviewer_20261119",
+    "date": "2026-11-19",
+    "status": "ACCEPTED",
+    "scope": "Only T5-019 CTE orders to order_counts rename; no business semantics change",
+    "finalCounts": {
+      "total": 100,
+      "PASS": 100,
+      "DEFECT": 0,
+      "AMBIGUOUS": 0,
+      "exactUnchangedElements": 99,
+      "compatibleCTERename": 1
+    },
+    "frozenSourceCandidateManifest": {
+      "data/benchmarks/olist-v3-dev-candidate/T1_single_table_basic.yaml": "6650bdadd9e150340e93e19b0fb1e6f7f6c3abca68633f18d207b02329348e8e",
+      "data/benchmarks/olist-v3-dev-candidate/T2_single_table_agg.yaml": "70a43a2709126ed438c125b8b0c2aee9c855df27f5371adb1fc08f63215fac57",
+      "data/benchmarks/olist-v3-dev-candidate/T3_time_window.yaml": "3dda45b41dc067ac4fcc8d817173cc14e0ea5381c31265c07a8fa8f146e993ed",
+      "data/benchmarks/olist-v3-dev-candidate/T4_multi_join.yaml": "0143ed484566df7f84436af9cdab4c615f9ce17f6a009d2db32783c13efa6397",
+      "data/benchmarks/olist-v3-dev-candidate/T5_multi_join_deep.yaml": "d5fa4bd58088553290bc632da4cb8cb6213b86b85831cff8ff5dec16dc53ab16",
+      "data/benchmarks/olist-v3-dev-candidate/T6_business_semantics.yaml": "1f838f0066c71721ce49e0c8d7ed18aa44acd717d4291933f74fbe3a41f4935b"
+    },
+    "frozenSourceManifestMatchesPriorIndependentAcceptance": true,
+    "finalCandidateManifest": {
+      "data/benchmarks/olist-v3-dev-runtime-candidate/T1_single_table_basic.yaml": "6650bdadd9e150340e93e19b0fb1e6f7f6c3abca68633f18d207b02329348e8e",
+      "data/benchmarks/olist-v3-dev-runtime-candidate/T2_single_table_agg.yaml": "70a43a2709126ed438c125b8b0c2aee9c855df27f5371adb1fc08f63215fac57",
+      "data/benchmarks/olist-v3-dev-runtime-candidate/T3_time_window.yaml": "3dda45b41dc067ac4fcc8d817173cc14e0ea5381c31265c07a8fa8f146e993ed",
+      "data/benchmarks/olist-v3-dev-runtime-candidate/T4_multi_join.yaml": "0143ed484566df7f84436af9cdab4c615f9ce17f6a009d2db32783c13efa6397",
+      "data/benchmarks/olist-v3-dev-runtime-candidate/T5_multi_join_deep.yaml": "84c2b6b827a11bfb21357301bc462a36d0b3fd9a4db744bccb37f09ea2318782",
+      "data/benchmarks/olist-v3-dev-runtime-candidate/T6_business_semantics.yaml": "1f838f0066c71721ce49e0c8d7ed18aa44acd717d4291933f74fbe3a41f4935b"
+    },
+    "finalCandidateManifestSHA256": "c341eb5969185042fe7823b84fa9318ca9e0e68032b66ecf3b47ba560ebcb77c",
+    "productionContractAndDDLManifest": {
+      "src/main/java/com/text2sql/agent/generation/PromptTemplate.java": "db75a631ddcd9084fe4cf3d4087ff35be11f8b89865a5ec31865b6b8999b6714",
+      "src/main/resources/schema/metrics.yml": "78dfc23f9075536aa7568f94c87c41d238cac0c66c553449c9fd7c67c9035192",
+      "src/main/resources/schema/glossary.yml": "b4bc655947ed1f4eb2e243bbdaf3800bdd7919ee4121fc9a7276b647947b99ac",
+      "src/main/resources/schema/ambiguities.yml": "493dccf3090c7f7ea544162a351e8c8d1e7ab085886ec16aa12797ae89ce3e3a",
+      "data/schema/01_olist_schema.sql": "3c7a256d13378e81b8c3c001e1ced117f2a00ec758634d5a2c103a3e82000105",
+      "data/schema/03_extend_schema.sql": "ca9910e2a3a2996350e3dd9c8305e416d0e2efbe8edac4804b9216269f9652f0"
+    },
+    "productionContractAndDDLManifestSHA256": "2e56e838db3caa6b413815c4af876941a9121cb02f5e1a7715460d93ba3c3fa4",
+    "changedIds": [
+      "T5-019"
+    ],
+    "changedFields": [
+      "gold_sql"
+    ],
+    "all100QuestionsAndOtherFieldsUnchanged": true,
+    "changeSpecification": {
+      "declaration": {
+        "from": "orders AS(",
+        "to": "order_counts AS("
+      },
+      "reference": {
+        "from": "JOIN orders o USING(",
+        "to": "JOIN order_counts o USING("
+      },
+      "outputAliasOrdersUnchanged": true
+    },
+    "equivalence": {
+      "kind": "equivalence",
+      "frozenMinusRuntime": 0,
+      "runtimeMinusFrozen": 0,
+      "rows": 20,
+      "orderedOutputEqual": true,
+      "sourceOutputSHA256": "ed8b294c00a2062e25c3ed1171b3a3b233efc25b528be45070ea8162f873a673",
+      "runtimeOutputSHA256": "ed8b294c00a2062e25c3ed1171b3a3b233efc25b528be45070ea8162f873a673"
+    },
+    "execution": {
+      "seconds": 0.469,
+      "readOnly": true,
+      "databaseRole": "text2sql_ro",
+      "statementTimeout": "8s",
+      "sqlSHA256": "e80620ad4ed7dfac311c892e61e3c24bbf8ad5c6ef3918ffee9232d35e0bf754",
+      "sqlFile": "final-reviewer-runtime-equivalence.sql",
+      "outputFile": "final-reviewer-runtime-output.jsonl",
+      "full100GoldReexecuted": false
+    },
+    "independence": {
+      "modelOrProviderCalls": 0,
+      "keysRead": false,
+      "blindOrUnseenContentRead": false,
+      "otherAuditConclusionsRead": false,
+      "candidateOrProductionFilesEdited": false,
+      "originalIndependentReportModified": false,
+      "gitCommits": 0
+    },
+    "limitations": [
+      "This review independently verifies exact transformation and SQL result equivalence, not the separate Java validator preflight.",
+      "The frozen failure record and original independent semantic review remain historical records; no model improvement claim follows from this rename."
+    ]
+  },
+  "items": [
+    {
+      "id": "T1-002",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "8e2577154e10efc99fcac331806117c123030ae05ae589e1b6a38eccd598fa9f",
+      "runtimeGoldSQLSHA256": "8e2577154e10efc99fcac331806117c123030ae05ae589e1b6a38eccd598fa9f",
+      "completeSourceElementSHA256": "fc0ee871ef36b0bb692ab0fd2f3dba16de0371f6424fe9da6b2977810380dcf4",
+      "completeRuntimeElementSHA256": "fc0ee871ef36b0bb692ab0fd2f3dba16de0371f6424fe9da6b2977810380dcf4",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T1-004",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "773c9381046138877a2a9ea064e889a8fe342e4fd7f16bd1e0a79a1c9d6cd899",
+      "runtimeGoldSQLSHA256": "773c9381046138877a2a9ea064e889a8fe342e4fd7f16bd1e0a79a1c9d6cd899",
+      "completeSourceElementSHA256": "1ef96c9da9d3de80c5de351b1ac85bf7aeda5bfea26f3db9c5dddfe3198582d5",
+      "completeRuntimeElementSHA256": "1ef96c9da9d3de80c5de351b1ac85bf7aeda5bfea26f3db9c5dddfe3198582d5",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T1-006",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "5b8d3bd30562565018dc0a253a100e0cdb324870e8a43e446ae6cb4903d68782",
+      "runtimeGoldSQLSHA256": "5b8d3bd30562565018dc0a253a100e0cdb324870e8a43e446ae6cb4903d68782",
+      "completeSourceElementSHA256": "a2233380b856e5049d7a82124c38225f6e36056be0b2dbfd6650102f4a5ce115",
+      "completeRuntimeElementSHA256": "a2233380b856e5049d7a82124c38225f6e36056be0b2dbfd6650102f4a5ce115",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T1-008",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "b097ba13c930184c858453ab59190c23473ba9e7549c0c36b0e4be17649aa00c",
+      "runtimeGoldSQLSHA256": "b097ba13c930184c858453ab59190c23473ba9e7549c0c36b0e4be17649aa00c",
+      "completeSourceElementSHA256": "e15b3c9aa16fadf8cf4ea50a9c1d380d570989dd0cba8c43c21f06d9435c83c1",
+      "completeRuntimeElementSHA256": "e15b3c9aa16fadf8cf4ea50a9c1d380d570989dd0cba8c43c21f06d9435c83c1",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T1-011",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "7b1769a274867ab6f8f3b126334ba89721594f9416f167c85406be18cb8b157c",
+      "runtimeGoldSQLSHA256": "7b1769a274867ab6f8f3b126334ba89721594f9416f167c85406be18cb8b157c",
+      "completeSourceElementSHA256": "e12c8de3ac5ddb6b7929b3752caad19df8390b6bde103b795528c2c33fc9903e",
+      "completeRuntimeElementSHA256": "e12c8de3ac5ddb6b7929b3752caad19df8390b6bde103b795528c2c33fc9903e",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T1-013",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "ce67f857914391defc8445ac93d143f82018ef02ae752df27aa8ebe7f82ad474",
+      "runtimeGoldSQLSHA256": "ce67f857914391defc8445ac93d143f82018ef02ae752df27aa8ebe7f82ad474",
+      "completeSourceElementSHA256": "04e7c3f0f26ae84639c1b04c4b12e6550e57e1be5a16b5452aad74923369834f",
+      "completeRuntimeElementSHA256": "04e7c3f0f26ae84639c1b04c4b12e6550e57e1be5a16b5452aad74923369834f",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T1-015",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "3174f80df39395a6440417b66956dafed03538808cd17bb29054fe5fafb90383",
+      "runtimeGoldSQLSHA256": "3174f80df39395a6440417b66956dafed03538808cd17bb29054fe5fafb90383",
+      "completeSourceElementSHA256": "8a5b9039bc87b6cdbebe9c8e016923f4f78063f1c031f9a4bd7b3a274d8725c3",
+      "completeRuntimeElementSHA256": "8a5b9039bc87b6cdbebe9c8e016923f4f78063f1c031f9a4bd7b3a274d8725c3",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T1-017",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "96bda0e53fb0474a1fa2426092cc433200ba59f7ba9d34e8d366cd5968177eb8",
+      "runtimeGoldSQLSHA256": "96bda0e53fb0474a1fa2426092cc433200ba59f7ba9d34e8d366cd5968177eb8",
+      "completeSourceElementSHA256": "52dee8359a3a74b91d5d6f6570b83fb7f050beddce57cbf3c3cb75a0a6226944",
+      "completeRuntimeElementSHA256": "52dee8359a3a74b91d5d6f6570b83fb7f050beddce57cbf3c3cb75a0a6226944",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T1-019",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "0d94937bdb47824c12928b372923350a8dc9578c49e2bf50201a88ca24f71c1d",
+      "runtimeGoldSQLSHA256": "0d94937bdb47824c12928b372923350a8dc9578c49e2bf50201a88ca24f71c1d",
+      "completeSourceElementSHA256": "c4dcb14402fda91f96163f91b8fd14196ac851c4da41d05f60b5b2389665e101",
+      "completeRuntimeElementSHA256": "c4dcb14402fda91f96163f91b8fd14196ac851c4da41d05f60b5b2389665e101",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T1-020",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "254d520a9ecf56ea1cec425e7e3c49d4e98ee727a7959b4b0a1f6265ff09a339",
+      "runtimeGoldSQLSHA256": "254d520a9ecf56ea1cec425e7e3c49d4e98ee727a7959b4b0a1f6265ff09a339",
+      "completeSourceElementSHA256": "f37a66cec0873d8928822391c37c5b9c5b0464491a0175d1edfa5021380df5a0",
+      "completeRuntimeElementSHA256": "f37a66cec0873d8928822391c37c5b9c5b0464491a0175d1edfa5021380df5a0",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T1-022",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "cd27c0fb1cb0f5a751710c40d84a3f4cdb83a7355e9ef16eac4734e8b0857660",
+      "runtimeGoldSQLSHA256": "cd27c0fb1cb0f5a751710c40d84a3f4cdb83a7355e9ef16eac4734e8b0857660",
+      "completeSourceElementSHA256": "05e6e0986d3513c2d54e36924db3f8ee8ed4e068412a5dac5213f5b16c51068b",
+      "completeRuntimeElementSHA256": "05e6e0986d3513c2d54e36924db3f8ee8ed4e068412a5dac5213f5b16c51068b",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T1-024",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "ca5cc34d7a50713a52812acd40758023475ef3f6df9b2a849065428bff3514cd",
+      "runtimeGoldSQLSHA256": "ca5cc34d7a50713a52812acd40758023475ef3f6df9b2a849065428bff3514cd",
+      "completeSourceElementSHA256": "53175b5e977de66626a63f53dfa1a502fa0ebc273f92889642836c80b66437ac",
+      "completeRuntimeElementSHA256": "53175b5e977de66626a63f53dfa1a502fa0ebc273f92889642836c80b66437ac",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T1-026",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "d480dc3b5a2d2f360410768dd71e88fb2ee9398bb1f60c56850070ce05453297",
+      "runtimeGoldSQLSHA256": "d480dc3b5a2d2f360410768dd71e88fb2ee9398bb1f60c56850070ce05453297",
+      "completeSourceElementSHA256": "b8db015e8e462a53e24289c2abd29c22ee9b90a06f7b007fad9d81b89a1c9d1d",
+      "completeRuntimeElementSHA256": "b8db015e8e462a53e24289c2abd29c22ee9b90a06f7b007fad9d81b89a1c9d1d",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T1-028",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "1679300be359cd6a8dc4b09280982da8b964d88e8a9680e6f540bb45a31a08a0",
+      "runtimeGoldSQLSHA256": "1679300be359cd6a8dc4b09280982da8b964d88e8a9680e6f540bb45a31a08a0",
+      "completeSourceElementSHA256": "788fc963abfe06c5920a5a8f1b0976dad967ca334bed050ec8d9ab1f8005a7d6",
+      "completeRuntimeElementSHA256": "788fc963abfe06c5920a5a8f1b0976dad967ca334bed050ec8d9ab1f8005a7d6",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T1-031",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "970f9768f98181c91f9a957398289bda40fb336bd75168f8a51ff496e18e117a",
+      "runtimeGoldSQLSHA256": "970f9768f98181c91f9a957398289bda40fb336bd75168f8a51ff496e18e117a",
+      "completeSourceElementSHA256": "7301023797780040695d1769a22e0fde689650bba0970461c5310800ae186047",
+      "completeRuntimeElementSHA256": "7301023797780040695d1769a22e0fde689650bba0970461c5310800ae186047",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T1-033",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "b16037ce3176531a9a07581899b75a9c933000492d3fe138284812a140d6ac37",
+      "runtimeGoldSQLSHA256": "b16037ce3176531a9a07581899b75a9c933000492d3fe138284812a140d6ac37",
+      "completeSourceElementSHA256": "bca62fa382f0940e456ce617396bdd6bbf75059c6a9cc7f84a86817e0da67250",
+      "completeRuntimeElementSHA256": "bca62fa382f0940e456ce617396bdd6bbf75059c6a9cc7f84a86817e0da67250",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T1-035",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "74e4cc88bd902b13c0d1ed552eabbf2d6103115ea4815f27176d22d3f064be20",
+      "runtimeGoldSQLSHA256": "74e4cc88bd902b13c0d1ed552eabbf2d6103115ea4815f27176d22d3f064be20",
+      "completeSourceElementSHA256": "4f0691de03d754229b33c432b8b6fb67ece1e2365b905c29863e892c0db87c96",
+      "completeRuntimeElementSHA256": "4f0691de03d754229b33c432b8b6fb67ece1e2365b905c29863e892c0db87c96",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T1-037",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "3aafb86a6bb166e7a41d94e2cb9cd832f38b3a68340e5d0787c2fef345930afc",
+      "runtimeGoldSQLSHA256": "3aafb86a6bb166e7a41d94e2cb9cd832f38b3a68340e5d0787c2fef345930afc",
+      "completeSourceElementSHA256": "ce296d0063e722b33d3c6dd639f01ae643963809749d0cf30eab062f71bb9a27",
+      "completeRuntimeElementSHA256": "ce296d0063e722b33d3c6dd639f01ae643963809749d0cf30eab062f71bb9a27",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T1-039",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "9eca14b0c33bd868d9e4898d860bf5a5a9a81c9ebff4ba99ebd9084ffef9fb06",
+      "runtimeGoldSQLSHA256": "9eca14b0c33bd868d9e4898d860bf5a5a9a81c9ebff4ba99ebd9084ffef9fb06",
+      "completeSourceElementSHA256": "5e24902e2a5d47be1afc0db9a91fed4340b37139251429723e90f96cec126476",
+      "completeRuntimeElementSHA256": "5e24902e2a5d47be1afc0db9a91fed4340b37139251429723e90f96cec126476",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T1-040",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "02fad7e3f9c6d3e299194454c9f247766a982ad622728cafd1a518e1cebcc4bb",
+      "runtimeGoldSQLSHA256": "02fad7e3f9c6d3e299194454c9f247766a982ad622728cafd1a518e1cebcc4bb",
+      "completeSourceElementSHA256": "2dde8f49ff6bd89ba14c16b9bfc025906f3045b9ac19be8aae152b492ea02ffb",
+      "completeRuntimeElementSHA256": "2dde8f49ff6bd89ba14c16b9bfc025906f3045b9ac19be8aae152b492ea02ffb",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T2-001",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "e446cd1e78dd184c812ef7f6f11cef34f3a6303c95d9fb6e95406c02420d0592",
+      "runtimeGoldSQLSHA256": "e446cd1e78dd184c812ef7f6f11cef34f3a6303c95d9fb6e95406c02420d0592",
+      "completeSourceElementSHA256": "68a3cfcea87ed44545f24b4cd12c67ad55dde7d9e4af74c00acf87bf2c9c9288",
+      "completeRuntimeElementSHA256": "68a3cfcea87ed44545f24b4cd12c67ad55dde7d9e4af74c00acf87bf2c9c9288",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T2-003",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "2f95d0fc93dd721846afba1b9e71844e2b369b868b9be75c3f07de0b8a3d61d6",
+      "runtimeGoldSQLSHA256": "2f95d0fc93dd721846afba1b9e71844e2b369b868b9be75c3f07de0b8a3d61d6",
+      "completeSourceElementSHA256": "cc7e07ad9923d49d62b5a1c42e9fc21246aee9c96fe008ae5c5d424f4685c10f",
+      "completeRuntimeElementSHA256": "cc7e07ad9923d49d62b5a1c42e9fc21246aee9c96fe008ae5c5d424f4685c10f",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T2-005",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "c77465147a50fd61b22b8be517f5776304d0473bf20173fe95f00176478a89ce",
+      "runtimeGoldSQLSHA256": "c77465147a50fd61b22b8be517f5776304d0473bf20173fe95f00176478a89ce",
+      "completeSourceElementSHA256": "0974220619defcef1a92ec98a60cd5a5462cd81fdb7057876dc4f1785ee43d83",
+      "completeRuntimeElementSHA256": "0974220619defcef1a92ec98a60cd5a5462cd81fdb7057876dc4f1785ee43d83",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T2-007",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "dda4aa6fa8dbae3cbaa78545217413270b7c09e77e43db4e341aed2fe178a3c7",
+      "runtimeGoldSQLSHA256": "dda4aa6fa8dbae3cbaa78545217413270b7c09e77e43db4e341aed2fe178a3c7",
+      "completeSourceElementSHA256": "c4ee8e43351e98162323557613053d950c1d1e235ebb3627463bc4d13f6974eb",
+      "completeRuntimeElementSHA256": "c4ee8e43351e98162323557613053d950c1d1e235ebb3627463bc4d13f6974eb",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T2-009",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "7bf5f35403c9a269828c52708764a4ff27ab66c439b90022cecf35fc3a5064d2",
+      "runtimeGoldSQLSHA256": "7bf5f35403c9a269828c52708764a4ff27ab66c439b90022cecf35fc3a5064d2",
+      "completeSourceElementSHA256": "72bc31cbcded23b7c0bb7af44d4182edd872ba35e26d4cd8395fe19ae2374eac",
+      "completeRuntimeElementSHA256": "72bc31cbcded23b7c0bb7af44d4182edd872ba35e26d4cd8395fe19ae2374eac",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T2-010",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "199532f8df89840d3b90ef5509e30c5c0c881d1f50d2520589b383c2a631bfb0",
+      "runtimeGoldSQLSHA256": "199532f8df89840d3b90ef5509e30c5c0c881d1f50d2520589b383c2a631bfb0",
+      "completeSourceElementSHA256": "5a45ce4ac16c32dfca27d2ec583f18748e1783094ce49e303553661552fb0edf",
+      "completeRuntimeElementSHA256": "5a45ce4ac16c32dfca27d2ec583f18748e1783094ce49e303553661552fb0edf",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T2-012",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "b48a85b9da6df209f0bf0ae5a5cfbd07fda0e105773b5fff6597d2ae603774df",
+      "runtimeGoldSQLSHA256": "b48a85b9da6df209f0bf0ae5a5cfbd07fda0e105773b5fff6597d2ae603774df",
+      "completeSourceElementSHA256": "49ead292f26026184458d413e44e8d98e3bf7bdb888f25682e01c9bdb63a5d90",
+      "completeRuntimeElementSHA256": "49ead292f26026184458d413e44e8d98e3bf7bdb888f25682e01c9bdb63a5d90",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T2-014",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "b8fe5968174559c6eae6fabaa8493a7ffaef5a3c28b9b95b787df6cd886c5135",
+      "runtimeGoldSQLSHA256": "b8fe5968174559c6eae6fabaa8493a7ffaef5a3c28b9b95b787df6cd886c5135",
+      "completeSourceElementSHA256": "03efab49ff1e162784cf8871a71bb446a9815a0fbccc9f248f533e4617a9acaf",
+      "completeRuntimeElementSHA256": "03efab49ff1e162784cf8871a71bb446a9815a0fbccc9f248f533e4617a9acaf",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T2-016",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "8dafafcf4eacecc259f0c9e9b7a146259304558ec969f5fa7d7cad1fb4d73c29",
+      "runtimeGoldSQLSHA256": "8dafafcf4eacecc259f0c9e9b7a146259304558ec969f5fa7d7cad1fb4d73c29",
+      "completeSourceElementSHA256": "25c3c28d4bf685e6e7d0f38eba25c9d5d81761a0b30d65b7ec663cbfa81f3076",
+      "completeRuntimeElementSHA256": "25c3c28d4bf685e6e7d0f38eba25c9d5d81761a0b30d65b7ec663cbfa81f3076",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T2-018",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "a4848d90276de755d0891063c47caf90923c588cb4768fbed0986aee6208f730",
+      "runtimeGoldSQLSHA256": "a4848d90276de755d0891063c47caf90923c588cb4768fbed0986aee6208f730",
+      "completeSourceElementSHA256": "980f6983392fea37664fa1adb30595337194d1c8183104fa1862ea7fdce3ad8d",
+      "completeRuntimeElementSHA256": "980f6983392fea37664fa1adb30595337194d1c8183104fa1862ea7fdce3ad8d",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T2-021",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "3a684667819fb37c3deddf072e1082da018e178275100756ceef0588c1df16ae",
+      "runtimeGoldSQLSHA256": "3a684667819fb37c3deddf072e1082da018e178275100756ceef0588c1df16ae",
+      "completeSourceElementSHA256": "396195ec27a2f4e525f9fbc7e8ea7849bda564c43d3d8c1b90fcceaf71fde796",
+      "completeRuntimeElementSHA256": "396195ec27a2f4e525f9fbc7e8ea7849bda564c43d3d8c1b90fcceaf71fde796",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T2-023",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "1ffa70a8dd0705b0c193bb79e7aa3fd8144229b03a234982d10a32d3ec9283a5",
+      "runtimeGoldSQLSHA256": "1ffa70a8dd0705b0c193bb79e7aa3fd8144229b03a234982d10a32d3ec9283a5",
+      "completeSourceElementSHA256": "7a55b13966f14f2d4f655f29afcae99db86ef1feb6a6e71e03fb7eb8feb03ee3",
+      "completeRuntimeElementSHA256": "7a55b13966f14f2d4f655f29afcae99db86ef1feb6a6e71e03fb7eb8feb03ee3",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T2-025",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "73789ae162b1efc44c888aea43a20f70d612edb04c6abcb16580fb6538151b8c",
+      "runtimeGoldSQLSHA256": "73789ae162b1efc44c888aea43a20f70d612edb04c6abcb16580fb6538151b8c",
+      "completeSourceElementSHA256": "f9fedca9bad62e194e5f9fd533a549c330caf3accea324cf7a0e63e74405f435",
+      "completeRuntimeElementSHA256": "f9fedca9bad62e194e5f9fd533a549c330caf3accea324cf7a0e63e74405f435",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T2-027",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "05351efdf48eb4b3a5efedc1b71b590e900b4e42747e0259390e3b33b89e7744",
+      "runtimeGoldSQLSHA256": "05351efdf48eb4b3a5efedc1b71b590e900b4e42747e0259390e3b33b89e7744",
+      "completeSourceElementSHA256": "99bd092ddc3c24c8852d1581235aa85265dd52139af57a0e37a94033da7f4571",
+      "completeRuntimeElementSHA256": "99bd092ddc3c24c8852d1581235aa85265dd52139af57a0e37a94033da7f4571",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T2-029",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "66cd80a37a43c142d4b1b4f9ba8717a4494a1563cfba4e91fc1e268635347606",
+      "runtimeGoldSQLSHA256": "66cd80a37a43c142d4b1b4f9ba8717a4494a1563cfba4e91fc1e268635347606",
+      "completeSourceElementSHA256": "bda0e98a02e4298418af6be9af6455c6074a96440e72edbd97addd025f2a9130",
+      "completeRuntimeElementSHA256": "bda0e98a02e4298418af6be9af6455c6074a96440e72edbd97addd025f2a9130",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T2-030",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "7b4e4f68b1b775115b932f5199c5fcaa36196bc45db98f490f25749a1075fd25",
+      "runtimeGoldSQLSHA256": "7b4e4f68b1b775115b932f5199c5fcaa36196bc45db98f490f25749a1075fd25",
+      "completeSourceElementSHA256": "99935635662595e373110a4bc56e605472890552b29e69521c2990d076284f56",
+      "completeRuntimeElementSHA256": "99935635662595e373110a4bc56e605472890552b29e69521c2990d076284f56",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T2-032",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "944c6bdbe4401e8160538bbc6aae333f5042c63d6f576add6a0b7bdcb43b61e1",
+      "runtimeGoldSQLSHA256": "944c6bdbe4401e8160538bbc6aae333f5042c63d6f576add6a0b7bdcb43b61e1",
+      "completeSourceElementSHA256": "2ee421eaa132e9b387dde800e39786d926d7b5641b33250bc2715dc483ab30f6",
+      "completeRuntimeElementSHA256": "2ee421eaa132e9b387dde800e39786d926d7b5641b33250bc2715dc483ab30f6",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T2-034",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "3b71107e2e97c05e3a75057e329b37d0f36bd1229963f15c1196f94436e2dccb",
+      "runtimeGoldSQLSHA256": "3b71107e2e97c05e3a75057e329b37d0f36bd1229963f15c1196f94436e2dccb",
+      "completeSourceElementSHA256": "3629f815b358023ac27e66d8d259d1c8502891b5d88864b7bcc89703189c9610",
+      "completeRuntimeElementSHA256": "3629f815b358023ac27e66d8d259d1c8502891b5d88864b7bcc89703189c9610",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T2-036",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "2621b67a2a99fde269372047cd010ac317ee6b9efbcabedf3b78c59ab372ea6c",
+      "runtimeGoldSQLSHA256": "2621b67a2a99fde269372047cd010ac317ee6b9efbcabedf3b78c59ab372ea6c",
+      "completeSourceElementSHA256": "db603d775844b42055826a33ead15ad72d0d2ee693d17fc979f6f77a7fbb8cac",
+      "completeRuntimeElementSHA256": "db603d775844b42055826a33ead15ad72d0d2ee693d17fc979f6f77a7fbb8cac",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T2-038",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "9865ca4b882dcfdcb2de373e56901a5a0d1e2d924d95f074f763d1d8adfafb94",
+      "runtimeGoldSQLSHA256": "9865ca4b882dcfdcb2de373e56901a5a0d1e2d924d95f074f763d1d8adfafb94",
+      "completeSourceElementSHA256": "8b57d86d180f442d8c73b3f3897df328f771e7799e4dd8c42bca5f04bc29deb3",
+      "completeRuntimeElementSHA256": "8b57d86d180f442d8c73b3f3897df328f771e7799e4dd8c42bca5f04bc29deb3",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T3-002",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "00ab301c7a617c31690c829fbc5b3dc01141fe0a1425612837f9495edd169ff0",
+      "runtimeGoldSQLSHA256": "00ab301c7a617c31690c829fbc5b3dc01141fe0a1425612837f9495edd169ff0",
+      "completeSourceElementSHA256": "364bcf58d3225e8e02b0f71508c866e19fca7026fd7d7170304bcb6f7f8ce453",
+      "completeRuntimeElementSHA256": "364bcf58d3225e8e02b0f71508c866e19fca7026fd7d7170304bcb6f7f8ce453",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T3-004",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "1d190664fc4dd5e8370e350ec1e1b90aa7d456595da28c6739c50f1b85d24a9d",
+      "runtimeGoldSQLSHA256": "1d190664fc4dd5e8370e350ec1e1b90aa7d456595da28c6739c50f1b85d24a9d",
+      "completeSourceElementSHA256": "73b9e36ba62a0404812c70612d1b332da98c81020859655246558bbea854a651",
+      "completeRuntimeElementSHA256": "73b9e36ba62a0404812c70612d1b332da98c81020859655246558bbea854a651",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T3-006",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "dbe132d1ae7ba16900ac9d9add080fdcf9849077045991a135f8b8dbea855ab6",
+      "runtimeGoldSQLSHA256": "dbe132d1ae7ba16900ac9d9add080fdcf9849077045991a135f8b8dbea855ab6",
+      "completeSourceElementSHA256": "cef86cd9d385c102d82a9a5cca75d267fa7a55bff3daa837836e4397cfc6125a",
+      "completeRuntimeElementSHA256": "cef86cd9d385c102d82a9a5cca75d267fa7a55bff3daa837836e4397cfc6125a",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T3-008",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "b3532d96e01f29b688e66fcdfb878ece7d12a6eda5af3299e969497a50b5340f",
+      "runtimeGoldSQLSHA256": "b3532d96e01f29b688e66fcdfb878ece7d12a6eda5af3299e969497a50b5340f",
+      "completeSourceElementSHA256": "b46548edf87c339f3d9bf9b296589ab3be83690daf476b08b7687a5eff2bd75e",
+      "completeRuntimeElementSHA256": "b46548edf87c339f3d9bf9b296589ab3be83690daf476b08b7687a5eff2bd75e",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T3-011",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "607c4a6ee3b7e182c9eda53fb5b6ae684ea720754660bd70bf2d55ab35b93e9a",
+      "runtimeGoldSQLSHA256": "607c4a6ee3b7e182c9eda53fb5b6ae684ea720754660bd70bf2d55ab35b93e9a",
+      "completeSourceElementSHA256": "e47e5dadf71c7c9a4cbaa29fbb05fcc09a11154782c174f686e2c1321e41835a",
+      "completeRuntimeElementSHA256": "e47e5dadf71c7c9a4cbaa29fbb05fcc09a11154782c174f686e2c1321e41835a",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T3-013",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "4a1b060aac8517cac9afc7bd4e9e140baa84e49b18b96e7726e8d394ecafde32",
+      "runtimeGoldSQLSHA256": "4a1b060aac8517cac9afc7bd4e9e140baa84e49b18b96e7726e8d394ecafde32",
+      "completeSourceElementSHA256": "b3170b5fe4377336d78d1c7ae1bda552183b6a249c16351e39320f5d78019e98",
+      "completeRuntimeElementSHA256": "b3170b5fe4377336d78d1c7ae1bda552183b6a249c16351e39320f5d78019e98",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T3-015",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "6c84b6f341ae001dff77d0503a99d2ae522d78e4d211eb9d282d8b315a4537e3",
+      "runtimeGoldSQLSHA256": "6c84b6f341ae001dff77d0503a99d2ae522d78e4d211eb9d282d8b315a4537e3",
+      "completeSourceElementSHA256": "a074fad4a2bf4e22df64c452f8c4cdac0fdbac515446feee5476e93566c8d79f",
+      "completeRuntimeElementSHA256": "a074fad4a2bf4e22df64c452f8c4cdac0fdbac515446feee5476e93566c8d79f",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T3-017",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "76191b78220af3088c92306530f980fd142fa2eb652129e98f6646d130a5e5d9",
+      "runtimeGoldSQLSHA256": "76191b78220af3088c92306530f980fd142fa2eb652129e98f6646d130a5e5d9",
+      "completeSourceElementSHA256": "e0a12ee92f2c30f2c85d9689cc107527986ee191991e2933c772512f68c97518",
+      "completeRuntimeElementSHA256": "e0a12ee92f2c30f2c85d9689cc107527986ee191991e2933c772512f68c97518",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T3-019",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "c466def5a3a8782faa12e6a46e6030143cb69195626de41c52a1e3637e07f550",
+      "runtimeGoldSQLSHA256": "c466def5a3a8782faa12e6a46e6030143cb69195626de41c52a1e3637e07f550",
+      "completeSourceElementSHA256": "b6830873e7ff5041b4313b9d25943135a4dedfaef88a92f76b83e5d43c760c7c",
+      "completeRuntimeElementSHA256": "b6830873e7ff5041b4313b9d25943135a4dedfaef88a92f76b83e5d43c760c7c",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T3-020",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "fe853dcec17f26ee1a2f35f343a3f11eea617e3b0c3d76a973ace045965b60d7",
+      "runtimeGoldSQLSHA256": "fe853dcec17f26ee1a2f35f343a3f11eea617e3b0c3d76a973ace045965b60d7",
+      "completeSourceElementSHA256": "dfee0fb8390340cf9dcd6672c6614d6918d4887bd059d9b9da3e11f3b6453b2d",
+      "completeRuntimeElementSHA256": "dfee0fb8390340cf9dcd6672c6614d6918d4887bd059d9b9da3e11f3b6453b2d",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T3-022",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "2e3fc3d8e017b5b191e6c45f918719b7c7031c09dcf2e7f64f818fb75bde4717",
+      "runtimeGoldSQLSHA256": "2e3fc3d8e017b5b191e6c45f918719b7c7031c09dcf2e7f64f818fb75bde4717",
+      "completeSourceElementSHA256": "9b5db5cb7e65685d39d273b18718498c401ed802da749347a88b9b3af13cb3ce",
+      "completeRuntimeElementSHA256": "9b5db5cb7e65685d39d273b18718498c401ed802da749347a88b9b3af13cb3ce",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T3-024",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "f691b79713d8be47eb31729194fe688402e4404f604352f5e5157c1684f8e734",
+      "runtimeGoldSQLSHA256": "f691b79713d8be47eb31729194fe688402e4404f604352f5e5157c1684f8e734",
+      "completeSourceElementSHA256": "4a5977620906dfdb9ee43069d6728d559880161b306521d86bbe1439ae562122",
+      "completeRuntimeElementSHA256": "4a5977620906dfdb9ee43069d6728d559880161b306521d86bbe1439ae562122",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T3-026",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "88a33761c571e50f73822a2c755840039b51cae6c085cf77a1793b072cba14ea",
+      "runtimeGoldSQLSHA256": "88a33761c571e50f73822a2c755840039b51cae6c085cf77a1793b072cba14ea",
+      "completeSourceElementSHA256": "13070d091d03efcb1ff3dc31d0a5e5b7e81146cd8523951941ba768dbc96a687",
+      "completeRuntimeElementSHA256": "13070d091d03efcb1ff3dc31d0a5e5b7e81146cd8523951941ba768dbc96a687",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T3-028",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "365eb4d1a277056075476f50368f41a269f092023bd7f7c30523ca6b1306846e",
+      "runtimeGoldSQLSHA256": "365eb4d1a277056075476f50368f41a269f092023bd7f7c30523ca6b1306846e",
+      "completeSourceElementSHA256": "b6bb63a1b17f3927b6a7f66238cc9c059b3c442ea1e310cf74d927c1ee0c3752",
+      "completeRuntimeElementSHA256": "b6bb63a1b17f3927b6a7f66238cc9c059b3c442ea1e310cf74d927c1ee0c3752",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T4-001",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "678b508bec3838e1c9493a3e8c6a72f256169d48c731a134dda6ef014cd41d24",
+      "runtimeGoldSQLSHA256": "678b508bec3838e1c9493a3e8c6a72f256169d48c731a134dda6ef014cd41d24",
+      "completeSourceElementSHA256": "d4f05ae1d881775ab828373d6bc09f98e0cce1a0982537e3e3defecc4fcefbce",
+      "completeRuntimeElementSHA256": "d4f05ae1d881775ab828373d6bc09f98e0cce1a0982537e3e3defecc4fcefbce",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T4-003",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "ece56ce357794504f5bcc4e155923cb2f9d9a614a5f190a0233dfeadb358a210",
+      "runtimeGoldSQLSHA256": "ece56ce357794504f5bcc4e155923cb2f9d9a614a5f190a0233dfeadb358a210",
+      "completeSourceElementSHA256": "72b4c7d35f15068f7838d002c510826d64886fcc36c4e683b79181da79ffaa65",
+      "completeRuntimeElementSHA256": "72b4c7d35f15068f7838d002c510826d64886fcc36c4e683b79181da79ffaa65",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T4-005",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "f2f3a745a38a55640c357c13eb32d8e1e9a55fa9da92689874e29e134cfa9e92",
+      "runtimeGoldSQLSHA256": "f2f3a745a38a55640c357c13eb32d8e1e9a55fa9da92689874e29e134cfa9e92",
+      "completeSourceElementSHA256": "f01e17169711aa89bccb3661af42aefca742812f88bd324cc58958cc6f1e8622",
+      "completeRuntimeElementSHA256": "f01e17169711aa89bccb3661af42aefca742812f88bd324cc58958cc6f1e8622",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T4-007",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "fb0e2da07169828021347ddc510332f3e0d6d83d8d1888be2d1f9482bee37c80",
+      "runtimeGoldSQLSHA256": "fb0e2da07169828021347ddc510332f3e0d6d83d8d1888be2d1f9482bee37c80",
+      "completeSourceElementSHA256": "7ba7f522deb199bc9461c018546164d1774890f0961474274ad30e1746662ec7",
+      "completeRuntimeElementSHA256": "7ba7f522deb199bc9461c018546164d1774890f0961474274ad30e1746662ec7",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T4-009",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "8734600104606b45eb7ee60502e8d9208a699475d3f5ec462ff42eb0adec0988",
+      "runtimeGoldSQLSHA256": "8734600104606b45eb7ee60502e8d9208a699475d3f5ec462ff42eb0adec0988",
+      "completeSourceElementSHA256": "464391d249bcfd0f77b105b512fece43df5360092042c053111ec10a07fb6ba6",
+      "completeRuntimeElementSHA256": "464391d249bcfd0f77b105b512fece43df5360092042c053111ec10a07fb6ba6",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T4-010",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "55483954c22e1c166cdb2525e28e1f47e4f1aee106d830fdd16726e78e204d7d",
+      "runtimeGoldSQLSHA256": "55483954c22e1c166cdb2525e28e1f47e4f1aee106d830fdd16726e78e204d7d",
+      "completeSourceElementSHA256": "e333f74b902201a6ba084b5c07ba37b300f17dab5ce875ee984e5bd07354e4db",
+      "completeRuntimeElementSHA256": "e333f74b902201a6ba084b5c07ba37b300f17dab5ce875ee984e5bd07354e4db",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T4-012",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "5017774abcd85d0561e44d18fa1ebe3b83eb750b9c0eacbf4e04f78eded4bb29",
+      "runtimeGoldSQLSHA256": "5017774abcd85d0561e44d18fa1ebe3b83eb750b9c0eacbf4e04f78eded4bb29",
+      "completeSourceElementSHA256": "125e54fdf3cce59e1ebe4d6dd41bcaa5b609537901d553d228fca1ae588315ac",
+      "completeRuntimeElementSHA256": "125e54fdf3cce59e1ebe4d6dd41bcaa5b609537901d553d228fca1ae588315ac",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T4-014",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "d52a5265bba9bd9f2af3930c0b81e7e8ab54eb9b358cac367835f5e51926540f",
+      "runtimeGoldSQLSHA256": "d52a5265bba9bd9f2af3930c0b81e7e8ab54eb9b358cac367835f5e51926540f",
+      "completeSourceElementSHA256": "fdafe0e3154ba84faf4e84a24d1190990fad4d62e704a9d7a13b8910948bf4af",
+      "completeRuntimeElementSHA256": "fdafe0e3154ba84faf4e84a24d1190990fad4d62e704a9d7a13b8910948bf4af",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T4-016",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "7e03d0fa5c087d14f91f8173e4b8382c1addf03ad5550f8974c40d11fc5c8d1a",
+      "runtimeGoldSQLSHA256": "7e03d0fa5c087d14f91f8173e4b8382c1addf03ad5550f8974c40d11fc5c8d1a",
+      "completeSourceElementSHA256": "f61b03f403042a35f42f0ecd473b4f74a7a4446066668b05d1613e9228d0a147",
+      "completeRuntimeElementSHA256": "f61b03f403042a35f42f0ecd473b4f74a7a4446066668b05d1613e9228d0a147",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T4-018",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "e3cae59d15cf6b70b7ceb35a9d8ba0ffb53504b4e22e70173fb0c35965ec2cbf",
+      "runtimeGoldSQLSHA256": "e3cae59d15cf6b70b7ceb35a9d8ba0ffb53504b4e22e70173fb0c35965ec2cbf",
+      "completeSourceElementSHA256": "2041b84820520713ed4e8987e697f2757aee887c73e60bf1c78f5409b7dfe02a",
+      "completeRuntimeElementSHA256": "2041b84820520713ed4e8987e697f2757aee887c73e60bf1c78f5409b7dfe02a",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T4-021",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "25e3b04e711a59351d24713bb47d500ad974999a3acec9e76e0017d0f2ae3480",
+      "runtimeGoldSQLSHA256": "25e3b04e711a59351d24713bb47d500ad974999a3acec9e76e0017d0f2ae3480",
+      "completeSourceElementSHA256": "fd1021d630eb24490fd4cdfde436f7be45a9f58103956fbf9b1b75aa9557eeda",
+      "completeRuntimeElementSHA256": "fd1021d630eb24490fd4cdfde436f7be45a9f58103956fbf9b1b75aa9557eeda",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T4-023",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "95ba7eb9b13d7aececa861dd7af130fed62fadf6c3055b8656ee4ddfa355415b",
+      "runtimeGoldSQLSHA256": "95ba7eb9b13d7aececa861dd7af130fed62fadf6c3055b8656ee4ddfa355415b",
+      "completeSourceElementSHA256": "1f243fbff693d4820ee8d26c324eeb6f5f198ad396a76b65bdeb54581b8e6868",
+      "completeRuntimeElementSHA256": "1f243fbff693d4820ee8d26c324eeb6f5f198ad396a76b65bdeb54581b8e6868",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T4-025",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "9f99d27c209d9bbcb791abf8ffcaed2c3e8cfb892fc7f06b8f7cf2637a6c73d6",
+      "runtimeGoldSQLSHA256": "9f99d27c209d9bbcb791abf8ffcaed2c3e8cfb892fc7f06b8f7cf2637a6c73d6",
+      "completeSourceElementSHA256": "92887d7a08842d39fac548e8777348cffd322ead7befc81db7d6d8f34f2f0cf4",
+      "completeRuntimeElementSHA256": "92887d7a08842d39fac548e8777348cffd322ead7befc81db7d6d8f34f2f0cf4",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T4-027",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "9f4331827ad20df42002aec6443dda700978cef01e95e1c8ff15baa2bfb5cca7",
+      "runtimeGoldSQLSHA256": "9f4331827ad20df42002aec6443dda700978cef01e95e1c8ff15baa2bfb5cca7",
+      "completeSourceElementSHA256": "41f5cd11761f8b07d0c67637a1be584805af38593e7f6a75c34682d17483726b",
+      "completeRuntimeElementSHA256": "41f5cd11761f8b07d0c67637a1be584805af38593e7f6a75c34682d17483726b",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T4-029",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "0ee5ee6ee70ee9618ff06a9614d57c3c2558be2c7fa10c453b38705affb18b12",
+      "runtimeGoldSQLSHA256": "0ee5ee6ee70ee9618ff06a9614d57c3c2558be2c7fa10c453b38705affb18b12",
+      "completeSourceElementSHA256": "312d52808bcb675ebe3da0d6734c033aec5b10aaece26f37e38eeae49093385b",
+      "completeRuntimeElementSHA256": "312d52808bcb675ebe3da0d6734c033aec5b10aaece26f37e38eeae49093385b",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T4-030",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "aee370554ce511c55a637a92a332af97b58ce13887f1eb58239c95ce2412344d",
+      "runtimeGoldSQLSHA256": "aee370554ce511c55a637a92a332af97b58ce13887f1eb58239c95ce2412344d",
+      "completeSourceElementSHA256": "67f19b1183feb6e1f2ef4b8b62d6c2d1142271f02452f13f88baee9cef187d27",
+      "completeRuntimeElementSHA256": "67f19b1183feb6e1f2ef4b8b62d6c2d1142271f02452f13f88baee9cef187d27",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T4-032",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "5aada3f2530a8122ea6325e02b249866d5d6295ae8cf9a0dc1ed002c77547567",
+      "runtimeGoldSQLSHA256": "5aada3f2530a8122ea6325e02b249866d5d6295ae8cf9a0dc1ed002c77547567",
+      "completeSourceElementSHA256": "5d2eb64d67aed19202d0ae216d5ea31e551ca2275cd8414e9189ac28ef67b173",
+      "completeRuntimeElementSHA256": "5d2eb64d67aed19202d0ae216d5ea31e551ca2275cd8414e9189ac28ef67b173",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T4-034",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "49de4b5299b40266d22ec0512c31ae0861702e65d48accbf126f030e0d6c8731",
+      "runtimeGoldSQLSHA256": "49de4b5299b40266d22ec0512c31ae0861702e65d48accbf126f030e0d6c8731",
+      "completeSourceElementSHA256": "e1b7aebdabbe2f265f1cb13f9e341a718e30bf222ed735edd49be0cc60c6dee3",
+      "completeRuntimeElementSHA256": "e1b7aebdabbe2f265f1cb13f9e341a718e30bf222ed735edd49be0cc60c6dee3",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T4-036",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "4c89bb701acb4c61d4f621dc55b4b4732f4f5148a035296c8d0b29410d11965c",
+      "runtimeGoldSQLSHA256": "4c89bb701acb4c61d4f621dc55b4b4732f4f5148a035296c8d0b29410d11965c",
+      "completeSourceElementSHA256": "5b669fe1dd2932b79004b8a6cdf952dab092ff5b4e5dfb13aadef512006ba9de",
+      "completeRuntimeElementSHA256": "5b669fe1dd2932b79004b8a6cdf952dab092ff5b4e5dfb13aadef512006ba9de",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T4-038",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "eb08a803fe5c555cf8d79aca7b3805e1029a20f9ad7c07a2d7054f0cc8bb889b",
+      "runtimeGoldSQLSHA256": "eb08a803fe5c555cf8d79aca7b3805e1029a20f9ad7c07a2d7054f0cc8bb889b",
+      "completeSourceElementSHA256": "7444387cb1fe863e3329ad1ec1f94bdd1f8657b4546465c83076b7c1d10dacc6",
+      "completeRuntimeElementSHA256": "7444387cb1fe863e3329ad1ec1f94bdd1f8657b4546465c83076b7c1d10dacc6",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T4-041",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "eef0bf2094c6cbc69da478d6ca59cdec4ad4021e54cf20346d7b7e50043dcfb8",
+      "runtimeGoldSQLSHA256": "eef0bf2094c6cbc69da478d6ca59cdec4ad4021e54cf20346d7b7e50043dcfb8",
+      "completeSourceElementSHA256": "49c3cb6621ac3a2672649d3c6769954bdc41f2580d666ecd4778d0c15ea04a8a",
+      "completeRuntimeElementSHA256": "49c3cb6621ac3a2672649d3c6769954bdc41f2580d666ecd4778d0c15ea04a8a",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T4-043",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "e57c8e1592449aa98acc67dd4cb3ae0dc67b3c5ded1c482629307b024a5a2d66",
+      "runtimeGoldSQLSHA256": "e57c8e1592449aa98acc67dd4cb3ae0dc67b3c5ded1c482629307b024a5a2d66",
+      "completeSourceElementSHA256": "839759c531188703f7caef96f9431a97bb06cba2b66c83930fc8c7600b33f3d4",
+      "completeRuntimeElementSHA256": "839759c531188703f7caef96f9431a97bb06cba2b66c83930fc8c7600b33f3d4",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T4-045",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "8545aee48ec6732af4783a81c4f1a87ad8c2fa6d9a6f8f1bc84bc2193f5c07e5",
+      "runtimeGoldSQLSHA256": "8545aee48ec6732af4783a81c4f1a87ad8c2fa6d9a6f8f1bc84bc2193f5c07e5",
+      "completeSourceElementSHA256": "6d56e4d8c09697061f554c595a6cfdaa3f8fed6a898422e02ccfed3609bc00af",
+      "completeRuntimeElementSHA256": "6d56e4d8c09697061f554c595a6cfdaa3f8fed6a898422e02ccfed3609bc00af",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T5-002",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "c199b55e23a46a0aef3fd5655bbcb935add7e0fb11dc83cba8bb564f1945b0f7",
+      "runtimeGoldSQLSHA256": "c199b55e23a46a0aef3fd5655bbcb935add7e0fb11dc83cba8bb564f1945b0f7",
+      "completeSourceElementSHA256": "1c309ba66774b83fa0d89f719ac00eeea14274aa67c8599854a240f57fa222e7",
+      "completeRuntimeElementSHA256": "1c309ba66774b83fa0d89f719ac00eeea14274aa67c8599854a240f57fa222e7",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T5-004",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "d3d43d34d4d70542777667e46fe5d5f1d5e69842ec7cf4f0eb449f00e22926a4",
+      "runtimeGoldSQLSHA256": "d3d43d34d4d70542777667e46fe5d5f1d5e69842ec7cf4f0eb449f00e22926a4",
+      "completeSourceElementSHA256": "7f0a939fe06cf011d6fa25dd55c8183c24c005cced8c20d3fce0c66042b9a685",
+      "completeRuntimeElementSHA256": "7f0a939fe06cf011d6fa25dd55c8183c24c005cced8c20d3fce0c66042b9a685",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T5-006",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "8dfd3470ae6dfdc14ea70b7e38a72a544fe46ced5ed2e6a0be325813b7d850c1",
+      "runtimeGoldSQLSHA256": "8dfd3470ae6dfdc14ea70b7e38a72a544fe46ced5ed2e6a0be325813b7d850c1",
+      "completeSourceElementSHA256": "00339ff0647de6c07d7579c50acc613fe08a3c93417b84d416af26eadfa6e68f",
+      "completeRuntimeElementSHA256": "00339ff0647de6c07d7579c50acc613fe08a3c93417b84d416af26eadfa6e68f",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T5-008",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "6bd842e0456833b385a76e0eddeb9296f62c5ee442449299846169da9ae48201",
+      "runtimeGoldSQLSHA256": "6bd842e0456833b385a76e0eddeb9296f62c5ee442449299846169da9ae48201",
+      "completeSourceElementSHA256": "fbc14207df6d717e8e9468c9439a91ea1360f777750719d5d13d7abaebbc04b4",
+      "completeRuntimeElementSHA256": "fbc14207df6d717e8e9468c9439a91ea1360f777750719d5d13d7abaebbc04b4",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T5-011",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "5f16d088ad0410369ec8a4e215d05fb85e45fcb636ac18bc2fe35b2de5e83c42",
+      "runtimeGoldSQLSHA256": "5f16d088ad0410369ec8a4e215d05fb85e45fcb636ac18bc2fe35b2de5e83c42",
+      "completeSourceElementSHA256": "ee3190769c89a826ad93d3685f8ddfbddb973ef1eff88e571e12d260d389e76a",
+      "completeRuntimeElementSHA256": "ee3190769c89a826ad93d3685f8ddfbddb973ef1eff88e571e12d260d389e76a",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T5-013",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "d2400e385d1c5dd16969ad4f9c480e1c5b34ce76df8883b9a87025a1996f2a7e",
+      "runtimeGoldSQLSHA256": "d2400e385d1c5dd16969ad4f9c480e1c5b34ce76df8883b9a87025a1996f2a7e",
+      "completeSourceElementSHA256": "83183084d405a8757b00b7bdb14b4e6da755ea4ecaf44533fe531a1cd36d02c1",
+      "completeRuntimeElementSHA256": "83183084d405a8757b00b7bdb14b4e6da755ea4ecaf44533fe531a1cd36d02c1",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T5-015",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "7103205bf1ee0659692a74393ecde81bcff03e14855aab534862ce9fd03e8611",
+      "runtimeGoldSQLSHA256": "7103205bf1ee0659692a74393ecde81bcff03e14855aab534862ce9fd03e8611",
+      "completeSourceElementSHA256": "ed512bf04d517d72e0e150e6fbda22594ffd19b65b3a3d0a81fcd43bd13c28aa",
+      "completeRuntimeElementSHA256": "ed512bf04d517d72e0e150e6fbda22594ffd19b65b3a3d0a81fcd43bd13c28aa",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T5-017",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "5440f7db47e543b894c843d2217ca4b5cb7cc64d1eba7999b708507036482c07",
+      "runtimeGoldSQLSHA256": "5440f7db47e543b894c843d2217ca4b5cb7cc64d1eba7999b708507036482c07",
+      "completeSourceElementSHA256": "04cb757e735f38371fa92cbe7311e365017fa9098242f89699f5c79def9d4a33",
+      "completeRuntimeElementSHA256": "04cb757e735f38371fa92cbe7311e365017fa9098242f89699f5c79def9d4a33",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T5-019",
+      "status": "PASS",
+      "comparison": "EXACT_CTE_RENAME_WITH_EQUAL_RESULTS",
+      "sourceGoldSQLSHA256": "e264b9adf4753dbc87435c8ef2d3071c8a94b6602142cf8c197c9ccf786ea116",
+      "runtimeGoldSQLSHA256": "d986ed44317322be068210ef7996c431f1bfc85a7d27613ef5ed24182dcb9e9a",
+      "completeSourceElementSHA256": "057aee2341e2e7ce54a0d302e5a5379cde91a01c21dc6b2f119ac1d13d0a28e9",
+      "completeRuntimeElementSHA256": "f2dbe9d5a83fa3bd3f632e6bb0a33b17aeae8f0311b61df8f3699adef1b1ec45",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T5-020",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "cbea7e345a2fe6b3962582f5d5f11af0cca9e15e3bf0adc51a08a4ca4ebe61e5",
+      "runtimeGoldSQLSHA256": "cbea7e345a2fe6b3962582f5d5f11af0cca9e15e3bf0adc51a08a4ca4ebe61e5",
+      "completeSourceElementSHA256": "7612feb6181f9601b484d0d96e5d5e03d141534bf676f544fbc8e0522bef81c3",
+      "completeRuntimeElementSHA256": "7612feb6181f9601b484d0d96e5d5e03d141534bf676f544fbc8e0522bef81c3",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T6-001",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "8bfbf0e1f2fb3bfa0191cf3d7630d54c18c9fadb1cc481684054caed02007c4a",
+      "runtimeGoldSQLSHA256": "8bfbf0e1f2fb3bfa0191cf3d7630d54c18c9fadb1cc481684054caed02007c4a",
+      "completeSourceElementSHA256": "aff1d8cd7443bdb9ee9adbdab067af2be82eb0f930ca0ffa93c1677e55950dd5",
+      "completeRuntimeElementSHA256": "aff1d8cd7443bdb9ee9adbdab067af2be82eb0f930ca0ffa93c1677e55950dd5",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T6-003",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "bbd17de0c65ec2391c6daf0ed6cf9071fea51f5375f26f1629862c0c20cfbac9",
+      "runtimeGoldSQLSHA256": "bbd17de0c65ec2391c6daf0ed6cf9071fea51f5375f26f1629862c0c20cfbac9",
+      "completeSourceElementSHA256": "2db111dfad84bd7354c46e2e272533bb970dfe7af027fbdf86e8ee4cf2fc3625",
+      "completeRuntimeElementSHA256": "2db111dfad84bd7354c46e2e272533bb970dfe7af027fbdf86e8ee4cf2fc3625",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T6-005",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "112a9205307ad3e0aa697a2ce2361d56891ebc21792b7298b6b2689b90171038",
+      "runtimeGoldSQLSHA256": "112a9205307ad3e0aa697a2ce2361d56891ebc21792b7298b6b2689b90171038",
+      "completeSourceElementSHA256": "7c1bc4350752b070f80e0f3551e2c48f5f845dac427e902c6c1ad6d051eb1c25",
+      "completeRuntimeElementSHA256": "7c1bc4350752b070f80e0f3551e2c48f5f845dac427e902c6c1ad6d051eb1c25",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T6-007",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "9bb668f8454416bf8733289ca06ddcff07f5c8adb09dc65a3dc500bfbfcb40e4",
+      "runtimeGoldSQLSHA256": "9bb668f8454416bf8733289ca06ddcff07f5c8adb09dc65a3dc500bfbfcb40e4",
+      "completeSourceElementSHA256": "f3fbbb7556d4ac56703a18c7ff9bbd1609430f21f30d19906f29bb86c50fb47b",
+      "completeRuntimeElementSHA256": "f3fbbb7556d4ac56703a18c7ff9bbd1609430f21f30d19906f29bb86c50fb47b",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T6-009",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "73593687040fd02c8aa143f9516109adc8509c073d21d2681c6f195fb30a24bd",
+      "runtimeGoldSQLSHA256": "73593687040fd02c8aa143f9516109adc8509c073d21d2681c6f195fb30a24bd",
+      "completeSourceElementSHA256": "c1ea8dc8b1a0e3ed2751d0b76717bc299535bdbb30930e533e0e47d8afadf4a9",
+      "completeRuntimeElementSHA256": "c1ea8dc8b1a0e3ed2751d0b76717bc299535bdbb30930e533e0e47d8afadf4a9",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T6-010",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "8b17954cf10edb0cf29c15e3292140c666eb4f1323c65af70c10070a0c41e419",
+      "runtimeGoldSQLSHA256": "8b17954cf10edb0cf29c15e3292140c666eb4f1323c65af70c10070a0c41e419",
+      "completeSourceElementSHA256": "24470e6bba7a8c75b743b0bbec4a97c4112bf79265cc2eede8c689635bba9490",
+      "completeRuntimeElementSHA256": "24470e6bba7a8c75b743b0bbec4a97c4112bf79265cc2eede8c689635bba9490",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T6-012",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "be909f80db54d8975f785d5c28f639e0d1c05795ae3c8ccaa5f02cf031a2ac0f",
+      "runtimeGoldSQLSHA256": "be909f80db54d8975f785d5c28f639e0d1c05795ae3c8ccaa5f02cf031a2ac0f",
+      "completeSourceElementSHA256": "5b3754fcc1bc2c500f43ddb95fc8c407acd8800d4d8813dbd150e7172f1ef41d",
+      "completeRuntimeElementSHA256": "5b3754fcc1bc2c500f43ddb95fc8c407acd8800d4d8813dbd150e7172f1ef41d",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T6-014",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "7071b3901389081afaa480b111ca7f56aeaf9323707504ad43bb863778f6e1a6",
+      "runtimeGoldSQLSHA256": "7071b3901389081afaa480b111ca7f56aeaf9323707504ad43bb863778f6e1a6",
+      "completeSourceElementSHA256": "5a2e69094dc84bbb5812223bc4781e942a7a9e6e30bc6e11ec04db23d8b43153",
+      "completeRuntimeElementSHA256": "5a2e69094dc84bbb5812223bc4781e942a7a9e6e30bc6e11ec04db23d8b43153",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T6-016",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "e0c11e81046d050ac9b7c94042b44b070baa4385416f0c32287bdcea4473a258",
+      "runtimeGoldSQLSHA256": "e0c11e81046d050ac9b7c94042b44b070baa4385416f0c32287bdcea4473a258",
+      "completeSourceElementSHA256": "800c96039e974e999355e3e6bb19d57d681c158aa17d1e661180c5f7b69fa083",
+      "completeRuntimeElementSHA256": "800c96039e974e999355e3e6bb19d57d681c158aa17d1e661180c5f7b69fa083",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T6-018",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "7dc8ae68d13108cc4ab25f57a54e975b9c18dc2b020d176d8f33281ee57a188d",
+      "runtimeGoldSQLSHA256": "7dc8ae68d13108cc4ab25f57a54e975b9c18dc2b020d176d8f33281ee57a188d",
+      "completeSourceElementSHA256": "7f5f337857effb9b4b18ee3cae98af604a9e182f029f5e4730e48d11635769ca",
+      "completeRuntimeElementSHA256": "7f5f337857effb9b4b18ee3cae98af604a9e182f029f5e4730e48d11635769ca",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T6-021",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "45d9e89d2679a48e83e46d82d0a1437f89a51a4722af4e0706d87996b834d823",
+      "runtimeGoldSQLSHA256": "45d9e89d2679a48e83e46d82d0a1437f89a51a4722af4e0706d87996b834d823",
+      "completeSourceElementSHA256": "7641a1e56a858dc3863c946bd7c38ef62769e3ccead48e838c9d5344f699eea1",
+      "completeRuntimeElementSHA256": "7641a1e56a858dc3863c946bd7c38ef62769e3ccead48e838c9d5344f699eea1",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T6-023",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "f0f541cfa3e8ed5e242c2bbf0fc8fea8e61e5503d4c898c3282bcecd1d736008",
+      "runtimeGoldSQLSHA256": "f0f541cfa3e8ed5e242c2bbf0fc8fea8e61e5503d4c898c3282bcecd1d736008",
+      "completeSourceElementSHA256": "c0b87a113b0ae30e861f673bb399e75f3073b476e2bb5109a250e1d9136b4c32",
+      "completeRuntimeElementSHA256": "c0b87a113b0ae30e861f673bb399e75f3073b476e2bb5109a250e1d9136b4c32",
+      "questionAndOtherFieldsUnchanged": true
+    },
+    {
+      "id": "T6-025",
+      "status": "PASS",
+      "comparison": "ALL_YAML_ELEMENTS_UNCHANGED",
+      "sourceGoldSQLSHA256": "9bdbca14f9a9090ba1b53373d4f46433eb1388c1dd0fe0cc11dc989617a36929",
+      "runtimeGoldSQLSHA256": "9bdbca14f9a9090ba1b53373d4f46433eb1388c1dd0fe0cc11dc989617a36929",
+      "completeSourceElementSHA256": "654c5e3480ec6fe9e402e3b53cc34a279f5214bf96eec08c9a1fe73a63652ff1",
+      "completeRuntimeElementSHA256": "654c5e3480ec6fe9e402e3b53cc34a279f5214bf96eec08c9a1fe73a63652ff1",
+      "questionAndOtherFieldsUnchanged": true
+    }
+  ],
+  "unresolvedIssues": []
+}
