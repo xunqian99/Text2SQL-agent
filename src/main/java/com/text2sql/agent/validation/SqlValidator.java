@@ -69,7 +69,7 @@ public class SqlValidator {
      * 校验 SQL。
      *
      * @param sql    模型生成的 SQL
-     * @param schema 本次请求的 schema 上下文，用于表白名单校验
+     * @param schema 完整受授权的业务目录；调用者不得传生成用的检索/剪枝子集
      */
     public ValidationResult validate(String sql, SchemaContext schema) {
         List<ValidationResult.Violation> violations = new ArrayList<>();

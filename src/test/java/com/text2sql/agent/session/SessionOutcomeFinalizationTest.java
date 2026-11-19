@@ -65,6 +65,7 @@ class SessionOutcomeFinalizationTest {
             ReflectionTestUtils.setField(generator, "chatModel", model);
             when(model.call(any(Prompt.class))).thenReturn(sql());
             when(schemas.provide(anyString())).thenReturn(schema);
+            when(schemas.fullSchema()).thenReturn(schema);
             when(validator.validate(anyString(), any())).thenAnswer(i -> ValidationResult.ok(i.getArgument(0)));
             when(executor.execute(anyString())).thenReturn(new QueryResult(List.of("order_id"), List.of(List.of("fixture")), false, 1));
             when(checker.check(anyString(), anyString(), any())).thenReturn(CheckResult.NORMAL);

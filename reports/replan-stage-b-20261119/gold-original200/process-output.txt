@@ -1,0 +1,665 @@
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::               (v3.5.16)
+
+2026-11-19T18:06:20.902+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.agent.Text2SqlAgentApplication       : Starting Text2SqlAgentApplication v0.1.0-SNAPSHOT using Java 21.0.11 with PID 8808 (C:\Users\xunqian\Desktop\agent\target\text2sql-agent-0.1.0-SNAPSHOT.jar started by xunqian in C:\Users\xunqian\Desktop\agent)
+2026-11-19T18:06:20.907+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.agent.Text2SqlAgentApplication       : The following 1 profile is active: "local"
+2026-11-19T18:06:23.753+08:00  INFO 8808 --- [text2sql-agent] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 18091 (http)
+2026-11-19T18:06:23.781+08:00  INFO 8808 --- [text2sql-agent] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-11-19T18:06:23.781+08:00  INFO 8808 --- [text2sql-agent] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.55]
+2026-11-19T18:06:23.841+08:00  INFO 8808 --- [text2sql-agent] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-11-19T18:06:23.843+08:00  INFO 8808 --- [text2sql-agent] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 2782 ms
+2026-11-19T18:06:24.450+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.agent.semantic.MetricRegistry        : 指标注册表已加载：27 条，维度口径：1 条，实体口径：1 条
+2026-11-19T18:06:24.649+08:00  INFO 8808 --- [text2sql-agent] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-11-19T18:06:24.685+08:00  INFO 8808 --- [text2sql-agent] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-11-19T18:06:25.236+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.agent.retrieval.SchemaCatalog        : schema 已加载：37 张表 / 201 列 / 13 条外键 / DDL 8666 字符
+2026-11-19T18:06:25.601+08:00  INFO 8808 --- [text2sql-agent] [           main] c.text2sql.agent.fewshot.ExampleLoader   : Few-shot 示例库加载完成：35 条示例
+2026-11-19T18:06:25.635+08:00  WARN 8808 --- [text2sql-agent] [           main] c.t.agent.generation.LlmSqlGenerator     : 未配置全局 agent.llm.api-key，进入 BYOK（用户自带密钥）模式；用户可在前端输入个人 API Key 体验。
+2026-11-19T18:06:25.677+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.clarification.AmbiguityDetector    : 歧义词表已加载：5 条
+2026-11-19T18:06:26.048+08:00  INFO 8808 --- [text2sql-agent] [           main] o.s.b.a.w.s.WelcomePageHandlerMapping    : Adding welcome page: class path resource [static/index.html]
+2026-11-19T18:06:26.975+08:00  INFO 8808 --- [text2sql-agent] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 18091 (http) with context path '/'
+2026-11-19T18:06:27.003+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.agent.Text2SqlAgentApplication       : Started Text2SqlAgentApplication in 7.116 seconds (process running for 7.977)
+2026-11-19T18:06:27.071+08:00  INFO 8808 --- [text2sql-agent] [           main] c.text2sql.agent.evaluation.EvalRunner   : 开始评估：200 条，dryRun=true，model=deepseek-flash
+2026-11-19T18:06:27.073+08:00  INFO 8808 --- [text2sql-agent] [           main] c.text2sql.agent.evaluation.EvalRunner   : 评测实际配置（不含密钥）：{maxTokens=8192, temperature=0.0, configuredReasoningEffort=provider-default, explicitReasoningEnabled=true, inputPricePer1k=0.001, outputPricePer1k=0.004, cacheHitPricePer1k=2.0E-5, costEstimated=true, requestBudgetEnabled=true, requestTimeoutMs=15000, requestMaxModelCalls=2, requestMinRetryRemainingMs=2000, sdkMaxAttempts=1, clarificationEnabled=true, resultCheckerEnabled=true, resultCheckerPolicyVersion=output-value-and-entity-extremum-v2, columnPruningEnabled=true, joinPlanEnabled=true, joinListEnabled=false, bridgeRepairEnabled=true, semanticEnabled=true, metricDefinitionsSha256=78dfc23f9075536aa7568f94c87c41d238cac0c66c553449c9fd7c67c9035192, fewshotEnabled=true, fewshotMaxExamples=2, fewshotRequireAvailableTables=false, fewshotSelectionPolicy=overlap-v1, cacheEnabled=false, routingEnabled=false, toolUseEnabled=false, conversationEnabled=false}
+2026-11-19T18:06:27.201+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.glossary.GlossaryLoader  : 语义词典已加载：37 张表有中文描述 / 36 条约定关联（无效条目 0 条）
+2026-11-19T18:06:27.303+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.agent.retrieval.ValueRetriever       : ValueRetriever 枚举与实体倒排索引初始化完成，共收录 300 个映射项
+2026-11-19T18:06:27.330+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1690 字符（全量 8666 字符）
+2026-11-19T18:06:27.348+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:27.468+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1917 字符（全量 8666 字符）
+2026-11-19T18:06:27.471+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:27.503+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：4 条主干边，起点 orders，覆盖目标表 [campaigns, orders]
+2026-11-19T18:06:27.503+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 9 张表：[orders, campaigns, customers, order_items, order_payments, order_reviews, campaign_products, coupon_usages, products] | DDL 1972 字符（全量 8666 字符）
+2026-11-19T18:06:27.503+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：2 条
+2026-11-19T18:06:27.620+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：2 条主干边，起点 customers，覆盖目标表 [customers, members, orders]
+2026-11-19T18:06:27.620+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[customers, members, orders, member_levels, order_items, order_payments, order_reviews, regions] | DDL 1681 字符（全量 8666 字符）
+2026-11-19T18:06:27.624+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:27.721+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 6 张表：[order_items, orders, products, sellers, refund_items, settlement_items] | DDL 1269 字符（全量 8666 字符）
+2026-11-19T18:06:27.722+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:27.760+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[products, order_items, campaign_products, inventory, inventory_movements, product_brand_map, product_category_translation, product_price_history] | DDL 1406 字符（全量 8666 字符）
+2026-11-19T18:06:27.762+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:27.775+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 4 张表：[sellers, order_items, regions, settlements] | DDL 747 字符（全量 8666 字符）
+2026-11-19T18:06:27.776+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:27.829+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 customers，覆盖目标表 [customers, geolocation, shipping_addresses]
+2026-11-19T18:06:27.830+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 6 张表：[customers, geolocation, shipping_addresses, orders, members, regions] | DDL 1173 字符（全量 8666 字符）
+2026-11-19T18:06:27.831+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:27.896+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：2 条主干边，起点 customers，覆盖目标表 [customers, geolocation, shipping_addresses, regions]
+2026-11-19T18:06:27.896+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 6 张表：[customers, orders, geolocation, shipping_addresses, members, regions] | DDL 1243 字符（全量 8666 字符）
+2026-11-19T18:06:27.897+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：3 条
+2026-11-19T18:06:27.917+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1690 字符（全量 8666 字符）
+2026-11-19T18:06:27.919+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:27.933+08:00  INFO 8808 --- [text2sql-agent] [           main] c.text2sql.agent.evaluation.EvalRunner   : 进度 10/200，当前准确率 100.0%（已排除 gold 不可执行条目 0 条）
+2026-11-19T18:06:27.938+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[products, order_items, campaign_products, inventory, inventory_movements, product_brand_map, product_category_translation, product_price_history] | DDL 1406 字符（全量 8666 字符）
+2026-11-19T18:06:27.939+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:27.969+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：2 条主干边，起点 order_items，覆盖目标表 [order_items, support_tickets]
+2026-11-19T18:06:27.970+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[order_items, orders, products, sellers, support_tickets, refund_items, settlement_items, ticket_categories] | DDL 1902 字符（全量 8666 字符）
+2026-11-19T18:06:27.971+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:28.017+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：2 条主干边，起点 order_items，覆盖目标表 [order_items, support_tickets]
+2026-11-19T18:06:28.017+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[order_items, orders, products, sellers, support_tickets, refund_items, settlement_items, ticket_categories] | DDL 1642 字符（全量 8666 字符）
+2026-11-19T18:06:28.017+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:28.076+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 2 张表：[order_reviews, orders] | DDL 441 字符（全量 8666 字符）
+2026-11-19T18:06:28.077+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:28.118+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 2 张表：[order_payments, orders] | DDL 451 字符（全量 8666 字符）
+2026-11-19T18:06:28.119+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：1 条
+2026-11-19T18:06:28.146+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 2 张表：[order_payments, orders] | DDL 451 字符（全量 8666 字符）
+2026-11-19T18:06:28.147+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:28.173+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[products, order_items, campaign_products, inventory, inventory_movements, product_brand_map, product_category_translation, product_price_history] | DDL 1396 字符（全量 8666 字符）
+2026-11-19T18:06:28.173+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:28.194+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 6 张表：[order_items, orders, products, sellers, refund_items, settlement_items] | DDL 1277 字符（全量 8666 字符）
+2026-11-19T18:06:28.195+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:28.242+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 customers，覆盖目标表 [customers, orders]
+2026-11-19T18:06:28.243+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[customers, orders, order_items, order_payments, order_reviews, coupon_usages, members, refund_items] | DDL 2053 字符（全量 8666 字符）
+2026-11-19T18:06:28.243+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:28.265+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 2 张表：[order_reviews, orders] | DDL 441 字符（全量 8666 字符）
+2026-11-19T18:06:28.266+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:28.279+08:00  INFO 8808 --- [text2sql-agent] [           main] c.text2sql.agent.evaluation.EvalRunner   : 进度 20/200，当前准确率 100.0%（已排除 gold 不可执行条目 0 条）
+2026-11-19T18:06:28.286+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：3 条主干边，起点 sellers，覆盖目标表 [customers, geolocation, shipping_addresses, sellers, regions]
+2026-11-19T18:06:28.286+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[sellers, customers, geolocation, shipping_addresses, order_items, orders, regions, settlements] | DDL 1672 字符（全量 8666 字符）
+2026-11-19T18:06:28.287+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：4 条
+2026-11-19T18:06:28.312+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：2 条主干边，起点 order_items，覆盖目标表 [order_items, support_tickets]
+2026-11-19T18:06:28.312+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[order_items, orders, products, sellers, support_tickets, refund_items, settlement_items, ticket_categories] | DDL 1902 字符（全量 8666 字符）
+2026-11-19T18:06:28.313+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:28.334+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 products，覆盖目标表 [product_category_translation, products]
+2026-11-19T18:06:28.334+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[products, product_category_translation, order_items, campaign_products, inventory, inventory_movements, product_brand_map, product_price_history] | DDL 1558 字符（全量 8666 字符）
+2026-11-19T18:06:28.335+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:28.350+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 3 张表：[member_levels, members, member_snapshot] | DDL 510 字符（全量 8666 字符）
+2026-11-19T18:06:28.350+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：1 条
+2026-11-19T18:06:28.362+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：3 条主干边，起点 members，覆盖目标表 [orders, members, search_logs, support_tickets]
+2026-11-19T18:06:28.362+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[members, orders, search_logs, support_tickets, member_levels, coupon_usages, customers, member_snapshot] | DDL 1535 字符（全量 8666 字符）
+2026-11-19T18:06:28.363+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：1 条
+2026-11-19T18:06:28.403+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：3 条主干边，起点 members，覆盖目标表 [member_snapshot, members, support_tickets, search_logs]
+2026-11-19T18:06:28.403+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[members, support_tickets, member_snapshot, search_logs, member_levels, ticket_categories, coupon_usages, customers] | DDL 1452 字符（全量 8666 字符）
+2026-11-19T18:06:28.404+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:28.429+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 shipments，覆盖目标表 [shipments, warehouses]
+2026-11-19T18:06:28.429+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 7 张表：[shipments, warehouses, inventory, inventory_movements, orders, regions, shipment_tracking] | DDL 1361 字符（全量 8666 字符）
+2026-11-19T18:06:28.430+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:28.440+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 warehouses，覆盖目标表 [warehouses, shipments]
+2026-11-19T18:06:28.440+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 7 张表：[warehouses, shipments, inventory, inventory_movements, regions, orders, shipment_tracking] | DDL 1361 字符（全量 8666 字符）
+2026-11-19T18:06:28.441+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:28.460+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 3 张表：[refunds, orders, refund_items] | DDL 589 字符（全量 8666 字符）
+2026-11-19T18:06:28.461+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:28.473+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 3 张表：[refunds, orders, refund_items] | DDL 589 字符（全量 8666 字符）
+2026-11-19T18:06:28.474+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：1 条
+2026-11-19T18:06:28.480+08:00  INFO 8808 --- [text2sql-agent] [           main] c.text2sql.agent.evaluation.EvalRunner   : 进度 30/200，当前准确率 100.0%（已排除 gold 不可执行条目 0 条）
+2026-11-19T18:06:28.485+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 coupon_usages，覆盖目标表 [coupon_usages, coupons]
+2026-11-19T18:06:28.486+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 5 张表：[coupon_usages, coupons, campaigns, members, orders] | DDL 1184 字符（全量 8666 字符）
+2026-11-19T18:06:28.486+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:28.495+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 coupons，覆盖目标表 [coupons, coupon_usages]
+2026-11-19T18:06:28.495+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 5 张表：[coupons, coupon_usages, campaigns, members, orders] | DDL 1184 字符（全量 8666 字符）
+2026-11-19T18:06:28.496+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：1 条
+2026-11-19T18:06:28.506+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 5 张表：[support_tickets, ticket_categories, members, orders, ticket_messages] | DDL 1102 字符（全量 8666 字符）
+2026-11-19T18:06:28.508+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：1 条
+2026-11-19T18:06:28.515+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：3 条主干边，起点 products，覆盖目标表 [support_tickets, products]
+2026-11-19T18:06:28.516+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 9 张表：[products, support_tickets, order_items, ticket_categories, campaign_products, inventory, inventory_movements, members, search_logs] | DDL 1753 字符（全量 8666 字符）
+2026-11-19T18:06:28.516+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:28.536+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：4 条主干边，起点 inventory，覆盖目标表 [inventory, support_tickets]
+2026-11-19T18:06:28.537+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 9 张表：[inventory, support_tickets, products, warehouses, ticket_categories, members, orders, ticket_messages, order_items] | DDL 2206 字符（全量 8666 字符）
+2026-11-19T18:06:28.538+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:28.568+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 3 张表：[inventory_movements, products, warehouses] | DDL 524 字符（全量 8666 字符）
+2026-11-19T18:06:28.570+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：1 条
+2026-11-19T18:06:28.589+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 3 张表：[search_logs, members, products] | DDL 513 字符（全量 8666 字符）
+2026-11-19T18:06:28.590+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:28.602+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：3 条主干边，起点 regions，覆盖目标表 [customers, geolocation, shipping_addresses, regions, warehouses]
+2026-11-19T18:06:28.603+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[regions, warehouses, customers, geolocation, shipping_addresses, shipments, inventory, inventory_movements] | DDL 1645 字符（全量 8666 字符）
+2026-11-19T18:06:28.604+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:28.616+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 3 张表：[campaigns, campaign_products, coupons] | DDL 614 字符（全量 8666 字符）
+2026-11-19T18:06:28.618+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:28.637+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 product_price_history，覆盖目标表 [product_price_history, products]
+2026-11-19T18:06:28.638+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[product_price_history, products, order_items, campaign_products, inventory, inventory_movements, product_brand_map, product_category_translation] | DDL 1690 字符（全量 8666 字符）
+2026-11-19T18:06:28.638+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:28.645+08:00  INFO 8808 --- [text2sql-agent] [           main] c.text2sql.agent.evaluation.EvalRunner   : 进度 40/200，当前准确率 100.0%（已排除 gold 不可执行条目 0 条）
+2026-11-19T18:06:28.666+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 6 张表：[order_items, orders, products, sellers, refund_items, settlement_items] | DDL 1467 字符（全量 8666 字符）
+2026-11-19T18:06:28.667+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:28.715+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 order_items，覆盖目标表 [orders, order_items]
+2026-11-19T18:06:28.715+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[order_items, orders, customers, order_payments, order_reviews, products, sellers, coupon_usages] | DDL 1752 字符（全量 8666 字符）
+2026-11-19T18:06:28.715+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:28.766+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 6 张表：[order_items, orders, products, sellers, refund_items, settlement_items] | DDL 1467 字符（全量 8666 字符）
+2026-11-19T18:06:28.766+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:28.845+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 order_items，覆盖目标表 [orders, order_items]
+2026-11-19T18:06:28.846+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[order_items, orders, customers, order_payments, order_reviews, products, sellers, coupon_usages] | DDL 1752 字符（全量 8666 字符）
+2026-11-19T18:06:28.846+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:28.893+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1651 字符（全量 8666 字符）
+2026-11-19T18:06:28.895+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:28.931+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 2 张表：[order_payments, orders] | DDL 451 字符（全量 8666 字符）
+2026-11-19T18:06:28.932+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:28.967+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 2 张表：[order_reviews, orders] | DDL 441 字符（全量 8666 字符）
+2026-11-19T18:06:28.967+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:29.014+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 customers，覆盖目标表 [customers, geolocation, shipping_addresses]
+2026-11-19T18:06:29.014+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 6 张表：[customers, orders, geolocation, shipping_addresses, members, regions] | DDL 1193 字符（全量 8666 字符）
+2026-11-19T18:06:29.021+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:29.057+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 products，覆盖目标表 [products, product_category_translation]
+2026-11-19T18:06:29.057+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[products, product_category_translation, order_items, campaign_products, inventory, inventory_movements, product_brand_map, product_price_history] | DDL 1726 字符（全量 8666 字符）
+2026-11-19T18:06:29.059+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:29.078+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：4 条主干边，起点 sellers，覆盖目标表 [customers, geolocation, shipping_addresses, sellers]
+2026-11-19T18:06:29.079+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[sellers, customers, geolocation, shipping_addresses, order_items, orders, regions, settlements] | DDL 1783 字符（全量 8666 字符）
+2026-11-19T18:06:29.080+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:29.102+08:00  INFO 8808 --- [text2sql-agent] [           main] c.text2sql.agent.evaluation.EvalRunner   : 进度 50/200，当前准确率 100.0%（已排除 gold 不可执行条目 0 条）
+2026-11-19T18:06:29.154+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：4 条主干边，起点 sellers，覆盖目标表 [sellers, products, order_items, support_tickets]
+2026-11-19T18:06:29.155+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[sellers, order_items, products, support_tickets, orders, regions, settlements, campaign_products] | DDL 1959 字符（全量 8666 字符）
+2026-11-19T18:06:29.156+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:29.242+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：3 条主干边，起点 order_items，覆盖目标表 [sellers, order_items, support_tickets]
+2026-11-19T18:06:29.242+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[order_items, sellers, support_tickets, orders, products, refund_items, regions, settlement_items] | DDL 1999 字符（全量 8666 字符）
+2026-11-19T18:06:29.243+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:29.311+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：3 条主干边，起点 orders，覆盖目标表 [orders, campaigns]
+2026-11-19T18:06:29.311+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 9 张表：[orders, customers, order_items, order_payments, order_reviews, campaigns, coupon_usages, refund_items, coupons] | DDL 2412 字符（全量 8666 字符）
+2026-11-19T18:06:29.316+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：3 条
+2026-11-19T18:06:29.354+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 2 张表：[order_payments, orders] | DDL 451 字符（全量 8666 字符）
+2026-11-19T18:06:29.355+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：1 条
+2026-11-19T18:06:29.395+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：2 条主干边，起点 members，覆盖目标表 [member_levels, members, member_snapshot]
+2026-11-19T18:06:29.395+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[members, member_levels, member_snapshot, coupon_usages, customers, referrals, search_logs, support_tickets] | DDL 1486 字符（全量 8666 字符）
+2026-11-19T18:06:29.396+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:29.431+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[members, member_levels, coupon_usages, customers, member_snapshot, referrals, search_logs, support_tickets] | DDL 1291 字符（全量 8666 字符）
+2026-11-19T18:06:29.432+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:29.449+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：3 条主干边，起点 regions，覆盖目标表 [regions, warehouses, customers, geolocation, shipping_addresses]
+2026-11-19T18:06:29.450+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[regions, warehouses, customers, geolocation, shipping_addresses, shipments, inventory, inventory_movements] | DDL 1645 字符（全量 8666 字符）
+2026-11-19T18:06:29.451+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:29.460+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 3 张表：[campaigns, campaign_products, coupons] | DDL 614 字符（全量 8666 字符）
+2026-11-19T18:06:29.461+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:29.471+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 3 张表：[campaigns, campaign_products, coupons] | DDL 554 字符（全量 8666 字符）
+2026-11-19T18:06:29.472+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:29.485+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 coupons，覆盖目标表 [coupons, coupon_usages]
+2026-11-19T18:06:29.485+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 5 张表：[coupons, coupon_usages, campaigns, members, orders] | DDL 1184 字符（全量 8666 字符）
+2026-11-19T18:06:29.486+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：1 条
+2026-11-19T18:06:29.493+08:00  INFO 8808 --- [text2sql-agent] [           main] c.text2sql.agent.evaluation.EvalRunner   : 进度 60/200，当前准确率 100.0%（已排除 gold 不可执行条目 0 条）
+2026-11-19T18:06:29.501+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 3 张表：[refunds, orders, refund_items] | DDL 589 字符（全量 8666 字符）
+2026-11-19T18:06:29.502+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:29.520+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 3 张表：[refunds, orders, refund_items] | DDL 554 字符（全量 8666 字符）
+2026-11-19T18:06:29.521+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:29.535+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：2 条主干边，起点 refunds，覆盖目标表 [refunds, orders, refund_items]
+2026-11-19T18:06:29.535+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[refunds, orders, refund_items, customers, order_items, order_payments, order_reviews, coupon_usages] | DDL 1670 字符（全量 8666 字符）
+2026-11-19T18:06:29.536+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:29.555+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：2 条主干边，起点 inventory，覆盖目标表 [shipments, warehouses, inventory]
+2026-11-19T18:06:29.555+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[inventory, shipments, warehouses, inventory_movements, orders, products, regions, shipment_tracking] | DDL 1615 字符（全量 8666 字符）
+2026-11-19T18:06:29.556+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:29.574+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：2 条主干边，起点 inventory，覆盖目标表 [shipments, warehouses, inventory]
+2026-11-19T18:06:29.574+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[inventory, shipments, warehouses, inventory_movements, orders, products, regions, shipment_tracking] | DDL 1731 字符（全量 8666 字符）
+2026-11-19T18:06:29.575+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:29.590+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：2 条主干边，起点 inventory，覆盖目标表 [shipments, warehouses, inventory]
+2026-11-19T18:06:29.590+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[inventory, shipments, warehouses, inventory_movements, orders, products, regions, shipment_tracking] | DDL 1731 字符（全量 8666 字符）
+2026-11-19T18:06:29.592+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:29.614+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 3 张表：[inventory_movements, products, warehouses] | DDL 524 字符（全量 8666 字符）
+2026-11-19T18:06:29.614+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:29.684+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 4 张表：[shipments, warehouses, orders, shipment_tracking] | DDL 1032 字符（全量 8666 字符）
+2026-11-19T18:06:29.684+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:29.725+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 4 张表：[shipments, warehouses, orders, shipment_tracking] | DDL 1054 字符（全量 8666 字符）
+2026-11-19T18:06:29.726+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:29.748+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 support_tickets，覆盖目标表 [support_tickets, ticket_categories]
+2026-11-19T18:06:29.749+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 5 张表：[support_tickets, ticket_categories, members, orders, ticket_messages] | DDL 1120 字符（全量 8666 字符）
+2026-11-19T18:06:29.750+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:29.758+08:00  INFO 8808 --- [text2sql-agent] [           main] c.text2sql.agent.evaluation.EvalRunner   : 进度 70/200，当前准确率 100.0%（已排除 gold 不可执行条目 0 条）
+2026-11-19T18:06:29.764+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 5 张表：[support_tickets, ticket_categories, members, orders, ticket_messages] | DDL 1102 字符（全量 8666 字符）
+2026-11-19T18:06:29.765+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:29.786+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 3 张表：[settlements, sellers, settlement_items] | DDL 529 字符（全量 8666 字符）
+2026-11-19T18:06:29.787+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:29.800+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：4 条主干边，起点 settlements，覆盖目标表 [order_payments, sellers, settlements]
+2026-11-19T18:06:29.801+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 7 张表：[settlements, order_payments, sellers, order_items, orders, settlement_items, regions] | DDL 1723 字符（全量 8666 字符）
+2026-11-19T18:06:29.803+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:29.816+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 sellers，覆盖目标表 [sellers, settlements]
+2026-11-19T18:06:29.817+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 5 张表：[sellers, settlements, order_items, regions, settlement_items] | DDL 1145 字符（全量 8666 字符）
+2026-11-19T18:06:29.818+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:29.831+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 3 张表：[search_logs, members, products] | DDL 485 字符（全量 8666 字符）
+2026-11-19T18:06:29.832+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:29.848+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 products，覆盖目标表 [products, product_category_translation]
+2026-11-19T18:06:29.848+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[products, product_category_translation, order_items, campaign_products, inventory, inventory_movements, product_brand_map, product_price_history] | DDL 1726 字符（全量 8666 字符）
+2026-11-19T18:06:29.849+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:29.886+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：2 条主干边，起点 orders，覆盖目标表 [orders, customers, geolocation, shipping_addresses]
+2026-11-19T18:06:29.886+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[orders, customers, geolocation, shipping_addresses, order_items, order_payments, order_reviews, coupon_usages] | DDL 1639 字符（全量 8666 字符）
+2026-11-19T18:06:29.888+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:29.937+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 6 张表：[order_items, orders, products, sellers, refund_items, settlement_items] | DDL 1467 字符（全量 8666 字符）
+2026-11-19T18:06:29.938+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:29.981+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 2 张表：[order_reviews, orders] | DDL 441 字符（全量 8666 字符）
+2026-11-19T18:06:29.982+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:30.042+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 2 张表：[order_payments, orders] | DDL 475 字符（全量 8666 字符）
+2026-11-19T18:06:30.043+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:30.092+08:00  INFO 8808 --- [text2sql-agent] [           main] c.text2sql.agent.evaluation.EvalRunner   : 进度 80/200，当前准确率 100.0%（已排除 gold 不可执行条目 0 条）
+2026-11-19T18:06:30.131+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：2 条主干边，起点 orders，覆盖目标表 [orders, settlements]
+2026-11-19T18:06:30.132+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 9 张表：[orders, settlements, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, settlement_items] | DDL 2392 字符（全量 8666 字符）
+2026-11-19T18:06:30.133+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:30.260+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1917 字符（全量 8666 字符）
+2026-11-19T18:06:30.262+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:30.358+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1690 字符（全量 8666 字符）
+2026-11-19T18:06:30.359+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:30.398+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1917 字符（全量 8666 字符）
+2026-11-19T18:06:30.399+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:30.448+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1917 字符（全量 8666 字符）
+2026-11-19T18:06:30.452+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:30.715+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 6 张表：[order_items, orders, products, sellers, refund_items, settlement_items] | DDL 1481 字符（全量 8666 字符）
+2026-11-19T18:06:30.715+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:31.338+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 6 张表：[order_items, orders, products, sellers, refund_items, settlement_items] | DDL 1679 字符（全量 8666 字符）
+2026-11-19T18:06:31.339+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:31.986+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 order_items，覆盖目标表 [orders, order_items]
+2026-11-19T18:06:31.986+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[order_items, orders, products, sellers, customers, order_payments, order_reviews, refund_items] | DDL 2106 字符（全量 8666 字符）
+2026-11-19T18:06:31.987+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:32.336+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1917 字符（全量 8666 字符）
+2026-11-19T18:06:32.337+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:32.388+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1917 字符（全量 8666 字符）
+2026-11-19T18:06:32.389+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:32.416+08:00  INFO 8808 --- [text2sql-agent] [           main] c.text2sql.agent.evaluation.EvalRunner   : 进度 90/200，当前准确率 100.0%（已排除 gold 不可执行条目 0 条）
+2026-11-19T18:06:32.440+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1917 字符（全量 8666 字符）
+2026-11-19T18:06:32.441+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:32.600+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1917 字符（全量 8666 字符）
+2026-11-19T18:06:32.600+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:32.661+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1917 字符（全量 8666 字符）
+2026-11-19T18:06:32.662+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:32.701+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 6 张表：[order_items, orders, products, sellers, refund_items, settlement_items] | DDL 1481 字符（全量 8666 字符）
+2026-11-19T18:06:32.702+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:32.773+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 orders，覆盖目标表 [support_tickets, orders]
+2026-11-19T18:06:32.773+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[orders, support_tickets, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items] | DDL 1889 字符（全量 8666 字符）
+2026-11-19T18:06:32.773+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:32.861+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 orders，覆盖目标表 [support_tickets, orders]
+2026-11-19T18:06:32.862+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[orders, support_tickets, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items] | DDL 1889 字符（全量 8666 字符）
+2026-11-19T18:06:32.862+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:32.933+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 2083 字符（全量 8666 字符）
+2026-11-19T18:06:32.934+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:33.109+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：3 条主干边，起点 shipments，覆盖目标表 [customers, geolocation, shipping_addresses, shipments, orders]
+2026-11-19T18:06:33.109+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[shipments, customers, geolocation, shipping_addresses, warehouses, orders, shipment_tracking, members] | DDL 1963 字符（全量 8666 字符）
+2026-11-19T18:06:33.110+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入业务指标：[delivery_days]
+2026-11-19T18:06:33.110+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:33.266+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 orders，覆盖目标表 [orders, shipments]
+2026-11-19T18:06:33.266+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, shipments, coupon_usages, refund_items] | DDL 1876 字符（全量 8666 字符）
+2026-11-19T18:06:33.267+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:33.297+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 2196 字符（全量 8666 字符）
+2026-11-19T18:06:33.297+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入业务指标：[late_delivery_rate]
+2026-11-19T18:06:33.297+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：1 条
+2026-11-19T18:06:33.312+08:00  INFO 8808 --- [text2sql-agent] [           main] c.text2sql.agent.evaluation.EvalRunner   : 进度 100/200，当前准确率 100.0%（已排除 gold 不可执行条目 0 条）
+2026-11-19T18:06:33.318+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 3 张表：[refunds, orders, refund_items] | DDL 802 字符（全量 8666 字符）
+2026-11-19T18:06:33.319+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:33.335+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 refund_items，覆盖目标表 [refund_items, refunds]
+2026-11-19T18:06:33.335+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 4 张表：[refund_items, refunds, order_items, orders] | DDL 1177 字符（全量 8666 字符）
+2026-11-19T18:06:33.336+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:33.364+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 5 张表：[support_tickets, ticket_categories, members, orders, ticket_messages] | DDL 1343 字符（全量 8666 字符）
+2026-11-19T18:06:33.365+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:33.384+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 5 张表：[support_tickets, ticket_categories, members, orders, ticket_messages] | DDL 1517 字符（全量 8666 字符）
+2026-11-19T18:06:33.384+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:33.471+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：2 条主干边，起点 orders，覆盖目标表 [customers, geolocation, shipping_addresses, orders]
+2026-11-19T18:06:33.471+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[orders, customers, geolocation, shipping_addresses, order_items, order_payments, order_reviews, coupon_usages] | DDL 1913 字符（全量 8666 字符）
+2026-11-19T18:06:33.472+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:33.562+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 2 张表：[order_reviews, orders] | DDL 667 字符（全量 8666 字符）
+2026-11-19T18:06:33.562+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:33.656+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[members, member_levels, coupon_usages, customers, member_snapshot, referrals, search_logs, support_tickets] | DDL 1599 字符（全量 8666 字符）
+2026-11-19T18:06:33.656+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:33.704+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：2 条主干边，起点 members，覆盖目标表 [members, search_logs, support_tickets]
+2026-11-19T18:06:33.704+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[members, search_logs, support_tickets, member_levels, ticket_categories, coupon_usages, customers, member_snapshot] | DDL 1475 字符（全量 8666 字符）
+2026-11-19T18:06:33.705+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:33.717+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 3 张表：[settlements, sellers, settlement_items] | DDL 704 字符（全量 8666 字符）
+2026-11-19T18:06:33.717+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:33.759+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1690 字符（全量 8666 字符）
+2026-11-19T18:06:33.759+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入业务指标：[valid_order]
+2026-11-19T18:06:33.760+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:33.788+08:00  INFO 8808 --- [text2sql-agent] [           main] c.text2sql.agent.evaluation.EvalRunner   : 进度 110/200，当前准确率 100.0%（已排除 gold 不可执行条目 0 条）
+2026-11-19T18:06:33.980+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 customers，覆盖目标表 [customers, orders]
+2026-11-19T18:06:33.981+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[customers, orders, order_items, order_payments, order_reviews, coupon_usages, members, refund_items] | DDL 1625 字符（全量 8666 字符）
+2026-11-19T18:06:33.981+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:34.427+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：3 条主干边，起点 order_items，覆盖目标表 [customers, geolocation, shipping_addresses, order_items]
+2026-11-19T18:06:34.428+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[order_items, customers, geolocation, shipping_addresses, orders, products, sellers, refund_items] | DDL 1716 字符（全量 8666 字符）
+2026-11-19T18:06:34.428+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:34.895+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：2 条主干边，起点 orders，覆盖目标表 [products, orders]
+2026-11-19T18:06:34.896+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[orders, products, customers, order_items, order_payments, order_reviews, campaign_products, coupon_usages] | DDL 1796 字符（全量 8666 字符）
+2026-11-19T18:06:34.896+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:35.251+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：4 条主干边，起点 product_category_translation，覆盖目标表 [product_category_translation, products, order_items, support_tickets]
+2026-11-19T18:06:35.252+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[product_category_translation, order_items, products, support_tickets, orders, sellers, campaign_products, inventory] | DDL 1821 字符（全量 8666 字符）
+2026-11-19T18:06:35.254+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:35.623+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：2 条主干边，起点 orders，覆盖目标表 [sellers, orders]
+2026-11-19T18:06:35.624+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[orders, sellers, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items] | DDL 1707 字符（全量 8666 字符）
+2026-11-19T18:06:35.625+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:35.797+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：4 条主干边，起点 sellers，覆盖目标表 [sellers, customers, geolocation, shipping_addresses, order_items]
+2026-11-19T18:06:35.797+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[sellers, customers, geolocation, order_items, shipping_addresses, orders, regions, settlements] | DDL 1714 字符（全量 8666 字符）
+2026-11-19T18:06:35.798+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:35.861+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 product_price_history，覆盖目标表 [products, product_price_history]
+2026-11-19T18:06:35.861+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[product_price_history, products, order_items, campaign_products, inventory, inventory_movements, product_brand_map, product_category_translation] | DDL 1690 字符（全量 8666 字符）
+2026-11-19T18:06:35.863+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:36.012+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：3 条主干边，起点 members，覆盖目标表 [members, search_logs, support_tickets, user_tag_map]
+2026-11-19T18:06:36.012+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[members, search_logs, support_tickets, user_tag_map, member_levels, ticket_categories, coupon_usages, customers] | DDL 1468 字符（全量 8666 字符）
+2026-11-19T18:06:36.012+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:36.180+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 2 张表：[order_payments, orders] | DDL 475 字符（全量 8666 字符）
+2026-11-19T18:06:36.181+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:36.299+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：2 条主干边，起点 order_items，覆盖目标表 [orders, products, order_items]
+2026-11-19T18:06:36.299+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[order_items, orders, products, customers, order_payments, order_reviews, sellers, campaign_products] | DDL 1795 字符（全量 8666 字符）
+2026-11-19T18:06:36.299+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:36.416+08:00  INFO 8808 --- [text2sql-agent] [           main] c.text2sql.agent.evaluation.EvalRunner   : 进度 120/200，当前准确率 100.0%（已排除 gold 不可执行条目 0 条）
+2026-11-19T18:06:36.531+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 order_reviews，覆盖目标表 [orders, order_reviews]
+2026-11-19T18:06:36.532+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[order_reviews, orders, customers, order_items, order_payments, coupon_usages, refund_items, refunds] | DDL 1614 字符（全量 8666 字符）
+2026-11-19T18:06:36.532+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:36.876+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：3 条主干边，起点 order_reviews，覆盖目标表 [customers, geolocation, shipping_addresses, order_reviews]
+2026-11-19T18:06:36.876+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 7 张表：[order_reviews, customers, geolocation, shipping_addresses, orders, members, regions] | DDL 1519 字符（全量 8666 字符）
+2026-11-19T18:06:36.876+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:37.213+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：2 条主干边，起点 orders，覆盖目标表 [orders, customers, geolocation, shipping_addresses]
+2026-11-19T18:06:37.213+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[orders, customers, geolocation, shipping_addresses, order_items, order_payments, order_reviews, coupon_usages] | DDL 1639 字符（全量 8666 字符）
+2026-11-19T18:06:37.215+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:37.457+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：2 条主干边，起点 order_payments，覆盖目标表 [order_payments, order_reviews]
+2026-11-19T18:06:37.457+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 3 张表：[order_payments, order_reviews, orders] | DDL 782 字符（全量 8666 字符）
+2026-11-19T18:06:37.457+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:37.785+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：3 条主干边，起点 orders，覆盖目标表 [regions, warehouses, orders]
+2026-11-19T18:06:37.785+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[orders, regions, warehouses, customers, order_items, order_payments, order_reviews, shipments] | DDL 1710 字符（全量 8666 字符）
+2026-11-19T18:06:37.785+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:38.245+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：3 条主干边，起点 order_items，覆盖目标表 [regions, warehouses, order_items]
+2026-11-19T18:06:38.245+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[order_items, regions, warehouses, orders, products, sellers, shipments, customers] | DDL 1703 字符（全量 8666 字符）
+2026-11-19T18:06:38.246+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:38.698+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：3 条主干边，起点 member_levels，覆盖目标表 [member_levels, members, orders]
+2026-11-19T18:06:38.699+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[member_levels, members, orders, customers, order_items, order_payments, order_reviews, coupon_usages] | DDL 1729 字符（全量 8666 字符）
+2026-11-19T18:06:38.700+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:39.456+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：4 条主干边，起点 customers，覆盖目标表 [member_levels, members, customers, order_items]
+2026-11-19T18:06:39.456+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[customers, member_levels, members, order_items, orders, coupon_usages, member_snapshot, referrals] | DDL 1670 字符（全量 8666 字符）
+2026-11-19T18:06:39.457+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:40.335+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：4 条主干边，起点 members，覆盖目标表 [user_tags, members, search_logs, support_tickets]
+2026-11-19T18:06:40.336+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 9 张表：[members, search_logs, support_tickets, user_tags, member_levels, ticket_categories, coupon_usages, customers, user_tag_map] | DDL 1656 字符（全量 8666 字符）
+2026-11-19T18:06:40.337+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:41.007+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：5 条主干边，起点 members，覆盖目标表 [user_tags, user_tag_map, members, search_logs, support_tickets, orders]
+2026-11-19T18:06:41.008+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[members, orders, search_logs, support_tickets, user_tag_map, user_tags, customers, member_levels] | DDL 1652 字符（全量 8666 字符）
+2026-11-19T18:06:41.009+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：1 条
+2026-11-19T18:06:41.140+08:00  INFO 8808 --- [text2sql-agent] [           main] c.text2sql.agent.evaluation.EvalRunner   : 进度 130/200，当前准确率 100.0%（已排除 gold 不可执行条目 0 条）
+2026-11-19T18:06:41.158+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 campaigns，覆盖目标表 [campaigns, coupons]
+2026-11-19T18:06:41.159+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 4 张表：[campaigns, coupons, campaign_products, coupon_usages] | DDL 782 字符（全量 8666 字符）
+2026-11-19T18:06:41.159+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:41.201+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 coupon_usages，覆盖目标表 [coupon_usages, coupons]
+2026-11-19T18:06:41.202+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 5 张表：[coupon_usages, coupons, campaigns, members, orders] | DDL 1210 字符（全量 8666 字符）
+2026-11-19T18:06:41.202+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:41.217+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 coupon_usages，覆盖目标表 [coupons, coupon_usages]
+2026-11-19T18:06:41.218+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 5 张表：[coupon_usages, coupons, campaigns, members, orders] | DDL 1230 字符（全量 8666 字符）
+2026-11-19T18:06:41.218+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：1 条
+2026-11-19T18:06:41.271+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 shipments，覆盖目标表 [shipments, warehouses]
+2026-11-19T18:06:41.271+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 7 张表：[shipments, warehouses, inventory, inventory_movements, orders, regions, shipment_tracking] | DDL 1752 字符（全量 8666 字符）
+2026-11-19T18:06:41.272+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:41.312+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 warehouses，覆盖目标表 [regions, warehouses]
+2026-11-19T18:06:41.312+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 7 张表：[warehouses, regions, shipments, inventory, inventory_movements, customers, sellers] | DDL 1343 字符（全量 8666 字符）
+2026-11-19T18:06:41.314+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:41.372+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 4 张表：[shipments, warehouses, orders, shipment_tracking] | DDL 1017 字符（全量 8666 字符）
+2026-11-19T18:06:41.372+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入业务指标：[shipment_delivery_days]
+2026-11-19T18:06:41.372+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:41.431+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：2 条主干边，起点 inventory，覆盖目标表 [shipments, warehouses, inventory]
+2026-11-19T18:06:41.431+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[inventory, shipments, warehouses, products, inventory_movements, orders, regions, shipment_tracking] | DDL 1731 字符（全量 8666 字符）
+2026-11-19T18:06:41.432+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:41.451+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 support_tickets，覆盖目标表 [support_tickets, ticket_categories]
+2026-11-19T18:06:41.451+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 5 张表：[support_tickets, ticket_categories, members, orders, ticket_messages] | DDL 1580 字符（全量 8666 字符）
+2026-11-19T18:06:41.452+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:41.518+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：3 条主干边，起点 support_tickets，覆盖目标表 [customers, geolocation, shipping_addresses, support_tickets]
+2026-11-19T18:06:41.518+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[support_tickets, customers, geolocation, shipping_addresses, ticket_categories, members, orders, ticket_messages] | DDL 1661 字符（全量 8666 字符）
+2026-11-19T18:06:41.518+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:41.581+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 sellers，覆盖目标表 [sellers, settlements]
+2026-11-19T18:06:41.581+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 5 张表：[sellers, settlements, order_items, regions, settlement_items] | DDL 1145 字符（全量 8666 字符）
+2026-11-19T18:06:41.582+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:41.590+08:00  INFO 8808 --- [text2sql-agent] [           main] c.text2sql.agent.evaluation.EvalRunner   : 进度 140/200，当前准确率 100.0%（已排除 gold 不可执行条目 0 条）
+2026-11-19T18:06:41.598+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：5 条主干边，起点 settlements，覆盖目标表 [customers, geolocation, shipping_addresses, sellers, settlements]
+2026-11-19T18:06:41.598+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[settlements, sellers, customers, geolocation, shipping_addresses, order_items, settlement_items, orders] | DDL 1934 字符（全量 8666 字符）
+2026-11-19T18:06:41.599+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:41.661+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：4 条主干边，起点 product_category_translation，覆盖目标表 [product_category_translation, products, refunds]
+2026-11-19T18:06:41.661+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[product_category_translation, products, refunds, order_items, campaign_products, inventory, inventory_movements, orders] | DDL 1836 字符（全量 8666 字符）
+2026-11-19T18:06:41.662+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:41.716+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 refunds，覆盖目标表 [refunds, refund_items]
+2026-11-19T18:06:41.716+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 4 张表：[refunds, refund_items, orders, order_items] | DDL 961 字符（全量 8666 字符）
+2026-11-19T18:06:41.716+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:41.742+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 orders，覆盖目标表 [refunds, orders]
+2026-11-19T18:06:41.742+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[orders, refunds, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items] | DDL 1641 字符（全量 8666 字符）
+2026-11-19T18:06:41.742+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:42.214+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：3 条主干边，起点 order_items，覆盖目标表 [order_items, support_tickets, customers, orders]
+2026-11-19T18:06:42.214+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[order_items, customers, orders, products, sellers, support_tickets, order_payments, order_reviews] | DDL 1964 字符（全量 8666 字符）
+2026-11-19T18:06:42.215+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入业务指标：[aov]
+2026-11-19T18:06:42.215+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:42.852+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：3 条主干边，起点 customers，覆盖目标表 [customers, geolocation, shipping_addresses, order_items]
+2026-11-19T18:06:42.852+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[customers, order_items, orders, geolocation, shipping_addresses, products, sellers, members] | DDL 1833 字符（全量 8666 字符）
+2026-11-19T18:06:42.853+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:43.341+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 order_items，覆盖目标表 [products, order_items]
+2026-11-19T18:06:43.341+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[order_items, products, orders, sellers, campaign_products, inventory, inventory_movements, product_brand_map] | DDL 1702 字符（全量 8666 字符）
+2026-11-19T18:06:43.342+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:43.523+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：3 条主干边，起点 member_levels，覆盖目标表 [member_levels, members, user_tags, user_tag_map]
+2026-11-19T18:06:43.523+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[member_levels, members, user_tag_map, user_tags, coupon_usages, customers, member_snapshot, referrals] | DDL 1457 字符（全量 8666 字符）
+2026-11-19T18:06:43.524+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：1 条
+2026-11-19T18:06:43.614+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 3 张表：[search_logs, members, products] | DDL 485 字符（全量 8666 字符）
+2026-11-19T18:06:43.615+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:43.630+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：3 条主干边，起点 inventory，覆盖目标表 [products, shipments, warehouses, inventory]
+2026-11-19T18:06:43.630+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[inventory, products, shipments, warehouses, order_items, campaign_products, inventory_movements, orders] | DDL 1673 字符（全量 8666 字符）
+2026-11-19T18:06:43.630+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:43.641+08:00  INFO 8808 --- [text2sql-agent] [           main] c.text2sql.agent.evaluation.EvalRunner   : 进度 150/200，当前准确率 100.0%（已排除 gold 不可执行条目 0 条）
+2026-11-19T18:06:43.784+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：3 条主干边，起点 brands，覆盖目标表 [brands, products, order_items]
+2026-11-19T18:06:43.784+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[brands, products, order_items, product_brand_map, campaign_products, inventory, inventory_movements, orders] | DDL 1765 字符（全量 8666 字符）
+2026-11-19T18:06:43.784+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:43.931+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：2 条主干边，起点 products，覆盖目标表 [product_price_history, products, order_items]
+2026-11-19T18:06:43.931+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[products, order_items, product_price_history, campaign_products, inventory, inventory_movements, orders, product_brand_map] | DDL 1739 字符（全量 8666 字符）
+2026-11-19T18:06:43.932+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:44.060+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 shipments，覆盖目标表 [shipments, shipment_tracking]
+2026-11-19T18:06:44.060+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 4 张表：[shipments, shipment_tracking, warehouses, orders] | DDL 1162 字符（全量 8666 字符）
+2026-11-19T18:06:44.061+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:44.473+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：2 条主干边，起点 customers，覆盖目标表 [regions, warehouses, customers]
+2026-11-19T18:06:44.473+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[customers, regions, warehouses, orders, shipments, inventory, inventory_movements, members] | DDL 1608 字符（全量 8666 字符）
+2026-11-19T18:06:44.473+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:44.761+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 products，覆盖目标表 [product_category_translation, products]
+2026-11-19T18:06:44.762+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[products, product_category_translation, order_items, campaign_products, inventory, inventory_movements, product_brand_map, product_price_history] | DDL 1726 字符（全量 8666 字符）
+2026-11-19T18:06:44.762+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:45.371+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：6 条主干边，起点 member_levels，覆盖目标表 [regions, member_levels, members, order_items, support_tickets]
+2026-11-19T18:06:45.372+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[member_levels, order_items, members, regions, support_tickets, orders, products, sellers] | DDL 2057 字符（全量 8666 字符）
+2026-11-19T18:06:45.373+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:46.247+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：4 条主干边，起点 member_levels，覆盖目标表 [member_levels, members, order_items]
+2026-11-19T18:06:46.247+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[member_levels, members, order_items, orders, products, sellers, coupon_usages, customers] | DDL 1744 字符（全量 8666 字符）
+2026-11-19T18:06:46.247+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:46.664+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：4 条主干边，起点 product_category_translation，覆盖目标表 [product_category_translation, refund_items, refunds, products]
+2026-11-19T18:06:46.664+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[product_category_translation, refunds, products, refund_items, order_items, orders, campaign_products, inventory] | DDL 1974 字符（全量 8666 字符）
+2026-11-19T18:06:46.664+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:47.040+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：3 条主干边，起点 shipments，覆盖目标表 [shipments, warehouses, regions, orders]
+2026-11-19T18:06:47.040+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[shipments, orders, regions, warehouses, customers, order_items, order_payments, order_reviews] | DDL 2202 字符（全量 8666 字符）
+2026-11-19T18:06:47.041+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:47.438+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：4 条主干边，起点 campaigns，覆盖目标表 [coupon_usages, coupons, campaigns, orders, order_items]
+2026-11-19T18:06:47.438+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 7 张表：[campaigns, coupon_usages, coupons, order_items, orders, campaign_products, members] | DDL 1684 字符（全量 8666 字符）
+2026-11-19T18:06:47.438+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入业务指标：[valid_order]
+2026-11-19T18:06:47.438+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:47.555+08:00  INFO 8808 --- [text2sql-agent] [           main] c.text2sql.agent.evaluation.EvalRunner   : 进度 160/200，当前准确率 100.0%（已排除 gold 不可执行条目 0 条）
+2026-11-19T18:06:47.940+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：5 条主干边，起点 customers，覆盖目标表 [ticket_categories, support_tickets, customers, geolocation, shipping_addresses, member_levels, members]
+2026-11-19T18:06:47.940+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[customers, member_levels, members, support_tickets, ticket_categories, orders, geolocation, shipping_addresses] | DDL 1751 字符（全量 8666 字符）
+2026-11-19T18:06:47.941+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：1 条
+2026-11-19T18:06:47.994+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：4 条主干边，起点 products，覆盖目标表 [products, search_logs, support_tickets, product_category_translation]
+2026-11-19T18:06:47.994+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 9 张表：[products, search_logs, product_category_translation, order_items, support_tickets, campaign_products, inventory, inventory_movements, members] | DDL 1944 字符（全量 8666 字符）
+2026-11-19T18:06:47.995+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:48.096+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：2 条主干边，起点 referrals，覆盖目标表 [referrals, member_levels, members]
+2026-11-19T18:06:48.097+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[referrals, member_levels, members, coupon_usages, customers, member_snapshot, search_logs, support_tickets] | DDL 1482 字符（全量 8666 字符）
+2026-11-19T18:06:48.097+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:48.135+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：8 条主干边，起点 inventory，覆盖目标表 [inventory, support_tickets, products, shipments, warehouses, regions, brands]
+2026-11-19T18:06:48.136+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 10 张表：[inventory, brands, products, regions, shipments, warehouses, support_tickets, order_items, product_brand_map, orders] | DDL 2477 字符（全量 8666 字符）
+2026-11-19T18:06:48.137+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:48.356+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：5 条主干边，起点 settlements，覆盖目标表 [sellers, settlement_items, product_category_translation, settlements]
+2026-11-19T18:06:48.357+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 7 张表：[settlements, product_category_translation, sellers, settlement_items, order_items, products, regions] | DDL 2009 字符（全量 8666 字符）
+2026-11-19T18:06:48.357+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:48.755+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：3 条主干边，起点 order_items，覆盖目标表 [brands, order_items]
+2026-11-19T18:06:48.755+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[order_items, orders, products, sellers, brands, refund_items, settlement_items, product_brand_map] | DDL 1905 字符（全量 8666 字符）
+2026-11-19T18:06:48.755+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:50.309+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：7 条主干边，起点 members，覆盖目标表 [user_tags, members, search_logs, support_tickets, orders, products, order_items]
+2026-11-19T18:06:50.309+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 9 张表：[members, search_logs, support_tickets, order_items, orders, products, user_tags, member_levels, user_tag_map] | DDL 2362 字符（全量 8666 字符）
+2026-11-19T18:06:50.310+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:51.173+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：4 条主干边，起点 campaigns，覆盖目标表 [campaigns, products, orders, order_items]
+2026-11-19T18:06:51.173+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[campaigns, order_items, orders, products, campaign_products, coupons, customers, order_payments] | DDL 1807 字符（全量 8666 字符）
+2026-11-19T18:06:51.174+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:51.280+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：4 条主干边，起点 members，覆盖目标表 [members, member_snapshot, search_logs, support_tickets, member_levels]
+2026-11-19T18:06:51.280+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[members, member_levels, member_snapshot, search_logs, support_tickets, coupon_usages, customers, referrals] | DDL 1671 字符（全量 8666 字符）
+2026-11-19T18:06:51.280+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:52.236+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：4 条主干边，起点 customers，覆盖目标表 [shipment_tracking, customers, geolocation, shipping_addresses, shipments]
+2026-11-19T18:06:52.236+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[customers, shipment_tracking, shipments, orders, geolocation, shipping_addresses, warehouses, members] | DDL 2063 字符（全量 8666 字符）
+2026-11-19T18:06:52.237+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:53.143+08:00  INFO 8808 --- [text2sql-agent] [           main] c.text2sql.agent.evaluation.EvalRunner   : 进度 170/200，当前准确率 100.0%（已排除 gold 不可执行条目 0 条）
+2026-11-19T18:06:53.183+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：4 条主干边，起点 refunds，覆盖目标表 [product_category_translation, refunds, refund_items]
+2026-11-19T18:06:53.183+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 6 张表：[refunds, product_category_translation, refund_items, orders, order_items, products] | DDL 1750 字符（全量 8666 字符）
+2026-11-19T18:06:53.184+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:53.268+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：4 条主干边，起点 support_tickets，覆盖目标表 [support_tickets, product_category_translation, products]
+2026-11-19T18:06:53.269+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[support_tickets, ticket_categories, product_category_translation, products, members, orders, ticket_messages, order_items] | DDL 1930 字符（全量 8666 字符）
+2026-11-19T18:06:53.269+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:53.625+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：2 条主干边，起点 customers，覆盖目标表 [shipping_addresses, customers, geolocation, orders]
+2026-11-19T18:06:53.625+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 6 张表：[customers, shipping_addresses, geolocation, orders, members, regions] | DDL 1504 字符（全量 8666 字符）
+2026-11-19T18:06:53.625+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:54.084+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：4 条主干边，起点 orders，覆盖目标表 [product_price_history, products, product_category_translation, orders]
+2026-11-19T18:06:54.084+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[orders, product_price_history, products, product_category_translation, customers, order_items, order_payments, order_reviews] | DDL 2030 字符（全量 8666 字符）
+2026-11-19T18:06:54.084+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:54.401+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：2 条主干边，起点 inventory_movements，覆盖目标表 [regions, inventory_movements]
+2026-11-19T18:06:54.402+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 6 张表：[inventory_movements, regions, products, warehouses, customers, sellers] | DDL 1406 字符（全量 8666 字符）
+2026-11-19T18:06:54.403+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：1 条
+2026-11-19T18:06:54.507+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 order_items，覆盖目标表 [order_items, orders]
+2026-11-19T18:06:54.507+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 6 张表：[order_items, orders, products, sellers, refund_items, settlement_items] | DDL 1539 字符（全量 8666 字符）
+2026-11-19T18:06:54.507+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入业务指标：[gmv_with_freight]
+2026-11-19T18:06:54.507+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:54.897+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：5 条主干边，起点 orders，覆盖目标表 [orders, campaigns, order_items, customers]
+2026-11-19T18:06:54.897+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 9 张表：[orders, customers, order_payments, order_reviews, campaigns, order_items, coupon_usages, refund_items, coupons] | DDL 2031 字符（全量 8666 字符）
+2026-11-19T18:06:54.897+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入业务指标：[aov, unique_buyers, valid_order]
+2026-11-19T18:06:54.897+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：3 条
+2026-11-19T18:06:55.327+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 customers，覆盖目标表 [customers, orders]
+2026-11-19T18:06:55.327+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[customers, orders, order_items, order_payments, order_reviews, coupon_usages, members, refund_items] | DDL 1589 字符（全量 8666 字符）
+2026-11-19T18:06:55.327+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入业务指标：[repeat_rate]
+2026-11-19T18:06:55.327+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:55.962+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 customers，覆盖目标表 [customers, orders]
+2026-11-19T18:06:55.962+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[customers, orders, order_items, order_payments, order_reviews, coupon_usages, members, refund_items] | DDL 1878 字符（全量 8666 字符）
+2026-11-19T18:06:55.962+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入业务指标：[retention_rate]
+2026-11-19T18:06:55.963+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:56.506+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：4 条主干边，起点 members，覆盖目标表 [members, orders, search_logs, support_tickets, customers]
+2026-11-19T18:06:56.506+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[members, orders, search_logs, support_tickets, member_levels, coupon_usages, customers, member_snapshot] | DDL 1600 字符（全量 8666 字符）
+2026-11-19T18:06:56.506+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入业务指标：[member_penetration]
+2026-11-19T18:06:56.506+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:56.728+08:00  INFO 8808 --- [text2sql-agent] [           main] c.text2sql.agent.evaluation.EvalRunner   : 进度 180/200，当前准确率 100.0%（已排除 gold 不可执行条目 0 条）
+2026-11-19T18:06:56.742+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[orders, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items, refunds] | DDL 1950 字符（全量 8666 字符）
+2026-11-19T18:06:56.742+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入业务指标：[on_time_rate]
+2026-11-19T18:06:56.744+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：1 条
+2026-11-19T18:06:56.842+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 orders，覆盖目标表 [refunds, orders]
+2026-11-19T18:06:56.842+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[orders, refunds, customers, order_items, order_payments, order_reviews, coupon_usages, refund_items] | DDL 1641 字符（全量 8666 字符）
+2026-11-19T18:06:56.842+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入业务指标：[refund_rate, valid_order]
+2026-11-19T18:06:56.842+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:57.024+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：2 条主干边，起点 products，覆盖目标表 [products, order_items, orders]
+2026-11-19T18:06:57.024+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[products, order_items, campaign_products, inventory, inventory_movements, product_brand_map, product_category_translation, product_price_history] | DDL 1748 字符（全量 8666 字符）
+2026-11-19T18:06:57.024+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入业务指标：[sell_through_rate]
+2026-11-19T18:06:57.024+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:57.364+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：4 条主干边，起点 customers，覆盖目标表 [support_tickets, orders, customers, geolocation, shipping_addresses, order_reviews]
+2026-11-19T18:06:57.364+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[customers, orders, geolocation, shipping_addresses, support_tickets, order_items, order_payments, order_reviews] | DDL 1838 字符（全量 8666 字符）
+2026-11-19T18:06:57.364+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入业务指标：[low_score_rate]
+2026-11-19T18:06:57.364+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:57.571+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：2 条主干边，起点 search_logs，覆盖目标表 [search_logs, referrals]
+2026-11-19T18:06:57.571+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 3 张表：[search_logs, members, products] | DDL 819 字符（全量 8666 字符）
+2026-11-19T18:06:57.571+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入业务指标：[conversion_rate, ctr]
+2026-11-19T18:06:57.571+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:57.852+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：3 条主干边，起点 order_items，覆盖目标表 [order_items, regions, orders]
+2026-11-19T18:06:57.852+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[order_items, regions, orders, products, sellers, refund_items, settlement_items, customers] | DDL 1769 字符（全量 8666 字符）
+2026-11-19T18:06:57.852+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入业务指标：[freight_ratio, gmv_with_freight]
+2026-11-19T18:06:57.853+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:58.322+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：2 条主干边，起点 customers，覆盖目标表 [members, orders, customers]
+2026-11-19T18:06:58.322+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[customers, members, orders, member_levels, order_items, order_payments, order_reviews, coupon_usages] | DDL 1956 字符（全量 8666 字符）
+2026-11-19T18:06:58.322+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入业务指标：[mau]
+2026-11-19T18:06:58.323+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:06:58.767+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：5 条主干边，起点 coupon_usages，覆盖目标表 [coupon_usages, coupons, order_items, orders, member_levels]
+2026-11-19T18:06:58.767+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[coupon_usages, coupons, member_levels, order_items, orders, campaigns, members, member_snapshot] | DDL 1943 字符（全量 8666 字符）
+2026-11-19T18:06:58.768+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入业务指标：[discount_rate, gmv_with_freight]
+2026-11-19T18:06:58.768+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：1 条
+2026-11-19T18:06:59.834+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：4 条主干边，起点 customers，覆盖目标表 [member_levels, members, customers, orders, order_items]
+2026-11-19T18:06:59.834+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[customers, member_levels, members, order_items, orders, coupon_usages, member_snapshot, referrals] | DDL 1639 字符（全量 8666 字符）
+2026-11-19T18:06:59.834+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入业务指标：[gmv_per_user, gmv_with_freight]
+2026-11-19T18:06:59.834+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:07:00.673+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：5 条主干边，起点 support_tickets，覆盖目标表 [support_tickets, product_category_translation, products, ticket_categories]
+2026-11-19T18:07:00.673+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[support_tickets, product_category_translation, products, ticket_categories, members, order_items, orders, ticket_messages] | DDL 2281 字符（全量 8666 字符）
+2026-11-19T18:07:00.673+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入业务指标：[sla_rate]
+2026-11-19T18:07:00.674+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:07:00.682+08:00  INFO 8808 --- [text2sql-agent] [           main] c.text2sql.agent.evaluation.EvalRunner   : 进度 190/200，当前准确率 100.0%（已排除 gold 不可执行条目 0 条）
+2026-11-19T18:07:00.967+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：4 条主干边，起点 order_items，覆盖目标表 [brands, products, order_items, orders]
+2026-11-19T18:07:00.967+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 9 张表：[order_items, products, brands, orders, sellers, campaign_products, inventory, inventory_movements, product_brand_map] | DDL 1882 字符（全量 8666 字符）
+2026-11-19T18:07:00.968+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入业务指标：[sell_through_rate]
+2026-11-19T18:07:00.968+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:07:01.133+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：4 条主干边，起点 campaigns，覆盖目标表 [referrals, campaigns]
+2026-11-19T18:07:01.133+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 6 张表：[campaigns, referrals, campaign_products, coupons, members, coupon_usages] | DDL 1334 字符（全量 8666 字符）
+2026-11-19T18:07:01.133+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入业务指标：[conversion_rate, reward_per_converted]
+2026-11-19T18:07:01.133+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:07:01.357+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：4 条主干边，起点 members，覆盖目标表 [members, search_logs, support_tickets, customers, orders]
+2026-11-19T18:07:01.357+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[members, search_logs, support_tickets, customers, orders, member_levels, ticket_categories, coupon_usages] | DDL 1590 字符（全量 8666 字符）
+2026-11-19T18:07:01.357+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入业务指标：[repeat_rate]
+2026-11-19T18:07:01.358+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:07:01.698+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：3 条主干边，起点 shipments，覆盖目标表 [customers, geolocation, shipping_addresses, shipments, orders]
+2026-11-19T18:07:01.698+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[shipments, customers, geolocation, orders, shipping_addresses, warehouses, shipment_tracking, members] | DDL 1963 字符（全量 8666 字符）
+2026-11-19T18:07:01.698+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入业务指标：[delivery_days]
+2026-11-19T18:07:01.698+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:07:01.822+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：4 条主干边，起点 settlement_items，覆盖目标表 [settlement_items, sellers, support_tickets, settlements]
+2026-11-19T18:07:01.822+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[settlement_items, sellers, support_tickets, order_items, orders, settlements, ticket_categories, members] | DDL 2116 字符（全量 8666 字符）
+2026-11-19T18:07:01.822+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入业务指标：[commission_rate]
+2026-11-19T18:07:01.822+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:07:02.247+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：2 条主干边，起点 customers，覆盖目标表 [customers, order_items, orders]
+2026-11-19T18:07:02.247+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[customers, order_items, orders, products, sellers, members, refund_items, regions] | DDL 1811 字符（全量 8666 字符）
+2026-11-19T18:07:02.247+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入业务指标：[gmv_with_freight]
+2026-11-19T18:07:02.248+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:07:02.795+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：1 条主干边，起点 order_items，覆盖目标表 [order_items, orders]
+2026-11-19T18:07:02.795+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 6 张表：[order_items, orders, products, sellers, refund_items, settlement_items] | DDL 1539 字符（全量 8666 字符）
+2026-11-19T18:07:02.795+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入业务指标：[gmv_with_freight, yoy_growth]
+2026-11-19T18:07:02.796+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:07:02.957+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：3 条主干边，起点 inventory，覆盖目标表 [shipments, warehouses, inventory, inventory_movements]
+2026-11-19T18:07:02.957+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 7 张表：[inventory, inventory_movements, shipments, warehouses, products, orders, shipment_tracking] | DDL 1814 字符（全量 8666 字符）
+2026-11-19T18:07:02.957+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入业务指标：[inventory_turnover_days]
+2026-11-19T18:07:02.957+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：1 条
+2026-11-19T18:07:03.246+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：4 条主干边，起点 order_reviews，覆盖目标表 [refunds, customers, order_reviews, support_tickets]
+2026-11-19T18:07:03.246+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 8 张表：[order_reviews, refunds, customers, orders, support_tickets, refund_items, members, regions] | DDL 1939 字符（全量 8666 字符）
+2026-11-19T18:07:03.246+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入业务指标：[low_score_rate]
+2026-11-19T18:07:03.246+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:07:04.248+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 多表 Join 拓扑约束提示已生效：6 条主干边，起点 customers，覆盖目标表 [order_items, support_tickets, customers, user_tags, orders]
+2026-11-19T18:07:04.248+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 检索完成：选中 9 张表：[customers, order_items, user_tags, orders, support_tickets, members, products, regions, user_tag_map] | DDL 2282 字符（全量 8666 字符）
+2026-11-19T18:07:04.248+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入业务指标：[customer_cohort, gmv_with_freight]
+2026-11-19T18:07:04.249+08:00  INFO 8808 --- [text2sql-agent] [           main] c.t.a.retrieval.HybridSchemaProvider     : 注入实体与枚举值取值对齐提示：0 条
+2026-11-19T18:07:05.098+08:00  INFO 8808 --- [text2sql-agent] [           main] c.text2sql.agent.evaluation.EvalRunner   : 进度 200/200，当前准确率 100.0%（已排除 gold 不可执行条目 0 条）
+2026-11-19T18:07:07.680+08:00  INFO 8808 --- [text2sql-agent] [           main] c.text2sql.agent.evaluation.EvalRunner   : 
+================ 评估结果 ================
+模式      : dry-run（用 gold_sql 自检评估器）
+模型      : deepseek-flash
+prompt    : p21-period-ranking-v21
+代码版本  : 54d227dc5943081a0c66786e7117909c21094b8e (UNKNOWN)
+数据指纹  : c3f290e0fa0be1bd7432ddd2e5a319883e4d9d8cfbc9b58e856b4a807f2f2d19
+样本指纹  : 23e99dd69e97258a8675ed36c4fd9b62c4ad1b5f036780825b64faa17c8588c2
+样本数    : 200
+schema    : 10 张表
+
+分组                       准确率 100.00% (200/200) | SQL有效 100.00% | 补LIMIT 115 | tokens 0 | 延迟 avg 94ms p50 26ms p95 406ms | 成本 avg 0.000000元
+single_table_basic       准确率 100.00% (40/40) | SQL有效 100.00% | 补LIMIT 0 | tokens 0 | 延迟 avg 20ms p50 10ms p95 55ms | 成本 avg 0.000000元
+single_table_agg         准确率 100.00% (40/40) | SQL有效 100.00% | 补LIMIT 31 | tokens 0 | 延迟 avg 20ms p50 16ms p95 49ms | 成本 avg 0.000000元
+time_window              准确率 100.00% (30/30) | SQL有效 100.00% | 补LIMIT 23 | tokens 0 | 延迟 avg 75ms p50 33ms p95 417ms | 成本 avg 0.000000元
+multi_join               准确率 100.00% (45/45) | SQL有效 100.00% | 补LIMIT 31 | tokens 0 | 延迟 avg 121ms p50 88ms p95 406ms | 成本 avg 0.000000元
+multi_join_deep          准确率 100.00% (20/20) | SQL有效 100.00% | 补LIMIT 8 | tokens 0 | 延迟 avg 222ms p50 72ms p95 800ms | 成本 avg 0.000000元
+business_semantics       准确率 100.00% (25/25) | SQL有效 100.00% | 补LIMIT 22 | tokens 0 | 延迟 avg 205ms p50 145ms p95 833ms | 成本 avg 0.000000元
+
+---- 按 gold 表数分组（阶段 3 主指标）----
+1 表      准确率 100.00% (116/116)
+2 表      准确率 100.00% (34/34)
+3 表      准确率 100.00% (26/26)
+4+ 表     准确率 100.00% (24/24)
+
+---- 检索层指标 ----
+表全召回率 :  97.50% (200 条有效样本)
+表平均召回 :  99.50%
+表精确率   :  28.85%
+平均召回表 : 6.82 张（baseline 为全部表）
+平均 DDL   : 1512 字符
+完全漏召回 : 0 条
+不完整召回 : 5 条
+  - T5-007 漏 [member_levels] | 有商品点击的搜索记录中，哪些关键词最常点到哪个英文类目的商品？取前 20。
+  - T5-011 漏 [customers] | 品牌销售额排名前 10 是哪些？销售额按商品金额统计。
+  - T5-015 漏 [order_items] | 物流轨迹事件类型按客户所在州分布，列出前 20 组（按发货单去重）。
+  - T5-017 漏 [member_levels] | 各工单类目、优先级的工单数和消息条数分别是多少？
+  - T5-020 漏 [inventory] | 按宏观区域和出入库类型统计库存变动笔数与数量合计。
+
+失败案例数: 0
+=========================================
+
+2026-11-19T18:07:07.742+08:00  INFO 8808 --- [text2sql-agent] [           main] c.text2sql.agent.evaluation.EvalRunner   : 评估报告已写入：C:\Users\xunqian\Desktop\agent\reports\replan-stage-b-20261119\gold-original200-evidence\eval-20261119-180707-dryrun.json
+2026-11-19T18:07:07.742+08:00  INFO 8808 --- [text2sql-agent] [           main] c.text2sql.agent.evaluation.EvalRunner   : 评估完成，退出进程（agent.eval.exit-after-run=true）
+2026-11-19T18:07:07.747+08:00  INFO 8808 --- [text2sql-agent] [           main] o.s.b.w.e.tomcat.GracefulShutdown        : Commencing graceful shutdown. Waiting for active requests to complete
+2026-11-19T18:07:07.749+08:00  INFO 8808 --- [text2sql-agent] [tomcat-shutdown] o.s.b.w.e.tomcat.GracefulShutdown        : Graceful shutdown complete
+2026-11-19T18:07:07.752+08:00  INFO 8808 --- [text2sql-agent] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-11-19T18:07:07.756+08:00  INFO 8808 --- [text2sql-agent] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.

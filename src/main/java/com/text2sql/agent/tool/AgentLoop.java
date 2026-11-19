@@ -80,10 +80,10 @@ public class AgentLoop {
         history.add(new SystemMessage(systemPrompt));
         history.add(new UserMessage(userPrompt));
 
-        // 工具需要当前请求的 schema（表白名单/列白名单都从它来），所以每请求新建一份，
+        // 工具保留当前请求的生成上下文；执行白名单另取完整业务目录。每请求新建一份，
         // 不能做成单例 Bean——否则上一个请求的 schema 会串到下一个请求。
-        List<ToolCallback> callbacks = List.of(
-                ToolCallbacks.from(new AgentToolFunctions(toolExecutor, schema)));
+        var functions = new AgentToolFunctions(toolExecutor, schema);
+        List<ToolCallback> callbacks = List.of(ToolCallbacks.from(functions));
         Map<String, ToolCallback> byName = new LinkedHashMap<>();
         for (ToolCallback cb : callbacks) {
             byName.put(cb.getToolDefinition().name(), cb);
@@ -142,6 +142,10 @@ public class AgentLoop {
             for (AssistantMessage.ToolCall toolCall : output.getToolCalls()) {
                 responses.add(new ToolResponseMessage.ToolResponse(
                         toolCall.id(), toolCall.name(), invoke(byName, toolCall)));
+                if (functions.schemaUnavailable()) {
+                    throw new GenerationException(GenerationException.Reason.SCHEMA_UNAVAILABLE,
+                            ToolResult.catalogUnavailable().output(), combinedRecord);
+                }
             }
             history.add(ToolResponseMessage.builder().responses(responses).build());
 

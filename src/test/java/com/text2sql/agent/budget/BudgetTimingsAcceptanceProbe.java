@@ -73,6 +73,7 @@ public final class BudgetTimingsAcceptanceProbe {
                 List.of(new SchemaContext.Column("order_id", "text", false, null)))), List.of(), "", "orders");
         var schemas = mock(SchemaProvider.class);
         when(schemas.provide(anyString())).thenAnswer(i -> { Thread.sleep(30); return schema; });
+        when(schemas.fullSchema()).thenReturn(schema);
         var validator = mock(SqlValidator.class);
         when(validator.validate(anyString(), any())).thenAnswer(i -> ValidationResult.ok(i.getArgument(0)));
         var executor = mock(SqlExecutor.class);

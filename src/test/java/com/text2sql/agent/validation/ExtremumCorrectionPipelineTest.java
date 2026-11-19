@@ -49,6 +49,7 @@ class ExtremumCorrectionPipelineTest {
         var checker = new ResultChecker(new ExtremumProjectionChecker(() -> glossary, () -> schema));
         var provider = mock(SchemaProvider.class);
         when(provider.provide(anyString())).thenReturn(schema);
+        when(provider.fullSchema()).thenReturn(schema);
         var validator = mock(SqlValidator.class);
         when(validator.validate(anyString(), any())).thenAnswer(i -> ValidationResult.ok(i.getArgument(0)));
         when(generator.generate(anyString(), any())).thenReturn(generated(OMITTED, 100));

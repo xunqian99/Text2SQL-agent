@@ -1,0 +1,198 @@
+Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+WARNING: A Java agent has been loaded dynamically (D:\develop\Maven\apache-maven-3.9.4\mvn_repo\net\bytebuddy\byte-buddy-agent\1.17.8\byte-buddy-agent-1.17.8.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+18:28:57.991 [main] INFO com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- SQL 被校验层拦下：[UNKNOWN_COLUMN] 表 customers 没有列 invented
+18:28:58.042 [main] INFO com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 启发式结果校验命中异常（规则：independent）：independent suspicious result
+18:28:58.046 [main] INFO com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- SQL 被校验层拦下：[UNKNOWN_COLUMN] 表 customers 没有列 invented
+18:28:58.065 [main] INFO com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 启发式结果校验命中异常（规则：independent）：independent suspicious result
+18:28:58.067 [main] INFO com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- SQL 被校验层拦下：[UNKNOWN_COLUMN] 表 customers 没有列 invented
+18:28:58.078 [main] INFO com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 启发式结果校验命中异常（规则：independent）：independent suspicious result
+18:28:58.081 [main] INFO com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- SQL 被校验层拦下：[UNKNOWN_COLUMN] 表 customers 没有列 invented
+18:28:58.091 [main] INFO com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 启发式结果校验命中异常（规则：independent）：independent suspicious result
+18:28:58.095 [main] WARN com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 首次生成异常（CALL_FAILED：independent recoverable），尝试重试一次生成
+18:28:58.102 [main] WARN com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 首次生成异常（UNPARSEABLE：independent recoverable），尝试重试一次生成
+18:28:58.108 [main] WARN com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 首次生成异常（OUTPUT_TRUNCATED：independent recoverable），尝试重试一次生成
+18:28:58.142 [main] INFO com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 触发 Agent 侦察工具循环模式（涉及 1 张表 >= 阈值 1）
+18:28:58.543 [main] INFO com.text2sql.agent.tool.AgentLoop -- Agent 第 1 轮请求 1 个工具：[SAMPLE_QUERY]
+18:28:58.567 [main] INFO com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 触发 Agent 侦察工具循环模式（涉及 1 张表 >= 阈值 1）
+18:28:58.581 [main] INFO com.text2sql.agent.tool.AgentLoop -- Agent 第 1 轮请求 1 个工具：[SAMPLE_QUERY]
+18:28:58.581 [main] WARN org.springframework.ai.tool.method.MethodToolCallback -- Conversion from JSON failed
+java.lang.IllegalStateException: Conversion from JSON to java.util.Map<java.lang.String, java.lang.Object> failed
+	at org.springframework.ai.util.json.JsonParser.fromJson(JsonParser.java:97)
+	at org.springframework.ai.tool.method.MethodToolCallback.extractToolArguments(MethodToolCallback.java:132)
+	at org.springframework.ai.tool.method.MethodToolCallback.call(MethodToolCallback.java:108)
+	at org.springframework.ai.tool.method.MethodToolCallback.call(MethodToolCallback.java:97)
+	at com.text2sql.agent.tool.AgentLoop.invoke(AgentLoop.java:208)
+	at com.text2sql.agent.tool.AgentLoop.run(AgentLoop.java:144)
+	at com.text2sql.agent.tool.AgentLoop.run(AgentLoop.java:68)
+	at com.text2sql.agent.orchestrator.Text2SqlOrchestrator.askPipeline(Text2SqlOrchestrator.java:305)
+	at com.text2sql.agent.orchestrator.Text2SqlOrchestrator.lambda$ask$0(Text2SqlOrchestrator.java:170)
+	at com.text2sql.agent.budget.RequestBudgetRunner.run(RequestBudgetRunner.java:37)
+	at com.text2sql.agent.orchestrator.Text2SqlOrchestrator.ask(Text2SqlOrchestrator.java:168)
+	at com.text2sql.agent.orchestrator.Text2SqlOrchestrator.ask(Text2SqlOrchestrator.java:159)
+	at com.text2sql.agent.orchestrator.Text2SqlOrchestrator.ask(Text2SqlOrchestrator.java:147)
+	at com.text2sql.agent.orchestrator.Text2SqlOrchestrator.ask(Text2SqlOrchestrator.java:134)
+	at com.text2sql.agent.orchestrator.ExtendedBProbe.main(ExtendedBProbe.java:78)
+Caused by: com.fasterxml.jackson.core.io.JsonEOFException: Unexpected end-of-input: expected close marker for Object (start marker at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 1])
+ at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 2]
+	at com.fasterxml.jackson.core.base.ParserMinimalBase._reportInvalidEOF(ParserMinimalBase.java:643)
+	at com.fasterxml.jackson.core.base.ParserBase._handleEOF(ParserBase.java:534)
+	at com.fasterxml.jackson.core.base.ParserBase._eofAsNextChar(ParserBase.java:551)
+	at com.fasterxml.jackson.core.json.ReaderBasedJsonParser._skipWSOrEnd(ReaderBasedJsonParser.java:2490)
+	at com.fasterxml.jackson.core.json.ReaderBasedJsonParser.nextFieldName(ReaderBasedJsonParser.java:912)
+	at com.fasterxml.jackson.databind.deser.std.MapDeserializer._readAndBindStringKeyMap(MapDeserializer.java:596)
+	at com.fasterxml.jackson.databind.deser.std.MapDeserializer.deserialize(MapDeserializer.java:450)
+	at com.fasterxml.jackson.databind.deser.std.MapDeserializer.deserialize(MapDeserializer.java:31)
+	at com.fasterxml.jackson.databind.deser.DefaultDeserializationContext.readRootValue(DefaultDeserializationContext.java:342)
+	at com.fasterxml.jackson.databind.ObjectMapper._readMapAndClose(ObjectMapper.java:5052)
+	at com.fasterxml.jackson.databind.ObjectMapper.readValue(ObjectMapper.java:3954)
+	at com.fasterxml.jackson.databind.ObjectMapper.readValue(ObjectMapper.java:3937)
+	at org.springframework.ai.util.json.JsonParser.fromJson(JsonParser.java:94)
+	... 14 common frames omitted
+18:28:58.588 [main] WARN com.text2sql.agent.tool.AgentLoop -- 工具 SAMPLE_QUERY 执行异常：Unexpected end-of-input: expected close marker for Object (start marker at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 1])
+ at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 2]
+18:28:58.589 [main] WARN com.text2sql.agent.tool.AgentLoop -- Agent 1 轮用尽仍在调用工具，发起一次强制收口
+18:28:58.592 [main] INFO com.text2sql.agent.tool.AgentLoop -- Agent 强制收口产出：SELECT o.order_id,c.city FROM orders o JOIN customers c ON o.customer_id=c.customer_id LIMIT 2
+18:28:58.596 [main] INFO com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 触发 Agent 侦察工具循环模式（涉及 1 张表 >= 阈值 1）
+18:28:58.601 [main] INFO com.text2sql.agent.tool.AgentLoop -- Agent 第 1 轮请求 1 个工具：[NONEXISTENT_INDEPENDENT_TOOL]
+18:28:58.601 [main] WARN com.text2sql.agent.tool.AgentLoop -- Agent 1 轮用尽仍在调用工具，发起一次强制收口
+18:28:58.601 [main] INFO com.text2sql.agent.tool.AgentLoop -- Agent 强制收口产出：SELECT o.order_id,c.city FROM orders o JOIN customers c ON o.customer_id=c.customer_id LIMIT 2
+18:28:58.607 [main] INFO com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 触发 Agent 侦察工具循环模式（涉及 1 张表 >= 阈值 1）
+18:28:58.608 [main] INFO com.text2sql.agent.tool.AgentLoop -- Agent 第 1 轮请求 1 个工具：[SAMPLE_QUERY]
+18:28:58.615 [main] INFO com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 触发 Agent 侦察工具循环模式（涉及 1 张表 >= 阈值 1）
+18:28:58.620 [main] INFO com.text2sql.agent.tool.AgentLoop -- Agent 第 1 轮请求 1 个工具：[SAMPLE_QUERY]
+18:28:58.620 [main] WARN org.springframework.ai.tool.method.MethodToolCallback -- Conversion from JSON failed
+java.lang.IllegalStateException: Conversion from JSON to java.util.Map<java.lang.String, java.lang.Object> failed
+	at org.springframework.ai.util.json.JsonParser.fromJson(JsonParser.java:97)
+	at org.springframework.ai.tool.method.MethodToolCallback.extractToolArguments(MethodToolCallback.java:132)
+	at org.springframework.ai.tool.method.MethodToolCallback.call(MethodToolCallback.java:108)
+	at org.springframework.ai.tool.method.MethodToolCallback.call(MethodToolCallback.java:97)
+	at com.text2sql.agent.tool.AgentLoop.invoke(AgentLoop.java:208)
+	at com.text2sql.agent.tool.AgentLoop.run(AgentLoop.java:144)
+	at com.text2sql.agent.tool.AgentLoop.run(AgentLoop.java:68)
+	at com.text2sql.agent.orchestrator.Text2SqlOrchestrator.askPipeline(Text2SqlOrchestrator.java:305)
+	at com.text2sql.agent.orchestrator.Text2SqlOrchestrator.lambda$ask$0(Text2SqlOrchestrator.java:170)
+	at com.text2sql.agent.budget.RequestBudgetRunner.run(RequestBudgetRunner.java:37)
+	at com.text2sql.agent.orchestrator.Text2SqlOrchestrator.ask(Text2SqlOrchestrator.java:168)
+	at com.text2sql.agent.orchestrator.Text2SqlOrchestrator.ask(Text2SqlOrchestrator.java:159)
+	at com.text2sql.agent.orchestrator.Text2SqlOrchestrator.ask(Text2SqlOrchestrator.java:147)
+	at com.text2sql.agent.orchestrator.Text2SqlOrchestrator.ask(Text2SqlOrchestrator.java:134)
+	at com.text2sql.agent.orchestrator.ExtendedBProbe.main(ExtendedBProbe.java:78)
+Caused by: com.fasterxml.jackson.core.io.JsonEOFException: Unexpected end-of-input: expected close marker for Object (start marker at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 1])
+ at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 2]
+	at com.fasterxml.jackson.core.base.ParserMinimalBase._reportInvalidEOF(ParserMinimalBase.java:643)
+	at com.fasterxml.jackson.core.base.ParserBase._handleEOF(ParserBase.java:534)
+	at com.fasterxml.jackson.core.base.ParserBase._eofAsNextChar(ParserBase.java:551)
+	at com.fasterxml.jackson.core.json.ReaderBasedJsonParser._skipWSOrEnd(ReaderBasedJsonParser.java:2490)
+	at com.fasterxml.jackson.core.json.ReaderBasedJsonParser.nextFieldName(ReaderBasedJsonParser.java:912)
+	at com.fasterxml.jackson.databind.deser.std.MapDeserializer._readAndBindStringKeyMap(MapDeserializer.java:596)
+	at com.fasterxml.jackson.databind.deser.std.MapDeserializer.deserialize(MapDeserializer.java:450)
+	at com.fasterxml.jackson.databind.deser.std.MapDeserializer.deserialize(MapDeserializer.java:31)
+	at com.fasterxml.jackson.databind.deser.DefaultDeserializationContext.readRootValue(DefaultDeserializationContext.java:342)
+	at com.fasterxml.jackson.databind.ObjectMapper._readMapAndClose(ObjectMapper.java:5052)
+	at com.fasterxml.jackson.databind.ObjectMapper.readValue(ObjectMapper.java:3954)
+	at com.fasterxml.jackson.databind.ObjectMapper.readValue(ObjectMapper.java:3937)
+	at org.springframework.ai.util.json.JsonParser.fromJson(JsonParser.java:94)
+	... 14 common frames omitted
+18:28:58.622 [main] WARN com.text2sql.agent.tool.AgentLoop -- 工具 SAMPLE_QUERY 执行异常：Unexpected end-of-input: expected close marker for Object (start marker at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 1])
+ at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 2]
+18:28:58.623 [main] WARN com.text2sql.agent.tool.AgentLoop -- Agent 1 轮用尽仍在调用工具，发起一次强制收口
+18:28:58.623 [main] INFO com.text2sql.agent.tool.AgentLoop -- Agent 强制收口产出：SELECT o.order_id,c.city FROM orders o JOIN customers c ON o.customer_id=c.customer_id LIMIT 2
+18:28:58.625 [main] INFO com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 触发 Agent 侦察工具循环模式（涉及 1 张表 >= 阈值 1）
+18:28:58.632 [main] INFO com.text2sql.agent.tool.AgentLoop -- Agent 第 1 轮请求 1 个工具：[NONEXISTENT_INDEPENDENT_TOOL]
+18:28:58.633 [main] WARN com.text2sql.agent.tool.AgentLoop -- Agent 1 轮用尽仍在调用工具，发起一次强制收口
+18:28:58.633 [main] INFO com.text2sql.agent.tool.AgentLoop -- Agent 强制收口产出：SELECT o.order_id,c.city FROM orders o JOIN customers c ON o.customer_id=c.customer_id LIMIT 2
+18:28:58.634 [main] INFO com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 触发 Agent 侦察工具循环模式（涉及 1 张表 >= 阈值 1）
+18:28:58.641 [main] INFO com.text2sql.agent.tool.AgentLoop -- Agent 第 1 轮请求 1 个工具：[SAMPLE_QUERY]
+18:28:58.643 [main] INFO com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 触发 Agent 侦察工具循环模式（涉及 1 张表 >= 阈值 1）
+18:28:58.643 [main] INFO com.text2sql.agent.tool.AgentLoop -- Agent 第 1 轮请求 1 个工具：[SAMPLE_QUERY]
+18:28:58.643 [main] WARN org.springframework.ai.tool.method.MethodToolCallback -- Conversion from JSON failed
+java.lang.IllegalStateException: Conversion from JSON to java.util.Map<java.lang.String, java.lang.Object> failed
+	at org.springframework.ai.util.json.JsonParser.fromJson(JsonParser.java:97)
+	at org.springframework.ai.tool.method.MethodToolCallback.extractToolArguments(MethodToolCallback.java:132)
+	at org.springframework.ai.tool.method.MethodToolCallback.call(MethodToolCallback.java:108)
+	at org.springframework.ai.tool.method.MethodToolCallback.call(MethodToolCallback.java:97)
+	at com.text2sql.agent.tool.AgentLoop.invoke(AgentLoop.java:208)
+	at com.text2sql.agent.tool.AgentLoop.run(AgentLoop.java:144)
+	at com.text2sql.agent.tool.AgentLoop.run(AgentLoop.java:68)
+	at com.text2sql.agent.orchestrator.Text2SqlOrchestrator.askPipeline(Text2SqlOrchestrator.java:305)
+	at com.text2sql.agent.orchestrator.Text2SqlOrchestrator.lambda$ask$0(Text2SqlOrchestrator.java:170)
+	at com.text2sql.agent.budget.RequestBudgetRunner.run(RequestBudgetRunner.java:37)
+	at com.text2sql.agent.orchestrator.Text2SqlOrchestrator.ask(Text2SqlOrchestrator.java:168)
+	at com.text2sql.agent.orchestrator.Text2SqlOrchestrator.ask(Text2SqlOrchestrator.java:159)
+	at com.text2sql.agent.orchestrator.Text2SqlOrchestrator.ask(Text2SqlOrchestrator.java:147)
+	at com.text2sql.agent.orchestrator.Text2SqlOrchestrator.ask(Text2SqlOrchestrator.java:134)
+	at com.text2sql.agent.orchestrator.ExtendedBProbe.main(ExtendedBProbe.java:78)
+Caused by: com.fasterxml.jackson.core.io.JsonEOFException: Unexpected end-of-input: expected close marker for Object (start marker at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 1])
+ at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 2]
+	at com.fasterxml.jackson.core.base.ParserMinimalBase._reportInvalidEOF(ParserMinimalBase.java:643)
+	at com.fasterxml.jackson.core.base.ParserBase._handleEOF(ParserBase.java:534)
+	at com.fasterxml.jackson.core.base.ParserBase._eofAsNextChar(ParserBase.java:551)
+	at com.fasterxml.jackson.core.json.ReaderBasedJsonParser._skipWSOrEnd(ReaderBasedJsonParser.java:2490)
+	at com.fasterxml.jackson.core.json.ReaderBasedJsonParser.nextFieldName(ReaderBasedJsonParser.java:912)
+	at com.fasterxml.jackson.databind.deser.std.MapDeserializer._readAndBindStringKeyMap(MapDeserializer.java:596)
+	at com.fasterxml.jackson.databind.deser.std.MapDeserializer.deserialize(MapDeserializer.java:450)
+	at com.fasterxml.jackson.databind.deser.std.MapDeserializer.deserialize(MapDeserializer.java:31)
+	at com.fasterxml.jackson.databind.deser.DefaultDeserializationContext.readRootValue(DefaultDeserializationContext.java:342)
+	at com.fasterxml.jackson.databind.ObjectMapper._readMapAndClose(ObjectMapper.java:5052)
+	at com.fasterxml.jackson.databind.ObjectMapper.readValue(ObjectMapper.java:3954)
+	at com.fasterxml.jackson.databind.ObjectMapper.readValue(ObjectMapper.java:3937)
+	at org.springframework.ai.util.json.JsonParser.fromJson(JsonParser.java:94)
+	... 14 common frames omitted
+18:28:58.650 [main] WARN com.text2sql.agent.tool.AgentLoop -- 工具 SAMPLE_QUERY 执行异常：Unexpected end-of-input: expected close marker for Object (start marker at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 1])
+ at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 2]
+18:28:58.650 [main] WARN com.text2sql.agent.tool.AgentLoop -- Agent 1 轮用尽仍在调用工具，发起一次强制收口
+18:28:58.650 [main] INFO com.text2sql.agent.tool.AgentLoop -- Agent 强制收口产出：SELECT o.order_id,c.city FROM orders o JOIN customers c ON o.customer_id=c.customer_id LIMIT 2
+18:28:58.650 [main] INFO com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 触发 Agent 侦察工具循环模式（涉及 1 张表 >= 阈值 1）
+18:28:58.660 [main] INFO com.text2sql.agent.tool.AgentLoop -- Agent 第 1 轮请求 1 个工具：[NONEXISTENT_INDEPENDENT_TOOL]
+18:28:58.661 [main] WARN com.text2sql.agent.tool.AgentLoop -- Agent 1 轮用尽仍在调用工具，发起一次强制收口
+18:28:58.661 [main] INFO com.text2sql.agent.tool.AgentLoop -- Agent 强制收口产出：SELECT o.order_id,c.city FROM orders o JOIN customers c ON o.customer_id=c.customer_id LIMIT 2
+18:28:58.662 [main] INFO com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 触发 Agent 侦察工具循环模式（涉及 1 张表 >= 阈值 1）
+18:28:58.668 [main] INFO com.text2sql.agent.tool.AgentLoop -- Agent 第 1 轮请求 1 个工具：[SAMPLE_QUERY]
+18:28:58.671 [main] INFO com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 触发 Agent 侦察工具循环模式（涉及 1 张表 >= 阈值 1）
+18:28:58.673 [main] INFO com.text2sql.agent.tool.AgentLoop -- Agent 第 1 轮请求 1 个工具：[SAMPLE_QUERY]
+18:28:58.673 [main] WARN org.springframework.ai.tool.method.MethodToolCallback -- Conversion from JSON failed
+java.lang.IllegalStateException: Conversion from JSON to java.util.Map<java.lang.String, java.lang.Object> failed
+	at org.springframework.ai.util.json.JsonParser.fromJson(JsonParser.java:97)
+	at org.springframework.ai.tool.method.MethodToolCallback.extractToolArguments(MethodToolCallback.java:132)
+	at org.springframework.ai.tool.method.MethodToolCallback.call(MethodToolCallback.java:108)
+	at org.springframework.ai.tool.method.MethodToolCallback.call(MethodToolCallback.java:97)
+	at com.text2sql.agent.tool.AgentLoop.invoke(AgentLoop.java:208)
+	at com.text2sql.agent.tool.AgentLoop.run(AgentLoop.java:144)
+	at com.text2sql.agent.tool.AgentLoop.run(AgentLoop.java:68)
+	at com.text2sql.agent.orchestrator.Text2SqlOrchestrator.askPipeline(Text2SqlOrchestrator.java:305)
+	at com.text2sql.agent.orchestrator.Text2SqlOrchestrator.lambda$ask$0(Text2SqlOrchestrator.java:170)
+	at com.text2sql.agent.budget.RequestBudgetRunner.run(RequestBudgetRunner.java:37)
+	at com.text2sql.agent.orchestrator.Text2SqlOrchestrator.ask(Text2SqlOrchestrator.java:168)
+	at com.text2sql.agent.orchestrator.Text2SqlOrchestrator.ask(Text2SqlOrchestrator.java:159)
+	at com.text2sql.agent.orchestrator.Text2SqlOrchestrator.ask(Text2SqlOrchestrator.java:147)
+	at com.text2sql.agent.orchestrator.Text2SqlOrchestrator.ask(Text2SqlOrchestrator.java:134)
+	at com.text2sql.agent.orchestrator.ExtendedBProbe.main(ExtendedBProbe.java:78)
+Caused by: com.fasterxml.jackson.core.io.JsonEOFException: Unexpected end-of-input: expected close marker for Object (start marker at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 1])
+ at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 2]
+	at com.fasterxml.jackson.core.base.ParserMinimalBase._reportInvalidEOF(ParserMinimalBase.java:643)
+	at com.fasterxml.jackson.core.base.ParserBase._handleEOF(ParserBase.java:534)
+	at com.fasterxml.jackson.core.base.ParserBase._eofAsNextChar(ParserBase.java:551)
+	at com.fasterxml.jackson.core.json.ReaderBasedJsonParser._skipWSOrEnd(ReaderBasedJsonParser.java:2490)
+	at com.fasterxml.jackson.core.json.ReaderBasedJsonParser.nextFieldName(ReaderBasedJsonParser.java:912)
+	at com.fasterxml.jackson.databind.deser.std.MapDeserializer._readAndBindStringKeyMap(MapDeserializer.java:596)
+	at com.fasterxml.jackson.databind.deser.std.MapDeserializer.deserialize(MapDeserializer.java:450)
+	at com.fasterxml.jackson.databind.deser.std.MapDeserializer.deserialize(MapDeserializer.java:31)
+	at com.fasterxml.jackson.databind.deser.DefaultDeserializationContext.readRootValue(DefaultDeserializationContext.java:342)
+	at com.fasterxml.jackson.databind.ObjectMapper._readMapAndClose(ObjectMapper.java:5052)
+	at com.fasterxml.jackson.databind.ObjectMapper.readValue(ObjectMapper.java:3954)
+	at com.fasterxml.jackson.databind.ObjectMapper.readValue(ObjectMapper.java:3937)
+	at org.springframework.ai.util.json.JsonParser.fromJson(JsonParser.java:94)
+	... 14 common frames omitted
+18:28:58.677 [main] WARN com.text2sql.agent.tool.AgentLoop -- 工具 SAMPLE_QUERY 执行异常：Unexpected end-of-input: expected close marker for Object (start marker at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 1])
+ at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 2]
+18:28:58.677 [main] WARN com.text2sql.agent.tool.AgentLoop -- Agent 1 轮用尽仍在调用工具，发起一次强制收口
+18:28:58.678 [main] INFO com.text2sql.agent.tool.AgentLoop -- Agent 强制收口产出：SELECT o.order_id,c.city FROM orders o JOIN customers c ON o.customer_id=c.customer_id LIMIT 2
+18:28:58.679 [main] INFO com.text2sql.agent.orchestrator.Text2SqlOrchestrator -- 触发 Agent 侦察工具循环模式（涉及 1 张表 >= 阈值 1）
+18:28:58.685 [main] INFO com.text2sql.agent.tool.AgentLoop -- Agent 第 1 轮请求 1 个工具：[NONEXISTENT_INDEPENDENT_TOOL]
+18:28:58.685 [main] WARN com.text2sql.agent.tool.AgentLoop -- Agent 1 轮用尽仍在调用工具，发起一次强制收口
+18:28:58.685 [main] INFO com.text2sql.agent.tool.AgentLoop -- Agent 强制收口产出：SELECT o.order_id,c.city FROM orders o JOIN customers c ON o.customer_id=c.customer_id LIMIT 2
+EXTENDED_B_PROBE total=33 passed=25 failed=8 providerCalls=0

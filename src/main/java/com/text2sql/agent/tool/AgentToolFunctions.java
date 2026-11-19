@@ -14,7 +14,7 @@ import org.springframework.ai.tool.annotation.ToolParam;
  * 结构化 {@code tool_calls} 数组，上面三类问题在协议层就不存在了。
  *
  * <p><b>为什么不是 Spring Bean</b>：工具执行需要当前请求的 {@link SchemaContext}
- * （表白名单、列白名单都从它来），是**每请求一份**的状态。做成单例 Bean 会把
+ * 以及不可恢复的目录故障标记，是**每请求一份**的状态。执行白名单来自共享业务目录。做成单例 Bean 会把
  * 上一个请求的 schema 串到下一个请求里。
  *
  * <p><b>description 是给模型看的</b>：模型选不选这个工具，几乎完全取决于 description
@@ -24,6 +24,10 @@ public class AgentToolFunctions {
 
     private final ToolExecutor executor;
     private final SchemaContext schema;
+    // Per loop, sticky control signal; never infer fatality from model-visible error text.
+    private boolean schemaUnavailable;
+
+    boolean schemaUnavailable() { return schemaUnavailable; }
 
     public AgentToolFunctions(ToolExecutor executor, SchemaContext schema) {
         this.executor = executor;
@@ -83,8 +87,12 @@ public class AgentToolFunctions {
      */
     private String run(ToolType type, String argument) {
         try {
+            if (schemaUnavailable) return ToolResult.catalogUnavailable().output();
             ToolResult result = executor.execute(new ToolCall(type, argument, ""), schema);
+            schemaUnavailable |= result.schemaUnavailable();
             return result.output();
+        } catch (com.text2sql.agent.budget.RequestBudget.Exceeded exceeded) {
+            throw exceeded;
         } catch (Exception e) {
             return "工具执行失败：" + e.getMessage();
         }

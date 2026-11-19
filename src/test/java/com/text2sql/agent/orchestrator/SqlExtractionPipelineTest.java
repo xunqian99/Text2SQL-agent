@@ -48,6 +48,7 @@ class SqlExtractionPipelineTest {
                 new SchemaContext.Column("order_status", "text", false, null)))), List.of(), "", "");
         var provider = mock(SchemaProvider.class);
         when(provider.provide("订单状态有多少种？")).thenReturn(schema);
+        when(provider.fullSchema()).thenReturn(schema);
         var model = mock(ChatModel.class);
         when(model.call(any(Prompt.class))).thenReturn(new ChatResponse(List.of(
                 new Generation(new AssistantMessage(sql + "\n```"))),

@@ -1,0 +1,89 @@
+{
+  "format": "replan-stage-b-independent-decision-v2",
+  "submission": 2,
+  "formalSubmissionsUsed": 2,
+  "formalSubmissionsMaximum": 2,
+  "decision": "REJECTED_STOP_CURRENT_B_ROUND",
+  "stageBExitAccepted": false,
+  "b0Established": false,
+  "candidateJarSha256": "4a0bd05e29faa4051d15fbe3012e2c0a95e00479842c69a2ebe1779939be3af8",
+  "priorBlocker": {
+    "id": "B-01",
+    "status": "RESOLVED_IN_SUBMISSION_2",
+    "originalIndependentProbeRerun": {"passed": 101, "total": 101}
+  },
+  "blockers": [
+    {
+      "id": "B-02",
+      "priority": "P1",
+      "title": "Malformed or unknown tool invocation permits optional finalization before catalog failure is checked",
+      "path": "src/main/java/com/text2sql/agent/tool/AgentLoop.java",
+      "line": 158,
+      "relatedLines": [144, 145, 204, 208, 209],
+      "reproductionMatrix": "constant null/empty/throws/unimplemented catalog x malformed SAMPLE_QUERY JSON or unknown tool name",
+      "combinationsFailed": 8,
+      "expectedMaximumModelCalls": 1,
+      "actualModelCallsEach": 2,
+      "businessSqlExecutionsEach": 0,
+      "explainCallsEach": 0,
+      "actualOrderingInstrumented": ["tool-model-1:AGENT_ROUND_1", "tool-model-2:AGENT_FINALIZE", "fullSchema"],
+      "orderingNote": "The default unimplemented provider is not instrumented; its two calls and SCHEMA_UNAVAILABLE are preserved.",
+      "directoryFaultWasConstant": true,
+      "lateDirectoryChangeExplanationApplies": false,
+      "syntheticUsage": {
+        "firstTotalTokens": 26,
+        "firstCostYuan": 0.125,
+        "actualCombinedTotalTokens": 60,
+        "actualCombinedCostYuan": 0.375,
+        "notProviderBilling": true
+      },
+      "mechanism": "invoke returns ordinary text before AgentToolFunctions/ToolExecutor on argument conversion failure or unknown name, leaving sticky schemaUnavailable false; loop then calls AGENT_FINALIZE before final authorized-catalog validation."
+    }
+  ],
+  "independentProbes": {
+    "original": {"total": 101, "passed": 101, "failed": 0},
+    "extended": {"total": 33, "passed": 25, "failed": 8},
+    "total": 134,
+    "passed": 126,
+    "failed": 8,
+    "unauthorizedObjectCasesPassed": 57,
+    "newDangerousAuthorizationsObserved": 0,
+    "providerCalls": 0,
+    "databaseConnections": 0,
+    "rawEvidence": ["submission-2/original-probe-results.json", "submission-2/extended-probe-results.json"]
+  },
+  "evidenceVerified": {
+    "manifestFiles": 421,
+    "manifestDrift": 0,
+    "sourceFiles": 252,
+    "compiledFiles": 427,
+    "dependenciesUnchangedFromA": 79,
+    "reversePatchCheckExit": 0,
+    "firstMessagesEqual": 400,
+    "firstMessagesTotal": 400,
+    "reusedP21CaptureHashesUnchanged": true,
+    "finalMavenXmlTests": 1233,
+    "finalMavenXmlSuites": 99,
+    "finalMavenXmlFailures": 0,
+    "finalMavenXmlErrors": 0,
+    "finalMavenXmlSkipped": 0,
+    "existingIntegrationEvidenceReviewedNotRerun": true,
+    "submission1IndependentEvidenceUnchanged": true,
+    "submission1JarPatchGuideHashesPreserved": true
+  },
+  "knownBoundaries": [
+    "Existing bare-column/derived/ambiguous alias analysis is incomplete; not represented as complete static typing",
+    "Catalog is a process snapshot; runtime DDL/authorization refresh is outside B and requires restart",
+    "No accuracy, P95, token or provider-cost improvement established by B probes"
+  ],
+  "providerCalls": 0,
+  "providerTokens": 0,
+  "providerCostYuan": 0,
+  "sealedDataRead": false,
+  "productionCodeChanged": false,
+  "originalTestsChanged": false,
+  "gitCommitted": false,
+  "paidEvaluationAdmitted": false,
+  "thirdSubmissionAllowedInCurrentRound": false,
+  "nextStep": "Stop this B round, retain both rejected candidates and all failures. Do not establish B0 or admit C/D/paid evaluation."
+}

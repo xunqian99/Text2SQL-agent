@@ -11,6 +11,7 @@ import com.text2sql.agent.generation.LlmSqlGenerator;
 import com.text2sql.agent.observability.LlmCallRecord;
 import com.text2sql.agent.observability.EvaluationTrace;
 import com.text2sql.agent.retrieval.SchemaContext;
+import com.text2sql.agent.retrieval.BusinessSchemaUnavailableException;
 import com.text2sql.agent.retrieval.SchemaProvider;
 import com.text2sql.agent.validation.CheckResult;
 import com.text2sql.agent.validation.SqlValidator;
@@ -269,7 +270,7 @@ public class Text2SqlOrchestrator {
                 boolean suspicious = hit.success() && properties.getResultChecker().isEnabled()
                         && resultChecker.check(effectiveQuestion, hit.sql(),
                         new QueryResult(hit.columns(), hit.rows(), hit.truncated(), 0L)).suspicious();
-                if (hit.success() && !suspicious) {
+                if (isSchemaUnavailable(hit) || (hit.success() && !suspicious)) {
                     EvaluationTrace.attempt("CACHE_SQL", hit);
                     RequestBudget.checkpoint(hit);
                     if (convEnabled) {
@@ -309,9 +310,27 @@ public class Text2SqlOrchestrator {
             }
         } catch (GenerationException e) {
             EvaluationTrace.generationFailure(question, e);
+            if (e.getReason() == GenerationException.Reason.SCHEMA_UNAVAILABLE) {
+                return catalogUnavailable(question, null, LlmCallRecord.combine(rewriteCall, e.getCallRecord()),
+                        tableCount, retrievedTables, ddlChars, retrievalMs,
+                        elapsedMs(generationStarted) + rewriteMs, 0, totalStarted);
+            }
             if (properties.getSelfCorrection().isEnabled() && properties.getSelfCorrection().getMaxAttempts() > 1
                     && e.getReason() != GenerationException.Reason.NOT_CONFIGURED
                     && e.getReason() != GenerationException.Reason.OFF_PEAK_REQUIRED && RequestBudget.allowRetry()) {
+                // Generation failed before final validation. A missing catalog must be discovered
+                // before spending the optional second call, not after that call returns SQL.
+                long failedGenerationMs = elapsedMs(generationStarted) + rewriteMs;
+                RequestBudget.stage("VALIDATION");
+                long admissionStarted = System.nanoTime();
+                try {
+                    BusinessSchemaUnavailableException.require(schemaProvider::fullSchema);
+                } catch (BusinessSchemaUnavailableException unavailable) {
+                    return catalogUnavailable(question, null, LlmCallRecord.combine(rewriteCall, e.getCallRecord()),
+                            tableCount, retrievedTables, ddlChars, retrievalMs,
+                            failedGenerationMs, elapsedMs(admissionStarted), totalStarted);
+                }
+                RequestBudget.stage("GENERATION");
                 generationRetried = true;
                 EvaluationTrace.trigger("GENERATION_" + e.getReason().name());
                 log.warn("首次生成异常（{}：{}），尝试重试一次生成", e.getReason(), e.getMessage());
@@ -557,6 +576,8 @@ public class Text2SqlOrchestrator {
      */
     private AgentResponse retryIfFailed(String question, String contractQuestion, AgentResponse first, String apiKey) {
         RequestBudget.stage("RESULT_CHECK");
+        // 目录缺失是环境故障，改 SQL 无法修复；禁止额外调用模型。
+        if (isSchemaUnavailable(first)) return first;
         var config = properties.getSelfCorrection();
         var routing = properties.getRouting();
         boolean escalate = routing.isEnabled() && !routing.getEscalationModel().isBlank();
@@ -589,6 +610,18 @@ public class Text2SqlOrchestrator {
         if (!shouldRetry || !RequestBudget.allowRetry()) {
             return first;
         }
+        long admissionStarted = System.nanoTime();
+        try {
+            BusinessSchemaUnavailableException.require(schemaProvider::fullSchema);
+        } catch (BusinessSchemaUnavailableException unavailable) {
+            var blocked = catalogUnavailable(first.question(), first.sql(), null,
+                    first.schemaTableCount(), first.retrievedTables(), first.schemaDdlChars(),
+                    0, 0, elapsedMs(admissionStarted), admissionStarted);
+            EvaluationTrace.trigger("SCHEMA_UNAVAILABLE");
+            EvaluationTrace.attempt("CORRECTION_ADMISSION", blocked);
+            EvaluationTrace.select(2);
+            return AgentResponse.combineAttempts(first, blocked);
+        }
         EvaluationTrace.trigger(firstSuspicion == null ? first.status().name() : firstSuspicion);
 
         // 阶段 6：路由开启时换强模型重试。两个开关的作用不同——
@@ -601,6 +634,11 @@ public class Text2SqlOrchestrator {
                 ? askWithCorrection(question, first.sql(), feedback, model, apiKey)
                 : askWithCorrection(question, first.sql(), feedback, model);
         EvaluationTrace.attempt("CORRECTION_SQL", second);
+        if (isSchemaUnavailable(second)) {
+            // Catalog failure is terminal even if the first SQL had a suspicious successful result.
+            EvaluationTrace.select(2);
+            return AgentResponse.combineAttempts(first, second);
+        }
         if (second.success()) {
             // 择优而非覆盖：首次是「成功但可疑」时，第二次也必须通过同一套校验才配替换。
             // 否则会出现「首次正确、被规则误判 → 重试 → 第二次也能跑但答错 → 采用第二次」，
@@ -651,6 +689,11 @@ public class Text2SqlOrchestrator {
         return sb.toString();
     }
 
+    private static boolean isSchemaUnavailable(AgentResponse response) {
+        return response.violations().stream().anyMatch(v -> v.startsWith(
+                "[" + ValidationResult.Code.SCHEMA_UNAVAILABLE + "]"));
+    }
+
     /** 把首次失败的真实原因整理成反馈。**只包含模型自己能观察到的信息，不含标准答案。** */
     private static String retryFeedback(AgentResponse first) {
         StringBuilder sb = new StringBuilder();
@@ -684,12 +727,8 @@ public class Text2SqlOrchestrator {
         long retrievalStarted = System.nanoTime();
         SchemaContext retrieved = schemaProvider.provide(question);
         long retrievalMs = elapsedMs(retrievalStarted);
-        // dry-run 的输入是 trusted gold SQL：校验用全量 schema，避免把
-        // gold 里「不产出列、只起过滤作用」的 join 误判成检索漏表。
-        // 检索指标仍按 retrieved 记录，召回率不会因此虚高。
-        SchemaContext validationSchema = properties.getEval().isDryRun()
-                ? schemaProvider.fullSchema() : retrieved;
-        return validateAndExecute(question, sql, llmCall, validationSchema,
+        // 固定 SQL 与模型 SQL 共用同一目录校验边界；指标仍记录原始检索子集。
+        return validateAndExecute(question, sql, llmCall, retrieved,
                 retrieved.tables().size(), retrieved.tableNames(),
                 retrieved.ddlText() == null ? 0 : retrieved.ddlText().length(),
                 retrievalMs, 0, totalStarted);
@@ -732,6 +771,15 @@ public class Text2SqlOrchestrator {
         List<String> retrievedTables = schema.tableNames();
         int ddlChars = schema.ddlText() == null ? 0 : schema.ddlText().length();
 
+        // Explicit correction entry points also need admission before calling the model.
+        RequestBudget.stage("VALIDATION");
+        long admissionStarted = System.nanoTime();
+        try {
+            BusinessSchemaUnavailableException.require(schemaProvider::fullSchema);
+        } catch (BusinessSchemaUnavailableException unavailable) {
+            return catalogUnavailable(question, previousSql, null, tableCount, retrievedTables, ddlChars,
+                    retrievalMs, 0, elapsedMs(admissionStarted), totalStarted);
+        }
         RequestBudget.stage("GENERATION");
         long generationStarted = System.nanoTime();
         GeneratedSql generated;
@@ -741,6 +789,10 @@ public class Text2SqlOrchestrator {
                     : generator.generateCorrection(question, schema, previousSql, feedback, modelOverride);
         } catch (GenerationException e) {
             long generationMs = elapsedMs(generationStarted);
+            if (e.getReason() == GenerationException.Reason.SCHEMA_UNAVAILABLE) {
+                return catalogUnavailable(question, null, e.getCallRecord(), tableCount, retrievedTables,
+                        ddlChars, retrievalMs, generationMs, 0, totalStarted);
+            }
             AgentResponse.Status status = e.getReason() == GenerationException.Reason.NOT_CONFIGURED
                     ? AgentResponse.Status.NOT_CONFIGURED
                     : AgentResponse.Status.GENERATION_FAILED;
@@ -760,7 +812,17 @@ public class Text2SqlOrchestrator {
                                              long retrievalMs, long generationMs, long totalStarted) {
         RequestBudget.stage("VALIDATION");
         long validationStarted = System.nanoTime();
-        ValidationResult validation = validator.validate(sql, schema);
+        // schema 是模型实际看到的检索/剪枝结果，不能冒充数据库对象白名单。
+        // fullSchema() 由两个生产 Provider 委托给同一个 SchemaCatalog，含完整业务列。
+        // 此对象只交给本地校验器，不写回 schema、RequestBudget、会话或检索统计。
+        SchemaContext validationSchema;
+        try {
+            validationSchema = BusinessSchemaUnavailableException.require(schemaProvider::fullSchema);
+        } catch (BusinessSchemaUnavailableException unavailable) {
+            return catalogUnavailable(question, sql, llmCall, tableCount, retrievedTables, ddlChars,
+                    retrievalMs, generationMs, elapsedMs(validationStarted), totalStarted);
+        }
+        ValidationResult validation = validator.validate(sql, validationSchema);
         long validationMs = elapsedMs(validationStarted);
 
         if (!validation.valid()) {
@@ -815,6 +877,16 @@ public class Text2SqlOrchestrator {
         return AgentResponse.success(question, validation.sql(), validation.rewritten(),
                 new AgentResponse.QueryOutcome(result.columns(), result.rows(), result.truncated()),
                 llmCall, tableCount, retrievedTables, ddlChars, timings);
+    }
+
+    private static AgentResponse catalogUnavailable(String question, String sql, LlmCallRecord call,
+                                                    int tableCount, List<String> retrievedTables, int ddlChars,
+                                                    long retrievalMs, long generationMs, long validationMs,
+                                                    long totalStarted) {
+        return AgentResponse.rejected(question, sql,
+                List.of("[" + ValidationResult.Code.SCHEMA_UNAVAILABLE + "] 完整业务 Schema 不可用，未执行 SQL"),
+                call, tableCount, retrievedTables, ddlChars,
+                timings(retrievalMs, generationMs, validationMs, 0, elapsedMs(totalStarted)));
     }
 
     private static AgentResponse.Timings timings(long retrieval, long generation, long validation,

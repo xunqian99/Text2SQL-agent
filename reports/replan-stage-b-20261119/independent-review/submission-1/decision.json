@@ -1,0 +1,73 @@
+{
+  "format": "replan-stage-b-independent-decision-v1",
+  "submission": 1,
+  "formalSubmissionsUsed": 1,
+  "formalSubmissionsMaximum": 2,
+  "decision": "REJECTED",
+  "stageBExitAccepted": false,
+  "b0Established": false,
+  "candidateJarSha256": "989e654f3d850352905756b73722e814c7b1b8e425dd2699d2260590d87b08f4",
+  "blockers": [
+    {
+      "id": "B-01",
+      "priority": "P1",
+      "title": "Unavailable catalog does not prevent generation-failure retry",
+      "path": "src/main/java/com/text2sql/agent/orchestrator/Text2SqlOrchestrator.java",
+      "line": 318,
+      "reproductionMatrix": "null/empty/throws/unimplemented directory x CALL_FAILED/UNPARSEABLE first generation",
+      "combinationsFailed": 8,
+      "expectedMaximumModelCalls": 1,
+      "actualModelCallsEach": 2,
+      "businessSqlExecutionsEach": 0,
+      "explainCallsEach": 0,
+      "actualOrderingInstrumented": ["generate-1", "generate-2", "fullSchema"],
+      "orderingNote": "Default unimplemented fullSchema is not instrumented; its two model calls and terminal SCHEMA_UNAVAILABLE are retained in raw evidence.",
+      "requiredChange": "Establish authorized catalog availability before admitting any extra generation/correction/fallback model call; preserve spent usage and terminal SCHEMA_UNAVAILABLE."
+    }
+  ],
+  "independentProbes": {
+    "total": 101,
+    "passed": 93,
+    "failed": 8,
+    "unauthorizedObjectCasesPassed": 57,
+    "newDangerousAuthorizationsObserved": 0,
+    "providerCalls": 0,
+    "databaseConnections": 0,
+    "rawEvidence": "submission-1/probe-results.json"
+  },
+  "evidenceVerified": {
+    "manifestFiles": 1050,
+    "manifestDrift": 0,
+    "sourceFiles": 252,
+    "compiledFiles": 427,
+    "dependenciesUnchangedFromA": 79,
+    "reversePatchCheckExit": 0,
+    "firstMessagesEqual": 400,
+    "firstMessagesTotal": 400,
+    "finalMavenXmlTests": 1224,
+    "finalMavenXmlSuites": 99,
+    "finalMavenXmlFailures": 0,
+    "finalMavenXmlErrors": 0,
+    "finalMavenXmlSkipped": 0,
+    "existingIntegrationEvidenceReviewedNotRerun": true,
+    "coverageIndexFaithfulButRetryRowFailsRequirement": true
+  },
+  "reviewerPreparationErrorsPreserved": [
+    "submission-1/probe-compile-output.txt: package-private cacheSignature access; corrected independent probe package",
+    "submission-1/evidence-verification.json: JSON object key-order comparison artifact; corrected fixed-field exact comparison in evidence-verification-v2.json"
+  ],
+  "knownBoundaries": [
+    "Existing bare-column/derived/ambiguous alias analysis is incomplete; not represented as complete static typing",
+    "Catalog is a process snapshot; runtime DDL/authorization refresh is outside B and requires restart",
+    "No accuracy, P95, token or provider-cost improvement established by B probes"
+  ],
+  "providerCalls": 0,
+  "providerTokens": 0,
+  "providerCostYuan": 0,
+  "sealedDataRead": false,
+  "productionCodeChanged": false,
+  "originalTestsChanged": false,
+  "gitCommitted": false,
+  "paidEvaluationAdmitted": false,
+  "nextStep": "Repair B-01, retain submission-1 failure evidence, freeze submission 2 and request final independent review."
+}

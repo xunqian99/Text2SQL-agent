@@ -1,0 +1,1068 @@
+--- /dev/null
++++ b/scripts/replan_stage_b.py
+@@ -0,0 +1,129 @@
++"""Offline-only B verification. Public data whitelist, loopback model endpoint, no key resolution."""
++from pathlib import Path
++import hashlib
++import json
++import shutil
++import subprocess
++import sys
++import time
++
++ROOT = Path(__file__).resolve().parent.parent
++OUT = ROOT / "reports/replan-stage-b-20261119"
++sys.path.insert(0, str(ROOT / "scripts"))
++import run_stage2_v3_comparison as frozen
++
++
++def write(path, value):
++    with Path(path).open("x", encoding="utf-8", newline="\n") as f:
++        json.dump(value, f, indent=2, ensure_ascii=False)
++        f.write("\n")
++
++
++def run(name, command, timeout=240):
++    path = OUT / name
++    path.mkdir(exist_ok=False)
++    started = time.monotonic()
++    with (path / "process-output.txt").open("x", encoding="utf-8") as log:
++        result = subprocess.run(command, cwd=ROOT, env=frozen.clean_environment(),
++                                stdout=log, stderr=subprocess.STDOUT, timeout=timeout)
++    write(path / "execution.json", dict(command=command, exitCode=result.returncode,
++          wallSeconds=round(time.monotonic()-started, 3), providerCalls=0,
++          scope="local-only; credentials absent, loopback model endpoint or mock model"))
++    print(name, "exit=", result.returncode, flush=True)
++    if result.returncode:
++        print((path / "process-output.txt").read_text(encoding="utf-8")[-6500:], flush=True)
++        raise SystemExit(result.returncode)
++
++
++def classpath(frozen_classes=False):
++    libs = (ROOT / "target/replan-b-classpath.txt").read_text(encoding="utf-8").strip()
++    classes = ROOT / ("target/replan-stage-a-frozen/BOOT-INF/classes" if frozen_classes else "target/classes")
++    return str(classes) + ";" + str(ROOT / "target/test-classes") + ";" + libs
++
++
++def probes():
++    cp = classpath()
++    for name, cls in [
++        ("catalog-http", "orchestrator.CatalogHttpAcceptanceProbe"),
++        ("access-http", "access.AccessHttpAcceptanceProbe"),
++        ("cost-http", "cost.CostHttpAcceptanceProbe"),
++        ("session-http", "session.SessionOutcomeAcceptanceProbe"),
++        ("timings-http", "budget.BudgetTimingsAcceptanceProbe"),
++    ]:
++        run(name, ["java", "-cp", cp, "com.text2sql.agent." + cls, str(OUT / (name + "-evidence"))])
++
++
++def captures():
++    for name, directory in [("original200", "data/eval"),
++            ("development100", "data/benchmarks/olist-v4-development-20261119"),
++            ("formal100", "data/benchmarks/olist-v4-formal-20261119")]:
++        for system in ("p21", "B"):
++            if system == "p21" and OUT.name == "attempt-2":
++                source = OUT.parent / ("messages-p21-"+name+".json")
++                manifest = json.loads((OUT.parent / "submission-1-manifest.json").read_text(encoding="utf-8"))
++                if hashlib.sha256(source.read_bytes()).hexdigest() != manifest["files"][source.relative_to(ROOT).as_posix()]:
++                    raise ValueError("Frozen baseline capture drift")
++                shutil.copyfile(source, OUT / source.name)
++                continue
++            run("first-call-"+system+"-"+name, ["java", "-cp", classpath(system=="p21"),
++                "com.text2sql.agent.retrieval.CatalogFirstCallCapture", directory,
++                str(OUT / ("messages-"+system+"-"+name+".json"))])
++    comparisons = []
++    for name in ("original200", "development100", "formal100"):
++        old = json.loads((OUT / ("messages-p21-"+name+".json")).read_text(encoding="utf-8"))
++        new = json.loads((OUT / ("messages-B-"+name+".json")).read_text(encoding="utf-8"))
++        if old != new:
++            raise ValueError("Actual first-call message/context drift: " + name)
++        comparisons.append(dict(dataset=name, equal=len(new["items"]), total=len(new["items"])))
++    write(OUT / "first-call-invariance.json", dict(comparisons=comparisons,
++          exactMessagesAndRetrievalEqual=True, providerCalls=0,
++          mockCalls=400 if OUT.name=="attempt-2" else 800,
++          reusedFrozenBaselineMockCalls=400 if OUT.name=="attempt-2" else 0,
++          boundary="Actual first ChatModel.call via ask; synthetic response, not provider transport"))
++
++
++def gold():
++    jar = ROOT / "target/text2sql-agent-0.1.0-SNAPSHOT.jar"
++    reports = []
++    for name, directory, count in [("original200", "data/eval", 200),
++            ("development100", "data/benchmarks/olist-v4-development-20261119", 100),
++            ("formal100", "data/benchmarks/olist-v4-formal-20261119", 100)]:
++        evidence = OUT / ("gold-"+name+"-evidence")
++        evidence.mkdir(exist_ok=False)
++        plan=dict(systems={"C":dict(repo=str(ROOT),jar=str(jar))},
++                  datasets={"public":dict(directory=directory,javaSuiteManifest="")},port=18091)
++        cmd=frozen.build_command(plan,"C","public",str(evidence.relative_to(ROOT)),True)
++        overrides={"server.address":"127.0.0.1","agent.llm.base-url":"http://127.0.0.1:1",
++                   "agent.llm.api-key":"","agent.persistence.enabled":"false"}
++        cmd=[a for a in cmd if not any(a.startswith("--"+key+"=") for key in overrides)]
++        cmd += ["--"+k+"="+v for k,v in overrides.items()]
++        run("gold-"+name,cmd)
++        files=list(evidence.glob("eval-*-dryrun.json"))
++        if len(files)!=1: raise ValueError("Missing dry report")
++        data=json.loads(files[0].read_text(encoding="utf-8-sig"))
++        if data["overall"]["correct"]!=count or data["overall"]["total"]!=count:
++            raise ValueError("Gold execution failed")
++        if any(r["calls"] for r in data["itemEvidence"]): raise ValueError("Unexpected model call")
++        reports.append(dict(name=name,correct=count,total=count,report=str(files[0].relative_to(ROOT))))
++    write(OUT / "gold-execution.json",dict(runs=reports,providerCalls=0,officialV4RuntimeAdmitted=False))
++
++
++if __name__ == "__main__":
++    if "--attempt-2" in sys.argv:
++        sys.argv.remove("--attempt-2")
++        OUT = OUT / "attempt-2"
++        OUT.mkdir(exist_ok=True)
++    action=sys.argv[1]
++    if action in ("focused", "build"):
++        command=[shutil.which("mvn.cmd"),"-q"]
++        if action=="focused": command += ["-Dtest=CatalogValidationBoundaryTest,SqlValidatorTest,ToolExecutorTest,AgentLoopTest,OrchestratorSelfCorrectionTest,MultiTurnOrchestratorTest,SessionOutcomeFinalizationTest,ClarificationReplyTest,BudgetOrchestratorTest,SqlExtractionPipelineTest", "test"]
++        else: command += ["package", "dependency:build-classpath", "-Dmdep.outputFile=target/replan-b-classpath.txt"]
++        try:
++            run(sys.argv[2],command,300)
++        finally:
++            source=ROOT / "target/surefire-reports"
++            if source.exists(): shutil.copytree(source,OUT / sys.argv[2] / "surefire",dirs_exist_ok=False)
++    elif action=="probes": probes()
++    elif action=="captures": captures()
++    elif action=="gold": gold()
++    else: raise ValueError("Unsupported offline action")
+--- a/src/main/java/com/text2sql/agent/generation/GenerationException.java
++++ b/src/main/java/com/text2sql/agent/generation/GenerationException.java
+@@ -17,6 +17,8 @@
+         NOT_CONFIGURED,
+         /** Local pricing-window policy refused the request before transport. */
+         OFF_PEAK_REQUIRED,
++        /** A tool could not acquire its authorized catalog; no retry/finalization call. */
++        SCHEMA_UNAVAILABLE,
+         /** 调用失败（网络、超时、限流、鉴权）。属于基础设施问题。 */
+         CALL_FAILED,
+         /** 调用成功但返回内容里提不出合法 SQL。属于模型质量问题。 */
+--- a/src/main/java/com/text2sql/agent/orchestrator/Text2SqlOrchestrator.java
++++ b/src/main/java/com/text2sql/agent/orchestrator/Text2SqlOrchestrator.java
+@@ -11,6 +11,7 @@
+ import com.text2sql.agent.observability.LlmCallRecord;
+ import com.text2sql.agent.observability.EvaluationTrace;
+ import com.text2sql.agent.retrieval.SchemaContext;
++import com.text2sql.agent.retrieval.BusinessSchemaUnavailableException;
+ import com.text2sql.agent.retrieval.SchemaProvider;
+ import com.text2sql.agent.validation.CheckResult;
+ import com.text2sql.agent.validation.SqlValidator;
+@@ -269,7 +270,7 @@
+                 boolean suspicious = hit.success() && properties.getResultChecker().isEnabled()
+                         && resultChecker.check(effectiveQuestion, hit.sql(),
+                         new QueryResult(hit.columns(), hit.rows(), hit.truncated(), 0L)).suspicious();
+-                if (hit.success() && !suspicious) {
++                if (isSchemaUnavailable(hit) || (hit.success() && !suspicious)) {
+                     EvaluationTrace.attempt("CACHE_SQL", hit);
+                     RequestBudget.checkpoint(hit);
+                     if (convEnabled) {
+@@ -309,9 +310,27 @@
+             }
+         } catch (GenerationException e) {
+             EvaluationTrace.generationFailure(question, e);
++            if (e.getReason() == GenerationException.Reason.SCHEMA_UNAVAILABLE) {
++                return catalogUnavailable(question, null, LlmCallRecord.combine(rewriteCall, e.getCallRecord()),
++                        tableCount, retrievedTables, ddlChars, retrievalMs,
++                        elapsedMs(generationStarted) + rewriteMs, 0, totalStarted);
++            }
+             if (properties.getSelfCorrection().isEnabled() && properties.getSelfCorrection().getMaxAttempts() > 1
+                     && e.getReason() != GenerationException.Reason.NOT_CONFIGURED
+                     && e.getReason() != GenerationException.Reason.OFF_PEAK_REQUIRED && RequestBudget.allowRetry()) {
++                // Generation failed before final validation. A missing catalog must be discovered
++                // before spending the optional second call, not after that call returns SQL.
++                long failedGenerationMs = elapsedMs(generationStarted) + rewriteMs;
++                RequestBudget.stage("VALIDATION");
++                long admissionStarted = System.nanoTime();
++                try {
++                    BusinessSchemaUnavailableException.require(schemaProvider::fullSchema);
++                } catch (BusinessSchemaUnavailableException unavailable) {
++                    return catalogUnavailable(question, null, LlmCallRecord.combine(rewriteCall, e.getCallRecord()),
++                            tableCount, retrievedTables, ddlChars, retrievalMs,
++                            failedGenerationMs, elapsedMs(admissionStarted), totalStarted);
++                }
++                RequestBudget.stage("GENERATION");
+                 generationRetried = true;
+                 EvaluationTrace.trigger("GENERATION_" + e.getReason().name());
+                 log.warn("首次生成异常（{}：{}），尝试重试一次生成", e.getReason(), e.getMessage());
+@@ -557,6 +576,8 @@
+      */
+     private AgentResponse retryIfFailed(String question, String contractQuestion, AgentResponse first, String apiKey) {
+         RequestBudget.stage("RESULT_CHECK");
++        // 目录缺失是环境故障，改 SQL 无法修复；禁止额外调用模型。
++        if (isSchemaUnavailable(first)) return first;
+         var config = properties.getSelfCorrection();
+         var routing = properties.getRouting();
+         boolean escalate = routing.isEnabled() && !routing.getEscalationModel().isBlank();
+@@ -589,6 +610,18 @@
+         if (!shouldRetry || !RequestBudget.allowRetry()) {
+             return first;
+         }
++        long admissionStarted = System.nanoTime();
++        try {
++            BusinessSchemaUnavailableException.require(schemaProvider::fullSchema);
++        } catch (BusinessSchemaUnavailableException unavailable) {
++            var blocked = catalogUnavailable(first.question(), first.sql(), null,
++                    first.schemaTableCount(), first.retrievedTables(), first.schemaDdlChars(),
++                    0, 0, elapsedMs(admissionStarted), admissionStarted);
++            EvaluationTrace.trigger("SCHEMA_UNAVAILABLE");
++            EvaluationTrace.attempt("CORRECTION_ADMISSION", blocked);
++            EvaluationTrace.select(2);
++            return AgentResponse.combineAttempts(first, blocked);
++        }
+         EvaluationTrace.trigger(firstSuspicion == null ? first.status().name() : firstSuspicion);
+ 
+         // 阶段 6：路由开启时换强模型重试。两个开关的作用不同——
+@@ -601,6 +634,11 @@
+                 ? askWithCorrection(question, first.sql(), feedback, model, apiKey)
+                 : askWithCorrection(question, first.sql(), feedback, model);
+         EvaluationTrace.attempt("CORRECTION_SQL", second);
++        if (isSchemaUnavailable(second)) {
++            // Catalog failure is terminal even if the first SQL had a suspicious successful result.
++            EvaluationTrace.select(2);
++            return AgentResponse.combineAttempts(first, second);
++        }
+         if (second.success()) {
+             // 择优而非覆盖：首次是「成功但可疑」时，第二次也必须通过同一套校验才配替换。
+             // 否则会出现「首次正确、被规则误判 → 重试 → 第二次也能跑但答错 → 采用第二次」，
+@@ -651,6 +689,11 @@
+         return sb.toString();
+     }
+ 
++    private static boolean isSchemaUnavailable(AgentResponse response) {
++        return response.violations().stream().anyMatch(v -> v.startsWith(
++                "[" + ValidationResult.Code.SCHEMA_UNAVAILABLE + "]"));
++    }
++
+     /** 把首次失败的真实原因整理成反馈。**只包含模型自己能观察到的信息，不含标准答案。** */
+     private static String retryFeedback(AgentResponse first) {
+         StringBuilder sb = new StringBuilder();
+@@ -684,12 +727,8 @@
+         long retrievalStarted = System.nanoTime();
+         SchemaContext retrieved = schemaProvider.provide(question);
+         long retrievalMs = elapsedMs(retrievalStarted);
+-        // dry-run 的输入是 trusted gold SQL：校验用全量 schema，避免把
+-        // gold 里「不产出列、只起过滤作用」的 join 误判成检索漏表。
+-        // 检索指标仍按 retrieved 记录，召回率不会因此虚高。
+-        SchemaContext validationSchema = properties.getEval().isDryRun()
+-                ? schemaProvider.fullSchema() : retrieved;
+-        return validateAndExecute(question, sql, llmCall, validationSchema,
++        // 固定 SQL 与模型 SQL 共用同一目录校验边界；指标仍记录原始检索子集。
++        return validateAndExecute(question, sql, llmCall, retrieved,
+                 retrieved.tables().size(), retrieved.tableNames(),
+                 retrieved.ddlText() == null ? 0 : retrieved.ddlText().length(),
+                 retrievalMs, 0, totalStarted);
+@@ -732,6 +771,15 @@
+         List<String> retrievedTables = schema.tableNames();
+         int ddlChars = schema.ddlText() == null ? 0 : schema.ddlText().length();
+ 
++        // Explicit correction entry points also need admission before calling the model.
++        RequestBudget.stage("VALIDATION");
++        long admissionStarted = System.nanoTime();
++        try {
++            BusinessSchemaUnavailableException.require(schemaProvider::fullSchema);
++        } catch (BusinessSchemaUnavailableException unavailable) {
++            return catalogUnavailable(question, previousSql, null, tableCount, retrievedTables, ddlChars,
++                    retrievalMs, 0, elapsedMs(admissionStarted), totalStarted);
++        }
+         RequestBudget.stage("GENERATION");
+         long generationStarted = System.nanoTime();
+         GeneratedSql generated;
+@@ -741,6 +789,10 @@
+                     : generator.generateCorrection(question, schema, previousSql, feedback, modelOverride);
+         } catch (GenerationException e) {
+             long generationMs = elapsedMs(generationStarted);
++            if (e.getReason() == GenerationException.Reason.SCHEMA_UNAVAILABLE) {
++                return catalogUnavailable(question, null, e.getCallRecord(), tableCount, retrievedTables,
++                        ddlChars, retrievalMs, generationMs, 0, totalStarted);
++            }
+             AgentResponse.Status status = e.getReason() == GenerationException.Reason.NOT_CONFIGURED
+                     ? AgentResponse.Status.NOT_CONFIGURED
+                     : AgentResponse.Status.GENERATION_FAILED;
+@@ -760,7 +812,17 @@
+                                              long retrievalMs, long generationMs, long totalStarted) {
+         RequestBudget.stage("VALIDATION");
+         long validationStarted = System.nanoTime();
+-        ValidationResult validation = validator.validate(sql, schema);
++        // schema 是模型实际看到的检索/剪枝结果，不能冒充数据库对象白名单。
++        // fullSchema() 由两个生产 Provider 委托给同一个 SchemaCatalog，含完整业务列。
++        // 此对象只交给本地校验器，不写回 schema、RequestBudget、会话或检索统计。
++        SchemaContext validationSchema;
++        try {
++            validationSchema = BusinessSchemaUnavailableException.require(schemaProvider::fullSchema);
++        } catch (BusinessSchemaUnavailableException unavailable) {
++            return catalogUnavailable(question, sql, llmCall, tableCount, retrievedTables, ddlChars,
++                    retrievalMs, generationMs, elapsedMs(validationStarted), totalStarted);
++        }
++        ValidationResult validation = validator.validate(sql, validationSchema);
+         long validationMs = elapsedMs(validationStarted);
+ 
+         if (!validation.valid()) {
+@@ -817,6 +879,16 @@
+                 llmCall, tableCount, retrievedTables, ddlChars, timings);
+     }
+ 
++    private static AgentResponse catalogUnavailable(String question, String sql, LlmCallRecord call,
++                                                    int tableCount, List<String> retrievedTables, int ddlChars,
++                                                    long retrievalMs, long generationMs, long validationMs,
++                                                    long totalStarted) {
++        return AgentResponse.rejected(question, sql,
++                List.of("[" + ValidationResult.Code.SCHEMA_UNAVAILABLE + "] 完整业务 Schema 不可用，未执行 SQL"),
++                call, tableCount, retrievedTables, ddlChars,
++                timings(retrievalMs, generationMs, validationMs, 0, elapsedMs(totalStarted)));
++    }
++
+     private static AgentResponse.Timings timings(long retrieval, long generation, long validation,
+                                                  long execution, long total) {
+         return new AgentResponse.Timings(retrieval, generation, validation, execution, total);
+--- /dev/null
++++ b/src/main/java/com/text2sql/agent/retrieval/BusinessSchemaUnavailableException.java
+@@ -0,0 +1,29 @@
++package com.text2sql.agent.retrieval;
++
++import com.text2sql.agent.budget.RequestBudget;
++import java.util.function.Supplier;
++
++/** A catalog failure is an environment failure, never model repair feedback. */
++public final class BusinessSchemaUnavailableException extends RuntimeException {
++    public BusinessSchemaUnavailableException() {
++        super("完整业务 Schema 不可用，未执行 SQL");
++    }
++
++    public static SchemaContext require(Supplier<SchemaContext> source) {
++        try {
++            SchemaContext schema = source.get();
++            if (schema == null || schema.tables() == null || schema.tables().isEmpty()
++                    || schema.tables().stream().anyMatch(t -> t == null || t.name() == null
++                    || t.name().isBlank() || t.columns() == null || t.columns().isEmpty()
++                    || t.columns().stream().anyMatch(c -> c == null || c.name() == null || c.name().isBlank()))) {
++                throw new BusinessSchemaUnavailableException();
++            }
++            return schema;
++        } catch (RequestBudget.Exceeded exceeded) {
++            throw exceeded;
++        } catch (RuntimeException unavailable) {
++            // Do not leak connection details or turn catalog faults into SQL correction feedback.
++            throw new BusinessSchemaUnavailableException();
++        }
++    }
++}
+--- a/src/main/java/com/text2sql/agent/retrieval/SchemaProvider.java
++++ b/src/main/java/com/text2sql/agent/retrieval/SchemaProvider.java
+@@ -12,13 +12,13 @@
+     SchemaContext provide(String question);
+ 
+     /**
+-     * 全量 schema，供 dry-run 的 trusted gold SQL 校验使用。
++     * 同一 SchemaCatalog 的完整公开业务 schema，供执行前校验使用。
+      *
+-     * <p>dry-run 的目的是验证评估器/校验器/执行器自身没坏，输入是 gold SQL，
+-     * 不是模型生成结果。此时不应该用检索子集去卡 gold 里那些「不产出列、
+-     * 只起过滤作用」的 join；检索召回率由 retrieval 指标单独报告。
++     * <p>必须保留完整列，且不能包含内部持久化表或其他 schema。
++     * 生成、会话复用与检索指标仍使用 provide(question) 的原始检索子集。
++     * 空问题检索不能保证完整，未实现时必须明确失败，禁止伪装成全量目录。
+      */
+     default SchemaContext fullSchema() {
+-        return provide("");
++        throw new UnsupportedOperationException("SchemaProvider must expose its shared full business catalog");
+     }
+ }
+--- a/src/main/java/com/text2sql/agent/tool/AgentLoop.java
++++ b/src/main/java/com/text2sql/agent/tool/AgentLoop.java
+@@ -80,10 +80,10 @@
+         history.add(new SystemMessage(systemPrompt));
+         history.add(new UserMessage(userPrompt));
+ 
+-        // 工具需要当前请求的 schema（表白名单/列白名单都从它来），所以每请求新建一份，
++        // 工具保留当前请求的生成上下文；执行白名单另取完整业务目录。每请求新建一份，
+         // 不能做成单例 Bean——否则上一个请求的 schema 会串到下一个请求。
+-        List<ToolCallback> callbacks = List.of(
+-                ToolCallbacks.from(new AgentToolFunctions(toolExecutor, schema)));
++        var functions = new AgentToolFunctions(toolExecutor, schema);
++        List<ToolCallback> callbacks = List.of(ToolCallbacks.from(functions));
+         Map<String, ToolCallback> byName = new LinkedHashMap<>();
+         for (ToolCallback cb : callbacks) {
+             byName.put(cb.getToolDefinition().name(), cb);
+@@ -142,6 +142,10 @@
+             for (AssistantMessage.ToolCall toolCall : output.getToolCalls()) {
+                 responses.add(new ToolResponseMessage.ToolResponse(
+                         toolCall.id(), toolCall.name(), invoke(byName, toolCall)));
++                if (functions.schemaUnavailable()) {
++                    throw new GenerationException(GenerationException.Reason.SCHEMA_UNAVAILABLE,
++                            ToolResult.catalogUnavailable().output(), combinedRecord);
++                }
+             }
+             history.add(ToolResponseMessage.builder().responses(responses).build());
+ 
+--- a/src/main/java/com/text2sql/agent/tool/AgentToolFunctions.java
++++ b/src/main/java/com/text2sql/agent/tool/AgentToolFunctions.java
+@@ -14,7 +14,7 @@
+  * 结构化 {@code tool_calls} 数组，上面三类问题在协议层就不存在了。
+  *
+  * <p><b>为什么不是 Spring Bean</b>：工具执行需要当前请求的 {@link SchemaContext}
+- * （表白名单、列白名单都从它来），是**每请求一份**的状态。做成单例 Bean 会把
++ * 以及不可恢复的目录故障标记，是**每请求一份**的状态。执行白名单来自共享业务目录。做成单例 Bean 会把
+  * 上一个请求的 schema 串到下一个请求里。
+  *
+  * <p><b>description 是给模型看的</b>：模型选不选这个工具，几乎完全取决于 description
+@@ -24,6 +24,10 @@
+ 
+     private final ToolExecutor executor;
+     private final SchemaContext schema;
++    // Per loop, sticky control signal; never infer fatality from model-visible error text.
++    private boolean schemaUnavailable;
++
++    boolean schemaUnavailable() { return schemaUnavailable; }
+ 
+     public AgentToolFunctions(ToolExecutor executor, SchemaContext schema) {
+         this.executor = executor;
+@@ -83,8 +87,12 @@
+      */
+     private String run(ToolType type, String argument) {
+         try {
++            if (schemaUnavailable) return ToolResult.catalogUnavailable().output();
+             ToolResult result = executor.execute(new ToolCall(type, argument, ""), schema);
++            schemaUnavailable |= result.schemaUnavailable();
+             return result.output();
++        } catch (com.text2sql.agent.budget.RequestBudget.Exceeded exceeded) {
++            throw exceeded;
+         } catch (Exception e) {
+             return "工具执行失败：" + e.getMessage();
+         }
+--- a/src/main/java/com/text2sql/agent/tool/ToolExecutor.java
++++ b/src/main/java/com/text2sql/agent/tool/ToolExecutor.java
+@@ -4,6 +4,8 @@
+ import com.text2sql.agent.execution.SqlExecutor;
+ import com.text2sql.agent.retrieval.SchemaCatalog;
+ import com.text2sql.agent.retrieval.SchemaContext;
++import com.text2sql.agent.retrieval.BusinessSchemaUnavailableException;
++import com.text2sql.agent.budget.RequestBudget;
+ import com.text2sql.agent.validation.SqlValidator;
+ import org.slf4j.Logger;
+ import org.slf4j.LoggerFactory;
+@@ -46,14 +48,22 @@
+         }
+ 
+         try {
++            // The supplied schema is generation context, not an authorization boundary.
++            // Take one complete authorized snapshot for the entire tool invocation.
++            SchemaContext authorized = call.type() == ToolType.FINAL_SQL ? null
++                    : BusinessSchemaUnavailableException.require(catalog::full);
+             return switch (call.type()) {
+-                case INSPECT_TABLE -> inspectTable(call.argument());
+-                case INSPECT_COLUMN -> inspectColumn(call.argument());
+-                case SAMPLE_QUERY -> sampleQuery(call.argument(), schema);
+-                case CHECK_JOIN -> checkJoin(call.argument(), schema);
+-                case EXPLAIN_QUERY -> explainQuery(call.argument(), schema);
++                case INSPECT_TABLE -> inspectTable(call.argument(), authorized);
++                case INSPECT_COLUMN -> inspectColumn(call.argument(), authorized);
++                case SAMPLE_QUERY -> sampleQuery(call.argument(), authorized);
++                case CHECK_JOIN -> checkJoin(call.argument(), authorized);
++                case EXPLAIN_QUERY -> explainQuery(call.argument(), authorized);
+                 case FINAL_SQL -> ToolResult.ok(call.argument(), List.of(), List.of());
+             };
++        } catch (RequestBudget.Exceeded exceeded) {
++            throw exceeded;
++        } catch (BusinessSchemaUnavailableException unavailable) {
++            return ToolResult.catalogUnavailable();
+         } catch (Exception e) {
+             log.warn("工具 {} 执行异常：{}", call.type(), e.getMessage());
+             return ToolResult.error(e.getMessage());
+@@ -63,12 +73,12 @@
+     /**
+      * 工具 1：查看指定表的前 5 行真实数据。
+      */
+-    private ToolResult inspectTable(String tableName) {
++    private ToolResult inspectTable(String tableName, SchemaContext schema) {
+         if (tableName == null || tableName.isBlank()) {
+             return ToolResult.error("缺少表名参数");
+         }
+         String cleanTable = tableName.strip().toLowerCase(Locale.ROOT);
+-        var tableOpt = catalog.full().tables().stream()
++        var tableOpt = schema.tables().stream()
+                 .filter(t -> t.name().equalsIgnoreCase(cleanTable))
+                 .findFirst();
+ 
+@@ -89,7 +99,7 @@
+      * 工具 2：查看指定列的值分布与常见枚举。
+      * 参数格式：table.column 或 table column
+      */
+-    private ToolResult inspectColumn(String tableColumn) {
++    private ToolResult inspectColumn(String tableColumn, SchemaContext schema) {
+         if (tableColumn == null || tableColumn.isBlank()) {
+             return ToolResult.error("缺少列名参数，格式如: orders.order_status");
+         }
+@@ -108,7 +118,7 @@
+         // 一个注入面——而且这里是五个工具里唯一一个既拼接、又不过 SQL 校验器的
+         // （sampleQuery / checkJoin / explainQuery 都会走 SqlValidator）。
+         // 用 catalog 里的规范名回填，既堵住注入，也顺手纠正大小写。
+-        var tableOpt = catalog.full().tables().stream()
++        var tableOpt = schema.tables().stream()
+                 .filter(t -> t.name().equalsIgnoreCase(table))
+                 .findFirst();
+         if (tableOpt.isEmpty()) {
+@@ -174,13 +184,13 @@
+ 
+         // 表名必须命中 catalog：用规范名回填，防止模型给出不存在的表，
+         // 也避免表名被直接拼进语句。
+-        var t1Opt = catalog.full().tables().stream()
++        var t1Opt = schema.tables().stream()
+                 .filter(t -> t.name().equalsIgnoreCase(t1))
+                 .findFirst();
+         if (t1Opt.isEmpty()) {
+             return ToolResult.error("表 " + t1 + " 不存在");
+         }
+-        var t2Opt = catalog.full().tables().stream()
++        var t2Opt = schema.tables().stream()
+                 .filter(t -> t.name().equalsIgnoreCase(t2))
+                 .findFirst();
+         if (t2Opt.isEmpty()) {
+--- a/src/main/java/com/text2sql/agent/tool/ToolResult.java
++++ b/src/main/java/com/text2sql/agent/tool/ToolResult.java
+@@ -10,13 +10,19 @@
+  * @param columns 列名（若有）
+  * @param rows 样例数据（若有）
+  */
+-public record ToolResult(boolean success, String output, List<String> columns, List<List<String>> rows) {
++public record ToolResult(boolean success, String output, List<String> columns, List<List<String>> rows,
++                         boolean schemaUnavailable) {
+ 
+     public static ToolResult ok(String output, List<String> columns, List<List<String>> rows) {
+-        return new ToolResult(true, output, columns, rows);
++        return new ToolResult(true, output, columns, rows, false);
+     }
+ 
+     public static ToolResult error(String errorMsg) {
+-        return new ToolResult(false, "工具执行失败：" + errorMsg, List.of(), List.of());
++        return new ToolResult(false, "工具执行失败：" + errorMsg, List.of(), List.of(), false);
++    }
++
++    public static ToolResult catalogUnavailable() {
++        return new ToolResult(false, "[SCHEMA_UNAVAILABLE] 完整业务 Schema 不可用，未执行 SQL",
++                List.of(), List.of(), true);
+     }
+ }
+--- a/src/main/java/com/text2sql/agent/validation/SqlValidator.java
++++ b/src/main/java/com/text2sql/agent/validation/SqlValidator.java
+@@ -69,7 +69,7 @@
+      * 校验 SQL。
+      *
+      * @param sql    模型生成的 SQL
+-     * @param schema 本次请求的 schema 上下文，用于表白名单校验
++     * @param schema 完整受授权的业务目录；调用者不得传生成用的检索/剪枝子集
+      */
+     public ValidationResult validate(String sql, SchemaContext schema) {
+         List<ValidationResult.Violation> violations = new ArrayList<>();
+--- a/src/main/java/com/text2sql/agent/validation/ValidationResult.java
++++ b/src/main/java/com/text2sql/agent/validation/ValidationResult.java
+@@ -33,6 +33,8 @@
+         MULTIPLE_STATEMENTS,
+         /** 没有 LIMIT，且配置为拒绝模式。 */
+         MISSING_LIMIT,
++        /** 完整业务目录不可用；禁止执行，且不交给模型修复环境故障。 */
++        SCHEMA_UNAVAILABLE,
+         /** 引用了 schema 里不存在的表。 */
+         UNKNOWN_TABLE,
+         /** 引用了 schema 里不存在的列。 */
+--- a/src/test/java/com/text2sql/agent/budget/BudgetOrchestratorTest.java
++++ b/src/test/java/com/text2sql/agent/budget/BudgetOrchestratorTest.java
+@@ -76,6 +76,7 @@
+         var schema = new SchemaContext(List.of(new SchemaContext.Table("orders", null,
+                 List.of(new SchemaContext.Column("order_id", "text", false, null)))), List.of(), "", "orders");
+         when(schemas.provide(anyString())).thenAnswer(i -> { Thread.sleep(30); return schema; });
++        when(schemas.fullSchema()).thenReturn(schema);
+         when(validator.validate(anyString(), any())).thenAnswer(i -> ValidationResult.ok(i.getArgument(0)));
+         when(model.call(any(Prompt.class))).thenReturn(sqlResponse());
+         when(executor.execute(anyString())).thenAnswer(i -> {
+--- a/src/test/java/com/text2sql/agent/budget/BudgetTimingsAcceptanceProbe.java
++++ b/src/test/java/com/text2sql/agent/budget/BudgetTimingsAcceptanceProbe.java
+@@ -73,6 +73,7 @@
+                 List.of(new SchemaContext.Column("order_id", "text", false, null)))), List.of(), "", "orders");
+         var schemas = mock(SchemaProvider.class);
+         when(schemas.provide(anyString())).thenAnswer(i -> { Thread.sleep(30); return schema; });
++        when(schemas.fullSchema()).thenReturn(schema);
+         var validator = mock(SqlValidator.class);
+         when(validator.validate(anyString(), any())).thenAnswer(i -> ValidationResult.ok(i.getArgument(0)));
+         var executor = mock(SqlExecutor.class);
+--- a/src/test/java/com/text2sql/agent/clarification/ClarificationReplyTest.java
++++ b/src/test/java/com/text2sql/agent/clarification/ClarificationReplyTest.java
+@@ -104,6 +104,7 @@
+             var schema = new SchemaContext(List.of(new SchemaContext.Table("orders", null,
+                     List.of(new SchemaContext.Column("order_id", "text", false, null)))), List.of(), "", "orders");
+             when(schemas.provide(anyString())).thenReturn(schema);
++            when(schemas.fullSchema()).thenReturn(schema);
+             when(generator.generate(anyString(), any())).thenReturn(new GeneratedSql("SELECT 1", "",
+                     LlmCallRecord.of("synthetic", 10, 5, 15, 1, 0, 0)));
+             when(validator.validate(anyString(), any())).thenReturn(ValidationResult.ok("SELECT 1"));
+--- /dev/null
++++ b/src/test/java/com/text2sql/agent/orchestrator/CatalogHttpAcceptanceProbe.java
+@@ -0,0 +1,107 @@
++package com.text2sql.agent.orchestrator;
++
++import com.fasterxml.jackson.databind.*;
++import com.text2sql.agent.Text2SqlAgentApplication;
++import com.text2sql.agent.access.ApiAdmissionGate;
++import com.text2sql.agent.generation.LlmSqlGenerator;
++import com.text2sql.agent.retrieval.*;
++import com.text2sql.agent.execution.SqlExecutor;
++import com.text2sql.agent.session.SessionStore;
++import com.text2sql.agent.tool.*;
++import org.springframework.boot.SpringApplication;
++import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
++import org.springframework.core.env.MapPropertySource;
++import org.springframework.ai.chat.model.*;
++import org.springframework.ai.chat.messages.AssistantMessage;
++import org.springframework.ai.chat.metadata.*;
++import org.springframework.ai.chat.prompt.Prompt;
++import org.springframework.test.util.ReflectionTestUtils;
++import java.net.*;
++import java.net.http.*;
++import java.nio.charset.StandardCharsets;
++import java.nio.file.*;
++import java.util.*;
++import java.util.concurrent.atomic.*;
++import static org.assertj.core.api.Assertions.*;
++import static org.mockito.Mockito.*;
++import static org.mockito.ArgumentMatchers.*;
++
++/** Real protected HTTP + real read-only SQL, synthetic ChatModel, no provider endpoint. */
++public final class CatalogHttpAcceptanceProbe {
++    static final ObjectMapper JSON=new ObjectMapper().findAndRegisterModules();
++    static final HttpClient HTTP=HttpClient.newHttpClient();
++    static final String SQL="SELECT st.ticket_id, tc.category_name FROM support_tickets st JOIN ticket_categories tc ON st.category_id=tc.category_id LIMIT 5";
++    public static void main(String[] args) throws Exception {
++        Path dir=Path.of(args[0]); Files.createDirectory(dir);
++        String token=UUID.randomUUID().toString();
++        String auth="Basic "+Base64.getEncoder().encodeToString(("demo:"+token).getBytes(StandardCharsets.UTF_8));
++        var app=new SpringApplication(Text2SqlAgentApplication.class);
++        app.addInitializers(c -> c.getEnvironment().getPropertySources().addFirst(new MapPropertySource("probe-token",Map.of("agent.access.token",token))));
++        var calls=new AtomicInteger(); var sql=new AtomicReference<>(SQL); var evidence=new ArrayList<Object>();
++        try(var c=(ServletWebServerApplicationContext)app.run("--spring.profiles.active=local,demo,protected","--server.port=0",
++                "--server.address=127.0.0.1","--agent.eval.enabled=false","--agent.observability.enabled=false",
++                "--agent.llm.api-key=","--agent.llm.base-url=http://127.0.0.1:1","--agent.llm.model=synthetic-catalog-probe",
++                "--agent.llm.input-price-per-1k=1","--agent.llm.output-price-per-1k=2","--agent.llm.cache-hit-price-per-1k=0.1",
++                "--agent.access.burst=100","--agent.access.requests-per-minute=60000",
++                "--agent.cost-quota.state-file="+dir.resolve("cost-ledger.json"),"--agent.cost-quota.total-yuan=10",
++                "--agent.cost-quota.reservation-yuan=0.10","--agent.self-correction.enabled=false","--agent.result-checker.enabled=false")) {
++            String base="http://127.0.0.1:"+c.getWebServer().getPort();
++            var model=mock(ChatModel.class);
++            when(model.call(any(Prompt.class))).thenAnswer(i -> { calls.incrementAndGet(); return new ChatResponse(List.of(new Generation(
++                    new AssistantMessage(sql.get()))),ChatResponseMetadata.builder().usage(new DefaultUsage(10,5)).build()); });
++            ReflectionTestUtils.setField(c.getBean(LlmSqlGenerator.class),"chatModel",model);
++            var orch=c.getBean(Text2SqlOrchestrator.class); var full=c.getBean(SchemaCatalog.class).full();
++            assertThat(full.tables()).hasSize(37);
++            var t=full.tables().stream().filter(x->x.name().equals("support_tickets")).findFirst().orElseThrow();
++            var pruned=new SchemaContext(List.of(new SchemaContext.Table(t.name(),t.comment(),t.columns().stream()
++                    .filter(x->x.name().equals("ticket_id")).toList())),List.of(),"","CREATE TABLE support_tickets(ticket_id text);");
++            var unavailable=new AtomicBoolean();
++            SchemaProvider provider=new SchemaProvider() {
++                public SchemaContext provide(String q) { return pruned; }
++                public SchemaContext fullSchema() { return unavailable.get()?null:full; }
++            };
++            ReflectionTestUtils.setField(orch,"schemaProvider",provider);
++            var db=spy(c.getBean(SqlExecutor.class)); ReflectionTestUtils.setField(orch,"executor",db);
++            var tools=c.getBean(ToolExecutor.class); ReflectionTestUtils.setField(tools,"sqlExecutor",db);
++            var body=Map.of("question","列出工单与类别","sessionId","catalog-positive","endSession",true);
++            var denied=send(base,null,body); assertThat(denied.path("http").asInt()).isEqualTo(401); assertThat(calls).hasValue(0);
++            evidence.add(Map.of("case","unauthenticated","http",401,"modelCalls",0));
++            var positive=send(base,auth,body); assertThat(positive.path("http").asInt()).isEqualTo(200);
++            assertThat(positive.path("body").path("rows").size()).isEqualTo(5); assertThat(positive.path("body").path("schemaTableCount").asInt()).isEqualTo(1);
++            verify(db).execute(SQL); assertThat(c.getBean(SessionStore.class).get("catalog-positive").orElseThrow().isClosed()).isTrue();
++            evidence.add(Map.of("case","omitted-table-pruned-column","response",positive,"fullTables",37,"generationTables",1));
++            for(var type:List.of(ToolType.SAMPLE_QUERY,ToolType.CHECK_JOIN,ToolType.EXPLAIN_QUERY)) {
++                String arg=type==ToolType.CHECK_JOIN ? "support_tickets, ticket_categories, support_tickets.category_id=ticket_categories.category_id":SQL;
++                var r=tools.execute(new ToolCall(type,arg,""),pruned); assertThat(r.success()).as(type.toString()).isTrue();
++                evidence.add(Map.of("case","real-db-"+type,"success",true));
++            }
++            for(String bad:List.of("SELECT x.missing FROM ticket_categories x LIMIT 5","SELECT * FROM semantic_cache LIMIT 5",
++                    "SELECT * FROM archive.ticket_categories LIMIT 5","SELECT * FROM invented LIMIT 5")) {
++                clearInvocations(db); sql.set(bad); var r=send(base,auth,Map.of("question","列出工单类别","sessionId","catalog-negative"));
++                assertThat(r.path("http").asInt()).isEqualTo(422); verifyNoInteractions(db); evidence.add(Map.of("case","reject-"+bad,"response",r,"businessExecutions",0));
++            }
++            clearInvocations(db); unavailable.set(true); sql.set(SQL); int before=calls.get();
++            var r=send(base,auth,Map.of("question","列出工单类别","sessionId","catalog-unavailable","endSession",true));
++            assertThat(r.path("http").asInt()).isEqualTo(422); assertThat(r.toString()).contains("SCHEMA_UNAVAILABLE");
++            assertThat(calls.get()-before).isEqualTo(1); verifyNoInteractions(db);
++            assertThat(c.getBean(SessionStore.class).get("catalog-unavailable").orElseThrow().isClosed()).isTrue();
++            assertThat(c.getBean(ApiAdmissionGate.class).activeRequests()).isZero();
++            evidence.add(Map.of("case","unavailable-terminal-with-session-close","response",r,"mockCalls",1,"businessExecutions",0));
++            var quota=c.getBean(com.text2sql.agent.cost.CostQuota.class).snapshot();
++            assertThat(quota.get("pendingCalls")).isEqualTo(0L);
++            assertThat(quota.get("unknownCalls")).isEqualTo(0L);
++            assertThat(((Number)quota.get("knownCalls")).intValue()).isEqualTo(calls.get());
++            evidence.add(Map.of("case","cost-reservations-settled","snapshot",quota,"syntheticPricingOnly",true));
++            Files.writeString(dir.resolve("summary.json"),JSON.writerWithDefaultPrettyPrinter().writeValueAsString(Map.of(
++                    "passed",evidence.size(),"cases",evidence,"providerCalls",0,"mockCalls",calls.get(),"activeRequests",0)),StandardOpenOption.CREATE_NEW);
++        }
++        System.out.println("CATALOG_HTTP passed="+evidence.size()+" providerCalls=0");
++    }
++    static JsonNode send(String base,String auth,Object body) throws Exception {
++        var b=HttpRequest.newBuilder(URI.create(base+"/api/ask")).header("Content-Type","application/json")
++                .timeout(java.time.Duration.ofSeconds(20)).POST(HttpRequest.BodyPublishers.ofString(JSON.writeValueAsString(body)));
++        if(auth!=null)b.header("Authorization",auth);
++        var r=HTTP.send(b.build(),HttpResponse.BodyHandlers.ofString());
++        return JSON.valueToTree(Map.of("http",r.statusCode(),"body",JSON.readTree(r.body())));
++    }
++}
+--- /dev/null
++++ b/src/test/java/com/text2sql/agent/orchestrator/CatalogValidationBoundaryTest.java
+@@ -0,0 +1,219 @@
++package com.text2sql.agent.orchestrator;
++
++import com.text2sql.agent.cache.SemanticCache;
++import com.text2sql.agent.clarification.AmbiguityDetector;
++import com.text2sql.agent.config.AgentProperties;
++import com.text2sql.agent.execution.*;
++import com.text2sql.agent.generation.*;
++import com.text2sql.agent.observability.LlmCallRecord;
++import com.text2sql.agent.retrieval.*;
++import com.text2sql.agent.tool.*;
++import com.text2sql.agent.validation.*;
++import org.junit.jupiter.api.Test;
++import org.junit.jupiter.params.ParameterizedTest;
++import org.junit.jupiter.params.provider.ValueSource;
++import org.springframework.ai.chat.messages.AssistantMessage;
++import org.springframework.ai.chat.model.ChatResponse;
++import org.springframework.ai.chat.model.Generation;
++import java.util.List;
++import static org.assertj.core.api.Assertions.*;
++import static org.mockito.ArgumentMatchers.*;
++import static org.mockito.Mockito.*;
++
++/** Executable B contract: actual validator and tool callbacks, synthetic model/execution only. */
++class CatalogValidationBoundaryTest {
++    static final String Q = "列出订单的客户城市";
++    static final String SQL = "SELECT o.order_id, c.city FROM orders o JOIN customers c ON o.customer_id=c.customer_id LIMIT 5";
++    static final LlmCallRecord CALL = LlmCallRecord.of("synthetic", 100, 20, 120, 1, 0, 0);
++    static SchemaContext.Table table(String name, String... cols) {
++        return new SchemaContext.Table(name, null, java.util.Arrays.stream(cols)
++                .map(c -> new SchemaContext.Column(c, "text", false, null)).toList());
++    }
++    static final SchemaContext RETRIEVED = new SchemaContext(List.of(table("orders", "order_id")), List.of(), "", "DDL_RETRIEVED_ONLY");
++    static final SchemaContext FULL = new SchemaContext(List.of(table("orders", "order_id", "customer_id"),
++            table("customers", "customer_id", "city")), List.of(), "", "DDL_FULL_MUST_NOT_REACH_PROMPT");
++    static class Fixture {
++        final AgentProperties p = new AgentProperties();
++        final SchemaProvider provider = mock(SchemaProvider.class);
++        final LlmSqlGenerator gen = mock(LlmSqlGenerator.class);
++        final SqlExecutor db = mock(SqlExecutor.class);
++        final SchemaCatalog catalog = mock(SchemaCatalog.class);
++        final QueryPlanAnalyzer plans = mock(QueryPlanAnalyzer.class);
++        final SqlValidator validator = new SqlValidator(p);
++        final SemanticCache cache = new SemanticCache(p);
++        final ToolExecutor tools = new ToolExecutor(catalog, db, validator, plans);
++        final AgentLoop loop = new AgentLoop(gen, new PromptTemplate(p), tools, p);
++        Fixture() {
++            p.getSelfCorrection().setEnabled(true); p.getSelfCorrection().setMaxAttempts(2);
++            p.getClarification().setEnabled(false); p.getResultChecker().setEnabled(false);
++            when(provider.provide(anyString())).thenReturn(RETRIEVED);
++            when(provider.fullSchema()).thenReturn(FULL); when(catalog.full()).thenReturn(FULL);
++            when(gen.generate(anyString(), any())).thenReturn(new GeneratedSql(SQL, SQL, CALL));
++            when(gen.generateCorrection(anyString(), any(), anyString(), anyString(), any()))
++                    .thenReturn(new GeneratedSql(SQL, SQL, CALL));
++            when(db.execute(anyString())).thenReturn(new QueryResult(List.of("order_id", "city"), List.of(List.of("o1", "city1")), false, 1));
++            when(plans.analyze(anyString())).thenReturn(QueryPlanAnalyzer.PlanAnalysis.safe(1, 1, "{}"));
++        }
++        Text2SqlOrchestrator orch() { return orch(provider); }
++        Text2SqlOrchestrator orch(SchemaProvider source) {
++            return new Text2SqlOrchestrator(source, gen, validator, db, mock(AmbiguityDetector.class),
++                    cache, new ResultChecker(), loop, p);
++        }
++        void unavailable(String mode) {
++            switch(mode) {
++                case "null" -> { when(provider.fullSchema()).thenReturn(null); when(catalog.full()).thenReturn(null); }
++                case "empty" -> { var empty = new SchemaContext(List.of(), List.of(), "", "");
++                    when(provider.fullSchema()).thenReturn(empty); when(catalog.full()).thenReturn(empty); }
++                case "throws" -> { when(provider.fullSchema()).thenThrow(new IllegalStateException("secret-db-detail"));
++                    when(catalog.full()).thenThrow(new IllegalStateException("secret-db-detail")); }
++                default -> throw new IllegalArgumentException(mode);
++            }
++        }
++    }
++    static void unavailable(AgentResponse r) {
++        assertThat(r.status()).isEqualTo(AgentResponse.Status.REJECTED);
++        assertThat(r.violations()).anyMatch(v -> v.startsWith("[SCHEMA_UNAVAILABLE]"));
++        assertThat(r.message()).doesNotContain("secret-db-detail");
++    }
++    @Test void omittedTableAndPrunedColumnPassWithoutExpandingGenerationContext() {
++        var f = new Fixture();
++        assertThat(f.validator.validate(SQL, RETRIEVED).valid()).isFalse();
++        var r = f.orch().ask(Q); assertThat(r.success()).isTrue();
++        assertThat(r.schemaTableCount()).isEqualTo(1); assertThat(r.retrievedTables()).containsExactly("orders");
++        assertThat(r.schemaDdlChars()).isEqualTo(RETRIEVED.ddlText().length());
++        verify(f.gen).generate(Q, RETRIEVED); verify(f.gen, never()).generateCorrection(anyString(), any(), anyString(), anyString(), any());
++        verify(f.db).execute(SQL);
++    }
++    @ParameterizedTest @ValueSource(strings={"normal", "dry-run", "correction", "cache"})
++    void everyExecutionEntryUsesFullCatalog(String path) {
++        var f = new Fixture(); var o = f.orch(); AgentResponse r;
++        switch(path) {
++            case "cache" -> { f.p.getCache().setEnabled(true); f.cache.put(f.cache.key(Q,o.cacheSignature()),SQL); r=o.ask(Q); verifyNoInteractions(f.gen); }
++            case "correction" -> r=o.askWithCorrection(Q,"SELECT invalid", "feedback");
++            default -> { f.p.getEval().setDryRun(path.equals("dry-run")); r=o.askWithFixedSql(Q,SQL,null); verifyNoInteractions(f.gen); }
++        }
++        assertThat(r.success()).isTrue(); assertThat(r.retrievedTables()).containsExactly("orders"); verify(f.db).execute(SQL);
++    }
++    @ParameterizedTest @ValueSource(strings={"null", "empty", "throws", "unimplemented"})
++    void unavailableCatalogCannotTriggerCorrectionOrCacheFallback(String mode) {
++        var f=new Fixture(); SchemaProvider source=f.provider;
++        if(mode.equals("unimplemented")) source=q -> RETRIEVED; else f.unavailable(mode);
++        var o=f.orch(source); var first=o.ask(Q); unavailable(first);
++        verify(f.gen, times(1)).generate(Q,RETRIEVED);
++        verify(f.gen,never()).generateCorrection(anyString(),any(),anyString(),anyString(),any());
++        clearInvocations(f.gen); f.p.getCache().setEnabled(true); f.cache.put(f.cache.key(Q,o.cacheSignature()),SQL);
++        unavailable(o.ask(Q)); verifyNoInteractions(f.gen); verifyNoInteractions(f.db,f.plans);
++        unavailable(o.askWithFixedSql(Q,SQL,null)); verifyNoInteractions(f.db);
++    }
++    @Test void correctionCatalogFailureIsTerminalRatherThanReturningEarlierSuccess() {
++        var f=new Fixture(); f.p.getResultChecker().setEnabled(true);
++        var checker=mock(ResultChecker.class);
++        when(checker.check(anyString(),anyString(),any())).thenReturn(CheckResult.suspicious("test", "retry"));
++        when(f.provider.fullSchema()).thenReturn(FULL, FULL, FULL, null);
++        var o=new Text2SqlOrchestrator(f.provider,f.gen,f.validator,f.db,mock(AmbiguityDetector.class),f.cache,checker,f.loop,f.p);
++        var r=o.ask(Q); unavailable(r); verify(f.db,times(1)).execute(SQL);
++        assertThat(r.llmCall().promptTokens()).isEqualTo(200);
++    }
++    @ParameterizedTest @ValueSource(strings={"null", "empty", "throws", "unimplemented"})
++    void unavailableCatalogBlocksAllRepairableGenerationFailureRetries(String mode) {
++        for(var reason:List.of(GenerationException.Reason.CALL_FAILED,GenerationException.Reason.UNPARSEABLE,
++                GenerationException.Reason.OUTPUT_TRUNCATED)) {
++            var f=new Fixture(); SchemaProvider source=f.provider;
++            if(mode.equals("unimplemented"))source=q->RETRIEVED; else f.unavailable(mode);
++            when(f.gen.generate(anyString(),any())).thenThrow(new GenerationException(reason,"synthetic failed call",CALL))
++                    .thenReturn(new GeneratedSql(SQL,SQL,CALL));
++            var r=f.orch(source).ask(Q); unavailable(r); assertThat(r.llmCall()).isEqualTo(CALL);
++            verify(f.gen,times(1)).generate(Q,RETRIEVED); verifyNoInteractions(f.db,f.plans);
++            verify(f.gen,never()).generateCorrection(anyString(),any(),anyString(),anyString(),any());
++        }
++    }
++    @ParameterizedTest @ValueSource(strings={"null", "empty", "throws", "unimplemented"})
++    void explicitCorrectionRejectsUnavailableCatalogBeforeModelCall(String mode) {
++        var f=new Fixture(); SchemaProvider source=f.provider;
++        if(mode.equals("unimplemented"))source=q->RETRIEVED; else f.unavailable(mode);
++        unavailable(f.orch(source).askWithCorrection(Q,"SELECT bad", "synthetic-feedback"));
++        verifyNoInteractions(f.gen,f.db,f.plans);
++    }
++    @Test void catalogFailureBeforeAutomaticCorrectionKeepsFirstUsageAndSkipsSecondCall() {
++        var f=new Fixture(); when(f.provider.fullSchema()).thenReturn(FULL,null);
++        when(f.gen.generate(anyString(),any())).thenReturn(new GeneratedSql("SELECT c.invented FROM customers c LIMIT 5","",CALL));
++        var r=f.orch().ask(Q); unavailable(r); assertThat(r.llmCall()).isEqualTo(CALL);
++        verify(f.gen,times(1)).generate(Q,RETRIEVED); verifyNoInteractions(f.db,f.plans);
++        verify(f.gen,never()).generateCorrection(anyString(),any(),anyString(),anyString(),any());
++    }
++    @Test void availableCatalogStillAllowsRecoverableGenerationRetryWithinExistingLimit() {
++        var f=new Fixture(); when(f.gen.generate(anyString(),any()))
++                .thenThrow(new GenerationException(GenerationException.Reason.UNPARSEABLE,"synthetic-first",CALL))
++                .thenReturn(new GeneratedSql(SQL,SQL,CALL));
++        var r=f.orch().ask(Q); assertThat(r.success()).isTrue(); assertThat(r.llmCall().promptTokens()).isEqualTo(200);
++        verify(f.gen,times(2)).generate(Q,RETRIEVED); verify(f.db).execute(SQL);
++    }
++    @ParameterizedTest @ValueSource(strings={"null-tables", "null-table", "blank-table", "empty-columns", "null-column", "blank-column"})
++    void malformedCatalogIsAnEnvironmentFailure(String kind) {
++        var f=new Fixture();
++        List<SchemaContext.Table> tables=switch(kind) {
++            case "null-tables" -> null;
++            case "null-table" -> java.util.Collections.singletonList(null);
++            case "blank-table" -> List.of(table(" ","id"));
++            case "empty-columns" -> List.of(table("orders"));
++            case "null-column" -> List.of(new SchemaContext.Table("orders",null,java.util.Collections.singletonList(null)));
++            default -> List.of(table("orders"," "));
++        };
++        var broken=new SchemaContext(tables,List.of(),"","");
++        when(f.provider.fullSchema()).thenReturn(broken); when(f.catalog.full()).thenReturn(broken);
++        unavailable(f.orch().ask(Q)); verifyNoInteractions(f.db,f.plans);
++        assertThat(f.tools.execute(new ToolCall(ToolType.SAMPLE_QUERY,SQL,""),RETRIEVED).schemaUnavailable()).isTrue();
++    }
++    @Test void rejectedCacheFallsBackThroughSameFullCatalogBoundary() {
++        var f=new Fixture(); f.p.getCache().setEnabled(true); var o=f.orch();
++        f.cache.put(f.cache.key(Q,o.cacheSignature()),"SELECT c.invented FROM customers c LIMIT 5");
++        var r=o.ask(Q); assertThat(r.success()).isTrue(); verify(f.gen).generate(Q,RETRIEVED); verify(f.db).execute(SQL);
++    }
++    @ParameterizedTest @ValueSource(strings={
++            "SELECT x.id FROM invented x LIMIT 5",
++            "SELECT c.invented FROM customers c LIMIT 5",
++            "SELECT x.id FROM semantic_cache x LIMIT 5",
++            "SELECT x.id FROM llm_call_log x LIMIT 5",
++            "SELECT x.id FROM conversation_session x LIMIT 5",
++            "SELECT x.id FROM conversation_turn x LIMIT 5",
++            "SELECT x.id FROM schema_chunks x LIMIT 5",
++            "SELECT c.city FROM archive.customers c LIMIT 5",
++            "SELECT c.city FROM public.customers c LIMIT 5",
++            "SELECT * FROM pg_catalog.pg_class LIMIT 5",
++            "SELECT * FROM information_schema.tables LIMIT 5",
++            "DELETE FROM customers", "SELECT pg_sleep(1) FROM orders LIMIT 5"})
++    void fullCatalogDoesNotAuthorizeUnsafeObjects(String sql) {
++        var f=new Fixture(); assertThat(f.orch().askWithFixedSql(Q,sql,null).success()).isFalse(); verifyNoInteractions(f.db,f.plans);
++        for(var type:List.of(ToolType.SAMPLE_QUERY,ToolType.EXPLAIN_QUERY)) {
++            assertThat(f.tools.execute(new ToolCall(type,sql,""),RETRIEVED).success()).as(type.toString()).isFalse();
++        }
++        verifyNoInteractions(f.db,f.plans);
++    }
++    @ParameterizedTest @ValueSource(strings={"SAMPLE_QUERY", "CHECK_JOIN", "EXPLAIN_QUERY"})
++    void toolsUseCompleteColumnsAndOmittedTables(String name) {
++        var f=new Fixture(); ToolType type=ToolType.valueOf(name);
++        String arg=type==ToolType.CHECK_JOIN ? "orders, customers, orders.customer_id=customers.customer_id" : SQL;
++        assertThat(f.tools.execute(new ToolCall(type,arg,""),RETRIEVED).success()).isTrue();
++        verify(f.catalog,times(1)).full();
++    }
++    @ParameterizedTest @ValueSource(strings={"null", "empty", "throws"})
++    void allDatabaseToolsFailClosed(String mode) {
++        var f=new Fixture(); f.unavailable(mode);
++        for(var type:List.of(ToolType.INSPECT_TABLE,ToolType.INSPECT_COLUMN,ToolType.SAMPLE_QUERY,ToolType.CHECK_JOIN,ToolType.EXPLAIN_QUERY)) {
++            var r=f.tools.execute(new ToolCall(type,SQL,""),RETRIEVED);
++            assertThat(r.schemaUnavailable()).as(type.toString()).isTrue(); assertThat(r.output()).doesNotContain("secret-db-detail");
++        }
++        verifyNoInteractions(f.db,f.plans);
++    }
++    @Test void realToolCallbackStopsLoopBeforeOtherToolsOrFinalizationAndKeepsUsage() {
++        var f=new Fixture(); f.unavailable("empty"); f.p.getToolUse().setEnabled(true); f.p.getToolUse().setTableThreshold(1);
++        var response=new ChatResponse(List.of(new Generation(AssistantMessage.builder().content("")
++                .toolCalls(List.of(new AssistantMessage.ToolCall("a","function","SAMPLE_QUERY","{\"sql\":\"SELECT order_id FROM orders\"}"),
++                        new AssistantMessage.ToolCall("b","function","INSPECT_TABLE","{\"table\":\"orders\"}"))).build())));
++        when(f.gen.callWithTools(anyList(),anyList(),anyString(),any(),any()))
++                .thenReturn(new LlmSqlGenerator.AgentTurn(response,CALL,""));
++        unavailable(f.orch().ask(Q)); verify(f.gen,times(1)).callWithTools(anyList(),anyList(),anyString(),any(),any());
++        verify(f.catalog,times(1)).full(); verifyNoInteractions(f.db,f.plans);
++        verify(f.gen,never()).generate(anyString(),any()); verify(f.gen,never()).generateCorrection(anyString(),any(),anyString(),anyString(),any());
++    }
++}
+--- a/src/test/java/com/text2sql/agent/orchestrator/OrchestratorSelfCorrectionTest.java
++++ b/src/test/java/com/text2sql/agent/orchestrator/OrchestratorSelfCorrectionTest.java
+@@ -60,10 +60,12 @@
+         properties = new AgentProperties();
+         cache = new com.text2sql.agent.cache.SemanticCache(properties);
+ 
+-        when(schemaProvider.provide(anyString())).thenReturn(new SchemaContext(
++        var fullFixture = new SchemaContext(
+                 List.of(new SchemaContext.Table("orders", null, List.of(
+                         new SchemaContext.Column("order_id", "text", false, null)))),
+-                List.of(), "", "CREATE TABLE orders(order_id text)"));
++                List.of(), "", "CREATE TABLE orders(order_id text)");
++        when(schemaProvider.provide(anyString())).thenReturn(fullFixture);
++        when(schemaProvider.fullSchema()).thenReturn(fullFixture);
+     }
+ 
+     private Text2SqlOrchestrator orchestrator() {
+--- a/src/test/java/com/text2sql/agent/orchestrator/SqlExtractionPipelineTest.java
++++ b/src/test/java/com/text2sql/agent/orchestrator/SqlExtractionPipelineTest.java
+@@ -48,6 +48,7 @@
+                 new SchemaContext.Column("order_status", "text", false, null)))), List.of(), "", "");
+         var provider = mock(SchemaProvider.class);
+         when(provider.provide("订单状态有多少种？")).thenReturn(schema);
++        when(provider.fullSchema()).thenReturn(schema);
+         var model = mock(ChatModel.class);
+         when(model.call(any(Prompt.class))).thenReturn(new ChatResponse(List.of(
+                 new Generation(new AssistantMessage(sql + "\n```"))),
+--- /dev/null
++++ b/src/test/java/com/text2sql/agent/retrieval/CatalogFirstCallCapture.java
+@@ -0,0 +1,76 @@
++package com.text2sql.agent.retrieval;
++
++import com.fasterxml.jackson.databind.ObjectMapper;
++import com.text2sql.agent.config.AgentProperties;
++import com.text2sql.agent.evaluation.EvalItemLoader;
++import com.text2sql.agent.fewshot.*;
++import com.text2sql.agent.generation.*;
++import com.text2sql.agent.observability.LlmCallLog;
++import com.text2sql.agent.orchestrator.Text2SqlOrchestrator;
++import com.text2sql.agent.retrieval.glossary.GlossaryLoader;
++import com.text2sql.agent.semantic.MetricRegistry;
++import com.text2sql.agent.execution.*;
++import com.text2sql.agent.cache.SemanticCache;
++import com.text2sql.agent.clarification.AmbiguityDetector;
++import com.text2sql.agent.tool.AgentLoop;
++import com.text2sql.agent.validation.*;
++import org.springframework.ai.chat.model.*;
++import org.springframework.ai.chat.messages.AssistantMessage;
++import org.springframework.ai.chat.prompt.Prompt;
++import org.springframework.jdbc.core.JdbcTemplate;
++import org.springframework.jdbc.datasource.DriverManagerDataSource;
++import org.springframework.test.util.ReflectionTestUtils;
++import java.nio.file.*;
++import java.util.*;
++import static org.mockito.Mockito.*;
++import static org.mockito.ArgumentMatchers.*;
++
++/** Captures actual first ChatModel.call messages through ask(), with an in-process fake model. */
++public final class CatalogFirstCallCapture {
++    public static void main(String[] args) throws Exception {
++        var allowed=Map.of("data/eval",200,"data/benchmarks/olist-v4-development-20261119",100,
++                "data/benchmarks/olist-v4-formal-20261119",100);
++        if(args.length!=2 || !allowed.containsKey(args[0])) throw new IllegalArgumentException("Public dataset only");
++        Path output=Path.of(args[1]); if(Files.exists(output)) throw new IllegalStateException("Never overwrite captures");
++        var p=new AgentProperties(); p.getEval().setDir(args[0]); p.getEval().setSplit("all");
++        p.getRetrieval().setEnabled(true); p.getRetrieval().setColumnPruningEnabled(true);
++        p.getRetrieval().setJoinHintsEnabled(true); p.getRetrieval().setJoinListEnabled(false); p.getRetrieval().setJoinPlanEnabled(true);
++        p.getSemantic().setEnabled(true); p.getFewshot().setEnabled(true); p.getFewshot().setMaxExamples(2);
++        p.getLlm().setBaseUrl("http://127.0.0.1:1"); p.getLlm().setApiKey(""); p.getLlm().setModel("synthetic-capture");
++        p.getObservability().setEnabled(false); p.getSelfCorrection().setEnabled(false);
++        p.getClarification().setEnabled(false); p.getResultChecker().setEnabled(false);
++        p.getCache().setEnabled(false); p.getToolUse().setEnabled(false); p.getRouting().setEnabled(false);
++        var jdbc=new JdbcTemplate(new DriverManagerDataSource("jdbc:postgresql://localhost:5432/olist","text2sql_ro","text2sql_ro"));
++        var catalog=new SchemaCatalog(new DatabaseSchemaReader(jdbc),p); var full=catalog.full();
++        if(full.tables().size()!=37) throw new IllegalStateException("Catalog identity changed");
++        var glossary=new GlossaryLoader(catalog); var registry=new MetricRegistry(); ReflectionTestUtils.invokeMethod(registry,"load");
++        var examples=new ExampleLoader(); examples.init();
++        var provider=new HybridSchemaProvider(catalog,new LexicalSchemaRetriever(glossary,catalog,p),glossary,p,registry,
++                new ExampleSelector(examples),new ValueRetriever(glossary),new ColumnPruner(glossary));
++        var model=mock(ChatModel.class); var db=mock(SqlExecutor.class);
++        when(db.execute(anyString())).thenReturn(new QueryResult(List.of("order_id"),List.of(List.of("synthetic")),false,0));
++        var captures=new ArrayList<Object>(); var current=new ArrayList<Object>();
++        when(model.call(any(Prompt.class))).thenAnswer(inv -> {
++            Prompt prompt=inv.getArgument(0);
++            current.add(prompt.getInstructions().stream().map(m -> Map.of("role",m.getMessageType().name(),"text",m.getText())).toList());
++            return new ChatResponse(List.of(new Generation(new AssistantMessage("SELECT order_id FROM orders LIMIT 1"))));
++        });
++        try(var logs=new LlmCallLog(p)) {
++            var generator=new LlmSqlGenerator(p,new PromptTemplate(p),logs); ReflectionTestUtils.setField(generator,"chatModel",model);
++            var o=new Text2SqlOrchestrator(provider,generator,new SqlValidator(p),db,mock(AmbiguityDetector.class),
++                    new SemanticCache(p),new ResultChecker(),mock(AgentLoop.class),p);
++            var items=new EvalItemLoader(p).load(); if(items.size()!=allowed.get(args[0])) throw new AssertionError("Wrong count");
++            for(var item:items) {
++                current.clear(); var response=o.ask(item.question());
++                if(current.size()!=1) throw new AssertionError("Expected exactly one synthetic first call: "+item.id());
++                captures.add(Map.of("id",item.id(),"question",item.question(),"messages",current.getFirst(),
++                        "retrievedTables",response.retrievedTables(),"schemaDdlChars",response.schemaDdlChars()));
++            }
++        }
++        Files.createDirectories(output.toAbsolutePath().getParent());
++        Files.writeString(output,new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(Map.of(
++                "dataset",args[0],"items",captures,"mockFirstCalls",captures.size(),"providerCalls",0,
++                "boundary","actual ask -> generator -> in-process ChatModel; not provider transport")),StandardOpenOption.CREATE_NEW);
++        System.out.println("FIRST_CALL_CAPTURE "+captures.size()+" providerCalls=0");
++    }
++}
+--- a/src/test/java/com/text2sql/agent/session/MultiTurnOrchestratorTest.java
++++ b/src/test/java/com/text2sql/agent/session/MultiTurnOrchestratorTest.java
+@@ -54,6 +54,7 @@
+                         new SchemaContext.Column("order_id", "text", false, null)))),
+                 List.of(), "", "CREATE TABLE orders(order_id text);");
+         when(schemaProvider.provide(anyString())).thenReturn(mockSchema);
++        when(schemaProvider.fullSchema()).thenReturn(mockSchema);
+ 
+         when(validator.validate(anyString(), any())).thenAnswer(inv ->
+                 ValidationResult.ok(inv.getArgument(0)));
+--- a/src/test/java/com/text2sql/agent/session/SessionOutcomeFinalizationTest.java
++++ b/src/test/java/com/text2sql/agent/session/SessionOutcomeFinalizationTest.java
+@@ -65,6 +65,7 @@
+             ReflectionTestUtils.setField(generator, "chatModel", model);
+             when(model.call(any(Prompt.class))).thenReturn(sql());
+             when(schemas.provide(anyString())).thenReturn(schema);
++            when(schemas.fullSchema()).thenReturn(schema);
+             when(validator.validate(anyString(), any())).thenAnswer(i -> ValidationResult.ok(i.getArgument(0)));
+             when(executor.execute(anyString())).thenReturn(new QueryResult(List.of("order_id"), List.of(List.of("fixture")), false, 1));
+             when(checker.check(anyString(), anyString(), any())).thenReturn(CheckResult.NORMAL);
+--- a/src/test/java/com/text2sql/agent/validation/ExtremumCorrectionPipelineTest.java
++++ b/src/test/java/com/text2sql/agent/validation/ExtremumCorrectionPipelineTest.java
+@@ -49,6 +49,7 @@
+         var checker = new ResultChecker(new ExtremumProjectionChecker(() -> glossary, () -> schema));
+         var provider = mock(SchemaProvider.class);
+         when(provider.provide(anyString())).thenReturn(schema);
++        when(provider.fullSchema()).thenReturn(schema);
+         var validator = mock(SqlValidator.class);
+         when(validator.validate(anyString(), any())).thenAnswer(i -> ValidationResult.ok(i.getArgument(0)));
+         when(generator.generate(anyString(), any())).thenReturn(generated(OMITTED, 100));
