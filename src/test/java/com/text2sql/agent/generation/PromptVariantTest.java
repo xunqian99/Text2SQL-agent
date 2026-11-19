@@ -36,7 +36,7 @@ class PromptVariantTest {
 
     @Test void archivedP14PreservesUnaffectedRulesFromP9() throws Exception {
         var template = new PromptTemplate();
-        assertThat(template.version()).isEqualTo("p20-calendar-window-v20");
+        assertThat(template.version()).isEqualTo("p21-period-ranking-v21");
         try (var in = getClass().getResourceAsStream("/prompts/p9-system.txt")) {
             assertThat(in).isNotNull();
             String archived = new String(in.readAllBytes(), StandardCharsets.UTF_8);
@@ -91,7 +91,7 @@ class PromptVariantTest {
         assertThat(shortened).isEqualTo(full.replace(full.substring(full.indexOf("思考与推理步骤"), full.indexOf("硬性规则")), ""));
         assertThat(shortened.substring(shortened.indexOf("硬性规则")))
                 .isEqualTo(full.substring(full.indexOf("硬性规则")));
-        assertThat(candidate.version()).isEqualTo("p20-calendar-window-v20-no-explicit-steps-v1");
+        assertThat(candidate.version()).isEqualTo("p21-period-ranking-v21-no-explicit-steps-v1");
         var schema = new SchemaContext(List.of(), List.of(), "画像", "CREATE TABLE orders(order_id text);");
         assertThat(candidate.userPrompt(schema, "订单有多少？")).isEqualTo(new PromptTemplate().userPrompt(schema, "订单有多少？"));
         assertThat(candidate.correctionPrompt(schema, "订单有多少？", "SELECT 0", "请修正"))
@@ -174,10 +174,16 @@ class PromptVariantTest {
                 .doesNotContain("默认用名称作为该维度的一个输出列");
     }
 
-    @Test void calendarWindowBatchPreservesEveryOtherSystemRule() throws Exception {
-        String current = new PromptTemplate().systemPrompt(), before = frozenP19();
+    @Test void archivedCalendarWindowBatchPreservesEveryOtherSystemRule() throws Exception {
+        String current = frozenP20(), before = frozenP19();
         assertThat(withoutWindowRule(current)).isEqualTo(withoutWindowRule(before));
-        assertThat(new PromptTemplate().version()).isEqualTo("p20-calendar-window-v20");
+    }
+
+    @Test void periodAndRankingBatchChangesOnlyRules8And13() throws Exception {
+        String current = new PromptTemplate().systemPrompt(), before = frozenP20();
+        assertThat(withoutTimeRule(withoutProjectionRule(current)))
+                .isEqualTo(withoutTimeRule(withoutProjectionRule(before)));
+        assertThat(new PromptTemplate().version()).isEqualTo("p21-period-ranking-v21");
     }
 
     @Test void timeDimensionDefaultsAreDistinctFromExplicitDisplayOverrides() {
@@ -224,6 +230,16 @@ class PromptVariantTest {
             byte[] bytes = in.readAllBytes();
             assertThat(HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes)))
                     .isEqualTo("4693860a86ae7986437f3996fa6d0f002501de32695e2eb0623a198d09c1a834");
+            return new String(bytes, StandardCharsets.UTF_8);
+        }
+    }
+
+    private static String frozenP20() throws Exception {
+        try (var in = PromptVariantTest.class.getResourceAsStream("/prompts/p20-system.txt")) {
+            assertThat(in).isNotNull();
+            byte[] bytes = in.readAllBytes();
+            assertThat(HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes)))
+                    .isEqualTo("89c906efe61c9e0d8b0c8737eb6a5019dfd94618fe991455b2de9fd3a5701882");
             return new String(bytes, StandardCharsets.UTF_8);
         }
     }

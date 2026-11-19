@@ -1,0 +1,219 @@
+{
+  "reviewer": "/root/review_basic_time",
+  "date": "2026-11-19",
+  "provenance": {
+    "freshContextForThisFollowup": false,
+    "priorWork": "曾独立复核原正式T1/T2/T3共56题；本次未重读原审查报告。",
+    "participatedInRuleAuthoring": false,
+    "participatedInProductionTuning": false,
+    "editedProductionCode": false,
+    "providedReviewFeedback": true,
+    "authorRevisedCandidateAfterReviewFeedback": true,
+    "finalCandidateCompletelyBlindReview": false,
+    "readOtherReviewersReports": false,
+    "externalModelCalls": 0,
+    "gitCommit": false
+  },
+  "scope": {
+    "version": "p21-period-ranking-v21",
+    "source": "src/main/java/com/text2sql/agent/generation/PromptTemplate.java",
+    "sourceSHA256": "db75a631ddcd9084fe4cf3d4087ff35be11f8b89865a5ec31865b6b8999b6714",
+    "normalizedSystemPromptSHA256": "79583b71433808b1a4034ed09f3eca59a2bdb7ff5d77261a9bb429e64fb4764d",
+    "baseline": "src/test/resources/prompts/p20-system.txt",
+    "baselineSHA256": "89c906efe61c9e0d8b0c8737eb6a5019dfd94618fe991455b2de9fd3a5701882",
+    "metrics": "src/main/resources/schema/metrics.yml",
+    "metricsSHA256": "78dfc23f9075536aa7568f94c87c41d238cac0c66c553449c9fd7c67c9035192",
+    "additionalSource": "src/main/java/com/text2sql/agent/retrieval/DatabaseSchemaReader.java 的readDataProfile（用于核实覆盖信息来源）",
+    "changedRulesVsBaseline": [
+      8,
+      13
+    ],
+    "sqlCases": "reviewer-basic-time-cases.sql",
+    "sqlResults": "reviewer-basic-time-query-results.json"
+  },
+  "verdict": "PASS_CONTRACT_REVIEW_NOT_MODEL_VALIDATION",
+  "openFindingCount": 0,
+  "summary": "最终候选已关闭本审查提出的周期/覆盖/并列实现缺口，也明确了排名精度、RANK与DENSE_RANK默认并修正继承的最小值DESC文案。未发现尚未关闭的规则自洽性阻断错误；只读反例不等于模型准确率或全生产运行链路已通过。",
+  "revisionTrail": [
+    {
+      "sourceSHA256": "deb48c92cfddd1ed73efd5c7425cc801a94e1d3ed856dea43b5b27d2399bc48a",
+      "state": "第一轮意见后周期覆盖/分区/基期及排名身份分离已修订，尚有排名精度、名次约定与继承DESC文字待定。"
+    },
+    {
+      "sourceSHA256": "db75a631ddcd9084fe4cf3d4087ff35be11f8b89865a5ec31865b6b8999b6714",
+      "state": "最终核对对象：三项待定均已明确或修正。审核者没有编辑生产源；作者依审查反馈修订。"
+    }
+  ],
+  "resolvedFindings": [
+    {
+      "id": "RESOLVED-01",
+      "topic": "缺期与覆盖信息",
+      "finalSourceLine": 116,
+      "resolution": "最终明确MIN/MAX只确定边界、不证明中间完整覆盖；补计数0必须有用户明确要求或完整观测凭据，缺金额/均值不造0。请求要求的缺失周期保留NULL而不删行。",
+      "evidence": [
+        "requested_calendar_vs_coverage",
+        "all_null_event_time"
+      ],
+      "remainingBoundary": "没有覆盖信息时，数据缺口仍然未知；这是已明确保守返回NULL的产品选择，不应再宣称缺口为0。"
+    },
+    {
+      "id": "RESOLVED-02",
+      "topic": "自然周期身份与多个维度",
+      "finalSourceLine": 116,
+      "resolution": "最终要求自然相邻周期及完整非时间分组身份分别对齐，避免稀疏LAG与跨维度串行。",
+      "evidence": [
+        "sparse_month",
+        "multiple_dimensions"
+      ],
+      "numericContrast": "已知完整覆盖的合成例中，稀疏行3月变化-5、自然月+5；A州2月不分区-9、按州分区+1。这里的0月份由合成例明确声明完整覆盖，不代表当前生产源已提供这种凭据。"
+    },
+    {
+      "id": "RESOLVED-03",
+      "topic": "历史基期与报告展示期分开",
+      "finalSourceLine": 116,
+      "resolution": "最终明确先取所需历史基期再裁展示期；报告首期不自动等于历史首期。",
+      "evidence": [
+        "history_outside_report"
+      ],
+      "numericContrast": "12月5、次年1月8，仅展示1月时先裁输入导致NULL，保留12月基期后应为+3。"
+    },
+    {
+      "id": "RESOLVED-04",
+      "topic": "组合主键与并列业务名次",
+      "finalSourceLine": 89,
+      "resolution": "最终要求完整身份元组稳定裁决，且显式保留并列时身份不能进入判断并列的窗口。完整(order_id,payment_sequential)可稳定区分同订单支付，业务名次仅看指标。",
+      "evidence": [
+        "ties_and_composite_key"
+      ],
+      "numericContrast": "同订单a的两笔支付均100分，按指标RANK均1，若错误混入复合身份则被打散为1、2；最终文本已明确禁止后者。"
+    },
+    {
+      "id": "RESOLVED-05",
+      "topic": "TopN候选不足与NULL最值",
+      "finalSourceLines": [
+        89,
+        90
+      ],
+      "resolution": "最终为最多N行、候选不足不补；数值最值先排属性NULL，全未知无可确认最值，普通列表仍保留NULL且NULLS LAST。不存在为凑N行伪造记录的要求。",
+      "evidence": [
+        "empty_and_all_null"
+      ],
+      "numericContrast": "请求N=5、2条属性全NULL：已知最值候选0，普通列表保留2；空输入0。"
+    }
+  ],
+  "findings": [
+    {
+      "id": "NOTE-01",
+      "priority": "P2",
+      "status": "RESOLVED_IN_FINAL",
+      "type": "UNRESOLVED_RANKING_CONVENTION",
+      "sourceLine": 89,
+      "title": "前N名含并列还需区分行位置边界与前N档",
+      "reason": "中间候选已正确禁止身份污染业务名次，但当时没有确定用户只说前2名含并列时采用RANK的竞争名次/行位置截点，还是DENSE_RANK的前2个不同指标值。100、100、90的RANK为1、1、3，DENSE_RANK为1、1、2；RANK<=2返回2行，DENSE_RANK<=2返回3行。两者都不会把身份放入排名窗口，仍有不同答案。该意见在最终版已关闭，见finalResolution。",
+      "evidence": [
+        "ties_and_composite_key"
+      ],
+      "action": "选定默认：例如前N行并列边界用RANK<=N（等价以第N行指标为边界保留并列），前N档用DENSE_RANK<=N；用户明确竞争/密集排名时覆盖默认。若不定默认，需澄清而不能判其中一种天然错误。",
+      "finalResolution": "最终第89行已规定前N名要求含并列默认RANK<=N，明确前N档不同指标值用DENSE_RANK<=N。100、100、90取前2名含并列默认返回前两行；前2档返回三行。",
+      "notClaimed": "未运行模型，未观察到生产模型实际选错；这是可复现的契约多解。"
+    },
+    {
+      "id": "NOTE-02",
+      "priority": "P2",
+      "status": "RESOLVED_IN_FINAL",
+      "type": "UNRESOLVED_PRECISION_COMPARATOR",
+      "sourceLines": [
+        89,
+        108
+      ],
+      "title": "主指标相等尚未界定是原值还是显示精度",
+      "reason": "中间候选在主指标相等后用身份裁决，而既有规则12统一ROUND两位。合成均值a=10.003、b=10.004都显示10.00；按原值选b，按ROUND后的主指标判并列再按身份则选a。当时普通AVG/SUM的显示舍入是否参与名次未明确。该意见在最终版已关闭，见finalResolution。",
+      "evidence": [
+        "rounded_vs_raw_ranking"
+      ],
+      "action": "明确业务排名比较表达式。可采用注册METRIC按其定义表达式；未注册指标默认用未舍入聚合值排名、ROUND只展示，或者反向选择按展示精度排名。两种都可执行，必须选一项并保留用户覆盖。",
+      "finalResolution": "最终第89行已选择按指标最终展示精度计算排名及相等，用户明确未舍入值时覆盖。例中默认a与b均10.00，身份a获选；明确未舍入值时b获选。这是已选定的产品权衡，不声称其等于原始精度最大值。",
+      "notClaimed": "精度概念原先已存在；本次稳定并列默认使差异更显性，不将其归因为本次已发生回归。"
+    },
+    {
+      "id": "INHERITED-01",
+      "priority": "P2",
+      "status": "RESOLVED_IN_FINAL_INHERITED_ORIGIN",
+      "type": "OVERBROAD_MAXIMUM_TEMPLATE",
+      "sourceLines": [
+        87,
+        88,
+        90
+      ],
+      "title": "通用实体寻优模板写死DESC不适用于最小值",
+      "reason": "p20及中间候选的最...实体段落给出ORDER BY ... DESC LIMIT 1，而第90行同时讨论数值最大/最小。若按字面用于最便宜商品，DESC会找最贵；最小值应ASC NULLS LAST。这段DESC在p20已有，不能把继承问题说成p21新引入；最终版已修正，见finalResolution。",
+      "evidence": [],
+      "action": "将通用模板改为按请求采用ASC或DESC；最大DESC、最小ASC，均执行现有NULL候选约束。",
+      "finalResolution": "最终第88行已区分最大DESC与最小ASC，并将纯聚合反例同时写为MAX()/MIN()。",
+      "databaseCheckNeeded": false,
+      "explanation": "ASC/DESC排序方向的确定性语义足以判断，无需为了这句文案重复查库。"
+    }
+  ],
+  "compatibility": [
+    {
+      "contract": "metrics.yml.yoy_growth",
+      "decision": "CONSISTENT",
+      "reason": "同期金额缺失/为0返回NULL，最终规则13不伪造缺失金额0，与该指标一致。用户只要求双方有数据周期时取交集，也一致。"
+    },
+    {
+      "contract": "Prompt规则7/9/10/12",
+      "decision": "CONSISTENT_WITH_SCOPED_NULL_HANDLING",
+      "reason": "只在数值实体最值候选中排属性NULL，不授权从其他指标事实全集或分母删除记录。候选不足不补行、空集计数0、未知均值NULL可以共存。周期未知计数NULL是对缺期可知性的具体约定，区别于已确认空事实COUNT=0。"
+    },
+    {
+      "contract": "Prompt规则8/9/17",
+      "decision": "CONSISTENT_IDENTITY_VS_PROJECTION",
+      "reason": "内部完整身份、裁决键与展示列已经区分；普通TopN不强加未请求裁决列，实体寻优按新默认输出完整身份。用户明确输出列仍优先，不得为了稳定排序改变分组粒度。"
+    },
+    {
+      "contract": "Prompt规则3与全部并列",
+      "decision": "SQL_FEASIBLE_RUNTIME_NOT_AUDITED",
+      "reason": "有限固定LIMIT可能截断全部并列；PostgreSQL层可使用LIMIT ALL或按完整并列数量限制来同时保持结果。未读取SqlValidator或执行器，因此不声称这些形式已获生产校验器支持，应由主审核对运行链路的行数上限约束。仅靠Prompt文本不能证明任意大的全部并列会被完整交付。"
+    }
+  ],
+  "edgeCases": [
+    {
+      "case": "空事实、无显式周期范围",
+      "assessment": "MIN/MAX均NULL时日历不能推断，0行周期结果合理；不能回退今天构造历史。"
+    },
+    {
+      "case": "显式周期范围、事件时间全NULL",
+      "assessment": "仍可生成请求日历；无法分配到周期的事实不证明该周期为0。最终缺期默认NULL，只有明确业务确认才按0。"
+    },
+    {
+      "case": "多个非时间维度",
+      "assessment": "完整分组身份作为分区元组，不拼接字符串；同名实体不能合并。日历是每个已确定身份的周期骨架，不能以全局事实MIN/MAX证明每个维度都完整观测。"
+    },
+    {
+      "case": "稀疏自然月",
+      "assessment": "缺期未知时本期减NULL仍NULL；只有已知空月才按0计算，不再把更早有数据月当基期。"
+    },
+    {
+      "case": "组合支付主键",
+      "assessment": "完整(order_id,payment_sequential)能稳定裁决；只用order_id不足。同样不授权实体之外的JOIN放大。"
+    }
+  ],
+  "validation": {
+    "readOnlySqlCases": 8,
+    "successfulCases": 8,
+    "transaction": "BEGIN READ ONLY; SET LOCAL statement_timeout='8s'; ... ROLLBACK;",
+    "databaseRole": "text2sql_ro",
+    "syntheticDataOnly": true,
+    "externalModelCalls": 0,
+    "notMeasured": [
+      "模型准确率",
+      "供应商延迟",
+      "付费评测通过率",
+      "生产校验器对LIMIT ALL或大并列集的支持"
+    ],
+    "evidenceSHA256": {
+      "reviewer-basic-time-cases.sql": "c3f22e2fbfda9315e4436a7b6575c2bd1cf4d242a4148c6ca247e6a4cf408711",
+      "reviewer-basic-time-query-results.json": "807016584dbf3a9bc25b71ea95cb2eda87e20f8e01f1b4e8b23129acc7b76f64"
+    }
+  }
+}

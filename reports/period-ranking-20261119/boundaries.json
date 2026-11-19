@@ -1,0 +1,252 @@
+{
+  "format": "period-ranking-boundaries-v1",
+  "cases": [
+    {
+      "id": "sparse-row-is-not-previous-calendar-month",
+      "sql": "WITH m(t,n) AS(VALUES(DATE '2016-10-01',324),(DATE '2016-12-01',1)),\nbad AS(SELECT t,n-LAG(n) OVER(ORDER BY t) AS delta FROM m)\nSELECT json_build_array(b.delta,c.n-COALESCE(p.n,0))\nFROM m c LEFT JOIN m p ON p.t=c.t-INTERVAL '1 month'\nJOIN bad b ON b.t=c.t WHERE c.t=DATE '2016-12-01'",
+      "expected": [
+        -323,
+        1
+      ],
+      "evidenceType": "synthetic",
+      "actual": [
+        -323,
+        1
+      ]
+    },
+    {
+      "id": "report-first-period-can-have-history",
+      "sql": "WITH m(t,n) AS(VALUES(DATE '2023-12-01',10),(DATE '2024-01-01',17)),\ncompared AS(SELECT t,n-LAG(n) OVER(ORDER BY t) AS delta FROM m)\nSELECT to_json(delta) FROM compared WHERE t=DATE '2024-01-01'",
+      "expected": 7,
+      "evidenceType": "synthetic",
+      "actual": 7
+    },
+    {
+      "id": "partition-by-full-nontime-group",
+      "sql": "WITH m(g,t,n) AS(VALUES('a',DATE '2024-01-01',10),('a',DATE '2024-02-01',12),\n ('b',DATE '2024-01-01',100),('b',DATE '2024-02-01',107)),\nq AS(SELECT g,t,n-LAG(n) OVER(PARTITION BY g ORDER BY t) AS d FROM m)\nSELECT json_agg(json_build_array(g,d) ORDER BY g) FROM q WHERE t=DATE '2024-02-01'",
+      "expected": [
+        [
+          "a",
+          2
+        ],
+        [
+          "b",
+          7
+        ]
+      ],
+      "evidenceType": "synthetic",
+      "actual": [
+        [
+          "a",
+          2
+        ],
+        [
+          "b",
+          7
+        ]
+      ]
+    },
+    {
+      "id": "requested-periods-are-not-inner-joined-away",
+      "sql": "WITH months AS(SELECT generate_series(1,12) AS m),\nfacts(m,v) AS(VALUES(1,10),(9,90))\nSELECT json_build_array(COUNT(*),COUNT(v),MAX(v) FILTER(WHERE months.m=12))\nFROM months LEFT JOIN facts USING(m)",
+      "expected": [
+        12,
+        2,
+        null
+      ],
+      "evidenceType": "synthetic",
+      "actual": [
+        12,
+        2,
+        null
+      ]
+    },
+    {
+      "id": "coverage-is-separate-from-event-minmax",
+      "sql": "WITH requested(period,complete) AS(VALUES('a',true),('b',false)),\nfacts(period,n) AS(SELECT 'none',1 WHERE false)\nSELECT json_agg(json_build_array(r.period,CASE WHEN r.complete THEN COALESCE(f.n,0) ELSE f.n END)\n ORDER BY r.period) FROM requested r LEFT JOIN facts f USING(period)",
+      "expected": [
+        [
+          "a",
+          0
+        ],
+        [
+          "b",
+          null
+        ]
+      ],
+      "evidenceType": "synthetic",
+      "actual": [
+        [
+          "a",
+          0
+        ],
+        [
+          "b",
+          null
+        ]
+      ]
+    },
+    {
+      "id": "calendar-empty-input-no-invented-period",
+      "sql": "WITH m(t,n) AS(SELECT DATE '2024-01-01',1 WHERE false),\ncalendar AS(SELECT generate_series(MIN(t),MAX(t),INTERVAL '1 month') AS t FROM m)\nSELECT to_json(COUNT(*)) FROM calendar",
+      "expected": 0,
+      "evidenceType": "synthetic",
+      "actual": 0
+    },
+    {
+      "id": "identity-does-not-outrank-metric",
+      "sql": "WITH x(id,v) AS(VALUES('z',100),('a',90),('b',90),('c',NULL::integer)),\nq AS(SELECT * FROM x ORDER BY v DESC NULLS LAST,id LIMIT 2)\nSELECT json_agg(id ORDER BY v DESC,id) FROM q",
+      "expected": [
+        "z",
+        "a"
+      ],
+      "evidenceType": "synthetic",
+      "actual": [
+        "z",
+        "a"
+      ]
+    },
+    {
+      "id": "input-order-does-not-decide-cutoff-tie",
+      "sql": "WITH x(id,v) AS(VALUES('b',90),('z',100),('a',90)),\nq AS(SELECT * FROM x ORDER BY v DESC,id LIMIT 2)\nSELECT json_agg(id ORDER BY v DESC,id) FROM q",
+      "expected": [
+        "z",
+        "a"
+      ],
+      "evidenceType": "synthetic",
+      "actual": [
+        "z",
+        "a"
+      ]
+    },
+    {
+      "id": "composite-key-breaks-within-parent-ties",
+      "sql": "WITH x(order_id,payment_sequential,v) AS(VALUES('b',1,24),('a',2,24),('a',1,24)),\nq AS(SELECT * FROM x ORDER BY v DESC,order_id,payment_sequential LIMIT 1)\nSELECT json_build_array(order_id,payment_sequential,v) FROM q",
+      "expected": [
+        "a",
+        1,
+        24
+      ],
+      "evidenceType": "synthetic",
+      "actual": [
+        "a",
+        1,
+        24
+      ]
+    },
+    {
+      "id": "unknown-is-not-numeric-maximum",
+      "sql": "WITH x(id,v) AS(VALUES('a',NULL::integer),('b',24)),\nq AS(SELECT * FROM x WHERE v IS NOT NULL ORDER BY v DESC,id LIMIT 1)\nSELECT to_json(id) FROM q",
+      "expected": "b",
+      "evidenceType": "synthetic",
+      "actual": "b"
+    },
+    {
+      "id": "all-unknown-has-no-confirmed-maximum",
+      "sql": "WITH x(id,v) AS(VALUES('a',NULL::integer),('b',NULL::integer)),\nq AS(SELECT * FROM x WHERE v IS NOT NULL ORDER BY v DESC,id LIMIT 1)\nSELECT to_json(COUNT(*)) FROM q",
+      "expected": 0,
+      "evidenceType": "synthetic",
+      "actual": 0
+    },
+    {
+      "id": "ranking-keys-must-exclude-display-identity",
+      "sql": "WITH x(id,v) AS(VALUES('a',100),('b',90),('c',90)),\nranked AS(SELECT *,RANK() OVER(ORDER BY v DESC) AS good_rank,\n RANK() OVER(ORDER BY v DESC,id) AS broken_rank FROM x)\nSELECT json_build_array(COUNT(*) FILTER(WHERE good_rank<=2),COUNT(*) FILTER(WHERE broken_rank<=2))\nFROM ranked",
+      "expected": [
+        3,
+        2
+      ],
+      "evidenceType": "synthetic",
+      "actual": [
+        3,
+        2
+      ]
+    },
+    {
+      "id": "insufficient-candidates-are-not-padded",
+      "sql": "WITH x(id,v) AS(VALUES('a',1)),q AS(SELECT * FROM x ORDER BY v DESC,id LIMIT 20)\nSELECT to_json(COUNT(*)) FROM q",
+      "expected": 1,
+      "evidenceType": "synthetic",
+      "actual": 1
+    },
+    {
+      "id": "absent-values-do-not-become-zero-means",
+      "sql": "WITH x(g,v) AS(VALUES('unknown',NULL::numeric),('known',10::numeric)),\ngroups(g) AS(VALUES('absent'),('unknown'),('known'))\nSELECT json_agg(json_build_array(g,n,mean) ORDER BY g) FROM(\n SELECT gs.g,COUNT(x.g) AS n,AVG(x.v) AS mean FROM groups gs LEFT JOIN x USING(g) GROUP BY gs.g) q",
+      "expected": [
+        [
+          "absent",
+          0,
+          null
+        ],
+        [
+          "known",
+          1,
+          10
+        ],
+        [
+          "unknown",
+          1,
+          null
+        ]
+      ],
+      "evidenceType": "synthetic",
+      "actual": [
+        [
+          "absent",
+          0,
+          null
+        ],
+        [
+          "known",
+          1,
+          10.0
+        ],
+        [
+          "unknown",
+          1,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "minimum-direction-is-ascending",
+      "sql": "WITH x(id,v) AS(VALUES('a',5),('b',1)),\nq AS(SELECT * FROM x WHERE v IS NOT NULL ORDER BY v ASC,id LIMIT 1)\nSELECT to_json(id) FROM q",
+      "expected": "b",
+      "evidenceType": "synthetic",
+      "actual": "b"
+    },
+    {
+      "id": "display-precision-is-the-default-tie-precision",
+      "sql": "WITH x(id,v) AS(VALUES('a',10.003::numeric),('b',10.004::numeric)),\nq AS(SELECT id,ROUND(v,2) AS shown FROM x ORDER BY ROUND(v,2) DESC,id LIMIT 1)\nSELECT json_build_array(id,shown) FROM q",
+      "expected": [
+        "a",
+        10.0
+      ],
+      "evidenceType": "synthetic",
+      "actual": [
+        "a",
+        10.0
+      ]
+    },
+    {
+      "id": "rank-and-dense-rank-have-different-contracts",
+      "sql": "WITH x(id,v) AS(VALUES('a',100),('b',100),('c',90)),\nq AS(SELECT RANK() OVER(ORDER BY v DESC) AS r,DENSE_RANK() OVER(ORDER BY v DESC) AS d FROM x)\nSELECT json_build_array(COUNT(*) FILTER(WHERE r<=2),COUNT(*) FILTER(WHERE d<=2)) FROM q",
+      "expected": [
+        2,
+        3
+      ],
+      "evidenceType": "synthetic",
+      "actual": [
+        2,
+        3
+      ]
+    }
+  ],
+  "passed": 17,
+  "total": 17,
+  "providerCalls": 0,
+  "providerTokens": 0,
+  "providerCostYuan": 0,
+  "limits": [
+    "Synthetic read-only SQL validates the declared contract examples, not LLM adherence or automatic AST enforcement."
+  ]
+}

@@ -37,8 +37,8 @@ public class PromptTemplate {
      * （比如加一句「优先使用高置信度的表」），那才需要 +1，
      * 并且要重跑阶段 1 的 baseline 才能对比。
      */
-    public static final String VERSION = "p20-calendar-window-v20";
-    public static final String NO_EXPLICIT_STEPS_VERSION = "p20-calendar-window-v20-no-explicit-steps-v1";
+    public static final String VERSION = "p21-period-ranking-v21";
+    public static final String NO_EXPLICIT_STEPS_VERSION = "p21-period-ranking-v21-no-explicit-steps-v1";
 
     private final AgentProperties properties;
 
@@ -85,7 +85,9 @@ public class PromptTemplate {
                    内部仍按完整实体主键区分，不能因同名而合并实体，只有明确按名称汇总时才合并。为获取明确要求的名称关联维表时，保留未匹配事实及NULL名称，不因INNER JOIN、重复维表或名称过滤改变统计覆盖与金额；无法确认唯一匹配时不能任意取一个名称。明确要求仅匹配名称的对象时服从用户范围。
                    筛选条件、分组身份和中间计算字段不自动成为输出列。只问两期差额或增长率时，不附加两期原始数值；明确要求两期数值及差额/增长率时才全部输出。
                    【实体寻优规范】问「最...的那一笔/哪一个」特定实体（如“分期数最多的那一笔支付分了多少期”）时，
-                   属于单条记录寻优，使用 ORDER BY ... DESC LIMIT 1 并保留实体标识（如 order_id）与指标列，不要写成纯 MAX()。
+                   属于单条记录寻优，最大值用 ORDER BY ... DESC LIMIT 1，最小值用 ASC，并保留实体完整标识与指标列，不要写成纯 MAX()/MIN()。
+                   【并列与未知值】用户未另定规则时，TopN最多取N行，候选不足不补行；按指标最终展示精度计算排名及是否相等，明确要求未舍入值时服从其要求。先按用户要求的主指标排序，只有主指标相等时才按完整维度/实体身份元组升序稳定裁决（NULLS LAST），不得让身份排序压过指标。仅作为裁决的键不自动追加输出列。前N名要求含并列时默认RANK<=N，明确前N档不同指标值时用DENSE_RANK<=N；仅用业务排名指标确定名次，再用身份稳定展示，身份键不进入判断并列的窗口，不用LIMIT截掉并列。
+                   寻找数值最大/最小的实体时，仅在该属性非NULL的候选中选取；全未知则没有可确认的最值，不将NULL当最大。该限制不扩散为其他指标的事实过滤，普通列表仍保留未知值并默认NULLS LAST。
 
                 9. 聚合粒度必须与问题的「每个…」一致。GROUP BY 的列要和 SELECT 里的维度列对应，
                    不要多分一层，也不要把分组列换成另一张表里的等价列。
@@ -111,6 +113,7 @@ public class PromptTemplate {
                    - 星期维度默认用 EXTRACT(DOW FROM 时间列)::int 输出编号（周日0、周一1至周六6）；用户明确要求ISO编号（周一1至周日7）或中文名称时按要求输出。
                    - 用 DATE_TRUNC('month'|'week'|'day', 时间列) 作为分组列，不要用 to_char 把时间转成 'YYYY-MM' 这类字符串。
                    - 问题涉及各月/每个月/每周等周期统计时，若表内有自身的业务时间字段（如 refunds.requested_at, support_tickets.created_at, members.register_date, settlements.period_start），优先使用本表对应业务时间，不要无故关联 orders 表。
+                   - “上个月/上周/环比”按相邻自然周期及完整非时间分组身份分别对齐，不能把稀疏结果的上一行当上一周期。先取所需历史基期再裁展示期，不把展示首期误当无基期。连续日历按用户请求的范围输出，不能删除其要求但缺数据的周期；未指定范围时可用源事件MIN/MAX定边界，但这不证明中间完整覆盖。只有用户明确无事实计0或覆盖信息证实已完整观测时，空缺计数才补0；否则缺期为NULL，缺金额或均值也不伪造0。没有基期时变化为NULL；明确只比较双方有数据的周期时服从其范围。
                 14. 时间窗口先确定参照值与边界，再写比较条件：
                    - 用户明确的起止、参照日期/时刻、时区及开闭边界优先于默认值；不要把明确时刻截成日期。
                    - 未指定时长口径时，“最近/近/最后N天”（N为正整数）默认最近N个自然日，包含参照日D：时间列 >= D-(N-1)天 AND 时间列 < D+1天；D由参照值取日期，时间戳边界为当天零点。N=1只包含参照日，不能从D-N天起算成N+1个日期。
