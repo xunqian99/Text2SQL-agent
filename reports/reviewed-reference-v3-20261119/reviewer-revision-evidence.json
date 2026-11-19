@@ -1,0 +1,781 @@
+[
+  {
+    "id": "R-T4-011-actual",
+    "synthetic": false,
+    "candidateId": "T4-011",
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT json_build_object('id','T4-011','rows',coalesce(json_agg(row_to_json(g)),'[]'::json)) FROM (SELECT o.order_status,ROUND(AVG(r.review_score),2) AS avg_score\nFROM orders o LEFT JOIN order_reviews r ON r.order_id=o.order_id\nGROUP BY o.order_status ORDER BY avg_score DESC NULLS LAST)g;\nWITH old_result AS (SELECT o.order_status, ROUND(AVG(r.review_score), 2) AS avg_score\nFROM orders o JOIN order_reviews r ON r.order_id = o.order_id\nGROUP BY 1 ORDER BY avg_score DESC), new_result AS (SELECT o.order_status,ROUND(AVG(r.review_score),2) AS avg_score\nFROM orders o LEFT JOIN order_reviews r ON r.order_id=o.order_id\nGROUP BY o.order_status ORDER BY avg_score DESC NULLS LAST) SELECT json_build_object('oldMinusNew',(SELECT count(*) FROM(SELECT * FROM old_result EXCEPT ALL SELECT * FROM new_result)d),'newMinusOld',(SELECT count(*) FROM(SELECT * FROM new_result EXCEPT ALL SELECT * FROM old_result)d));\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "{\"id\" : \"T4-011\", \"rows\" : [{\"order_status\":\"delivered\",\"avg_score\":4.16}, {\"order_status\":\"approved\",\"avg_score\":2.50}, {\"order_status\":\"created\",\"avg_score\":2.33}, {\"order_status\":\"shipped\",\"avg_score\":2.01}, {\"order_status\":\"canceled\",\"avg_score\":1.81}, {\"order_status\":\"invoiced\",\"avg_score\":1.66}, {\"order_status\":\"unavailable\",\"avg_score\":1.53}, {\"order_status\":\"processing\",\"avg_score\":1.28}]}\n{\"oldMinusNew\" : 0, \"newMinusOld\" : 0}\n",
+    "stderr": ""
+  },
+  {
+    "id": "R-T4-015-actual",
+    "synthetic": false,
+    "candidateId": "T4-015",
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT json_build_object('id','T4-015','rows',coalesce(json_agg(row_to_json(g)),'[]'::json)) FROM (SELECT r.macro_region,COUNT(*) AS orders\nFROM orders o JOIN customers c ON c.customer_id=o.customer_id\nLEFT JOIN regions r ON r.region_code=c.customer_state\nGROUP BY r.macro_region ORDER BY orders DESC)g;\nWITH old_result AS (SELECT r.macro_region, COUNT(*) AS cnt\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN regions r ON r.region_code = c.customer_state\nGROUP BY 1 ORDER BY cnt DESC), new_result AS (SELECT r.macro_region,COUNT(*) AS orders\nFROM orders o JOIN customers c ON c.customer_id=o.customer_id\nLEFT JOIN regions r ON r.region_code=c.customer_state\nGROUP BY r.macro_region ORDER BY orders DESC) SELECT json_build_object('oldMinusNew',(SELECT count(*) FROM(SELECT * FROM old_result EXCEPT ALL SELECT * FROM new_result)d),'newMinusOld',(SELECT count(*) FROM(SELECT * FROM new_result EXCEPT ALL SELECT * FROM old_result)d));\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "{\"id\" : \"T4-015\", \"rows\" : [{\"macro_region\":\"Sudeste\",\"orders\":68266}, {\"macro_region\":\"Sul\",\"orders\":14148}, {\"macro_region\":\"Nordeste\",\"orders\":9394}, {\"macro_region\":\"Centro-Oeste\",\"orders\":5782}, {\"macro_region\":\"Norte\",\"orders\":1851}]}\n{\"oldMinusNew\" : 0, \"newMinusOld\" : 0}\n",
+    "stderr": ""
+  },
+  {
+    "id": "R-T4-031-actual",
+    "synthetic": false,
+    "candidateId": "T4-031",
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT json_build_object('id','T4-031','rows',coalesce(json_agg(row_to_json(g)),'[]'::json)) FROM (SELECT s.seller_state,ROUND(SUM(st.net_amount),2) AS net\nFROM settlements st LEFT JOIN sellers s ON s.seller_id=st.seller_id\nGROUP BY s.seller_state ORDER BY net DESC NULLS LAST)g;\nWITH old_result AS (SELECT s.seller_state, ROUND(SUM(st.net_amount), 2) AS total\nFROM settlements st JOIN sellers s ON s.seller_id = st.seller_id\nGROUP BY 1 ORDER BY total DESC), new_result AS (SELECT s.seller_state,ROUND(SUM(st.net_amount),2) AS net\nFROM settlements st LEFT JOIN sellers s ON s.seller_id=st.seller_id\nGROUP BY s.seller_state ORDER BY net DESC NULLS LAST) SELECT json_build_object('oldMinusNew',(SELECT count(*) FROM(SELECT * FROM old_result EXCEPT ALL SELECT * FROM new_result)d),'newMinusOld',(SELECT count(*) FROM(SELECT * FROM new_result EXCEPT ALL SELECT * FROM old_result)d));\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "{\"id\" : \"T4-031\", \"rows\" : [{\"seller_state\":\"SP\",\"net\":3278715.11}, {\"seller_state\":\"PR\",\"net\":436904.95}, {\"seller_state\":\"MG\",\"net\":340639.16}, {\"seller_state\":\"RJ\",\"net\":249481.12}, {\"seller_state\":\"SC\",\"net\":211848.37}, {\"seller_state\":\"RS\",\"net\":134191.78}, {\"seller_state\":\"BA\",\"net\":61846.84}, {\"seller_state\":\"DF\",\"net\":34535.36}, {\"seller_state\":\"PE\",\"net\":21115.86}, {\"seller_state\":\"GO\",\"net\":13459.94}, {\"seller_state\":\"ES\",\"net\":11088.37}, {\"seller_state\":\"CE\",\"net\":9835.14}, {\"seller_state\":\"PB\",\"net\":6975.69}, {\"seller_state\":\"MT\",\"net\":3988.87}, {\"seller_state\":\"MS\",\"net\":3377.54}, {\"seller_state\":\"PI\",\"net\":2176.51}, {\"seller_state\":\"RO\",\"net\":680.70}, {\"seller_state\":\"PA\",\"net\":664.41}, {\"seller_state\":\"RN\",\"net\":241.88}, {\"seller_state\":\"SE\",\"net\":147.03}]}\n{\"oldMinusNew\" : 0, \"newMinusOld\" : 0}\n",
+    "stderr": ""
+  },
+  {
+    "id": "R-T5-001-actual",
+    "synthetic": false,
+    "candidateId": "T5-001",
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT json_build_object('id','T5-001','rows',coalesce(json_agg(row_to_json(g)),'[]'::json)) FROM (SELECT r.macro_region,ml.level_name,ROUND(SUM(oi.price),2) AS sales\nFROM orders o JOIN customers c ON c.customer_id=o.customer_id\nJOIN members m ON m.customer_unique_id=c.customer_unique_id\nLEFT JOIN member_levels ml ON ml.level_id=m.level_id\nLEFT JOIN regions r ON r.region_code=c.customer_state\nJOIN order_items oi ON oi.order_id=o.order_id\nGROUP BY r.macro_region,ml.level_name ORDER BY sales DESC NULLS LAST)g;\nWITH old_result AS (SELECT r.macro_region, ml.level_name, ROUND(SUM(oi.price), 2) AS gmv\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN regions r ON r.region_code = c.customer_state\nJOIN members m ON m.customer_unique_id = c.customer_unique_id\nJOIN member_levels ml ON ml.level_id = m.level_id\nJOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1, 2 ORDER BY gmv DESC), new_result AS (SELECT r.macro_region,ml.level_name,ROUND(SUM(oi.price),2) AS sales\nFROM orders o JOIN customers c ON c.customer_id=o.customer_id\nJOIN members m ON m.customer_unique_id=c.customer_unique_id\nLEFT JOIN member_levels ml ON ml.level_id=m.level_id\nLEFT JOIN regions r ON r.region_code=c.customer_state\nJOIN order_items oi ON oi.order_id=o.order_id\nGROUP BY r.macro_region,ml.level_name ORDER BY sales DESC NULLS LAST) SELECT json_build_object('oldMinusNew',(SELECT count(*) FROM(SELECT * FROM old_result EXCEPT ALL SELECT * FROM new_result)d),'newMinusOld',(SELECT count(*) FROM(SELECT * FROM new_result EXCEPT ALL SELECT * FROM old_result)d));\nROLLBACK;\n",
+    "exitCode": 3,
+    "stdout": "{\"id\" : \"T5-001\", \"rows\" : [{\"macro_region\":\"Sudeste\",\"level_name\":\"青铜会员\",\"sales\":4888336.35}, {\"macro_region\":\"Sudeste\",\"level_name\":\"白银会员\",\"sales\":3403102.09}, {\"macro_region\":\"Sul\",\"level_name\":\"青铜会员\",\"sales\":1079497.16}, {\"macro_region\":\"Nordeste\",\"level_name\":\"青铜会员\",\"sales\":864916.36}, {\"macro_region\":\"Sul\",\"level_name\":\"白银会员\",\"sales\":746544.64}, {\"macro_region\":\"Sudeste\",\"level_name\":\"黄金会员\",\"sales\":578888.11}, {\"macro_region\":\"Nordeste\",\"level_name\":\"白银会员\",\"sales\":577095.22}, {\"macro_region\":\"Centro-Oeste\",\"level_name\":\"青铜会员\",\"sales\":495933.93}, {\"macro_region\":\"Centro-Oeste\",\"level_name\":\"白银会员\",\"sales\":311701.70}, {\"macro_region\":\"Norte\",\"level_name\":\"青铜会员\",\"sales\":169525.53}, {\"macro_region\":\"Norte\",\"level_name\":\"白银会员\",\"sales\":138839.72}, {\"macro_region\":\"Sul\",\"level_name\":\"黄金会员\",\"sales\":124136.17}, {\"macro_region\":\"Nordeste\",\"level_name\":\"黄金会员\",\"sales\":100453.63}, {\"macro_region\":\"Centro-Oeste\",\"level_name\":\"黄金会员\",\"sales\":62353.56}, {\"macro_region\":\"Norte\",\"level_name\":\"黄金会员\",\"sales\":25533.74}, {\"macro_region\":\"Sudeste\",\"level_name\":\"铂金会员\",\"sales\":17066.51}, {\"macro_region\":\"Sul\",\"level_name\":\"铂金会员\",\"sales\":3763.15}, {\"macro_region\":\"Nordeste\",\"level_name\":\"铂金会员\",\"sales\":3028.54}, {\"macro_region\":\"Centro-Oeste\",\"level_name\":\"铂金会员\",\"sales\":472.87}, {\"macro_region\":\"Norte\",\"level_name\":\"铂金会员\",\"sales\":454.72}]}\n",
+    "stderr": "ERROR:  could not resize shared memory segment \"/PostgreSQL.137478666\" to 8388608 bytes: No space left on device\n"
+  },
+  {
+    "id": "R-T5-003-actual",
+    "synthetic": false,
+    "candidateId": "T5-003",
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT json_build_object('id','T5-003','rows',coalesce(json_agg(row_to_json(g)),'[]'::json)) FROM (SELECT t.product_category_name_english,ROUND(SUM(ri.refund_value),2) AS refund_amt\nFROM refunds r JOIN refund_items ri ON ri.refund_id=r.refund_id\nJOIN order_items oi ON oi.order_id=ri.order_id AND oi.order_item_id=ri.order_item_id\nJOIN products p ON p.product_id=oi.product_id\nLEFT JOIN product_category_translation t ON t.product_category_name=p.product_category_name\nWHERE p.product_category_name IS NOT NULL\nGROUP BY t.product_category_name_english HAVING SUM(ri.refund_value) IS NOT NULL\nORDER BY refund_amt DESC NULLS LAST,t.product_category_name_english ASC NULLS LAST LIMIT 15)g;\nWITH old_result AS (SELECT t.product_category_name_english,ROUND(SUM(ri.refund_value),2) AS refund_amt\nFROM refunds r JOIN refund_items ri ON ri.refund_id=r.refund_id\nJOIN order_items oi ON oi.order_id=ri.order_id AND oi.order_item_id=ri.order_item_id\nJOIN products p ON p.product_id=oi.product_id\nLEFT JOIN product_category_translation t ON t.product_category_name=p.product_category_name\nWHERE p.product_category_name IS NOT NULL\nGROUP BY t.product_category_name_english\nORDER BY refund_amt DESC NULLS LAST,t.product_category_name_english ASC NULLS LAST LIMIT 15), new_result AS (SELECT t.product_category_name_english,ROUND(SUM(ri.refund_value),2) AS refund_amt\nFROM refunds r JOIN refund_items ri ON ri.refund_id=r.refund_id\nJOIN order_items oi ON oi.order_id=ri.order_id AND oi.order_item_id=ri.order_item_id\nJOIN products p ON p.product_id=oi.product_id\nLEFT JOIN product_category_translation t ON t.product_category_name=p.product_category_name\nWHERE p.product_category_name IS NOT NULL\nGROUP BY t.product_category_name_english HAVING SUM(ri.refund_value) IS NOT NULL\nORDER BY refund_amt DESC NULLS LAST,t.product_category_name_english ASC NULLS LAST LIMIT 15) SELECT json_build_object('oldMinusNew',(SELECT count(*) FROM(SELECT * FROM old_result EXCEPT ALL SELECT * FROM new_result)d),'newMinusOld',(SELECT count(*) FROM(SELECT * FROM new_result EXCEPT ALL SELECT * FROM old_result)d));\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "{\"id\" : \"T5-003\", \"rows\" : [{\"product_category_name_english\":\"watches_gifts\",\"refund_amt\":56539.68}, {\"product_category_name_english\":\"health_beauty\",\"refund_amt\":54300.35}, {\"product_category_name_english\":\"bed_bath_table\",\"refund_amt\":53219.74}, {\"product_category_name_english\":\"sports_leisure\",\"refund_amt\":47306.67}, {\"product_category_name_english\":\"computers_accessories\",\"refund_amt\":41862.15}, {\"product_category_name_english\":\"auto\",\"refund_amt\":33623.37}, {\"product_category_name_english\":\"furniture_decor\",\"refund_amt\":30738.44}, {\"product_category_name_english\":\"housewares\",\"refund_amt\":30548.21}, {\"product_category_name_english\":\"cool_stuff\",\"refund_amt\":27184.04}, {\"product_category_name_english\":\"garden_tools\",\"refund_amt\":26248.74}, {\"product_category_name_english\":\"toys\",\"refund_amt\":23291.44}, {\"product_category_name_english\":\"baby\",\"refund_amt\":19845.53}, {\"product_category_name_english\":\"perfumery\",\"refund_amt\":18608.57}, {\"product_category_name_english\":\"telephony\",\"refund_amt\":15943.45}, {\"product_category_name_english\":\"pet_shop\",\"refund_amt\":13359.56}]}\n{\"oldMinusNew\" : 0, \"newMinusOld\" : 0}\n",
+    "stderr": ""
+  },
+  {
+    "id": "R-T5-009-actual",
+    "synthetic": false,
+    "candidateId": "T5-009",
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT json_build_object('id','T5-009','rows',coalesce(json_agg(row_to_json(g)),'[]'::json)) FROM (SELECT i.warehouse_id,w.region_code,pbm.brand_id,COUNT(*) AS low_stock_items\nFROM inventory i LEFT JOIN warehouses w ON w.warehouse_id=i.warehouse_id\nLEFT JOIN product_brand_map pbm ON pbm.product_id=i.product_id AND pbm.is_current\nWHERE i.quantity<i.safety_stock\nGROUP BY i.warehouse_id,w.region_code,pbm.brand_id\nORDER BY low_stock_items DESC,i.warehouse_id,w.region_code,pbm.brand_id ASC NULLS LAST LIMIT 20)g;\nWITH old_result AS (SELECT w.warehouse_id,w.region_code,pbm.brand_id,COUNT(*) AS low_stock_items\nFROM inventory i JOIN warehouses w ON w.warehouse_id=i.warehouse_id\nLEFT JOIN product_brand_map pbm ON pbm.product_id=i.product_id AND pbm.is_current\nWHERE i.quantity<i.safety_stock\nGROUP BY w.warehouse_id,w.region_code,pbm.brand_id\nORDER BY low_stock_items DESC,w.warehouse_id,w.region_code,pbm.brand_id ASC NULLS LAST LIMIT 20), new_result AS (SELECT i.warehouse_id,w.region_code,pbm.brand_id,COUNT(*) AS low_stock_items\nFROM inventory i LEFT JOIN warehouses w ON w.warehouse_id=i.warehouse_id\nLEFT JOIN product_brand_map pbm ON pbm.product_id=i.product_id AND pbm.is_current\nWHERE i.quantity<i.safety_stock\nGROUP BY i.warehouse_id,w.region_code,pbm.brand_id\nORDER BY low_stock_items DESC,i.warehouse_id,w.region_code,pbm.brand_id ASC NULLS LAST LIMIT 20) SELECT json_build_object('oldMinusNew',(SELECT count(*) FROM(SELECT * FROM old_result EXCEPT ALL SELECT * FROM new_result)d),'newMinusOld',(SELECT count(*) FROM(SELECT * FROM new_result EXCEPT ALL SELECT * FROM old_result)d));\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "{\"id\" : \"T5-009\", \"rows\" : [{\"warehouse_id\":5,\"region_code\":\"BA\",\"brand_id\":null,\"low_stock_items\":79}, {\"warehouse_id\":3,\"region_code\":\"MG\",\"brand_id\":null,\"low_stock_items\":77}, {\"warehouse_id\":2,\"region_code\":\"RJ\",\"brand_id\":null,\"low_stock_items\":70}, {\"warehouse_id\":4,\"region_code\":\"RS\",\"brand_id\":null,\"low_stock_items\":67}, {\"warehouse_id\":1,\"region_code\":\"SP\",\"brand_id\":null,\"low_stock_items\":66}, {\"warehouse_id\":3,\"region_code\":\"MG\",\"brand_id\":17,\"low_stock_items\":8}, {\"warehouse_id\":3,\"region_code\":\"MG\",\"brand_id\":53,\"low_stock_items\":8}, {\"warehouse_id\":4,\"region_code\":\"RS\",\"brand_id\":30,\"low_stock_items\":8}, {\"warehouse_id\":1,\"region_code\":\"SP\",\"brand_id\":18,\"low_stock_items\":7}, {\"warehouse_id\":2,\"region_code\":\"RJ\",\"brand_id\":43,\"low_stock_items\":7}, {\"warehouse_id\":3,\"region_code\":\"MG\",\"brand_id\":34,\"low_stock_items\":7}, {\"warehouse_id\":4,\"region_code\":\"RS\",\"brand_id\":18,\"low_stock_items\":7}, {\"warehouse_id\":5,\"region_code\":\"BA\",\"brand_id\":29,\"low_stock_items\":7}, {\"warehouse_id\":1,\"region_code\":\"SP\",\"brand_id\":15,\"low_stock_items\":6}, {\"warehouse_id\":2,\"region_code\":\"RJ\",\"brand_id\":4,\"low_stock_items\":6}, {\"warehouse_id\":2,\"region_code\":\"RJ\",\"brand_id\":28,\"low_stock_items\":6}, {\"warehouse_id\":2,\"region_code\":\"RJ\",\"brand_id\":42,\"low_stock_items\":6}, {\"warehouse_id\":2,\"region_code\":\"RJ\",\"brand_id\":55,\"low_stock_items\":6}, {\"warehouse_id\":3,\"region_code\":\"MG\",\"brand_id\":8,\"low_stock_items\":6}, {\"warehouse_id\":4,\"region_code\":\"RS\",\"brand_id\":39,\"low_stock_items\":6}]}\n{\"oldMinusNew\" : 0, \"newMinusOld\" : 0}\n",
+    "stderr": ""
+  },
+  {
+    "id": "R-T5-010-actual",
+    "synthetic": false,
+    "candidateId": "T5-010",
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT json_build_object('id','T5-010','rows',coalesce(json_agg(row_to_json(g)),'[]'::json)) FROM (SELECT st.seller_id,COUNT(DISTINCT t.product_category_name_english) AS category_cnt,\n ROUND(SUM(si.commission_amount),2) AS commission\nFROM settlements st JOIN settlement_items si ON si.settlement_id=st.settlement_id\nLEFT JOIN order_items oi ON oi.order_id=si.order_id AND oi.order_item_id=si.order_item_id\nLEFT JOIN products p ON p.product_id=oi.product_id\nLEFT JOIN product_category_translation t ON t.product_category_name=p.product_category_name\nGROUP BY st.seller_id HAVING SUM(si.commission_amount) IS NOT NULL ORDER BY commission DESC NULLS LAST,st.seller_id LIMIT 20)g;\nWITH old_result AS (SELECT st.seller_id,COUNT(DISTINCT t.product_category_name_english) AS category_cnt,\n ROUND(SUM(si.commission_amount),2) AS commission\nFROM settlements st JOIN settlement_items si ON si.settlement_id=st.settlement_id\nLEFT JOIN order_items oi ON oi.order_id=si.order_id AND oi.order_item_id=si.order_item_id\nLEFT JOIN products p ON p.product_id=oi.product_id\nLEFT JOIN product_category_translation t ON t.product_category_name=p.product_category_name\nGROUP BY st.seller_id ORDER BY commission DESC NULLS LAST,st.seller_id LIMIT 20), new_result AS (SELECT st.seller_id,COUNT(DISTINCT t.product_category_name_english) AS category_cnt,\n ROUND(SUM(si.commission_amount),2) AS commission\nFROM settlements st JOIN settlement_items si ON si.settlement_id=st.settlement_id\nLEFT JOIN order_items oi ON oi.order_id=si.order_id AND oi.order_item_id=si.order_item_id\nLEFT JOIN products p ON p.product_id=oi.product_id\nLEFT JOIN product_category_translation t ON t.product_category_name=p.product_category_name\nGROUP BY st.seller_id HAVING SUM(si.commission_amount) IS NOT NULL ORDER BY commission DESC NULLS LAST,st.seller_id LIMIT 20) SELECT json_build_object('oldMinusNew',(SELECT count(*) FROM(SELECT * FROM old_result EXCEPT ALL SELECT * FROM new_result)d),'newMinusOld',(SELECT count(*) FROM(SELECT * FROM new_result EXCEPT ALL SELECT * FROM old_result)d));\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "{\"id\" : \"T5-010\", \"rows\" : [{\"seller_id\":\"7c67e1448b00f6e969d365cea6b010ab\",\"category_cnt\":6,\"commission\":17559.11}, {\"seller_id\":\"4869f7a5dfa277a7dca6462dcf3b52b2\",\"category_cnt\":7,\"commission\":8199.61}, {\"seller_id\":\"7e93a43ef30c4f03f38b393420bc753a\",\"category_cnt\":6,\"commission\":8084.53}, {\"seller_id\":\"7d13fca15225358621be4086e1eb0964\",\"category_cnt\":7,\"commission\":7504.84}, {\"seller_id\":\"6560211a19b47992c3666cc44a7e94c0\",\"category_cnt\":7,\"commission\":7320.77}, {\"seller_id\":\"4a3ca9315b744ce9f8e9374361493884\",\"category_cnt\":7,\"commission\":6718.42}, {\"seller_id\":\"955fee9216a65b617aa5c0531780ce60\",\"category_cnt\":23,\"commission\":6198.44}, {\"seller_id\":\"1f50f920176fa81dab994f9023523100\",\"category_cnt\":3,\"commission\":5854.00}, {\"seller_id\":\"7a67c85e85bb2ce8582c35f2203ad736\",\"category_cnt\":2,\"commission\":5730.95}, {\"seller_id\":\"53243585a1d6dc2643021fd1853d8905\",\"category_cnt\":2,\"commission\":5362.77}, {\"seller_id\":\"cc419e0650a3c5ba77189a1882b7556a\",\"category_cnt\":3,\"commission\":5321.97}, {\"seller_id\":\"37be5a7c751166fbc5f8ccba4119e043\",\"category_cnt\":2,\"commission\":5238.24}, {\"seller_id\":\"1025f0e2d44d7041d6cf58b6550e0bfa\",\"category_cnt\":4,\"commission\":4843.29}, {\"seller_id\":\"f7ba60f8c3f99e7ee4042fdef03b70c4\",\"category_cnt\":2,\"commission\":4549.18}, {\"seller_id\":\"46dc3b2cc0980fb8ec44634e21d2718e\",\"category_cnt\":4,\"commission\":4048.90}, {\"seller_id\":\"da8622b14eb17ae2831f4ac5b9dab84a\",\"category_cnt\":2,\"commission\":3884.12}, {\"seller_id\":\"fa1c13f2614d7b5c4749cbc52fecda94\",\"category_cnt\":2,\"commission\":3864.92}, {\"seller_id\":\"a1043bafd471dff536d0c462352beb48\",\"category_cnt\":3,\"commission\":3802.20}, {\"seller_id\":\"620c87c171fb2a6dd6e8bb4dec959fc6\",\"category_cnt\":2,\"commission\":3687.85}, {\"seller_id\":\"c826c40d7b19f62a09e2d7c5e7295ee2\",\"category_cnt\":0,\"commission\":3651.16}]}\n{\"oldMinusNew\" : 0, \"newMinusOld\" : 0}\n",
+    "stderr": ""
+  },
+  {
+    "id": "R-T5-014-actual",
+    "synthetic": false,
+    "candidateId": "T5-014",
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT json_build_object('id','T5-014','rows',coalesce(json_agg(row_to_json(g)),'[]'::json)) FROM (WITH ranked AS (\n SELECT ms.*,ROW_NUMBER() OVER(PARTITION BY member_id ORDER BY snapshot_date DESC,snapshot_id DESC) AS rn\n FROM member_snapshot ms WHERE snapshot_date IS NOT NULL\n)\nSELECT ml_cur.level_name AS current_level,ml_snap.level_name AS snapshot_level,\n COUNT(DISTINCT m.member_id) AS member_cnt\nFROM ranked ms\nJOIN members m ON m.member_id=ms.member_id\nLEFT JOIN member_levels ml_cur ON ml_cur.level_id=m.level_id\nLEFT JOIN member_levels ml_snap ON ml_snap.level_id=ms.level_id\nWHERE ms.rn=1 AND ml_cur.level_id IS NOT NULL AND ml_snap.level_id IS NOT NULL AND ms.level_id<>m.level_id\nGROUP BY ml_cur.level_name,ml_snap.level_name ORDER BY member_cnt DESC)g;\nWITH old_result AS (WITH ranked AS (\n SELECT ms.*,ROW_NUMBER() OVER(PARTITION BY member_id ORDER BY snapshot_date DESC,snapshot_id DESC) AS rn\n FROM member_snapshot ms WHERE snapshot_date IS NOT NULL\n)\nSELECT ml_cur.level_name AS current_level,ml_snap.level_name AS snapshot_level,\n COUNT(DISTINCT m.member_id) AS member_cnt\nFROM ranked ms\nJOIN members m ON m.member_id=ms.member_id\nLEFT JOIN member_levels ml_cur ON ml_cur.level_id=m.level_id\nLEFT JOIN member_levels ml_snap ON ml_snap.level_id=ms.level_id\nWHERE ms.rn=1 AND ms.level_id<>m.level_id\nGROUP BY ml_cur.level_name,ml_snap.level_name ORDER BY member_cnt DESC), new_result AS (WITH ranked AS (\n SELECT ms.*,ROW_NUMBER() OVER(PARTITION BY member_id ORDER BY snapshot_date DESC,snapshot_id DESC) AS rn\n FROM member_snapshot ms WHERE snapshot_date IS NOT NULL\n)\nSELECT ml_cur.level_name AS current_level,ml_snap.level_name AS snapshot_level,\n COUNT(DISTINCT m.member_id) AS member_cnt\nFROM ranked ms\nJOIN members m ON m.member_id=ms.member_id\nLEFT JOIN member_levels ml_cur ON ml_cur.level_id=m.level_id\nLEFT JOIN member_levels ml_snap ON ml_snap.level_id=ms.level_id\nWHERE ms.rn=1 AND ml_cur.level_id IS NOT NULL AND ml_snap.level_id IS NOT NULL AND ms.level_id<>m.level_id\nGROUP BY ml_cur.level_name,ml_snap.level_name ORDER BY member_cnt DESC) SELECT json_build_object('oldMinusNew',(SELECT count(*) FROM(SELECT * FROM old_result EXCEPT ALL SELECT * FROM new_result)d),'newMinusOld',(SELECT count(*) FROM(SELECT * FROM new_result EXCEPT ALL SELECT * FROM old_result)d));\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "{\"id\" : \"T5-014\", \"rows\" : [{\"current_level\":\"白银会员\",\"snapshot_level\":\"青铜会员\",\"member_cnt\":2110}, {\"current_level\":\"黄金会员\",\"snapshot_level\":\"白银会员\",\"member_cnt\":415}, {\"current_level\":\"铂金会员\",\"snapshot_level\":\"黄金会员\",\"member_cnt\":7}]}\n{\"oldMinusNew\" : 0, \"newMinusOld\" : 0}\n",
+    "stderr": ""
+  },
+  {
+    "id": "R-T6-006-actual",
+    "synthetic": false,
+    "candidateId": "T6-006",
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT json_build_object('id','T6-006','rows',coalesce(json_agg(row_to_json(g)),'[]'::json)) FROM (SELECT ROUND(100.0*COUNT(*) FILTER(\n WHERE order_delivered_customer_date<=order_estimated_delivery_date\n)/NULLIF(COUNT(*),0),2) AS on_time_pct\nFROM orders WHERE order_delivered_customer_date IS NOT NULL)g;\nWITH old_result AS (SELECT ROUND(100.0 * COUNT(*) FILTER (\n         WHERE o.order_delivered_customer_date <= o.order_estimated_delivery_date\n       ) / COUNT(*), 2) AS on_time_pct\nFROM orders o\nWHERE o.order_delivered_customer_date IS NOT NULL), new_result AS (SELECT ROUND(100.0*COUNT(*) FILTER(\n WHERE order_delivered_customer_date<=order_estimated_delivery_date\n)/NULLIF(COUNT(*),0),2) AS on_time_pct\nFROM orders WHERE order_delivered_customer_date IS NOT NULL) SELECT json_build_object('oldMinusNew',(SELECT count(*) FROM(SELECT * FROM old_result EXCEPT ALL SELECT * FROM new_result)d),'newMinusOld',(SELECT count(*) FROM(SELECT * FROM new_result EXCEPT ALL SELECT * FROM old_result)d));\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "{\"id\" : \"T6-006\", \"rows\" : [{\"on_time_pct\":91.89}]}\n{\"oldMinusNew\" : 0, \"newMinusOld\" : 0}\n",
+    "stderr": ""
+  },
+  {
+    "id": "R-T6-008-actual",
+    "synthetic": false,
+    "candidateId": "T6-008",
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT json_build_object('id','T6-008','rows',coalesce(json_agg(row_to_json(g)),'[]'::json)) FROM (WITH sold AS (\n SELECT COUNT(DISTINCT oi.product_id) AS n FROM order_items oi\n JOIN orders o ON o.order_id=oi.order_id WHERE o.order_status NOT IN ('canceled','unavailable')\n), allp AS(SELECT COUNT(*) AS n FROM products)\nSELECT ROUND(100.0*s.n/NULLIF(a.n,0),2) AS sell_through_pct FROM sold s CROSS JOIN allp a)g;\nWITH old_result AS (WITH sold AS (\n  SELECT COUNT(DISTINCT oi.product_id) AS n\n  FROM order_items oi\n  JOIN orders o ON o.order_id = oi.order_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n),\nallp AS (SELECT COUNT(*) AS n FROM products)\nSELECT ROUND(100.0 * s.n / a.n, 2) AS sell_through_pct\nFROM sold s CROSS JOIN allp a), new_result AS (WITH sold AS (\n SELECT COUNT(DISTINCT oi.product_id) AS n FROM order_items oi\n JOIN orders o ON o.order_id=oi.order_id WHERE o.order_status NOT IN ('canceled','unavailable')\n), allp AS(SELECT COUNT(*) AS n FROM products)\nSELECT ROUND(100.0*s.n/NULLIF(a.n,0),2) AS sell_through_pct FROM sold s CROSS JOIN allp a) SELECT json_build_object('oldMinusNew',(SELECT count(*) FROM(SELECT * FROM old_result EXCEPT ALL SELECT * FROM new_result)d),'newMinusOld',(SELECT count(*) FROM(SELECT * FROM new_result EXCEPT ALL SELECT * FROM old_result)d));\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "{\"id\" : \"T6-008\", \"rows\" : [{\"sell_through_pct\":99.33}]}\n{\"oldMinusNew\" : 0, \"newMinusOld\" : 0}\n",
+    "stderr": ""
+  },
+  {
+    "id": "R-T6-011-actual",
+    "synthetic": false,
+    "candidateId": "T6-011",
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT json_build_object('id','T6-011','rows',coalesce(json_agg(row_to_json(g)),'[]'::json)) FROM (SELECT r.macro_region,ROUND(100.0*SUM(oi.freight_value)/\n NULLIF(SUM(oi.price+oi.freight_value),0),2) AS freight_pct\nFROM orders o JOIN customers c ON c.customer_id=o.customer_id\nLEFT JOIN regions r ON r.region_code=c.customer_state\nJOIN order_items oi ON oi.order_id=o.order_id\nWHERE o.order_status NOT IN ('canceled','unavailable')\nGROUP BY r.macro_region ORDER BY freight_pct DESC NULLS LAST)g;\nWITH old_result AS (SELECT r.macro_region,\n       ROUND(100.0 * SUM(oi.freight_value) / SUM(oi.price + oi.freight_value), 2) AS freight_pct\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN regions r ON r.region_code = c.customer_state\nJOIN order_items oi ON oi.order_id = o.order_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable')\nGROUP BY 1 ORDER BY freight_pct DESC), new_result AS (SELECT r.macro_region,ROUND(100.0*SUM(oi.freight_value)/\n NULLIF(SUM(oi.price+oi.freight_value),0),2) AS freight_pct\nFROM orders o JOIN customers c ON c.customer_id=o.customer_id\nLEFT JOIN regions r ON r.region_code=c.customer_state\nJOIN order_items oi ON oi.order_id=o.order_id\nWHERE o.order_status NOT IN ('canceled','unavailable')\nGROUP BY r.macro_region ORDER BY freight_pct DESC NULLS LAST) SELECT json_build_object('oldMinusNew',(SELECT count(*) FROM(SELECT * FROM old_result EXCEPT ALL SELECT * FROM new_result)d),'newMinusOld',(SELECT count(*) FROM(SELECT * FROM new_result EXCEPT ALL SELECT * FROM old_result)d));\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "{\"id\" : \"T6-011\", \"rows\" : [{\"macro_region\":\"Norte\",\"freight_pct\":18.53}, {\"macro_region\":\"Nordeste\",\"freight_pct\":17.86}, {\"macro_region\":\"Centro-Oeste\",\"freight_pct\":14.99}, {\"macro_region\":\"Sul\",\"freight_pct\":14.98}, {\"macro_region\":\"Sudeste\",\"freight_pct\":13.16}]}\n{\"oldMinusNew\" : 0, \"newMinusOld\" : 0}\n",
+    "stderr": ""
+  },
+  {
+    "id": "R-T6-017-actual",
+    "synthetic": false,
+    "candidateId": "T6-017",
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT json_build_object('id','T6-017','rows',coalesce(json_agg(row_to_json(g)),'[]'::json)) FROM (SELECT ROUND(100.0*COUNT(*) FILTER(WHERE converted_at IS NOT NULL)/NULLIF(COUNT(*),0),2) AS conversion_pct,\n ROUND(SUM(reward_amount)/NULLIF(COUNT(*) FILTER(WHERE converted_at IS NOT NULL),0),2) AS reward_per_converted\nFROM referrals)g;\nWITH old_result AS (SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE converted_at IS NOT NULL) / COUNT(*), 2) AS conversion_pct,\n       ROUND(SUM(reward_amount) / COUNT(*) FILTER (WHERE converted_at IS NOT NULL), 2) AS reward_per_converted\nFROM referrals), new_result AS (SELECT ROUND(100.0*COUNT(*) FILTER(WHERE converted_at IS NOT NULL)/NULLIF(COUNT(*),0),2) AS conversion_pct,\n ROUND(SUM(reward_amount)/NULLIF(COUNT(*) FILTER(WHERE converted_at IS NOT NULL),0),2) AS reward_per_converted\nFROM referrals) SELECT json_build_object('oldMinusNew',(SELECT count(*) FROM(SELECT * FROM old_result EXCEPT ALL SELECT * FROM new_result)d),'newMinusOld',(SELECT count(*) FROM(SELECT * FROM new_result EXCEPT ALL SELECT * FROM old_result)d));\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "{\"id\" : \"T6-017\", \"rows\" : [{\"conversion_pct\":33.86,\"reward_per_converted\":20.01}]}\n{\"oldMinusNew\" : 0, \"newMinusOld\" : 0}\n",
+    "stderr": ""
+  },
+  {
+    "id": "R-T6-019-actual",
+    "synthetic": false,
+    "candidateId": "T6-019",
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT json_build_object('id','T6-019','rows',coalesce(json_agg(row_to_json(g)),'[]'::json)) FROM (WITH state_times AS (\n SELECT c.customer_state,ROUND(AVG(EXTRACT(EPOCH FROM(\n o.order_delivered_customer_date-o.order_purchase_timestamp))/86400.0),2) AS avg_days\n FROM orders o JOIN customers c ON c.customer_id=o.customer_id\n WHERE o.order_delivered_customer_date IS NOT NULL GROUP BY c.customer_state\n)\nSELECT customer_state,avg_days FROM state_times WHERE avg_days IS NOT NULL\nORDER BY avg_days DESC,customer_state ASC NULLS LAST LIMIT 10)g;\nWITH old_result AS (SELECT c.customer_state,\n       ROUND(AVG(EXTRACT(EPOCH FROM (o.order_delivered_customer_date - o.order_purchase_timestamp)) / 86400.0), 2) AS avg_days\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nWHERE o.order_delivered_customer_date IS NOT NULL\nGROUP BY 1 ORDER BY avg_days DESC NULLS LAST,c.customer_state ASC NULLS LAST LIMIT 10), new_result AS (WITH state_times AS (\n SELECT c.customer_state,ROUND(AVG(EXTRACT(EPOCH FROM(\n o.order_delivered_customer_date-o.order_purchase_timestamp))/86400.0),2) AS avg_days\n FROM orders o JOIN customers c ON c.customer_id=o.customer_id\n WHERE o.order_delivered_customer_date IS NOT NULL GROUP BY c.customer_state\n)\nSELECT customer_state,avg_days FROM state_times WHERE avg_days IS NOT NULL\nORDER BY avg_days DESC,customer_state ASC NULLS LAST LIMIT 10) SELECT json_build_object('oldMinusNew',(SELECT count(*) FROM(SELECT * FROM old_result EXCEPT ALL SELECT * FROM new_result)d),'newMinusOld',(SELECT count(*) FROM(SELECT * FROM new_result EXCEPT ALL SELECT * FROM old_result)d));\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "{\"id\" : \"T6-019\", \"rows\" : [{\"customer_state\":\"RR\",\"avg_days\":29.39}, {\"customer_state\":\"AP\",\"avg_days\":27.19}, {\"customer_state\":\"AM\",\"avg_days\":26.43}, {\"customer_state\":\"AL\",\"avg_days\":24.54}, {\"customer_state\":\"PA\",\"avg_days\":23.77}, {\"customer_state\":\"MA\",\"avg_days\":21.57}, {\"customer_state\":\"SE\",\"avg_days\":21.52}, {\"customer_state\":\"CE\",\"avg_days\":21.27}, {\"customer_state\":\"AC\",\"avg_days\":21.04}, {\"customer_state\":\"PB\",\"avg_days\":20.43}]}\n{\"oldMinusNew\" : 0, \"newMinusOld\" : 0}\n",
+    "stderr": ""
+  },
+  {
+    "id": "R-T5-001-actual-retry",
+    "candidateId": "T5-001",
+    "synthetic": false,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSET LOCAL max_parallel_workers_per_gather=0;\nSELECT json_build_object('id','T5-001','rows',coalesce(json_agg(row_to_json(g)),'[]'::json)) FROM (SELECT r.macro_region,ml.level_name,ROUND(SUM(oi.price),2) AS sales\nFROM orders o JOIN customers c ON c.customer_id=o.customer_id\nJOIN members m ON m.customer_unique_id=c.customer_unique_id\nLEFT JOIN member_levels ml ON ml.level_id=m.level_id\nLEFT JOIN regions r ON r.region_code=c.customer_state\nJOIN order_items oi ON oi.order_id=o.order_id\nGROUP BY r.macro_region,ml.level_name ORDER BY sales DESC NULLS LAST)g;\nWITH old_result AS (SELECT r.macro_region, ml.level_name, ROUND(SUM(oi.price), 2) AS gmv\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN regions r ON r.region_code = c.customer_state\nJOIN members m ON m.customer_unique_id = c.customer_unique_id\nJOIN member_levels ml ON ml.level_id = m.level_id\nJOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1, 2 ORDER BY gmv DESC), new_result AS (SELECT r.macro_region,ml.level_name,ROUND(SUM(oi.price),2) AS sales\nFROM orders o JOIN customers c ON c.customer_id=o.customer_id\nJOIN members m ON m.customer_unique_id=c.customer_unique_id\nLEFT JOIN member_levels ml ON ml.level_id=m.level_id\nLEFT JOIN regions r ON r.region_code=c.customer_state\nJOIN order_items oi ON oi.order_id=o.order_id\nGROUP BY r.macro_region,ml.level_name ORDER BY sales DESC NULLS LAST) SELECT json_build_object('oldMinusNew',(SELECT count(*) FROM(SELECT * FROM old_result EXCEPT ALL SELECT * FROM new_result)d),'newMinusOld',(SELECT count(*) FROM(SELECT * FROM new_result EXCEPT ALL SELECT * FROM old_result)d));\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "{\"id\" : \"T5-001\", \"rows\" : [{\"macro_region\":\"Sudeste\",\"level_name\":\"青铜会员\",\"sales\":4888336.35}, {\"macro_region\":\"Sudeste\",\"level_name\":\"白银会员\",\"sales\":3403102.09}, {\"macro_region\":\"Sul\",\"level_name\":\"青铜会员\",\"sales\":1079497.16}, {\"macro_region\":\"Nordeste\",\"level_name\":\"青铜会员\",\"sales\":864916.36}, {\"macro_region\":\"Sul\",\"level_name\":\"白银会员\",\"sales\":746544.64}, {\"macro_region\":\"Sudeste\",\"level_name\":\"黄金会员\",\"sales\":578888.11}, {\"macro_region\":\"Nordeste\",\"level_name\":\"白银会员\",\"sales\":577095.22}, {\"macro_region\":\"Centro-Oeste\",\"level_name\":\"青铜会员\",\"sales\":495933.93}, {\"macro_region\":\"Centro-Oeste\",\"level_name\":\"白银会员\",\"sales\":311701.70}, {\"macro_region\":\"Norte\",\"level_name\":\"青铜会员\",\"sales\":169525.53}, {\"macro_region\":\"Norte\",\"level_name\":\"白银会员\",\"sales\":138839.72}, {\"macro_region\":\"Sul\",\"level_name\":\"黄金会员\",\"sales\":124136.17}, {\"macro_region\":\"Nordeste\",\"level_name\":\"黄金会员\",\"sales\":100453.63}, {\"macro_region\":\"Centro-Oeste\",\"level_name\":\"黄金会员\",\"sales\":62353.56}, {\"macro_region\":\"Norte\",\"level_name\":\"黄金会员\",\"sales\":25533.74}, {\"macro_region\":\"Sudeste\",\"level_name\":\"铂金会员\",\"sales\":17066.51}, {\"macro_region\":\"Sul\",\"level_name\":\"铂金会员\",\"sales\":3763.15}, {\"macro_region\":\"Nordeste\",\"level_name\":\"铂金会员\",\"sales\":3028.54}, {\"macro_region\":\"Centro-Oeste\",\"level_name\":\"铂金会员\",\"sales\":472.87}, {\"macro_region\":\"Norte\",\"level_name\":\"铂金会员\",\"sales\":454.72}]}\n{\"oldMinusNew\" : 0, \"newMinusOld\" : 0}\n",
+    "stderr": ""
+  },
+  {
+    "id": "RS01",
+    "candidateId": "T4-011",
+    "synthetic": true,
+    "purpose": "零评价状态保留NULL均分",
+    "expectedRows": [
+      [
+        "created",
+        null
+      ]
+    ],
+    "actualRows": [
+      [
+        "created",
+        null
+      ]
+    ],
+    "passed": true,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT COALESCE(json_agg(row_to_json(g)),'[]'::json) FROM (WITH orders(order_id,order_status) AS(VALUES('o','created')),order_reviews(order_id,review_score) AS(SELECT NULL::text,NULL::int WHERE false) SELECT o.order_status,ROUND(AVG(r.review_score),2) AS avg_score\nFROM orders o LEFT JOIN order_reviews r ON r.order_id=o.order_id\nGROUP BY o.order_status ORDER BY avg_score DESC NULLS LAST)g;\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "[{\"order_status\":\"created\",\"avg_score\":null}]\n",
+    "stderr": "",
+    "comparisonRule": "行袋比较，数值按数学相等；100与100.0相同，不按JSON字面文本比较。RS16另核验返回顺序。"
+  },
+  {
+    "id": "RS02",
+    "candidateId": "T4-015",
+    "synthetic": true,
+    "purpose": "未知大区订单保留",
+    "expectedRows": [
+      [
+        "Sudeste",
+        1
+      ],
+      [
+        null,
+        1
+      ]
+    ],
+    "actualRows": [
+      [
+        null,
+        1
+      ],
+      [
+        "Sudeste",
+        1
+      ]
+    ],
+    "passed": true,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT COALESCE(json_agg(row_to_json(g)),'[]'::json) FROM (WITH orders(order_id,customer_id) AS(VALUES('o1','c1'),('o2','c2')),customers(customer_id,customer_state) AS(VALUES('c1','SP'),('c2',NULL::text)),regions(region_code,macro_region) AS(VALUES('SP','Sudeste')) SELECT r.macro_region,COUNT(*) AS orders\nFROM orders o JOIN customers c ON c.customer_id=o.customer_id\nLEFT JOIN regions r ON r.region_code=c.customer_state\nGROUP BY r.macro_region ORDER BY orders DESC)g;\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "[{\"macro_region\":null,\"orders\":1}, {\"macro_region\":\"Sudeste\",\"orders\":1}]\n",
+    "stderr": "",
+    "comparisonRule": "行袋比较，数值按数学相等；100与100.0相同，不按JSON字面文本比较。RS16另核验返回顺序。"
+  },
+  {
+    "id": "RS03",
+    "candidateId": "T4-031",
+    "synthetic": true,
+    "purpose": "未匹配卖家金额保留",
+    "expectedRows": [
+      [
+        null,
+        100
+      ]
+    ],
+    "actualRows": [
+      [
+        null,
+        100.0
+      ]
+    ],
+    "passed": true,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT COALESCE(json_agg(row_to_json(g)),'[]'::json) FROM (WITH settlements(seller_id,net_amount) AS(VALUES('orphan',100::numeric)),sellers(seller_id,seller_state) AS(SELECT NULL::text,NULL::text WHERE false) SELECT s.seller_state,ROUND(SUM(st.net_amount),2) AS net\nFROM settlements st LEFT JOIN sellers s ON s.seller_id=st.seller_id\nGROUP BY s.seller_state ORDER BY net DESC NULLS LAST)g;\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "[{\"seller_state\":null,\"net\":100.00}]\n",
+    "stderr": "",
+    "comparisonRule": "行袋比较，数值按数学相等；100与100.0相同，不按JSON字面文本比较。RS16另核验返回顺序。"
+  },
+  {
+    "id": "RS04",
+    "candidateId": "T5-001",
+    "synthetic": true,
+    "purpose": "显式同名等级合并且未知等级/地域金额保留",
+    "expectedRows": [
+      [
+        "Sudeste",
+        "same-name",
+        300
+      ],
+      [
+        null,
+        null,
+        25
+      ]
+    ],
+    "actualRows": [
+      [
+        "Sudeste",
+        "same-name",
+        300.0
+      ],
+      [
+        null,
+        null,
+        25.0
+      ]
+    ],
+    "passed": true,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT COALESCE(json_agg(row_to_json(g)),'[]'::json) FROM (WITH orders(order_id,customer_id) AS(VALUES('o1','c1'),('o2','c2'),('o3','c3')),customers(customer_id,customer_state,customer_unique_id) AS(VALUES('c1','SP','u1'),('c2','SP','u2'),('c3','XX','u3')),regions(region_code,macro_region) AS(VALUES('SP','Sudeste')),members(customer_unique_id,level_id) AS(VALUES('u1',1),('u2',2),('u3',NULL::int)),member_levels(level_id,level_name) AS(VALUES(1,'same-name'),(2,'same-name')),order_items(order_id,price) AS(VALUES('o1',100::numeric),('o2',200::numeric),('o3',25::numeric)) SELECT r.macro_region,ml.level_name,ROUND(SUM(oi.price),2) AS sales\nFROM orders o JOIN customers c ON c.customer_id=o.customer_id\nJOIN members m ON m.customer_unique_id=c.customer_unique_id\nLEFT JOIN member_levels ml ON ml.level_id=m.level_id\nLEFT JOIN regions r ON r.region_code=c.customer_state\nJOIN order_items oi ON oi.order_id=o.order_id\nGROUP BY r.macro_region,ml.level_name ORDER BY sales DESC NULLS LAST)g;\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "[{\"macro_region\":\"Sudeste\",\"level_name\":\"same-name\",\"sales\":300.00}, {\"macro_region\":null,\"level_name\":null,\"sales\":25.00}]\n",
+    "stderr": "",
+    "comparisonRule": "行袋比较，数值按数学相等；100与100.0相同，不按JSON字面文本比较。RS16另核验返回顺序。"
+  },
+  {
+    "id": "RS05",
+    "candidateId": "T5-003",
+    "synthetic": true,
+    "purpose": "全未知退款金额不进榜",
+    "expectedRows": [],
+    "actualRows": [],
+    "passed": true,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT COALESCE(json_agg(row_to_json(g)),'[]'::json) FROM (WITH refunds(refund_id) AS(VALUES(1)),refund_items(refund_id,order_id,order_item_id,refund_value) AS(VALUES(1,'o',1,NULL::numeric)),order_items(order_id,order_item_id,product_id) AS(VALUES('o',1,'p')),products(product_id,product_category_name) AS(VALUES('p','cat')),product_category_translation(product_category_name,product_category_name_english) AS(VALUES('cat','category')) SELECT t.product_category_name_english,ROUND(SUM(ri.refund_value),2) AS refund_amt\nFROM refunds r JOIN refund_items ri ON ri.refund_id=r.refund_id\nJOIN order_items oi ON oi.order_id=ri.order_id AND oi.order_item_id=ri.order_item_id\nJOIN products p ON p.product_id=oi.product_id\nLEFT JOIN product_category_translation t ON t.product_category_name=p.product_category_name\nWHERE p.product_category_name IS NOT NULL\nGROUP BY t.product_category_name_english HAVING SUM(ri.refund_value) IS NOT NULL\nORDER BY refund_amt DESC NULLS LAST,t.product_category_name_english ASC NULLS LAST LIMIT 15)g;\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "[]\n",
+    "stderr": "",
+    "comparisonRule": "行袋比较，数值按数学相等；100与100.0相同，不按JSON字面文本比较。RS16另核验返回顺序。"
+  },
+  {
+    "id": "RS06",
+    "candidateId": "T5-009",
+    "synthetic": true,
+    "purpose": "孤儿仓库使用i身份；多当前品牌分别计；缺品牌保留NULL",
+    "expectedRows": [
+      [
+        1,
+        "SP",
+        null,
+        1
+      ],
+      [
+        999,
+        null,
+        1,
+        1
+      ],
+      [
+        999,
+        null,
+        2,
+        1
+      ]
+    ],
+    "actualRows": [
+      [
+        1,
+        "SP",
+        null,
+        1
+      ],
+      [
+        999,
+        null,
+        1,
+        1
+      ],
+      [
+        999,
+        null,
+        2,
+        1
+      ]
+    ],
+    "passed": true,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT COALESCE(json_agg(row_to_json(g)),'[]'::json) FROM (WITH inventory(warehouse_id,product_id,quantity,safety_stock) AS(VALUES(999,'p1',1,2),(1,'p2',1,2)),warehouses(warehouse_id,region_code) AS(VALUES(1,'SP')),product_brand_map(product_id,brand_id,is_current) AS(VALUES('p1',1,true),('p1',2,true)) SELECT i.warehouse_id,w.region_code,pbm.brand_id,COUNT(*) AS low_stock_items\nFROM inventory i LEFT JOIN warehouses w ON w.warehouse_id=i.warehouse_id\nLEFT JOIN product_brand_map pbm ON pbm.product_id=i.product_id AND pbm.is_current\nWHERE i.quantity<i.safety_stock\nGROUP BY i.warehouse_id,w.region_code,pbm.brand_id\nORDER BY low_stock_items DESC,i.warehouse_id,w.region_code,pbm.brand_id ASC NULLS LAST LIMIT 20)g;\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "[{\"warehouse_id\":1,\"region_code\":\"SP\",\"brand_id\":null,\"low_stock_items\":1}, {\"warehouse_id\":999,\"region_code\":null,\"brand_id\":1,\"low_stock_items\":1}, {\"warehouse_id\":999,\"region_code\":null,\"brand_id\":2,\"low_stock_items\":1}]\n",
+    "stderr": "",
+    "comparisonRule": "行袋比较，数值按数学相等；100与100.0相同，不按JSON字面文本比较。RS16另核验返回顺序。"
+  },
+  {
+    "id": "RS07",
+    "candidateId": "T5-010",
+    "synthetic": true,
+    "purpose": "全未知佣金不进榜",
+    "expectedRows": [],
+    "actualRows": [],
+    "passed": true,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT COALESCE(json_agg(row_to_json(g)),'[]'::json) FROM (WITH settlements(settlement_id,seller_id) AS(VALUES(1,'s')),settlement_items(settlement_id,order_id,order_item_id,commission_amount) AS(VALUES(1,'o',1,NULL::numeric)),order_items(order_id,order_item_id,product_id) AS(VALUES('o',1,'p')),products(product_id,product_category_name) AS(VALUES('p','cat')),product_category_translation(product_category_name,product_category_name_english) AS(VALUES('cat','category')) SELECT st.seller_id,COUNT(DISTINCT t.product_category_name_english) AS category_cnt,\n ROUND(SUM(si.commission_amount),2) AS commission\nFROM settlements st JOIN settlement_items si ON si.settlement_id=st.settlement_id\nLEFT JOIN order_items oi ON oi.order_id=si.order_id AND oi.order_item_id=si.order_item_id\nLEFT JOIN products p ON p.product_id=oi.product_id\nLEFT JOIN product_category_translation t ON t.product_category_name=p.product_category_name\nGROUP BY st.seller_id HAVING SUM(si.commission_amount) IS NOT NULL ORDER BY commission DESC NULLS LAST,st.seller_id LIMIT 20)g;\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "[]\n",
+    "stderr": "",
+    "comparisonRule": "行袋比较，数值按数学相等；100与100.0相同，不按JSON字面文本比较。RS16另核验返回顺序。"
+  },
+  {
+    "id": "RS08",
+    "candidateId": "T5-014",
+    "synthetic": true,
+    "purpose": "先取最新后判有效，不回退旧有效等级；同日最大ID；未知日期排除",
+    "expectedRows": [
+      [
+        "current",
+        "other",
+        1
+      ]
+    ],
+    "actualRows": [
+      [
+        "current",
+        "other",
+        1
+      ]
+    ],
+    "passed": true,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT COALESCE(json_agg(row_to_json(g)),'[]'::json) FROM (WITH member_snapshot(snapshot_id,member_id,snapshot_date,level_id) AS(VALUES(1,1,DATE '2018-01-01',2),(2,1,DATE '2018-02-01',999),(3,2,DATE '2018-02-01',2),(4,2,DATE '2018-02-01',1),(5,3,NULL::date,1),(6,3,DATE '2018-01-01',2)),members(member_id,level_id) AS(VALUES(1,1),(2,1),(3,1)),member_levels(level_id,level_name) AS(VALUES(1,'current'),(2,'other')), ranked AS (\n SELECT ms.*,ROW_NUMBER() OVER(PARTITION BY member_id ORDER BY snapshot_date DESC,snapshot_id DESC) AS rn\n FROM member_snapshot ms WHERE snapshot_date IS NOT NULL\n)\nSELECT ml_cur.level_name AS current_level,ml_snap.level_name AS snapshot_level,\n COUNT(DISTINCT m.member_id) AS member_cnt\nFROM ranked ms\nJOIN members m ON m.member_id=ms.member_id\nLEFT JOIN member_levels ml_cur ON ml_cur.level_id=m.level_id\nLEFT JOIN member_levels ml_snap ON ml_snap.level_id=ms.level_id\nWHERE ms.rn=1 AND ml_cur.level_id IS NOT NULL AND ml_snap.level_id IS NOT NULL AND ms.level_id<>m.level_id\nGROUP BY ml_cur.level_name,ml_snap.level_name ORDER BY member_cnt DESC)g;\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "[{\"current_level\":\"current\",\"snapshot_level\":\"other\",\"member_cnt\":1}]\n",
+    "stderr": "",
+    "comparisonRule": "行袋比较，数值按数学相等；100与100.0相同，不按JSON字面文本比较。RS16另核验返回顺序。"
+  },
+  {
+    "id": "RS09",
+    "candidateId": "T6-006",
+    "synthetic": true,
+    "purpose": "空已签收集合准时率NULL",
+    "expectedRows": [
+      [
+        null
+      ]
+    ],
+    "actualRows": [
+      [
+        null
+      ]
+    ],
+    "passed": true,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT COALESCE(json_agg(row_to_json(g)),'[]'::json) FROM (WITH orders(order_delivered_customer_date,order_estimated_delivery_date) AS(SELECT NULL::timestamp,NULL::timestamp WHERE false) SELECT ROUND(100.0*COUNT(*) FILTER(\n WHERE order_delivered_customer_date<=order_estimated_delivery_date\n)/NULLIF(COUNT(*),0),2) AS on_time_pct\nFROM orders WHERE order_delivered_customer_date IS NOT NULL)g;\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "[{\"on_time_pct\":null}]\n",
+    "stderr": "",
+    "comparisonRule": "行袋比较，数值按数学相等；100与100.0相同，不按JSON字面文本比较。RS16另核验返回顺序。"
+  },
+  {
+    "id": "RS10",
+    "candidateId": "T6-008",
+    "synthetic": true,
+    "purpose": "空商品全集动销率NULL",
+    "expectedRows": [
+      [
+        null
+      ]
+    ],
+    "actualRows": [
+      [
+        null
+      ]
+    ],
+    "passed": true,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT COALESCE(json_agg(row_to_json(g)),'[]'::json) FROM (WITH products(product_id) AS(SELECT NULL::text WHERE false),orders(order_id,order_status) AS(SELECT NULL::text,NULL::text WHERE false),order_items(order_id,product_id) AS(SELECT NULL::text,NULL::text WHERE false), sold AS (\n SELECT COUNT(DISTINCT oi.product_id) AS n FROM order_items oi\n JOIN orders o ON o.order_id=oi.order_id WHERE o.order_status NOT IN ('canceled','unavailable')\n), allp AS(SELECT COUNT(*) AS n FROM products)\nSELECT ROUND(100.0*s.n/NULLIF(a.n,0),2) AS sell_through_pct FROM sold s CROSS JOIN allp a)g;\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "[{\"sell_through_pct\":null}]\n",
+    "stderr": "",
+    "comparisonRule": "行袋比较，数值按数学相等；100与100.0相同，不按JSON字面文本比较。RS16另核验返回顺序。"
+  },
+  {
+    "id": "RS11",
+    "candidateId": "T6-008",
+    "synthetic": true,
+    "purpose": "分子有效订单商品去重；分母全部3商品独立，不收缩为有销量2商品",
+    "expectedRows": [
+      [
+        33.33
+      ]
+    ],
+    "actualRows": [
+      [
+        33.33
+      ]
+    ],
+    "passed": true,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT COALESCE(json_agg(row_to_json(g)),'[]'::json) FROM (WITH products(product_id) AS(VALUES('p1'),('p2'),('p3')),orders(order_id,order_status) AS(VALUES('o1','delivered'),('o2','canceled')),order_items(order_id,product_id) AS(VALUES('o1','p1'),('o1','p1'),('o2','p2')), sold AS (\n SELECT COUNT(DISTINCT oi.product_id) AS n FROM order_items oi\n JOIN orders o ON o.order_id=oi.order_id WHERE o.order_status NOT IN ('canceled','unavailable')\n), allp AS(SELECT COUNT(*) AS n FROM products)\nSELECT ROUND(100.0*s.n/NULLIF(a.n,0),2) AS sell_through_pct FROM sold s CROSS JOIN allp a)g;\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "[{\"sell_through_pct\":33.33}]\n",
+    "stderr": "",
+    "comparisonRule": "行袋比较，数值按数学相等；100与100.0相同，不按JSON字面文本比较。RS16另核验返回顺序。"
+  },
+  {
+    "id": "RS12",
+    "candidateId": "T6-011",
+    "synthetic": true,
+    "purpose": "零GMV返回NULL且未知大区10%保留",
+    "expectedRows": [
+      [
+        null,
+        10
+      ],
+      [
+        "Sudeste",
+        null
+      ]
+    ],
+    "actualRows": [
+      [
+        null,
+        10.0
+      ],
+      [
+        "Sudeste",
+        null
+      ]
+    ],
+    "passed": true,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT COALESCE(json_agg(row_to_json(g)),'[]'::json) FROM (WITH orders(order_id,customer_id,order_status) AS(VALUES('o1','c1','delivered'),('o2','c2','delivered')),customers(customer_id,customer_state) AS(VALUES('c1','SP'),('c2','XX')),regions(region_code,macro_region) AS(VALUES('SP','Sudeste')),order_items(order_id,price,freight_value) AS(VALUES('o1',0::numeric,0::numeric),('o2',90::numeric,10::numeric)) SELECT r.macro_region,ROUND(100.0*SUM(oi.freight_value)/\n NULLIF(SUM(oi.price+oi.freight_value),0),2) AS freight_pct\nFROM orders o JOIN customers c ON c.customer_id=o.customer_id\nLEFT JOIN regions r ON r.region_code=c.customer_state\nJOIN order_items oi ON oi.order_id=o.order_id\nWHERE o.order_status NOT IN ('canceled','unavailable')\nGROUP BY r.macro_region ORDER BY freight_pct DESC NULLS LAST)g;\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "[{\"macro_region\":null,\"freight_pct\":10.00}, {\"macro_region\":\"Sudeste\",\"freight_pct\":null}]\n",
+    "stderr": "",
+    "comparisonRule": "行袋比较，数值按数学相等；100与100.0相同，不按JSON字面文本比较。RS16另核验返回顺序。"
+  },
+  {
+    "id": "RS13",
+    "candidateId": "T6-017",
+    "synthetic": true,
+    "purpose": "空推荐两个指标NULL",
+    "expectedRows": [
+      [
+        null,
+        null
+      ]
+    ],
+    "actualRows": [
+      [
+        null,
+        null
+      ]
+    ],
+    "passed": true,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT COALESCE(json_agg(row_to_json(g)),'[]'::json) FROM (WITH referrals(converted_at,reward_amount) AS(SELECT NULL::timestamp,NULL::numeric WHERE false) SELECT ROUND(100.0*COUNT(*) FILTER(WHERE converted_at IS NOT NULL)/NULLIF(COUNT(*),0),2) AS conversion_pct,\n ROUND(SUM(reward_amount)/NULLIF(COUNT(*) FILTER(WHERE converted_at IS NOT NULL),0),2) AS reward_per_converted\nFROM referrals)g;\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "[{\"conversion_pct\":null,\"reward_per_converted\":null}]\n",
+    "stderr": "",
+    "comparisonRule": "行袋比较，数值按数学相等；100与100.0相同，不按JSON字面文本比较。RS16另核验返回顺序。"
+  },
+  {
+    "id": "RS14",
+    "candidateId": "T6-017",
+    "synthetic": true,
+    "purpose": "有推荐无转化时转化0%、成功奖励NULL",
+    "expectedRows": [
+      [
+        0,
+        null
+      ]
+    ],
+    "actualRows": [
+      [
+        0.0,
+        null
+      ]
+    ],
+    "passed": true,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT COALESCE(json_agg(row_to_json(g)),'[]'::json) FROM (WITH referrals(converted_at,reward_amount) AS(VALUES(NULL::timestamp,0::numeric)) SELECT ROUND(100.0*COUNT(*) FILTER(WHERE converted_at IS NOT NULL)/NULLIF(COUNT(*),0),2) AS conversion_pct,\n ROUND(SUM(reward_amount)/NULLIF(COUNT(*) FILTER(WHERE converted_at IS NOT NULL),0),2) AS reward_per_converted\nFROM referrals)g;\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "[{\"conversion_pct\":0.00,\"reward_per_converted\":null}]\n",
+    "stderr": "",
+    "comparisonRule": "行袋比较，数值按数学相等；100与100.0相同，不按JSON字面文本比较。RS16另核验返回顺序。"
+  },
+  {
+    "id": "RS15",
+    "candidateId": "T6-019",
+    "synthetic": true,
+    "purpose": "全未知配送均值州不进榜",
+    "expectedRows": [],
+    "actualRows": [],
+    "passed": true,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT COALESCE(json_agg(row_to_json(g)),'[]'::json) FROM (WITH orders(customer_id,order_delivered_customer_date,order_purchase_timestamp) AS(VALUES('c',TIMESTAMP '2018-01-03',NULL::timestamp)),customers(customer_id,customer_state) AS(VALUES('c','SP')), state_times AS (\n SELECT c.customer_state,ROUND(AVG(EXTRACT(EPOCH FROM(\n o.order_delivered_customer_date-o.order_purchase_timestamp))/86400.0),2) AS avg_days\n FROM orders o JOIN customers c ON c.customer_id=o.customer_id\n WHERE o.order_delivered_customer_date IS NOT NULL GROUP BY c.customer_state\n)\nSELECT customer_state,avg_days FROM state_times WHERE avg_days IS NOT NULL\nORDER BY avg_days DESC,customer_state ASC NULLS LAST LIMIT 10)g;\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "[]\n",
+    "stderr": "",
+    "comparisonRule": "行袋比较，数值按数学相等；100与100.0相同，不按JSON字面文本比较。RS16另核验返回顺序。"
+  },
+  {
+    "id": "RS16",
+    "candidateId": "T6-019",
+    "synthetic": true,
+    "purpose": "Top10边界最终两位舍入后同10.00，州AA胜ZZ，不能原始10.004先胜",
+    "expectedRows": [
+      [
+        "S9",
+        28
+      ],
+      [
+        "S8",
+        27
+      ],
+      [
+        "S7",
+        26
+      ],
+      [
+        "S6",
+        25
+      ],
+      [
+        "S5",
+        24
+      ],
+      [
+        "S4",
+        23
+      ],
+      [
+        "S3",
+        22
+      ],
+      [
+        "S2",
+        21
+      ],
+      [
+        "S1",
+        20
+      ],
+      [
+        "AA",
+        10
+      ]
+    ],
+    "actualRows": [
+      [
+        "S9",
+        28.0
+      ],
+      [
+        "S8",
+        27.0
+      ],
+      [
+        "S7",
+        26.0
+      ],
+      [
+        "S6",
+        25.0
+      ],
+      [
+        "S5",
+        24.0
+      ],
+      [
+        "S4",
+        23.0
+      ],
+      [
+        "S3",
+        22.0
+      ],
+      [
+        "S2",
+        21.0
+      ],
+      [
+        "S1",
+        20.0
+      ],
+      [
+        "AA",
+        10.0
+      ]
+    ],
+    "passed": true,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT COALESCE(json_agg(row_to_json(g)),'[]'::json) FROM (WITH facts(id,days) AS(VALUES('AA',10.003::numeric),('ZZ',10.004::numeric),('S1',20::numeric),('S2',21::numeric),('S3',22::numeric),('S4',23::numeric),('S5',24::numeric),('S6',25::numeric),('S7',26::numeric),('S8',27::numeric),('S9',28::numeric)),orders(customer_id,order_delivered_customer_date,order_purchase_timestamp) AS(SELECT id,TIMESTAMP '2018-01-01'+days*INTERVAL '1 day',TIMESTAMP '2018-01-01' FROM facts),customers(customer_id,customer_state) AS(SELECT id,id FROM facts), state_times AS (\n SELECT c.customer_state,ROUND(AVG(EXTRACT(EPOCH FROM(\n o.order_delivered_customer_date-o.order_purchase_timestamp))/86400.0),2) AS avg_days\n FROM orders o JOIN customers c ON c.customer_id=o.customer_id\n WHERE o.order_delivered_customer_date IS NOT NULL GROUP BY c.customer_state\n)\nSELECT customer_state,avg_days FROM state_times WHERE avg_days IS NOT NULL\nORDER BY avg_days DESC,customer_state ASC NULLS LAST LIMIT 10)g;\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "[{\"customer_state\":\"S9\",\"avg_days\":28.00}, {\"customer_state\":\"S8\",\"avg_days\":27.00}, {\"customer_state\":\"S7\",\"avg_days\":26.00}, {\"customer_state\":\"S6\",\"avg_days\":25.00}, {\"customer_state\":\"S5\",\"avg_days\":24.00}, {\"customer_state\":\"S4\",\"avg_days\":23.00}, {\"customer_state\":\"S3\",\"avg_days\":22.00}, {\"customer_state\":\"S2\",\"avg_days\":21.00}, {\"customer_state\":\"S1\",\"avg_days\":20.00}, {\"customer_state\":\"AA\",\"avg_days\":10.00}]\n",
+    "stderr": "",
+    "comparisonRule": "行袋比较，数值按数学相等；100与100.0相同，不按JSON字面文本比较。RS16另核验返回顺序。"
+  },
+  {
+    "id": "RS17",
+    "candidateId": "T5-016",
+    "synthetic": true,
+    "purpose": "金额Top20应排除未知聚合金额；复核遗漏项",
+    "expectedRows": [],
+    "actualRows": [
+      [
+        "category",
+        "QUAL",
+        1,
+        null
+      ]
+    ],
+    "passed": false,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT COALESCE(json_agg(row_to_json(g)),'[]'::json) FROM (WITH refunds(refund_id,reason_code) AS(VALUES(1,'QUAL')),refund_items(refund_id,order_id,order_item_id,refund_value) AS(VALUES(1,'o',1,NULL::numeric)),order_items(order_id,order_item_id,product_id) AS(VALUES('o',1,'p')),products(product_id,product_category_name) AS(VALUES('p','cat')),product_category_translation(product_category_name,product_category_name_english) AS(VALUES('cat','category')) SELECT t.product_category_name_english,r.reason_code,\n COUNT(DISTINCT r.refund_id) AS refunds,ROUND(SUM(ri.refund_value),2) AS amt\nFROM refunds r JOIN refund_items ri ON ri.refund_id=r.refund_id\nJOIN order_items oi ON oi.order_id=ri.order_id AND oi.order_item_id=ri.order_item_id\nJOIN products p ON p.product_id=oi.product_id\nLEFT JOIN product_category_translation t ON t.product_category_name=p.product_category_name\nWHERE p.product_category_name IS NOT NULL\nGROUP BY t.product_category_name_english,r.reason_code\nORDER BY amt DESC NULLS LAST,t.product_category_name_english ASC NULLS LAST,r.reason_code ASC NULLS LAST LIMIT 20)g;\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "[{\"product_category_name_english\":\"category\",\"reason_code\":\"QUAL\",\"refunds\":1,\"amt\":null}]\n",
+    "stderr": "",
+    "comparisonRule": "行袋比较，数值按数学相等；100与100.0相同，不按JSON字面文本比较。RS16另核验返回顺序。",
+    "expectedInterpretation": "按已知聚合金额最高的作者修订意图预期0行；当前普通降序列表字面允许保留NULL，因此passed=false只表示该意图未落实，不表示数据库异常或必然违反p21。",
+    "blockingForSelectedRevisionIntent": true
+  },
+  {
+    "id": "RS18",
+    "candidateId": "T3-001",
+    "synthetic": true,
+    "purpose": "实际订单月只返回1/3月，不伪造2月",
+    "expectedRowCount": 2,
+    "actualRows": [
+      [
+        "2018-01-01T00:00:00",
+        1
+      ],
+      [
+        "2018-03-01T00:00:00",
+        1
+      ]
+    ],
+    "passed": true,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT COALESCE(json_agg(row_to_json(g)),'[]'::json) FROM (WITH orders(order_purchase_timestamp) AS(VALUES(TIMESTAMP '2018-01-01'),(TIMESTAMP '2018-03-01')) SELECT DATE_TRUNC('month', order_purchase_timestamp) AS month,\n       COUNT(*) AS cnt\nFROM orders GROUP BY 1 ORDER BY 1)g;\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "[{\"month\":\"2018-01-01T00:00:00\",\"cnt\":1}, {\"month\":\"2018-03-01T00:00:00\",\"cnt\":1}]\n",
+    "stderr": ""
+  },
+  {
+    "id": "RS19",
+    "candidateId": "T3-007",
+    "synthetic": true,
+    "purpose": "实际有订单明细月只返回1/3月；2月无明细按题意不展示",
+    "expectedRowCount": 2,
+    "actualRows": [
+      [
+        "2018-01-01T00:00:00",
+        10.0
+      ],
+      [
+        "2018-03-01T00:00:00",
+        30.0
+      ]
+    ],
+    "passed": true,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT COALESCE(json_agg(row_to_json(g)),'[]'::json) FROM (WITH orders(order_id,order_purchase_timestamp) AS(VALUES('o1',TIMESTAMP '2018-01-01'),('o2',TIMESTAMP '2018-02-01'),('o3',TIMESTAMP '2018-03-01')),order_items(order_id,freight_value) AS(VALUES('o1',10::numeric),('o3',30::numeric)) SELECT DATE_TRUNC('month', o.order_purchase_timestamp) AS month,\n       ROUND(SUM(oi.freight_value), 2) AS freight\nFROM orders o JOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY 1)g;\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "[{\"month\":\"2018-01-01T00:00:00\",\"freight\":10.00}, {\"month\":\"2018-03-01T00:00:00\",\"freight\":30.00}]\n",
+    "stderr": ""
+  },
+  {
+    "id": "RS20",
+    "candidateId": "T3-021",
+    "synthetic": true,
+    "purpose": "实际退款申请月只返回1/3月",
+    "expectedRowCount": 2,
+    "actualRows": [
+      [
+        "2018-01-01T00:00:00",
+        1
+      ],
+      [
+        "2018-03-01T00:00:00",
+        1
+      ]
+    ],
+    "passed": true,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT COALESCE(json_agg(row_to_json(g)),'[]'::json) FROM (WITH refunds(requested_at) AS(VALUES(TIMESTAMP '2018-01-01'),(TIMESTAMP '2018-03-01')) SELECT DATE_TRUNC('month', requested_at) AS month, COUNT(*) AS cnt\nFROM refunds GROUP BY 1 ORDER BY 1)g;\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "[{\"month\":\"2018-01-01T00:00:00\",\"cnt\":1}, {\"month\":\"2018-03-01T00:00:00\",\"cnt\":1}]\n",
+    "stderr": ""
+  },
+  {
+    "id": "RS21",
+    "candidateId": "T3-023",
+    "synthetic": true,
+    "purpose": "实际工单创建月只返回1/3月",
+    "expectedRowCount": 2,
+    "actualRows": [
+      [
+        "2018-01-01T00:00:00",
+        1
+      ],
+      [
+        "2018-03-01T00:00:00",
+        1
+      ]
+    ],
+    "passed": true,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT COALESCE(json_agg(row_to_json(g)),'[]'::json) FROM (WITH support_tickets(created_at) AS(VALUES(TIMESTAMP '2018-01-01'),(TIMESTAMP '2018-03-01')) SELECT DATE_TRUNC('month', created_at) AS month, COUNT(*) AS cnt\nFROM support_tickets GROUP BY 1 ORDER BY 1)g;\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "[{\"month\":\"2018-01-01T00:00:00\",\"cnt\":1}, {\"month\":\"2018-03-01T00:00:00\",\"cnt\":1}]\n",
+    "stderr": ""
+  },
+  {
+    "id": "RS22",
+    "candidateId": "T3-029",
+    "synthetic": true,
+    "purpose": "实际结算账期月只返回1/3月",
+    "expectedRowCount": 2,
+    "actualRows": [
+      [
+        "2018-01-01T00:00:00+08:00",
+        10.0
+      ],
+      [
+        "2018-03-01T00:00:00+08:00",
+        30.0
+      ]
+    ],
+    "passed": true,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT COALESCE(json_agg(row_to_json(g)),'[]'::json) FROM (WITH settlements(period_start,commission) AS(VALUES(DATE '2018-01-01',10::numeric),(DATE '2018-03-01',30::numeric)) SELECT DATE_TRUNC('month', period_start) AS month,\n       ROUND(SUM(commission), 2) AS total\nFROM settlements GROUP BY 1 ORDER BY 1)g;\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "[{\"month\":\"2018-01-01T00:00:00+08:00\",\"total\":10.00}, {\"month\":\"2018-03-01T00:00:00+08:00\",\"total\":30.00}]\n",
+    "stderr": ""
+  },
+  {
+    "id": "RS23",
+    "candidateId": "T4-017",
+    "synthetic": true,
+    "purpose": "已有会员但无关联订单，按新题意不展示等级",
+    "expectedRowCount": 0,
+    "actualRows": [],
+    "passed": true,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT COALESCE(json_agg(row_to_json(g)),'[]'::json) FROM (WITH orders(customer_id) AS(SELECT NULL::text WHERE false),customers(customer_id,customer_unique_id) AS(SELECT NULL::text,NULL::text WHERE false),members(customer_unique_id,level_id) AS(VALUES('u1',1)) SELECT m.level_id, COUNT(*) AS cnt\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN members m ON m.customer_unique_id = c.customer_unique_id\nGROUP BY 1 ORDER BY 1)g;\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "[]\n",
+    "stderr": ""
+  },
+  {
+    "id": "RS24",
+    "candidateId": "T5-005",
+    "synthetic": true,
+    "purpose": "所有活动包括非COUPON及零用券活动；重复核销不重复订单或金额",
+    "expectedRowCount": 3,
+    "actualRows": [
+      [
+        2,
+        1,
+        200.0
+      ],
+      [
+        1,
+        1,
+        100.0
+      ],
+      [
+        3,
+        0,
+        null
+      ]
+    ],
+    "passed": true,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT COALESCE(json_agg(row_to_json(g)),'[]'::json) FROM (WITH campaigns(campaign_id,campaign_type) AS(VALUES(1,'COUPON'),(2,'DISCOUNT'),(3,'MEMBER_DAY')),coupons(coupon_id,campaign_id) AS(VALUES(1,1),(2,2)),coupon_usages(coupon_id,order_id) AS(VALUES(1,'o1'),(1,'o1'),(2,'o2')),orders(order_id,order_status) AS(VALUES('o1','delivered'),('o2','delivered')),order_items(order_id,price) AS(VALUES('o1',50::numeric),('o1',50::numeric),('o2',200::numeric)), campaign_orders AS (\n SELECT DISTINCT cp.campaign_id, cu.order_id\n FROM coupon_usages cu JOIN coupons cp ON cp.coupon_id=cu.coupon_id\n JOIN orders o ON o.order_id=cu.order_id\n WHERE o.order_status NOT IN ('canceled','unavailable')\n), item_totals AS (\n SELECT order_id,SUM(price) AS sales FROM order_items GROUP BY order_id\n)\nSELECT ca.campaign_id,COUNT(co.order_id) AS used_orders,ROUND(SUM(it.sales),2) AS gmv\nFROM campaigns ca LEFT JOIN campaign_orders co ON co.campaign_id=ca.campaign_id\nLEFT JOIN item_totals it ON it.order_id=co.order_id\nGROUP BY ca.campaign_id ORDER BY gmv DESC NULLS LAST,ca.campaign_id LIMIT 10)g;\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "[{\"campaign_id\":2,\"used_orders\":1,\"gmv\":200.00}, {\"campaign_id\":1,\"used_orders\":1,\"gmv\":100.00}, {\"campaign_id\":3,\"used_orders\":0,\"gmv\":null}]\n",
+    "stderr": ""
+  }
+]

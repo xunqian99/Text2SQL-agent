@@ -1,0 +1,1762 @@
+{
+  "metadata": {
+    "reviewDate": "2026-11-19",
+    "kind": "independent-review-feedback-revision-acceptance",
+    "notBlindTest": true,
+    "providerCalls": 0,
+    "statement": "这是初审反馈、作者裁决、集中修订及定点补验后的参考题库语义验收；不是未见盲测，不是生产模型准确率评测。",
+    "finalCounts": {
+      "PASS": 100,
+      "DEFECT": 0,
+      "AMBIGUOUS": 0
+    },
+    "unresolvedItems": [],
+    "independence": "审查者未参与原题/Gold编写或生产调参；修订建议来自本审查，最终题面/Gold由父agent改写。第一次读取candidate T1–T3附带notes的例外已在初审如实披露，未把notes作为正确性证据。",
+    "lineage": [
+      "reviewer-final-item-review.json",
+      "reviewer-revision-frozen-items.json",
+      "reviewer-revision-snapshot-note.md",
+      "reviewer-acceptance-evidence.json"
+    ],
+    "finalDeltaVsDraft3": {
+      "changedItems": [
+        "T5-016"
+      ],
+      "fields": [
+        "question",
+        "gold_sql"
+      ],
+      "other99Exact": true
+    },
+    "minimalFinalValidation": {
+      "actualGoldSQLExecuted": 1,
+      "actualCandidateId": "T5-016",
+      "actualRows": 20,
+      "bagDifferenceVsDraft3": {
+        "oldMinusNew": 0,
+        "newMinusOld": 0
+      },
+      "syntheticCases": 2,
+      "syntheticPassed": 2,
+      "reranAll100Gold": false
+    },
+    "inheritedValidation": {
+      "initialCompleteActualExecution": 100,
+      "revision1ChangedGoldExecution": 13,
+      "revision1SyntheticCases": 24,
+      "revision1SelectedIntentPass": 23,
+      "remainingRevision1SelectedIntent": "T5-016 now resolved by final acceptance evidence",
+      "combinedReferenceRows": 808,
+      "maxSingleReferenceRows": 52,
+      "maxSingleReferenceItem": "T2-019",
+      "rowCountBasis": "初审完整100题实际输出，加revision 13条修改Gold和本次T5-016的实际结果；修改查询在真实数据上双向EXCEPT ALL差异均0，因此合并规模808和最大52保持。没有冒称最终重跑全100。"
+    },
+    "sourceFormRuling": {
+      "referenceNoLimitQueries": 41,
+      "meaning": "Gold用于定义完整预期结果。保留无LIMIT不构成参考集合缺陷，不是生产规则3豁免，不改生产执行器上限。无LIMIT且不改变集合的NULL排序仅展示lint。"
+    },
+    "finalCandidateManifest": [
+      {
+        "path": "data/benchmarks/olist-v3-candidate/T1_single_table_basic.yaml",
+        "sha256": "33b76dc96570c1feb33efdd77745dbc791bedc5e2641900fa479a7e59488fc7e",
+        "bytes": 4913
+      },
+      {
+        "path": "data/benchmarks/olist-v3-candidate/T2_single_table_agg.yaml",
+        "sha256": "06cfb00244a0b8e0c07fc0f0226f01d26b21a20c8d9cb2f826ebca4a0e590ae2",
+        "bytes": 5586
+      },
+      {
+        "path": "data/benchmarks/olist-v3-candidate/T3_time_window.yaml",
+        "sha256": "fda5b14beecd51aafa5b4818de1b2c538acf544d79777428f0a290d5d749269b",
+        "bytes": 7095
+      },
+      {
+        "path": "data/benchmarks/olist-v3-candidate/T4_multi_join.yaml",
+        "sha256": "c811af116e0af60acaf8f74f6b3ca0988b9cb02df2e9d4b8bfba6d45d03f8aaf",
+        "bytes": 9978
+      },
+      {
+        "path": "data/benchmarks/olist-v3-candidate/T5_multi_join_deep.yaml",
+        "sha256": "7b0e5063e15857d3a5f61bd923c23ee7dbb874a09e2c52a5331bc52163593c31",
+        "bytes": 10091
+      },
+      {
+        "path": "data/benchmarks/olist-v3-candidate/T6_business_semantics.yaml",
+        "sha256": "313b43a6ce6ab1cf7d4ec146bb1301ff0d5c6e2ecada7462a28d0a8006d1c48b",
+        "bytes": 11726
+      }
+    ],
+    "productionContractAndDDLManifest": [
+      {
+        "path": "data/schema/01_olist_schema.sql",
+        "sha256": "3c7a256d13378e81b8c3c001e1ced117f2a00ec758634d5a2c103a3e82000105",
+        "bytes": 4886
+      },
+      {
+        "path": "data/schema/03_extend_schema.sql",
+        "sha256": "ca9910e2a3a2996350e3dd9c8305e416d0e2efbe8edac4804b9216269f9652f0",
+        "bytes": 11606
+      },
+      {
+        "path": "src/main/java/com/text2sql/agent/clarification/AmbiguityDetector.java",
+        "sha256": "155f6f879d696083955e4ddf231c52e713695c6361a37b1224ac9e12fcbc8f18",
+        "bytes": 15225
+      },
+      {
+        "path": "src/main/java/com/text2sql/agent/generation/PromptTemplate.java",
+        "sha256": "db75a631ddcd9084fe4cf3d4087ff35be11f8b89865a5ec31865b6b8999b6714",
+        "bytes": 20332
+      },
+      {
+        "path": "src/main/java/com/text2sql/agent/retrieval/DatabaseSchemaReader.java",
+        "sha256": "c264eb79e4c73fa1d8302f355195a02958c9d2e3e15dc09c082506e2da917f6d",
+        "bytes": 10073
+      },
+      {
+        "path": "src/main/resources/schema/ambiguities.yml",
+        "sha256": "493dccf3090c7f7ea544162a351e8c8d1e7ab085886ec16aa12797ae89ce3e3a",
+        "bytes": 10180
+      },
+      {
+        "path": "src/main/resources/schema/glossary.yml",
+        "sha256": "b4bc655947ed1f4eb2e243bbdaf3800bdd7919ee4121fc9a7276b647947b99ac",
+        "bytes": 28504
+      },
+      {
+        "path": "src/main/resources/schema/metrics.yml",
+        "sha256": "78dfc23f9075536aa7568f94c87c41d238cac0c66c553449c9fd7c67c9035192",
+        "bytes": 31765
+      }
+    ],
+    "productionContractMatchesInitialSHA": true,
+    "readonlySafety": "本次仅SELECT/CTE；全部会话BEGIN READ ONLY; SET LOCAL statement_timeout='8s'; ... ROLLBACK; 未写数据库。",
+    "filePreservation": "初审主体、addendum、原revision和99/0/1冻结勘正均保留；未修改候选、生产源码，未Git提交。"
+  },
+  "items": [
+    {
+      "id": "T1-001",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T1_single_table_basic.yaml",
+        "line": 1
+      },
+      "questionSHA256": "cf452098a9f74489f1746cd921e94e5fae9408b8f96a6e2e2f0edd079b75bccf",
+      "goldSQLSHA256": "efbdb7c8bae3e47ea04e97166859a8a75f9fd918c633bd692c464aca94496d38",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T1-001"
+      ]
+    },
+    {
+      "id": "T1-003",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T1_single_table_basic.yaml",
+        "line": 7
+      },
+      "questionSHA256": "f961c3a339ebea423d9c0a6aff6b506c007fa7b637045899cf903732efd64221",
+      "goldSQLSHA256": "1555ae72d67c1b20e3fcf6fd6b10c91249017867645c679305bb540d98687563",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T1-003"
+      ]
+    },
+    {
+      "id": "T1-005",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T1_single_table_basic.yaml",
+        "line": 14
+      },
+      "questionSHA256": "25ba897e82cbc9a23ae656022122cc84bd3c363505c3a85ed3ea348e2cda511b",
+      "goldSQLSHA256": "40091cbb4e8fe1f933ef3bb8f2073126c48f1af78f778311f58f6f55de077a2e",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T1-005"
+      ]
+    },
+    {
+      "id": "T1-007",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T1_single_table_basic.yaml",
+        "line": 22
+      },
+      "questionSHA256": "e0f115e55c29c9d04b406d8572b76fdd41e05543eb2fbbe420769e89b601bc20",
+      "goldSQLSHA256": "56b74a307f6c276c8d9cd88614508d6b2ca6412ee8bcc80450302f2b0b234bf1",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T1-007"
+      ]
+    },
+    {
+      "id": "T1-009",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T1_single_table_basic.yaml",
+        "line": 28
+      },
+      "questionSHA256": "0a54a88f456dbec20e31b119d40f123cd88c57dae6081e0fdb49f43ee8dfaae6",
+      "goldSQLSHA256": "ee64307afa62989b7c3f762bfb0ae9bc83798e23c2f45a7553e9bacbcc61f5ff",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T1-009"
+      ]
+    },
+    {
+      "id": "T1-010",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T1_single_table_basic.yaml",
+        "line": 34
+      },
+      "questionSHA256": "25ea101d468b2e03be18db74f63afd74ff917fc0aa807d728a9b430613d300b0",
+      "goldSQLSHA256": "d4c8607449b4dfb7b5aa38ea22abbe0e2aa6fc48e2c506746c52231e596c13b6",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T1-010"
+      ]
+    },
+    {
+      "id": "T1-012",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T1_single_table_basic.yaml",
+        "line": 41
+      },
+      "questionSHA256": "88e5cb27a94f42a36fa8223632246f76174facb308eb1c7f00a78a1fcdcb2778",
+      "goldSQLSHA256": "b2fe9111c6c3d90879ade491322ef8812404a943d57433e400669f5310917af7",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T1-012"
+      ]
+    },
+    {
+      "id": "T1-014",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T1_single_table_basic.yaml",
+        "line": 50
+      },
+      "questionSHA256": "83bfec12b5461072e2521b3bfa0cc8fdcf0c656a1850d0c20d1e946e3655f3a3",
+      "goldSQLSHA256": "adcb6faa60cb761db00dab135baafc4b120cf231ad5323b1a450c505e1afea38",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T1-014"
+      ]
+    },
+    {
+      "id": "T1-016",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T1_single_table_basic.yaml",
+        "line": 56
+      },
+      "questionSHA256": "658038311a7c628e77cbf7e892c9d239d70057f1bdc42912558de0a72bae955c",
+      "goldSQLSHA256": "ec391ab530e2b2435e4c3d394f884af596369a48aae6b44ebd5832f042e6a908",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T1-016"
+      ]
+    },
+    {
+      "id": "T1-018",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T1_single_table_basic.yaml",
+        "line": 67
+      },
+      "questionSHA256": "9a111807f3a1ebf43a31d3f3117b6180cfa78836eb86f88aecd8f507538ba2fb",
+      "goldSQLSHA256": "34cac4b797aaad1507387f0f392f306128d072c839eaecaa3a685fff05782edb",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T1-018"
+      ]
+    },
+    {
+      "id": "T1-021",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T1_single_table_basic.yaml",
+        "line": 75
+      },
+      "questionSHA256": "7cf494c2d0c1ecc42777ad325463348548145d9d0b869c1b8ce67694291bc91d",
+      "goldSQLSHA256": "599662e776c89e52c17d39099ed386cd27debe9b66d39a5fdd4c1c63165914ea",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T1-021"
+      ]
+    },
+    {
+      "id": "T1-023",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T1_single_table_basic.yaml",
+        "line": 81
+      },
+      "questionSHA256": "121ec53cdff147d533f517344502f60038075bfeaf2d86b5df9eaa7687d1ee99",
+      "goldSQLSHA256": "c4e7cd3a99d10fc33a9e414edef2992306bf6cd3ee147c27c8ef21edacc89058",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T1-023"
+      ]
+    },
+    {
+      "id": "T1-025",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T1_single_table_basic.yaml",
+        "line": 87
+      },
+      "questionSHA256": "fbc5053c50942d22b765d8cdbfd5714e516577b5c21dbadaac28eb9ff04fe944",
+      "goldSQLSHA256": "078ca4b89ca2d2b12d356b900a740f6f98c9b86a35163c1d3eee0f8ecc4e6611",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T1-025"
+      ]
+    },
+    {
+      "id": "T1-027",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T1_single_table_basic.yaml",
+        "line": 95
+      },
+      "questionSHA256": "7db0eb0666945b5e51a8255a6bd3c36d5b95982d17a00ba76f741654ce2553ba",
+      "goldSQLSHA256": "58cb915fff69ca17a3cd806bf7695e64985fd566b8585181649aca3393bd64f1",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T1-027"
+      ]
+    },
+    {
+      "id": "T1-029",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T1_single_table_basic.yaml",
+        "line": 101
+      },
+      "questionSHA256": "5f557c4dac2b0a258459585682fd69456b74d513e56ff631efb212ae5f791acf",
+      "goldSQLSHA256": "60ff230ea51592b01891cdcb52a7d4fdcfb8b39e56f9bcbc089abaa147560d26",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T1-029"
+      ]
+    },
+    {
+      "id": "T1-030",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T1_single_table_basic.yaml",
+        "line": 109
+      },
+      "questionSHA256": "1c53d4603021fc951127cb7daa2816557800088f3a18ec4fed25c1636a12f0fd",
+      "goldSQLSHA256": "3ae4358d6d1a856ba0219b73d0e8f7711d730d2fe82df22e7446335e9958e67a",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T1-030"
+      ]
+    },
+    {
+      "id": "T1-032",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T1_single_table_basic.yaml",
+        "line": 117
+      },
+      "questionSHA256": "fb5fd8dab09442fcf23203133b659ea48baa30a43df964dcd6928fcd744754d9",
+      "goldSQLSHA256": "27a62184663644e69ba38216582d80fbe94141e865c60b98319ac262fd3d2fd3",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T1-032"
+      ]
+    },
+    {
+      "id": "T1-034",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T1_single_table_basic.yaml",
+        "line": 124
+      },
+      "questionSHA256": "a7322343af3c457600b18011814717b802292fb2b865b99eee76ac2bd1064f65",
+      "goldSQLSHA256": "815c4beaabb40702d7a638551651a92d311ac4769fb2e458c2cc0836d1c0a52e",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T1-034"
+      ]
+    },
+    {
+      "id": "T1-036",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T1_single_table_basic.yaml",
+        "line": 130
+      },
+      "questionSHA256": "44ad9a021acd07234fedbfbac0b715a4e7eb6e0549798091f6b3cd74881bb585",
+      "goldSQLSHA256": "3175e29c234801284ffa0f767962df8cd6c7998d08bd21ca75d138828c505ef8",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T1-036"
+      ]
+    },
+    {
+      "id": "T1-038",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T1_single_table_basic.yaml",
+        "line": 138
+      },
+      "questionSHA256": "9b0705e89a8589c36e9b2afedd490ef2fe608d44217edc0fc3dc6f600d234763",
+      "goldSQLSHA256": "3f3885d7a7ce5ee976fc0334162d304df9e6b54af1f469c9cf431dc5b877ae8b",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T1-038"
+      ]
+    },
+    {
+      "id": "T2-002",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T2_single_table_agg.yaml",
+        "line": 1
+      },
+      "questionSHA256": "9e2d39d140c0576329d1918c49fd441e5c551c85b4f93da6993cf346ddd93eb8",
+      "goldSQLSHA256": "f044a1aa46fc4ad3f4fc750f5cd38e2f956b1f065f0a6977aae70bef0ef71683",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T2-002"
+      ]
+    },
+    {
+      "id": "T2-004",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T2_single_table_agg.yaml",
+        "line": 8
+      },
+      "questionSHA256": "7f7c53cc8cbcb00435b90b2de11f44b40d4f4cdcc12380e4adc072f21f0a04bd",
+      "goldSQLSHA256": "126b11d2a718aa676bcf2ca9cf62452dd42755de4c4d07fcd3f0551b4a4985e0",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T2-004"
+      ]
+    },
+    {
+      "id": "T2-006",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T2_single_table_agg.yaml",
+        "line": 17
+      },
+      "questionSHA256": "bfc5688ecdd8ed66bdfb25c92d25be9176746ff9658e8d8ebb0bda6c305a1016",
+      "goldSQLSHA256": "a797ac74c78a599aad134c4172e27be3c30db68a4b900b96217d417e545bd117",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T2-006"
+      ]
+    },
+    {
+      "id": "T2-008",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T2_single_table_agg.yaml",
+        "line": 26
+      },
+      "questionSHA256": "1aaa29569bb563c18e1f9cfd4132c3f4735be716c9c085c2888a0526165fe0a2",
+      "goldSQLSHA256": "8a75b28f78e33ad277868cf731675c914768f696204f410240766d86bc91e3b4",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T2-008"
+      ]
+    },
+    {
+      "id": "T2-011",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T2_single_table_agg.yaml",
+        "line": 36
+      },
+      "questionSHA256": "894ea6e687838ec46490609c3a9ce66f15d56acef6d9f135dcf3c6bc2cb4f24d",
+      "goldSQLSHA256": "a77b31906c89cd810383f7fe8dd1853fa0473804504261041e93178c6a719ab1",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T2-011"
+      ]
+    },
+    {
+      "id": "T2-013",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T2_single_table_agg.yaml",
+        "line": 46
+      },
+      "questionSHA256": "ee099b90f6a455b55c99f2b796c3a9cc4b02c883d529ab3ae456efd6ef0387b4",
+      "goldSQLSHA256": "6a5c0fa083616b8177ec482d6717febddc5c5538f3eeb738c0c4be96eebced70",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T2-013"
+      ]
+    },
+    {
+      "id": "T2-015",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T2_single_table_agg.yaml",
+        "line": 53
+      },
+      "questionSHA256": "20d82752b2cc715d654f075f4c372a205811bf379aea9eb34f8228e52c63dccf",
+      "goldSQLSHA256": "2c81c65074327b358e1dee9352fcc7871316dae1f88e18dcc7c9e23ba6d4357d",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T2-015"
+      ]
+    },
+    {
+      "id": "T2-017",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T2_single_table_agg.yaml",
+        "line": 62
+      },
+      "questionSHA256": "e01e07fef44eeadae1e7ea752ee88b36bdd62f169574487370dac7ded86e85b8",
+      "goldSQLSHA256": "6c03e5f6ae31c9baa860ce258d463f51710ca4e34fac4189c569ec34071bbfd1",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T2-017"
+      ]
+    },
+    {
+      "id": "T2-019",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T2_single_table_agg.yaml",
+        "line": 71
+      },
+      "questionSHA256": "2a1c41745b0c2fd73dbc8e4e50f6bd3421d25c7600ca68c5fe42fce1fec6a9fd",
+      "goldSQLSHA256": "70e7642b848b44db11160fc57ea6dd976e698d3087e54ad1c503d21cecb8404e",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T2-019"
+      ]
+    },
+    {
+      "id": "T2-020",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T2_single_table_agg.yaml",
+        "line": 79
+      },
+      "questionSHA256": "c2a066403c6cc37fe397aa4e7db7d548dcf487a99a81c528fe6c6198b0e35f9c",
+      "goldSQLSHA256": "a3b85bc79da203901d135929712b9e6a0585b69683c5d8ff8bc452903f3f97f9",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T2-020"
+      ]
+    },
+    {
+      "id": "T2-022",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T2_single_table_agg.yaml",
+        "line": 88
+      },
+      "questionSHA256": "4d93e50aa3be173382533ce36abae62abf969ecc53dfc7b5ab2fc92ee4aea798",
+      "goldSQLSHA256": "8cac88a409f8bd0c579b7c6d5e963f3a28733d6042f821047fd5970e9457fac4",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T2-022"
+      ]
+    },
+    {
+      "id": "T2-024",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T2_single_table_agg.yaml",
+        "line": 95
+      },
+      "questionSHA256": "c6e74720e3b485c0b6373eb30b80acfd35f32b5e540283312da050c7aca8e23e",
+      "goldSQLSHA256": "dddb7767816339ad0bb1cbd7cfd7bb63d4900e8df3fa6c666109fbed34b70972",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T2-024"
+      ]
+    },
+    {
+      "id": "T2-026",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T2_single_table_agg.yaml",
+        "line": 104
+      },
+      "questionSHA256": "b9073141e139420a1b6aed672356f7b28a02a790e6bcd934665d519b18d48572",
+      "goldSQLSHA256": "fd6e51a394205b97c4c28f4738f8ceff59c02a376aab45112142f54f4e1d5ccf",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T2-026"
+      ]
+    },
+    {
+      "id": "T2-028",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T2_single_table_agg.yaml",
+        "line": 114
+      },
+      "questionSHA256": "bc2c6428e005146f13c7f0b2ae5eab23b43cca6f58c2d6166391f8c5dd0fddb4",
+      "goldSQLSHA256": "0d8cc8268073c0e402a9b58b451ae3f5cd8ec64895cfd2785e6b13d36ce6b570",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T2-028"
+      ]
+    },
+    {
+      "id": "T2-031",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T2_single_table_agg.yaml",
+        "line": 123
+      },
+      "questionSHA256": "56595700bdf519f395be8e9b800c98cf10b4b1e6d8f95e7ac5e4710f5cbb55e3",
+      "goldSQLSHA256": "c7da8aefbc958cac960a898dfd28cdeab659e7197b08214179c6aa280bf30ffb",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T2-031"
+      ]
+    },
+    {
+      "id": "T2-033",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T2_single_table_agg.yaml",
+        "line": 132
+      },
+      "questionSHA256": "11f1d5bbf169ee4cb9f9ff7d92c2f6679ff36ace3c5edecb7bd5a6e7704a3fe9",
+      "goldSQLSHA256": "36692ee4a2ac93d024ea11a8921c7024495d7ba632fe28072f58606779cc336b",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T2-033"
+      ]
+    },
+    {
+      "id": "T2-035",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T2_single_table_agg.yaml",
+        "line": 139
+      },
+      "questionSHA256": "08021ae9cce51416b9d92e951032e4fda7cf89e3bbe4352b63b642e0aa9bc80e",
+      "goldSQLSHA256": "460b657424d66a6b57b291a2092f0d520d0a35aeb0de3b7c1361e5a4f71c0cbb",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T2-035"
+      ]
+    },
+    {
+      "id": "T2-037",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T2_single_table_agg.yaml",
+        "line": 149
+      },
+      "questionSHA256": "0b162014618612c0c75e1c5b7949c97a60c16d436f906a95701cc73bc844d242",
+      "goldSQLSHA256": "23462f7a553d773ee7a59662ec5352d5015e8ee75e662d9bccde2854272372b3",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T2-037"
+      ]
+    },
+    {
+      "id": "T2-039",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T2_single_table_agg.yaml",
+        "line": 159
+      },
+      "questionSHA256": "ed138cd6f06c9204e6a47f16cffc274885867ef575f04883b697e21aaa4b162b",
+      "goldSQLSHA256": "f3b3f341b4176bc20c004fbf92edc7109cdd743919bd6bffc71fb89818b72a2b",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T2-039"
+      ]
+    },
+    {
+      "id": "T2-040",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T2_single_table_agg.yaml",
+        "line": 168
+      },
+      "questionSHA256": "d15b9b48c3ce812d3993ba8cc2ef2d83bcb2ee3885fccd6550ae45c429102a70",
+      "goldSQLSHA256": "04bc8862f978ced167027840f4f36e1125d3b918bb4eac1074065de7bb857597",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T2-040"
+      ]
+    },
+    {
+      "id": "T3-001",
+      "status": "PASS",
+      "priorIndependentStatus": "AMBIGUOUS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T3_time_window.yaml",
+        "line": 1
+      },
+      "questionSHA256": "99790542341e05f17faf0b0a579c75e4411d390f0ac18ec14fccc56438343511",
+      "goldSQLSHA256": "6d78b4255f51269590a664336fa9d0d23c51343b884b2d46bd0e68880ba0e1df",
+      "reason": "题干已限定实际有订单月，Gold只返回观测月份；不要求补2016-11。RS18确认内部缺月不补行，月升序保持。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T3-001",
+        "reviewer-revision-frozen-items.json#T3-001"
+      ]
+    },
+    {
+      "id": "T3-003",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T3_time_window.yaml",
+        "line": 9
+      },
+      "questionSHA256": "56c023f5a8dd2b692e0dc6bca1812df3c2c43644bd36bb6327174ed0105e3f9c",
+      "goldSQLSHA256": "30b269834d8a79d85734075585580f3443403268468e01c260a1b35366dba750",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T3-003"
+      ]
+    },
+    {
+      "id": "T3-005",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T3_time_window.yaml",
+        "line": 18
+      },
+      "questionSHA256": "f0ceb3e10d857681fa0771b9d3f66ef057fad85fa008a135acf68c64018eaae6",
+      "goldSQLSHA256": "8071055e0479b3aecebf574815cf12cf7cdd453dfb30cf183d1cf57b850051d5",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T3-005"
+      ]
+    },
+    {
+      "id": "T3-007",
+      "status": "PASS",
+      "priorIndependentStatus": "AMBIGUOUS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T3_time_window.yaml",
+        "line": 27
+      },
+      "questionSHA256": "ed42fc1def3f6d9a0fb667634a5158d16b948d5546698f198e3a5b262756fd7d",
+      "goldSQLSHA256": "dab7bf630a553f0d043e7689b69cbaeff8b45c3fe582f7d00950a9ee3be876f0",
+      "reason": "题干已限定实际有关联订单明细的下单月，因此有订单无明细月份不展示符合范围。RS19确认只出有明细月份，不把缺金额伪造0。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T3-007",
+        "reviewer-revision-frozen-items.json#T3-007"
+      ]
+    },
+    {
+      "id": "T3-009",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T3_time_window.yaml",
+        "line": 36
+      },
+      "questionSHA256": "a3866bac19f35c4c24b4b3585cb736a5c8b05d6c4f8e2a2b265ed3ba820bc012",
+      "goldSQLSHA256": "b0924121929854f7f69fd5658244fb28a69c301464facd8609f7cb061c08e6f4",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T3-009"
+      ]
+    },
+    {
+      "id": "T3-010",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T3_time_window.yaml",
+        "line": 45
+      },
+      "questionSHA256": "91f4d76947a8867d06c1e8dd8b70cfdc406f61e9abe9166af26a73c0ab61b0d0",
+      "goldSQLSHA256": "0349358ec27ac63bf723c27a9efea6e160ff102815116d933d9c36a8134c7d93",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T3-010"
+      ]
+    },
+    {
+      "id": "T3-012",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T3_time_window.yaml",
+        "line": 56
+      },
+      "questionSHA256": "57f06856eae54e950718567abbe1676e4eee31c87e9a967873730fed34688688",
+      "goldSQLSHA256": "8c3324fd2df86d7306a6f62fb6ec2976f5cb6a87a4c79097534fcbcc53990f53",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T3-012"
+      ]
+    },
+    {
+      "id": "T3-014",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T3_time_window.yaml",
+        "line": 66
+      },
+      "questionSHA256": "228f5d05729c6f95577f5e39a8860cf45f7224b4d95fa8e0285c423e11a68c3b",
+      "goldSQLSHA256": "c5ea8a7660e50c3e52c5e9d99ce6ac10848e51bd14bc875778caa850bd77217c",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T3-014"
+      ]
+    },
+    {
+      "id": "T3-016",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T3_time_window.yaml",
+        "line": 78
+      },
+      "questionSHA256": "2d32729095605a9d558772090fbea4cb68d21a2c21ed4f1c1e181cf0fd76baed",
+      "goldSQLSHA256": "0fa5dc5927f5c0fcf06f4b5bbfb885a8f78fc022a44ba068fac2a226a3887fae",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T3-016"
+      ]
+    },
+    {
+      "id": "T3-018",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T3_time_window.yaml",
+        "line": 88
+      },
+      "questionSHA256": "ca516192982e4544830be20f84a8df28e6859827f9153cce04b2b690ff6b0d2c",
+      "goldSQLSHA256": "a8d5da2f22bef0ea4d22b8ee6e0ec665c5a135b5921e400ef20840f0555228cb",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T3-018"
+      ]
+    },
+    {
+      "id": "T3-021",
+      "status": "PASS",
+      "priorIndependentStatus": "AMBIGUOUS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T3_time_window.yaml",
+        "line": 98
+      },
+      "questionSHA256": "3bf25181b6ad09022b86ae6543560af6fb58aab17145dd5735c7e07ac3475112",
+      "goldSQLSHA256": "2289df224ca4376f4f0e5f7be42e78f9e6df616f89163f957e0f24aa02c52160",
+      "reason": "题干已限定实际有退款申请月份，与requested_at分组一致。RS20确认内部无事实月不补行。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T3-021",
+        "reviewer-revision-frozen-items.json#T3-021"
+      ]
+    },
+    {
+      "id": "T3-023",
+      "status": "PASS",
+      "priorIndependentStatus": "AMBIGUOUS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T3_time_window.yaml",
+        "line": 108
+      },
+      "questionSHA256": "1e2174ef6f76f3be35a912b7fdf7fa771a8acfa23b30905f2677e775795450b1",
+      "goldSQLSHA256": "cc55b30fa1b3624d9f737ededcedbeb5dc5c28b4d7b4768b5e0289ec29f24876",
+      "reason": "题干已限定实际新建工单月份，与created_at分组一致。RS21确认内部无事实月不补行。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T3-023",
+        "reviewer-revision-frozen-items.json#T3-023"
+      ]
+    },
+    {
+      "id": "T3-025",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T3_time_window.yaml",
+        "line": 118
+      },
+      "questionSHA256": "bc5e26001cc93282a3de8ad08d901b3588b787597e8cd9ad7dbef77e87bce6b5",
+      "goldSQLSHA256": "8cd17e5649db7e4cdb3ad3fa083b4e93b26ac01fc00e598f2d6ba17452acb906",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T3-025"
+      ]
+    },
+    {
+      "id": "T3-027",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T3_time_window.yaml",
+        "line": 128
+      },
+      "questionSHA256": "839110762f0513c211a3dd871b9938ac31c9756efcf7e97bfa8acd7107a65aaf",
+      "goldSQLSHA256": "f5ef1a21beb65d3a80593759e9a4f9da3cd286bc4c39764c0143f3f06b8f68d2",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T3-027"
+      ]
+    },
+    {
+      "id": "T3-029",
+      "status": "PASS",
+      "priorIndependentStatus": "AMBIGUOUS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T3_time_window.yaml",
+        "line": 138
+      },
+      "questionSHA256": "fd8b0757c07afced62ca2897ef7895864f39ff34e93ef9c13a7b8468a58bfcf8",
+      "goldSQLSHA256": "84b771940af11bbf8e16ac3b86f0af6d36e0b9a2cd42539b55b273b0000c62e4",
+      "reason": "题干已限定实际有结算单的账期起始月份，与period_start分组一致。RS22确认缺期不补0金额。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T3-029",
+        "reviewer-revision-frozen-items.json#T3-029"
+      ]
+    },
+    {
+      "id": "T3-030",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T3_time_window.yaml",
+        "line": 147
+      },
+      "questionSHA256": "0c0d831b41fa1bcc92d0f21feaf762c5fb3ebbaffa99c64f480d27f0eb9a2707",
+      "goldSQLSHA256": "03e4eb1856565ea93c7e41b401c5447099a3922488dbae8a5e5843903d093d31",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T3-030"
+      ]
+    },
+    {
+      "id": "T4-002",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T4_multi_join.yaml",
+        "line": 1
+      },
+      "questionSHA256": "8635bbe8c59b25deeea9bfbc443cb5b582093b5cbe0315142f172031e910cba4",
+      "goldSQLSHA256": "24ca01d810d4eef0e66eec799bf3dec24d3d83b324340b3f0cbefa81cc3f04d2",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T4-002"
+      ]
+    },
+    {
+      "id": "T4-004",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T4_multi_join.yaml",
+        "line": 18
+      },
+      "questionSHA256": "4eccc65ace064db08a258a7b2e7ad5161abf8766fe60c972191a4907c62601c9",
+      "goldSQLSHA256": "12deff49ffb86e4beec41ad36b1a1920321ace8ee8910ec4d709ad51d976e391",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T4-004"
+      ]
+    },
+    {
+      "id": "T4-006",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T4_multi_join.yaml",
+        "line": 36
+      },
+      "questionSHA256": "b9789b308b9d0aee8d250568dd5818d9bdfea6107f7e4c59b7b3683ef52a27a3",
+      "goldSQLSHA256": "ceb371dfb0493020b4130fa554fff98e7de0c7705b8057f249f1087441ef6b1f",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T4-006"
+      ]
+    },
+    {
+      "id": "T4-008",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T4_multi_join.yaml",
+        "line": 47
+      },
+      "questionSHA256": "6fc1291f35c88c85c9db18435ae51b68fedbba3520868f2b70c268278459d0de",
+      "goldSQLSHA256": "106fd660e846e0a7cfa8e7a69a7ad7c5edb77ff3561b038469af0138b3c6eb57",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T4-008"
+      ]
+    },
+    {
+      "id": "T4-011",
+      "status": "PASS",
+      "priorIndependentStatus": "DEFECT",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T4_multi_join.yaml",
+        "line": 62
+      },
+      "questionSHA256": "ffbdea5d07143134c305138c7f2b1c339f87db8e6a4c96d6142d6459a27b93ed",
+      "goldSQLSHA256": "47cc341e6093faabe93b1812a00980bb99712de32f345d92fb4d1d6638d0e278",
+      "reason": "从实际orders状态全集LEFT评价；无评价状态保留NULL均分。RS01通过；主指标NULLS LAST不再先排未知。评价AVG仍按完整记录等权。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T4-011",
+        "reviewer-revision-frozen-items.json#T4-011"
+      ]
+    },
+    {
+      "id": "T4-013",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T4_multi_join.yaml",
+        "line": 74
+      },
+      "questionSHA256": "63b1afdf45f0f6dc615782857420f446f6e02094f671feae2d19df9c702b552d",
+      "goldSQLSHA256": "8573d0fbfde13a7fbdbf94c5203bee87a7598320f047e0f745f9c011c889b309",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T4-013"
+      ]
+    },
+    {
+      "id": "T4-015",
+      "status": "PASS",
+      "priorIndependentStatus": "DEFECT",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T4_multi_join.yaml",
+        "line": 83
+      },
+      "questionSHA256": "b7a434ffcd9424a0946de4d9e302095ab02f0ff17d0bec68c4aea08662e18862",
+      "goldSQLSHA256": "f06800426e78ed2527d33bfbe821451be5e4ba83640a32e672dd1e98656612af",
+      "reason": "LEFT regions保留未映射大区订单；订单仍沿customer_id唯一客户档案取州，不改走自然人其他档案。RS02保留NULL大区计数。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T4-015",
+        "reviewer-revision-frozen-items.json#T4-015"
+      ]
+    },
+    {
+      "id": "T4-017",
+      "status": "PASS",
+      "priorIndependentStatus": "AMBIGUOUS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T4_multi_join.yaml",
+        "line": 98
+      },
+      "questionSHA256": "f6c78a81aa358b71b39187b50b293d113ff2ca3703e4454e051d355242b795c9",
+      "goldSQLSHA256": "2f16665991552b544fadf7cbe06ff02f660bbdf3e5d0302dbe393c4843bff0c8",
+      "reason": "题干明确只取现有订单关联会员中出现的等级编号。RS23中会员存在但无订单时0行符合范围，不再要求补0等级。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T4-017",
+        "reviewer-revision-frozen-items.json#T4-017"
+      ]
+    },
+    {
+      "id": "T4-019",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T4_multi_join.yaml",
+        "line": 114
+      },
+      "questionSHA256": "0dc91218f3d728a19589c2fb856462be3e44e9339e429687e5e923c02dbf4a51",
+      "goldSQLSHA256": "112da661b2a1f46da58cf97fdb72b5b370eb7fbda8a5400a884f91cec4f53e4a",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T4-019"
+      ]
+    },
+    {
+      "id": "T4-020",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T4_multi_join.yaml",
+        "line": 122
+      },
+      "questionSHA256": "0c343d1b1722c75254742a4b572894628394fab268fe84c54873e85adf1332b1",
+      "goldSQLSHA256": "22bba61eb8589e843975cf121e0378e89d82647a62280458c6a66618f19a9530",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T4-020"
+      ]
+    },
+    {
+      "id": "T4-022",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T4_multi_join.yaml",
+        "line": 141
+      },
+      "questionSHA256": "4933de5e4a50def102a229072e1c1737e1d9b74195ec401703c1c68080b714e6",
+      "goldSQLSHA256": "9249e17bcddad3c1e33eced646c43c2cf0ab5586d706c230a50ef3bed55dc283",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T4-022"
+      ]
+    },
+    {
+      "id": "T4-024",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T4_multi_join.yaml",
+        "line": 148
+      },
+      "questionSHA256": "b78ee2dc3055fb7834255b24e8b3b41497ca1f158f9413b2acca3dac3e68aa46",
+      "goldSQLSHA256": "81d9d236b7f0ce4f3161e64476395a633640d30dc4ab918228c0072c94a89ffc",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T4-024"
+      ]
+    },
+    {
+      "id": "T4-026",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T4_multi_join.yaml",
+        "line": 156
+      },
+      "questionSHA256": "3a926e441c6fd58810c9f0c5f9e14b5fe26d7840c1ffb43fd43bd936a5870459",
+      "goldSQLSHA256": "96653b5f484a4d429e5b4d231056f8bf102f6b83d99ab4ac3da41c36784a8d19",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T4-026"
+      ]
+    },
+    {
+      "id": "T4-028",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T4_multi_join.yaml",
+        "line": 165
+      },
+      "questionSHA256": "d1ee01952ca59340e7685cc8505faedf2d1125358df72cb0e75a32e9a9917480",
+      "goldSQLSHA256": "b426abdafdde47675bf01b87c44b541c32e672f423fcbbf9e535b17504d4d68f",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T4-028"
+      ]
+    },
+    {
+      "id": "T4-031",
+      "status": "PASS",
+      "priorIndependentStatus": "DEFECT",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T4_multi_join.yaml",
+        "line": 174
+      },
+      "questionSHA256": "2a17ee47f58b22063479df2e89e9a868015f57d5d249318b87025faa0df064ff",
+      "goldSQLSHA256": "3ffe4a0a588094a3eeb69f852cc76127fb1f470e15b65144fc8727ade4c5d5c5",
+      "reason": "settlements LEFT sellers保留无匹配卖家的结算金额；RS03返回NULL州100金额，无事实损失。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T4-031",
+        "reviewer-revision-frozen-items.json#T4-031"
+      ]
+    },
+    {
+      "id": "T4-033",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T4_multi_join.yaml",
+        "line": 186
+      },
+      "questionSHA256": "df003544e4458955f0961144d913515c36150a56fb11332e0d81c03ab4f01d8d",
+      "goldSQLSHA256": "af6e818d4852dfae169bd18e16d2aaa5d7df7dfa8801007daa7e45de467842f3",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T4-033"
+      ]
+    },
+    {
+      "id": "T4-035",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T4_multi_join.yaml",
+        "line": 196
+      },
+      "questionSHA256": "7a1cbbf49e7622043ea7d55df61a96d81ce43c498524bfe46ca603467712078a",
+      "goldSQLSHA256": "2ae739dad286d5fd0494c400342aabed2f839fabf6833d450fe1198d5c2c868e",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T4-035"
+      ]
+    },
+    {
+      "id": "T4-037",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T4_multi_join.yaml",
+        "line": 209
+      },
+      "questionSHA256": "ec77a82d2403498012c6a3efc6aac740320a072265e85b3fc4637144b19458a9",
+      "goldSQLSHA256": "e95a056de64be7b3afbcf26fa51442120a337669dc4ac2f811616195fe6c19ee",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T4-037"
+      ]
+    },
+    {
+      "id": "T4-039",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T4_multi_join.yaml",
+        "line": 220
+      },
+      "questionSHA256": "9f6fc7ebf29f57a6490ab97abb3347e588225f34ad7d3557fc3c9751ea3531e9",
+      "goldSQLSHA256": "46923dc9da5f8abf45997ba319b246e92c5bd28ed1a6401f0133bd29d13ab55b",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T4-039"
+      ]
+    },
+    {
+      "id": "T4-040",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T4_multi_join.yaml",
+        "line": 228
+      },
+      "questionSHA256": "13ae9a21b7600b517e892e1d7d9a93b7a163d1833070cd87f2fc7416dee841e3",
+      "goldSQLSHA256": "fb58301831261a8f58ed0be4f3ad2002870fe395bded7ec2fb8a4350fcd57681",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T4-040"
+      ]
+    },
+    {
+      "id": "T4-042",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T4_multi_join.yaml",
+        "line": 243
+      },
+      "questionSHA256": "0f41eccae057f7ca4777fa6ffbf23979999ff7a1eed63a179b1221a7158812d7",
+      "goldSQLSHA256": "ff35a2b892610a1a1c2e02463724a478d87b571979aa6e31d9b5756c27ec982f",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T4-042"
+      ]
+    },
+    {
+      "id": "T4-044",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T4_multi_join.yaml",
+        "line": 250
+      },
+      "questionSHA256": "b1cf99949457dc2e8ec081915536a9c0d21cbc847372103e40eab43262e51c58",
+      "goldSQLSHA256": "01a94ab43a5278cfe536aedd3a60b0c207a940ea3848e85ea8e63ce06aeb44e6",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T4-044"
+      ]
+    },
+    {
+      "id": "T5-001",
+      "status": "PASS",
+      "priorIndependentStatus": "DEFECT",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T5_multi_join_deep.yaml",
+        "line": 1
+      },
+      "questionSHA256": "731beeb4fc57e2f6c29beb5a06e383d1e10aa577f6b1506d0c1d8601c9aa8863",
+      "goldSQLSHA256": "bc0592fa8d9b4be48343551f9171952adcaaecd45a7f3d1234b750a122577e35",
+      "reason": "LEFT等级/地区保留会员商品金额；members自然人UNIQUE及商品订单外键使关联不放大。RS04中不同level_id同名按题干明确合并300，未知等级和地域金额25留NULL组。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T5-001",
+        "reviewer-revision-frozen-items.json#T5-001"
+      ]
+    },
+    {
+      "id": "T5-003",
+      "status": "PASS",
+      "priorIndependentStatus": "DEFECT",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T5_multi_join_deep.yaml",
+        "line": 24
+      },
+      "questionSHA256": "8f83010689391f57621c2b8512ac22ab863073b3b9b14bf8e702ea8edf48d436",
+      "goldSQLSHA256": "04a2a47cc502c8618b9763ed0fa7276f099987cc953f4d1f650018b13241cc7b",
+      "reason": "题干明确已知金额最高最多15组；HAVING SUM(refund_value) IS NOT NULL排除全未知金额候选，仍保留缺翻译NULL名称。RS05通过。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T5-003",
+        "reviewer-revision-frozen-items.json#T5-003"
+      ]
+    },
+    {
+      "id": "T5-005",
+      "status": "PASS",
+      "priorIndependentStatus": "AMBIGUOUS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T5_multi_join_deep.yaml",
+        "line": 47
+      },
+      "questionSHA256": "673752746534524cc25e4da72eabc2a92a285cd86a9e10b879d1edd970caafa4",
+      "goldSQLSHA256": "7aa878165a60e4b89764d1144fb936166de17069849a9db8d95f8cd71d212344",
+      "reason": "题干明确所有活动通过券归因，不再只指COUPON类型；活动全集LEFT保留零用券活动，普通降序最多N列表可保留NULL金额末尾。RS24同时核查非COUPON、零活动、多核销去重与金额不倍增。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T5-005",
+        "reviewer-revision-frozen-items.json#T5-005"
+      ]
+    },
+    {
+      "id": "T5-007",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T5_multi_join_deep.yaml",
+        "line": 61
+      },
+      "questionSHA256": "e9ae75d18d679ef0e95bbba795cc047dbb6fc59ac90045e6818f5c7fb8787c15",
+      "goldSQLSHA256": "92dbbd63299d77c612089d2552d641f4a8ff959da1a3e2f72de04894eac35f8e",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T5-007"
+      ]
+    },
+    {
+      "id": "T5-009",
+      "status": "PASS",
+      "priorIndependentStatus": "DEFECT",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T5_multi_join_deep.yaml",
+        "line": 79
+      },
+      "questionSHA256": "99be981e7d11979ca263a6dee721e60d16fdf1ff08a9be2259ec748064f642a1",
+      "goldSQLSHA256": "9cc9a45df544fcec0f6d711cc170d8b5805fee9b9a6ea7d36c9217857583f545",
+      "reason": "SELECT/GROUP/ORDER统一i.warehouse_id，LEFT仓库不删除孤儿库存；当前品牌LEFT为1:N由题干授权分组分别计入。RS06确认3组身份、数量、NULL归属均正确；ASC默认NULLS LAST符合三个裁决键要求。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T5-009",
+        "reviewer-revision-frozen-items.json#T5-009"
+      ]
+    },
+    {
+      "id": "T5-010",
+      "status": "PASS",
+      "priorIndependentStatus": "DEFECT",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T5_multi_join_deep.yaml",
+        "line": 98
+      },
+      "questionSHA256": "fc848452cd2052e5ce026f644074e4d7b8b4cee7abc0efbb999f79ca3aeb6dc5",
+      "goldSQLSHA256": "cbed6c6ef24d35960e509456b9ca3a060cec15e23ec42d8b3e8ed8f494c9a03f",
+      "reason": "题干明确已知佣金最高最多20；HAVING SUM(commission_amount) IS NOT NULL先排未知卖家，LEFT商品/翻译仍保留佣金事实。RS07通过。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T5-010",
+        "reviewer-revision-frozen-items.json#T5-010"
+      ]
+    },
+    {
+      "id": "T5-012",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T5_multi_join_deep.yaml",
+        "line": 111
+      },
+      "questionSHA256": "c5483401144171d3a89c4483445389e5214c1e78e771d1c37388943d928e4dc7",
+      "goldSQLSHA256": "43594c2a38c0f495906aff93051202ae621a2cad3ce90ea83f0a215e0b54c08d",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T5-012"
+      ]
+    },
+    {
+      "id": "T5-014",
+      "status": "PASS",
+      "priorIndependentStatus": "DEFECT",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T5_multi_join_deep.yaml",
+        "line": 132
+      },
+      "questionSHA256": "9b6d9eb374cbe56ae7c16440552e29e4ec3670895a33082f13b7a6ce3a87b6c2",
+      "goldSQLSHA256": "eca9299ba3b94c986943a87a5e54b5e35ec5355d3fcb83d7bf8366c5d8cbad61",
+      "reason": "先按每会员日期DESC和snapshot_id DESC取最新，再检查两个等级能在维表匹配，不把最新未知等级回退成旧快照。RS08同时验证同日最大ID和未知日期忽略，结果仅1位确认不一致会员。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T5-014",
+        "reviewer-revision-frozen-items.json#T5-014"
+      ]
+    },
+    {
+      "id": "T5-016",
+      "status": "PASS",
+      "priorIndependentStatus": "AMBIGUOUS",
+      "revision1Status": "AMBIGUOUS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T5_multi_join_deep.yaml",
+        "line": 146
+      },
+      "questionSHA256": "8a5ab3e58c7462219d96b514cc200cd45a173c5a76ee523b831eca073fd6ecce",
+      "goldSQLSHA256": "6246ddb2226a368df5a9c86f65a73c688ac8c4ee820aa08d71c25944661254bc",
+      "reason": "题面明确已知退款金额最高，Gold HAVING SUM(ri.refund_value) IS NOT NULL同步限制候选；实际20行与draft3相同，未知金额组0行，缺英文翻译NULL名称组的已知100金额保留，同退款两明细金额75而退款笔数1。按最终两位金额DESC及完整名称/原因稳定裁决，最多20行。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T5-016",
+        "reviewer-revision-frozen-items.json#T5-016",
+        "reviewer-acceptance-evidence.json#AC01-T5-016-actual",
+        "reviewer-acceptance-evidence.json#AC02-T5-016-unknown-amount",
+        "reviewer-acceptance-evidence.json#AC03-T5-016-known-missing-name"
+      ]
+    },
+    {
+      "id": "T5-018",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T5_multi_join_deep.yaml",
+        "line": 160
+      },
+      "questionSHA256": "c776b00ebaafd46c705879218a7f59355a3edfd67b3567391ec954222d9cac1d",
+      "goldSQLSHA256": "2d586826504668ea706bcad423f6c83b1b23991f6f5e9bdd3c2378a1fee00466",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T5-018"
+      ]
+    },
+    {
+      "id": "T6-002",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T6_business_semantics.yaml",
+        "line": 1
+      },
+      "questionSHA256": "e7b8e0df90a8ed68acefb861bd2fcf27c1be9fa4ffbacf987e5fc20c6013a856",
+      "goldSQLSHA256": "391a33e82b2a9f212db05f681338cd0a9f28c21d00d1cc7855e21520b461356c",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T6-002"
+      ]
+    },
+    {
+      "id": "T6-004",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T6_business_semantics.yaml",
+        "line": 12
+      },
+      "questionSHA256": "790db8a04db4a7ebb488f5ce2bccfe7f7504e9f0fefb63d82e5e06736366d307",
+      "goldSQLSHA256": "2704152f66f3e74dfa54dbaafa00346ea0d4b2690a17f6c6300bc229bfb3d1a2",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T6-004"
+      ]
+    },
+    {
+      "id": "T6-006",
+      "status": "PASS",
+      "priorIndependentStatus": "DEFECT",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T6_business_semantics.yaml",
+        "line": 28
+      },
+      "questionSHA256": "778f687eb1c15ba61e8070f7b9d2e777c7d588aaa8f0c3824b51e7ee32b0688d",
+      "goldSQLSHA256": "4489944ab1c2aff0b2149bfe82e2ce892436e60a8e17d6928b209362344fa9e3",
+      "reason": "COUNT分母加NULLIF，已送达且预计时间未知仍留分母；RS09空已签收集合返回NULL，比例单位仍为百分数两位。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T6-006",
+        "reviewer-revision-frozen-items.json#T6-006"
+      ]
+    },
+    {
+      "id": "T6-008",
+      "status": "PASS",
+      "priorIndependentStatus": "DEFECT",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T6_business_semantics.yaml",
+        "line": 48
+      },
+      "questionSHA256": "c23802b223f2a4b3b258609e2f53cccc5ace4656250164a30b880ebb02cee6e0",
+      "goldSQLSHA256": "499efdbc49ee550147e2e2ea98aa6a05f31666e47e72a2ee58f73b78b17dd374",
+      "reason": "只给独立products全集分母加NULLIF，未改变有效订单商品分子。RS10空全集NULL；RS11含重复有效明细及取消订单时分子1/全部商品3=33.33%，不是1/2或100%。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T6-008",
+        "reviewer-revision-frozen-items.json#T6-008"
+      ]
+    },
+    {
+      "id": "T6-011",
+      "status": "PASS",
+      "priorIndependentStatus": "DEFECT",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T6_business_semantics.yaml",
+        "line": 58
+      },
+      "questionSHA256": "4135d0b0d40a18c6f856add5087e68222527c905072705446a4f6c603bb13735",
+      "goldSQLSHA256": "28fab61b367cfca85bec989407a9ed5e1b175cd1862f7dc050fa8164a7b40919",
+      "reason": "LEFT地区与金额分母NULLIF同时落实；RS12显示未知地域10%保留、已知地域零GMV返回NULL，单位与有效状态范围不变。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T6-011",
+        "reviewer-revision-frozen-items.json#T6-011"
+      ]
+    },
+    {
+      "id": "T6-013",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T6_business_semantics.yaml",
+        "line": 69
+      },
+      "questionSHA256": "72ef2eb6810427364ce71d3b42cc09d76b92b23f66ded7a6a9d87236536db7c1",
+      "goldSQLSHA256": "457e873675d49cffbad2b33de5379e5e5200c2e0b638e7aafbedeffb720b9415",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T6-013"
+      ]
+    },
+    {
+      "id": "T6-015",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T6_business_semantics.yaml",
+        "line": 81
+      },
+      "questionSHA256": "8bfdf84ef430c59e3f9ababebaa4a384812acb0f2b9e3ea8611b578754f6ff18",
+      "goldSQLSHA256": "e4630b19824648ab6a114dc2b8a52cd2bfc6576920332c81d9c08039671b8822",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T6-015"
+      ]
+    },
+    {
+      "id": "T6-017",
+      "status": "PASS",
+      "priorIndependentStatus": "DEFECT",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T6_business_semantics.yaml",
+        "line": 101
+      },
+      "questionSHA256": "ac6b7dc053e5b352cd934e9a57bb30984670adc388e2732abbd78162884d074c",
+      "goldSQLSHA256": "2cf8e6eed7e110731f6959e76d470de3406ac9a1d158110e4459e0eba1336657",
+      "reason": "转化率和奖励两个分母分别NULLIF；RS13空推荐(NULL,NULL)，RS14有推荐零转化(0,NULL)，没有把成功奖励未知补0。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T6-017",
+        "reviewer-revision-frozen-items.json#T6-017"
+      ]
+    },
+    {
+      "id": "T6-019",
+      "status": "PASS",
+      "priorIndependentStatus": "DEFECT",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T6_business_semantics.yaml",
+        "line": 118
+      },
+      "questionSHA256": "5dafc494368f23a999439898e4398eadf02beaf537489a70888deab4cb9ffd27",
+      "goldSQLSHA256": "4c50e1a6431ab617587a4982cc2fe077af3fce359b34f13a5c70ca8c24914a90",
+      "reason": "先按州ROUND平均天数为最终展示别名avg_days，再外层排NULL并排序。RS15全未知州0行；RS16第10名原始10.003和10.004同展示10.00，由州AA裁决胜ZZ，证明未错误按未舍入值排序。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T6-019",
+        "reviewer-revision-frozen-items.json#T6-019"
+      ]
+    },
+    {
+      "id": "T6-020",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T6_business_semantics.yaml",
+        "line": 130
+      },
+      "questionSHA256": "89cc96eca79d5bf88b0e4fb50d8d6370731eb771fd07ff65c829820021ed45d8",
+      "goldSQLSHA256": "9ef6d77a9d1f768e80a879b67af25987b4f128e9c3d678e5f3bfd6e523c47a3b",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T6-020"
+      ]
+    },
+    {
+      "id": "T6-022",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T6_business_semantics.yaml",
+        "line": 142
+      },
+      "questionSHA256": "521c0885d1baadf615cae2283d6e940863257ba8e7b0b07334ed46aa0c6c307e",
+      "goldSQLSHA256": "2a472651d35638912a759b6d630ae019d0014d097ef9f1f2b21340c5f38b437b",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T6-022"
+      ]
+    },
+    {
+      "id": "T6-024",
+      "status": "PASS",
+      "priorIndependentStatus": "PASS",
+      "revision1Status": "PASS",
+      "source": {
+        "path": "data/benchmarks/olist-v3-candidate/T6_business_semantics.yaml",
+        "line": 156
+      },
+      "questionSHA256": "455c69ce1d1fa7a068ef7564a9e80df08676a7e132e27ea38c4dcd27fe133ca3",
+      "goldSQLSHA256": "32a65d70de6a318acef2b7d3f1ba1aa2a65300f6ff0b6d35c54fd4b1b9b83eac",
+      "reason": "在当前题干、实际DDL和已登记口径下，统计对象、粒度、事实范围、单位与输出形状一致；边界依据见七项逐题记录，不以dry-run成功替代语义判断。",
+      "reviewReferences": [
+        "reviewer-final-item-review.json#T6-024"
+      ]
+    }
+  ]
+}

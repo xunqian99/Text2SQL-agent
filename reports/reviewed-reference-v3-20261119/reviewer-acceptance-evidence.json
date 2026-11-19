@@ -1,0 +1,64 @@
+[
+  {
+    "id": "AC01-T5-016-actual",
+    "candidateId": "T5-016",
+    "synthetic": false,
+    "purpose": "最终题真实输出及与draft3双向集合差异",
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT json_build_object('id','T5-016','rows',coalesce(json_agg(row_to_json(g)),'[]'::json)) FROM (SELECT t.product_category_name_english,r.reason_code,\n COUNT(DISTINCT r.refund_id) AS refunds,ROUND(SUM(ri.refund_value),2) AS amt\nFROM refunds r JOIN refund_items ri ON ri.refund_id=r.refund_id\nJOIN order_items oi ON oi.order_id=ri.order_id AND oi.order_item_id=ri.order_item_id\nJOIN products p ON p.product_id=oi.product_id\nLEFT JOIN product_category_translation t ON t.product_category_name=p.product_category_name\nWHERE p.product_category_name IS NOT NULL\nGROUP BY t.product_category_name_english,r.reason_code HAVING SUM(ri.refund_value) IS NOT NULL\nORDER BY amt DESC NULLS LAST,t.product_category_name_english ASC NULLS LAST,r.reason_code ASC NULLS LAST LIMIT 20)g;\nWITH old_result AS (SELECT t.product_category_name_english,r.reason_code,\n COUNT(DISTINCT r.refund_id) AS refunds,ROUND(SUM(ri.refund_value),2) AS amt\nFROM refunds r JOIN refund_items ri ON ri.refund_id=r.refund_id\nJOIN order_items oi ON oi.order_id=ri.order_id AND oi.order_item_id=ri.order_item_id\nJOIN products p ON p.product_id=oi.product_id\nLEFT JOIN product_category_translation t ON t.product_category_name=p.product_category_name\nWHERE p.product_category_name IS NOT NULL\nGROUP BY t.product_category_name_english,r.reason_code\nORDER BY amt DESC NULLS LAST,t.product_category_name_english ASC NULLS LAST,r.reason_code ASC NULLS LAST LIMIT 20), new_result AS (SELECT t.product_category_name_english,r.reason_code,\n COUNT(DISTINCT r.refund_id) AS refunds,ROUND(SUM(ri.refund_value),2) AS amt\nFROM refunds r JOIN refund_items ri ON ri.refund_id=r.refund_id\nJOIN order_items oi ON oi.order_id=ri.order_id AND oi.order_item_id=ri.order_item_id\nJOIN products p ON p.product_id=oi.product_id\nLEFT JOIN product_category_translation t ON t.product_category_name=p.product_category_name\nWHERE p.product_category_name IS NOT NULL\nGROUP BY t.product_category_name_english,r.reason_code HAVING SUM(ri.refund_value) IS NOT NULL\nORDER BY amt DESC NULLS LAST,t.product_category_name_english ASC NULLS LAST,r.reason_code ASC NULLS LAST LIMIT 20) SELECT json_build_object('oldMinusNew',(SELECT count(*) FROM(SELECT * FROM old_result EXCEPT ALL SELECT * FROM new_result)d),'newMinusOld',(SELECT count(*) FROM(SELECT * FROM new_result EXCEPT ALL SELECT * FROM old_result)d));\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "{\"id\" : \"T5-016\", \"rows\" : [{\"product_category_name_english\":\"watches_gifts\",\"reason_code\":\"QUAL\",\"refunds\":86,\"amt\":20114.26}, {\"product_category_name_english\":\"bed_bath_table\",\"reason_code\":\"LATE\",\"refunds\":166,\"amt\":19434.28}, {\"product_category_name_english\":\"computers_accessories\",\"reason_code\":\"LATE\",\"refunds\":123,\"amt\":18493.19}, {\"product_category_name_english\":\"bed_bath_table\",\"reason_code\":\"QUAL\",\"refunds\":151,\"amt\":18465.90}, {\"product_category_name_english\":\"health_beauty\",\"reason_code\":\"LATE\",\"refunds\":123,\"amt\":18085.11}, {\"product_category_name_english\":\"health_beauty\",\"reason_code\":\"QUAL\",\"refunds\":158,\"amt\":17557.04}, {\"product_category_name_english\":\"sports_leisure\",\"reason_code\":\"LATE\",\"refunds\":130,\"amt\":16554.18}, {\"product_category_name_english\":\"watches_gifts\",\"reason_code\":\"LATE\",\"refunds\":89,\"amt\":15549.15}, {\"product_category_name_english\":\"sports_leisure\",\"reason_code\":\"QUAL\",\"refunds\":122,\"amt\":15003.92}, {\"product_category_name_english\":\"housewares\",\"reason_code\":\"QUAL\",\"refunds\":109,\"amt\":11922.33}, {\"product_category_name_english\":\"auto\",\"reason_code\":\"LATE\",\"refunds\":69,\"amt\":11352.67}, {\"product_category_name_english\":\"furniture_decor\",\"reason_code\":\"QUAL\",\"refunds\":96,\"amt\":11348.19}, {\"product_category_name_english\":\"computers_accessories\",\"reason_code\":\"QUAL\",\"refunds\":104,\"amt\":11016.15}, {\"product_category_name_english\":\"watches_gifts\",\"reason_code\":\"OTHER\",\"refunds\":52,\"amt\":10979.34}, {\"product_category_name_english\":\"health_beauty\",\"reason_code\":\"OTHER\",\"refunds\":81,\"amt\":10766.73}, {\"product_category_name_english\":\"furniture_decor\",\"reason_code\":\"LATE\",\"refunds\":99,\"amt\":10547.84}, {\"product_category_name_english\":\"housewares\",\"reason_code\":\"LATE\",\"refunds\":100,\"amt\":10422.59}, {\"product_category_name_english\":\"watches_gifts\",\"reason_code\":\"CUST\",\"refunds\":47,\"amt\":9896.93}, {\"product_category_name_english\":\"cool_stuff\",\"reason_code\":\"LATE\",\"refunds\":66,\"amt\":9527.77}, {\"product_category_name_english\":\"garden_tools\",\"reason_code\":\"LATE\",\"refunds\":54,\"amt\":9490.91}]}\n{\"oldMinusNew\" : 0, \"newMinusOld\" : 0}\n",
+    "stderr": ""
+  },
+  {
+    "id": "AC02-T5-016-unknown-amount",
+    "candidateId": "T5-016",
+    "synthetic": true,
+    "purpose": "聚合退款金额全未知不进Top20",
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT COALESCE(json_agg(row_to_json(g)),'[]'::json) FROM (WITH refunds(refund_id,reason_code) AS(VALUES(1,'QUAL')),refund_items(refund_id,order_id,order_item_id,refund_value) AS(VALUES(1,'o',1,NULL::numeric)),order_items(order_id,order_item_id,product_id) AS(VALUES('o',1,'p')),products(product_id,product_category_name) AS(VALUES('p','cat')),product_category_translation(product_category_name,product_category_name_english) AS(VALUES('cat','category')) SELECT t.product_category_name_english,r.reason_code,\n COUNT(DISTINCT r.refund_id) AS refunds,ROUND(SUM(ri.refund_value),2) AS amt\nFROM refunds r JOIN refund_items ri ON ri.refund_id=r.refund_id\nJOIN order_items oi ON oi.order_id=ri.order_id AND oi.order_item_id=ri.order_item_id\nJOIN products p ON p.product_id=oi.product_id\nLEFT JOIN product_category_translation t ON t.product_category_name=p.product_category_name\nWHERE p.product_category_name IS NOT NULL\nGROUP BY t.product_category_name_english,r.reason_code HAVING SUM(ri.refund_value) IS NOT NULL\nORDER BY amt DESC NULLS LAST,t.product_category_name_english ASC NULLS LAST,r.reason_code ASC NULLS LAST LIMIT 20)g;\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "[]\n",
+    "stderr": "",
+    "expectedRows": [],
+    "actualRows": [],
+    "passed": true
+  },
+  {
+    "id": "AC03-T5-016-known-missing-name",
+    "candidateId": "T5-016",
+    "synthetic": true,
+    "purpose": "只排未知金额；缺翻译NULL名称的已知金额仍保留；同退款两明细金额累加而笔数一次",
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT COALESCE(json_agg(row_to_json(g)),'[]'::json) FROM (WITH refunds(refund_id,reason_code) AS(VALUES(1,'QUAL'),(2,'QUAL'),(3,'QUAL')),refund_items(refund_id,order_id,order_item_id,refund_value) AS(VALUES(1,'o1',1,NULL::numeric),(2,'o2',1,100::numeric),(3,'o3',1,50::numeric),(3,'o3',2,25::numeric)),order_items(order_id,order_item_id,product_id) AS(VALUES('o1',1,'p1'),('o2',1,'p2'),('o3',1,'p3'),('o3',2,'p3')),products(product_id,product_category_name) AS(VALUES('p1','unknown-amount'),('p2','missing-translation'),('p3','known-cat')),product_category_translation(product_category_name,product_category_name_english) AS(VALUES('unknown-amount','unknown-amount'),('known-cat','known-category')) SELECT t.product_category_name_english,r.reason_code,\n COUNT(DISTINCT r.refund_id) AS refunds,ROUND(SUM(ri.refund_value),2) AS amt\nFROM refunds r JOIN refund_items ri ON ri.refund_id=r.refund_id\nJOIN order_items oi ON oi.order_id=ri.order_id AND oi.order_item_id=ri.order_item_id\nJOIN products p ON p.product_id=oi.product_id\nLEFT JOIN product_category_translation t ON t.product_category_name=p.product_category_name\nWHERE p.product_category_name IS NOT NULL\nGROUP BY t.product_category_name_english,r.reason_code HAVING SUM(ri.refund_value) IS NOT NULL\nORDER BY amt DESC NULLS LAST,t.product_category_name_english ASC NULLS LAST,r.reason_code ASC NULLS LAST LIMIT 20)g;\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "[{\"product_category_name_english\":null,\"reason_code\":\"QUAL\",\"refunds\":1,\"amt\":100.00}, {\"product_category_name_english\":\"known-category\",\"reason_code\":\"QUAL\",\"refunds\":1,\"amt\":75.00}]\n",
+    "stderr": "",
+    "expectedRows": [
+      [
+        null,
+        "QUAL",
+        1,
+        100
+      ],
+      [
+        "known-category",
+        "QUAL",
+        1,
+        75
+      ]
+    ],
+    "actualRows": [
+      [
+        null,
+        "QUAL",
+        1,
+        100.0
+      ],
+      [
+        "known-category",
+        "QUAL",
+        1,
+        75.0
+      ]
+    ],
+    "passed": true
+  }
+]

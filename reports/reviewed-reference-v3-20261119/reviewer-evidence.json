@@ -1,0 +1,202 @@
+[
+  {
+    "id": "A01_schema_constraints",
+    "synthetic": false,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT conrelid::regclass::text AS relation,conname,pg_get_constraintdef(oid) AS definition FROM pg_constraint WHERE connamespace='public'::regnamespace AND contype IN ('p','u','f') ORDER BY 1,2;\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "brands|brands_pkey|PRIMARY KEY (brand_id)\ncampaign_products|campaign_products_campaign_id_fkey|FOREIGN KEY (campaign_id) REFERENCES campaigns(campaign_id)\ncampaign_products|campaign_products_pkey|PRIMARY KEY (campaign_id, product_id)\ncampaigns|campaigns_pkey|PRIMARY KEY (campaign_id)\nconversation_session|conversation_session_pkey|PRIMARY KEY (session_id)\nconversation_turn|conversation_turn_pkey|PRIMARY KEY (id)\ncoupon_usages|coupon_usages_coupon_id_fkey|FOREIGN KEY (coupon_id) REFERENCES coupons(coupon_id)\ncoupon_usages|coupon_usages_pkey|PRIMARY KEY (usage_id)\ncoupons|coupons_campaign_id_fkey|FOREIGN KEY (campaign_id) REFERENCES campaigns(campaign_id)\ncoupons|coupons_coupon_code_key|UNIQUE (coupon_code)\ncoupons|coupons_pkey|PRIMARY KEY (coupon_id)\ncustomers|customers_pkey|PRIMARY KEY (customer_id)\ninventory|inventory_pkey|PRIMARY KEY (warehouse_id, product_id)\ninventory_movements|inventory_movements_pkey|PRIMARY KEY (movement_id)\nllm_call_log|llm_call_log_pkey|PRIMARY KEY (id)\nmember_levels|member_levels_pkey|PRIMARY KEY (level_id)\nmember_snapshot|member_snapshot_pkey|PRIMARY KEY (snapshot_id)\nmembers|members_customer_unique_id_key|UNIQUE (customer_unique_id)\nmembers|members_level_id_fkey|FOREIGN KEY (level_id) REFERENCES member_levels(level_id)\nmembers|members_pkey|PRIMARY KEY (member_id)\norder_items|order_items_order_id_fkey|FOREIGN KEY (order_id) REFERENCES orders(order_id)\norder_items|order_items_pkey|PRIMARY KEY (order_id, order_item_id)\norder_items|order_items_product_id_fkey|FOREIGN KEY (product_id) REFERENCES products(product_id)\norder_items|order_items_seller_id_fkey|FOREIGN KEY (seller_id) REFERENCES sellers(seller_id)\norder_payments|order_payments_order_id_fkey|FOREIGN KEY (order_id) REFERENCES orders(order_id)\norder_payments|order_payments_pkey|PRIMARY KEY (order_id, payment_sequential)\norder_reviews|order_reviews_order_id_fkey|FOREIGN KEY (order_id) REFERENCES orders(order_id)\norder_reviews|order_reviews_pkey|PRIMARY KEY (review_id, order_id)\norders|orders_customer_id_fkey|FOREIGN KEY (customer_id) REFERENCES customers(customer_id)\norders|orders_pkey|PRIMARY KEY (order_id)\nproduct_brand_map|product_brand_map_brand_id_fkey|FOREIGN KEY (brand_id) REFERENCES brands(brand_id)\nproduct_brand_map|product_brand_map_pkey|PRIMARY KEY (product_id, brand_id)\nproduct_category_translation|product_category_translation_pkey|PRIMARY KEY (product_category_name)\nproduct_price_history|product_price_history_pkey|PRIMARY KEY (history_id)\nproducts|products_pkey|PRIMARY KEY (product_id)\nreferrals|referrals_pkey|PRIMARY KEY (referral_id)\nrefund_items|refund_items_pkey|PRIMARY KEY (refund_id, order_id, order_item_id)\nrefunds|refunds_pkey|PRIMARY KEY (refund_id)\nregions|regions_pkey|PRIMARY KEY (region_code)\nsearch_logs|search_logs_pkey|PRIMARY KEY (log_id)\nsellers|sellers_pkey|PRIMARY KEY (seller_id)\nsemantic_cache|semantic_cache_pkey|PRIMARY KEY (cache_key)\nsettlement_items|settlement_items_pkey|PRIMARY KEY (settlement_id, order_id, order_item_id)\nsettlements|settlements_pkey|PRIMARY KEY (settlement_id)\nshipment_tracking|shipment_tracking_pkey|PRIMARY KEY (tracking_id)\nshipments|shipments_pkey|PRIMARY KEY (shipment_id)\nshipments|shipments_warehouse_id_fkey|FOREIGN KEY (warehouse_id) REFERENCES warehouses(warehouse_id)\nshipping_addresses|shipping_addresses_pkey|PRIMARY KEY (address_id)\nsupport_tickets|support_tickets_category_id_fkey|FOREIGN KEY (category_id) REFERENCES ticket_categories(category_id)\nsupport_tickets|support_tickets_pkey|PRIMARY KEY (ticket_id)\nticket_categories|ticket_categories_pkey|PRIMARY KEY (category_id)\nticket_messages|ticket_messages_pkey|PRIMARY KEY (message_id)\nuser_tag_map|user_tag_map_pkey|PRIMARY KEY (member_id, tag_id)\nuser_tags|user_tags_pkey|PRIMARY KEY (tag_id)\nwarehouses|warehouses_pkey|PRIMARY KEY (warehouse_id)\n",
+    "stderr": ""
+  },
+  {
+    "id": "A02_nulls_and_denominators",
+    "synthetic": false,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT (SELECT count(*) FROM orders WHERE order_delivered_customer_date IS NOT NULL) AS delivered,(SELECT count(*) FROM products) AS products,(SELECT count(*) FROM referrals) AS referrals,(SELECT count(*) FROM referrals WHERE converted_at IS NOT NULL) AS converted,(SELECT count(*) FROM orders WHERE order_purchase_timestamp IS NULL) AS null_order_time,(SELECT count(*) FROM refunds WHERE requested_at IS NULL) AS null_refund_time,(SELECT count(*) FROM support_tickets WHERE created_at IS NULL) AS null_ticket_time,(SELECT count(*) FROM members WHERE register_date IS NULL) AS null_registration,(SELECT count(*) FROM settlements WHERE period_start IS NULL) AS null_period_start;\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "96476|32951|4793|1623|0|0|0|0|0\n",
+    "stderr": ""
+  },
+  {
+    "id": "A03_month_coverage",
+    "synthetic": false,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nWITH events AS(SELECT 'orders' AS src,order_purchase_timestamp AS ts FROM orders UNION ALL SELECT 'freight',o.order_purchase_timestamp FROM orders o JOIN order_items i USING(order_id) UNION ALL SELECT 'refunds',requested_at FROM refunds UNION ALL SELECT 'tickets',created_at FROM support_tickets UNION ALL SELECT 'members',register_date FROM members UNION ALL SELECT 'settlements',period_start FROM settlements), monthly AS(SELECT src,date_trunc('month',ts) AS m,count(*) AS n FROM events WHERE ts IS NOT NULL GROUP BY 1,2), bounds AS(SELECT src,min(m) AS lo,max(m) AS hi FROM monthly GROUP BY src) SELECT b.src,b.lo,b.hi,count(*) FILTER(WHERE m.n IS NULL) AS missing_months,array_agg(c.m::date ORDER BY c.m) FILTER(WHERE m.n IS NULL) AS gaps FROM bounds b CROSS JOIN LATERAL generate_series(b.lo,b.hi,interval '1 month') c(m) LEFT JOIN monthly m ON m.src=b.src AND m.m=c.m GROUP BY b.src,b.lo,b.hi ORDER BY b.src;\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "freight|2016-09-01 00:00:00|2018-09-01 00:00:00|1|{2016-11-01}\nmembers|2016-01-01 00:00:00|2018-09-01 00:00:00|0|\norders|2016-09-01 00:00:00|2018-10-01 00:00:00|1|{2016-11-01}\nrefunds|2016-10-01 00:00:00|2018-10-01 00:00:00|1|{2016-12-01}\nsettlements|2017-01-01 00:00:00|2018-08-01 00:00:00|1|{2017-02-01}\ntickets|2016-10-01 00:00:00|2018-10-01 00:00:00|1|{2016-12-01}\n",
+    "stderr": ""
+  },
+  {
+    "id": "A04_zero_review_states_and_member_levels",
+    "synthetic": false,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT 'order_status' AS dimension,o.order_status AS value,count(DISTINCT o.order_id) AS population,count(r.order_id) AS child_facts FROM orders o LEFT JOIN order_reviews r USING(order_id) GROUP BY o.order_status UNION ALL SELECT 'member_level',ml.level_id::text,count(DISTINCT m.member_id),count(o.order_id) FROM member_levels ml LEFT JOIN members m ON m.level_id=ml.level_id LEFT JOIN customers c ON c.customer_unique_id=m.customer_unique_id LEFT JOIN orders o ON o.customer_id=c.customer_id GROUP BY ml.level_id ORDER BY 1,2;\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "member_level|1|52722|54605\nmember_level|2|36853|38080\nmember_level|3|6339|6571\nmember_level|4|182|185\norder_status|approved|2|2\norder_status|canceled|625|609\norder_status|created|5|3\norder_status|delivered|96478|96361\norder_status|invoiced|314|313\norder_status|processing|301|296\norder_status|shipped|1107|1043\norder_status|unavailable|609|597\n",
+    "stderr": ""
+  },
+  {
+    "id": "A05_unmatched_keys",
+    "synthetic": false,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT 'inventory_warehouse' AS relation,count(*) AS n FROM inventory i LEFT JOIN warehouses w USING(warehouse_id) WHERE w.warehouse_id IS NULL UNION ALL SELECT 'settlement_seller',count(*) FROM settlements st LEFT JOIN sellers s USING(seller_id) WHERE s.seller_id IS NULL UNION ALL SELECT 'snapshot_level',count(*) FROM member_snapshot ms LEFT JOIN member_levels ml USING(level_id) WHERE ms.level_id IS NOT NULL AND ml.level_id IS NULL UNION ALL SELECT 'refund_order',count(*) FROM refunds r LEFT JOIN orders o USING(order_id) WHERE o.order_id IS NULL UNION ALL SELECT 'raw_category_no_translation',count(*) FROM products p LEFT JOIN product_category_translation t USING(product_category_name) WHERE p.product_category_name IS NOT NULL AND t.product_category_name IS NULL UNION ALL SELECT 'clicked_product',count(*) FROM search_logs sl LEFT JOIN products p ON p.product_id=sl.clicked_product_id WHERE sl.clicked_product_id IS NOT NULL AND p.product_id IS NULL;\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "settlement_seller|0\ninventory_warehouse|0\nclicked_product|0\nraw_category_no_translation|13\nrefund_order|0\nsnapshot_level|0\n",
+    "stderr": ""
+  },
+  {
+    "id": "A06_identity_and_fanout",
+    "synthetic": false,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT 'customer_unique_ids_with_multiple_rows' AS issue,count(*) AS n FROM(SELECT customer_unique_id FROM customers GROUP BY 1 HAVING count(*)>1)x UNION ALL SELECT 'people_in_multiple_states',count(*) FROM(SELECT customer_unique_id FROM customers GROUP BY 1 HAVING count(DISTINCT customer_state)>1)x UNION ALL SELECT 'orders_with_multiple_reviews',count(*) FROM(SELECT order_id FROM order_reviews GROUP BY 1 HAVING count(*)>1)x UNION ALL SELECT 'orders_with_multiple_coupons',count(*) FROM(SELECT order_id FROM coupon_usages GROUP BY 1 HAVING count(*)>1)x UNION ALL SELECT 'customers_with_multiple_default_addresses',count(*) FROM(SELECT customer_id FROM shipping_addresses WHERE is_default GROUP BY 1 HAVING count(*)>1)x UNION ALL SELECT 'products_with_multiple_current_brands',count(*) FROM(SELECT product_id FROM product_brand_map WHERE is_current GROUP BY 1 HAVING count(*)>1)x UNION ALL SELECT 'member_date_multiple_snapshots',count(*) FROM(SELECT member_id,snapshot_date FROM member_snapshot GROUP BY 1,2 HAVING count(*)>1)x;\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "orders_with_multiple_coupons|0\nproducts_with_multiple_current_brands|0\nmember_date_multiple_snapshots|0\norders_with_multiple_reviews|547\ncustomer_unique_ids_with_multiple_rows|2997\ncustomers_with_multiple_default_addresses|0\npeople_in_multiple_states|39\n",
+    "stderr": ""
+  },
+  {
+    "id": "A07_campaign_population",
+    "synthetic": false,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT campaign_type,count(*) AS campaigns,count(*) FILTER(WHERE NOT EXISTS(SELECT 1 FROM coupons cp WHERE cp.campaign_id=ca.campaign_id)) AS without_coupon FROM campaigns ca GROUP BY campaign_type ORDER BY 1;\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "COUPON|13|0\nDISCOUNT|13|0\nFLASH_SALE|13|0\nMEMBER_DAY|13|0\n",
+    "stderr": ""
+  },
+  {
+    "id": "A08_slowest_unknown_candidates",
+    "synthetic": false,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT c.customer_state,count(*) AS delivered, count(o.order_purchase_timestamp) AS measurable,round(avg(extract(epoch FROM(o.order_delivered_customer_date-o.order_purchase_timestamp))/86400.0),2) AS avg_days FROM orders o JOIN customers c USING(customer_id) WHERE order_delivered_customer_date IS NOT NULL GROUP BY c.customer_state ORDER BY avg_days DESC NULLS LAST,c.customer_state NULLS LAST;\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "RR|41|41|29.39\nAP|67|67|27.19\nAM|145|145|26.43\nAL|397|397|24.54\nPA|946|946|23.77\nMA|717|717|21.57\nSE|335|335|21.52\nCE|1279|1279|21.27\nAC|80|80|21.04\nPB|517|517|20.43\nPI|476|476|19.46\nRO|243|243|19.37\nBA|3256|3256|19.34\nRN|474|474|19.28\nPE|1593|1593|18.45\nMT|886|886|18.06\nTO|274|274|17.66\nES|1995|1995|15.79\nMS|701|701|15.62\nGO|1957|1957|15.61\nRJ|12353|12353|15.31\nRS|5344|5344|15.30\nSC|3547|3547|14.96\nDF|2080|2080|12.97\nMG|11355|11355|12.01\nPR|4923|4923|11.99\nSP|40495|40495|8.76\n",
+    "stderr": ""
+  },
+  {
+    "id": "A09_zero_gmv_region",
+    "synthetic": false,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT r.macro_region,sum(i.price+i.freight_value) AS gmv FROM orders o JOIN customers c USING(customer_id) JOIN regions r ON r.region_code=c.customer_state JOIN order_items i USING(order_id) WHERE o.order_status NOT IN('canceled','unavailable') GROUP BY 1 ORDER BY 1;\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "Centro-Oeste|1013752.38\nNordeste|1872583.31\nNorte|409725.36\nSudeste|10159955.08\nSul|2279510.90\n",
+    "stderr": ""
+  },
+  {
+    "id": "S01_T6-006_empty_delivered",
+    "synthetic": true,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nWITH orders AS(SELECT * FROM public.orders WHERE false) SELECT ROUND(100.0 * COUNT(*) FILTER (\n         WHERE o.order_delivered_customer_date <= o.order_estimated_delivery_date\n       ) / COUNT(*), 2) AS on_time_pct\nFROM orders o\nWHERE o.order_delivered_customer_date IS NOT NULL;\nROLLBACK;\n",
+    "exitCode": 3,
+    "stdout": "",
+    "stderr": "ERROR:  division by zero\n"
+  },
+  {
+    "id": "S02_T6-008_empty_products",
+    "synthetic": true,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nWITH sold AS(SELECT 0::bigint AS n),allp AS(SELECT 0::bigint AS n) SELECT round(100.0*s.n/a.n,2) AS sell_through_pct FROM sold s CROSS JOIN allp a;\nROLLBACK;\n",
+    "exitCode": 3,
+    "stdout": "",
+    "stderr": "ERROR:  division by zero\n"
+  },
+  {
+    "id": "S03_T6-011_zero_region_gmv",
+    "synthetic": true,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nWITH oi(price,freight_value) AS(VALUES(0::numeric,0::numeric)) SELECT round(100.0*sum(freight_value)/sum(price+freight_value),2) AS freight_pct FROM oi;\nROLLBACK;\n",
+    "exitCode": 3,
+    "stdout": "",
+    "stderr": "ERROR:  division by zero\n"
+  },
+  {
+    "id": "S04_T6-017_empty_referrals",
+    "synthetic": true,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nWITH referrals AS(SELECT * FROM public.referrals WHERE false) SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE converted_at IS NOT NULL) / COUNT(*), 2) AS conversion_pct,\n       ROUND(SUM(reward_amount) / COUNT(*) FILTER (WHERE converted_at IS NOT NULL), 2) AS reward_per_converted\nFROM referrals;\nROLLBACK;\n",
+    "exitCode": 3,
+    "stdout": "",
+    "stderr": "ERROR:  division by zero\n"
+  },
+  {
+    "id": "S05_T6-017_no_conversion",
+    "synthetic": true,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nWITH referrals(converted_at,reward_amount) AS(VALUES(NULL::timestamp,0::numeric)) SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE converted_at IS NOT NULL) / COUNT(*), 2) AS conversion_pct,\n       ROUND(SUM(reward_amount) / COUNT(*) FILTER (WHERE converted_at IS NOT NULL), 2) AS reward_per_converted\nFROM referrals;\nROLLBACK;\n",
+    "exitCode": 3,
+    "stdout": "",
+    "stderr": "ERROR:  division by zero\n"
+  },
+  {
+    "id": "S06_T5-009_orphan_warehouse",
+    "synthetic": true,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nWITH inventory(warehouse_id,product_id,quantity,safety_stock) AS(VALUES(999999,'synthetic-p',1,2)),warehouses(warehouse_id,region_code) AS(SELECT NULL::int,NULL::text WHERE false),product_brand_map(product_id,brand_id,is_current) AS(SELECT NULL::text,NULL::int,NULL::boolean WHERE false) SELECT w.warehouse_id,w.region_code,pbm.brand_id,COUNT(*) AS low_stock_items\nFROM inventory i JOIN warehouses w ON w.warehouse_id=i.warehouse_id\nLEFT JOIN product_brand_map pbm ON pbm.product_id=i.product_id AND pbm.is_current\nWHERE i.quantity<i.safety_stock\nGROUP BY w.warehouse_id,w.region_code,pbm.brand_id\nORDER BY low_stock_items DESC,w.warehouse_id,w.region_code,pbm.brand_id ASC NULLS LAST LIMIT 20;\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "id": "S08_T6-019_unknown_average_enters_top10",
+    "synthetic": true,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nWITH orders(customer_id,order_delivered_customer_date,order_purchase_timestamp) AS(VALUES('c',TIMESTAMP '2018-01-03',NULL::timestamp)),customers(customer_id,customer_state) AS(VALUES('c','SP')) SELECT c.customer_state,\n       ROUND(AVG(EXTRACT(EPOCH FROM (o.order_delivered_customer_date - o.order_purchase_timestamp)) / 86400.0), 2) AS avg_days\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nWHERE o.order_delivered_customer_date IS NOT NULL\nGROUP BY 1 ORDER BY avg_days DESC NULLS LAST,c.customer_state ASC NULLS LAST LIMIT 10;\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "SP|\n",
+    "stderr": ""
+  },
+  {
+    "id": "S09_T4-011_zero_review_status",
+    "synthetic": true,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nWITH orders(order_id,order_status) AS(VALUES('synthetic-o','created')),order_reviews(order_id,review_score) AS(SELECT NULL::text,NULL::int WHERE false) SELECT o.order_status, ROUND(AVG(r.review_score), 2) AS avg_score\nFROM orders o JOIN order_reviews r ON r.order_id = o.order_id\nGROUP BY 1 ORDER BY avg_score DESC;\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "id": "S10_T4-017_zero_order_level",
+    "synthetic": true,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nWITH orders(customer_id) AS(SELECT NULL::text WHERE false),customers(customer_id,customer_unique_id) AS(SELECT NULL::text,NULL::text WHERE false),members(customer_unique_id,level_id) AS(VALUES('synthetic-person',1)) SELECT m.level_id, COUNT(*) AS cnt\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN members m ON m.customer_unique_id = c.customer_unique_id\nGROUP BY 1 ORDER BY 1;\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "id": "S07_T5-014_unknown_snapshot_level",
+    "synthetic": true,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nWITH member_snapshot(snapshot_id,member_id,snapshot_date,level_id) AS(VALUES(1,1,DATE '2018-01-01',999)),members(member_id,level_id) AS(VALUES(1,1)),member_levels(level_id,level_name) AS(VALUES(1,'known-level')), ranked AS (\n SELECT ms.*,ROW_NUMBER() OVER(PARTITION BY member_id ORDER BY snapshot_date DESC,snapshot_id DESC) AS rn\n FROM member_snapshot ms WHERE snapshot_date IS NOT NULL\n)\nSELECT ml_cur.level_name AS current_level,ml_snap.level_name AS snapshot_level,\n COUNT(DISTINCT m.member_id) AS member_cnt\nFROM ranked ms\nJOIN members m ON m.member_id=ms.member_id\nLEFT JOIN member_levels ml_cur ON ml_cur.level_id=m.level_id\nLEFT JOIN member_levels ml_snap ON ml_snap.level_id=ms.level_id\nWHERE ms.rn=1 AND ms.level_id<>m.level_id\nGROUP BY ml_cur.level_name,ml_snap.level_name ORDER BY member_cnt DESC;\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "known-level||1\n",
+    "stderr": ""
+  },
+  {
+    "id": "S11_T4-015_unmapped_region",
+    "synthetic": true,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nWITH orders(order_id,customer_id) AS(VALUES('o','c')),customers(customer_id,customer_state) AS(VALUES('c',NULL::text)),regions(region_code,macro_region) AS(VALUES('SP','Sudeste')) SELECT r.macro_region, COUNT(*) AS cnt\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN regions r ON r.region_code = c.customer_state\nGROUP BY 1 ORDER BY cnt DESC;\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "id": "S12_T5-001_unknown_level_name",
+    "synthetic": true,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nWITH orders(order_id,customer_id) AS(VALUES('o','c')),customers(customer_id,customer_state,customer_unique_id) AS(VALUES('c','SP','u')),regions(region_code,macro_region) AS(VALUES('SP','Sudeste')),members(customer_unique_id,level_id) AS(VALUES('u',NULL::int)),member_levels(level_id,level_name) AS(VALUES(1,'known-level')),order_items(order_id,price) AS(VALUES('o',100::numeric)) SELECT r.macro_region, ml.level_name, ROUND(SUM(oi.price), 2) AS gmv\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN regions r ON r.region_code = c.customer_state\nJOIN members m ON m.customer_unique_id = c.customer_unique_id\nJOIN member_levels ml ON ml.level_id = m.level_id\nJOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1, 2 ORDER BY gmv DESC;\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "id": "S13_T4-031_unmatched_seller",
+    "synthetic": true,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nWITH settlements(seller_id,net_amount) AS(VALUES('unknown-s',100::numeric)),sellers(seller_id,seller_state) AS(SELECT NULL::text,NULL::text WHERE false) SELECT s.seller_state, ROUND(SUM(st.net_amount), 2) AS total\nFROM settlements st JOIN sellers s ON s.seller_id = st.seller_id\nGROUP BY 1 ORDER BY total DESC;\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "id": "A10_campaign_top10_types",
+    "synthetic": false,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nWITH co AS(SELECT DISTINCT cp.campaign_id,cu.order_id FROM coupon_usages cu JOIN coupons cp USING(coupon_id) JOIN orders o USING(order_id) WHERE o.order_status NOT IN('canceled','unavailable')),it AS(SELECT order_id,sum(price) AS sales FROM order_items GROUP BY 1) SELECT ca.campaign_id,ca.campaign_type,round(sum(it.sales),2) AS sales FROM campaigns ca LEFT JOIN co USING(campaign_id) LEFT JOIN it USING(order_id) GROUP BY ca.campaign_id ORDER BY sales DESC NULLS LAST,ca.campaign_id LIMIT 10;\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "16|DISCOUNT|41423.64\n28|DISCOUNT|39668.42\n49|COUPON|39626.69\n4|DISCOUNT|38989.22\n27|MEMBER_DAY|37363.43\n12|DISCOUNT|36990.08\n37|COUPON|36511.68\n48|DISCOUNT|36157.79\n41|COUPON|35945.43\n36|DISCOUNT|35861.04\n",
+    "stderr": ""
+  },
+  {
+    "id": "A11_region_and_seller_coverage",
+    "synthetic": false,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT count(*) AS orders_unmapped_region FROM orders o JOIN customers c USING(customer_id) LEFT JOIN regions r ON r.region_code=c.customer_state WHERE r.region_code IS NULL; SELECT count(*) AS member_orders_null_level FROM orders o JOIN customers c USING(customer_id) JOIN members m USING(customer_unique_id) WHERE m.level_id IS NULL;\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "0\n0\n",
+    "stderr": ""
+  },
+  {
+    "id": "A12_real_schema_nullable",
+    "synthetic": false,
+    "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout='8s';\nSELECT table_name,column_name,is_nullable,data_type FROM information_schema.columns WHERE table_schema='public' AND ((table_name='members' AND column_name IN('customer_unique_id','level_id')) OR (table_name='customers' AND column_name IN('customer_unique_id','customer_state')) OR (table_name='orders' AND column_name IN('customer_id','order_purchase_timestamp')) OR (table_name='member_snapshot' AND column_name IN('level_id','snapshot_date')) OR (table_name='order_items' AND column_name IN('price','freight_value'))) ORDER BY 1,2;\nROLLBACK;\n",
+    "exitCode": 0,
+    "stdout": "customers|customer_state|YES|character varying\ncustomers|customer_unique_id|NO|character varying\nmember_snapshot|level_id|YES|integer\nmember_snapshot|snapshot_date|YES|date\nmembers|customer_unique_id|NO|character varying\nmembers|level_id|YES|integer\norder_items|freight_value|NO|numeric\norder_items|price|NO|numeric\norders|customer_id|NO|character varying\norders|order_purchase_timestamp|YES|timestamp without time zone\n",
+    "stderr": ""
+  }
+]

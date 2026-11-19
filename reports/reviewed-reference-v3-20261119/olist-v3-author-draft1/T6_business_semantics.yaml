@@ -1,0 +1,164 @@
+- id: T6-002
+  difficulty: business_semantics
+  tags:
+  - 口径
+  - 有效订单
+  question: 有效订单（排除已取消和不可用）的订单数、下单人数、客单价分别是多少？
+  gold_sql: "WITH valid_orders AS (\n SELECT o.order_id,c.customer_unique_id FROM orders o JOIN customers c ON c.customer_id=o.customer_id\n\
+    \ WHERE o.order_status NOT IN ('canceled','unavailable')\n), item_totals AS (\n SELECT order_id,SUM(price+freight_value)\
+    \ AS gmv FROM order_items GROUP BY order_id\n)\nSELECT COUNT(*) AS valid_orders,COUNT(DISTINCT vo.customer_unique_id)\
+    \ AS buyers,\n ROUND(SUM(it.gmv)/NULLIF(COUNT(*),0),2) AS aov\nFROM valid_orders vo LEFT JOIN item_totals it ON it.order_id=vo.order_id;"
+  notes: 【需确认】 客单价 AOV 口径假设为「GMV（含运费）/ 有效订单数」。另一种常见口径是「销售额（不含运费）/ 订单数」，两者差约 16%。
+- id: T6-004
+  difficulty: business_semantics
+  tags:
+  - 口径
+  - 留存
+  question: 首单在 2017 年上半年的用户，在 2017 年下半年是否再次下单？按月留存率是多少？
+  gold_sql: "WITH first_order AS (\n  SELECT c.customer_unique_id, MIN(o.order_purchase_timestamp) AS first_ts\n  FROM orders\
+    \ o\n  JOIN customers c ON c.customer_id = o.customer_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n\
+    \  GROUP BY 1\n),\ncohort AS (\n  SELECT customer_unique_id, DATE_TRUNC('month', first_ts)::date AS cohort_month\n  FROM\
+    \ first_order\n  WHERE first_ts >= DATE '2017-01-01' AND first_ts < DATE '2017-07-01'\n),\nreturner AS (\n  SELECT DISTINCT\
+    \ co.customer_unique_id, co.cohort_month\n  FROM cohort co\n  JOIN customers c ON c.customer_unique_id = co.customer_unique_id\n\
+    \  JOIN orders o ON o.customer_id = c.customer_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n    AND\
+    \ o.order_purchase_timestamp >= DATE '2017-07-01'\n    AND o.order_purchase_timestamp < DATE '2018-01-01'\n)\nSELECT co.cohort_month,\n\
+    \       ROUND(100.0 * COUNT(re.customer_unique_id) / COUNT(*), 2) AS retention_pct\nFROM cohort co\nLEFT JOIN returner\
+    \ re ON re.customer_unique_id = co.customer_unique_id\nGROUP BY 1 ORDER BY 1;"
+  notes: 【需确认】 留存口径假设为「按首单月分群，看该用户在下一半年窗口内是否复购」，是粗粒度留存，不是严格的次月留存。
+- id: T6-006
+  difficulty: business_semantics
+  tags:
+  - 口径
+  - 履约
+  question: 已送达订单的准时率是多少？（实际送达日期不晚于预计送达日期）
+  gold_sql: "SELECT ROUND(100.0 * COUNT(*) FILTER (\n         WHERE o.order_delivered_customer_date <= o.order_estimated_delivery_date\n\
+    \       ) / COUNT(*), 2) AS on_time_pct\nFROM orders o\nWHERE o.order_delivered_customer_date IS NOT NULL;"
+  notes: '【需确认】 准时率分母假设为「已送达订单」，不含未送达订单。若把未送达也算作不准时，准时率会明显下降。
+
+
+    【阶段 4 修正】原 gold 额外输出了 on_time 和 delivered_orders 两个中间量
+
+    （分子/分母，供人工核对口径用）。问题只问「准时率是多少」，标准答案
+
+    就应该只给准时率。多输出中间量会让「答案对不对」和「输出列数像不像」
+
+    混在一起判——模型算出 91.89 也会被判错。按统一规则改为只输出指标列。
+
+    '
+- id: T6-008
+  difficulty: business_semantics
+  tags:
+  - 口径
+  - 动销率
+  question: 商品动销率是多少？（有销量的商品数 / 全部商品数）
+  gold_sql: "WITH sold AS (\n  SELECT COUNT(DISTINCT oi.product_id) AS n\n  FROM order_items oi\n  JOIN orders o ON o.order_id\
+    \ = oi.order_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n),\nallp AS (SELECT COUNT(*) AS n FROM products)\n\
+    SELECT ROUND(100.0 * s.n / a.n, 2) AS sell_through_pct\nFROM sold s CROSS JOIN allp a;"
+  notes: 【需确认】 动销率分母假设为「全部商品数」。电商里动销率常按「有库存的商品」算，口径不同结果差异很大。
+- id: T6-011
+  difficulty: business_semantics
+  tags:
+  - 口径
+  - 运费
+  question: 按订单关联客户档案所在州所属宏观区域，运费占含运费GMV的百分比是多少？仅统计有效订单。
+  gold_sql: "SELECT r.macro_region,\n       ROUND(100.0 * SUM(oi.freight_value) / SUM(oi.price + oi.freight_value), 2) AS\
+    \ freight_pct\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN regions r ON r.region_code = c.customer_state\n\
+    JOIN order_items oi ON oi.order_id = o.order_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable')\nGROUP BY 1 ORDER\
+    \ BY freight_pct DESC;"
+  notes: 【需确认】 分母假设为「含运费 GMV」。若要算「运费/商品销售额」，分母改成 SUM(oi.price)。
+- id: T6-013
+  difficulty: business_semantics
+  tags:
+  - 口径
+  - 优惠
+  question: 优惠券带来的 GMV 和优惠金额分别是多少？用券订单的折扣率是多少？
+  gold_sql: "WITH coupon_totals AS (\n SELECT order_id,SUM(discount_amount) AS discount_amount FROM coupon_usages GROUP BY\
+    \ order_id\n), order_totals AS (\n SELECT order_id,SUM(price+freight_value) AS order_gmv FROM order_items GROUP BY order_id\n\
+    )\nSELECT ROUND(SUM(ot.order_gmv),2) AS gmv,ROUND(SUM(ct.discount_amount),2) AS discount,\n ROUND(100.0*SUM(ct.discount_amount)/NULLIF(SUM(ot.order_gmv),0),2)\
+    \ AS discount_pct\nFROM coupon_totals ct JOIN orders o ON o.order_id=ct.order_id\nJOIN order_totals ot ON ot.order_id=ct.order_id\n\
+    WHERE o.order_status NOT IN ('canceled','unavailable');"
+  notes: 【需确认】 折扣率分母假设为「用券订单的 GMV」。注意 coupon_usages 与 order_items 是一对多，SUM(discount_amount) 会被放大，这里用 SUM 前需确认；若一个订单多条 order_items，折扣会被重复计算。
+- id: T6-015
+  difficulty: business_semantics
+  tags:
+  - 口径
+  - 客服
+  - SLA
+  question: 按工单分类编号，各类工单的SLA达成百分比是多少？解决时间不超过类目SLA小时数计达成，未解决工单仍在分母。
+  gold_sql: "SELECT st.category_id,ROUND(100.0*COUNT(*) FILTER(\n WHERE st.resolved_at IS NOT NULL\n AND EXTRACT(EPOCH FROM(st.resolved_at-st.created_at))/3600.0<=tc.sla_hours\n\
+    )/NULLIF(COUNT(*),0),2) AS sla_pct\nFROM support_tickets st LEFT JOIN ticket_categories tc ON tc.category_id=st.category_id\n\
+    GROUP BY st.category_id ORDER BY sla_pct;"
+  notes: '【需确认】 SLA 分母假设为「全部工单」，未解决的工单计入未达成。若分母只算已解决工单，达成率会虚高。
+
+
+    【阶段 4 修正】原 gold 额外输出了 sla_hours、tickets、within_sla 三个中间量。
+
+    问题只问「各类工单的 SLA 达成率」，维度列 category_name 必须保留
+
+    （要按类目分组），其余中间量去掉。理由同 T6-006。
+
+    '
+- id: T6-017
+  difficulty: business_semantics
+  tags:
+  - 口径
+  - 推荐
+  question: 推荐活动的转化率和人均奖励是多少？
+  gold_sql: "SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE converted_at IS NOT NULL) / COUNT(*), 2) AS conversion_pct,\n   \
+    \    ROUND(SUM(reward_amount) / COUNT(*) FILTER (WHERE converted_at IS NOT NULL), 2) AS reward_per_converted\nFROM referrals;"
+  notes: '【需确认】 转化口径假设为「converted_at 非空」。人均奖励分母只算已转化，若算全部邀请则人均奖励会偏低。
+
+
+    【阶段 4 修正】原 gold 额外输出了 referrals 和 converted 两个中间量。
+
+    问题问「转化率和人均奖励」，这两列就是答案，中间量去掉。理由同 T6-006。
+
+    '
+- id: T6-019
+  difficulty: business_semantics
+  tags:
+  - 口径
+  - 履约
+  - 时效
+  question: 各州的平均配送时长（下单到签收）是多少天？列出配送最慢的 10 个州。
+  gold_sql: "SELECT c.customer_state,\n       ROUND(AVG(EXTRACT(EPOCH FROM (o.order_delivered_customer_date - o.order_purchase_timestamp))\
+    \ / 86400.0), 2) AS avg_days\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nWHERE o.order_delivered_customer_date\
+    \ IS NOT NULL\nGROUP BY 1 ORDER BY avg_days DESC NULLS LAST,c.customer_state ASC NULLS LAST LIMIT 10;"
+  notes: 【需确认】 配送时长口径假设为「下单时间到客户签收时间」，不含未送达订单。分母若含未送达订单则无法计算时长，需要单独口径。
+- id: T6-020
+  difficulty: business_semantics
+  tags:
+  - 口径
+  - 结算
+  - 佣金
+  question: 平台整体佣金率和各卖家佣金率分布（最低、等权平均、最高）分别是多少？输出四位小数比率；分母为0的卖家率未知，不补0参与平均。
+  gold_sql: "WITH seller_rate AS (\n SELECT st.seller_id,SUM(si.gross_amount) AS gross,SUM(si.commission_amount) AS commission,\n\
+    \ SUM(si.commission_amount)/NULLIF(SUM(si.gross_amount),0) AS rate\n FROM settlements st JOIN settlement_items si ON si.settlement_id=st.settlement_id\
+    \ GROUP BY st.seller_id\n)\nSELECT ROUND(SUM(commission)/NULLIF(SUM(gross),0),4) AS platform_rate,\n ROUND(MIN(rate),4)\
+    \ AS min_seller_rate,ROUND(AVG(rate),4) AS avg_seller_rate,\n ROUND(MAX(rate),4) AS max_seller_rate FROM seller_rate;"
+  notes: 【需确认】 平台佣金率是「总佣金/总 GMV」加权值，卖家佣金率是「各卖家佣金率的算术平均」，两者统计口径不同，在业务指标定义中需严格区分。
+- id: T6-022
+  difficulty: business_semantics
+  tags:
+  - 口径
+  - 时间
+  - 同比
+  question: 按1至12月展示2017年和2018年每月GMV，以及2018相对2017同月的同比增长百分比；某年该月没有金额数据时为NULL，同比不可计算时为NULL，不填0。
+  gold_sql: "WITH monthly AS (\n SELECT EXTRACT(YEAR FROM o.order_purchase_timestamp)::int AS yr,\n EXTRACT(MONTH FROM o.order_purchase_timestamp)::int\
+    \ AS mo,SUM(oi.price+oi.freight_value) AS gmv\n FROM orders o JOIN order_items oi ON oi.order_id=o.order_id\n WHERE o.order_status\
+    \ NOT IN ('canceled','unavailable')\n AND o.order_purchase_timestamp>=DATE '2017-01-01' AND o.order_purchase_timestamp<DATE\
+    \ '2019-01-01'\n GROUP BY 1,2\n), months AS (SELECT generate_series(1,12) AS mo)\nSELECT m.mo,ROUND(m17.gmv,2) AS gmv_2017,ROUND(m18.gmv,2)\
+    \ AS gmv_2018,\n ROUND(100.0*(m18.gmv-m17.gmv)/NULLIF(m17.gmv,0),2) AS yoy_pct\nFROM months m LEFT JOIN monthly m17 ON\
+    \ m17.mo=m.mo AND m17.yr=2017\nLEFT JOIN monthly m18 ON m18.mo=m.mo AND m18.yr=2018 ORDER BY m.mo;"
+  notes: 【需确认】 2016 年只有 9-12 月数据、2018 年只到 10 月，同比对比时要注意两边月份不完整，1 月和 11-12 月会因缺数据产生偏差。
+- id: T6-024
+  difficulty: business_semantics
+  tags:
+  - 口径
+  - 客服
+  - 归因
+  question: 按退款原因，统计有该原因退款订单对应评价记录的平均评分和低分百分比；同一原因同一订单多笔退款不得重复加权评价，每条评价按完整记录身份保留。
+  gold_sql: "WITH reason_orders AS (SELECT DISTINCT reason_code,order_id FROM refunds)\nSELECT r.reason_code,ROUND(AVG(rev.review_score),2)\
+    \ AS avg_score,\n ROUND(100.0*COUNT(*) FILTER(WHERE rev.review_score<=2)/NULLIF(COUNT(*),0),2) AS low_score_pct\nFROM\
+    \ reason_orders r JOIN order_reviews rev ON rev.order_id=r.order_id\nGROUP BY r.reason_code ORDER BY low_score_pct DESC;"
+  notes: 【需确认】 低分口径与 T6-009 保持一致（1-2 星）。一个订单可能有多条评价，这里按评价行计数，不是按订单去重。

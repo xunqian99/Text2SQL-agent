@@ -1,0 +1,179 @@
+- id: T5-001
+  difficulty: multi_join_deep
+  tags:
+  - join
+  - 分组
+  - 求和
+  - 会员
+  question: 按订单关联客户档案所在州所属宏观区域，各会员等级（按等级名称汇总）的商品销售额分别是多少？按销售额从高到低排序。
+  gold_sql: 'SELECT r.macro_region, ml.level_name, ROUND(SUM(oi.price), 2) AS gmv
+
+    FROM orders o
+
+    JOIN customers c ON c.customer_id = o.customer_id
+
+    JOIN regions r ON r.region_code = c.customer_state
+
+    JOIN members m ON m.customer_unique_id = c.customer_unique_id
+
+    JOIN member_levels ml ON ml.level_id = m.level_id
+
+    JOIN order_items oi ON oi.order_id = o.order_id
+
+    GROUP BY 1, 2 ORDER BY gmv DESC;'
+  notes: 六表链路：orders -> customers -> regions，同时 customers -> members -> member_levels，最后到 order_items。地理维度和会员维度交叉分析。销售额口径为
+    order_items.price 之和，不含运费。明确指定输出等级名称维度。
+- id: T5-003
+  difficulty: multi_join_deep
+  tags:
+  - join
+  - 退款
+  - 翻译表
+  question: 用英文类目名统计退款金额，哪些类目退款最多？取前 15。
+  gold_sql: 'SELECT t.product_category_name_english,ROUND(SUM(ri.refund_value),2) AS refund_amt
+
+    FROM refunds r JOIN refund_items ri ON ri.refund_id=r.refund_id
+
+    JOIN order_items oi ON oi.order_id=ri.order_id AND oi.order_item_id=ri.order_item_id
+
+    JOIN products p ON p.product_id=oi.product_id
+
+    LEFT JOIN product_category_translation t ON t.product_category_name=p.product_category_name
+
+    WHERE p.product_category_name IS NOT NULL
+
+    GROUP BY t.product_category_name_english
+
+    ORDER BY refund_amt DESC NULLS LAST,t.product_category_name_english ASC NULLS LAST LIMIT 15;'
+  notes: refund_items 要回连 order_items 才能拿到 product_id，必须同时匹配 order_id 和 order_item_id 两个键。剔除题干未要求的冗余 refund_cnt 列。
+- id: T5-005
+  difficulty: multi_join_deep
+  tags:
+  - join
+  - 优惠券
+  - 活动
+  question: 按活动编号统计每个优惠券活动带来的有效订单数和商品销售额，按商品销售额降序取前10；没有有效用券订单的活动也保留。
+  gold_sql: "WITH campaign_orders AS (\n SELECT DISTINCT cp.campaign_id, cu.order_id\n FROM coupon_usages cu JOIN coupons\
+    \ cp ON cp.coupon_id=cu.coupon_id\n JOIN orders o ON o.order_id=cu.order_id\n WHERE o.order_status NOT IN ('canceled','unavailable')\n\
+    ), item_totals AS (\n SELECT order_id,SUM(price) AS sales FROM order_items GROUP BY order_id\n)\nSELECT ca.campaign_id,COUNT(co.order_id)\
+    \ AS used_orders,ROUND(SUM(it.sales),2) AS gmv\nFROM campaigns ca LEFT JOIN campaign_orders co ON co.campaign_id=ca.campaign_id\n\
+    LEFT JOIN item_totals it ON it.order_id=co.order_id\nGROUP BY ca.campaign_id ORDER BY gmv DESC NULLS LAST,ca.campaign_id\
+    \ LIMIT 10;"
+  notes: 有效订单口径排除 canceled 和 unavailable。活动 -> 券 -> 使用记录 -> 订单 是四跳链路。
+- id: T5-007
+  difficulty: multi_join_deep
+  tags:
+  - join
+  - 搜索
+  - 类目
+  question: 有商品点击的搜索记录中，按关键词和英文类目名称汇总，点击次数最多的20组是什么？原始类目为空不参与分类；有原始类目但缺翻译的点击保留在NULL名称组。不要求点击者有会员等级。
+  gold_sql: 'SELECT sl.keyword,t.product_category_name_english,COUNT(*) AS clicks
+
+    FROM search_logs sl JOIN products p ON p.product_id=sl.clicked_product_id
+
+    LEFT JOIN product_category_translation t ON t.product_category_name=p.product_category_name
+
+    WHERE sl.clicked_product_id IS NOT NULL AND p.product_category_name IS NOT NULL
+
+    GROUP BY sl.keyword,t.product_category_name_english ORDER BY clicks DESC,sl.keyword ASC NULLS LAST,t.product_category_name_english
+    ASC NULLS LAST LIMIT 20;'
+  notes: 必须过滤 clicked_product_id IS NULL，否则会把「只搜不点」的记录算成点击。
+- id: T5-009
+  difficulty: multi_join_deep
+  tags:
+  - join
+  - 库存
+  - 品牌
+  question: 库存低于安全库存时，按仓库编号、仓库州代码及当前品牌编号统计仓库×商品库存行数，缺当前品牌归入NULL品牌组。按行数降序取严格20组，并列时按这三个分组字段升序、NULL排最后。
+  gold_sql: 'SELECT w.warehouse_id,w.region_code,pbm.brand_id,COUNT(*) AS low_stock_items
+
+    FROM inventory i JOIN warehouses w ON w.warehouse_id=i.warehouse_id
+
+    LEFT JOIN product_brand_map pbm ON pbm.product_id=i.product_id AND pbm.is_current
+
+    WHERE i.quantity<i.safety_stock
+
+    GROUP BY w.warehouse_id,w.region_code,pbm.brand_id
+
+    ORDER BY low_stock_items DESC,w.warehouse_id,w.region_code,pbm.brand_id ASC NULLS LAST LIMIT 20;'
+  notes: products 到 brands 没有直接外键，必须经过 product_brand_map 桥接表，且只取 is_current 为真的当前映射。
+- id: T5-010
+  difficulty: multi_join_deep
+  tags:
+  - join
+  - 结算
+  - 卖家
+  question: 每个卖家结算明细覆盖了多少个英文商品类目、佣金合计多少？取佣金前 20。
+  gold_sql: "SELECT st.seller_id,COUNT(DISTINCT t.product_category_name_english) AS category_cnt,\n ROUND(SUM(si.commission_amount),2)\
+    \ AS commission\nFROM settlements st JOIN settlement_items si ON si.settlement_id=st.settlement_id\nLEFT JOIN order_items\
+    \ oi ON oi.order_id=si.order_id AND oi.order_item_id=si.order_item_id\nLEFT JOIN products p ON p.product_id=oi.product_id\n\
+    LEFT JOIN product_category_translation t ON t.product_category_name=p.product_category_name\nGROUP BY st.seller_id ORDER\
+    \ BY commission DESC NULLS LAST,st.seller_id LIMIT 20;"
+  notes: settlement_items 用 (order_id, order_item_id) 复合键回连 order_items，只匹配 order_id 会串行放大。
+- id: T5-012
+  difficulty: multi_join_deep
+  tags:
+  - join
+  - 标签
+  - 用户画像
+  question: 每个用户标签编号覆盖多少会员、这些会员订单的平均商品单价是多少？会员数包括无订单会员，平均值只用已知商品明细价格。
+  gold_sql: 'SELECT ut.tag_id,COUNT(DISTINCT m.member_id) AS members,ROUND(AVG(oi.price),2) AS avg_item_price
+
+    FROM user_tags ut LEFT JOIN user_tag_map utm ON utm.tag_id=ut.tag_id
+
+    LEFT JOIN members m ON m.member_id=utm.member_id
+
+    LEFT JOIN customers c ON c.customer_unique_id=m.customer_unique_id
+
+    LEFT JOIN orders o ON o.customer_id=c.customer_id
+
+    LEFT JOIN order_items oi ON oi.order_id=o.order_id
+
+    GROUP BY ut.tag_id ORDER BY members DESC;'
+  notes: 一个会员可能有多个标签，COUNT(DISTINCT member_id) 得到覆盖人数；订单采用 LEFT JOIN 保证未下单的标签会员不被遗漏。
+- id: T5-014
+  difficulty: multi_join_deep
+  tags:
+  - join
+  - 快照
+  - 会员
+  question: 将每个会员最近一次日期的快照等级与当前等级比较，按当前等级名称和快照等级名称组合汇总不一致会员数；任一等级未知或无快照不判为已确认不一致。
+  gold_sql: "WITH latest AS (\n SELECT member_id,MAX(snapshot_date) AS snapshot_date FROM member_snapshot GROUP BY member_id\n\
+    )\nSELECT ml_cur.level_name AS current_level,ml_snap.level_name AS snapshot_level,\n COUNT(DISTINCT m.member_id) AS member_cnt\n\
+    FROM latest l JOIN member_snapshot ms ON ms.member_id=l.member_id AND ms.snapshot_date=l.snapshot_date\nJOIN members m\
+    \ ON m.member_id=ms.member_id\nLEFT JOIN member_levels ml_cur ON ml_cur.level_id=m.level_id\nLEFT JOIN member_levels ml_snap\
+    \ ON ml_snap.level_id=ms.level_id\nWHERE ms.level_id<>m.level_id\nGROUP BY ml_cur.level_name,ml_snap.level_name ORDER\
+    \ BY member_cnt DESC;"
+  notes: member_snapshot完整主键(member_id,snapshot_date)保证同会员同日期唯一；名称明确按名称组合汇总。
+- id: T5-016
+  difficulty: multi_join_deep
+  tags:
+  - join
+  - 退款
+  - 原因
+  question: 按英文类目和退款原因统计退款笔数与退款金额，列出前 20。
+  gold_sql: "SELECT t.product_category_name_english,r.reason_code,\n COUNT(DISTINCT r.refund_id) AS refunds,ROUND(SUM(ri.refund_value),2)\
+    \ AS amt\nFROM refunds r JOIN refund_items ri ON ri.refund_id=r.refund_id\nJOIN order_items oi ON oi.order_id=ri.order_id\
+    \ AND oi.order_item_id=ri.order_item_id\nJOIN products p ON p.product_id=oi.product_id\nLEFT JOIN product_category_translation\
+    \ t ON t.product_category_name=p.product_category_name\nWHERE p.product_category_name IS NOT NULL\nGROUP BY t.product_category_name_english,r.reason_code\n\
+    ORDER BY amt DESC NULLS LAST,t.product_category_name_english ASC NULLS LAST,r.reason_code ASC NULLS LAST LIMIT 20;"
+  notes: reason_code 是缩写代码（CUST/QUAL/LATE/OTHER），列注释里有中文含义，答案里保留原始代码。
+- id: T5-018
+  difficulty: multi_join_deep
+  tags:
+  - join
+  - 地址
+  - 分组
+  question: 默认收货地址所在州和客户登记州各组合的订单量对比，列出前 20。
+  gold_sql: 'SELECT sa.state AS addr_state, c.customer_state, COUNT(DISTINCT o.order_id) AS orders
+
+    FROM shipping_addresses sa
+
+    JOIN customers c ON c.customer_id = sa.customer_id
+
+    JOIN orders o ON o.customer_id = c.customer_id
+
+    WHERE sa.is_default
+
+    GROUP BY 1, 2 ORDER BY orders DESC,1 ASC NULLS LAST,2 ASC NULLS LAST LIMIT 20;'
+  notes: 这是数据一致性探查题，按收货州和注册州组合统计订单量。剔除无意义的 order_items 冗余关联。
