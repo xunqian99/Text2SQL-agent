@@ -2,6 +2,7 @@
 from pathlib import Path
 import hashlib
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -60,7 +61,7 @@ def captures():
             ("development100", "data/benchmarks/olist-v4-development-20261119"),
             ("formal100", "data/benchmarks/olist-v4-formal-20261119")]:
         for system in ("p21", "B"):
-            if system == "p21" and OUT.name in ("attempt-2", "attempt-3"):
+            if system == "p21" and OUT.name.startswith("attempt-"):
                 source = OUT.parent / ("messages-p21-"+name+".json")
                 manifest = json.loads((OUT.parent / "submission-1-manifest.json").read_text(encoding="utf-8"))
                 if hashlib.sha256(source.read_bytes()).hexdigest() != manifest["files"][source.relative_to(ROOT).as_posix()]:
@@ -79,8 +80,8 @@ def captures():
         comparisons.append(dict(dataset=name, equal=len(new["items"]), total=len(new["items"])))
     write(OUT / "first-call-invariance.json", dict(comparisons=comparisons,
           exactMessagesAndRetrievalEqual=True, providerCalls=0,
-          mockCalls=400 if OUT.name in ("attempt-2", "attempt-3") else 800,
-          reusedFrozenBaselineMockCalls=400 if OUT.name in ("attempt-2", "attempt-3") else 0,
+          mockCalls=400 if OUT.name.startswith("attempt-") else 800,
+          reusedFrozenBaselineMockCalls=400 if OUT.name.startswith("attempt-") else 0,
           boundary="Actual first ChatModel.call via ask; synthetic response, not provider transport"))
 
 
@@ -111,17 +112,17 @@ def gold():
 
 
 if __name__ == "__main__":
-    for attempt in ("attempt-2", "attempt-3"):
-        if "--"+attempt in sys.argv:
-            sys.argv.remove("--"+attempt)
-            OUT = OUT / attempt
-            OUT.mkdir(exist_ok=True)
-            break
+    attempt_args = [a for a in sys.argv if re.fullmatch(r"--attempt-[2-9][0-9]*", a)]
+    if len(attempt_args)>1: raise ValueError("One submission per invocation")
+    if attempt_args:
+        attempt=attempt_args[0]; sys.argv.remove(attempt)
+        OUT=OUT/attempt.removeprefix("--"); OUT.mkdir(exist_ok=True)
     action=sys.argv[1]
-    if action in ("focused", "build"):
+    if action in ("focused", "targeted", "build"):
         command=[shutil.which("mvn.cmd"),"-q"]
-        if action=="focused": command += ["-Dtest=CatalogSendBoundaryTest,CatalogValidationBoundaryTest,SqlValidatorTest,ToolExecutorTest,AgentLoopTest,OrchestratorSelfCorrectionTest,MultiTurnOrchestratorTest,SessionOutcomeFinalizationTest,ClarificationReplyTest,BudgetOrchestratorTest,SqlExtractionPipelineTest", "test"]
-        else: command += (["clean"] if OUT.name == "attempt-3" else []) + ["package", "dependency:build-classpath", "-Dmdep.outputFile=target/replan-b-classpath.txt"]
+        if action=="targeted": command += ["-Dtest=CatalogSendBoundaryTest,AgentLoopTest,OrchestratorSelfCorrectionTest", "test"]
+        elif action=="focused": command += ["-Dtest=CatalogSendBoundaryTest,CatalogValidationBoundaryTest,SqlValidatorTest,ToolExecutorTest,AgentLoopTest,OrchestratorSelfCorrectionTest,MultiTurnOrchestratorTest,SessionOutcomeFinalizationTest,ClarificationReplyTest,BudgetOrchestratorTest,SqlExtractionPipelineTest", "test"]
+        else: command += (["clean"] if OUT.name.startswith("attempt-") and OUT.name != "attempt-2" else []) + ["package", "dependency:build-classpath", "-Dmdep.outputFile=target/replan-b-classpath.txt"]
         try:
             run(sys.argv[2],command,300)
         finally:

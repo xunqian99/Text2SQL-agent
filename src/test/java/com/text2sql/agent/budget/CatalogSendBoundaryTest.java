@@ -155,7 +155,7 @@ class CatalogSendBoundaryTest {
             when(f.model.call(any(Prompt.class))).thenAnswer(i -> {
                 f.sends.incrementAndGet(); f.fault.set("null");
                 if (!known) throw new IllegalStateException("synthetic transport failed after start");
-                return response("no sql here", true);
+                return response("", true);
             });
             var r = f.orch.ask("列出订单"); unavailable(r);
             assertThat(f.sends).hasValue(1); assertThat(r.budget().modelCalls()).isEqualTo(1);
@@ -268,6 +268,56 @@ class CatalogSendBoundaryTest {
             unavailable(result); assertThat(result.budget().modelCalls()).isZero();
             verifyNoInteractions(f.model, f.db, f.plans);
             assertThat(f.quota.snapshot()).containsEntry("knownCalls", 0L).containsEntry("unknownCalls", 0L).containsEntry("pendingCalls", 0L);
+        }
+    }
+
+    static Stream<Arguments> failedToolTurns() {
+        var cases = new ArrayList<Arguments>();
+        for (int rounds : List.of(1, 2))
+            for (int failOn = 1; failOn <= rounds + 1; failOn++)
+                for (String failure : List.of("empty", "length"))
+                    for (boolean budget : List.of(false, true))
+                        cases.add(Arguments.of(rounds, failOn, failure, budget));
+        return cases.stream();
+    }
+
+    @ParameterizedTest @MethodSource("failedToolTurns")
+    void everyFailedTurnKeepsAllEarlierUsageBeforeCatalogTermination(int rounds, int failOn,
+                                                                    String failure, boolean budgetOn) {
+        try (var f = new Fixture(budgetOn, budgetOn, false);
+             var trace = com.text2sql.agent.observability.EvaluationTrace.open()) {
+            f.p.getRequestBudget().setMaxModelCalls(4);
+            f.p.getToolUse().setEnabled(true); f.p.getToolUse().setTableThreshold(1);
+            f.p.getToolUse().setMaxRounds(rounds);
+            when(f.model.call(any(Prompt.class))).thenAnswer(i -> {
+                int n = f.sends.incrementAndGet();
+                var usage = ChatResponseMetadata.builder().usage(new DefaultUsage(10*n, 5*n)).build();
+                if (n == failOn) {
+                    f.fault.set("null");
+                    if (failure.equals("empty")) return new ChatResponse(List.of(new Generation(new AssistantMessage(""))), usage);
+                    var meta = mock(ChatGenerationMetadata.class);
+                    when(meta.getFinishReason()).thenReturn("length");
+                    return new ChatResponse(List.of(new Generation(new AssistantMessage(SQL), meta)), usage);
+                }
+                var output = AssistantMessage.builder().content("").toolCalls(List.of(
+                        new AssistantMessage.ToolCall("t"+n, "function", "UNKNOWN_TOOL", "{}"))).build();
+                return new ChatResponse(List.of(new Generation(output)), usage);
+            });
+            var result = f.orch.ask("列出订单"); unavailable(result);
+            int sum = failOn*(failOn+1)/2;
+            assertThat(f.sends).hasValue(failOn);
+            assertThat(result.llmCall().promptTokens()).isEqualTo(10*sum);
+            assertThat(result.llmCall().completionTokens()).isEqualTo(5*sum);
+            assertThat(result.llmCall().totalTokens()).isEqualTo(15*sum);
+            assertThat(result.llmCall().costYuan()).isCloseTo(0.02*sum, within(0.000000001));
+            assertThat(trace.calls()).hasSize(failOn);
+            if (budgetOn) {
+                assertThat(result.budget().modelCalls()).isEqualTo(failOn);
+                assertThat(result.budget().unknownUsageCalls()).isZero();
+                assertThat(f.quota.snapshot()).containsEntry("knownCalls", (long)failOn)
+                        .containsEntry("unknownCalls", 0L).containsEntry("pendingCalls", 0L);
+            }
+            verifyNoInteractions(f.db, f.plans);
         }
     }
 }
