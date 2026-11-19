@@ -1,0 +1,56 @@
+{
+  "submission": 3,
+  "decision": "REJECT",
+  "stageBAccepted": false,
+  "b0Established": false,
+  "paidEvaluationAdmitted": false,
+  "candidateSourceCommit": "54d7a93",
+  "authorizationCommit": "93c7d3b",
+  "candidateJarSha256": "7ed0b6a449ec18a9f4a1f9349b3a33ada96cd9515e99dc876d3b3c962f32f668",
+  "blockingFinding": "B-03: with request budget disabled, AgentLoop loses completed tool-turn usage when later SQL extraction or finalization truncation throws before a terminal catalog failure",
+  "batches": [
+    {"name":"original-101-adapted","total":101,"passed":101,"failed":0,"path":"original-101-results-first.json"},
+    {"name":"real-send-first","total":338,"passed":324,"failed":14,"path":"real-send-results-first.json","failureClassification":{"reviewHarnessAssumptions":12,"demonstratedPreexistingBareColumnLimitation":2}},
+    {"name":"focused-followup","total":14,"passed":14,"failed":0,"path":"followup-corrected-subset/real-send-results-first.json","composition":{"correctedHarnessCases":12,"additionalQualifiedColumnControls":2},"replacesOriginalResult":false},
+    {"name":"supplemental","total":30,"passed":29,"failed":1,"path":"supplemental/supplemental-results-first.json"},
+    {"name":"mandatory-dependency-construction","total":4,"passed":4,"failed":0,"path":"supplemental/supplemental-results-first.json"},
+    {"name":"actual-empty-tool-output","total":4,"passed":2,"failed":2,"path":"empty-tool-output/empty-tool-output-results-first.json"}
+  ],
+  "rawIndependentAssertionRecords": {"total":491,"passed":474,"failed":17,"note":"Raw records include original harness failures, their focused followups and separate qualified-column controls; this is not a business accuracy denominator."},
+  "failureClassification": {"reviewHarnessAssumptions":12,"preexistingOutOfScopeBareColumnLimitation":2,"blockingAccountingCounterexamples":3},
+  "blockingCounterexamples": [
+    {"id":"agent-finalize-truncated-after-two-calls-false","actualModelCalls":2,"sqlExecutions":0,"explainCalls":0,"expectedTokens":60,"responseTokens":34,"expectedSyntheticCostYuan":0.081,"responseSyntheticCostYuan":0.0459,"missingPriorTokens":26,"path":"supplemental/supplemental-results-first.json"},
+    {"id":"empty-tool-output-first-turn-budgetfalse","actualModelCalls":1,"sqlExecutions":0,"explainCalls":0,"expectedTokens":26,"responseLlmCall":null,"expectedSyntheticCostYuan":0.0351,"path":"empty-tool-output/empty-tool-output-results-first.json"},
+    {"id":"empty-tool-output-finalize-budgetfalse","actualModelCalls":2,"sqlExecutions":0,"explainCalls":0,"expectedTokens":60,"responseLlmCall":null,"expectedSyntheticCostYuan":0.081,"path":"empty-tool-output/empty-tool-output-results-first.json"}
+  ],
+  "newDangerousObjectAllowancesObserved":0,
+  "preexistingBareColumnObservations": {
+    "originalMockCases":2,
+    "mockSqlExecutionsPerOriginalCase":2,
+    "p21AndCandidateSameWrappedSqlBehavior":true,
+    "bareUnknownColumnAcceptedByBothValidators":true,
+    "qualifiedUnknownColumnRejectedByBothValidators":true,
+    "realReadonlyDatabaseConnections":1,
+    "realReadonlySelectAttempts":2,
+    "realDatabaseSqlStates":["42703","42703"],
+    "realDatabaseReturnedRows":0,
+    "paths":["bare-column-baseline-first.json","bare-column-candidate-first.json","local-readonly-sqlstate-first.json"]
+  },
+  "identityVerification": {"manifestFiles":1599,"sourceAndResourceFiles":255,"compiledFiles":431,"packagedProductionFiles":240,"dependenciesComparedWithP21":79,"drift":0,"finalCompiledDrift":0,"historicalSubmission1EvidenceDrift":0,"historicalSubmission2EvidenceChecked":396,"historicalSubmission2EvidenceDrift":0,"actualFirstMessagesExactlyEqual":400},
+  "implementationEvidenceVerifiedNotIndependentlyRerun": {"finalMavenSuites":100,"finalMavenTests":1379,"failures":0,"errors":0,"skipped":0,"goldExecutable":400,"protectedHttpProbeGroups":5},
+  "coverageLimitations": [
+    "The nonempty strings named UNPARSEABLE/no-SQL in some probes are passed by SqlExtractor to downstream SQL validation; these names do not prove extraction failure. The separate empty-output batch exercises actual UNPARSEABLE and exposes two failures.",
+    "Bare columns, derived relation typing and cross-scope aliases retain preexisting static-analysis limitations; complete authorized catalog is not a full SQL compiler.",
+    "Catalog is a process snapshot, not live database availability or DDL/permission refresh.",
+    "The protected HTTP, Gold400 and full Maven suite were checked as fixed implementation evidence, not rerun by this reviewer.",
+    "No business accuracy, provider latency, P95 or provider cost improvement was measured."
+  ],
+  "providerCalls":0,
+  "providerTokens":0,
+  "providerCostYuan":0,
+  "readBlindOrHoldout":false,
+  "modifiedProductionSourcesOrExistingTests":false,
+  "modifiedReferencesScoringOrThresholds":false,
+  "gitCommitPerformed":false,
+  "priorRejectionsPreserved":true
+}

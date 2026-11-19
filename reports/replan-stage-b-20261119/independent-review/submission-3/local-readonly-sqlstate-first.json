@@ -1,0 +1,23 @@
+{
+  "readonlySelectAttempts" : 2,
+  "rows" : [ {
+    "sql" : "SELECT * FROM (SELECT invented FROM orders LIMIT 1) AS sample_subq LIMIT 5",
+    "readOnly" : true,
+    "success" : false,
+    "sqlState" : "42703",
+    "errorClass" : "org.postgresql.util.PSQLException",
+    "returnedRows" : 0,
+    "passed" : true
+  }, {
+    "sql" : "SELECT * FROM (SELECT o.invented FROM orders o LIMIT 1) AS sample_subq LIMIT 5",
+    "readOnly" : true,
+    "success" : false,
+    "sqlState" : "42703",
+    "errorClass" : "org.postgresql.util.PSQLException",
+    "returnedRows" : 0,
+    "passed" : true
+  } ],
+  "providerCalls" : 0,
+  "passed" : true,
+  "databaseConnections" : 1
+}
