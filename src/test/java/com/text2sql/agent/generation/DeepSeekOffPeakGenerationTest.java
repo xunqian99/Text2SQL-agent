@@ -26,7 +26,7 @@ class DeepSeekOffPeakGenerationTest {
         agent.getObservability().setEnabled(false);
         var quota = mock(CostQuota.class);
         try (var log = new LlmCallLog(agent); var trace = EvaluationTrace.open()) {
-            var generator = new LlmSqlGenerator(agent, new PromptTemplate(agent), log, quota);
+            var generator = new LlmSqlGenerator(agent, new PromptTemplate(agent), log, quota, com.text2sql.agent.retrieval.CatalogFixture.healthy());
             ReflectionTestUtils.setField(generator, "offPeak", new DeepSeekOffPeakPolicy(
                     Clock.fixed(Instant.parse("2026-11-17T07:00:00Z"), ZoneOffset.UTC)));
             var schema = new SchemaContext(List.of(), List.of(), "", "fixture");

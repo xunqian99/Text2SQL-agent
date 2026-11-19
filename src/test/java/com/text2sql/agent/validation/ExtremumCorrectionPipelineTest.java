@@ -49,13 +49,14 @@ class ExtremumCorrectionPipelineTest {
         var checker = new ResultChecker(new ExtremumProjectionChecker(() -> glossary, () -> schema));
         var provider = mock(SchemaProvider.class);
         when(provider.provide(anyString())).thenReturn(schema);
+        when(provider.fullSchema()).thenReturn(schema);
         var validator = mock(SqlValidator.class);
         when(validator.validate(anyString(), any())).thenAnswer(i -> ValidationResult.ok(i.getArgument(0)));
         when(generator.generate(anyString(), any())).thenReturn(generated(OMITTED, 100));
         when(generator.generateCorrection(anyString(), any(), anyString(), anyString(), any())).thenReturn(generated(FIXED, 200));
         when(executor.execute(OMITTED)).thenReturn(new QueryResult(List.of("warehouse_id"), List.of(List.of("1")), false, 1));
         when(executor.execute(FIXED)).thenReturn(new QueryResult(List.of("warehouse_id", "volume"), List.of(List.of("1", "50000")), false, 1));
-        orchestrator = new Text2SqlOrchestrator(provider, generator, validator, executor,
+        orchestrator = new Text2SqlOrchestrator(provider, com.text2sql.agent.retrieval.CatalogFixture.from(provider::fullSchema), generator, validator, executor,
                 mock(AmbiguityDetector.class), cache, checker, mock(AgentLoop.class), properties);
     }
 

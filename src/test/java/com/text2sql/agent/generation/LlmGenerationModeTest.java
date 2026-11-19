@@ -93,7 +93,7 @@ class LlmGenerationModeTest {
         props.getObservability().setIncludeContent(false);
         var template = new PromptTemplate(props);
         try (var log = new LlmCallLog(props)) {
-            var generator = new LlmSqlGenerator(props, template, log);
+            var generator = new LlmSqlGenerator(props, template, log, com.text2sql.agent.retrieval.CatalogFixture.healthy());
             String overrideKey = byok ? "fixture-byok-key" : null;
             String overrideModel = "fixture-override";
             var schema = new SchemaContext(List.of(), List.of(), "", "fixture schema");

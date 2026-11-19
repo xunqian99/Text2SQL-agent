@@ -12,13 +12,13 @@ public interface SchemaProvider {
     SchemaContext provide(String question);
 
     /**
-     * 全量 schema，供 dry-run 的 trusted gold SQL 校验使用。
+     * 同一 SchemaCatalog 的完整公开业务 schema，供执行前校验使用。
      *
-     * <p>dry-run 的目的是验证评估器/校验器/执行器自身没坏，输入是 gold SQL，
-     * 不是模型生成结果。此时不应该用检索子集去卡 gold 里那些「不产出列、
-     * 只起过滤作用」的 join；检索召回率由 retrieval 指标单独报告。
+     * <p>必须保留完整列，且不能包含内部持久化表或其他 schema。
+     * 生成、会话复用与检索指标仍使用 provide(question) 的原始检索子集。
+     * 空问题检索不能保证完整，未实现时必须明确失败，禁止伪装成全量目录。
      */
     default SchemaContext fullSchema() {
-        return provide("");
+        throw new UnsupportedOperationException("SchemaProvider must expose its shared full business catalog");
     }
 }

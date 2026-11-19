@@ -54,6 +54,7 @@ class MultiTurnOrchestratorTest {
                         new SchemaContext.Column("order_id", "text", false, null)))),
                 List.of(), "", "CREATE TABLE orders(order_id text);");
         when(schemaProvider.provide(anyString())).thenReturn(mockSchema);
+        when(schemaProvider.fullSchema()).thenReturn(mockSchema);
 
         when(validator.validate(anyString(), any())).thenAnswer(inv ->
                 ValidationResult.ok(inv.getArgument(0)));
@@ -62,7 +63,7 @@ class MultiTurnOrchestratorTest {
                 new QueryResult(List.of("cnt"), List.of(List.of("100")), false, 10));
 
         orchestrator = new Text2SqlOrchestrator(
-                schemaProvider, generator, validator, executor,
+                schemaProvider, com.text2sql.agent.retrieval.CatalogFixture.from(schemaProvider::fullSchema), generator, validator, executor,
                 mock(AmbiguityDetector.class),
                 new com.text2sql.agent.cache.SemanticCache(properties),
                 new ResultChecker(),

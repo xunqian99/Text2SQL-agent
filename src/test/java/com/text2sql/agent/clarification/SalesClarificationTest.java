@@ -65,7 +65,7 @@ class SalesClarificationTest {
         var validator = mock(SqlValidator.class);
         var executor = mock(SqlExecutor.class);
         var loop = mock(AgentLoop.class);
-        var orchestrator = new Text2SqlOrchestrator(provider, generator, validator, executor,
+        var orchestrator = new Text2SqlOrchestrator(provider, com.text2sql.agent.retrieval.CatalogFixture.from(provider::fullSchema), generator, validator, executor,
                 RepurchaseClarificationTest.loaded(), new SemanticCache(props), new ResultChecker(), loop, props);
         var response = orchestrator.ask("销售额按含运费还是不含运费统计？");
         assertThat(response.status()).isEqualTo(AgentResponse.Status.NEEDS_CLARIFICATION);

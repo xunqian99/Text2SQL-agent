@@ -2,8 +2,10 @@ package com.text2sql.agent.tool;
 
 import com.text2sql.agent.execution.QueryResult;
 import com.text2sql.agent.execution.SqlExecutor;
-import com.text2sql.agent.retrieval.SchemaCatalog;
+import com.text2sql.agent.retrieval.AuthorizedSchemaCatalog;
 import com.text2sql.agent.retrieval.SchemaContext;
+import com.text2sql.agent.retrieval.BusinessSchemaUnavailableException;
+import com.text2sql.agent.budget.RequestBudget;
 import com.text2sql.agent.validation.SqlValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,14 +25,14 @@ public class ToolExecutor {
 
     private static final Logger log = LoggerFactory.getLogger(ToolExecutor.class);
 
-    private final SchemaCatalog catalog;
+    private final AuthorizedSchemaCatalog catalog;
     private final SqlExecutor sqlExecutor;
     private final SqlValidator sqlValidator;
     private final com.text2sql.agent.execution.QueryPlanAnalyzer planAnalyzer;
 
-    public ToolExecutor(SchemaCatalog catalog, SqlExecutor sqlExecutor, SqlValidator sqlValidator,
+    public ToolExecutor(AuthorizedSchemaCatalog catalog, SqlExecutor sqlExecutor, SqlValidator sqlValidator,
                         com.text2sql.agent.execution.QueryPlanAnalyzer planAnalyzer) {
-        this.catalog = catalog;
+        this.catalog = java.util.Objects.requireNonNull(catalog, "Authorized catalog is required");
         this.sqlExecutor = sqlExecutor;
         this.sqlValidator = sqlValidator;
         this.planAnalyzer = planAnalyzer;
@@ -46,14 +48,22 @@ public class ToolExecutor {
         }
 
         try {
+            // The supplied schema is generation context, not an authorization boundary.
+            // Take one complete authorized snapshot for the entire tool invocation.
+            SchemaContext authorized = call.type() == ToolType.FINAL_SQL ? null
+                    : catalog.require();
             return switch (call.type()) {
-                case INSPECT_TABLE -> inspectTable(call.argument());
-                case INSPECT_COLUMN -> inspectColumn(call.argument());
-                case SAMPLE_QUERY -> sampleQuery(call.argument(), schema);
-                case CHECK_JOIN -> checkJoin(call.argument(), schema);
-                case EXPLAIN_QUERY -> explainQuery(call.argument(), schema);
+                case INSPECT_TABLE -> inspectTable(call.argument(), authorized);
+                case INSPECT_COLUMN -> inspectColumn(call.argument(), authorized);
+                case SAMPLE_QUERY -> sampleQuery(call.argument(), authorized);
+                case CHECK_JOIN -> checkJoin(call.argument(), authorized);
+                case EXPLAIN_QUERY -> explainQuery(call.argument(), authorized);
                 case FINAL_SQL -> ToolResult.ok(call.argument(), List.of(), List.of());
             };
+        } catch (RequestBudget.Exceeded exceeded) {
+            throw exceeded;
+        } catch (BusinessSchemaUnavailableException unavailable) {
+            return ToolResult.catalogUnavailable();
         } catch (Exception e) {
             log.warn("工具 {} 执行异常：{}", call.type(), e.getMessage());
             return ToolResult.error(e.getMessage());
@@ -63,12 +73,12 @@ public class ToolExecutor {
     /**
      * 工具 1：查看指定表的前 5 行真实数据。
      */
-    private ToolResult inspectTable(String tableName) {
+    private ToolResult inspectTable(String tableName, SchemaContext schema) {
         if (tableName == null || tableName.isBlank()) {
             return ToolResult.error("缺少表名参数");
         }
         String cleanTable = tableName.strip().toLowerCase(Locale.ROOT);
-        var tableOpt = catalog.full().tables().stream()
+        var tableOpt = schema.tables().stream()
                 .filter(t -> t.name().equalsIgnoreCase(cleanTable))
                 .findFirst();
 
@@ -89,7 +99,7 @@ public class ToolExecutor {
      * 工具 2：查看指定列的值分布与常见枚举。
      * 参数格式：table.column 或 table column
      */
-    private ToolResult inspectColumn(String tableColumn) {
+    private ToolResult inspectColumn(String tableColumn, SchemaContext schema) {
         if (tableColumn == null || tableColumn.isBlank()) {
             return ToolResult.error("缺少列名参数，格式如: orders.order_status");
         }
@@ -108,7 +118,7 @@ public class ToolExecutor {
         // 一个注入面——而且这里是五个工具里唯一一个既拼接、又不过 SQL 校验器的
         // （sampleQuery / checkJoin / explainQuery 都会走 SqlValidator）。
         // 用 catalog 里的规范名回填，既堵住注入，也顺手纠正大小写。
-        var tableOpt = catalog.full().tables().stream()
+        var tableOpt = schema.tables().stream()
                 .filter(t -> t.name().equalsIgnoreCase(table))
                 .findFirst();
         if (tableOpt.isEmpty()) {
@@ -174,13 +184,13 @@ public class ToolExecutor {
 
         // 表名必须命中 catalog：用规范名回填，防止模型给出不存在的表，
         // 也避免表名被直接拼进语句。
-        var t1Opt = catalog.full().tables().stream()
+        var t1Opt = schema.tables().stream()
                 .filter(t -> t.name().equalsIgnoreCase(t1))
                 .findFirst();
         if (t1Opt.isEmpty()) {
             return ToolResult.error("表 " + t1 + " 不存在");
         }
-        var t2Opt = catalog.full().tables().stream()
+        var t2Opt = schema.tables().stream()
                 .filter(t -> t.name().equalsIgnoreCase(t2))
                 .findFirst();
         if (t2Opt.isEmpty()) {

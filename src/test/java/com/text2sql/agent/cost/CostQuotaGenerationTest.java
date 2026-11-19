@@ -53,7 +53,7 @@ class CostQuotaGenerationTest {
             cfg.setTotalYuan(new BigDecimal(total)); cfg.setStateFile(temp.resolve("ledger.json").toString());
             quota = new CostQuota(cfg, agent);
             logs = new LlmCallLog(agent);
-            generator = new LlmSqlGenerator(agent, new PromptTemplate(agent), logs, quota);
+            generator = new LlmSqlGenerator(agent, new PromptTemplate(agent), logs, quota, com.text2sql.agent.retrieval.CatalogFixture.healthy());
             ReflectionTestUtils.setField(generator, "chatModel", model);
             when(model.call(any(Prompt.class))).thenReturn(sql());
         }

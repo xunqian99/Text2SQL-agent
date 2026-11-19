@@ -80,10 +80,10 @@ public class AgentLoop {
         history.add(new SystemMessage(systemPrompt));
         history.add(new UserMessage(userPrompt));
 
-        // 工具需要当前请求的 schema（表白名单/列白名单都从它来），所以每请求新建一份，
+        // 工具保留当前请求的生成上下文；执行白名单另取完整业务目录。每请求新建一份，
         // 不能做成单例 Bean——否则上一个请求的 schema 会串到下一个请求。
-        List<ToolCallback> callbacks = List.of(
-                ToolCallbacks.from(new AgentToolFunctions(toolExecutor, schema)));
+        var functions = new AgentToolFunctions(toolExecutor, schema);
+        List<ToolCallback> callbacks = List.of(ToolCallbacks.from(functions));
         Map<String, ToolCallback> byName = new LinkedHashMap<>();
         for (ToolCallback cb : callbacks) {
             byName.put(cb.getToolDefinition().name(), cb);
@@ -122,7 +122,7 @@ public class AgentLoop {
                                 + "只调用工具，不要输出 SQL。"));
             }
 
-            LlmSqlGenerator.AgentTurn turn = generator.callWithTools(
+            LlmSqlGenerator.AgentTurn turn = nextTurn(combinedRecord,
                     roundMessages, available, "AGENT_ROUND_" + round, modelOverride, apiKeyOverride);
             combinedRecord = LlmCallRecord.combine(combinedRecord, turn.call());
             lastRaw = turn.raw();
@@ -142,6 +142,10 @@ public class AgentLoop {
             for (AssistantMessage.ToolCall toolCall : output.getToolCalls()) {
                 responses.add(new ToolResponseMessage.ToolResponse(
                         toolCall.id(), toolCall.name(), invoke(byName, toolCall)));
+                if (functions.schemaUnavailable()) {
+                    throw new GenerationException(GenerationException.Reason.SCHEMA_UNAVAILABLE,
+                            ToolResult.catalogUnavailable().output(), combinedRecord);
+                }
             }
             history.add(ToolResponseMessage.builder().responses(responses).build());
 
@@ -151,7 +155,7 @@ public class AgentLoop {
                 history.add(new UserMessage(
                         "工具调用轮次已用完，现在没有工具可用了。不要再输出任何工具调用或标记，"
                                 + "直接根据已有信息输出最终 SQL 语句。"));
-                LlmSqlGenerator.AgentTurn finish = generator.callWithTools(
+                LlmSqlGenerator.AgentTurn finish = nextTurn(combinedRecord,
                         history, List.of(), "AGENT_FINALIZE", modelOverride, apiKeyOverride);
                 combinedRecord = LlmCallRecord.combine(combinedRecord, finish.call());
                 lastRaw = finish.raw();
@@ -165,6 +169,20 @@ public class AgentLoop {
                     "Agent 在 " + maxRounds + " 轮内未产出可解析的 SQL");
         }
         return new GeneratedSql(finalSql, lastRaw, combinedRecord);
+    }
+
+    private LlmSqlGenerator.AgentTurn nextTurn(LlmCallRecord prior, List<Message> messages,
+                                               List<ToolCallback> callbacks, String tag,
+                                               String modelOverride, String apiKeyOverride) {
+        try {
+            return generator.callWithTools(messages, callbacks, tag, modelOverride, apiKeyOverride);
+        } catch (GenerationException failure) {
+            if (failure.getReason() != GenerationException.Reason.SCHEMA_UNAVAILABLE) throw failure;
+            // Budget-enabled paths also retain usage in RequestBudget. Keep it in the
+            // exception too, so disabling the request budget cannot erase earlier calls.
+            throw new GenerationException(failure.getReason(), failure.getMessage(),
+                    LlmCallRecord.combine(prior, failure.getCallRecord()), failure);
+        }
     }
 
     /**

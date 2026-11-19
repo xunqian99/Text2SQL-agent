@@ -45,7 +45,7 @@ class BudgetOrchestratorTest {
         when(model.call(any(Prompt.class))).thenReturn(new ChatResponse(List.of(
                 new Generation(new AssistantMessage("SELECT 1")))));
         try (var logs = new LlmCallLog(props); var trace = EvaluationTrace.open()) {
-            var generator = new LlmSqlGenerator(props, new PromptTemplate(), logs);
+            var generator = new LlmSqlGenerator(props, new PromptTemplate(), logs, com.text2sql.agent.retrieval.CatalogFixture.healthy());
             ReflectionTestUtils.setField(generator, "chatModel", model);
             var result = RequestBudgetRunner.run("orders", null, RequestBudgetTest.config(3000), () -> {
                 generator.generate("orders", new SchemaContext(List.of(), List.of(), "", "orders"));
@@ -76,6 +76,7 @@ class BudgetOrchestratorTest {
         var schema = new SchemaContext(List.of(new SchemaContext.Table("orders", null,
                 List.of(new SchemaContext.Column("order_id", "text", false, null)))), List.of(), "", "orders");
         when(schemas.provide(anyString())).thenAnswer(i -> { Thread.sleep(30); return schema; });
+        when(schemas.fullSchema()).thenReturn(schema);
         when(validator.validate(anyString(), any())).thenAnswer(i -> ValidationResult.ok(i.getArgument(0)));
         when(model.call(any(Prompt.class))).thenReturn(sqlResponse());
         when(executor.execute(anyString())).thenAnswer(i -> {
@@ -85,9 +86,9 @@ class BudgetOrchestratorTest {
             return null;
         });
         try (var logs = new LlmCallLog(props); var trace = EvaluationTrace.open()) {
-            var generator = new LlmSqlGenerator(props, new PromptTemplate(), logs);
+            var generator = new LlmSqlGenerator(props, new PromptTemplate(), logs, com.text2sql.agent.retrieval.CatalogFixture.healthy());
             ReflectionTestUtils.setField(generator, "chatModel", model);
-            var orchestrator = new Text2SqlOrchestrator(schemas, generator, validator, executor,
+            var orchestrator = new Text2SqlOrchestrator(schemas, com.text2sql.agent.retrieval.CatalogFixture.from(schemas::fullSchema), generator, validator, executor,
                     mock(AmbiguityDetector.class), new SemanticCache(props), new ResultChecker(),
                     mock(com.text2sql.agent.tool.AgentLoop.class), props);
             long started = System.nanoTime();
@@ -112,7 +113,7 @@ class BudgetOrchestratorTest {
         var model = mock(ChatModel.class);
         when(model.call(any(Prompt.class))).thenReturn(sqlResponse());
         try (var logs = new LlmCallLog(props); var trace = EvaluationTrace.open()) {
-            var generator = new LlmSqlGenerator(props, new PromptTemplate(), logs);
+            var generator = new LlmSqlGenerator(props, new PromptTemplate(), logs, com.text2sql.agent.retrieval.CatalogFixture.healthy());
             ReflectionTestUtils.setField(generator, "chatModel", model);
             var schema = new SchemaContext(List.of(), List.of(), "", "orders");
             var options = RequestBudgetTest.config(3000);

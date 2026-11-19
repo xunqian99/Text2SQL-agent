@@ -33,7 +33,7 @@ class ToolExecutorTest {
         sqlExecutor = mock(SqlExecutor.class);
         sqlValidator = mock(SqlValidator.class);
         planAnalyzer = mock(QueryPlanAnalyzer.class);
-        executor = new ToolExecutor(catalog, sqlExecutor, sqlValidator, planAnalyzer);
+        executor = new ToolExecutor(new com.text2sql.agent.retrieval.AuthorizedSchemaCatalog(catalog), sqlExecutor, sqlValidator, planAnalyzer);
 
         mockSchema = new SchemaContext(
                 List.of(

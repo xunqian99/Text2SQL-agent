@@ -34,7 +34,7 @@ class LlmSqlGeneratorLoggingTest {
         var props = new AgentProperties();
         var logs = mock(LlmCallLog.class);
         var model = mock(ChatModel.class);
-        var generator = new LlmSqlGenerator(props, new PromptTemplate(), logs);
+        var generator = new LlmSqlGenerator(props, new PromptTemplate(), logs, com.text2sql.agent.retrieval.CatalogFixture.healthy());
         ReflectionTestUtils.setField(generator, "chatModel", model);
         var complete = response("stop");
         var truncated = response("length");

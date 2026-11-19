@@ -3,6 +3,8 @@ package com.text2sql.agent.generation;
 import com.text2sql.agent.config.AgentProperties;
 import com.text2sql.agent.observability.LlmCallRecord;
 import com.text2sql.agent.retrieval.SchemaContext;
+import com.text2sql.agent.retrieval.AuthorizedSchemaCatalog;
+import com.text2sql.agent.retrieval.BusinessSchemaUnavailableException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.messages.AssistantMessage;
@@ -55,6 +57,7 @@ public class LlmSqlGenerator {
     private final PromptTemplate promptTemplate;
     private final com.text2sql.agent.observability.LlmCallLog callLog;
     private final com.text2sql.agent.cost.CostQuota costQuota;
+    private final AuthorizedSchemaCatalog authorizedCatalog;
     private final com.text2sql.agent.budget.DeepSeekOffPeakPolicy offPeak =
             new com.text2sql.agent.budget.DeepSeekOffPeakPolicy(java.time.Clock.systemUTC());
 
@@ -83,17 +86,20 @@ public class LlmSqlGenerator {
             });
 
     public LlmSqlGenerator(AgentProperties properties, PromptTemplate promptTemplate,
-                           com.text2sql.agent.observability.LlmCallLog callLog) {
-        this(properties, promptTemplate, callLog, com.text2sql.agent.cost.CostQuota.disabled());
+                           com.text2sql.agent.observability.LlmCallLog callLog,
+                           AuthorizedSchemaCatalog authorizedCatalog) {
+        this(properties, promptTemplate, callLog, com.text2sql.agent.cost.CostQuota.disabled(), authorizedCatalog);
     }
 
     @org.springframework.beans.factory.annotation.Autowired
     public LlmSqlGenerator(AgentProperties properties, PromptTemplate promptTemplate,
-                           com.text2sql.agent.observability.LlmCallLog callLog, com.text2sql.agent.cost.CostQuota costQuota) {
+                           com.text2sql.agent.observability.LlmCallLog callLog, com.text2sql.agent.cost.CostQuota costQuota,
+                           AuthorizedSchemaCatalog authorizedCatalog) {
         this.properties = properties;
         this.promptTemplate = promptTemplate;
         this.callLog = callLog;
         this.costQuota = costQuota;
+        this.authorizedCatalog = java.util.Objects.requireNonNull(authorizedCatalog, "Authorized catalog is required");
         this.chatModel = buildChatModel(properties, properties.getLlm().getApiKey());
         if (this.chatModel == null) {
             log.warn("未配置全局 agent.llm.api-key，进入 BYOK（用户自带密钥）模式；用户可在前端输入个人 API Key 体验。");
@@ -196,6 +202,8 @@ public class LlmSqlGenerator {
         try {
             response = invoke(targetModel, new Prompt(messages, options), promptSha256);
         } catch (Exception e) {
+            if (e instanceof GenerationException failure
+                    && failure.getReason() == GenerationException.Reason.SCHEMA_UNAVAILABLE) throw failure;
             if (e instanceof RequestBudget.Exceeded expired) throw expired;
             if (e instanceof com.text2sql.agent.budget.DeepSeekOffPeakPolicy.Rejected rejected) throw rejected;
             com.text2sql.agent.observability.EvaluationTrace.call(null, "CALL_FAILED", promptSha256);
@@ -268,6 +276,8 @@ public class LlmSqlGenerator {
         try {
             response = invoke(targetModel, new Prompt(messages, options), promptSha256);
         } catch (Exception e) {
+            if (e instanceof GenerationException failure
+                    && failure.getReason() == GenerationException.Reason.SCHEMA_UNAVAILABLE) throw failure;
             if (e instanceof RequestBudget.Exceeded expired) throw expired;
             if (e instanceof com.text2sql.agent.budget.DeepSeekOffPeakPolicy.Rejected rejected) throw rejected;
             com.text2sql.agent.observability.EvaluationTrace.call(null, "CALL_FAILED_CORRECTION", promptSha256);
@@ -320,6 +330,8 @@ public class LlmSqlGenerator {
         try {
             response = invoke(targetModel, new Prompt(messages, options), promptSha256);
         } catch (Exception e) {
+            if (e instanceof GenerationException failure
+                    && failure.getReason() == GenerationException.Reason.SCHEMA_UNAVAILABLE) throw failure;
             if (e instanceof RequestBudget.Exceeded expired) throw expired;
             if (e instanceof com.text2sql.agent.budget.DeepSeekOffPeakPolicy.Rejected rejected) throw rejected;
             com.text2sql.agent.observability.EvaluationTrace.call(null, "CALL_FAILED_" + logTag, promptSha256);
@@ -386,6 +398,8 @@ public class LlmSqlGenerator {
         try {
             response = invoke(targetModel, new Prompt(messages, optionsBuilder.build()), promptSha256);
         } catch (Exception e) {
+            if (e instanceof GenerationException failure
+                    && failure.getReason() == GenerationException.Reason.SCHEMA_UNAVAILABLE) throw failure;
             if (e instanceof RequestBudget.Exceeded expired) throw expired;
             if (e instanceof com.text2sql.agent.budget.DeepSeekOffPeakPolicy.Rejected rejected) throw rejected;
             com.text2sql.agent.observability.EvaluationTrace.call(null, "CALL_FAILED_" + logTag, promptSha256);
@@ -501,6 +515,15 @@ public class LlmSqlGenerator {
      * 失败就记一次失败，继续下一条。
      */
     private ChatResponse invoke(ChatModel model, Prompt prompt, String hash) {
+        // All model paths converge here, including failures before a tool callback runs.
+        // An unsent catalog failure must create neither a cost reservation nor a call.
+        // Keep this independent of RequestBudget/CostQuota switches and BYOK resolution.
+        try {
+            authorizedCatalog.require();
+        } catch (BusinessSchemaUnavailableException unavailable) {
+            throw new GenerationException(GenerationException.Reason.SCHEMA_UNAVAILABLE,
+                    unavailable.getMessage(), unavailable);
+        }
         boolean guarded = model instanceof OpenAiChatModel
                 && com.text2sql.agent.budget.DeepSeekOffPeakPolicy.appliesTo(
                 java.net.URI.create(properties.getLlm().getBaseUrl()), prompt.getOptions().getModel());

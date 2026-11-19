@@ -57,6 +57,11 @@ public class DatabaseSchemaReader {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    static boolean isBusinessTableName(String name) {
+        return AuthorizedSchemaCatalog.identifier(name)
+                && !INTERNAL_TABLES.contains(name.toLowerCase(java.util.Locale.ROOT));
+    }
+
     /**
      * 读取所有业务表与列。
      *

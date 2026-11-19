@@ -49,7 +49,7 @@ class BudgetTransportTest {
             props.getLlm().setApiKey("local-fixture-only");
             props.getObservability().setEnabled(false);
             try (var logs = new LlmCallLog(props); var trace = EvaluationTrace.open()) {
-                var generator = new LlmSqlGenerator(props, new PromptTemplate(), logs);
+                var generator = new LlmSqlGenerator(props, new PromptTemplate(), logs, com.text2sql.agent.retrieval.CatalogFixture.healthy());
                 long started = System.nanoTime();
                 AgentResponse result = RequestBudgetRunner.run("count orders", null, RequestBudgetTest.config(1200), () -> {
                     generator.generate("count orders", new SchemaContext(List.of(), List.of(), "", ""));

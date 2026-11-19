@@ -60,14 +60,16 @@ class OrchestratorSelfCorrectionTest {
         properties = new AgentProperties();
         cache = new com.text2sql.agent.cache.SemanticCache(properties);
 
-        when(schemaProvider.provide(anyString())).thenReturn(new SchemaContext(
+        var fullFixture = new SchemaContext(
                 List.of(new SchemaContext.Table("orders", null, List.of(
                         new SchemaContext.Column("order_id", "text", false, null)))),
-                List.of(), "", "CREATE TABLE orders(order_id text)"));
+                List.of(), "", "CREATE TABLE orders(order_id text)");
+        when(schemaProvider.provide(anyString())).thenReturn(fullFixture);
+        when(schemaProvider.fullSchema()).thenReturn(fullFixture);
     }
 
     private Text2SqlOrchestrator orchestrator() {
-        return new Text2SqlOrchestrator(schemaProvider, generator, validator, executor,
+        return new Text2SqlOrchestrator(schemaProvider, com.text2sql.agent.retrieval.CatalogFixture.from(schemaProvider::fullSchema), generator, validator, executor,
                 mock(AmbiguityDetector.class), cache, new com.text2sql.agent.validation.ResultChecker(),
                 mock(com.text2sql.agent.tool.AgentLoop.class), properties);
     }
@@ -441,7 +443,7 @@ class OrchestratorSelfCorrectionTest {
         properties.getGuard().setExplainCostGuardEnabled(true);
 
         com.text2sql.agent.execution.QueryPlanAnalyzer planAnalyzer = mock(com.text2sql.agent.execution.QueryPlanAnalyzer.class);
-        Text2SqlOrchestrator orch = new Text2SqlOrchestrator(schemaProvider, generator, validator, executor,
+        Text2SqlOrchestrator orch = new Text2SqlOrchestrator(schemaProvider, com.text2sql.agent.retrieval.CatalogFixture.from(schemaProvider::fullSchema), generator, validator, executor,
                 mock(AmbiguityDetector.class), cache, new com.text2sql.agent.validation.ResultChecker(),
                 mock(com.text2sql.agent.tool.AgentLoop.class),
                 new com.text2sql.agent.session.SessionStore(properties),

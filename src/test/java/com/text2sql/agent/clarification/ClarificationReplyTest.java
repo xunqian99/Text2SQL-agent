@@ -104,11 +104,12 @@ class ClarificationReplyTest {
             var schema = new SchemaContext(List.of(new SchemaContext.Table("orders", null,
                     List.of(new SchemaContext.Column("order_id", "text", false, null)))), List.of(), "", "orders");
             when(schemas.provide(anyString())).thenReturn(schema);
+            when(schemas.fullSchema()).thenReturn(schema);
             when(generator.generate(anyString(), any())).thenReturn(new GeneratedSql("SELECT 1", "",
                     LlmCallRecord.of("synthetic", 10, 5, 15, 1, 0, 0)));
             when(validator.validate(anyString(), any())).thenReturn(ValidationResult.ok("SELECT 1"));
             when(executor.execute(anyString())).thenReturn(new QueryResult(List.of("n"), List.of(List.of("1")), false, 1));
-            orchestrator = new Text2SqlOrchestrator(schemas, generator, validator, executor, detector,
+            orchestrator = new Text2SqlOrchestrator(schemas, com.text2sql.agent.retrieval.CatalogFixture.from(schemas::fullSchema), generator, validator, executor, detector,
                     new SemanticCache(properties), new ResultChecker(), mock(AgentLoop.class), store, rewriter, properties);
         }
     }

@@ -73,6 +73,7 @@ public final class BudgetTimingsAcceptanceProbe {
                 List.of(new SchemaContext.Column("order_id", "text", false, null)))), List.of(), "", "orders");
         var schemas = mock(SchemaProvider.class);
         when(schemas.provide(anyString())).thenAnswer(i -> { Thread.sleep(30); return schema; });
+        when(schemas.fullSchema()).thenReturn(schema);
         var validator = mock(SqlValidator.class);
         when(validator.validate(anyString(), any())).thenAnswer(i -> ValidationResult.ok(i.getArgument(0)));
         var executor = mock(SqlExecutor.class);
@@ -93,9 +94,9 @@ public final class BudgetTimingsAcceptanceProbe {
             return BudgetOrchestratorTest.sqlResponse();
         });
         try (var logs = new LlmCallLog(props); var trace = EvaluationTrace.open()) {
-            var generator = new LlmSqlGenerator(props, new PromptTemplate(), logs);
+            var generator = new LlmSqlGenerator(props, new PromptTemplate(), logs, com.text2sql.agent.retrieval.CatalogFixture.healthy());
             ReflectionTestUtils.setField(generator, "chatModel", model);
-            var orchestrator = new Text2SqlOrchestrator(schemas, generator, validator, executor,
+            var orchestrator = new Text2SqlOrchestrator(schemas, com.text2sql.agent.retrieval.CatalogFixture.from(schemas::fullSchema), generator, validator, executor,
                     mock(AmbiguityDetector.class), new SemanticCache(props), checker,
                     mock(com.text2sql.agent.tool.AgentLoop.class), props);
             long started = System.nanoTime();

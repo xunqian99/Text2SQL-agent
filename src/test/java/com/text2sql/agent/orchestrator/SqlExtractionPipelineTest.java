@@ -48,6 +48,7 @@ class SqlExtractionPipelineTest {
                 new SchemaContext.Column("order_status", "text", false, null)))), List.of(), "", "");
         var provider = mock(SchemaProvider.class);
         when(provider.provide("订单状态有多少种？")).thenReturn(schema);
+        when(provider.fullSchema()).thenReturn(schema);
         var model = mock(ChatModel.class);
         when(model.call(any(Prompt.class))).thenReturn(new ChatResponse(List.of(
                 new Generation(new AssistantMessage(sql + "\n```"))),
@@ -57,9 +58,9 @@ class SqlExtractionPipelineTest {
         when(executor.execute(sql)).thenReturn(new QueryResult(
                 List.of("status_count"), List.of(List.of("8")), false, 1));
         try (var logs = new LlmCallLog(properties)) {
-            var generator = new LlmSqlGenerator(properties, new PromptTemplate(), logs);
+            var generator = new LlmSqlGenerator(properties, new PromptTemplate(), logs, com.text2sql.agent.retrieval.CatalogFixture.healthy());
             ReflectionTestUtils.setField(generator, "chatModel", model);
-            var pipeline = new Text2SqlOrchestrator(provider, generator, new SqlValidator(properties), executor,
+            var pipeline = new Text2SqlOrchestrator(provider, com.text2sql.agent.retrieval.CatalogFixture.from(provider::fullSchema), generator, new SqlValidator(properties), executor,
                     mock(AmbiguityDetector.class), new SemanticCache(properties), new ResultChecker(),
                     mock(AgentLoop.class), properties);
             try (var trace = EvaluationTrace.open()) {

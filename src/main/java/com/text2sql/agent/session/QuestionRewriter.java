@@ -143,26 +143,39 @@ public class QuestionRewriter {
                 ? lastTurn.rewrittenQuestion()
                 : lastTurn.question();
 
+        // A rule fallback does not refund an already sent rewrite. Retain its known
+        // usage/elapsed time if the following catalog gate terminates the request.
+        com.text2sql.agent.observability.LlmCallRecord attemptedCall = null;
+        long attemptedMs = 0;
         // 优先使用 LLM 改写
         if (properties.getConversation().isRewriteWithLlm() && generator.isConfigured()) {
             long rewriteStarted = System.nanoTime();
             try {
                 GeneratedSql result = rewriteWithLlm(prevQuestion, lastTurn.sql(), question);
                 long rewriteMs = (System.nanoTime() - rewriteStarted) / 1_000_000;
+                attemptedCall = result == null ? null : result.call();
                 String llmRewritten = result == null ? null : cleanRewriteText(result.rawOutput());
                 if (llmRewritten != null && !llmRewritten.isBlank() && llmRewritten.length() < 300) {
                     log.info("LLM 意图补全改写: '{}' -> '{}'", question, llmRewritten);
                     return new RewriteOutcome(llmRewritten, result.call(), rewriteMs);
                 }
             } catch (Exception e) {
+                if (e instanceof com.text2sql.agent.generation.GenerationException failure
+                        && failure.getReason() == com.text2sql.agent.generation.GenerationException.Reason.SCHEMA_UNAVAILABLE) {
+                    throw failure;
+                }
+                if (e instanceof com.text2sql.agent.generation.GenerationException failure) {
+                    attemptedCall = failure.getCallRecord();
+                }
                 log.warn("LLM 改写失败，降级为规则改写：{}", e.getMessage());
             }
+            attemptedMs = (System.nanoTime() - rewriteStarted) / 1_000_000;
         }
 
         // 规则补全降级
         String ruleRewritten = rewriteWithRules(prevQuestion, question);
         log.info("规则意图补全改写: '{}' -> '{}'", question, ruleRewritten);
-        return RewriteOutcome.withoutLlm(ruleRewritten);
+        return new RewriteOutcome(ruleRewritten, attemptedCall, attemptedMs);
     }
 
     /** 清理模型改写结果里可能混进来的引号、前缀与空白。 */

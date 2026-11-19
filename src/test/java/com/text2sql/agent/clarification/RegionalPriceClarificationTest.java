@@ -103,7 +103,7 @@ class RegionalPriceClarificationTest {
         var properties = new AgentProperties(); properties.getClarification().setEnabled(true);
         var provider=mock(SchemaProvider.class); var generator=mock(LlmSqlGenerator.class);
         var validator=mock(SqlValidator.class); var executor=mock(SqlExecutor.class); var loop=mock(AgentLoop.class);
-        var orchestrator=new Text2SqlOrchestrator(provider,generator,validator,executor,
+        var orchestrator=new Text2SqlOrchestrator(provider, com.text2sql.agent.retrieval.CatalogFixture.from(provider::fullSchema),generator,validator,executor,
                 RepurchaseClarificationTest.loaded(),new SemanticCache(properties),new ResultChecker(),loop,properties);
         for (String question : java.util.List.of("按大区统计商品销售额", "价格平均涨跌幅是多少")) {
             var response=orchestrator.ask(question);
