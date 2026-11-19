@@ -85,6 +85,13 @@ class SendGateTest(unittest.TestCase):
         self.assertEqual(self.gate.committed(),d.RESERVE)
         self.assertFalse(self.gate.data["calls"][0]["usageKnown"])
 
+    def test_duplicate_provider_usage_response_is_unknown_and_terminal(self):
+        permit=self.gate.before(*payload())
+        self.gate.after(permit,result(False,error="D_LOCAL_RESPONSE:duplicate JSON object member; usage is unknown"))
+        self.assertEqual(self.gate.committed(),d.RESERVE)
+        self.assertEqual(self.gate.data["breaches"][0]["reason"],"UNTRUSTED_PROVIDER_RESPONSE")
+        with self.assertRaisesRegex(d.Refused,"PRIOR_"): self.gate.before(*payload(correction=True))
+
     def test_input_or_output_estimate_breach_retains_actual_cost_then_stops(self):
         value=result();value["responseJson"]["usage"].update(prompt_tokens=10000,prompt_cache_hit_tokens=0,prompt_cache_miss_tokens=10000,total_tokens=10020)
         permit=self.gate.before(*payload());self.gate.after(permit,value)
@@ -194,7 +201,9 @@ class HttpEvidenceTest(unittest.TestCase):
             opener.return_value.open.side_effect=error
             evidence=Path(temp)/"answer.json"
             with self.assertRaisesRegex(ValueError,"Duplicate JSON key"):
-                d.http_json("http://127.0.0.1",evidence=evidence)
+                d.http_json("http://127.0.0.1",evidence=evidence,token="local-only-fixture")
+            request=opener.return_value.open.call_args.args[0]
+            self.assertEqual(request.get_header("Authorization"),"Basic ZGVtbzpsb2NhbC1vbmx5LWZpeHR1cmU=")
             self.assertEqual(evidence.with_suffix(".body.bin").read_bytes(),raw)
             meta=d.read(evidence)
             self.assertEqual(meta["httpStatus"],400)

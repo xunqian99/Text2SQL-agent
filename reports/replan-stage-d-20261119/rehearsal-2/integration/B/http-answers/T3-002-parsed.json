@@ -1,0 +1,84 @@
+{
+  "id": "T3-002",
+  "httpStatus": 200,
+  "body": {
+    "status": "SUCCESS",
+    "sql": "SELECT EXTRACT(YEAR FROM order_purchase_timestamp)::INT AS yr, COUNT(*) AS cnt FROM orders WHERE EXTRACT(YEAR FROM order_purchase_timestamp) IN (2017, 2018) GROUP BY 1 ORDER BY 1 LIMIT 201",
+    "message": null,
+    "violations": [],
+    "columns": [
+      "yr",
+      "cnt"
+    ],
+    "rows": [
+      [
+        "2017",
+        "45101"
+      ],
+      [
+        "2018",
+        "54011"
+      ]
+    ],
+    "truncated": false,
+    "rewritten": true,
+    "rowCount": 2,
+    "schemaTableCount": 8,
+    "retrievedTables": [
+      "orders",
+      "customers",
+      "order_items",
+      "order_payments",
+      "order_reviews",
+      "coupon_usages",
+      "refund_items",
+      "refunds"
+    ],
+    "schemaDdlChars": 1573,
+    "llm": {
+      "model": "deepseek-flash",
+      "promptTokens": 10,
+      "completionTokens": 10,
+      "totalTokens": 20,
+      "latencyMs": 23,
+      "costYuan": 5e-05
+    },
+    "timings": {
+      "retrievalMs": 4,
+      "generationMs": 25,
+      "validationMs": 4,
+      "executionMs": 49,
+      "totalMs": 84
+    },
+    "sessionId": null,
+    "rewrittenQuestion": null,
+    "schemaReused": false,
+    "budget": {
+      "requestId": "f0d4e3e0-f752-43c4-8c6f-54bc376e2973",
+      "timeoutMs": 15000,
+      "maxModelCalls": 2,
+      "modelCalls": 1,
+      "unknownUsageCalls": 0,
+      "elapsedMs": 84,
+      "termination": "COMPLETE",
+      "stage": "CACHE_WRITE",
+      "retrySkippedReason": null,
+      "stageMs": {
+        "RESULT_CHECK": 0,
+        "CLARIFICATION": 0,
+        "VALIDATION": 4,
+        "RETRIEVAL": 4,
+        "ADMISSION": 0,
+        "SESSION": 0,
+        "CACHE": 0,
+        "MODEL": 24,
+        "EXECUTION": 49,
+        "CACHE_WRITE": 0
+      },
+      "cancellationRejected": 0
+    }
+  },
+  "wallLatencyMs": 175.63629988580942,
+  "returnedAt": "2026-11-19T13:02:53.121837+00:00",
+  "httpEvidence": "reports/replan-stage-d-20261119/rehearsal-2/integration/B/http-answers/T3-002.json"
+}

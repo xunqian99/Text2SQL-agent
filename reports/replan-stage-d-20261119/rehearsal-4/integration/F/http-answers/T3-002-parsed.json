@@ -1,0 +1,89 @@
+{
+  "id": "T3-002",
+  "httpStatus": 200,
+  "body": {
+    "status": "SUCCESS",
+    "sql": "SELECT EXTRACT(YEAR FROM order_purchase_timestamp)::INT AS yr, COUNT(*) AS cnt FROM orders WHERE EXTRACT(YEAR FROM order_purchase_timestamp) IN (2017, 2018) GROUP BY 1 ORDER BY 1 LIMIT 201",
+    "message": null,
+    "violations": [],
+    "columns": [
+      "yr",
+      "cnt"
+    ],
+    "rows": [
+      [
+        "2017",
+        "45101"
+      ],
+      [
+        "2018",
+        "54011"
+      ]
+    ],
+    "truncated": false,
+    "rewritten": true,
+    "rowCount": 2,
+    "schemaTableCount": 8,
+    "retrievedTables": [
+      "orders",
+      "customers",
+      "order_items",
+      "order_payments",
+      "order_reviews",
+      "coupon_usages",
+      "refund_items",
+      "refunds"
+    ],
+    "schemaDdlChars": 1917,
+    "llm": {
+      "model": "deepseek-flash",
+      "promptTokens": 10,
+      "completionTokens": 10,
+      "totalTokens": 20,
+      "latencyMs": 35,
+      "costYuan": 5e-05
+    },
+    "timings": {
+      "retrievalMs": 5,
+      "generationMs": 37,
+      "validationMs": 5,
+      "executionMs": 34,
+      "totalMs": 85
+    },
+    "sessionId": null,
+    "rewrittenQuestion": null,
+    "schemaReused": false,
+    "budget": {
+      "requestId": "01afee96-ed31-40e4-ab6c-2a5ae609ac83",
+      "timeoutMs": 15000,
+      "maxModelCalls": 2,
+      "modelCalls": 1,
+      "unknownUsageCalls": 0,
+      "elapsedMs": 85,
+      "termination": "COMPLETE",
+      "stage": "CONVERSATION",
+      "retrySkippedReason": null,
+      "stageMs": {
+        "CLARIFICATION": 0,
+        "CACHE_WRITE": 0,
+        "VALIDATION": 5,
+        "RETRIEVAL": 5,
+        "CONVERSATION": 0,
+        "SESSION": 0,
+        "EXECUTION": 34,
+        "MODEL": 30,
+        "CACHE": 0,
+        "ADMISSION": 0,
+        "GENERATION": 7,
+        "RESULT_CHECK": 0
+      },
+      "cancellationRejected": 0,
+      "timingsVersion": "request-budget-exclusive-v1",
+      "otherMs": 4,
+      "currentStageMs": 0
+    }
+  },
+  "wallLatencyMs": 174.55720016732812,
+  "returnedAt": "2026-11-19T13:08:32.003280+00:00",
+  "httpEvidence": "reports/replan-stage-d-20261119/rehearsal-4/integration/F/http-answers/T3-002.json"
+}

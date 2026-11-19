@@ -6,6 +6,7 @@ Java scorer. A shared local proxy accounts every upstream attempt before send.
 from __future__ import annotations
 
 import argparse
+import base64
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
@@ -348,6 +349,8 @@ class SendGate:
             matches=[c for c in self.data["calls"] if c["token"]==permit["token"]]
             if len(matches)!=1 or matches[0]["result"] is not None: raise Refused("Duplicate/missing completion identity")
             call=matches[0]; call["result"]=result
+            if "D_LOCAL_RESPONSE:" in (result.get("error") or ""):
+                self.data["breaches"].append(dict(token=call["token"],reason="UNTRUSTED_PROVIDER_RESPONSE"))
             usage=(result.get("responseJson") or {}).get("usage")
             fields=("prompt_tokens","completion_tokens","total_tokens","prompt_cache_hit_tokens","prompt_cache_miss_tokens")
             valid=result.get("responseComplete") is True and isinstance(usage,dict) and all(type(usage.get(k)) is int and usage[k]>=0 for k in fields)
@@ -442,7 +445,7 @@ def app_command(side,port,base_url,out,*,offline=False):
 
 def http_json(url,*,data=None,token=None,timeout=20,evidence=None):
     headers={"Content-Type":"application/json"}
-    if token: headers["Authorization"]="Bearer "+token
+    if token: headers["Authorization"]="Basic "+base64.b64encode(("demo:"+token).encode()).decode()
     request=urllib.request.Request(url,data=None if data is None else json.dumps(data,ensure_ascii=False).encode(),headers=headers)
     opener=urllib.request.build_opener(urllib.request.ProxyHandler({}))
     status=None;raw=b"";meta=dict(startedAt=stamp(),responseComplete=False)
@@ -452,7 +455,7 @@ def http_json(url,*,data=None,token=None,timeout=20,evidence=None):
         with response:
             status=response.code
             raw=response.read(16*1024*1024+1)
-            meta.update(httpStatus=status,responseComplete=True,returnedAt=stamp(),responseBytes=len(raw),
+            meta.update(httpStatus=status,responseComplete=True,returnedAt=stamp(),httpReadCompletedMonotonic=time.monotonic(),responseBytes=len(raw),
                         responseBodySha256=hashlib.sha256(raw).hexdigest())
         if evidence: write_bytes(Path(evidence).with_suffix(".body.bin"),raw)
         if len(raw)>16*1024*1024:
@@ -483,7 +486,7 @@ def application(side,proxy,out,*,offline=False):
             while time.monotonic()<deadline:
                 if process.poll() is not None: raise Refused("Application exited before readiness")
                 try:
-                    code,body=http_json(f"http://127.0.0.1:{port}/api/health",timeout=1)
+                    code,body=http_json(f"http://127.0.0.1:{port}/api/health",token=token,timeout=1)
                     if code==200 and body.get("llmConfigured"):
                         write(out/"health.json",body); break
                 except (OSError,ValueError): pass
@@ -567,8 +570,9 @@ def offline_preflight(plan,output):
                         evidence=out/"http-answers"/(item["id"]+".json")
                         try: code,body=http_json(url+"/api/ask",data={"question":item["question"]},token=token,timeout=20,evidence=evidence)
                         finally: gate.end()
-                        rows[item["id"]]=dict(id=item["id"],httpStatus=code,body=body,wallLatencyMs=(time.monotonic()-started)*1000,
-                            returnedAt=read(evidence)["returnedAt"],httpEvidence=evidence.relative_to(ROOT).as_posix())
+                        observed=read(evidence)
+                        rows[item["id"]]=dict(id=item["id"],httpStatus=code,body=body,wallLatencyMs=(observed["httpReadCompletedMonotonic"]-started)*1000,
+                            returnedAt=observed["returnedAt"],httpEvidence=evidence.relative_to(ROOT).as_posix())
                         write(out/"http-answers"/(item["id"]+"-parsed.json"),rows[item["id"]])
                         if code!=200 or body.get("status")!="SUCCESS": raise Refused("Offline actual HTTP smoke failed: "+side+" "+item["id"])
                         budget=body.get("budget") or {}
@@ -645,9 +649,9 @@ def run_next():
                             evidence=out/"http-answers"/(item["id"]+".json")
                             try: status,body=http_json(url+"/api/ask",data={"question":item["question"]},token=access_token,timeout=20,evidence=evidence)
                             finally: gate.end()
-                            wall=(time.monotonic()-started)*1000
+                            observed=read(evidence);wall=(observed["httpReadCompletedMonotonic"]-started)*1000
                             row=dict(id=item["id"],httpStatus=status,body=body,wallLatencyMs=wall,
-                                returnedAt=read(evidence)["returnedAt"],httpEvidence=evidence.relative_to(ROOT).as_posix())
+                                returnedAt=observed["returnedAt"],httpEvidence=evidence.relative_to(ROOT).as_posix())
                             responses.append(row);journal.write((json.dumps(row,ensure_ascii=False)+"\n").encode());journal.flush();os.fsync(journal.fileno())
                             budget=body.get("budget")
                             if not isinstance(budget,dict) or budget.get("timeoutMs")!=15000 or budget.get("maxModelCalls")!=2 or budget.get("modelCalls",3)>2:
