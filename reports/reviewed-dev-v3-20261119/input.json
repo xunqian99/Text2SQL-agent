@@ -1,0 +1,606 @@
+{
+  "format": "original-dev-review-input-v1",
+  "sourceCommit": "023311c",
+  "items": [
+    {
+      "id": "T1-002",
+      "difficulty": "single_table_basic",
+      "question": "2018 年下单的订单有多少笔？",
+      "gold_sql": "SELECT COUNT(*) FROM orders\nWHERE order_purchase_timestamp >= '2018-01-01'\n  AND order_purchase_timestamp < '2019-01-01';\n"
+    },
+    {
+      "id": "T1-004",
+      "difficulty": "single_table_basic",
+      "question": "一共有多少个不同的客户（按自然人统计，同一人多次下单只算一个）？",
+      "gold_sql": "SELECT COUNT(DISTINCT customer_unique_id) FROM customers;\n"
+    },
+    {
+      "id": "T1-006",
+      "difficulty": "single_table_basic",
+      "question": "商品表里有多少个商品？",
+      "gold_sql": "SELECT COUNT(*) FROM products;\n"
+    },
+    {
+      "id": "T1-008",
+      "difficulty": "single_table_basic",
+      "question": "客户分布在多少个不同的城市？",
+      "gold_sql": "SELECT COUNT(DISTINCT customer_city) FROM customers;\n"
+    },
+    {
+      "id": "T1-011",
+      "difficulty": "single_table_basic",
+      "question": "商品类目一共有多少个？",
+      "gold_sql": "SELECT COUNT(DISTINCT product_category_name) FROM products;\n"
+    },
+    {
+      "id": "T1-013",
+      "difficulty": "single_table_basic",
+      "question": "运费最高的 5 条订单明细是哪几条？",
+      "gold_sql": "SELECT order_id, order_item_id, freight_value\nFROM order_items ORDER BY freight_value DESC LIMIT 5;\n"
+    },
+    {
+      "id": "T1-015",
+      "difficulty": "single_table_basic",
+      "question": "使用信用卡支付的记录有多少条？",
+      "gold_sql": "SELECT COUNT(*) FROM order_payments WHERE payment_type = 'credit_card';\n"
+    },
+    {
+      "id": "T1-017",
+      "difficulty": "single_table_basic",
+      "question": "重量超过 5000 克的商品有多少个？",
+      "gold_sql": "SELECT COUNT(*) FROM products WHERE product_weight_g > 5000;\n"
+    },
+    {
+      "id": "T1-019",
+      "difficulty": "single_table_basic",
+      "question": "还没有送达客户的订单有多少笔？",
+      "gold_sql": "SELECT COUNT(*) FROM orders WHERE order_delivered_customer_date IS NULL;\n"
+    },
+    {
+      "id": "T1-020",
+      "difficulty": "single_table_basic",
+      "question": "带文字标题的评价有多少条？",
+      "gold_sql": "SELECT COUNT(*) FROM order_reviews WHERE review_comment_title IS NOT NULL;\n"
+    },
+    {
+      "id": "T1-022",
+      "difficulty": "single_table_basic",
+      "question": "价格低于 10 元的订单明细有多少条？",
+      "gold_sql": "SELECT COUNT(*) FROM order_items WHERE price < 10;\n"
+    },
+    {
+      "id": "T1-024",
+      "difficulty": "single_table_basic",
+      "question": "黄金会员有多少人？",
+      "gold_sql": "SELECT COUNT(*) FROM members WHERE level_id = 3;\n"
+    },
+    {
+      "id": "T1-026",
+      "difficulty": "single_table_basic",
+      "question": "积分最高的 10 个会员是谁？",
+      "gold_sql": "SELECT member_id, points FROM members ORDER BY points DESC LIMIT 10;\n"
+    },
+    {
+      "id": "T1-028",
+      "difficulty": "single_table_basic",
+      "question": "容量最大的仓库是哪一个？",
+      "gold_sql": "SELECT warehouse_id, warehouse_name, capacity\nFROM warehouses ORDER BY capacity DESC LIMIT 1;\n"
+    },
+    {
+      "id": "T1-031",
+      "difficulty": "single_table_basic",
+      "question": "一共有多少张优惠券？",
+      "gold_sql": "SELECT COUNT(*) FROM coupons;\n"
+    },
+    {
+      "id": "T1-033",
+      "difficulty": "single_table_basic",
+      "question": "紧急优先级的客服工单有多少个？",
+      "gold_sql": "SELECT COUNT(*) FROM support_tickets WHERE priority = 4;\n"
+    },
+    {
+      "id": "T1-035",
+      "difficulty": "single_table_basic",
+      "question": "库存数量低于安全库存的记录有多少条？",
+      "gold_sql": "SELECT COUNT(*) FROM inventory WHERE quantity < safety_stock;\n"
+    },
+    {
+      "id": "T1-037",
+      "difficulty": "single_table_basic",
+      "question": "搜索日志里一共出现过多少个不同的搜索关键词？",
+      "gold_sql": "SELECT COUNT(DISTINCT keyword) FROM search_logs;\n"
+    },
+    {
+      "id": "T1-039",
+      "difficulty": "single_table_basic",
+      "question": "已经结束的营销活动有多少个？",
+      "gold_sql": "SELECT COUNT(*) FROM campaigns WHERE status = 3;\n"
+    },
+    {
+      "id": "T1-040",
+      "difficulty": "single_table_basic",
+      "question": "发生过价格调整的商品有多少个？",
+      "gold_sql": "SELECT COUNT(DISTINCT product_id) FROM product_price_history;\n"
+    },
+    {
+      "id": "T2-001",
+      "difficulty": "single_table_agg",
+      "question": "所有订单明细的商品金额加起来一共是多少？",
+      "gold_sql": "SELECT SUM(price) FROM order_items;\n"
+    },
+    {
+      "id": "T2-003",
+      "difficulty": "single_table_agg",
+      "question": "订单明细的平均商品价格是多少？",
+      "gold_sql": "SELECT ROUND(AVG(price), 2) FROM order_items;\n"
+    },
+    {
+      "id": "T2-005",
+      "difficulty": "single_table_agg",
+      "question": "每种订单状态各有多少笔订单？按数量从多到少排列。",
+      "gold_sql": "SELECT order_status, COUNT(*) AS cnt\nFROM orders GROUP BY order_status ORDER BY cnt DESC;\n"
+    },
+    {
+      "id": "T2-007",
+      "difficulty": "single_table_agg",
+      "question": "每个评价分数各有多少条评价？",
+      "gold_sql": "SELECT review_score, COUNT(*) AS cnt\nFROM order_reviews GROUP BY review_score ORDER BY review_score;\n"
+    },
+    {
+      "id": "T2-009",
+      "difficulty": "single_table_agg",
+      "question": "商品数量最多的 10 个类目是哪些？",
+      "gold_sql": "SELECT product_category_name, COUNT(*) AS cnt\nFROM products\nWHERE product_category_name IS NOT NULL\nGROUP BY product_category_name ORDER BY cnt DESC LIMIT 10;\n"
+    },
+    {
+      "id": "T2-010",
+      "difficulty": "single_table_agg",
+      "question": "每个州的卖家各有多少个？按数量倒序。",
+      "gold_sql": "SELECT seller_state, COUNT(*) AS cnt\nFROM sellers GROUP BY seller_state ORDER BY cnt DESC;\n"
+    },
+    {
+      "id": "T2-012",
+      "difficulty": "single_table_agg",
+      "question": "每个卖家的运费收入合计是多少？取最高的 10 个。",
+      "gold_sql": "SELECT seller_id, ROUND(SUM(freight_value), 2) AS total\nFROM order_items GROUP BY seller_id ORDER BY total DESC LIMIT 10;\n"
+    },
+    {
+      "id": "T2-014",
+      "difficulty": "single_table_agg",
+      "question": "支付方式里信用卡和 boleto 各占多少笔？",
+      "gold_sql": "SELECT\n  COUNT(*) FILTER (WHERE payment_type = 'credit_card') AS credit_card,\n  COUNT(*) FILTER (WHERE payment_type = 'boleto')      AS boleto\nFROM order_payments;\n"
+    },
+    {
+      "id": "T2-016",
+      "difficulty": "single_table_agg",
+      "question": "每种会员状态各有多少人？",
+      "gold_sql": "SELECT status, COUNT(*) AS cnt FROM members GROUP BY status ORDER BY status;\n"
+    },
+    {
+      "id": "T2-018",
+      "difficulty": "single_table_agg",
+      "question": "每种营销活动类型各有多少个活动？",
+      "gold_sql": "SELECT campaign_type, COUNT(*) AS cnt\nFROM campaigns GROUP BY campaign_type ORDER BY cnt DESC;\n"
+    },
+    {
+      "id": "T2-021",
+      "difficulty": "single_table_agg",
+      "question": "每个退款原因各有多少笔退款？",
+      "gold_sql": "SELECT reason_code, COUNT(*) AS cnt\nFROM refunds GROUP BY reason_code ORDER BY cnt DESC;\n"
+    },
+    {
+      "id": "T2-023",
+      "difficulty": "single_table_agg",
+      "question": "已经退款的订单，退款金额合计是多少？",
+      "gold_sql": "SELECT ROUND(SUM(refund_amount), 2) FROM refunds WHERE status = 4;\n"
+    },
+    {
+      "id": "T2-025",
+      "difficulty": "single_table_agg",
+      "question": "所有仓库的库存总数量是多少？",
+      "gold_sql": "SELECT SUM(quantity) FROM inventory;\n"
+    },
+    {
+      "id": "T2-027",
+      "difficulty": "single_table_agg",
+      "question": "每种库存变动类型各有多少条记录？",
+      "gold_sql": "SELECT movement_type, COUNT(*) AS cnt\nFROM inventory_movements GROUP BY movement_type ORDER BY movement_type;\n"
+    },
+    {
+      "id": "T2-029",
+      "difficulty": "single_table_agg",
+      "question": "每种发货状态各有多少个发货单？",
+      "gold_sql": "SELECT status, COUNT(*) AS cnt FROM shipments GROUP BY status ORDER BY status;\n"
+    },
+    {
+      "id": "T2-030",
+      "difficulty": "single_table_agg",
+      "question": "每个工单分类各有多少个工单？",
+      "gold_sql": "SELECT category_id, COUNT(*) AS cnt\nFROM support_tickets GROUP BY category_id ORDER BY category_id;\n"
+    },
+    {
+      "id": "T2-032",
+      "difficulty": "single_table_agg",
+      "question": "每种结算状态各有多少张结算单？",
+      "gold_sql": "SELECT status, COUNT(*) AS cnt FROM settlements GROUP BY status ORDER BY status;\n"
+    },
+    {
+      "id": "T2-034",
+      "difficulty": "single_table_agg",
+      "question": "平台从卖家那里收取的佣金总额是多少？",
+      "gold_sql": "SELECT ROUND(SUM(commission), 2) FROM settlements;\n"
+    },
+    {
+      "id": "T2-036",
+      "difficulty": "single_table_agg",
+      "question": "商品数量超过 1500 个的类目有哪些？",
+      "gold_sql": "SELECT product_category_name, COUNT(*) AS cnt\nFROM products\nWHERE product_category_name IS NOT NULL\nGROUP BY product_category_name\nHAVING COUNT(*) > 1500\nORDER BY cnt DESC;\n"
+    },
+    {
+      "id": "T2-038",
+      "difficulty": "single_table_agg",
+      "question": "订单明细里最贵的一件商品价格是多少？最便宜的呢？",
+      "gold_sql": "SELECT MAX(price) AS max_price, MIN(price) AS min_price FROM order_items;\n"
+    },
+    {
+      "id": "T3-002",
+      "difficulty": "time_window",
+      "question": "2017 年和 2018 年各有多少笔订单？",
+      "gold_sql": "SELECT EXTRACT(YEAR FROM order_purchase_timestamp)::INT AS yr, COUNT(*) AS cnt\nFROM orders\nWHERE EXTRACT(YEAR FROM order_purchase_timestamp) IN (2017, 2018)\nGROUP BY 1 ORDER BY 1;\n"
+    },
+    {
+      "id": "T3-004",
+      "difficulty": "time_window",
+      "question": "2017 年 11 月的订单有多少笔？",
+      "gold_sql": "SELECT COUNT(*) FROM orders\nWHERE order_purchase_timestamp >= '2017-11-01'\n  AND order_purchase_timestamp < '2017-12-01';\n"
+    },
+    {
+      "id": "T3-006",
+      "difficulty": "time_window",
+      "question": "每个月的商品销售额是多少？",
+      "gold_sql": "SELECT DATE_TRUNC('month', o.order_purchase_timestamp) AS month,\n       ROUND(SUM(oi.price), 2) AS sales\nFROM orders o JOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY 1;\n"
+    },
+    {
+      "id": "T3-008",
+      "difficulty": "time_window",
+      "question": "每个月的平均订单金额（按订单明细商品金额计）是多少？",
+      "gold_sql": "SELECT DATE_TRUNC('month', o.order_purchase_timestamp) AS month,\n       ROUND(SUM(oi.price) / COUNT(DISTINCT o.order_id), 2) AS avg_order_value\nFROM orders o JOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY 1;\n"
+    },
+    {
+      "id": "T3-011",
+      "difficulty": "time_window",
+      "question": "每个月的订单量环比增长率是多少？",
+      "gold_sql": "WITH monthly AS (\n  SELECT DATE_TRUNC('month', order_purchase_timestamp) AS m, COUNT(*) AS cnt\n  FROM orders GROUP BY 1\n)\nSELECT m AS month,\n       cnt,\n       ROUND((cnt - LAG(cnt) OVER (ORDER BY m))::NUMERIC\n             / NULLIF(LAG(cnt) OVER (ORDER BY m), 0), 4) AS mom_rate\nFROM monthly ORDER BY m;\n"
+    },
+    {
+      "id": "T3-013",
+      "difficulty": "time_window",
+      "question": "数据里最后 90 天的订单有多少笔？",
+      "gold_sql": "SELECT COUNT(*) FROM orders\nWHERE order_purchase_timestamp > (SELECT MAX(order_purchase_timestamp) FROM orders) - INTERVAL '90 days';\n"
+    },
+    {
+      "id": "T3-015",
+      "difficulty": "time_window",
+      "question": "一天中哪个小时的订单最多？",
+      "gold_sql": "SELECT EXTRACT(HOUR FROM order_purchase_timestamp)::INT AS hr, COUNT(*) AS cnt\nFROM orders GROUP BY 1 ORDER BY cnt DESC LIMIT 1;\n"
+    },
+    {
+      "id": "T3-017",
+      "difficulty": "time_window",
+      "question": "订单从下单到送达平均需要多少天？",
+      "gold_sql": "SELECT ROUND(AVG(EXTRACT(EPOCH FROM (order_delivered_customer_date - order_purchase_timestamp)) / 86400), 2)\nFROM orders WHERE order_delivered_customer_date IS NOT NULL;\n"
+    },
+    {
+      "id": "T3-019",
+      "difficulty": "time_window",
+      "question": "实际送达时间晚于预计送达时间的订单有多少笔？",
+      "gold_sql": "SELECT COUNT(*) FROM orders\nWHERE order_delivered_customer_date > order_estimated_delivery_date;\n"
+    },
+    {
+      "id": "T3-020",
+      "difficulty": "time_window",
+      "question": "超时送达的订单占已送达订单的比例是多少？",
+      "gold_sql": "SELECT ROUND(\n  COUNT(*) FILTER (WHERE order_delivered_customer_date > order_estimated_delivery_date)::NUMERIC\n  / NULLIF(COUNT(*) FILTER (WHERE order_delivered_customer_date IS NOT NULL), 0), 4) AS late_rate\nFROM orders;\n"
+    },
+    {
+      "id": "T3-022",
+      "difficulty": "time_window",
+      "question": "每个月的退款金额合计是多少？",
+      "gold_sql": "SELECT DATE_TRUNC('month', requested_at) AS month,\n       ROUND(SUM(refund_amount), 2) AS total\nFROM refunds GROUP BY 1 ORDER BY 1;\n"
+    },
+    {
+      "id": "T3-024",
+      "difficulty": "time_window",
+      "question": "客服工单从创建到解决平均需要多少小时？",
+      "gold_sql": "SELECT ROUND(AVG(EXTRACT(EPOCH FROM (resolved_at - created_at)) / 3600), 2)\nFROM support_tickets WHERE resolved_at IS NOT NULL;\n"
+    },
+    {
+      "id": "T3-026",
+      "difficulty": "time_window",
+      "question": "每个月的评价平均分是多少？",
+      "gold_sql": "SELECT DATE_TRUNC('month', review_creation_date) AS month,\n       ROUND(AVG(review_score), 2) AS avg_score\nFROM order_reviews GROUP BY 1 ORDER BY 1;\n"
+    },
+    {
+      "id": "T3-028",
+      "difficulty": "time_window",
+      "question": "最近 30 天内有登录记录的会员有多少人？",
+      "gold_sql": "SELECT COUNT(*) FROM members\nWHERE last_login_date > (SELECT MAX(last_login_date) FROM members) - 30;\n"
+    },
+    {
+      "id": "T4-001",
+      "difficulty": "multi_join",
+      "question": "每个客户的订单数量是多少？取订单最多的 10 个客户。",
+      "gold_sql": "SELECT c.customer_unique_id, COUNT(*) AS cnt\nFROM orders o JOIN customers c ON c.customer_id = o.customer_id\nGROUP BY 1 ORDER BY cnt DESC LIMIT 10;\n"
+    },
+    {
+      "id": "T4-003",
+      "difficulty": "multi_join",
+      "question": "每个商品类目的订单数量是多少？",
+      "gold_sql": "SELECT p.product_category_name, COUNT(DISTINCT oi.order_id) AS order_cnt\nFROM order_items oi JOIN products p ON p.product_id = oi.product_id\nWHERE p.product_category_name IS NOT NULL\nGROUP BY 1 ORDER BY order_cnt DESC;\n"
+    },
+    {
+      "id": "T4-005",
+      "difficulty": "multi_join",
+      "question": "每个卖家的订单数量是多少？取前 10 名。",
+      "gold_sql": "SELECT oi.seller_id, COUNT(DISTINCT oi.order_id) AS order_cnt\nFROM order_items oi GROUP BY 1 ORDER BY order_cnt DESC LIMIT 10;\n"
+    },
+    {
+      "id": "T4-007",
+      "difficulty": "multi_join",
+      "question": "有多少个商品从来没有发生过价格变动？",
+      "gold_sql": "SELECT COUNT(*)\nFROM products p\nLEFT JOIN product_price_history h ON h.product_id = p.product_id\nWHERE h.product_id IS NULL;\n"
+    },
+    {
+      "id": "T4-009",
+      "difficulty": "multi_join",
+      "question": "每个支付方式的平均支付金额是多少？",
+      "gold_sql": "SELECT payment_type, ROUND(AVG(payment_value), 2) AS avg_value\nFROM order_payments WHERE payment_type IS NOT NULL\nGROUP BY 1 ORDER BY avg_value DESC;\n"
+    },
+    {
+      "id": "T4-010",
+      "difficulty": "multi_join",
+      "question": "每个订单状态的商品销售总额是多少？",
+      "gold_sql": "SELECT o.order_status, ROUND(SUM(oi.price), 2) AS sales\nFROM orders o JOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY sales DESC;\n"
+    },
+    {
+      "id": "T4-012",
+      "difficulty": "multi_join",
+      "question": "每个州的评价平均分是多少？取评价数最多的 10 个州。",
+      "gold_sql": "SELECT c.customer_state, ROUND(AVG(r.review_score), 2) AS avg_score, COUNT(*) AS cnt\nFROM order_reviews r\nJOIN orders o ON o.order_id = r.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY 1 ORDER BY cnt DESC LIMIT 10;\n"
+    },
+    {
+      "id": "T4-014",
+      "difficulty": "multi_join",
+      "question": "每种支付方式的评价平均分是多少？",
+      "gold_sql": "SELECT p.payment_type, ROUND(AVG(r.review_score), 2) AS avg_score\nFROM order_payments p\nJOIN order_reviews r ON r.order_id = p.order_id\nGROUP BY 1 ORDER BY avg_score DESC;\n"
+    },
+    {
+      "id": "T4-016",
+      "difficulty": "multi_join",
+      "question": "每个大区的商品销售额是多少？",
+      "gold_sql": "SELECT r.macro_region, ROUND(SUM(oi.price), 2) AS sales\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN regions r ON r.region_code = c.customer_state\nJOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY sales DESC;\n"
+    },
+    {
+      "id": "T4-018",
+      "difficulty": "multi_join",
+      "question": "每个会员等级的用户消费总额是多少？",
+      "gold_sql": "SELECT m.level_id, ROUND(SUM(oi.price), 2) AS sales\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN members m ON m.customer_unique_id = c.customer_unique_id\nJOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY 1;\n"
+    },
+    {
+      "id": "T4-021",
+      "difficulty": "multi_join",
+      "question": "每个活动带来的用券次数是多少？",
+      "gold_sql": "SELECT c.campaign_name, COUNT(*) AS cnt\nFROM coupon_usages cu\nJOIN coupons cp ON cp.coupon_id = cu.coupon_id\nJOIN campaigns c ON c.campaign_id = cp.campaign_id\nGROUP BY 1 ORDER BY cnt DESC;\n"
+    },
+    {
+      "id": "T4-023",
+      "difficulty": "multi_join",
+      "question": "每种折扣类型的优惠券分别带来了多少优惠金额？",
+      "gold_sql": "SELECT c.discount_type, ROUND(SUM(cu.discount_amount), 2) AS total\nFROM coupon_usages cu JOIN coupons c ON c.coupon_id = cu.coupon_id\nGROUP BY 1 ORDER BY total DESC;\n"
+    },
+    {
+      "id": "T4-025",
+      "difficulty": "multi_join",
+      "question": "每个大区的仓库容量合计是多少？",
+      "gold_sql": "SELECT r.macro_region, SUM(w.capacity) AS total_capacity\nFROM warehouses w JOIN regions r ON r.region_code = w.region_code\nGROUP BY 1 ORDER BY total_capacity DESC;\n"
+    },
+    {
+      "id": "T4-027",
+      "difficulty": "multi_join",
+      "question": "每个仓库的库存总量和平均库存量分别是多少？",
+      "gold_sql": "SELECT w.warehouse_name, SUM(i.quantity) AS total_qty, ROUND(AVG(i.quantity), 2) AS avg_qty\nFROM inventory i JOIN warehouses w ON w.warehouse_id = i.warehouse_id\nGROUP BY 1 ORDER BY total_qty DESC;\n"
+    },
+    {
+      "id": "T4-029",
+      "difficulty": "multi_join",
+      "question": "每个州的客服工单数量是多少？",
+      "gold_sql": "SELECT c.customer_state, COUNT(*) AS cnt\nFROM support_tickets st\nJOIN orders o ON o.order_id = st.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY 1 ORDER BY cnt DESC;\n"
+    },
+    {
+      "id": "T4-030",
+      "difficulty": "multi_join",
+      "question": "每个卖家的结算总额是多少？取前 10 名。",
+      "gold_sql": "SELECT seller_id, ROUND(SUM(total_amount), 2) AS total\nFROM settlements GROUP BY 1 ORDER BY total DESC LIMIT 10;\n"
+    },
+    {
+      "id": "T4-032",
+      "difficulty": "multi_join",
+      "question": "每个类目下发生过多少次退款？",
+      "gold_sql": "SELECT p.product_category_name, COUNT(DISTINCT rf.refund_id) AS cnt\nFROM refunds rf\nJOIN order_items oi ON oi.order_id = rf.order_id\nJOIN products p ON p.product_id = oi.product_id\nWHERE p.product_category_name IS NOT NULL\nGROUP BY 1 ORDER BY cnt DESC;\n"
+    },
+    {
+      "id": "T4-034",
+      "difficulty": "multi_join",
+      "question": "有过退款的订单占比是多少？",
+      "gold_sql": "SELECT ROUND(\n  (SELECT COUNT(DISTINCT order_id) FROM refunds)::NUMERIC\n  / (SELECT COUNT(*) FROM orders), 4) AS refund_rate;\n"
+    },
+    {
+      "id": "T4-036",
+      "difficulty": "multi_join",
+      "question": "每个州的客户平均消费了多少？",
+      "gold_sql": "SELECT c.customer_state,\n       ROUND(SUM(oi.price) / COUNT(DISTINCT c.customer_unique_id), 2) AS avg_per_customer\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY avg_per_customer DESC;\n"
+    },
+    {
+      "id": "T4-038",
+      "difficulty": "multi_join",
+      "question": "每个会员等级里有多少人打过\"流失风险用户\"标签？",
+      "gold_sql": "SELECT m.level_id, COUNT(DISTINCT m.member_id) AS cnt\nFROM members m\nJOIN user_tag_map tm ON tm.member_id = m.member_id\nJOIN user_tags t ON t.tag_id = tm.tag_id\nWHERE t.tag_code = 'CHURN_RISK'\nGROUP BY 1 ORDER BY 1;\n"
+    },
+    {
+      "id": "T4-041",
+      "difficulty": "multi_join",
+      "question": "每个品牌的商品有多少个？品牌的商品销售总额是多少？",
+      "gold_sql": "SELECT b.brand_name, COUNT(DISTINCT oi.product_id) AS product_cnt,\n       ROUND(SUM(oi.price), 2) AS sales\nFROM order_items oi\nJOIN product_brand_map bm ON bm.product_id = oi.product_id\nJOIN brands b ON b.brand_id = bm.brand_id\nGROUP BY 1 ORDER BY sales DESC LIMIT 10;\n"
+    },
+    {
+      "id": "T4-043",
+      "difficulty": "multi_join",
+      "question": "每个发货状态的发货单平均有几条物流轨迹记录？",
+      "gold_sql": "SELECT s.status, ROUND(AVG(t.cnt), 2) AS avg_events\nFROM shipments s\nJOIN (SELECT shipment_id, COUNT(*) AS cnt FROM shipment_tracking GROUP BY 1) t\n  ON t.shipment_id = s.shipment_id\nGROUP BY 1 ORDER BY 1;\n"
+    },
+    {
+      "id": "T4-045",
+      "difficulty": "multi_join",
+      "question": "每个类目的平均商品重量是多少？取商品数最多的 10 个类目。",
+      "gold_sql": "SELECT p.product_category_name,\n       COUNT(*) AS product_cnt,\n       ROUND(AVG(p.product_weight_g), 2) AS avg_weight\nFROM products p\nWHERE p.product_category_name IS NOT NULL AND p.product_weight_g IS NOT NULL\nGROUP BY 1 ORDER BY product_cnt DESC LIMIT 10;\n"
+    },
+    {
+      "id": "T5-002",
+      "difficulty": "multi_join_deep",
+      "question": "每个会员等级对应的商品销售额是多少？",
+      "gold_sql": "SELECT ml.level_name, ROUND(SUM(oi.price), 2) AS sales\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN members m ON m.customer_unique_id = c.customer_unique_id\nJOIN member_levels ml ON ml.level_id = m.level_id\nJOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY sales DESC;\n"
+    },
+    {
+      "id": "T5-004",
+      "difficulty": "multi_join_deep",
+      "question": "每个仓库所在区域的发货单量和覆盖订单数分别是多少？",
+      "gold_sql": "SELECT r.region_name, COUNT(DISTINCT s.shipment_id) AS shipments, COUNT(DISTINCT o.order_id) AS orders\nFROM shipments s\nJOIN warehouses w ON w.warehouse_id = s.warehouse_id\nJOIN regions r ON r.region_code = w.region_code\nJOIN orders o ON o.order_id = s.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY 1 ORDER BY shipments DESC;\n"
+    },
+    {
+      "id": "T5-006",
+      "difficulty": "multi_join_deep",
+      "question": "物流延迟类工单按客户所在州和会员等级分布，列出前 20 组。",
+      "gold_sql": "SELECT c.customer_state, ml.level_name, COUNT(DISTINCT st.ticket_id) AS tickets\nFROM support_tickets st\nJOIN ticket_categories tc ON tc.category_id = st.category_id\nJOIN orders o ON o.order_id = st.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN members m ON m.member_id = st.member_id\nJOIN member_levels ml ON ml.level_id = m.level_id\nWHERE tc.category_name = '物流延迟'\nGROUP BY 1, 2 ORDER BY tickets DESC LIMIT 20;\n"
+    },
+    {
+      "id": "T5-008",
+      "difficulty": "multi_join_deep",
+      "question": "按推荐人和被推荐人的会员等级组合统计推荐关系数量和奖励金额。",
+      "gold_sql": "SELECT mlr.level_name AS referrer_level, mli.level_name AS invitee_level,\n       COUNT(*) AS referrals, ROUND(SUM(rf.reward_amount), 2) AS reward\nFROM referrals rf\nJOIN members mr ON mr.member_id = rf.referrer_member_id\nJOIN member_levels mlr ON mlr.level_id = mr.level_id\nJOIN members mi ON mi.member_id = rf.invitee_member_id\nJOIN member_levels mli ON mli.level_id = mi.level_id\nGROUP BY 1, 2 ORDER BY referrals DESC;\n"
+    },
+    {
+      "id": "T5-011",
+      "difficulty": "multi_join_deep",
+      "question": "品牌销售额排名前 10 是哪些？销售额按商品金额统计。",
+      "gold_sql": "SELECT b.brand_name, ROUND(SUM(oi.price), 2) AS sales\nFROM order_items oi\nJOIN product_brand_map pbm ON pbm.product_id = oi.product_id AND pbm.is_current\nJOIN brands b ON b.brand_id = pbm.brand_id\nJOIN orders o ON o.order_id = oi.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY 1 ORDER BY sales DESC LIMIT 10;\n"
+    },
+    {
+      "id": "T5-013",
+      "difficulty": "multi_join_deep",
+      "question": "每个营销活动关联商品实际带来的订单数和销售额，取前 10。",
+      "gold_sql": "SELECT ca.campaign_name, COUNT(DISTINCT oi.order_id) AS orders, ROUND(SUM(oi.price), 2) AS gmv\nFROM campaign_products cp\nJOIN campaigns ca ON ca.campaign_id = cp.campaign_id\nJOIN order_items oi ON oi.product_id = cp.product_id\nJOIN orders o ON o.order_id = oi.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY 1 ORDER BY gmv DESC LIMIT 10;\n"
+    },
+    {
+      "id": "T5-015",
+      "difficulty": "multi_join_deep",
+      "question": "物流轨迹事件类型按客户所在州分布，列出前 20 组（按发货单去重）。",
+      "gold_sql": "SELECT st.event_code, c.customer_state, COUNT(DISTINCT s.shipment_id) AS shipments\nFROM shipment_tracking st\nJOIN shipments s ON s.shipment_id = st.shipment_id\nJOIN orders o ON o.order_id = s.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1, 2 ORDER BY shipments DESC LIMIT 20;\n"
+    },
+    {
+      "id": "T5-017",
+      "difficulty": "multi_join_deep",
+      "question": "各工单类目、优先级的工单数和消息条数分别是多少？",
+      "gold_sql": "SELECT tc.category_name, st.priority, COUNT(DISTINCT st.ticket_id) AS tickets,\n       COUNT(tm.message_id) AS messages\nFROM support_tickets st\nJOIN ticket_categories tc ON tc.category_id = st.category_id\nJOIN ticket_messages tm ON tm.ticket_id = st.ticket_id\nJOIN members m ON m.member_id = st.member_id\nJOIN member_levels ml ON ml.level_id = m.level_id\nGROUP BY 1, 2 ORDER BY tickets DESC;\n"
+    },
+    {
+      "id": "T5-019",
+      "difficulty": "multi_join_deep",
+      "question": "发生过价格变动的商品，按类目统计平均涨跌幅和关联订单数，取订单数前 20。",
+      "gold_sql": "SELECT p.product_category_name,\n       ROUND(AVG(pph.new_price - pph.old_price), 2) AS avg_price_change,\n       COUNT(DISTINCT oi.order_id) AS orders\nFROM product_price_history pph\nJOIN products p ON p.product_id = pph.product_id\nJOIN order_items oi ON oi.product_id = pph.product_id\nJOIN orders o ON o.order_id = oi.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY 1 ORDER BY orders DESC LIMIT 20;\n"
+    },
+    {
+      "id": "T5-020",
+      "difficulty": "multi_join_deep",
+      "question": "按宏观区域和出入库类型统计库存变动笔数与数量合计。",
+      "gold_sql": "SELECT r.macro_region, im.movement_type, COUNT(*) AS movements, SUM(im.quantity) AS qty\nFROM inventory_movements im\nJOIN inventory i ON i.warehouse_id = im.warehouse_id AND i.product_id = im.product_id\nJOIN warehouses w ON w.warehouse_id = im.warehouse_id\nJOIN regions r ON r.region_code = w.region_code\nJOIN products p ON p.product_id = im.product_id\nGROUP BY 1, 2 ORDER BY movements DESC;\n"
+    },
+    {
+      "id": "T6-001",
+      "difficulty": "business_semantics",
+      "question": "统计 2018 年全站 GMV（含运费），以及不含运费的销售额，两者分别是多少？",
+      "gold_sql": "SELECT ROUND(SUM(oi.price + oi.freight_value), 2) AS gmv_with_freight,\n       ROUND(SUM(oi.price), 2) AS sales_without_freight\nFROM orders o\nJOIN order_items oi ON oi.order_id = o.order_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable')\n  AND o.order_purchase_timestamp >= DATE '2018-01-01'\n  AND o.order_purchase_timestamp < DATE '2019-01-01';\n"
+    },
+    {
+      "id": "T6-003",
+      "difficulty": "business_semantics",
+      "question": "复购率是多少？（下单 2 次及以上的用户占全部下单用户的比例）",
+      "gold_sql": "WITH per_user AS (\n  SELECT c.customer_unique_id, COUNT(DISTINCT o.order_id) AS order_cnt\n  FROM orders o\n  JOIN customers c ON c.customer_id = o.customer_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n  GROUP BY 1\n)\nSELECT ROUND(100.0 * COUNT(*) FILTER (WHERE order_cnt >= 2) / COUNT(*), 2) AS repeat_rate_pct\nFROM per_user;\n"
+    },
+    {
+      "id": "T6-005",
+      "difficulty": "business_semantics",
+      "question": "会员用户贡献的订单占比是多少？（会员渗透率）",
+      "gold_sql": "WITH member_orders AS (\n  SELECT COUNT(DISTINCT o.order_id) AS n\n  FROM orders o\n  JOIN customers c ON c.customer_id = o.customer_id\n  JOIN members m ON m.customer_unique_id = c.customer_unique_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n),\nall_orders AS (\n  SELECT COUNT(DISTINCT o.order_id) AS n\n  FROM orders o\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n)\nSELECT ROUND(100.0 * mo.n / ao.n, 2) AS penetration_pct\nFROM member_orders mo CROSS JOIN all_orders ao;\n"
+    },
+    {
+      "id": "T6-007",
+      "difficulty": "business_semantics",
+      "question": "退款率是多少？（退款订单数 / 有效订单数）",
+      "gold_sql": "WITH r AS (\n  SELECT COUNT(DISTINCT r.order_id) AS n FROM refunds r\n  JOIN orders o ON o.order_id = r.order_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n),\na AS (\n  SELECT COUNT(DISTINCT o.order_id) AS n FROM orders o\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n)\nSELECT ROUND(100.0 * r.n / a.n, 2) AS refund_rate_pct\nFROM r CROSS JOIN a;\n"
+    },
+    {
+      "id": "T6-009",
+      "difficulty": "business_semantics",
+      "question": "低分订单（1-2 星）占比是多少？按客户所在州列出前 10。",
+      "gold_sql": "SELECT c.customer_state,\n       ROUND(100.0 * COUNT(*) FILTER (WHERE r.review_score <= 2) / COUNT(*), 2) AS low_pct\nFROM order_reviews r\nJOIN orders o ON o.order_id = r.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable')\nGROUP BY 1 ORDER BY low_pct DESC LIMIT 10;\n"
+    },
+    {
+      "id": "T6-010",
+      "difficulty": "business_semantics",
+      "question": "搜索转化率是多少？（有点击的搜索记录 / 全部搜索记录）",
+      "gold_sql": "SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE clicked_product_id IS NOT NULL) / COUNT(*), 2) AS ctr_pct\nFROM search_logs;\n"
+    },
+    {
+      "id": "T6-012",
+      "difficulty": "business_semantics",
+      "question": "2018 年按月统计活跃下单用户数（MAU）。",
+      "gold_sql": "SELECT DATE_TRUNC('month', o.order_purchase_timestamp)::date AS month,\n       COUNT(DISTINCT c.customer_unique_id) AS mau\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable')\n  AND o.order_purchase_timestamp >= DATE '2018-01-01'\n  AND o.order_purchase_timestamp < DATE '2019-01-01'\nGROUP BY 1 ORDER BY 1;\n"
+    },
+    {
+      "id": "T6-014",
+      "difficulty": "business_semantics",
+      "question": "各会员等级的用户数、人均订单数、人均 GMV 分别是多少？",
+      "gold_sql": "WITH user_level AS (\n  SELECT m.member_id, ml.level_name\n  FROM members m JOIN member_levels ml ON ml.level_id = m.level_id\n),\nuser_orders AS (\n  SELECT ul.level_name, c.customer_unique_id, COUNT(DISTINCT o.order_id) AS order_cnt,\n         SUM(oi.price + oi.freight_value) AS gmv\n  FROM user_level ul\n  JOIN customers c ON c.customer_unique_id = (\n    SELECT m2.customer_unique_id FROM members m2 WHERE m2.member_id = ul.member_id\n  )\n  JOIN orders o ON o.customer_id = c.customer_id\n  JOIN order_items oi ON oi.order_id = o.order_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n  GROUP BY 1, 2\n)\nSELECT level_name, COUNT(*) AS users,\n       ROUND(AVG(order_cnt), 2) AS orders_per_user,\n       ROUND(AVG(gmv), 2) AS gmv_per_user\nFROM user_orders GROUP BY 1 ORDER BY gmv_per_user DESC;\n"
+    },
+    {
+      "id": "T6-016",
+      "difficulty": "business_semantics",
+      "question": "各品牌的商品数、动销商品数、销售额和动销率分别是多少？取销售额前 10。",
+      "gold_sql": "WITH brand_products AS (\n  SELECT b.brand_id, b.brand_name, pbm.product_id\n  FROM brands b\n  JOIN product_brand_map pbm ON pbm.brand_id = b.brand_id AND pbm.is_current\n),\nsales AS (\n  SELECT bp.brand_id, COUNT(DISTINCT oi.product_id) AS sold_products,\n         SUM(oi.price) AS sales\n  FROM brand_products bp\n  JOIN order_items oi ON oi.product_id = bp.product_id\n  JOIN orders o ON o.order_id = oi.order_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n  GROUP BY 1\n),\ntotal AS (\n  SELECT brand_id, COUNT(*) AS product_cnt FROM brand_products GROUP BY 1\n)\nSELECT bp.brand_name, t.product_cnt, COALESCE(s.sold_products, 0) AS sold_products,\n       ROUND(COALESCE(s.sales, 0), 2) AS sales,\n       ROUND(100.0 * COALESCE(s.sold_products, 0) / t.product_cnt, 2) AS sell_through_pct\nFROM brands bp\nJOIN total t ON t.brand_id = bp.brand_id\nLEFT JOIN sales s ON s.brand_id = bp.brand_id\nORDER BY sales DESC LIMIT 10;\n"
+    },
+    {
+      "id": "T6-018",
+      "difficulty": "business_semantics",
+      "question": "会员与非会员的复购率分别是多少？",
+      "gold_sql": "WITH user_orders AS (\n  SELECT c.customer_unique_id,\n         BOOL_OR(m.member_id IS NOT NULL) AS is_member,\n         COUNT(DISTINCT o.order_id) AS order_cnt\n  FROM orders o\n  JOIN customers c ON c.customer_id = o.customer_id\n  LEFT JOIN members m ON m.customer_unique_id = c.customer_unique_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n  GROUP BY 1\n)\nSELECT CASE WHEN is_member THEN 'member' ELSE 'non_member' END AS user_type,\n       ROUND(100.0 * COUNT(*) FILTER (WHERE order_cnt >= 2) / COUNT(*), 2) AS repeat_rate_pct\nFROM user_orders GROUP BY 1 ORDER BY 1;\n"
+    },
+    {
+      "id": "T6-021",
+      "difficulty": "business_semantics",
+      "question": "按用户累计 GMV 排序，贡献前 20% 的用户占总 GMV 的比例是多少？",
+      "gold_sql": "WITH user_gmv AS (\n  SELECT c.customer_unique_id, SUM(oi.price + oi.freight_value) AS gmv\n  FROM orders o\n  JOIN customers c ON c.customer_id = o.customer_id\n  JOIN order_items oi ON oi.order_id = o.order_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n  GROUP BY 1\n),\nranked AS (\n  SELECT gmv, NTILE(5) OVER (ORDER BY gmv DESC) AS quintile\n  FROM user_gmv\n)\nSELECT quintile, ROUND(100.0 * SUM(gmv) / (SELECT SUM(gmv) FROM user_gmv), 2) AS gmv_pct\nFROM ranked GROUP BY 1 ORDER BY 1;\n"
+    },
+    {
+      "id": "T6-023",
+      "difficulty": "business_semantics",
+      "question": "各仓库的库存周转情况：当前库存量、近 90 天出库量、库存周转天数分别是多少？",
+      "gold_sql": "WITH anchor AS (\n  SELECT MAX(moved_at) AS max_ts FROM inventory_movements\n),\noutbound AS (\n  SELECT im.warehouse_id, SUM(im.quantity) AS out_qty\n  FROM inventory_movements im, anchor a\n  WHERE im.movement_type = 2\n    AND im.moved_at > a.max_ts - INTERVAL '90 days'\n    AND im.moved_at <= a.max_ts\n  GROUP BY 1\n),\nstock AS (\n  SELECT warehouse_id, SUM(quantity) AS stock_qty FROM inventory GROUP BY 1\n)\nSELECT w.warehouse_name, s.stock_qty, COALESCE(o.out_qty, 0) AS out_qty_90d,\n       CASE WHEN COALESCE(o.out_qty, 0) > 0\n            THEN ROUND(90.0 * s.stock_qty / o.out_qty, 1) END AS turnover_days\nFROM warehouses w\nJOIN stock s ON s.warehouse_id = w.warehouse_id\nLEFT JOIN outbound o ON o.warehouse_id = w.warehouse_id\nORDER BY turnover_days DESC NULLS LAST;\n"
+    },
+    {
+      "id": "T6-025",
+      "difficulty": "business_semantics",
+      "question": "2018 年每个月的 GMV 中，新客和老客各贡献多少？",
+      "gold_sql": "WITH first_order AS (\n  SELECT c.customer_unique_id, MIN(o.order_purchase_timestamp) AS first_ts\n  FROM orders o\n  JOIN customers c ON c.customer_id = o.customer_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n  GROUP BY 1\n),\nmonthly AS (\n  SELECT DATE_TRUNC('month', o.order_purchase_timestamp)::date AS month,\n         c.customer_unique_id,\n         SUM(oi.price + oi.freight_value) AS gmv\n  FROM orders o\n  JOIN customers c ON c.customer_id = o.customer_id\n  JOIN order_items oi ON oi.order_id = o.order_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n    AND o.order_purchase_timestamp >= DATE '2018-01-01'\n    AND o.order_purchase_timestamp < DATE '2019-01-01'\n  GROUP BY 1, 2\n)\nSELECT m.month,\n       ROUND(SUM(m.gmv) FILTER (WHERE DATE_TRUNC('month', f.first_ts)::date = m.month), 2) AS new_customer_gmv,\n       ROUND(SUM(m.gmv) FILTER (WHERE DATE_TRUNC('month', f.first_ts)::date <> m.month), 2) AS returning_gmv\nFROM monthly m\nJOIN first_order f ON f.customer_unique_id = m.customer_unique_id\nGROUP BY 1 ORDER BY 1;\n"
+    }
+  ]
+}

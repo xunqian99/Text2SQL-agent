@@ -1,0 +1,4583 @@
+[
+  {
+    "id": "T1-002",
+    "sql": "SELECT COUNT(*) FROM orders\nWHERE order_purchase_timestamp >= '2018-01-01'\n  AND order_purchase_timestamp < '2019-01-01'",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 208,
+    "rows": [
+      {
+        "count": 54011
+      }
+    ]
+  },
+  {
+    "id": "T1-004",
+    "sql": "SELECT COUNT(DISTINCT customer_unique_id) FROM customers",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 220,
+    "rows": [
+      {
+        "count": 96096
+      }
+    ]
+  },
+  {
+    "id": "T1-006",
+    "sql": "SELECT COUNT(*) FROM products",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 154,
+    "rows": [
+      {
+        "count": 32951
+      }
+    ]
+  },
+  {
+    "id": "T1-008",
+    "sql": "SELECT COUNT(DISTINCT customer_city) FROM customers",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 188,
+    "rows": [
+      {
+        "count": 4119
+      }
+    ]
+  },
+  {
+    "id": "T1-011",
+    "sql": "SELECT COUNT(DISTINCT product_category_name) FROM products",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 148,
+    "rows": [
+      {
+        "count": 73
+      }
+    ]
+  },
+  {
+    "id": "T1-013",
+    "sql": "SELECT order_id, order_item_id, freight_value\nFROM order_items ORDER BY freight_value DESC LIMIT 5",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 138,
+    "rows": [
+      {
+        "order_id": "a77e1550db865202c56b19ddc6dc4d53",
+        "freight_value": 409.68,
+        "order_item_id": 1
+      },
+      {
+        "order_id": "3fde74c28a3d5d618c00f26d51baafa0",
+        "freight_value": 375.28,
+        "order_item_id": 1
+      },
+      {
+        "order_id": "076d1555fb53a89b0ef4d529e527a0f6",
+        "freight_value": 375.28,
+        "order_item_id": 1
+      },
+      {
+        "order_id": "9f49bd16053df810384e793386312674",
+        "freight_value": 339.59,
+        "order_item_id": 1
+      },
+      {
+        "order_id": "264a7e199467906c0727394df82d1a6a",
+        "freight_value": 338.3,
+        "order_item_id": 1
+      }
+    ]
+  },
+  {
+    "id": "T1-015",
+    "sql": "SELECT COUNT(*) FROM order_payments WHERE payment_type = 'credit_card'",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 166,
+    "rows": [
+      {
+        "count": 76795
+      }
+    ]
+  },
+  {
+    "id": "T1-017",
+    "sql": "SELECT COUNT(*) FROM products WHERE product_weight_g > 5000",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 147,
+    "rows": [
+      {
+        "count": 4153
+      }
+    ]
+  },
+  {
+    "id": "T1-019",
+    "sql": "SELECT COUNT(*) FROM orders WHERE order_delivered_customer_date IS NULL",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 130,
+    "rows": [
+      {
+        "count": 2965
+      }
+    ]
+  },
+  {
+    "id": "T1-020",
+    "sql": "SELECT COUNT(*) FROM order_reviews WHERE review_comment_title IS NOT NULL",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 176,
+    "rows": [
+      {
+        "count": 11568
+      }
+    ]
+  },
+  {
+    "id": "T1-022",
+    "sql": "SELECT COUNT(*) FROM order_items WHERE price < 10",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 134,
+    "rows": [
+      {
+        "count": 1188
+      }
+    ]
+  },
+  {
+    "id": "T1-024",
+    "sql": "SELECT COUNT(*) FROM members WHERE level_id = 3",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 125,
+    "rows": [
+      {
+        "count": 6339
+      }
+    ]
+  },
+  {
+    "id": "T1-026",
+    "sql": "SELECT member_id, points FROM members ORDER BY points DESC LIMIT 10",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 150,
+    "rows": [
+      {
+        "points": 5000,
+        "member_id": 153282
+      },
+      {
+        "points": 5000,
+        "member_id": 112521
+      },
+      {
+        "points": 5000,
+        "member_id": 101665
+      },
+      {
+        "points": 5000,
+        "member_id": 120654
+      },
+      {
+        "points": 5000,
+        "member_id": 188328
+      },
+      {
+        "points": 5000,
+        "member_id": 165825
+      },
+      {
+        "points": 4999,
+        "member_id": 169300
+      },
+      {
+        "points": 4999,
+        "member_id": 129401
+      },
+      {
+        "points": 4999,
+        "member_id": 132747
+      },
+      {
+        "points": 4999,
+        "member_id": 119338
+      }
+    ]
+  },
+  {
+    "id": "T1-028",
+    "sql": "SELECT warehouse_id, warehouse_name, capacity\nFROM warehouses ORDER BY capacity DESC LIMIT 1",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 156,
+    "rows": [
+      {
+        "capacity": 50000,
+        "warehouse_id": 1,
+        "warehouse_name": "圣保罗中心仓"
+      }
+    ]
+  },
+  {
+    "id": "T1-031",
+    "sql": "SELECT COUNT(*) FROM coupons",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 177,
+    "rows": [
+      {
+        "count": 300
+      }
+    ]
+  },
+  {
+    "id": "T1-033",
+    "sql": "SELECT COUNT(*) FROM support_tickets WHERE priority = 4",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 142,
+    "rows": [
+      {
+        "count": 1357
+      }
+    ]
+  },
+  {
+    "id": "T1-035",
+    "sql": "SELECT COUNT(*) FROM inventory WHERE quantity < safety_stock",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 130,
+    "rows": [
+      {
+        "count": 1177
+      }
+    ]
+  },
+  {
+    "id": "T1-037",
+    "sql": "SELECT COUNT(DISTINCT keyword) FROM search_logs",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 136,
+    "rows": [
+      {
+        "count": 10
+      }
+    ]
+  },
+  {
+    "id": "T1-039",
+    "sql": "SELECT COUNT(*) FROM campaigns WHERE status = 3",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 123,
+    "rows": [
+      {
+        "count": 40
+      }
+    ]
+  },
+  {
+    "id": "T1-040",
+    "sql": "SELECT COUNT(DISTINCT product_id) FROM product_price_history",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 167,
+    "rows": [
+      {
+        "count": 9813
+      }
+    ]
+  },
+  {
+    "id": "T2-001",
+    "sql": "SELECT SUM(price) FROM order_items",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 135,
+    "rows": [
+      {
+        "sum": 13591643.7
+      }
+    ]
+  },
+  {
+    "id": "T2-003",
+    "sql": "SELECT ROUND(AVG(price), 2) FROM order_items",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 152,
+    "rows": [
+      {
+        "round": 120.65
+      }
+    ]
+  },
+  {
+    "id": "T2-005",
+    "sql": "SELECT order_status, COUNT(*) AS cnt\nFROM orders GROUP BY order_status ORDER BY cnt DESC",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 134,
+    "rows": [
+      {
+        "cnt": 96478,
+        "order_status": "delivered"
+      },
+      {
+        "cnt": 1107,
+        "order_status": "shipped"
+      },
+      {
+        "cnt": 625,
+        "order_status": "canceled"
+      },
+      {
+        "cnt": 609,
+        "order_status": "unavailable"
+      },
+      {
+        "cnt": 314,
+        "order_status": "invoiced"
+      },
+      {
+        "cnt": 301,
+        "order_status": "processing"
+      },
+      {
+        "cnt": 5,
+        "order_status": "created"
+      },
+      {
+        "cnt": 2,
+        "order_status": "approved"
+      }
+    ]
+  },
+  {
+    "id": "T2-007",
+    "sql": "SELECT review_score, COUNT(*) AS cnt\nFROM order_reviews GROUP BY review_score ORDER BY review_score",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 148,
+    "rows": [
+      {
+        "cnt": 11424,
+        "review_score": 1
+      },
+      {
+        "cnt": 3151,
+        "review_score": 2
+      },
+      {
+        "cnt": 8179,
+        "review_score": 3
+      },
+      {
+        "cnt": 19142,
+        "review_score": 4
+      },
+      {
+        "cnt": 57328,
+        "review_score": 5
+      }
+    ]
+  },
+  {
+    "id": "T2-009",
+    "sql": "SELECT product_category_name, COUNT(*) AS cnt\nFROM products\nWHERE product_category_name IS NOT NULL\nGROUP BY product_category_name ORDER BY cnt DESC LIMIT 10",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 115,
+    "rows": [
+      {
+        "cnt": 3029,
+        "product_category_name": "cama_mesa_banho"
+      },
+      {
+        "cnt": 2867,
+        "product_category_name": "esporte_lazer"
+      },
+      {
+        "cnt": 2657,
+        "product_category_name": "moveis_decoracao"
+      },
+      {
+        "cnt": 2444,
+        "product_category_name": "beleza_saude"
+      },
+      {
+        "cnt": 2335,
+        "product_category_name": "utilidades_domesticas"
+      },
+      {
+        "cnt": 1900,
+        "product_category_name": "automotivo"
+      },
+      {
+        "cnt": 1639,
+        "product_category_name": "informatica_acessorios"
+      },
+      {
+        "cnt": 1411,
+        "product_category_name": "brinquedos"
+      },
+      {
+        "cnt": 1329,
+        "product_category_name": "relogios_presentes"
+      },
+      {
+        "cnt": 1134,
+        "product_category_name": "telefonia"
+      }
+    ]
+  },
+  {
+    "id": "T2-010",
+    "sql": "SELECT seller_state, COUNT(*) AS cnt\nFROM sellers GROUP BY seller_state ORDER BY cnt DESC",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 140,
+    "rows": [
+      {
+        "cnt": 1849,
+        "seller_state": "SP"
+      },
+      {
+        "cnt": 349,
+        "seller_state": "PR"
+      },
+      {
+        "cnt": 244,
+        "seller_state": "MG"
+      },
+      {
+        "cnt": 190,
+        "seller_state": "SC"
+      },
+      {
+        "cnt": 171,
+        "seller_state": "RJ"
+      },
+      {
+        "cnt": 129,
+        "seller_state": "RS"
+      },
+      {
+        "cnt": 40,
+        "seller_state": "GO"
+      },
+      {
+        "cnt": 30,
+        "seller_state": "DF"
+      },
+      {
+        "cnt": 23,
+        "seller_state": "ES"
+      },
+      {
+        "cnt": 19,
+        "seller_state": "BA"
+      },
+      {
+        "cnt": 13,
+        "seller_state": "CE"
+      },
+      {
+        "cnt": 9,
+        "seller_state": "PE"
+      },
+      {
+        "cnt": 6,
+        "seller_state": "PB"
+      },
+      {
+        "cnt": 5,
+        "seller_state": "RN"
+      },
+      {
+        "cnt": 5,
+        "seller_state": "MS"
+      },
+      {
+        "cnt": 4,
+        "seller_state": "MT"
+      },
+      {
+        "cnt": 2,
+        "seller_state": "SE"
+      },
+      {
+        "cnt": 2,
+        "seller_state": "RO"
+      },
+      {
+        "cnt": 1,
+        "seller_state": "MA"
+      },
+      {
+        "cnt": 1,
+        "seller_state": "AC"
+      },
+      {
+        "cnt": 1,
+        "seller_state": "PI"
+      },
+      {
+        "cnt": 1,
+        "seller_state": "PA"
+      },
+      {
+        "cnt": 1,
+        "seller_state": "AM"
+      }
+    ]
+  },
+  {
+    "id": "T2-012",
+    "sql": "SELECT seller_id, ROUND(SUM(freight_value), 2) AS total\nFROM order_items GROUP BY seller_id ORDER BY total DESC LIMIT 10",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 178,
+    "rows": [
+      {
+        "total": 51612.55,
+        "seller_id": "7c67e1448b00f6e969d365cea6b010ab"
+      },
+      {
+        "total": 35165.77,
+        "seller_id": "1f50f920176fa81dab994f9023523100"
+      },
+      {
+        "total": 35067.04,
+        "seller_id": "4a3ca9315b744ce9f8e9374361493884"
+      },
+      {
+        "total": 33892.14,
+        "seller_id": "1025f0e2d44d7041d6cf58b6550e0bfa"
+      },
+      {
+        "total": 31844.09,
+        "seller_id": "a1043bafd471dff536d0c462352beb48"
+      },
+      {
+        "total": 27960.94,
+        "seller_id": "6560211a19b47992c3666cc44a7e94c0"
+      },
+      {
+        "total": 25668.99,
+        "seller_id": "cc419e0650a3c5ba77189a1882b7556a"
+      },
+      {
+        "total": 25430.98,
+        "seller_id": "955fee9216a65b617aa5c0531780ce60"
+      },
+      {
+        "total": 24955.75,
+        "seller_id": "da8622b14eb17ae2831f4ac5b9dab84a"
+      },
+      {
+        "total": 22433.51,
+        "seller_id": "3d871de0142ce09b7081e2b9d1733cb1"
+      }
+    ]
+  },
+  {
+    "id": "T2-014",
+    "sql": "SELECT\n  COUNT(*) FILTER (WHERE payment_type = 'credit_card') AS credit_card,\n  COUNT(*) FILTER (WHERE payment_type = 'boleto')      AS boleto\nFROM order_payments",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 139,
+    "rows": [
+      {
+        "boleto": 19784,
+        "credit_card": 76795
+      }
+    ]
+  },
+  {
+    "id": "T2-016",
+    "sql": "SELECT status, COUNT(*) AS cnt FROM members GROUP BY status ORDER BY status",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 170,
+    "rows": [
+      {
+        "cnt": 90246,
+        "status": 1
+      },
+      {
+        "cnt": 5724,
+        "status": 2
+      },
+      {
+        "cnt": 126,
+        "status": 3
+      }
+    ]
+  },
+  {
+    "id": "T2-018",
+    "sql": "SELECT campaign_type, COUNT(*) AS cnt\nFROM campaigns GROUP BY campaign_type ORDER BY cnt DESC",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 140,
+    "rows": [
+      {
+        "cnt": 13,
+        "campaign_type": "FLASH_SALE"
+      },
+      {
+        "cnt": 13,
+        "campaign_type": "MEMBER_DAY"
+      },
+      {
+        "cnt": 13,
+        "campaign_type": "COUPON"
+      },
+      {
+        "cnt": 13,
+        "campaign_type": "DISCOUNT"
+      }
+    ]
+  },
+  {
+    "id": "T2-021",
+    "sql": "SELECT reason_code, COUNT(*) AS cnt\nFROM refunds GROUP BY reason_code ORDER BY cnt DESC",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 132,
+    "rows": [
+      {
+        "cnt": 2009,
+        "reason_code": "LATE"
+      },
+      {
+        "cnt": 1925,
+        "reason_code": "QUAL"
+      },
+      {
+        "cnt": 994,
+        "reason_code": "OTHER"
+      },
+      {
+        "cnt": 982,
+        "reason_code": "CUST"
+      }
+    ]
+  },
+  {
+    "id": "T2-023",
+    "sql": "SELECT ROUND(SUM(refund_amount), 2) FROM refunds WHERE status = 4",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 140,
+    "rows": [
+      {
+        "round": 458711.5
+      }
+    ]
+  },
+  {
+    "id": "T2-025",
+    "sql": "SELECT SUM(quantity) FROM inventory",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 132,
+    "rows": [
+      {
+        "sum": 6143734
+      }
+    ]
+  },
+  {
+    "id": "T2-027",
+    "sql": "SELECT movement_type, COUNT(*) AS cnt\nFROM inventory_movements GROUP BY movement_type ORDER BY movement_type",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 151,
+    "rows": [
+      {
+        "cnt": 8259,
+        "movement_type": 1
+      },
+      {
+        "cnt": 16273,
+        "movement_type": 2
+      },
+      {
+        "cnt": 16419,
+        "movement_type": 3
+      },
+      {
+        "cnt": 8209,
+        "movement_type": 4
+      }
+    ]
+  },
+  {
+    "id": "T2-029",
+    "sql": "SELECT status, COUNT(*) AS cnt FROM shipments GROUP BY status ORDER BY status",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 139,
+    "rows": [
+      {
+        "cnt": 618,
+        "status": 1
+      },
+      {
+        "cnt": 1114,
+        "status": 2
+      },
+      {
+        "cnt": 96470,
+        "status": 3
+      }
+    ]
+  },
+  {
+    "id": "T2-030",
+    "sql": "SELECT category_id, COUNT(*) AS cnt\nFROM support_tickets GROUP BY category_id ORDER BY category_id",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 146,
+    "rows": [
+      {
+        "cnt": 803,
+        "category_id": 1
+      },
+      {
+        "cnt": 1628,
+        "category_id": 2
+      },
+      {
+        "cnt": 1655,
+        "category_id": 3
+      },
+      {
+        "cnt": 1524,
+        "category_id": 4
+      },
+      {
+        "cnt": 1579,
+        "category_id": 5
+      },
+      {
+        "cnt": 745,
+        "category_id": 6
+      }
+    ]
+  },
+  {
+    "id": "T2-032",
+    "sql": "SELECT status, COUNT(*) AS cnt FROM settlements GROUP BY status ORDER BY status",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 145,
+    "rows": [
+      {
+        "cnt": 1106,
+        "status": 2
+      },
+      {
+        "cnt": 4552,
+        "status": 3
+      }
+    ]
+  },
+  {
+    "id": "T2-034",
+    "sql": "SELECT ROUND(SUM(commission), 2) FROM settlements",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 145,
+    "rows": [
+      {
+        "round": 535788.39
+      }
+    ]
+  },
+  {
+    "id": "T2-036",
+    "sql": "SELECT product_category_name, COUNT(*) AS cnt\nFROM products\nWHERE product_category_name IS NOT NULL\nGROUP BY product_category_name\nHAVING COUNT(*) > 1500\nORDER BY cnt DESC",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 149,
+    "rows": [
+      {
+        "cnt": 3029,
+        "product_category_name": "cama_mesa_banho"
+      },
+      {
+        "cnt": 2867,
+        "product_category_name": "esporte_lazer"
+      },
+      {
+        "cnt": 2657,
+        "product_category_name": "moveis_decoracao"
+      },
+      {
+        "cnt": 2444,
+        "product_category_name": "beleza_saude"
+      },
+      {
+        "cnt": 2335,
+        "product_category_name": "utilidades_domesticas"
+      },
+      {
+        "cnt": 1900,
+        "product_category_name": "automotivo"
+      },
+      {
+        "cnt": 1639,
+        "product_category_name": "informatica_acessorios"
+      }
+    ]
+  },
+  {
+    "id": "T2-038",
+    "sql": "SELECT MAX(price) AS max_price, MIN(price) AS min_price FROM order_items",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 146,
+    "rows": [
+      {
+        "max_price": 6735.0,
+        "min_price": 0.85
+      }
+    ]
+  },
+  {
+    "id": "T3-002",
+    "sql": "SELECT EXTRACT(YEAR FROM order_purchase_timestamp)::INT AS yr, COUNT(*) AS cnt\nFROM orders\nWHERE EXTRACT(YEAR FROM order_purchase_timestamp) IN (2017, 2018)\nGROUP BY 1 ORDER BY 1",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 181,
+    "rows": [
+      {
+        "yr": 2017,
+        "cnt": 45101
+      },
+      {
+        "yr": 2018,
+        "cnt": 54011
+      }
+    ]
+  },
+  {
+    "id": "T3-004",
+    "sql": "SELECT COUNT(*) FROM orders\nWHERE order_purchase_timestamp >= '2017-11-01'\n  AND order_purchase_timestamp < '2017-12-01'",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 160,
+    "rows": [
+      {
+        "count": 7544
+      }
+    ]
+  },
+  {
+    "id": "T3-006",
+    "sql": "SELECT DATE_TRUNC('month', o.order_purchase_timestamp) AS month,\n       ROUND(SUM(oi.price), 2) AS sales\nFROM orders o JOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY 1",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 206,
+    "rows": [
+      {
+        "month": "2016-09-01T00:00:00",
+        "sales": 267.36
+      },
+      {
+        "month": "2016-10-01T00:00:00",
+        "sales": 49507.66
+      },
+      {
+        "month": "2016-12-01T00:00:00",
+        "sales": 10.9
+      },
+      {
+        "month": "2017-01-01T00:00:00",
+        "sales": 120312.87
+      },
+      {
+        "month": "2017-02-01T00:00:00",
+        "sales": 247303.02
+      },
+      {
+        "month": "2017-03-01T00:00:00",
+        "sales": 374344.3
+      },
+      {
+        "month": "2017-04-01T00:00:00",
+        "sales": 359927.23
+      },
+      {
+        "month": "2017-05-01T00:00:00",
+        "sales": 506071.14
+      },
+      {
+        "month": "2017-06-01T00:00:00",
+        "sales": 433038.6
+      },
+      {
+        "month": "2017-07-01T00:00:00",
+        "sales": 498031.48
+      },
+      {
+        "month": "2017-08-01T00:00:00",
+        "sales": 573971.68
+      },
+      {
+        "month": "2017-09-01T00:00:00",
+        "sales": 624401.69
+      },
+      {
+        "month": "2017-10-01T00:00:00",
+        "sales": 664219.43
+      },
+      {
+        "month": "2017-11-01T00:00:00",
+        "sales": 1010271.37
+      },
+      {
+        "month": "2017-12-01T00:00:00",
+        "sales": 743914.17
+      },
+      {
+        "month": "2018-01-01T00:00:00",
+        "sales": 950030.36
+      },
+      {
+        "month": "2018-02-01T00:00:00",
+        "sales": 844178.71
+      },
+      {
+        "month": "2018-03-01T00:00:00",
+        "sales": 983213.44
+      },
+      {
+        "month": "2018-04-01T00:00:00",
+        "sales": 996647.75
+      },
+      {
+        "month": "2018-05-01T00:00:00",
+        "sales": 996517.68
+      },
+      {
+        "month": "2018-06-01T00:00:00",
+        "sales": 865124.31
+      },
+      {
+        "month": "2018-07-01T00:00:00",
+        "sales": 895507.22
+      },
+      {
+        "month": "2018-08-01T00:00:00",
+        "sales": 854686.33
+      },
+      {
+        "month": "2018-09-01T00:00:00",
+        "sales": 145.0
+      }
+    ]
+  },
+  {
+    "id": "T3-008",
+    "sql": "SELECT DATE_TRUNC('month', o.order_purchase_timestamp) AS month,\n       ROUND(SUM(oi.price) / COUNT(DISTINCT o.order_id), 2) AS avg_order_value\nFROM orders o JOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY 1",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 354,
+    "rows": [
+      {
+        "month": "2016-09-01T00:00:00",
+        "avg_order_value": 89.12
+      },
+      {
+        "month": "2016-10-01T00:00:00",
+        "avg_order_value": 160.74
+      },
+      {
+        "month": "2016-12-01T00:00:00",
+        "avg_order_value": 10.9
+      },
+      {
+        "month": "2017-01-01T00:00:00",
+        "avg_order_value": 152.49
+      },
+      {
+        "month": "2017-02-01T00:00:00",
+        "avg_order_value": 142.7
+      },
+      {
+        "month": "2017-03-01T00:00:00",
+        "avg_order_value": 141.74
+      },
+      {
+        "month": "2017-04-01T00:00:00",
+        "avg_order_value": 150.53
+      },
+      {
+        "month": "2017-05-01T00:00:00",
+        "avg_order_value": 138.27
+      },
+      {
+        "month": "2017-06-01T00:00:00",
+        "avg_order_value": 134.61
+      },
+      {
+        "month": "2017-07-01T00:00:00",
+        "avg_order_value": 125.48
+      },
+      {
+        "month": "2017-08-01T00:00:00",
+        "avg_order_value": 133.7
+      },
+      {
+        "month": "2017-09-01T00:00:00",
+        "avg_order_value": 147.16
+      },
+      {
+        "month": "2017-10-01T00:00:00",
+        "avg_order_value": 145.41
+      },
+      {
+        "month": "2017-11-01T00:00:00",
+        "avg_order_value": 135.59
+      },
+      {
+        "month": "2017-12-01T00:00:00",
+        "avg_order_value": 132.27
+      },
+      {
+        "month": "2018-01-01T00:00:00",
+        "avg_order_value": 131.58
+      },
+      {
+        "month": "2018-02-01T00:00:00",
+        "avg_order_value": 126.11
+      },
+      {
+        "month": "2018-03-01T00:00:00",
+        "avg_order_value": 136.79
+      },
+      {
+        "month": "2018-04-01T00:00:00",
+        "avg_order_value": 143.73
+      },
+      {
+        "month": "2018-05-01T00:00:00",
+        "avg_order_value": 145.41
+      },
+      {
+        "month": "2018-06-01T00:00:00",
+        "avg_order_value": 140.44
+      },
+      {
+        "month": "2018-07-01T00:00:00",
+        "avg_order_value": 142.76
+      },
+      {
+        "month": "2018-08-01T00:00:00",
+        "avg_order_value": 132.47
+      },
+      {
+        "month": "2018-09-01T00:00:00",
+        "avg_order_value": 145.0
+      }
+    ]
+  },
+  {
+    "id": "T3-011",
+    "sql": "WITH monthly AS (\n  SELECT DATE_TRUNC('month', order_purchase_timestamp) AS m, COUNT(*) AS cnt\n  FROM orders GROUP BY 1\n)\nSELECT m AS month,\n       cnt,\n       ROUND((cnt - LAG(cnt) OVER (ORDER BY m))::NUMERIC\n             / NULLIF(LAG(cnt) OVER (ORDER BY m), 0), 4) AS mom_rate\nFROM monthly ORDER BY m",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 161,
+    "rows": [
+      {
+        "cnt": 4,
+        "month": "2016-09-01T00:00:00",
+        "mom_rate": null
+      },
+      {
+        "cnt": 324,
+        "month": "2016-10-01T00:00:00",
+        "mom_rate": 80.0
+      },
+      {
+        "cnt": 1,
+        "month": "2016-12-01T00:00:00",
+        "mom_rate": -0.9969
+      },
+      {
+        "cnt": 800,
+        "month": "2017-01-01T00:00:00",
+        "mom_rate": 799.0
+      },
+      {
+        "cnt": 1780,
+        "month": "2017-02-01T00:00:00",
+        "mom_rate": 1.225
+      },
+      {
+        "cnt": 2682,
+        "month": "2017-03-01T00:00:00",
+        "mom_rate": 0.5067
+      },
+      {
+        "cnt": 2404,
+        "month": "2017-04-01T00:00:00",
+        "mom_rate": -0.1037
+      },
+      {
+        "cnt": 3700,
+        "month": "2017-05-01T00:00:00",
+        "mom_rate": 0.5391
+      },
+      {
+        "cnt": 3245,
+        "month": "2017-06-01T00:00:00",
+        "mom_rate": -0.123
+      },
+      {
+        "cnt": 4026,
+        "month": "2017-07-01T00:00:00",
+        "mom_rate": 0.2407
+      },
+      {
+        "cnt": 4331,
+        "month": "2017-08-01T00:00:00",
+        "mom_rate": 0.0758
+      },
+      {
+        "cnt": 4285,
+        "month": "2017-09-01T00:00:00",
+        "mom_rate": -0.0106
+      },
+      {
+        "cnt": 4631,
+        "month": "2017-10-01T00:00:00",
+        "mom_rate": 0.0807
+      },
+      {
+        "cnt": 7544,
+        "month": "2017-11-01T00:00:00",
+        "mom_rate": 0.629
+      },
+      {
+        "cnt": 5673,
+        "month": "2017-12-01T00:00:00",
+        "mom_rate": -0.248
+      },
+      {
+        "cnt": 7269,
+        "month": "2018-01-01T00:00:00",
+        "mom_rate": 0.2813
+      },
+      {
+        "cnt": 6728,
+        "month": "2018-02-01T00:00:00",
+        "mom_rate": -0.0744
+      },
+      {
+        "cnt": 7211,
+        "month": "2018-03-01T00:00:00",
+        "mom_rate": 0.0718
+      },
+      {
+        "cnt": 6939,
+        "month": "2018-04-01T00:00:00",
+        "mom_rate": -0.0377
+      },
+      {
+        "cnt": 6873,
+        "month": "2018-05-01T00:00:00",
+        "mom_rate": -0.0095
+      },
+      {
+        "cnt": 6167,
+        "month": "2018-06-01T00:00:00",
+        "mom_rate": -0.1027
+      },
+      {
+        "cnt": 6292,
+        "month": "2018-07-01T00:00:00",
+        "mom_rate": 0.0203
+      },
+      {
+        "cnt": 6512,
+        "month": "2018-08-01T00:00:00",
+        "mom_rate": 0.035
+      },
+      {
+        "cnt": 16,
+        "month": "2018-09-01T00:00:00",
+        "mom_rate": -0.9975
+      },
+      {
+        "cnt": 4,
+        "month": "2018-10-01T00:00:00",
+        "mom_rate": -0.75
+      }
+    ]
+  },
+  {
+    "id": "T3-013",
+    "sql": "SELECT COUNT(*) FROM orders\nWHERE order_purchase_timestamp > (SELECT MAX(order_purchase_timestamp) FROM orders) - INTERVAL '90 days'",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 135,
+    "rows": [
+      {
+        "count": 9529
+      }
+    ]
+  },
+  {
+    "id": "T3-015",
+    "sql": "SELECT EXTRACT(HOUR FROM order_purchase_timestamp)::INT AS hr, COUNT(*) AS cnt\nFROM orders GROUP BY 1 ORDER BY cnt DESC LIMIT 1",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 180,
+    "rows": [
+      {
+        "hr": 16,
+        "cnt": 6675
+      }
+    ]
+  },
+  {
+    "id": "T3-017",
+    "sql": "SELECT ROUND(AVG(EXTRACT(EPOCH FROM (order_delivered_customer_date - order_purchase_timestamp)) / 86400), 2)\nFROM orders WHERE order_delivered_customer_date IS NOT NULL",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 154,
+    "rows": [
+      {
+        "round": 12.56
+      }
+    ]
+  },
+  {
+    "id": "T3-019",
+    "sql": "SELECT COUNT(*) FROM orders\nWHERE order_delivered_customer_date > order_estimated_delivery_date",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 136,
+    "rows": [
+      {
+        "count": 7827
+      }
+    ]
+  },
+  {
+    "id": "T3-020",
+    "sql": "SELECT ROUND(\n  COUNT(*) FILTER (WHERE order_delivered_customer_date > order_estimated_delivery_date)::NUMERIC\n  / NULLIF(COUNT(*) FILTER (WHERE order_delivered_customer_date IS NOT NULL), 0), 4) AS late_rate\nFROM orders",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 155,
+    "rows": [
+      {
+        "late_rate": 0.0811
+      }
+    ]
+  },
+  {
+    "id": "T3-022",
+    "sql": "SELECT DATE_TRUNC('month', requested_at) AS month,\n       ROUND(SUM(refund_amount), 2) AS total\nFROM refunds GROUP BY 1 ORDER BY 1",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 138,
+    "rows": [
+      {
+        "month": "2016-10-01T00:00:00",
+        "total": 2243.61
+      },
+      {
+        "month": "2016-11-01T00:00:00",
+        "total": 483.65
+      },
+      {
+        "month": "2017-01-01T00:00:00",
+        "total": 1626.28
+      },
+      {
+        "month": "2017-02-01T00:00:00",
+        "total": 7301.5
+      },
+      {
+        "month": "2017-03-01T00:00:00",
+        "total": 12274.68
+      },
+      {
+        "month": "2017-04-01T00:00:00",
+        "total": 13467.3
+      },
+      {
+        "month": "2017-05-01T00:00:00",
+        "total": 16808.43
+      },
+      {
+        "month": "2017-06-01T00:00:00",
+        "total": 24642.55
+      },
+      {
+        "month": "2017-07-01T00:00:00",
+        "total": 25720.51
+      },
+      {
+        "month": "2017-08-01T00:00:00",
+        "total": 28804.8
+      },
+      {
+        "month": "2017-09-01T00:00:00",
+        "total": 29108.47
+      },
+      {
+        "month": "2017-10-01T00:00:00",
+        "total": 29631.57
+      },
+      {
+        "month": "2017-11-01T00:00:00",
+        "total": 32349.47
+      },
+      {
+        "month": "2017-12-01T00:00:00",
+        "total": 49323.27
+      },
+      {
+        "month": "2018-01-01T00:00:00",
+        "total": 40886.16
+      },
+      {
+        "month": "2018-02-01T00:00:00",
+        "total": 45826.68
+      },
+      {
+        "month": "2018-03-01T00:00:00",
+        "total": 46894.85
+      },
+      {
+        "month": "2018-04-01T00:00:00",
+        "total": 44485.05
+      },
+      {
+        "month": "2018-05-01T00:00:00",
+        "total": 45907.55
+      },
+      {
+        "month": "2018-06-01T00:00:00",
+        "total": 40804.42
+      },
+      {
+        "month": "2018-07-01T00:00:00",
+        "total": 37531.15
+      },
+      {
+        "month": "2018-08-01T00:00:00",
+        "total": 51254.77
+      },
+      {
+        "month": "2018-09-01T00:00:00",
+        "total": 21869.87
+      },
+      {
+        "month": "2018-10-01T00:00:00",
+        "total": 469.03
+      }
+    ]
+  },
+  {
+    "id": "T3-024",
+    "sql": "SELECT ROUND(AVG(EXTRACT(EPOCH FROM (resolved_at - created_at)) / 3600), 2)\nFROM support_tickets WHERE resolved_at IS NOT NULL",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 143,
+    "rows": [
+      {
+        "round": 84.76
+      }
+    ]
+  },
+  {
+    "id": "T3-026",
+    "sql": "SELECT DATE_TRUNC('month', review_creation_date) AS month,\n       ROUND(AVG(review_score), 2) AS avg_score\nFROM order_reviews GROUP BY 1 ORDER BY 1",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 174,
+    "rows": [
+      {
+        "month": "2016-10-01T00:00:00",
+        "avg_score": 4.06
+      },
+      {
+        "month": "2016-11-01T00:00:00",
+        "avg_score": 3.19
+      },
+      {
+        "month": "2016-12-01T00:00:00",
+        "avg_score": 2.36
+      },
+      {
+        "month": "2017-01-01T00:00:00",
+        "avg_score": 4.34
+      },
+      {
+        "month": "2017-02-01T00:00:00",
+        "avg_score": 4.28
+      },
+      {
+        "month": "2017-03-01T00:00:00",
+        "avg_score": 4.03
+      },
+      {
+        "month": "2017-04-01T00:00:00",
+        "avg_score": 4.04
+      },
+      {
+        "month": "2017-05-01T00:00:00",
+        "avg_score": 4.1
+      },
+      {
+        "month": "2017-06-01T00:00:00",
+        "avg_score": 4.13
+      },
+      {
+        "month": "2017-07-01T00:00:00",
+        "avg_score": 4.18
+      },
+      {
+        "month": "2017-08-01T00:00:00",
+        "avg_score": 4.22
+      },
+      {
+        "month": "2017-09-01T00:00:00",
+        "avg_score": 4.18
+      },
+      {
+        "month": "2017-10-01T00:00:00",
+        "avg_score": 4.18
+      },
+      {
+        "month": "2017-11-01T00:00:00",
+        "avg_score": 4.11
+      },
+      {
+        "month": "2017-12-01T00:00:00",
+        "avg_score": 3.93
+      },
+      {
+        "month": "2018-01-01T00:00:00",
+        "avg_score": 4.06
+      },
+      {
+        "month": "2018-02-01T00:00:00",
+        "avg_score": 4.01
+      },
+      {
+        "month": "2018-03-01T00:00:00",
+        "avg_score": 3.73
+      },
+      {
+        "month": "2018-04-01T00:00:00",
+        "avg_score": 3.92
+      },
+      {
+        "month": "2018-05-01T00:00:00",
+        "avg_score": 4.19
+      },
+      {
+        "month": "2018-06-01T00:00:00",
+        "avg_score": 4.2
+      },
+      {
+        "month": "2018-07-01T00:00:00",
+        "avg_score": 4.29
+      },
+      {
+        "month": "2018-08-01T00:00:00",
+        "avg_score": 4.21
+      }
+    ]
+  },
+  {
+    "id": "T3-028",
+    "sql": "SELECT COUNT(*) FROM members\nWHERE last_login_date > (SELECT MAX(last_login_date) FROM members) - 30",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 137,
+    "rows": [
+      {
+        "count": 4321
+      }
+    ]
+  },
+  {
+    "id": "T4-001",
+    "sql": "SELECT c.customer_unique_id, COUNT(*) AS cnt\nFROM orders o JOIN customers c ON c.customer_id = o.customer_id\nGROUP BY 1 ORDER BY cnt DESC LIMIT 10",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 295,
+    "rows": [
+      {
+        "cnt": 17,
+        "customer_unique_id": "8d50f5eadf50201ccdcedfb9e2ac8455"
+      },
+      {
+        "cnt": 9,
+        "customer_unique_id": "3e43e6105506432c953e165fb2acf44c"
+      },
+      {
+        "cnt": 7,
+        "customer_unique_id": "ca77025e7201e3b30c44b472ff346268"
+      },
+      {
+        "cnt": 7,
+        "customer_unique_id": "1b6c7548a2a1f9037c1fd3ddfed95f33"
+      },
+      {
+        "cnt": 7,
+        "customer_unique_id": "6469f99c1f9dfae7733b25662e7f1782"
+      },
+      {
+        "cnt": 6,
+        "customer_unique_id": "63cfc61cee11cbe306bff5857d00bfe4"
+      },
+      {
+        "cnt": 6,
+        "customer_unique_id": "12f5d6e1cbf93dafd9dcc19095df0b3d"
+      },
+      {
+        "cnt": 6,
+        "customer_unique_id": "f0e310a6839dce9de1638e0fe5ab282a"
+      },
+      {
+        "cnt": 6,
+        "customer_unique_id": "de34b16117594161a6a89c50b289d35a"
+      },
+      {
+        "cnt": 6,
+        "customer_unique_id": "dc813062e0fc23409cd255f7f53c7074"
+      }
+    ]
+  },
+  {
+    "id": "T4-003",
+    "sql": "SELECT p.product_category_name, COUNT(DISTINCT oi.order_id) AS order_cnt\nFROM order_items oi JOIN products p ON p.product_id = oi.product_id\nWHERE p.product_category_name IS NOT NULL\nGROUP BY 1 ORDER BY order_cnt DESC",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 279,
+    "rows": [
+      {
+        "order_cnt": 9417,
+        "product_category_name": "cama_mesa_banho"
+      },
+      {
+        "order_cnt": 8836,
+        "product_category_name": "beleza_saude"
+      },
+      {
+        "order_cnt": 7720,
+        "product_category_name": "esporte_lazer"
+      },
+      {
+        "order_cnt": 6689,
+        "product_category_name": "informatica_acessorios"
+      },
+      {
+        "order_cnt": 6449,
+        "product_category_name": "moveis_decoracao"
+      },
+      {
+        "order_cnt": 5884,
+        "product_category_name": "utilidades_domesticas"
+      },
+      {
+        "order_cnt": 5624,
+        "product_category_name": "relogios_presentes"
+      },
+      {
+        "order_cnt": 4199,
+        "product_category_name": "telefonia"
+      },
+      {
+        "order_cnt": 3897,
+        "product_category_name": "automotivo"
+      },
+      {
+        "order_cnt": 3886,
+        "product_category_name": "brinquedos"
+      },
+      {
+        "order_cnt": 3632,
+        "product_category_name": "cool_stuff"
+      },
+      {
+        "order_cnt": 3518,
+        "product_category_name": "ferramentas_jardim"
+      },
+      {
+        "order_cnt": 3162,
+        "product_category_name": "perfumaria"
+      },
+      {
+        "order_cnt": 2885,
+        "product_category_name": "bebes"
+      },
+      {
+        "order_cnt": 2550,
+        "product_category_name": "eletronicos"
+      },
+      {
+        "order_cnt": 2311,
+        "product_category_name": "papelaria"
+      },
+      {
+        "order_cnt": 1864,
+        "product_category_name": "fashion_bolsas_e_acessorios"
+      },
+      {
+        "order_cnt": 1710,
+        "product_category_name": "pet_shop"
+      },
+      {
+        "order_cnt": 1273,
+        "product_category_name": "moveis_escritorio"
+      },
+      {
+        "order_cnt": 1062,
+        "product_category_name": "consoles_games"
+      },
+      {
+        "order_cnt": 1034,
+        "product_category_name": "malas_acessorios"
+      },
+      {
+        "order_cnt": 764,
+        "product_category_name": "eletrodomesticos"
+      },
+      {
+        "order_cnt": 748,
+        "product_category_name": "construcao_ferramentas_construcao"
+      },
+      {
+        "order_cnt": 630,
+        "product_category_name": "eletroportateis"
+      },
+      {
+        "order_cnt": 628,
+        "product_category_name": "instrumentos_musicais"
+      },
+      {
+        "order_cnt": 512,
+        "product_category_name": "livros_interesse_geral"
+      },
+      {
+        "order_cnt": 490,
+        "product_category_name": "casa_construcao"
+      },
+      {
+        "order_cnt": 450,
+        "product_category_name": "alimentos"
+      },
+      {
+        "order_cnt": 422,
+        "product_category_name": "moveis_sala"
+      },
+      {
+        "order_cnt": 397,
+        "product_category_name": "casa_conforto"
+      },
+      {
+        "order_cnt": 350,
+        "product_category_name": "audio"
+      },
+      {
+        "order_cnt": 297,
+        "product_category_name": "bebidas"
+      },
+      {
+        "order_cnt": 280,
+        "product_category_name": "market_place"
+      },
+      {
+        "order_cnt": 260,
+        "product_category_name": "livros_tecnicos"
+      },
+      {
+        "order_cnt": 253,
+        "product_category_name": "climatizacao"
+      },
+      {
+        "order_cnt": 248,
+        "product_category_name": "moveis_cozinha_area_de_servico_jantar_e_jardim"
+      },
+      {
+        "order_cnt": 244,
+        "product_category_name": "construcao_ferramentas_iluminacao"
+      },
+      {
+        "order_cnt": 240,
+        "product_category_name": "fashion_calcados"
+      },
+      {
+        "order_cnt": 235,
+        "product_category_name": "industria_comercio_e_negocios"
+      },
+      {
+        "order_cnt": 234,
+        "product_category_name": "eletrodomesticos_2"
+      },
+      {
+        "order_cnt": 227,
+        "product_category_name": "alimentos_bebidas"
+      },
+      {
+        "order_cnt": 217,
+        "product_category_name": "telefonia_fixa"
+      },
+      {
+        "order_cnt": 202,
+        "product_category_name": "artes"
+      },
+      {
+        "order_cnt": 194,
+        "product_category_name": "construcao_ferramentas_jardim"
+      },
+      {
+        "order_cnt": 182,
+        "product_category_name": "agro_industria_e_comercio"
+      },
+      {
+        "order_cnt": 181,
+        "product_category_name": "pcs"
+      },
+      {
+        "order_cnt": 167,
+        "product_category_name": "construcao_ferramentas_seguranca"
+      },
+      {
+        "order_cnt": 140,
+        "product_category_name": "sinalizacao_e_seguranca"
+      },
+      {
+        "order_cnt": 128,
+        "product_category_name": "artigos_de_natal"
+      },
+      {
+        "order_cnt": 121,
+        "product_category_name": "fashion_underwear_e_moda_praia"
+      },
+      {
+        "order_cnt": 112,
+        "product_category_name": "fashion_roupa_masculina"
+      },
+      {
+        "order_cnt": 97,
+        "product_category_name": "construcao_ferramentas_ferramentas"
+      },
+      {
+        "order_cnt": 95,
+        "product_category_name": "moveis_quarto"
+      },
+      {
+        "order_cnt": 79,
+        "product_category_name": "tablets_impressao_imagem"
+      },
+      {
+        "order_cnt": 75,
+        "product_category_name": "portateis_casa_forno_e_cafe"
+      },
+      {
+        "order_cnt": 65,
+        "product_category_name": "cine_foto"
+      },
+      {
+        "order_cnt": 59,
+        "product_category_name": "dvds_blu_ray"
+      },
+      {
+        "order_cnt": 53,
+        "product_category_name": "livros_importados"
+      },
+      {
+        "order_cnt": 39,
+        "product_category_name": "fashion_roupa_feminina"
+      },
+      {
+        "order_cnt": 39,
+        "product_category_name": "artigos_de_festas"
+      },
+      {
+        "order_cnt": 38,
+        "product_category_name": "moveis_colchao_e_estofado"
+      },
+      {
+        "order_cnt": 38,
+        "product_category_name": "musica"
+      },
+      {
+        "order_cnt": 29,
+        "product_category_name": "flores"
+      },
+      {
+        "order_cnt": 27,
+        "product_category_name": "fraldas_higiene"
+      },
+      {
+        "order_cnt": 27,
+        "product_category_name": "fashion_esporte"
+      },
+      {
+        "order_cnt": 24,
+        "product_category_name": "casa_conforto_2"
+      },
+      {
+        "order_cnt": 23,
+        "product_category_name": "artes_e_artesanato"
+      },
+      {
+        "order_cnt": 14,
+        "product_category_name": "portateis_cozinha_e_preparadores_de_alimentos"
+      },
+      {
+        "order_cnt": 13,
+        "product_category_name": "la_cuisine"
+      },
+      {
+        "order_cnt": 12,
+        "product_category_name": "cds_dvds_musicais"
+      },
+      {
+        "order_cnt": 8,
+        "product_category_name": "pc_gamer"
+      },
+      {
+        "order_cnt": 8,
+        "product_category_name": "fashion_roupa_infanto_juvenil"
+      },
+      {
+        "order_cnt": 2,
+        "product_category_name": "seguros_e_servicos"
+      }
+    ]
+  },
+  {
+    "id": "T4-005",
+    "sql": "SELECT oi.seller_id, COUNT(DISTINCT oi.order_id) AS order_cnt\nFROM order_items oi GROUP BY 1 ORDER BY order_cnt DESC LIMIT 10",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 227,
+    "rows": [
+      {
+        "order_cnt": 1854,
+        "seller_id": "6560211a19b47992c3666cc44a7e94c0"
+      },
+      {
+        "order_cnt": 1806,
+        "seller_id": "4a3ca9315b744ce9f8e9374361493884"
+      },
+      {
+        "order_cnt": 1706,
+        "seller_id": "cc419e0650a3c5ba77189a1882b7556a"
+      },
+      {
+        "order_cnt": 1404,
+        "seller_id": "1f50f920176fa81dab994f9023523100"
+      },
+      {
+        "order_cnt": 1314,
+        "seller_id": "da8622b14eb17ae2831f4ac5b9dab84a"
+      },
+      {
+        "order_cnt": 1287,
+        "seller_id": "955fee9216a65b617aa5c0531780ce60"
+      },
+      {
+        "order_cnt": 1160,
+        "seller_id": "7a67c85e85bb2ce8582c35f2203ad736"
+      },
+      {
+        "order_cnt": 1146,
+        "seller_id": "ea8482cd71df3c1969d7b9473ff13abc"
+      },
+      {
+        "order_cnt": 1132,
+        "seller_id": "4869f7a5dfa277a7dca6462dcf3b52b2"
+      },
+      {
+        "order_cnt": 1080,
+        "seller_id": "3d871de0142ce09b7081e2b9d1733cb1"
+      }
+    ]
+  },
+  {
+    "id": "T4-007",
+    "sql": "SELECT COUNT(*)\nFROM products p\nLEFT JOIN product_price_history h ON h.product_id = p.product_id\nWHERE h.product_id IS NULL",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 186,
+    "rows": [
+      {
+        "count": 23138
+      }
+    ]
+  },
+  {
+    "id": "T4-009",
+    "sql": "SELECT payment_type, ROUND(AVG(payment_value), 2) AS avg_value\nFROM order_payments WHERE payment_type IS NOT NULL\nGROUP BY 1 ORDER BY avg_value DESC",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 156,
+    "rows": [
+      {
+        "avg_value": 163.32,
+        "payment_type": "credit_card"
+      },
+      {
+        "avg_value": 145.03,
+        "payment_type": "boleto"
+      },
+      {
+        "avg_value": 142.57,
+        "payment_type": "debit_card"
+      },
+      {
+        "avg_value": 65.7,
+        "payment_type": "voucher"
+      },
+      {
+        "avg_value": 0.0,
+        "payment_type": "not_defined"
+      }
+    ]
+  },
+  {
+    "id": "T4-010",
+    "sql": "SELECT o.order_status, ROUND(SUM(oi.price), 2) AS sales\nFROM orders o JOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY sales DESC",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 168,
+    "rows": [
+      {
+        "sales": 13221498.11,
+        "order_status": "delivered"
+      },
+      {
+        "sales": 150727.44,
+        "order_status": "shipped"
+      },
+      {
+        "sales": 95235.27,
+        "order_status": "canceled"
+      },
+      {
+        "sales": 61526.37,
+        "order_status": "invoiced"
+      },
+      {
+        "sales": 60439.22,
+        "order_status": "processing"
+      },
+      {
+        "sales": 2007.69,
+        "order_status": "unavailable"
+      },
+      {
+        "sales": 209.6,
+        "order_status": "approved"
+      }
+    ]
+  },
+  {
+    "id": "T4-012",
+    "sql": "SELECT c.customer_state, ROUND(AVG(r.review_score), 2) AS avg_score, COUNT(*) AS cnt\nFROM order_reviews r\nJOIN orders o ON o.order_id = r.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY 1 ORDER BY cnt DESC LIMIT 10",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 230,
+    "rows": [
+      {
+        "cnt": 41690,
+        "avg_score": 4.17,
+        "customer_state": "SP"
+      },
+      {
+        "cnt": 12765,
+        "avg_score": 3.87,
+        "customer_state": "RJ"
+      },
+      {
+        "cnt": 11625,
+        "avg_score": 4.14,
+        "customer_state": "MG"
+      },
+      {
+        "cnt": 5483,
+        "avg_score": 4.13,
+        "customer_state": "RS"
+      },
+      {
+        "cnt": 5038,
+        "avg_score": 4.18,
+        "customer_state": "PR"
+      },
+      {
+        "cnt": 3623,
+        "avg_score": 4.07,
+        "customer_state": "SC"
+      },
+      {
+        "cnt": 3357,
+        "avg_score": 3.86,
+        "customer_state": "BA"
+      },
+      {
+        "cnt": 2148,
+        "avg_score": 4.06,
+        "customer_state": "DF"
+      },
+      {
+        "cnt": 2024,
+        "avg_score": 4.04,
+        "customer_state": "GO"
+      },
+      {
+        "cnt": 2016,
+        "avg_score": 4.04,
+        "customer_state": "ES"
+      }
+    ]
+  },
+  {
+    "id": "T4-014",
+    "sql": "SELECT p.payment_type, ROUND(AVG(r.review_score), 2) AS avg_score\nFROM order_payments p\nJOIN order_reviews r ON r.order_id = p.order_id\nGROUP BY 1 ORDER BY avg_score DESC",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 172,
+    "rows": [
+      {
+        "avg_score": 4.17,
+        "payment_type": "debit_card"
+      },
+      {
+        "avg_score": 4.09,
+        "payment_type": "boleto"
+      },
+      {
+        "avg_score": 4.09,
+        "payment_type": "credit_card"
+      },
+      {
+        "avg_score": 4.0,
+        "payment_type": "voucher"
+      },
+      {
+        "avg_score": 1.67,
+        "payment_type": "not_defined"
+      }
+    ]
+  },
+  {
+    "id": "T4-016",
+    "sql": "SELECT r.macro_region, ROUND(SUM(oi.price), 2) AS sales\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN regions r ON r.region_code = c.customer_state\nJOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY sales DESC",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 258,
+    "rows": [
+      {
+        "sales": 8887393.06,
+        "macro_region": "Sudeste"
+      },
+      {
+        "sales": 1953941.12,
+        "macro_region": "Sul"
+      },
+      {
+        "sales": 1545493.75,
+        "macro_region": "Nordeste"
+      },
+      {
+        "sales": 870462.06,
+        "macro_region": "Centro-Oeste"
+      },
+      {
+        "sales": 334353.71,
+        "macro_region": "Norte"
+      }
+    ]
+  },
+  {
+    "id": "T4-018",
+    "sql": "SELECT m.level_id, ROUND(SUM(oi.price), 2) AS sales\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN members m ON m.customer_unique_id = c.customer_unique_id\nJOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY 1",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 290,
+    "rows": [
+      {
+        "sales": 7498209.33,
+        "level_id": 1
+      },
+      {
+        "sales": 5177283.37,
+        "level_id": 2
+      },
+      {
+        "sales": 891365.21,
+        "level_id": 3
+      },
+      {
+        "sales": 24785.79,
+        "level_id": 4
+      }
+    ]
+  },
+  {
+    "id": "T4-021",
+    "sql": "SELECT c.campaign_name, COUNT(*) AS cnt\nFROM coupon_usages cu\nJOIN coupons cp ON cp.coupon_id = cu.coupon_id\nJOIN campaigns c ON c.campaign_id = cp.campaign_id\nGROUP BY 1 ORDER BY cnt DESC",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 150,
+    "rows": [
+      {
+        "cnt": 276,
+        "campaign_name": "活动_27"
+      },
+      {
+        "cnt": 273,
+        "campaign_name": "活动_24"
+      },
+      {
+        "cnt": 272,
+        "campaign_name": "活动_16"
+      },
+      {
+        "cnt": 269,
+        "campaign_name": "活动_37"
+      },
+      {
+        "cnt": 269,
+        "campaign_name": "活动_21"
+      },
+      {
+        "cnt": 260,
+        "campaign_name": "活动_4"
+      },
+      {
+        "cnt": 258,
+        "campaign_name": "活动_23"
+      },
+      {
+        "cnt": 256,
+        "campaign_name": "活动_25"
+      },
+      {
+        "cnt": 255,
+        "campaign_name": "活动_18"
+      },
+      {
+        "cnt": 251,
+        "campaign_name": "活动_3"
+      },
+      {
+        "cnt": 249,
+        "campaign_name": "活动_7"
+      },
+      {
+        "cnt": 247,
+        "campaign_name": "活动_32"
+      },
+      {
+        "cnt": 247,
+        "campaign_name": "活动_12"
+      },
+      {
+        "cnt": 246,
+        "campaign_name": "活动_38"
+      },
+      {
+        "cnt": 245,
+        "campaign_name": "活动_15"
+      },
+      {
+        "cnt": 245,
+        "campaign_name": "活动_8"
+      },
+      {
+        "cnt": 245,
+        "campaign_name": "活动_17"
+      },
+      {
+        "cnt": 244,
+        "campaign_name": "活动_19"
+      },
+      {
+        "cnt": 242,
+        "campaign_name": "活动_5"
+      },
+      {
+        "cnt": 240,
+        "campaign_name": "活动_13"
+      },
+      {
+        "cnt": 240,
+        "campaign_name": "活动_36"
+      },
+      {
+        "cnt": 239,
+        "campaign_name": "活动_44"
+      },
+      {
+        "cnt": 238,
+        "campaign_name": "活动_22"
+      },
+      {
+        "cnt": 236,
+        "campaign_name": "活动_34"
+      },
+      {
+        "cnt": 234,
+        "campaign_name": "活动_26"
+      },
+      {
+        "cnt": 232,
+        "campaign_name": "活动_40"
+      },
+      {
+        "cnt": 232,
+        "campaign_name": "活动_35"
+      },
+      {
+        "cnt": 228,
+        "campaign_name": "活动_33"
+      },
+      {
+        "cnt": 228,
+        "campaign_name": "活动_14"
+      },
+      {
+        "cnt": 225,
+        "campaign_name": "活动_39"
+      },
+      {
+        "cnt": 225,
+        "campaign_name": "活动_10"
+      },
+      {
+        "cnt": 225,
+        "campaign_name": "活动_49"
+      },
+      {
+        "cnt": 225,
+        "campaign_name": "活动_29"
+      },
+      {
+        "cnt": 223,
+        "campaign_name": "活动_6"
+      },
+      {
+        "cnt": 222,
+        "campaign_name": "活动_30"
+      },
+      {
+        "cnt": 221,
+        "campaign_name": "活动_31"
+      },
+      {
+        "cnt": 220,
+        "campaign_name": "活动_20"
+      },
+      {
+        "cnt": 219,
+        "campaign_name": "活动_52"
+      },
+      {
+        "cnt": 218,
+        "campaign_name": "活动_2"
+      },
+      {
+        "cnt": 218,
+        "campaign_name": "活动_28"
+      },
+      {
+        "cnt": 213,
+        "campaign_name": "活动_11"
+      },
+      {
+        "cnt": 211,
+        "campaign_name": "活动_41"
+      },
+      {
+        "cnt": 209,
+        "campaign_name": "活动_9"
+      },
+      {
+        "cnt": 208,
+        "campaign_name": "活动_48"
+      },
+      {
+        "cnt": 208,
+        "campaign_name": "活动_45"
+      },
+      {
+        "cnt": 206,
+        "campaign_name": "活动_46"
+      },
+      {
+        "cnt": 205,
+        "campaign_name": "活动_43"
+      },
+      {
+        "cnt": 204,
+        "campaign_name": "活动_47"
+      },
+      {
+        "cnt": 202,
+        "campaign_name": "活动_51"
+      },
+      {
+        "cnt": 191,
+        "campaign_name": "活动_1"
+      },
+      {
+        "cnt": 186,
+        "campaign_name": "活动_42"
+      },
+      {
+        "cnt": 174,
+        "campaign_name": "活动_50"
+      }
+    ]
+  },
+  {
+    "id": "T4-023",
+    "sql": "SELECT c.discount_type, ROUND(SUM(cu.discount_amount), 2) AS total\nFROM coupon_usages cu JOIN coupons c ON c.coupon_id = cu.coupon_id\nGROUP BY 1 ORDER BY total DESC",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 155,
+    "rows": [
+      {
+        "total": 213074.35,
+        "discount_type": "fixed"
+      },
+      {
+        "total": 209388.52,
+        "discount_type": "percent"
+      }
+    ]
+  },
+  {
+    "id": "T4-025",
+    "sql": "SELECT r.macro_region, SUM(w.capacity) AS total_capacity\nFROM warehouses w JOIN regions r ON r.region_code = w.region_code\nGROUP BY 1 ORDER BY total_capacity DESC",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 130,
+    "rows": [
+      {
+        "macro_region": "Sudeste",
+        "total_capacity": 85000
+      },
+      {
+        "macro_region": "Sul",
+        "total_capacity": 18000
+      },
+      {
+        "macro_region": "Nordeste",
+        "total_capacity": 12000
+      }
+    ]
+  },
+  {
+    "id": "T4-027",
+    "sql": "SELECT w.warehouse_name, SUM(i.quantity) AS total_qty, ROUND(AVG(i.quantity), 2) AS avg_qty\nFROM inventory i JOIN warehouses w ON w.warehouse_id = i.warehouse_id\nGROUP BY 1 ORDER BY total_qty DESC",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 134,
+    "rows": [
+      {
+        "avg_qty": 248.66,
+        "total_qty": 1256233,
+        "warehouse_name": "东北仓"
+      },
+      {
+        "avg_qty": 252.63,
+        "total_qty": 1250032,
+        "warehouse_name": "圣保罗中心仓"
+      },
+      {
+        "avg_qty": 251.12,
+        "total_qty": 1224732,
+        "warehouse_name": "南部仓"
+      },
+      {
+        "avg_qty": 247.55,
+        "total_qty": 1219929,
+        "warehouse_name": "里约分仓"
+      },
+      {
+        "avg_qty": 249.8,
+        "total_qty": 1192808,
+        "warehouse_name": "米纳斯仓"
+      }
+    ]
+  },
+  {
+    "id": "T4-029",
+    "sql": "SELECT c.customer_state, COUNT(*) AS cnt\nFROM support_tickets st\nJOIN orders o ON o.order_id = st.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY 1 ORDER BY cnt DESC",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 171,
+    "rows": [
+      {
+        "cnt": 3309,
+        "customer_state": "SP"
+      },
+      {
+        "cnt": 1034,
+        "customer_state": "RJ"
+      },
+      {
+        "cnt": 909,
+        "customer_state": "MG"
+      },
+      {
+        "cnt": 457,
+        "customer_state": "RS"
+      },
+      {
+        "cnt": 379,
+        "customer_state": "PR"
+      },
+      {
+        "cnt": 316,
+        "customer_state": "SC"
+      },
+      {
+        "cnt": 280,
+        "customer_state": "BA"
+      },
+      {
+        "cnt": 175,
+        "customer_state": "DF"
+      },
+      {
+        "cnt": 171,
+        "customer_state": "ES"
+      },
+      {
+        "cnt": 152,
+        "customer_state": "GO"
+      },
+      {
+        "cnt": 128,
+        "customer_state": "CE"
+      },
+      {
+        "cnt": 127,
+        "customer_state": "PE"
+      },
+      {
+        "cnt": 77,
+        "customer_state": "PA"
+      },
+      {
+        "cnt": 63,
+        "customer_state": "MA"
+      },
+      {
+        "cnt": 61,
+        "customer_state": "MT"
+      },
+      {
+        "cnt": 50,
+        "customer_state": "MS"
+      },
+      {
+        "cnt": 42,
+        "customer_state": "PB"
+      },
+      {
+        "cnt": 40,
+        "customer_state": "AL"
+      },
+      {
+        "cnt": 35,
+        "customer_state": "RN"
+      },
+      {
+        "cnt": 32,
+        "customer_state": "TO"
+      },
+      {
+        "cnt": 30,
+        "customer_state": "PI"
+      },
+      {
+        "cnt": 24,
+        "customer_state": "SE"
+      },
+      {
+        "cnt": 20,
+        "customer_state": "RO"
+      },
+      {
+        "cnt": 8,
+        "customer_state": "AM"
+      },
+      {
+        "cnt": 7,
+        "customer_state": "AC"
+      },
+      {
+        "cnt": 4,
+        "customer_state": "AP"
+      },
+      {
+        "cnt": 4,
+        "customer_state": "RR"
+      }
+    ]
+  },
+  {
+    "id": "T4-030",
+    "sql": "SELECT seller_id, ROUND(SUM(total_amount), 2) AS total\nFROM settlements GROUP BY 1 ORDER BY total DESC LIMIT 10",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 162,
+    "rows": [
+      {
+        "total": 175585.41,
+        "seller_id": "7c67e1448b00f6e969d365cea6b010ab"
+      },
+      {
+        "total": 81992.93,
+        "seller_id": "4869f7a5dfa277a7dca6462dcf3b52b2"
+      },
+      {
+        "total": 80843.72,
+        "seller_id": "7e93a43ef30c4f03f38b393420bc753a"
+      },
+      {
+        "total": 75047.23,
+        "seller_id": "7d13fca15225358621be4086e1eb0964"
+      },
+      {
+        "total": 73199.3,
+        "seller_id": "6560211a19b47992c3666cc44a7e94c0"
+      },
+      {
+        "total": 67181.92,
+        "seller_id": "4a3ca9315b744ce9f8e9374361493884"
+      },
+      {
+        "total": 61982.49,
+        "seller_id": "955fee9216a65b617aa5c0531780ce60"
+      },
+      {
+        "total": 58533.29,
+        "seller_id": "1f50f920176fa81dab994f9023523100"
+      },
+      {
+        "total": 57307.67,
+        "seller_id": "7a67c85e85bb2ce8582c35f2203ad736"
+      },
+      {
+        "total": 53629.24,
+        "seller_id": "53243585a1d6dc2643021fd1853d8905"
+      }
+    ]
+  },
+  {
+    "id": "T4-032",
+    "sql": "SELECT p.product_category_name, COUNT(DISTINCT rf.refund_id) AS cnt\nFROM refunds rf\nJOIN order_items oi ON oi.order_id = rf.order_id\nJOIN products p ON p.product_id = oi.product_id\nWHERE p.product_category_name IS NOT NULL\nGROUP BY 1 ORDER BY cnt DESC",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 179,
+    "rows": [
+      {
+        "cnt": 557,
+        "product_category_name": "cama_mesa_banho"
+      },
+      {
+        "cnt": 531,
+        "product_category_name": "beleza_saude"
+      },
+      {
+        "cnt": 480,
+        "product_category_name": "esporte_lazer"
+      },
+      {
+        "cnt": 399,
+        "product_category_name": "informatica_acessorios"
+      },
+      {
+        "cnt": 365,
+        "product_category_name": "moveis_decoracao"
+      },
+      {
+        "cnt": 365,
+        "product_category_name": "utilidades_domesticas"
+      },
+      {
+        "cnt": 340,
+        "product_category_name": "relogios_presentes"
+      },
+      {
+        "cnt": 247,
+        "product_category_name": "automotivo"
+      },
+      {
+        "cnt": 228,
+        "product_category_name": "telefonia"
+      },
+      {
+        "cnt": 225,
+        "product_category_name": "brinquedos"
+      },
+      {
+        "cnt": 222,
+        "product_category_name": "cool_stuff"
+      },
+      {
+        "cnt": 201,
+        "product_category_name": "ferramentas_jardim"
+      },
+      {
+        "cnt": 173,
+        "product_category_name": "perfumaria"
+      },
+      {
+        "cnt": 171,
+        "product_category_name": "bebes"
+      },
+      {
+        "cnt": 142,
+        "product_category_name": "eletronicos"
+      },
+      {
+        "cnt": 123,
+        "product_category_name": "papelaria"
+      },
+      {
+        "cnt": 113,
+        "product_category_name": "fashion_bolsas_e_acessorios"
+      },
+      {
+        "cnt": 108,
+        "product_category_name": "pet_shop"
+      },
+      {
+        "cnt": 77,
+        "product_category_name": "malas_acessorios"
+      },
+      {
+        "cnt": 71,
+        "product_category_name": "moveis_escritorio"
+      },
+      {
+        "cnt": 59,
+        "product_category_name": "consoles_games"
+      },
+      {
+        "cnt": 42,
+        "product_category_name": "eletrodomesticos"
+      },
+      {
+        "cnt": 42,
+        "product_category_name": "instrumentos_musicais"
+      },
+      {
+        "cnt": 41,
+        "product_category_name": "construcao_ferramentas_construcao"
+      },
+      {
+        "cnt": 32,
+        "product_category_name": "moveis_sala"
+      },
+      {
+        "cnt": 30,
+        "product_category_name": "livros_interesse_geral"
+      },
+      {
+        "cnt": 28,
+        "product_category_name": "eletroportateis"
+      },
+      {
+        "cnt": 27,
+        "product_category_name": "alimentos"
+      },
+      {
+        "cnt": 26,
+        "product_category_name": "casa_construcao"
+      },
+      {
+        "cnt": 21,
+        "product_category_name": "market_place"
+      },
+      {
+        "cnt": 21,
+        "product_category_name": "casa_conforto"
+      },
+      {
+        "cnt": 18,
+        "product_category_name": "climatizacao"
+      },
+      {
+        "cnt": 17,
+        "product_category_name": "audio"
+      },
+      {
+        "cnt": 17,
+        "product_category_name": "fashion_calcados"
+      },
+      {
+        "cnt": 16,
+        "product_category_name": "artes"
+      },
+      {
+        "cnt": 14,
+        "product_category_name": "construcao_ferramentas_iluminacao"
+      },
+      {
+        "cnt": 14,
+        "product_category_name": "artigos_de_natal"
+      },
+      {
+        "cnt": 13,
+        "product_category_name": "eletrodomesticos_2"
+      },
+      {
+        "cnt": 13,
+        "product_category_name": "moveis_cozinha_area_de_servico_jantar_e_jardim"
+      },
+      {
+        "cnt": 13,
+        "product_category_name": "alimentos_bebidas"
+      },
+      {
+        "cnt": 12,
+        "product_category_name": "construcao_ferramentas_jardim"
+      },
+      {
+        "cnt": 12,
+        "product_category_name": "construcao_ferramentas_seguranca"
+      },
+      {
+        "cnt": 12,
+        "product_category_name": "livros_tecnicos"
+      },
+      {
+        "cnt": 11,
+        "product_category_name": "industria_comercio_e_negocios"
+      },
+      {
+        "cnt": 11,
+        "product_category_name": "bebidas"
+      },
+      {
+        "cnt": 11,
+        "product_category_name": "sinalizacao_e_seguranca"
+      },
+      {
+        "cnt": 11,
+        "product_category_name": "telefonia_fixa"
+      },
+      {
+        "cnt": 10,
+        "product_category_name": "agro_industria_e_comercio"
+      },
+      {
+        "cnt": 9,
+        "product_category_name": "fashion_roupa_masculina"
+      },
+      {
+        "cnt": 8,
+        "product_category_name": "moveis_quarto"
+      },
+      {
+        "cnt": 8,
+        "product_category_name": "tablets_impressao_imagem"
+      },
+      {
+        "cnt": 8,
+        "product_category_name": "fashion_underwear_e_moda_praia"
+      },
+      {
+        "cnt": 7,
+        "product_category_name": "pcs"
+      },
+      {
+        "cnt": 7,
+        "product_category_name": "construcao_ferramentas_ferramentas"
+      },
+      {
+        "cnt": 7,
+        "product_category_name": "cine_foto"
+      },
+      {
+        "cnt": 6,
+        "product_category_name": "portateis_casa_forno_e_cafe"
+      },
+      {
+        "cnt": 4,
+        "product_category_name": "dvds_blu_ray"
+      },
+      {
+        "cnt": 3,
+        "product_category_name": "artes_e_artesanato"
+      },
+      {
+        "cnt": 3,
+        "product_category_name": "musica"
+      },
+      {
+        "cnt": 3,
+        "product_category_name": "livros_importados"
+      },
+      {
+        "cnt": 3,
+        "product_category_name": "la_cuisine"
+      },
+      {
+        "cnt": 3,
+        "product_category_name": "artigos_de_festas"
+      },
+      {
+        "cnt": 1,
+        "product_category_name": "moveis_colchao_e_estofado"
+      },
+      {
+        "cnt": 1,
+        "product_category_name": "flores"
+      },
+      {
+        "cnt": 1,
+        "product_category_name": "fashion_esporte"
+      },
+      {
+        "cnt": 1,
+        "product_category_name": "casa_conforto_2"
+      },
+      {
+        "cnt": 1,
+        "product_category_name": "fashion_roupa_feminina"
+      }
+    ]
+  },
+  {
+    "id": "T4-034",
+    "sql": "SELECT ROUND(\n  (SELECT COUNT(DISTINCT order_id) FROM refunds)::NUMERIC\n  / (SELECT COUNT(*) FROM orders), 4) AS refund_rate",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 188,
+    "rows": [
+      {
+        "refund_rate": 0.0594
+      }
+    ]
+  },
+  {
+    "id": "T4-036",
+    "sql": "SELECT c.customer_state,\n       ROUND(SUM(oi.price) / COUNT(DISTINCT c.customer_unique_id), 2) AS avg_per_customer\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY avg_per_customer DESC",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 315,
+    "rows": [
+      {
+        "customer_state": "PB",
+        "avg_per_customer": 223.39
+      },
+      {
+        "customer_state": "AC",
+        "avg_per_customer": 207.57
+      },
+      {
+        "customer_state": "AL",
+        "avg_per_customer": 201.29
+      },
+      {
+        "customer_state": "AP",
+        "avg_per_customer": 201.11
+      },
+      {
+        "customer_state": "RO",
+        "avg_per_customer": 196.34
+      },
+      {
+        "customer_state": "PA",
+        "avg_per_customer": 189.56
+      },
+      {
+        "customer_state": "TO",
+        "avg_per_customer": 182.43
+      },
+      {
+        "customer_state": "PI",
+        "avg_per_customer": 180.69
+      },
+      {
+        "customer_state": "MT",
+        "avg_per_customer": 179.21
+      },
+      {
+        "customer_state": "RN",
+        "avg_per_customer": 176.3
+      },
+      {
+        "customer_state": "SE",
+        "avg_per_customer": 174.32
+      },
+      {
+        "customer_state": "CE",
+        "avg_per_customer": 174.14
+      },
+      {
+        "customer_state": "RR",
+        "avg_per_customer": 173.99
+      },
+      {
+        "customer_state": "MS",
+        "avg_per_customer": 169.79
+      },
+      {
+        "customer_state": "MA",
+        "avg_per_customer": 166.41
+      },
+      {
+        "customer_state": "PE",
+        "avg_per_customer": 163.73
+      },
+      {
+        "customer_state": "AM",
+        "avg_per_customer": 157.44
+      },
+      {
+        "customer_state": "BA",
+        "avg_per_customer": 157.0
+      },
+      {
+        "customer_state": "GO",
+        "avg_per_customer": 151.7
+      },
+      {
+        "customer_state": "RJ",
+        "avg_per_customer": 148.26
+      },
+      {
+        "customer_state": "SC",
+        "avg_per_customer": 148.18
+      },
+      {
+        "customer_state": "DF",
+        "avg_per_customer": 146.75
+      },
+      {
+        "customer_state": "RS",
+        "avg_per_customer": 142.94
+      },
+      {
+        "customer_state": "MG",
+        "avg_per_customer": 141.82
+      },
+      {
+        "customer_state": "PR",
+        "avg_per_customer": 141.13
+      },
+      {
+        "customer_state": "ES",
+        "avg_per_customer": 140.61
+      },
+      {
+        "customer_state": "SP",
+        "avg_per_customer": 130.14
+      }
+    ]
+  },
+  {
+    "id": "T4-038",
+    "sql": "SELECT m.level_id, COUNT(DISTINCT m.member_id) AS cnt\nFROM members m\nJOIN user_tag_map tm ON tm.member_id = m.member_id\nJOIN user_tags t ON t.tag_id = tm.tag_id\nWHERE t.tag_code = 'CHURN_RISK'\nGROUP BY 1 ORDER BY 1",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 249,
+    "rows": [
+      {
+        "cnt": 36143,
+        "level_id": 1
+      },
+      {
+        "cnt": 25377,
+        "level_id": 2
+      },
+      {
+        "cnt": 4357,
+        "level_id": 3
+      },
+      {
+        "cnt": 121,
+        "level_id": 4
+      }
+    ]
+  },
+  {
+    "id": "T4-041",
+    "sql": "SELECT b.brand_name, COUNT(DISTINCT oi.product_id) AS product_cnt,\n       ROUND(SUM(oi.price), 2) AS sales\nFROM order_items oi\nJOIN product_brand_map bm ON bm.product_id = oi.product_id\nJOIN brands b ON b.brand_id = bm.brand_id\nGROUP BY 1 ORDER BY sales DESC LIMIT 10",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 324,
+    "rows": [
+      {
+        "sales": 232862.79,
+        "brand_name": "Brand_51",
+        "product_cnt": 419
+      },
+      {
+        "sales": 211781.67,
+        "brand_name": "Brand_56",
+        "product_cnt": 368
+      },
+      {
+        "sales": 202288.95,
+        "brand_name": "Brand_20",
+        "product_cnt": 378
+      },
+      {
+        "sales": 200192.86,
+        "brand_name": "Brand_9",
+        "product_cnt": 385
+      },
+      {
+        "sales": 197901.11,
+        "brand_name": "Brand_32",
+        "product_cnt": 391
+      },
+      {
+        "sales": 197577.91,
+        "brand_name": "Brand_4",
+        "product_cnt": 390
+      },
+      {
+        "sales": 191952.6,
+        "brand_name": "Brand_25",
+        "product_cnt": 374
+      },
+      {
+        "sales": 186143.51,
+        "brand_name": "Brand_3",
+        "product_cnt": 379
+      },
+      {
+        "sales": 186017.41,
+        "brand_name": "Brand_39",
+        "product_cnt": 371
+      },
+      {
+        "sales": 184732.75,
+        "brand_name": "Brand_48",
+        "product_cnt": 396
+      }
+    ]
+  },
+  {
+    "id": "T4-043",
+    "sql": "SELECT s.status, ROUND(AVG(t.cnt), 2) AS avg_events\nFROM shipments s\nJOIN (SELECT shipment_id, COUNT(*) AS cnt FROM shipment_tracking GROUP BY 1) t\n  ON t.shipment_id = s.shipment_id\nGROUP BY 1 ORDER BY 1",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 285,
+    "rows": [
+      {
+        "status": 2,
+        "avg_events": 3.0
+      },
+      {
+        "status": 3,
+        "avg_events": 3.0
+      }
+    ]
+  },
+  {
+    "id": "T4-045",
+    "sql": "SELECT p.product_category_name,\n       COUNT(*) AS product_cnt,\n       ROUND(AVG(p.product_weight_g), 2) AS avg_weight\nFROM products p\nWHERE p.product_category_name IS NOT NULL AND p.product_weight_g IS NOT NULL\nGROUP BY 1 ORDER BY product_cnt DESC LIMIT 10",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 144,
+    "rows": [
+      {
+        "avg_weight": 2456.41,
+        "product_cnt": 3029,
+        "product_category_name": "cama_mesa_banho"
+      },
+      {
+        "avg_weight": 2024.67,
+        "product_cnt": 2867,
+        "product_category_name": "esporte_lazer"
+      },
+      {
+        "avg_weight": 3008.27,
+        "product_cnt": 2657,
+        "product_category_name": "moveis_decoracao"
+      },
+      {
+        "avg_weight": 1434.79,
+        "product_cnt": 2444,
+        "product_category_name": "beleza_saude"
+      },
+      {
+        "avg_weight": 3020.79,
+        "product_cnt": 2335,
+        "product_category_name": "utilidades_domesticas"
+      },
+      {
+        "avg_weight": 2654.65,
+        "product_cnt": 1900,
+        "product_category_name": "automotivo"
+      },
+      {
+        "avg_weight": 898.38,
+        "product_cnt": 1639,
+        "product_category_name": "informatica_acessorios"
+      },
+      {
+        "avg_weight": 1869.36,
+        "product_cnt": 1411,
+        "product_category_name": "brinquedos"
+      },
+      {
+        "avg_weight": 509.29,
+        "product_cnt": 1329,
+        "product_category_name": "relogios_presentes"
+      },
+      {
+        "avg_weight": 236.51,
+        "product_cnt": 1134,
+        "product_category_name": "telefonia"
+      }
+    ]
+  },
+  {
+    "id": "T5-002",
+    "sql": "SELECT ml.level_name, ROUND(SUM(oi.price), 2) AS sales\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN members m ON m.customer_unique_id = c.customer_unique_id\nJOIN member_levels ml ON ml.level_id = m.level_id\nJOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY sales DESC",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 288,
+    "rows": [
+      {
+        "sales": 7498209.33,
+        "level_name": "青铜会员"
+      },
+      {
+        "sales": 5177283.37,
+        "level_name": "白银会员"
+      },
+      {
+        "sales": 891365.21,
+        "level_name": "黄金会员"
+      },
+      {
+        "sales": 24785.79,
+        "level_name": "铂金会员"
+      }
+    ]
+  },
+  {
+    "id": "T5-004",
+    "sql": "SELECT r.region_name, COUNT(DISTINCT s.shipment_id) AS shipments, COUNT(DISTINCT o.order_id) AS orders\nFROM shipments s\nJOIN warehouses w ON w.warehouse_id = s.warehouse_id\nJOIN regions r ON r.region_code = w.region_code\nJOIN orders o ON o.order_id = s.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY 1 ORDER BY shipments DESC",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 471,
+    "rows": [
+      {
+        "orders": 24729,
+        "shipments": 24729,
+        "region_name": "Rio de Janeiro"
+      },
+      {
+        "orders": 24497,
+        "shipments": 24497,
+        "region_name": "Rio Grande do Sul"
+      },
+      {
+        "orders": 24359,
+        "shipments": 24359,
+        "region_name": "Minas Gerais"
+      },
+      {
+        "orders": 12318,
+        "shipments": 12318,
+        "region_name": "Bahia"
+      },
+      {
+        "orders": 12299,
+        "shipments": 12299,
+        "region_name": "São Paulo"
+      }
+    ]
+  },
+  {
+    "id": "T5-006",
+    "sql": "SELECT c.customer_state, ml.level_name, COUNT(DISTINCT st.ticket_id) AS tickets\nFROM support_tickets st\nJOIN ticket_categories tc ON tc.category_id = st.category_id\nJOIN orders o ON o.order_id = st.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN members m ON m.member_id = st.member_id\nJOIN member_levels ml ON ml.level_id = m.level_id\nWHERE tc.category_name = '物流延迟'\nGROUP BY 1, 2 ORDER BY tickets DESC LIMIT 20",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 347,
+    "rows": [
+      {
+        "tickets": 188,
+        "level_name": "青铜会员",
+        "customer_state": "SP"
+      },
+      {
+        "tickets": 134,
+        "level_name": "白银会员",
+        "customer_state": "SP"
+      },
+      {
+        "tickets": 54,
+        "level_name": "青铜会员",
+        "customer_state": "RJ"
+      },
+      {
+        "tickets": 49,
+        "level_name": "白银会员",
+        "customer_state": "RJ"
+      },
+      {
+        "tickets": 38,
+        "level_name": "青铜会员",
+        "customer_state": "RS"
+      },
+      {
+        "tickets": 36,
+        "level_name": "青铜会员",
+        "customer_state": "MG"
+      },
+      {
+        "tickets": 30,
+        "level_name": "黄金会员",
+        "customer_state": "SP"
+      },
+      {
+        "tickets": 24,
+        "level_name": "青铜会员",
+        "customer_state": "PR"
+      },
+      {
+        "tickets": 22,
+        "level_name": "白银会员",
+        "customer_state": "MG"
+      },
+      {
+        "tickets": 15,
+        "level_name": "青铜会员",
+        "customer_state": "BA"
+      },
+      {
+        "tickets": 15,
+        "level_name": "白银会员",
+        "customer_state": "PR"
+      },
+      {
+        "tickets": 15,
+        "level_name": "青铜会员",
+        "customer_state": "SC"
+      },
+      {
+        "tickets": 14,
+        "level_name": "青铜会员",
+        "customer_state": "ES"
+      },
+      {
+        "tickets": 11,
+        "level_name": "青铜会员",
+        "customer_state": "DF"
+      },
+      {
+        "tickets": 11,
+        "level_name": "青铜会员",
+        "customer_state": "PE"
+      },
+      {
+        "tickets": 11,
+        "level_name": "白银会员",
+        "customer_state": "RS"
+      },
+      {
+        "tickets": 10,
+        "level_name": "白银会员",
+        "customer_state": "BA"
+      },
+      {
+        "tickets": 10,
+        "level_name": "青铜会员",
+        "customer_state": "CE"
+      },
+      {
+        "tickets": 10,
+        "level_name": "青铜会员",
+        "customer_state": "GO"
+      },
+      {
+        "tickets": 9,
+        "level_name": "白银会员",
+        "customer_state": "GO"
+      }
+    ]
+  },
+  {
+    "id": "T5-008",
+    "sql": "SELECT mlr.level_name AS referrer_level, mli.level_name AS invitee_level,\n       COUNT(*) AS referrals, ROUND(SUM(rf.reward_amount), 2) AS reward\nFROM referrals rf\nJOIN members mr ON mr.member_id = rf.referrer_member_id\nJOIN member_levels mlr ON mlr.level_id = mr.level_id\nJOIN members mi ON mi.member_id = rf.invitee_member_id\nJOIN member_levels mli ON mli.level_id = mi.level_id\nGROUP BY 1, 2 ORDER BY referrals DESC",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 179,
+    "rows": [
+      {
+        "reward": 10680.57,
+        "referrals": 1439,
+        "invitee_level": "青铜会员",
+        "referrer_level": "青铜会员"
+      },
+      {
+        "reward": 6720.06,
+        "referrals": 1063,
+        "invitee_level": "白银会员",
+        "referrer_level": "青铜会员"
+      },
+      {
+        "reward": 6117.18,
+        "referrals": 979,
+        "invitee_level": "青铜会员",
+        "referrer_level": "白银会员"
+      },
+      {
+        "reward": 4625.63,
+        "referrals": 667,
+        "invitee_level": "白银会员",
+        "referrer_level": "白银会员"
+      },
+      {
+        "reward": 1219.71,
+        "referrals": 190,
+        "invitee_level": "黄金会员",
+        "referrer_level": "青铜会员"
+      },
+      {
+        "reward": 1178.9,
+        "referrals": 175,
+        "invitee_level": "青铜会员",
+        "referrer_level": "黄金会员"
+      },
+      {
+        "reward": 732.58,
+        "referrals": 123,
+        "invitee_level": "黄金会员",
+        "referrer_level": "白银会员"
+      },
+      {
+        "reward": 973.47,
+        "referrals": 122,
+        "invitee_level": "白银会员",
+        "referrer_level": "黄金会员"
+      },
+      {
+        "reward": 94.8,
+        "referrals": 19,
+        "invitee_level": "黄金会员",
+        "referrer_level": "黄金会员"
+      },
+      {
+        "reward": 75.21,
+        "referrals": 5,
+        "invitee_level": "青铜会员",
+        "referrer_level": "铂金会员"
+      },
+      {
+        "reward": 16.55,
+        "referrals": 4,
+        "invitee_level": "白银会员",
+        "referrer_level": "铂金会员"
+      },
+      {
+        "reward": 12.96,
+        "referrals": 4,
+        "invitee_level": "铂金会员",
+        "referrer_level": "青铜会员"
+      },
+      {
+        "reward": 33.97,
+        "referrals": 3,
+        "invitee_level": "铂金会员",
+        "referrer_level": "白银会员"
+      }
+    ]
+  },
+  {
+    "id": "T5-011",
+    "sql": "SELECT b.brand_name, ROUND(SUM(oi.price), 2) AS sales\nFROM order_items oi\nJOIN product_brand_map pbm ON pbm.product_id = oi.product_id AND pbm.is_current\nJOIN brands b ON b.brand_id = pbm.brand_id\nJOIN orders o ON o.order_id = oi.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY 1 ORDER BY sales DESC LIMIT 10",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 227,
+    "rows": [
+      {
+        "sales": 232862.79,
+        "brand_name": "Brand_51"
+      },
+      {
+        "sales": 211781.67,
+        "brand_name": "Brand_56"
+      },
+      {
+        "sales": 202288.95,
+        "brand_name": "Brand_20"
+      },
+      {
+        "sales": 200192.86,
+        "brand_name": "Brand_9"
+      },
+      {
+        "sales": 197901.11,
+        "brand_name": "Brand_32"
+      },
+      {
+        "sales": 197577.91,
+        "brand_name": "Brand_4"
+      },
+      {
+        "sales": 191952.6,
+        "brand_name": "Brand_25"
+      },
+      {
+        "sales": 186143.51,
+        "brand_name": "Brand_3"
+      },
+      {
+        "sales": 186017.41,
+        "brand_name": "Brand_39"
+      },
+      {
+        "sales": 184732.75,
+        "brand_name": "Brand_48"
+      }
+    ]
+  },
+  {
+    "id": "T5-013",
+    "sql": "SELECT ca.campaign_name, COUNT(DISTINCT oi.order_id) AS orders, ROUND(SUM(oi.price), 2) AS gmv\nFROM campaign_products cp\nJOIN campaigns ca ON ca.campaign_id = cp.campaign_id\nJOIN order_items oi ON oi.product_id = cp.product_id\nJOIN orders o ON o.order_id = oi.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY 1 ORDER BY gmv DESC LIMIT 10",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 231,
+    "rows": [
+      {
+        "gmv": 50146.91,
+        "orders": 453,
+        "campaign_name": "活动_45"
+      },
+      {
+        "gmv": 43382.21,
+        "orders": 206,
+        "campaign_name": "活动_44"
+      },
+      {
+        "gmv": 38356.58,
+        "orders": 380,
+        "campaign_name": "活动_20"
+      },
+      {
+        "gmv": 37304.06,
+        "orders": 179,
+        "campaign_name": "活动_14"
+      },
+      {
+        "gmv": 31649.67,
+        "orders": 195,
+        "campaign_name": "活动_38"
+      },
+      {
+        "gmv": 30645.63,
+        "orders": 237,
+        "campaign_name": "活动_32"
+      },
+      {
+        "gmv": 28611.35,
+        "orders": 173,
+        "campaign_name": "活动_43"
+      },
+      {
+        "gmv": 27605.4,
+        "orders": 176,
+        "campaign_name": "活动_39"
+      },
+      {
+        "gmv": 25674.46,
+        "orders": 165,
+        "campaign_name": "活动_16"
+      },
+      {
+        "gmv": 24313.79,
+        "orders": 170,
+        "campaign_name": "活动_28"
+      }
+    ]
+  },
+  {
+    "id": "T5-015",
+    "sql": "SELECT st.event_code, c.customer_state, COUNT(DISTINCT s.shipment_id) AS shipments\nFROM shipment_tracking st\nJOIN shipments s ON s.shipment_id = st.shipment_id\nJOIN orders o ON o.order_id = s.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1, 2 ORDER BY shipments DESC LIMIT 20",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 1282,
+    "rows": [
+      {
+        "shipments": 40828,
+        "event_code": "OUT_FOR_DELIVERY",
+        "customer_state": "SP"
+      },
+      {
+        "shipments": 40828,
+        "event_code": "IN_TRANSIT",
+        "customer_state": "SP"
+      },
+      {
+        "shipments": 40828,
+        "event_code": "ARRIVED",
+        "customer_state": "SP"
+      },
+      {
+        "shipments": 12639,
+        "event_code": "IN_TRANSIT",
+        "customer_state": "RJ"
+      },
+      {
+        "shipments": 12639,
+        "event_code": "OUT_FOR_DELIVERY",
+        "customer_state": "RJ"
+      },
+      {
+        "shipments": 12639,
+        "event_code": "ARRIVED",
+        "customer_state": "RJ"
+      },
+      {
+        "shipments": 11425,
+        "event_code": "OUT_FOR_DELIVERY",
+        "customer_state": "MG"
+      },
+      {
+        "shipments": 11425,
+        "event_code": "ARRIVED",
+        "customer_state": "MG"
+      },
+      {
+        "shipments": 11425,
+        "event_code": "IN_TRANSIT",
+        "customer_state": "MG"
+      },
+      {
+        "shipments": 5380,
+        "event_code": "ARRIVED",
+        "customer_state": "RS"
+      },
+      {
+        "shipments": 5380,
+        "event_code": "OUT_FOR_DELIVERY",
+        "customer_state": "RS"
+      },
+      {
+        "shipments": 5380,
+        "event_code": "IN_TRANSIT",
+        "customer_state": "RS"
+      },
+      {
+        "shipments": 4952,
+        "event_code": "IN_TRANSIT",
+        "customer_state": "PR"
+      },
+      {
+        "shipments": 4952,
+        "event_code": "OUT_FOR_DELIVERY",
+        "customer_state": "PR"
+      },
+      {
+        "shipments": 4952,
+        "event_code": "ARRIVED",
+        "customer_state": "PR"
+      },
+      {
+        "shipments": 3574,
+        "event_code": "IN_TRANSIT",
+        "customer_state": "SC"
+      },
+      {
+        "shipments": 3574,
+        "event_code": "ARRIVED",
+        "customer_state": "SC"
+      },
+      {
+        "shipments": 3574,
+        "event_code": "OUT_FOR_DELIVERY",
+        "customer_state": "SC"
+      },
+      {
+        "shipments": 3324,
+        "event_code": "ARRIVED",
+        "customer_state": "BA"
+      },
+      {
+        "shipments": 3324,
+        "event_code": "IN_TRANSIT",
+        "customer_state": "BA"
+      }
+    ]
+  },
+  {
+    "id": "T5-017",
+    "sql": "SELECT tc.category_name, st.priority, COUNT(DISTINCT st.ticket_id) AS tickets,\n       COUNT(tm.message_id) AS messages\nFROM support_tickets st\nJOIN ticket_categories tc ON tc.category_id = st.category_id\nJOIN ticket_messages tm ON tm.ticket_id = st.ticket_id\nJOIN members m ON m.member_id = st.member_id\nJOIN member_levels ml ON ml.level_id = m.level_id\nGROUP BY 1, 2 ORDER BY tickets DESC",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 190,
+    "rows": [
+      {
+        "tickets": 561,
+        "messages": 1122,
+        "priority": 3,
+        "category_name": "退款咨询"
+      },
+      {
+        "tickets": 552,
+        "messages": 1104,
+        "priority": 3,
+        "category_name": "商品质量问题"
+      },
+      {
+        "tickets": 546,
+        "messages": 1092,
+        "priority": 2,
+        "category_name": "商品质量问题"
+      },
+      {
+        "tickets": 527,
+        "messages": 1054,
+        "priority": 3,
+        "category_name": "账号问题"
+      },
+      {
+        "tickets": 511,
+        "messages": 1022,
+        "priority": 2,
+        "category_name": "退款咨询"
+      },
+      {
+        "tickets": 508,
+        "messages": 1016,
+        "priority": 2,
+        "category_name": "账号问题"
+      },
+      {
+        "tickets": 502,
+        "messages": 1004,
+        "priority": 2,
+        "category_name": "发票问题"
+      },
+      {
+        "tickets": 491,
+        "messages": 982,
+        "priority": 3,
+        "category_name": "发票问题"
+      },
+      {
+        "tickets": 313,
+        "messages": 626,
+        "priority": 4,
+        "category_name": "退款咨询"
+      },
+      {
+        "tickets": 277,
+        "messages": 554,
+        "priority": 2,
+        "category_name": "物流延迟"
+      },
+      {
+        "tickets": 275,
+        "messages": 550,
+        "priority": 1,
+        "category_name": "发票问题"
+      },
+      {
+        "tickets": 274,
+        "messages": 548,
+        "priority": 1,
+        "category_name": "账号问题"
+      },
+      {
+        "tickets": 270,
+        "messages": 540,
+        "priority": 1,
+        "category_name": "退款咨询"
+      },
+      {
+        "tickets": 270,
+        "messages": 540,
+        "priority": 1,
+        "category_name": "商品质量问题"
+      },
+      {
+        "tickets": 270,
+        "messages": 540,
+        "priority": 4,
+        "category_name": "账号问题"
+      },
+      {
+        "tickets": 260,
+        "messages": 520,
+        "priority": 4,
+        "category_name": "商品质量问题"
+      },
+      {
+        "tickets": 257,
+        "messages": 514,
+        "priority": 3,
+        "category_name": "其他"
+      },
+      {
+        "tickets": 256,
+        "messages": 512,
+        "priority": 4,
+        "category_name": "发票问题"
+      },
+      {
+        "tickets": 255,
+        "messages": 510,
+        "priority": 3,
+        "category_name": "物流延迟"
+      },
+      {
+        "tickets": 237,
+        "messages": 474,
+        "priority": 2,
+        "category_name": "其他"
+      },
+      {
+        "tickets": 137,
+        "messages": 274,
+        "priority": 4,
+        "category_name": "物流延迟"
+      },
+      {
+        "tickets": 134,
+        "messages": 268,
+        "priority": 1,
+        "category_name": "物流延迟"
+      },
+      {
+        "tickets": 130,
+        "messages": 260,
+        "priority": 1,
+        "category_name": "其他"
+      },
+      {
+        "tickets": 121,
+        "messages": 242,
+        "priority": 4,
+        "category_name": "其他"
+      }
+    ]
+  },
+  {
+    "id": "T5-019",
+    "sql": "SELECT p.product_category_name,\n       ROUND(AVG(pph.new_price - pph.old_price), 2) AS avg_price_change,\n       COUNT(DISTINCT oi.order_id) AS orders\nFROM product_price_history pph\nJOIN products p ON p.product_id = pph.product_id\nJOIN order_items oi ON oi.product_id = pph.product_id\nJOIN orders o ON o.order_id = oi.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY 1 ORDER BY orders DESC LIMIT 20",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 377,
+    "rows": [
+      {
+        "orders": 3638,
+        "avg_price_change": 19.34,
+        "product_category_name": "cama_mesa_banho"
+      },
+      {
+        "orders": 2983,
+        "avg_price_change": -9.93,
+        "product_category_name": "beleza_saude"
+      },
+      {
+        "orders": 2568,
+        "avg_price_change": -11.35,
+        "product_category_name": "informatica_acessorios"
+      },
+      {
+        "orders": 2338,
+        "avg_price_change": 11.51,
+        "product_category_name": "esporte_lazer"
+      },
+      {
+        "orders": 1930,
+        "avg_price_change": -16.13,
+        "product_category_name": "moveis_decoracao"
+      },
+      {
+        "orders": 1900,
+        "avg_price_change": 19.7,
+        "product_category_name": "utilidades_domesticas"
+      },
+      {
+        "orders": 1682,
+        "avg_price_change": -24.53,
+        "product_category_name": "relogios_presentes"
+      },
+      {
+        "orders": 1345,
+        "avg_price_change": -9.63,
+        "product_category_name": "brinquedos"
+      },
+      {
+        "orders": 1257,
+        "avg_price_change": -8.07,
+        "product_category_name": "telefonia"
+      },
+      {
+        "orders": 1115,
+        "avg_price_change": 30.12,
+        "product_category_name": "cool_stuff"
+      },
+      {
+        "orders": 1094,
+        "avg_price_change": -3.15,
+        "product_category_name": "automotivo"
+      },
+      {
+        "orders": 983,
+        "avg_price_change": 11.08,
+        "product_category_name": "papelaria"
+      },
+      {
+        "orders": 900,
+        "avg_price_change": 16.18,
+        "product_category_name": "ferramentas_jardim"
+      },
+      {
+        "orders": 856,
+        "avg_price_change": -0.93,
+        "product_category_name": "perfumaria"
+      },
+      {
+        "orders": 839,
+        "avg_price_change": -9.17,
+        "product_category_name": "bebes"
+      },
+      {
+        "orders": 802,
+        "avg_price_change": -1.84,
+        "product_category_name": "eletronicos"
+      },
+      {
+        "orders": 627,
+        "avg_price_change": -2.82,
+        "product_category_name": "fashion_bolsas_e_acessorios"
+      },
+      {
+        "orders": 570,
+        "avg_price_change": 14.5,
+        "product_category_name": "pet_shop"
+      },
+      {
+        "orders": 461,
+        "avg_price_change": 10.47,
+        "product_category_name": "moveis_escritorio"
+      },
+      {
+        "orders": 352,
+        "avg_price_change": 12.02,
+        "product_category_name": null
+      }
+    ]
+  },
+  {
+    "id": "T5-020",
+    "sql": "SELECT r.macro_region, im.movement_type, COUNT(*) AS movements, SUM(im.quantity) AS qty\nFROM inventory_movements im\nJOIN inventory i ON i.warehouse_id = im.warehouse_id AND i.product_id = im.product_id\nJOIN warehouses w ON w.warehouse_id = im.warehouse_id\nJOIN regions r ON r.region_code = w.region_code\nJOIN products p ON p.product_id = im.product_id\nGROUP BY 1, 2 ORDER BY movements DESC",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 188,
+    "rows": [
+      {
+        "qty": 489709,
+        "movements": 9757,
+        "macro_region": "Sudeste",
+        "movement_type": 3
+      },
+      {
+        "qty": 490948,
+        "movements": 9689,
+        "macro_region": "Sudeste",
+        "movement_type": 2
+      },
+      {
+        "qty": 251240,
+        "movements": 4945,
+        "macro_region": "Sudeste",
+        "movement_type": 1
+      },
+      {
+        "qty": 245786,
+        "movements": 4911,
+        "macro_region": "Sudeste",
+        "movement_type": 4
+      },
+      {
+        "qty": 167744,
+        "movements": 3390,
+        "macro_region": "Nordeste",
+        "movement_type": 2
+      },
+      {
+        "qty": 163762,
+        "movements": 3342,
+        "macro_region": "Sul",
+        "movement_type": 3
+      },
+      {
+        "qty": 169582,
+        "movements": 3320,
+        "macro_region": "Nordeste",
+        "movement_type": 3
+      },
+      {
+        "qty": 158187,
+        "movements": 3194,
+        "macro_region": "Sul",
+        "movement_type": 2
+      },
+      {
+        "qty": 86066,
+        "movements": 1719,
+        "macro_region": "Nordeste",
+        "movement_type": 4
+      },
+      {
+        "qty": 83152,
+        "movements": 1675,
+        "macro_region": "Nordeste",
+        "movement_type": 1
+      },
+      {
+        "qty": 84118,
+        "movements": 1639,
+        "macro_region": "Sul",
+        "movement_type": 1
+      },
+      {
+        "qty": 79120,
+        "movements": 1579,
+        "macro_region": "Sul",
+        "movement_type": 4
+      }
+    ]
+  },
+  {
+    "id": "T6-001",
+    "sql": "SELECT ROUND(SUM(oi.price + oi.freight_value), 2) AS gmv_with_freight,\n       ROUND(SUM(oi.price), 2) AS sales_without_freight\nFROM orders o\nJOIN order_items oi ON oi.order_id = o.order_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable')\n  AND o.order_purchase_timestamp >= DATE '2018-01-01'\n  AND o.order_purchase_timestamp < DATE '2019-01-01'",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 180,
+    "rows": [
+      {
+        "gmv_with_freight": 8593303.96,
+        "sales_without_freight": 7341182.41
+      }
+    ]
+  },
+  {
+    "id": "T6-003",
+    "sql": "WITH per_user AS (\n  SELECT c.customer_unique_id, COUNT(DISTINCT o.order_id) AS order_cnt\n  FROM orders o\n  JOIN customers c ON c.customer_id = o.customer_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n  GROUP BY 1\n)\nSELECT ROUND(100.0 * COUNT(*) FILTER (WHERE order_cnt >= 2) / COUNT(*), 2) AS repeat_rate_pct\nFROM per_user",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 305,
+    "rows": [
+      {
+        "repeat_rate_pct": 3.04
+      }
+    ]
+  },
+  {
+    "id": "T6-005",
+    "sql": "WITH member_orders AS (\n  SELECT COUNT(DISTINCT o.order_id) AS n\n  FROM orders o\n  JOIN customers c ON c.customer_id = o.customer_id\n  JOIN members m ON m.customer_unique_id = c.customer_unique_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n),\nall_orders AS (\n  SELECT COUNT(DISTINCT o.order_id) AS n\n  FROM orders o\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n)\nSELECT ROUND(100.0 * mo.n / ao.n, 2) AS penetration_pct\nFROM member_orders mo CROSS JOIN all_orders ao",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 445,
+    "rows": [
+      {
+        "penetration_pct": 100.0
+      }
+    ]
+  },
+  {
+    "id": "T6-007",
+    "sql": "WITH r AS (\n  SELECT COUNT(DISTINCT r.order_id) AS n FROM refunds r\n  JOIN orders o ON o.order_id = r.order_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n),\na AS (\n  SELECT COUNT(DISTINCT o.order_id) AS n FROM orders o\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n)\nSELECT ROUND(100.0 * r.n / a.n, 2) AS refund_rate_pct\nFROM r CROSS JOIN a",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 213,
+    "rows": [
+      {
+        "refund_rate_pct": 5.95
+      }
+    ]
+  },
+  {
+    "id": "T6-009",
+    "sql": "SELECT c.customer_state,\n       ROUND(100.0 * COUNT(*) FILTER (WHERE r.review_score <= 2) / COUNT(*), 2) AS low_pct\nFROM order_reviews r\nJOIN orders o ON o.order_id = r.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable')\nGROUP BY 1 ORDER BY low_pct DESC LIMIT 10",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 255,
+    "rows": [
+      {
+        "low_pct": 23.79,
+        "customer_state": "AL"
+      },
+      {
+        "low_pct": 22.22,
+        "customer_state": "RR"
+      },
+      {
+        "low_pct": 21.22,
+        "customer_state": "MA"
+      },
+      {
+        "low_pct": 20.93,
+        "customer_state": "SE"
+      },
+      {
+        "low_pct": 20.0,
+        "customer_state": "RJ"
+      },
+      {
+        "low_pct": 19.33,
+        "customer_state": "PA"
+      },
+      {
+        "low_pct": 19.15,
+        "customer_state": "CE"
+      },
+      {
+        "low_pct": 18.27,
+        "customer_state": "BA"
+      },
+      {
+        "low_pct": 17.9,
+        "customer_state": "PI"
+      },
+      {
+        "low_pct": 16.35,
+        "customer_state": "PB"
+      }
+    ]
+  },
+  {
+    "id": "T6-010",
+    "sql": "SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE clicked_product_id IS NOT NULL) / COUNT(*), 2) AS ctr_pct\nFROM search_logs",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 153,
+    "rows": [
+      {
+        "ctr_pct": 60.11
+      }
+    ]
+  },
+  {
+    "id": "T6-012",
+    "sql": "SELECT DATE_TRUNC('month', o.order_purchase_timestamp)::date AS month,\n       COUNT(DISTINCT c.customer_unique_id) AS mau\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable')\n  AND o.order_purchase_timestamp >= DATE '2018-01-01'\n  AND o.order_purchase_timestamp < DATE '2019-01-01'\nGROUP BY 1 ORDER BY 1",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 258,
+    "rows": [
+      {
+        "mau": 7088,
+        "month": "2018-01-01"
+      },
+      {
+        "mau": 6469,
+        "month": "2018-02-01"
+      },
+      {
+        "mau": 7077,
+        "month": "2018-03-01"
+      },
+      {
+        "mau": 6863,
+        "month": "2018-04-01"
+      },
+      {
+        "mau": 6775,
+        "month": "2018-05-01"
+      },
+      {
+        "mau": 6106,
+        "month": "2018-06-01"
+      },
+      {
+        "mau": 6172,
+        "month": "2018-07-01"
+      },
+      {
+        "mau": 6380,
+        "month": "2018-08-01"
+      },
+      {
+        "mau": 1,
+        "month": "2018-09-01"
+      }
+    ]
+  },
+  {
+    "id": "T6-014",
+    "sql": "WITH user_level AS (\n  SELECT m.member_id, ml.level_name\n  FROM members m JOIN member_levels ml ON ml.level_id = m.level_id\n),\nuser_orders AS (\n  SELECT ul.level_name, c.customer_unique_id, COUNT(DISTINCT o.order_id) AS order_cnt,\n         SUM(oi.price + oi.freight_value) AS gmv\n  FROM user_level ul\n  JOIN customers c ON c.customer_unique_id = (\n    SELECT m2.customer_unique_id FROM members m2 WHERE m2.member_id = ul.member_id\n  )\n  JOIN orders o ON o.customer_id = c.customer_id\n  JOIN order_items oi ON oi.order_id = o.order_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n  GROUP BY 1, 2\n)\nSELECT level_name, COUNT(*) AS users,\n       ROUND(AVG(order_cnt), 2) AS orders_per_user,\n       ROUND(AVG(gmv), 2) AS gmv_per_user\nFROM user_orders GROUP BY 1 ORDER BY gmv_per_user DESC",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 1354,
+    "rows": [
+      {
+        "users": 52113,
+        "level_name": "青铜会员",
+        "gmv_per_user": 166.42,
+        "orders_per_user": 1.03
+      },
+      {
+        "users": 36431,
+        "level_name": "白银会员",
+        "gmv_per_user": 164.81,
+        "orders_per_user": 1.03
+      },
+      {
+        "users": 6261,
+        "level_name": "黄金会员",
+        "gmv_per_user": 164.66,
+        "orders_per_user": 1.03
+      },
+      {
+        "users": 178,
+        "level_name": "铂金会员",
+        "gmv_per_user": 158.09,
+        "orders_per_user": 1.02
+      }
+    ]
+  },
+  {
+    "id": "T6-016",
+    "sql": "WITH brand_products AS (\n  SELECT b.brand_id, b.brand_name, pbm.product_id\n  FROM brands b\n  JOIN product_brand_map pbm ON pbm.brand_id = b.brand_id AND pbm.is_current\n),\nsales AS (\n  SELECT bp.brand_id, COUNT(DISTINCT oi.product_id) AS sold_products,\n         SUM(oi.price) AS sales\n  FROM brand_products bp\n  JOIN order_items oi ON oi.product_id = bp.product_id\n  JOIN orders o ON o.order_id = oi.order_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n  GROUP BY 1\n),\ntotal AS (\n  SELECT brand_id, COUNT(*) AS product_cnt FROM brand_products GROUP BY 1\n)\nSELECT bp.brand_name, t.product_cnt, COALESCE(s.sold_products, 0) AS sold_products,\n       ROUND(COALESCE(s.sales, 0), 2) AS sales,\n       ROUND(100.0 * COALESCE(s.sold_products, 0) / t.product_cnt, 2) AS sell_through_pct\nFROM brands bp\nJOIN total t ON t.brand_id = bp.brand_id\nLEFT JOIN sales s ON s.brand_id = bp.brand_id\nORDER BY sales DESC LIMIT 10",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 417,
+    "rows": [
+      {
+        "sales": 232016.9,
+        "brand_name": "Brand_51",
+        "product_cnt": 419,
+        "sold_products": 418,
+        "sell_through_pct": 99.76
+      },
+      {
+        "sales": 211192.07,
+        "brand_name": "Brand_56",
+        "product_cnt": 368,
+        "sold_products": 366,
+        "sell_through_pct": 99.46
+      },
+      {
+        "sales": 201539.36,
+        "brand_name": "Brand_20",
+        "product_cnt": 378,
+        "sold_products": 376,
+        "sell_through_pct": 99.47
+      },
+      {
+        "sales": 199707.71,
+        "brand_name": "Brand_9",
+        "product_cnt": 385,
+        "sold_products": 381,
+        "sell_through_pct": 98.96
+      },
+      {
+        "sales": 197097.71,
+        "brand_name": "Brand_4",
+        "product_cnt": 390,
+        "sold_products": 389,
+        "sell_through_pct": 99.74
+      },
+      {
+        "sales": 196992.84,
+        "brand_name": "Brand_32",
+        "product_cnt": 391,
+        "sold_products": 389,
+        "sell_through_pct": 99.49
+      },
+      {
+        "sales": 191390.45,
+        "brand_name": "Brand_25",
+        "product_cnt": 374,
+        "sold_products": 372,
+        "sell_through_pct": 99.47
+      },
+      {
+        "sales": 184638.83,
+        "brand_name": "Brand_3",
+        "product_cnt": 379,
+        "sold_products": 379,
+        "sell_through_pct": 100.0
+      },
+      {
+        "sales": 184510.85,
+        "brand_name": "Brand_48",
+        "product_cnt": 396,
+        "sold_products": 394,
+        "sell_through_pct": 99.49
+      },
+      {
+        "sales": 180432.38,
+        "brand_name": "Brand_39",
+        "product_cnt": 371,
+        "sold_products": 368,
+        "sell_through_pct": 99.19
+      }
+    ]
+  },
+  {
+    "id": "T6-018",
+    "sql": "WITH user_orders AS (\n  SELECT c.customer_unique_id,\n         BOOL_OR(m.member_id IS NOT NULL) AS is_member,\n         COUNT(DISTINCT o.order_id) AS order_cnt\n  FROM orders o\n  JOIN customers c ON c.customer_id = o.customer_id\n  LEFT JOIN members m ON m.customer_unique_id = c.customer_unique_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n  GROUP BY 1\n)\nSELECT CASE WHEN is_member THEN 'member' ELSE 'non_member' END AS user_type,\n       ROUND(100.0 * COUNT(*) FILTER (WHERE order_cnt >= 2) / COUNT(*), 2) AS repeat_rate_pct\nFROM user_orders GROUP BY 1 ORDER BY 1",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 348,
+    "rows": [
+      {
+        "user_type": "member",
+        "repeat_rate_pct": 3.04
+      }
+    ]
+  },
+  {
+    "id": "T6-021",
+    "sql": "WITH user_gmv AS (\n  SELECT c.customer_unique_id, SUM(oi.price + oi.freight_value) AS gmv\n  FROM orders o\n  JOIN customers c ON c.customer_id = o.customer_id\n  JOIN order_items oi ON oi.order_id = o.order_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n  GROUP BY 1\n),\nranked AS (\n  SELECT gmv, NTILE(5) OVER (ORDER BY gmv DESC) AS quintile\n  FROM user_gmv\n)\nSELECT quintile, ROUND(100.0 * SUM(gmv) / (SELECT SUM(gmv) FROM user_gmv), 2) AS gmv_pct\nFROM ranked GROUP BY 1 ORDER BY 1",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 448,
+    "rows": [
+      {
+        "gmv_pct": 53.58,
+        "quintile": 1
+      },
+      {
+        "gmv_pct": 19.98,
+        "quintile": 2
+      },
+      {
+        "gmv_pct": 13.12,
+        "quintile": 3
+      },
+      {
+        "gmv_pct": 8.52,
+        "quintile": 4
+      },
+      {
+        "gmv_pct": 4.8,
+        "quintile": 5
+      }
+    ]
+  },
+  {
+    "id": "T6-023",
+    "sql": "WITH anchor AS (\n  SELECT MAX(moved_at) AS max_ts FROM inventory_movements\n),\noutbound AS (\n  SELECT im.warehouse_id, SUM(im.quantity) AS out_qty\n  FROM inventory_movements im, anchor a\n  WHERE im.movement_type = 2\n    AND im.moved_at > a.max_ts - INTERVAL '90 days'\n    AND im.moved_at <= a.max_ts\n  GROUP BY 1\n),\nstock AS (\n  SELECT warehouse_id, SUM(quantity) AS stock_qty FROM inventory GROUP BY 1\n)\nSELECT w.warehouse_name, s.stock_qty, COALESCE(o.out_qty, 0) AS out_qty_90d,\n       CASE WHEN COALESCE(o.out_qty, 0) > 0\n            THEN ROUND(90.0 * s.stock_qty / o.out_qty, 1) END AS turnover_days\nFROM warehouses w\nJOIN stock s ON s.warehouse_id = w.warehouse_id\nLEFT JOIN outbound o ON o.warehouse_id = w.warehouse_id\nORDER BY turnover_days DESC NULLS LAST",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 162,
+    "rows": [
+      {
+        "stock_qty": 1224732,
+        "out_qty_90d": 45509,
+        "turnover_days": 2422.1,
+        "warehouse_name": "南部仓"
+      },
+      {
+        "stock_qty": 1256233,
+        "out_qty_90d": 48364,
+        "turnover_days": 2337.7,
+        "warehouse_name": "东北仓"
+      },
+      {
+        "stock_qty": 1219929,
+        "out_qty_90d": 49704,
+        "turnover_days": 2208.9,
+        "warehouse_name": "里约分仓"
+      },
+      {
+        "stock_qty": 1192808,
+        "out_qty_90d": 48621,
+        "turnover_days": 2207.9,
+        "warehouse_name": "米纳斯仓"
+      },
+      {
+        "stock_qty": 1250032,
+        "out_qty_90d": 52847,
+        "turnover_days": 2128.8,
+        "warehouse_name": "圣保罗中心仓"
+      }
+    ]
+  },
+  {
+    "id": "T6-025",
+    "sql": "WITH first_order AS (\n  SELECT c.customer_unique_id, MIN(o.order_purchase_timestamp) AS first_ts\n  FROM orders o\n  JOIN customers c ON c.customer_id = o.customer_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n  GROUP BY 1\n),\nmonthly AS (\n  SELECT DATE_TRUNC('month', o.order_purchase_timestamp)::date AS month,\n         c.customer_unique_id,\n         SUM(oi.price + oi.freight_value) AS gmv\n  FROM orders o\n  JOIN customers c ON c.customer_id = o.customer_id\n  JOIN order_items oi ON oi.order_id = o.order_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n    AND o.order_purchase_timestamp >= DATE '2018-01-01'\n    AND o.order_purchase_timestamp < DATE '2019-01-01'\n  GROUP BY 1, 2\n)\nSELECT m.month,\n       ROUND(SUM(m.gmv) FILTER (WHERE DATE_TRUNC('month', f.first_ts)::date = m.month), 2) AS new_customer_gmv,\n       ROUND(SUM(m.gmv) FILTER (WHERE DATE_TRUNC('month', f.first_ts)::date <> m.month), 2) AS returning_gmv\nFROM monthly m\nJOIN first_order f ON f.customer_unique_id = m.customer_unique_id\nGROUP BY 1 ORDER BY 1",
+    "synthetic": false,
+    "timeoutMs": 8000,
+    "transaction": "BEGIN READ ONLY",
+    "exitCode": 0,
+    "elapsedMs": 983,
+    "rows": [
+      {
+        "month": "2018-01-01",
+        "returning_gmv": 21224.41,
+        "new_customer_gmv": 1080695.6
+      },
+      {
+        "month": "2018-02-01",
+        "returning_gmv": 16224.36,
+        "new_customer_gmv": 963261.8
+      },
+      {
+        "month": "2018-03-01",
+        "returning_gmv": 20507.22,
+        "new_customer_gmv": 1132149.77
+      },
+      {
+        "month": "2018-04-01",
+        "returning_gmv": 25558.24,
+        "new_customer_gmv": 1130690.65
+      },
+      {
+        "month": "2018-05-01",
+        "returning_gmv": 28884.45,
+        "new_customer_gmv": 1116802.01
+      },
+      {
+        "month": "2018-06-01",
+        "returning_gmv": 30477.3,
+        "new_customer_gmv": 989904.6
+      },
+      {
+        "month": "2018-07-01",
+        "returning_gmv": 24613.52,
+        "new_customer_gmv": 1015170.06
+      },
+      {
+        "month": "2018-08-01",
+        "returning_gmv": 23052.28,
+        "new_customer_gmv": 973921.23
+      },
+      {
+        "month": "2018-09-01",
+        "returning_gmv": 166.46,
+        "new_customer_gmv": null
+      }
+    ]
+  }
+]

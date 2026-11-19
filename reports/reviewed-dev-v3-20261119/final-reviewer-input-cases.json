@@ -1,0 +1,1222 @@
+[
+  {
+    "id": "T1-002",
+    "difficulty": "single_table_basic",
+    "tags": [
+      "过滤",
+      "时间"
+    ],
+    "question": "2018 年下单的订单有多少笔？",
+    "gold_sql": "SELECT COUNT(*) FROM orders\nWHERE order_purchase_timestamp >= '2018-01-01'\n  AND order_purchase_timestamp < '2019-01-01';\n",
+    "notes": "时间口径取 order_purchase_timestamp（下单时间），非支付或送达时间。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T1_single_table_basic.yaml"
+  },
+  {
+    "id": "T1-004",
+    "difficulty": "single_table_basic",
+    "tags": [
+      "计数",
+      "去重"
+    ],
+    "question": "一共有多少个不同的客户（按自然人统计，同一人多次下单只算一个）？",
+    "gold_sql": "SELECT COUNT(DISTINCT customer_unique_id) FROM customers;\n",
+    "notes": "客户表 99441 行是「订单级」客户，customer_unique_id 去重后是 96096 个自然人。这是 customer_id 与 customer_unique_id 的经典区别。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T1_single_table_basic.yaml"
+  },
+  {
+    "id": "T1-006",
+    "difficulty": "single_table_basic",
+    "tags": [
+      "计数"
+    ],
+    "question": "商品表里有多少个商品？",
+    "gold_sql": "SELECT COUNT(*) FROM products;\n",
+    "notes": "",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T1_single_table_basic.yaml"
+  },
+  {
+    "id": "T1-008",
+    "difficulty": "single_table_basic",
+    "tags": [
+      "去重"
+    ],
+    "question": "客户档案中出现过多少个不同的customer_city城市名称值？同名城市跨州合并统计。",
+    "gold_sql": "SELECT COUNT(DISTINCT customer_city) FROM customers;\n",
+    "notes": "V3开发参考，题面已明确本题定义。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T1_single_table_basic.yaml"
+  },
+  {
+    "id": "T1-011",
+    "difficulty": "single_table_basic",
+    "tags": [
+      "去重"
+    ],
+    "question": "商品类目一共有多少个？",
+    "gold_sql": "SELECT COUNT(DISTINCT product_category_name) FROM products;\n",
+    "notes": "",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T1_single_table_basic.yaml"
+  },
+  {
+    "id": "T1-013",
+    "difficulty": "single_table_basic",
+    "tags": [
+      "排序",
+      "限制"
+    ],
+    "question": "运费最高的 5 条订单明细是哪几条？",
+    "gold_sql": "SELECT order_id, order_item_id, freight_value\nFROM order_items ORDER BY freight_value DESC LIMIT 5;\n",
+    "notes": "",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T1_single_table_basic.yaml"
+  },
+  {
+    "id": "T1-015",
+    "difficulty": "single_table_basic",
+    "tags": [
+      "过滤",
+      "枚举"
+    ],
+    "question": "使用信用卡支付的记录有多少条？",
+    "gold_sql": "SELECT COUNT(*) FROM order_payments WHERE payment_type = 'credit_card';\n",
+    "notes": "",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T1_single_table_basic.yaml"
+  },
+  {
+    "id": "T1-017",
+    "difficulty": "single_table_basic",
+    "tags": [
+      "过滤",
+      "数值"
+    ],
+    "question": "重量超过 5000 克的商品有多少个？",
+    "gold_sql": "SELECT COUNT(*) FROM products WHERE product_weight_g > 5000;\n",
+    "notes": "",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T1_single_table_basic.yaml"
+  },
+  {
+    "id": "T1-019",
+    "difficulty": "single_table_basic",
+    "tags": [
+      "NULL 判断"
+    ],
+    "question": "还没有送达客户的订单有多少笔？",
+    "gold_sql": "SELECT COUNT(*) FROM orders WHERE order_delivered_customer_date IS NULL;\n",
+    "notes": "包含已取消、处理中等所有未送达状态。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T1_single_table_basic.yaml"
+  },
+  {
+    "id": "T1-020",
+    "difficulty": "single_table_basic",
+    "tags": [
+      "NULL 判断"
+    ],
+    "question": "带文字标题的评价有多少条？标题去首尾空格后为空的不算。",
+    "gold_sql": "SELECT COUNT(*) FROM order_reviews WHERE review_comment_title IS NOT NULL AND BTRIM(review_comment_title)<>'';\n",
+    "notes": "V3开发参考，题面已明确本题定义。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T1_single_table_basic.yaml"
+  },
+  {
+    "id": "T1-022",
+    "difficulty": "single_table_basic",
+    "tags": [
+      "过滤",
+      "数值"
+    ],
+    "question": "价格低于 10 元的订单明细有多少条？",
+    "gold_sql": "SELECT COUNT(*) FROM order_items WHERE price < 10;\n",
+    "notes": "",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T1_single_table_basic.yaml"
+  },
+  {
+    "id": "T1-024",
+    "difficulty": "single_table_basic",
+    "tags": [
+      "过滤",
+      "枚举"
+    ],
+    "question": "黄金会员有多少人？",
+    "gold_sql": "SELECT COUNT(*) FROM members m JOIN member_levels l ON l.level_id=m.level_id WHERE l.level_name='黄金会员';\n",
+    "notes": "member_levels 表定义 level_id=3 为 GOLD（黄金会员）。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T1_single_table_basic.yaml"
+  },
+  {
+    "id": "T1-026",
+    "difficulty": "single_table_basic",
+    "tags": [
+      "排序",
+      "限制"
+    ],
+    "question": "积分最高的10个会员是谁？只考虑已知积分，输出会员ID和积分，同分按会员ID升序严格取10人。",
+    "gold_sql": "SELECT member_id,points FROM members WHERE points IS NOT NULL ORDER BY points DESC,member_id ASC LIMIT 10;\n",
+    "notes": "V3开发参考，题面已明确本题定义。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T1_single_table_basic.yaml"
+  },
+  {
+    "id": "T1-028",
+    "difficulty": "single_table_basic",
+    "tags": [
+      "排序",
+      "限制"
+    ],
+    "question": "已知容量最大的仓库是哪一个？输出仓库ID和容量，并列按仓库ID升序取1个。",
+    "gold_sql": "SELECT warehouse_id,capacity FROM warehouses WHERE capacity IS NOT NULL ORDER BY capacity DESC,warehouse_id ASC LIMIT 1;\n",
+    "notes": "V3开发参考，题面已明确本题定义。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T1_single_table_basic.yaml"
+  },
+  {
+    "id": "T1-031",
+    "difficulty": "single_table_basic",
+    "tags": [
+      "计数"
+    ],
+    "question": "一共有多少张优惠券？",
+    "gold_sql": "SELECT COUNT(*) FROM coupons;\n",
+    "notes": "",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T1_single_table_basic.yaml"
+  },
+  {
+    "id": "T1-033",
+    "difficulty": "single_table_basic",
+    "tags": [
+      "过滤",
+      "枚举"
+    ],
+    "question": "紧急优先级的客服工单有多少个？",
+    "gold_sql": "SELECT COUNT(*) FROM support_tickets WHERE priority = 4;\n",
+    "notes": "support_tickets.priority：1=低 2=中 3=高 4=紧急。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T1_single_table_basic.yaml"
+  },
+  {
+    "id": "T1-035",
+    "difficulty": "single_table_basic",
+    "tags": [
+      "过滤",
+      "比较"
+    ],
+    "question": "库存数量低于安全库存的记录有多少条？",
+    "gold_sql": "SELECT COUNT(*) FROM inventory WHERE quantity < safety_stock;\n",
+    "notes": "",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T1_single_table_basic.yaml"
+  },
+  {
+    "id": "T1-037",
+    "difficulty": "single_table_basic",
+    "tags": [
+      "去重"
+    ],
+    "question": "搜索日志里一共出现过多少个不同的搜索关键词？",
+    "gold_sql": "SELECT COUNT(DISTINCT keyword) FROM search_logs;\n",
+    "notes": "",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T1_single_table_basic.yaml"
+  },
+  {
+    "id": "T1-039",
+    "difficulty": "single_table_basic",
+    "tags": [
+      "过滤",
+      "枚举"
+    ],
+    "question": "已经结束的营销活动有多少个？",
+    "gold_sql": "SELECT COUNT(*) FROM campaigns WHERE status = 3;\n",
+    "notes": "campaigns.status：1=草稿 2=进行中 3=已结束 4=已取消。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T1_single_table_basic.yaml"
+  },
+  {
+    "id": "T1-040",
+    "difficulty": "single_table_basic",
+    "tags": [
+      "去重"
+    ],
+    "question": "发生过价格调整的商品有多少个？",
+    "gold_sql": "SELECT COUNT(DISTINCT product_id) FROM product_price_history;\n",
+    "notes": "",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T1_single_table_basic.yaml"
+  },
+  {
+    "id": "T2-001",
+    "difficulty": "single_table_agg",
+    "tags": [
+      "聚合",
+      "求和"
+    ],
+    "question": "所有订单明细的商品金额加起来一共是多少？",
+    "gold_sql": "SELECT SUM(price) FROM order_items;\n",
+    "notes": "",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T2_single_table_agg.yaml"
+  },
+  {
+    "id": "T2-003",
+    "difficulty": "single_table_agg",
+    "tags": [
+      "聚合",
+      "平均"
+    ],
+    "question": "订单明细的平均商品价格是多少？",
+    "gold_sql": "SELECT ROUND(AVG(price), 2) FROM order_items;\n",
+    "notes": "",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T2_single_table_agg.yaml"
+  },
+  {
+    "id": "T2-005",
+    "difficulty": "single_table_agg",
+    "tags": [
+      "聚合",
+      "分组"
+    ],
+    "question": "每种订单状态各有多少笔订单？按数量从多到少排列。",
+    "gold_sql": "SELECT order_status, COUNT(*) AS cnt\nFROM orders GROUP BY order_status ORDER BY cnt DESC;\n",
+    "notes": "",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T2_single_table_agg.yaml"
+  },
+  {
+    "id": "T2-007",
+    "difficulty": "single_table_agg",
+    "tags": [
+      "聚合",
+      "分组"
+    ],
+    "question": "每个评价分数各有多少条评价？",
+    "gold_sql": "SELECT review_score, COUNT(*) AS cnt\nFROM order_reviews GROUP BY review_score ORDER BY review_score;\n",
+    "notes": "",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T2_single_table_agg.yaml"
+  },
+  {
+    "id": "T2-009",
+    "difficulty": "single_table_agg",
+    "tags": [
+      "聚合",
+      "分组",
+      "排序"
+    ],
+    "question": "商品数量最多的 10 个类目是哪些？",
+    "gold_sql": "SELECT product_category_name, COUNT(*) AS cnt\nFROM products\nWHERE product_category_name IS NOT NULL\nGROUP BY product_category_name ORDER BY cnt DESC LIMIT 10;\n",
+    "notes": "",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T2_single_table_agg.yaml"
+  },
+  {
+    "id": "T2-010",
+    "difficulty": "single_table_agg",
+    "tags": [
+      "聚合",
+      "分组"
+    ],
+    "question": "每个州的卖家各有多少个？按数量倒序。",
+    "gold_sql": "SELECT seller_state, COUNT(*) AS cnt\nFROM sellers GROUP BY seller_state ORDER BY cnt DESC;\n",
+    "notes": "",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T2_single_table_agg.yaml"
+  },
+  {
+    "id": "T2-012",
+    "difficulty": "single_table_agg",
+    "tags": [
+      "聚合",
+      "分组",
+      "求和"
+    ],
+    "question": "每个卖家的运费收入合计是多少？取最高的 10 个。",
+    "gold_sql": "SELECT seller_id, ROUND(SUM(freight_value), 2) AS total\nFROM order_items GROUP BY seller_id ORDER BY total DESC LIMIT 10;\n",
+    "notes": "",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T2_single_table_agg.yaml"
+  },
+  {
+    "id": "T2-014",
+    "difficulty": "single_table_agg",
+    "tags": [
+      "条件聚合"
+    ],
+    "question": "支付方式里信用卡和 boleto 各占多少笔？",
+    "gold_sql": "SELECT\n  COUNT(*) FILTER (WHERE payment_type = 'credit_card') AS credit_card,\n  COUNT(*) FILTER (WHERE payment_type = 'boleto')      AS boleto\nFROM order_payments;\n",
+    "notes": "",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T2_single_table_agg.yaml"
+  },
+  {
+    "id": "T2-016",
+    "difficulty": "single_table_agg",
+    "tags": [
+      "聚合",
+      "分组"
+    ],
+    "question": "每种会员状态各有多少人？",
+    "gold_sql": "SELECT status, COUNT(*) AS cnt FROM members GROUP BY status ORDER BY status;\n",
+    "notes": "",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T2_single_table_agg.yaml"
+  },
+  {
+    "id": "T2-018",
+    "difficulty": "single_table_agg",
+    "tags": [
+      "聚合",
+      "分组"
+    ],
+    "question": "每种营销活动类型各有多少个活动？",
+    "gold_sql": "SELECT campaign_type, COUNT(*) AS cnt\nFROM campaigns GROUP BY campaign_type ORDER BY cnt DESC;\n",
+    "notes": "",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T2_single_table_agg.yaml"
+  },
+  {
+    "id": "T2-021",
+    "difficulty": "single_table_agg",
+    "tags": [
+      "聚合",
+      "分组"
+    ],
+    "question": "每个退款原因各有多少笔退款？",
+    "gold_sql": "SELECT reason_code, COUNT(*) AS cnt\nFROM refunds GROUP BY reason_code ORDER BY cnt DESC;\n",
+    "notes": "",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T2_single_table_agg.yaml"
+  },
+  {
+    "id": "T2-023",
+    "difficulty": "single_table_agg",
+    "tags": [
+      "聚合",
+      "求和",
+      "过滤"
+    ],
+    "question": "已经退款的订单，退款金额合计是多少？",
+    "gold_sql": "SELECT ROUND(SUM(refund_amount), 2) FROM refunds WHERE status = 4;\n",
+    "notes": "",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T2_single_table_agg.yaml"
+  },
+  {
+    "id": "T2-025",
+    "difficulty": "single_table_agg",
+    "tags": [
+      "聚合",
+      "求和"
+    ],
+    "question": "所有仓库的库存总数量是多少？",
+    "gold_sql": "SELECT SUM(quantity) FROM inventory;\n",
+    "notes": "",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T2_single_table_agg.yaml"
+  },
+  {
+    "id": "T2-027",
+    "difficulty": "single_table_agg",
+    "tags": [
+      "聚合",
+      "分组"
+    ],
+    "question": "每种库存变动类型各有多少条记录？",
+    "gold_sql": "SELECT movement_type, COUNT(*) AS cnt\nFROM inventory_movements GROUP BY movement_type ORDER BY movement_type;\n",
+    "notes": "",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T2_single_table_agg.yaml"
+  },
+  {
+    "id": "T2-029",
+    "difficulty": "single_table_agg",
+    "tags": [
+      "聚合",
+      "分组"
+    ],
+    "question": "每种发货状态各有多少个发货单？",
+    "gold_sql": "SELECT status, COUNT(*) AS cnt FROM shipments GROUP BY status ORDER BY status;\n",
+    "notes": "",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T2_single_table_agg.yaml"
+  },
+  {
+    "id": "T2-030",
+    "difficulty": "single_table_agg",
+    "tags": [
+      "聚合",
+      "分组"
+    ],
+    "question": "按客服工单中实际出现的category_id分类编号统计各分类的工单数，不补没有工单的分类。",
+    "gold_sql": "SELECT category_id, COUNT(*) AS cnt\nFROM support_tickets GROUP BY category_id ORDER BY category_id;\n",
+    "notes": "V3开发参考，题面已明确本题定义。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T2_single_table_agg.yaml"
+  },
+  {
+    "id": "T2-032",
+    "difficulty": "single_table_agg",
+    "tags": [
+      "聚合",
+      "分组"
+    ],
+    "question": "每种结算状态各有多少张结算单？",
+    "gold_sql": "SELECT status, COUNT(*) AS cnt FROM settlements GROUP BY status ORDER BY status;\n",
+    "notes": "",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T2_single_table_agg.yaml"
+  },
+  {
+    "id": "T2-034",
+    "difficulty": "single_table_agg",
+    "tags": [
+      "聚合",
+      "求和"
+    ],
+    "question": "平台从卖家那里收取的佣金总额是多少？",
+    "gold_sql": "SELECT ROUND(SUM(commission), 2) FROM settlements;\n",
+    "notes": "",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T2_single_table_agg.yaml"
+  },
+  {
+    "id": "T2-036",
+    "difficulty": "single_table_agg",
+    "tags": [
+      "HAVING"
+    ],
+    "question": "商品数量超过 1500 个的类目有哪些？",
+    "gold_sql": "SELECT product_category_name, COUNT(*) AS cnt\nFROM products\nWHERE product_category_name IS NOT NULL\nGROUP BY product_category_name\nHAVING COUNT(*) > 1500\nORDER BY cnt DESC;\n",
+    "notes": "",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T2_single_table_agg.yaml"
+  },
+  {
+    "id": "T2-038",
+    "difficulty": "single_table_agg",
+    "tags": [
+      "聚合",
+      "最值"
+    ],
+    "question": "订单明细里最贵的一件商品价格是多少？最便宜的呢？",
+    "gold_sql": "SELECT MAX(price) AS max_price, MIN(price) AS min_price FROM order_items;\n",
+    "notes": "",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T2_single_table_agg.yaml"
+  },
+  {
+    "id": "T3-002",
+    "difficulty": "time_window",
+    "tags": [
+      "时间",
+      "按年"
+    ],
+    "question": "2017 年和 2018 年各有多少笔订单？",
+    "gold_sql": "SELECT EXTRACT(YEAR FROM order_purchase_timestamp)::INT AS yr, COUNT(*) AS cnt\nFROM orders\nWHERE EXTRACT(YEAR FROM order_purchase_timestamp) IN (2017, 2018)\nGROUP BY 1 ORDER BY 1;\n",
+    "notes": "",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T3_time_window.yaml"
+  },
+  {
+    "id": "T3-004",
+    "difficulty": "time_window",
+    "tags": [
+      "时间",
+      "过滤"
+    ],
+    "question": "2017 年 11 月的订单有多少笔？",
+    "gold_sql": "SELECT COUNT(*) FROM orders\nWHERE order_purchase_timestamp >= '2017-11-01'\n  AND order_purchase_timestamp < '2017-12-01';\n",
+    "notes": "",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T3_time_window.yaml"
+  },
+  {
+    "id": "T3-006",
+    "difficulty": "time_window",
+    "tags": [
+      "时间",
+      "按月",
+      "求和"
+    ],
+    "question": "每个月的商品销售额是多少？",
+    "gold_sql": "SELECT DATE_TRUNC('month', o.order_purchase_timestamp) AS month,\n       ROUND(SUM(oi.price), 2) AS sales\nFROM orders o JOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY 1;\n",
+    "notes": "销售额口径 = order_items.price 之和，不含运费。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T3_time_window.yaml"
+  },
+  {
+    "id": "T3-008",
+    "difficulty": "time_window",
+    "tags": [
+      "时间",
+      "平均"
+    ],
+    "question": "每个有商品明细的月份，按有商品明细的订单等权，计算每单明细商品金额合计的平均值；无明细订单不参与均值。",
+    "gold_sql": "SELECT DATE_TRUNC('month', o.order_purchase_timestamp) AS month,\n       ROUND(SUM(oi.price) / COUNT(DISTINCT o.order_id), 2) AS avg_order_value\nFROM orders o JOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY 1;\n",
+    "notes": "V3开发参考，题面已明确本题定义。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T3_time_window.yaml"
+  },
+  {
+    "id": "T3-011",
+    "difficulty": "time_window",
+    "tags": [
+      "时间",
+      "环比",
+      "比率"
+    ],
+    "question": "从最早到最晚下单月份逐自然月输出订单量环比增长率（小数四位），仅输出月份和增长率；缺月订单量未知，当前月或上个自然月未知、或基期为0时增长率为NULL。",
+    "gold_sql": "WITH monthly AS(SELECT DATE_TRUNC('month',order_purchase_timestamp) AS m,COUNT(*) AS cnt FROM orders WHERE order_purchase_timestamp IS NOT NULL GROUP BY 1),calendar AS(SELECT generate_series(MIN(m),MAX(m),INTERVAL '1 month') AS m FROM monthly),aligned AS(SELECT c.m,m.cnt FROM calendar c LEFT JOIN monthly m USING(m)) SELECT m AS month,ROUND((cnt-LAG(cnt) OVER(ORDER BY m))::numeric/NULLIF(LAG(cnt) OVER(ORDER BY m),0),4) AS mom_rate FROM aligned ORDER BY m;\n",
+    "notes": "V3开发参考，题面已明确本题定义。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T3_time_window.yaml"
+  },
+  {
+    "id": "T3-013",
+    "difficulty": "time_window",
+    "tags": [
+      "时间",
+      "近 N 天"
+    ],
+    "question": "以库内最大下单日期为参考日，含参考日在内最近90个自然日的订单有多少笔？",
+    "gold_sql": "WITH anchor AS(SELECT MAX(order_purchase_timestamp) AS mx FROM orders) SELECT COUNT(*) FROM orders o CROSS JOIN anchor a WHERE o.order_purchase_timestamp>=a.mx::date-INTERVAL '89 days' AND o.order_purchase_timestamp<a.mx::date+INTERVAL '1 day';\n",
+    "notes": "V3开发参考，题面已明确本题定义。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T3_time_window.yaml"
+  },
+  {
+    "id": "T3-015",
+    "difficulty": "time_window",
+    "tags": [
+      "时间",
+      "按小时"
+    ],
+    "question": "一天中哪个小时的订单最多？",
+    "gold_sql": "SELECT EXTRACT(HOUR FROM order_purchase_timestamp)::INT AS hr, COUNT(*) AS cnt\nFROM orders GROUP BY 1 ORDER BY cnt DESC LIMIT 1;\n",
+    "notes": "",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T3_time_window.yaml"
+  },
+  {
+    "id": "T3-017",
+    "difficulty": "time_window",
+    "tags": [
+      "时间",
+      "日期差"
+    ],
+    "question": "订单从下单到送达平均需要多少天？",
+    "gold_sql": "SELECT ROUND(AVG(EXTRACT(EPOCH FROM (order_delivered_customer_date - order_purchase_timestamp)) / 86400), 2)\nFROM orders WHERE order_delivered_customer_date IS NOT NULL;\n",
+    "notes": "",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T3_time_window.yaml"
+  },
+  {
+    "id": "T3-019",
+    "difficulty": "time_window",
+    "tags": [
+      "时间",
+      "日期差"
+    ],
+    "question": "实际送达时间晚于预计送达时间的订单有多少笔？",
+    "gold_sql": "SELECT COUNT(*) FROM orders\nWHERE order_delivered_customer_date > order_estimated_delivery_date;\n",
+    "notes": "",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T3_time_window.yaml"
+  },
+  {
+    "id": "T3-020",
+    "difficulty": "time_window",
+    "tags": [
+      "时间",
+      "日期差",
+      "比率"
+    ],
+    "question": "超时送达的订单占已送达订单的比例是多少？",
+    "gold_sql": "SELECT ROUND(\n  COUNT(*) FILTER (WHERE order_delivered_customer_date > order_estimated_delivery_date)::NUMERIC\n  / NULLIF(COUNT(*) FILTER (WHERE order_delivered_customer_date IS NOT NULL), 0), 4) AS late_rate\nFROM orders;\n",
+    "notes": "",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T3_time_window.yaml"
+  },
+  {
+    "id": "T3-022",
+    "difficulty": "time_window",
+    "tags": [
+      "时间",
+      "按月",
+      "求和"
+    ],
+    "question": "每个月的退款金额合计是多少？",
+    "gold_sql": "SELECT DATE_TRUNC('month', requested_at) AS month,\n       ROUND(SUM(refund_amount), 2) AS total\nFROM refunds GROUP BY 1 ORDER BY 1;\n",
+    "notes": "",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T3_time_window.yaml"
+  },
+  {
+    "id": "T3-024",
+    "difficulty": "time_window",
+    "tags": [
+      "时间",
+      "日期差"
+    ],
+    "question": "客服工单从创建到解决平均需要多少小时？",
+    "gold_sql": "SELECT ROUND(AVG(EXTRACT(EPOCH FROM (resolved_at - created_at)) / 3600), 2)\nFROM support_tickets WHERE resolved_at IS NOT NULL;\n",
+    "notes": "",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T3_time_window.yaml"
+  },
+  {
+    "id": "T3-026",
+    "difficulty": "time_window",
+    "tags": [
+      "时间",
+      "按月",
+      "分组"
+    ],
+    "question": "每个月的评价平均分是多少？",
+    "gold_sql": "SELECT DATE_TRUNC('month', review_creation_date) AS month,\n       ROUND(AVG(review_score), 2) AS avg_score\nFROM order_reviews GROUP BY 1 ORDER BY 1;\n",
+    "notes": "",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T3_time_window.yaml"
+  },
+  {
+    "id": "T3-028",
+    "difficulty": "time_window",
+    "tags": [
+      "时间",
+      "活跃"
+    ],
+    "question": "以会员表最大最近登录日期为参考日，含参考日在内最近30个自然日登录过的会员有多少人？",
+    "gold_sql": "SELECT COUNT(*) FROM members\nWHERE last_login_date > (SELECT MAX(last_login_date) FROM members) - 30;\n",
+    "notes": "V3开发参考，题面已明确本题定义。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T3_time_window.yaml"
+  },
+  {
+    "id": "T4-001",
+    "difficulty": "multi_join",
+    "tags": [
+      "join",
+      "计数"
+    ],
+    "question": "按自然人统计订单数，输出订单最多的10人的自然人ID与订单数，同数按自然人ID升序。",
+    "gold_sql": "SELECT c.customer_unique_id,COUNT(*) AS cnt FROM orders o JOIN customers c ON c.customer_id=o.customer_id GROUP BY c.customer_unique_id ORDER BY cnt DESC,c.customer_unique_id ASC NULLS LAST LIMIT 10;\n",
+    "notes": "V3开发参考，题面已明确本题定义。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T4_multi_join.yaml"
+  },
+  {
+    "id": "T4-003",
+    "difficulty": "multi_join",
+    "tags": [
+      "join",
+      "分组"
+    ],
+    "question": "每个商品类目的订单数量是多少？",
+    "gold_sql": "SELECT p.product_category_name, COUNT(DISTINCT oi.order_id) AS order_cnt\nFROM order_items oi JOIN products p ON p.product_id = oi.product_id\nWHERE p.product_category_name IS NOT NULL\nGROUP BY 1 ORDER BY order_cnt DESC;\n",
+    "notes": "用 COUNT(DISTINCT order_id) 而不是 COUNT(*)，因为一个订单可能包含同类目多个商品。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T4_multi_join.yaml"
+  },
+  {
+    "id": "T4-005",
+    "difficulty": "multi_join",
+    "tags": [
+      "join",
+      "分组",
+      "求和"
+    ],
+    "question": "每个卖家的订单数量是多少？取前 10 名。",
+    "gold_sql": "SELECT oi.seller_id, COUNT(DISTINCT oi.order_id) AS order_cnt\nFROM order_items oi GROUP BY 1 ORDER BY order_cnt DESC LIMIT 10;\n",
+    "notes": "",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T4_multi_join.yaml"
+  },
+  {
+    "id": "T4-007",
+    "difficulty": "multi_join",
+    "tags": [
+      "join",
+      "外连接",
+      "计数"
+    ],
+    "question": "有多少个商品从来没有发生过价格变动？",
+    "gold_sql": "SELECT COUNT(*)\nFROM products p\nLEFT JOIN product_price_history h ON h.product_id = p.product_id\nWHERE h.product_id IS NULL;\n",
+    "notes": "必须用 LEFT JOIN + IS NULL 找「没有关联记录」的商品。若写成 INNER JOIN，结果会变成「有过价格变动的商品数」，含义完全相反。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T4_multi_join.yaml"
+  },
+  {
+    "id": "T4-009",
+    "difficulty": "multi_join",
+    "tags": [
+      "join",
+      "分组",
+      "平均"
+    ],
+    "question": "按支付方式原值分组，统计每条支付记录等权的平均支付金额，未知方式保留为NULL组，金额两位。",
+    "gold_sql": "SELECT payment_type,ROUND(AVG(payment_value),2) AS avg_value FROM order_payments GROUP BY payment_type ORDER BY avg_value DESC NULLS LAST,payment_type ASC NULLS LAST;\n",
+    "notes": "V3开发参考，题面已明确本题定义。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T4_multi_join.yaml"
+  },
+  {
+    "id": "T4-010",
+    "difficulty": "multi_join",
+    "tags": [
+      "join",
+      "分组"
+    ],
+    "question": "每个订单状态的商品销售总额是多少？",
+    "gold_sql": "SELECT o.order_status, ROUND(SUM(oi.price), 2) AS sales\nFROM orders o JOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY sales DESC;\n",
+    "notes": "",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T4_multi_join.yaml"
+  },
+  {
+    "id": "T4-012",
+    "difficulty": "multi_join",
+    "tags": [
+      "join",
+      "分组"
+    ],
+    "question": "按订单客户档案所在州统计每条评价等权的平均分两位，按评价记录数取前10州，仅输出州和平均分，同数按州升序。",
+    "gold_sql": "SELECT c.customer_state,ROUND(AVG(r.review_score),2) AS avg_score FROM order_reviews r JOIN orders o ON o.order_id=r.order_id JOIN customers c ON c.customer_id=o.customer_id GROUP BY c.customer_state ORDER BY COUNT(*) DESC,c.customer_state ASC NULLS LAST LIMIT 10;\n",
+    "notes": "V3开发参考，题面已明确本题定义。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T4_multi_join.yaml"
+  },
+  {
+    "id": "T4-014",
+    "difficulty": "multi_join",
+    "tags": [
+      "join",
+      "分组"
+    ],
+    "question": "每种支付方式的评价平均分是多少（两位）？每条评价在其订单使用的每种支付方式下各计一次，同单同方式多次支付不重复加权评价。",
+    "gold_sql": "WITH order_types AS(SELECT DISTINCT order_id,payment_type FROM order_payments) SELECT p.payment_type,ROUND(AVG(r.review_score),2) AS avg_score FROM order_types p JOIN order_reviews r ON r.order_id=p.order_id GROUP BY p.payment_type ORDER BY avg_score DESC NULLS LAST,p.payment_type ASC NULLS LAST;\n",
+    "notes": "V3开发参考，题面已明确本题定义。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T4_multi_join.yaml"
+  },
+  {
+    "id": "T4-016",
+    "difficulty": "multi_join",
+    "tags": [
+      "join",
+      "分组",
+      "求和"
+    ],
+    "question": "按订单对应客户档案的customer_state映射大区，统计各客户所在大区不含运费的商品销售额，包含全部订单状态。",
+    "gold_sql": "SELECT r.macro_region,ROUND(SUM(oi.price),2) AS sales\nFROM order_items oi JOIN orders o ON o.order_id=oi.order_id\nLEFT JOIN customers c ON c.customer_id=o.customer_id\nLEFT JOIN regions r ON r.region_code=c.customer_state\nGROUP BY r.macro_region ORDER BY sales DESC NULLS LAST,r.macro_region ASC NULLS LAST;\n",
+    "notes": "V3开发参考，题面已明确本题定义。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T4_multi_join.yaml"
+  },
+  {
+    "id": "T4-018",
+    "difficulty": "multi_join",
+    "tags": [
+      "join",
+      "分组",
+      "求和"
+    ],
+    "question": "每个会员等级的用户消费总额是多少？",
+    "gold_sql": "SELECT m.level_id, ROUND(SUM(oi.price), 2) AS sales\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN members m ON m.customer_unique_id = c.customer_unique_id\nJOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY 1;\n",
+    "notes": "",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T4_multi_join.yaml"
+  },
+  {
+    "id": "T4-021",
+    "difficulty": "multi_join",
+    "tags": [
+      "join",
+      "分组"
+    ],
+    "question": "按活动ID统计其关联优惠券的使用记录数，仅列有使用记录的活动，输出活动ID与次数。",
+    "gold_sql": "SELECT c.campaign_id,COUNT(*) AS cnt FROM coupon_usages cu JOIN coupons cp ON cp.coupon_id=cu.coupon_id JOIN campaigns c ON c.campaign_id=cp.campaign_id GROUP BY c.campaign_id ORDER BY cnt DESC,c.campaign_id ASC;\n",
+    "notes": "V3开发参考，题面已明确本题定义。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T4_multi_join.yaml"
+  },
+  {
+    "id": "T4-023",
+    "difficulty": "multi_join",
+    "tags": [
+      "join",
+      "分组",
+      "求和"
+    ],
+    "question": "每种折扣类型的优惠券分别带来了多少优惠金额？",
+    "gold_sql": "SELECT c.discount_type, ROUND(SUM(cu.discount_amount), 2) AS total\nFROM coupon_usages cu JOIN coupons c ON c.coupon_id = cu.coupon_id\nGROUP BY 1 ORDER BY total DESC;\n",
+    "notes": "",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T4_multi_join.yaml"
+  },
+  {
+    "id": "T4-025",
+    "difficulty": "multi_join",
+    "tags": [
+      "join",
+      "分组"
+    ],
+    "question": "每个大区的仓库容量合计是多少？",
+    "gold_sql": "SELECT r.macro_region, SUM(w.capacity) AS total_capacity\nFROM warehouses w JOIN regions r ON r.region_code = w.region_code\nGROUP BY 1 ORDER BY total_capacity DESC;\n",
+    "notes": "",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T4_multi_join.yaml"
+  },
+  {
+    "id": "T4-027",
+    "difficulty": "multi_join",
+    "tags": [
+      "join",
+      "分组"
+    ],
+    "question": "按库存记录中出现的仓库ID，统计库存数量总和及每条仓库商品库存记录等权的平均库存量两位；输出仓库ID和两项数量。",
+    "gold_sql": "SELECT i.warehouse_id,SUM(i.quantity) AS total_qty,ROUND(AVG(i.quantity),2) AS avg_qty FROM inventory i GROUP BY i.warehouse_id ORDER BY total_qty DESC NULLS LAST,i.warehouse_id ASC;\n",
+    "notes": "V3开发参考，题面已明确本题定义。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T4_multi_join.yaml"
+  },
+  {
+    "id": "T4-029",
+    "difficulty": "multi_join",
+    "tags": [
+      "join",
+      "分组"
+    ],
+    "question": "按工单关联订单的客户档案所在州统计工单数；全部工单都参与，无法确定州的保留NULL组。",
+    "gold_sql": "SELECT c.customer_state,COUNT(*) AS cnt FROM support_tickets st LEFT JOIN orders o ON o.order_id=st.order_id LEFT JOIN customers c ON c.customer_id=o.customer_id GROUP BY c.customer_state ORDER BY cnt DESC,c.customer_state ASC NULLS LAST;\n",
+    "notes": "V3开发参考，题面已明确本题定义。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T4_multi_join.yaml"
+  },
+  {
+    "id": "T4-030",
+    "difficulty": "multi_join",
+    "tags": [
+      "join",
+      "分组"
+    ],
+    "question": "每个卖家的结算总额是多少？取前 10 名。",
+    "gold_sql": "SELECT seller_id, ROUND(SUM(total_amount), 2) AS total\nFROM settlements GROUP BY 1 ORDER BY total DESC LIMIT 10;\n",
+    "notes": "",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T4_multi_join.yaml"
+  },
+  {
+    "id": "T4-032",
+    "difficulty": "multi_join",
+    "tags": [
+      "join",
+      "分组"
+    ],
+    "question": "按实际退款明细对应商品的非NULL类目，统计每类目发生过的不同退款单数；同一退款单涉及多个类目时各类目分别计一次。",
+    "gold_sql": "SELECT p.product_category_name,COUNT(DISTINCT ri.refund_id) AS cnt\nFROM refund_items ri JOIN refunds rf ON rf.refund_id=ri.refund_id AND rf.order_id=ri.order_id\nJOIN order_items oi ON oi.order_id=ri.order_id AND oi.order_item_id=ri.order_item_id\nJOIN products p ON p.product_id=oi.product_id\nWHERE p.product_category_name IS NOT NULL\nGROUP BY p.product_category_name ORDER BY cnt DESC,p.product_category_name ASC;\n",
+    "notes": "V3开发参考，题面已明确本题定义。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T4_multi_join.yaml"
+  },
+  {
+    "id": "T4-034",
+    "difficulty": "multi_join",
+    "tags": [
+      "join",
+      "分组"
+    ],
+    "question": "全部订单中有过任意退款记录的订单占比是多少？不排订单状态，按订单去重，输出0到1小数四位，分母为0时NULL。",
+    "gold_sql": "SELECT ROUND(COUNT(*) FILTER(WHERE EXISTS(SELECT 1 FROM refunds r WHERE r.order_id=o.order_id))::numeric/NULLIF(COUNT(*),0),4) AS refund_rate FROM orders o;\n",
+    "notes": "V3开发参考，题面已明确本题定义。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T4_multi_join.yaml"
+  },
+  {
+    "id": "T4-036",
+    "difficulty": "multi_join",
+    "tags": [
+      "join",
+      "分组"
+    ],
+    "question": "按订单对应客户档案所在州，统计有商品明细的下单自然人的人均商品金额，不含运费，全部订单状态；同人在各州分别去重。",
+    "gold_sql": "SELECT c.customer_state,\n       ROUND(SUM(oi.price) / COUNT(DISTINCT c.customer_unique_id), 2) AS avg_per_customer\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY avg_per_customer DESC;\n",
+    "notes": "V3开发参考，题面已明确本题定义。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T4_multi_join.yaml"
+  },
+  {
+    "id": "T4-038",
+    "difficulty": "multi_join",
+    "tags": [
+      "join",
+      "分组"
+    ],
+    "question": "每个会员等级里有多少人打过\"流失风险用户\"标签？",
+    "gold_sql": "SELECT m.level_id, COUNT(DISTINCT m.member_id) AS cnt\nFROM members m\nJOIN user_tag_map tm ON tm.member_id = m.member_id\nJOIN user_tags t ON t.tag_id = tm.tag_id\nWHERE t.tag_code = 'CHURN_RISK'\nGROUP BY 1 ORDER BY 1;\n",
+    "notes": "",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T4_multi_join.yaml"
+  },
+  {
+    "id": "T4-041",
+    "difficulty": "multi_join",
+    "tags": [
+      "join",
+      "分组",
+      "求和"
+    ],
+    "question": "按当前is_current=true的品牌归属，列出所有品牌ID、当前商品数及这些商品全部订单状态下不含运费销售额；无销售金额为NULL，不只取前10。",
+    "gold_sql": "WITH products_by_brand AS(SELECT b.brand_id,p.product_id FROM brands b LEFT JOIN product_brand_map bm ON bm.brand_id=b.brand_id AND bm.is_current IS TRUE LEFT JOIN products p ON p.product_id=bm.product_id) SELECT b.brand_id,COUNT(DISTINCT b.product_id) AS product_cnt,ROUND(SUM(oi.price),2) AS sales FROM products_by_brand b LEFT JOIN order_items oi ON oi.product_id=b.product_id GROUP BY b.brand_id ORDER BY sales DESC NULLS LAST,b.brand_id ASC;\n",
+    "notes": "V3开发参考，题面已明确本题定义。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T4_multi_join.yaml"
+  },
+  {
+    "id": "T4-043",
+    "difficulty": "multi_join",
+    "tags": [
+      "join",
+      "分组"
+    ],
+    "question": "按发货状态统计每张发货单等权的平均物流轨迹记录数两位；包括0条轨迹的发货单。",
+    "gold_sql": "WITH per_shipment AS(SELECT s.shipment_id,s.status,COUNT(t.tracking_id) AS cnt FROM shipments s LEFT JOIN shipment_tracking t ON t.shipment_id=s.shipment_id GROUP BY s.shipment_id,s.status) SELECT status,ROUND(AVG(cnt),2) AS avg_events FROM per_shipment GROUP BY status ORDER BY status ASC NULLS LAST;\n",
+    "notes": "V3开发参考，题面已明确本题定义。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T4_multi_join.yaml"
+  },
+  {
+    "id": "T4-045",
+    "difficulty": "multi_join",
+    "tags": [
+      "join",
+      "分组"
+    ],
+    "question": "按非NULL类目统计已知商品重量平均值两位；按类目全部商品数取前10，同数按类目原值升序，仅输出类目和平均重量。",
+    "gold_sql": "SELECT product_category_name,ROUND(AVG(product_weight_g),2) AS avg_weight FROM products WHERE product_category_name IS NOT NULL GROUP BY product_category_name ORDER BY COUNT(*) DESC,product_category_name ASC LIMIT 10;\n",
+    "notes": "V3开发参考，题面已明确本题定义。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T4_multi_join.yaml"
+  },
+  {
+    "id": "T5-002",
+    "difficulty": "multi_join_deep",
+    "tags": [
+      "join",
+      "会员",
+      "求和"
+    ],
+    "question": "按当前会员等级ID统计其会员订单明细商品金额，不含运费，包含全部订单状态；输出等级ID和金额两位。",
+    "gold_sql": "SELECT m.level_id,ROUND(SUM(oi.price),2) AS sales FROM orders o JOIN customers c ON c.customer_id=o.customer_id JOIN members m ON m.customer_unique_id=c.customer_unique_id JOIN order_items oi ON oi.order_id=o.order_id GROUP BY m.level_id ORDER BY sales DESC NULLS LAST,m.level_id ASC NULLS LAST;\n",
+    "notes": "V3开发参考，题面已明确本题定义。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T5_multi_join_deep.yaml"
+  },
+  {
+    "id": "T5-004",
+    "difficulty": "multi_join_deep",
+    "tags": [
+      "join",
+      "物流",
+      "分组"
+    ],
+    "question": "按发货仓库的区域编码统计发货单量和不同订单数，输出区域编码及两项计数，无法确定区域的发货单保留NULL组。",
+    "gold_sql": "SELECT w.region_code,COUNT(*) AS shipments,COUNT(DISTINCT s.order_id) AS orders FROM shipments s LEFT JOIN warehouses w ON w.warehouse_id=s.warehouse_id GROUP BY w.region_code ORDER BY shipments DESC,w.region_code ASC NULLS LAST;\n",
+    "notes": "V3开发参考，题面已明确本题定义。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T5_multi_join_deep.yaml"
+  },
+  {
+    "id": "T5-006",
+    "difficulty": "multi_join_deep",
+    "tags": [
+      "join",
+      "客服",
+      "会员"
+    ],
+    "question": "物流延迟类工单按关联订单客户所在州、工单会员的当前等级ID组合统计工单数；未知属性保留NULL，按工单数取20，同数按州和等级ID升序NULL最后。",
+    "gold_sql": "SELECT c.customer_state,m.level_id,COUNT(*) AS tickets FROM support_tickets st JOIN ticket_categories tc ON tc.category_id=st.category_id LEFT JOIN orders o ON o.order_id=st.order_id LEFT JOIN customers c ON c.customer_id=o.customer_id LEFT JOIN members m ON m.member_id=st.member_id WHERE tc.category_name='物流延迟' GROUP BY c.customer_state,m.level_id ORDER BY tickets DESC,c.customer_state ASC NULLS LAST,m.level_id ASC NULLS LAST LIMIT 20;\n",
+    "notes": "V3开发参考，题面已明确本题定义。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T5_multi_join_deep.yaml"
+  },
+  {
+    "id": "T5-008",
+    "difficulty": "multi_join_deep",
+    "tags": [
+      "join",
+      "自连接",
+      "推荐"
+    ],
+    "question": "按推荐人和被推荐人的当前会员等级ID组合，统计全部推荐记录数和奖励金额两位；未知等级保留NULL，输出两个等级ID和两项指标。",
+    "gold_sql": "SELECT mr.level_id AS referrer_level,mii.level_id AS invitee_level,COUNT(*) AS referrals,ROUND(SUM(rf.reward_amount),2) AS reward FROM referrals rf LEFT JOIN members mr ON mr.member_id=rf.referrer_member_id LEFT JOIN members mii ON mii.member_id=rf.invitee_member_id GROUP BY mr.level_id,mii.level_id ORDER BY referrals DESC,mr.level_id ASC NULLS LAST,mii.level_id ASC NULLS LAST;\n",
+    "notes": "V3开发参考，题面已明确本题定义。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T5_multi_join_deep.yaml"
+  },
+  {
+    "id": "T5-011",
+    "difficulty": "multi_join_deep",
+    "tags": [
+      "join",
+      "品牌",
+      "销售额"
+    ],
+    "question": "按商品当前is_current=true的品牌ID，统计全部订单明细的不含运费商品金额两位，输出前10品牌ID和金额；同金额按品牌ID升序，严格最多10。",
+    "gold_sql": "SELECT bm.brand_id,ROUND(SUM(oi.price),2) AS sales FROM order_items oi JOIN product_brand_map bm ON bm.product_id=oi.product_id AND bm.is_current IS TRUE GROUP BY bm.brand_id ORDER BY sales DESC NULLS LAST,bm.brand_id ASC LIMIT 10;\n",
+    "notes": "V3开发参考，题面已明确本题定义。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T5_multi_join_deep.yaml"
+  },
+  {
+    "id": "T5-013",
+    "difficulty": "multi_join_deep",
+    "tags": [
+      "join",
+      "活动",
+      "商品"
+    ],
+    "question": "按活动ID，统计其关联商品在全部历史订单中的不同订单数与不含运费商品金额，非因果归因；同商品可分别归入多个活动，按商品金额倒序取10。",
+    "gold_sql": "SELECT cp.campaign_id,COUNT(DISTINCT oi.order_id) AS orders,ROUND(SUM(oi.price),2) AS sales\nFROM campaign_products cp JOIN order_items oi ON oi.product_id=cp.product_id\nGROUP BY cp.campaign_id ORDER BY sales DESC NULLS LAST,cp.campaign_id ASC LIMIT 10;\n",
+    "notes": "V3开发参考，题面已明确本题定义。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T5_multi_join_deep.yaml"
+  },
+  {
+    "id": "T5-015",
+    "difficulty": "multi_join_deep",
+    "tags": [
+      "join",
+      "物流轨迹",
+      "分组"
+    ],
+    "question": "物流轨迹按事件代码和订单客户档案所在州分组，统计不同发货单数；不要求订单有商品明细，按发货单数取20，同数按事件代码和州升序。",
+    "gold_sql": "SELECT st.event_code,c.customer_state,COUNT(DISTINCT s.shipment_id) AS shipments FROM shipment_tracking st JOIN shipments s ON s.shipment_id=st.shipment_id JOIN orders o ON o.order_id=s.order_id JOIN customers c ON c.customer_id=o.customer_id GROUP BY st.event_code,c.customer_state ORDER BY shipments DESC,st.event_code ASC NULLS LAST,c.customer_state ASC NULLS LAST LIMIT 20;\n",
+    "notes": "V3开发参考，题面已明确本题定义。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T5_multi_join_deep.yaml"
+  },
+  {
+    "id": "T5-017",
+    "difficulty": "multi_join_deep",
+    "tags": [
+      "join",
+      "客服",
+      "优先级"
+    ],
+    "question": "按工单category_id、priority组合统计全部工单数和消息条数，包含零消息工单及未知属性，不限制会员资格；输出两个维度和两项计数。",
+    "gold_sql": "SELECT st.category_id,st.priority,COUNT(DISTINCT st.ticket_id) AS tickets,COUNT(tm.message_id) AS messages FROM support_tickets st LEFT JOIN ticket_messages tm ON tm.ticket_id=st.ticket_id GROUP BY st.category_id,st.priority ORDER BY tickets DESC,st.category_id ASC NULLS LAST,st.priority ASC NULLS LAST;\n",
+    "notes": "V3开发参考，题面已明确本题定义。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T5_multi_join_deep.yaml"
+  },
+  {
+    "id": "T5-019",
+    "difficulty": "multi_join_deep",
+    "tags": [
+      "join",
+      "价格变动",
+      "商品"
+    ],
+    "question": "对发生过价格变动的商品，按非NULL类目统计每条调价记录等权的平均金额差new_price-old_price，以及这些商品关联的不同订单数；按订单数取20，金额差与订单数分别聚合后合并。",
+    "gold_sql": "WITH changed AS(\n SELECT p.product_category_name,pph.product_id,pph.new_price-pph.old_price AS delta\n FROM product_price_history pph JOIN products p ON p.product_id=pph.product_id\n WHERE p.product_category_name IS NOT NULL),\nmeans AS(SELECT product_category_name,ROUND(AVG(delta),2) AS avg_price_change FROM changed GROUP BY 1),\norders AS(SELECT x.product_category_name,COUNT(DISTINCT oi.order_id) AS orders\n FROM(SELECT DISTINCT product_category_name,product_id FROM changed)x\n LEFT JOIN order_items oi ON oi.product_id=x.product_id GROUP BY 1)\nSELECT m.product_category_name,m.avg_price_change,o.orders FROM means m JOIN orders o USING(product_category_name)\nORDER BY o.orders DESC,m.product_category_name ASC LIMIT 20;\n",
+    "notes": "V3开发参考，题面已明确本题定义。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T5_multi_join_deep.yaml"
+  },
+  {
+    "id": "T5-020",
+    "difficulty": "multi_join_deep",
+    "tags": [
+      "join",
+      "库存",
+      "出入库"
+    ],
+    "question": "按流水所属仓库映射的宏观区域及出入库类型，统计全部库存变动记录数和数量合计；不要求当前库存仍有记录，未知大区保留NULL。",
+    "gold_sql": "SELECT r.macro_region,im.movement_type,COUNT(*) AS movements,SUM(im.quantity) AS qty FROM inventory_movements im LEFT JOIN warehouses w ON w.warehouse_id=im.warehouse_id LEFT JOIN regions r ON r.region_code=w.region_code GROUP BY r.macro_region,im.movement_type ORDER BY movements DESC,r.macro_region ASC NULLS LAST,im.movement_type ASC NULLS LAST;\n",
+    "notes": "V3开发参考，题面已明确本题定义。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T5_multi_join_deep.yaml"
+  },
+  {
+    "id": "T6-001",
+    "difficulty": "business_semantics",
+    "tags": [
+      "口径",
+      "GMV"
+    ],
+    "question": "统计 2018 年全站 GMV（含运费），以及不含运费的销售额，两者分别是多少？",
+    "gold_sql": "SELECT ROUND(SUM(oi.price + oi.freight_value), 2) AS gmv_with_freight,\n       ROUND(SUM(oi.price), 2) AS sales_without_freight\nFROM orders o\nJOIN order_items oi ON oi.order_id = o.order_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable')\n  AND o.order_purchase_timestamp >= DATE '2018-01-01'\n  AND o.order_purchase_timestamp < DATE '2019-01-01';\n",
+    "notes": "【需确认】 GMV 口径假设为「商品金额+运费，且排除已取消/不可用订单」。若贵司 GMV 不含运费，此条口径需调整。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T6_business_semantics.yaml"
+  },
+  {
+    "id": "T6-003",
+    "difficulty": "business_semantics",
+    "tags": [
+      "口径",
+      "复购率"
+    ],
+    "question": "复购率是多少？（下单 2 次及以上的用户占全部下单用户的比例）",
+    "gold_sql": "WITH per_user AS(SELECT c.customer_unique_id,COUNT(DISTINCT o.order_id) AS order_cnt FROM orders o JOIN customers c ON c.customer_id=o.customer_id WHERE o.order_status NOT IN('canceled','unavailable') GROUP BY c.customer_unique_id) SELECT ROUND(100.0*COUNT(*) FILTER(WHERE order_cnt>=2)/NULLIF(COUNT(*),0),2) AS repeat_rate_pct FROM per_user;\n",
+    "notes": "【需确认】 复购率分母假设为「有过有效订单的全部用户」。另一种口径是「分母只算注册满 N 天的用户」，会显著抬高复购率。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T6_business_semantics.yaml"
+  },
+  {
+    "id": "T6-005",
+    "difficulty": "business_semantics",
+    "tags": [
+      "口径",
+      "会员渗透"
+    ],
+    "question": "会员用户贡献的订单占比是多少？（会员渗透率）",
+    "gold_sql": "SELECT ROUND(100.0*COUNT(DISTINCT o.order_id) FILTER(WHERE m.member_id IS NOT NULL)/NULLIF(COUNT(DISTINCT o.order_id),0),2) AS penetration_pct FROM orders o LEFT JOIN customers c ON c.customer_id=o.customer_id LEFT JOIN members m ON m.customer_unique_id=c.customer_unique_id WHERE o.order_status NOT IN('canceled','unavailable');\n",
+    "notes": "【需确认】 会员渗透率分母假设为「全部有效订单」。另一种口径是「会员数/总用户数」，是人数渗透率而不是订单渗透率。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T6_business_semantics.yaml"
+  },
+  {
+    "id": "T6-007",
+    "difficulty": "business_semantics",
+    "tags": [
+      "口径",
+      "退款率"
+    ],
+    "question": "退款率是多少？（退款订单数 / 有效订单数）",
+    "gold_sql": "SELECT ROUND(100.0*COUNT(DISTINCT o.order_id) FILTER(WHERE EXISTS(SELECT 1 FROM refunds r WHERE r.order_id=o.order_id))/NULLIF(COUNT(DISTINCT o.order_id),0),2) AS refund_rate_pct FROM orders o WHERE o.order_status NOT IN('canceled','unavailable');\n",
+    "notes": "【需确认】 退款率分母假设为「有效订单数」。分母若用「全部订单」会把取消单也算进去，口径更宽松。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T6_business_semantics.yaml"
+  },
+  {
+    "id": "T6-009",
+    "difficulty": "business_semantics",
+    "tags": [
+      "口径",
+      "评分"
+    ],
+    "question": "低分订单（1-2 星）占比是多少？按客户所在州列出前 10。",
+    "gold_sql": "SELECT c.customer_state,\n       ROUND(100.0 * COUNT(*) FILTER (WHERE r.review_score <= 2) / COUNT(*), 2) AS low_pct\nFROM order_reviews r\nJOIN orders o ON o.order_id = r.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable')\nGROUP BY 1 ORDER BY low_pct DESC LIMIT 10;\n",
+    "notes": "【需确认】 低分口径假设为「1-2 星」。有的公司只把 1 星算差评，占比会低很多。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T6_business_semantics.yaml"
+  },
+  {
+    "id": "T6-010",
+    "difficulty": "business_semantics",
+    "tags": [
+      "口径",
+      "转化"
+    ],
+    "question": "搜索转化率是多少？（有点击的搜索记录 / 全部搜索记录）",
+    "gold_sql": "SELECT ROUND(100.0*COUNT(*) FILTER(WHERE clicked_product_id IS NOT NULL)/NULLIF(COUNT(*),0),2) AS ctr_pct FROM search_logs;\n",
+    "notes": "【需确认】 转化口径假设为「点击率 CTR」而非「下单转化率」。真正下单转化需要把 search_logs 与 orders 通过 member_id 关联到同一会话，本数据集没有会话字段。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T6_business_semantics.yaml"
+  },
+  {
+    "id": "T6-012",
+    "difficulty": "business_semantics",
+    "tags": [
+      "口径",
+      "活跃用户"
+    ],
+    "question": "2018年按自然月统计有效下单自然人数（MAU），输出全部12个月；无事实月份覆盖未知，人数保留NULL。",
+    "gold_sql": "WITH monthly AS(SELECT DATE_TRUNC('month',o.order_purchase_timestamp)::date AS month,COUNT(DISTINCT c.customer_unique_id) AS mau FROM orders o JOIN customers c ON c.customer_id=o.customer_id WHERE o.order_status NOT IN('canceled','unavailable') AND o.order_purchase_timestamp>=DATE '2018-01-01' AND o.order_purchase_timestamp<DATE '2019-01-01' GROUP BY 1),calendar AS(SELECT generate_series(DATE '2018-01-01',DATE '2018-12-01',INTERVAL '1 month')::date AS month) SELECT c.month,m.mau FROM calendar c LEFT JOIN monthly m USING(month) ORDER BY c.month;\n",
+    "notes": "V3开发参考，题面已明确本题定义。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T6_business_semantics.yaml"
+  },
+  {
+    "id": "T6-014",
+    "difficulty": "business_semantics",
+    "tags": [
+      "口径",
+      "会员",
+      "分层"
+    ],
+    "question": "按会员等级ID统计全部会员数（含无有效订单）、人均有效订单数；同时统计会员已知含运费GMV的平均值，无商品金额事实为NULL不参与GMV均值，不把未知金额当0。",
+    "gold_sql": "WITH per_member AS(SELECT m.member_id,m.level_id,COUNT(DISTINCT o.order_id) AS order_cnt,SUM(oi.price+oi.freight_value) AS gmv FROM members m LEFT JOIN customers c ON c.customer_unique_id=m.customer_unique_id LEFT JOIN orders o ON o.customer_id=c.customer_id AND o.order_status NOT IN('canceled','unavailable') LEFT JOIN order_items oi ON oi.order_id=o.order_id GROUP BY m.member_id,m.level_id) SELECT level_id,COUNT(*) AS users,ROUND(AVG(order_cnt),2) AS orders_per_user,ROUND(AVG(gmv),2) AS gmv_per_user FROM per_member GROUP BY level_id ORDER BY gmv_per_user DESC NULLS LAST,level_id ASC NULLS LAST;\n",
+    "notes": "V3开发参考，题面已明确本题定义。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T6_business_semantics.yaml"
+  },
+  {
+    "id": "T6-016",
+    "difficulty": "business_semantics",
+    "tags": [
+      "口径",
+      "品牌"
+    ],
+    "question": "按当前品牌ID统计商品总数、有效订单中动销商品数、不含运费商品销售额两位和动销率百分数两位；仅在销售额已知的品牌中取前10，同额按品牌ID升序，严格最多10。",
+    "gold_sql": "WITH bp AS(SELECT b.brand_id,p.product_id FROM brands b\n LEFT JOIN product_brand_map bm ON bm.brand_id=b.brand_id AND bm.is_current IS TRUE\n LEFT JOIN products p ON p.product_id=bm.product_id),\ntotals AS(SELECT brand_id,COUNT(DISTINCT product_id) AS product_cnt FROM bp GROUP BY 1),\nsales AS(SELECT bp.brand_id,COUNT(DISTINCT oi.product_id) AS sold_products,SUM(oi.price) AS sales\n FROM bp JOIN order_items oi ON oi.product_id=bp.product_id JOIN orders o ON o.order_id=oi.order_id\n WHERE o.order_status NOT IN('canceled','unavailable') GROUP BY 1)\nSELECT t.brand_id,t.product_cnt,COALESCE(s.sold_products,0) AS sold_products,ROUND(s.sales,2) AS sales,\n ROUND(100.0*COALESCE(s.sold_products,0)/NULLIF(t.product_cnt,0),2) AS sell_through_pct\nFROM totals t JOIN sales s USING(brand_id) WHERE s.sales IS NOT NULL\nORDER BY sales DESC,t.brand_id ASC LIMIT 10;\n",
+    "notes": "V3开发参考，题面已明确本题定义。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T6_business_semantics.yaml"
+  },
+  {
+    "id": "T6-018",
+    "difficulty": "business_semantics",
+    "tags": [
+      "口径",
+      "复购",
+      "会员"
+    ],
+    "question": "按当前会员身份分会员和非会员两组，复购率分母为各组全部有效下单自然人，分子为有效订单数至少2的自然人；输出两组百分数两位，某组无人时该组仍显示且比例NULL。",
+    "gold_sql": "WITH user_orders AS(SELECT c.customer_unique_id,\n BOOL_OR(m.member_id IS NOT NULL) AS is_member,COUNT(DISTINCT o.order_id) AS order_cnt\n FROM orders o JOIN customers c ON c.customer_id=o.customer_id\n LEFT JOIN members m ON m.customer_unique_id=c.customer_unique_id\n WHERE o.order_status NOT IN('canceled','unavailable') GROUP BY 1),\ngroups(is_member,user_type) AS(VALUES(TRUE,'member'),(FALSE,'non_member'))\nSELECT g.user_type,ROUND(100.0*COUNT(u.customer_unique_id) FILTER(WHERE u.order_cnt>=2)\n /NULLIF(COUNT(u.customer_unique_id),0),2) AS repeat_rate_pct\nFROM groups g LEFT JOIN user_orders u ON u.is_member=g.is_member\nGROUP BY g.user_type ORDER BY g.user_type;\n",
+    "notes": "V3开发参考，题面已明确本题定义。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T6_business_semantics.yaml"
+  },
+  {
+    "id": "T6-021",
+    "difficulty": "business_semantics",
+    "tags": [
+      "口径",
+      "用户分层",
+      "帕累托"
+    ],
+    "question": "在有已知有效订单含运费GMV的自然人中，按累计GMV两位展示值倒序、自然人ID升序取前CEIL(人数*0.2)人（不扩并列），仅输出其占总GMV的小数比率，保留四位。",
+    "gold_sql": "WITH user_gmv AS(SELECT c.customer_unique_id,SUM(oi.price+oi.freight_value) AS gmv FROM orders o JOIN customers c ON c.customer_id=o.customer_id JOIN order_items oi ON oi.order_id=o.order_id WHERE o.order_status NOT IN('canceled','unavailable') GROUP BY c.customer_unique_id),ranked AS(SELECT gmv,ROW_NUMBER() OVER(ORDER BY ROUND(gmv,2) DESC,customer_unique_id ASC) AS rn,COUNT(*) OVER() AS n FROM user_gmv) SELECT ROUND(SUM(gmv) FILTER(WHERE rn<=CEIL(n*0.2))/NULLIF(SUM(gmv),0),4) AS top20_gmv_ratio FROM ranked;\n",
+    "notes": "V3开发参考，题面已明确本题定义。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T6_business_semantics.yaml"
+  },
+  {
+    "id": "T6-023",
+    "difficulty": "business_semantics",
+    "tags": [
+      "口径",
+      "库存",
+      "周转"
+    ],
+    "question": "按仓库ID列出全部仓库当前库存量、最近90个自然日出库数量和库存周转天数一位；参考日取全部库存流水最大日期且含当日，无出库记0，未有参考日期时未知；周转天数=90*当前库存/出库量，出库为0时NULL。",
+    "gold_sql": "WITH anchor AS(SELECT MAX(moved_at) AS mx FROM inventory_movements),outbound AS(SELECT im.warehouse_id,SUM(im.quantity) AS out_qty FROM inventory_movements im CROSS JOIN anchor a WHERE im.movement_type=2 AND im.moved_at>=a.mx::date-INTERVAL '89 days' AND im.moved_at<a.mx::date+INTERVAL '1 day' GROUP BY im.warehouse_id),stock AS(SELECT warehouse_id,SUM(quantity) AS stock_qty FROM inventory GROUP BY warehouse_id),combined AS(SELECT w.warehouse_id,s.stock_qty,CASE WHEN a.mx IS NULL THEN NULL ELSE COALESCE(o.out_qty,0) END AS out_qty FROM warehouses w CROSS JOIN anchor a LEFT JOIN stock s ON s.warehouse_id=w.warehouse_id LEFT JOIN outbound o ON o.warehouse_id=w.warehouse_id) SELECT warehouse_id,stock_qty,out_qty AS out_qty_90d,ROUND(90.0*stock_qty/NULLIF(out_qty,0),1) AS turnover_days FROM combined ORDER BY turnover_days DESC NULLS LAST,warehouse_id ASC;\n",
+    "notes": "V3开发参考，题面已明确本题定义。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T6_business_semantics.yaml"
+  },
+  {
+    "id": "T6-025",
+    "difficulty": "business_semantics",
+    "tags": [
+      "口径",
+      "增长",
+      "新老客"
+    ],
+    "question": "2018年逐自然月输出有效订单含运费GMV两位，按自然人全部历史首次有效下单月区分新老客；输出月份、新客GMV、老客GMV全部12个月，缺金额事实为NULL。",
+    "gold_sql": "WITH first_order AS(SELECT c.customer_unique_id,DATE_TRUNC('month',MIN(o.order_purchase_timestamp))::date AS first_month FROM orders o JOIN customers c ON c.customer_id=o.customer_id WHERE o.order_status NOT IN('canceled','unavailable') GROUP BY c.customer_unique_id),monthly AS(SELECT DATE_TRUNC('month',o.order_purchase_timestamp)::date AS month,c.customer_unique_id,SUM(oi.price+oi.freight_value) AS gmv FROM orders o JOIN customers c ON c.customer_id=o.customer_id JOIN order_items oi ON oi.order_id=o.order_id WHERE o.order_status NOT IN('canceled','unavailable') AND o.order_purchase_timestamp>=DATE '2018-01-01' AND o.order_purchase_timestamp<DATE '2019-01-01' GROUP BY 1,2),summed AS(SELECT m.month,ROUND(SUM(m.gmv) FILTER(WHERE f.first_month=m.month),2) AS new_customer_gmv,ROUND(SUM(m.gmv) FILTER(WHERE f.first_month<m.month),2) AS returning_gmv FROM monthly m JOIN first_order f ON f.customer_unique_id=m.customer_unique_id GROUP BY m.month),calendar AS(SELECT generate_series(DATE '2018-01-01',DATE '2018-12-01',INTERVAL '1 month')::date AS month) SELECT c.month,s.new_customer_gmv,s.returning_gmv FROM calendar c LEFT JOIN summed s USING(month) ORDER BY c.month;\n",
+    "notes": "V3开发参考，题面已明确本题定义。",
+    "source_file": "data/benchmarks/olist-v3-dev-candidate/T6_business_semantics.yaml"
+  }
+]
