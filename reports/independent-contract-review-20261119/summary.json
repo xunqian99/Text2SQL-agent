@@ -1,0 +1,1127 @@
+{
+  "format": "fresh-agent-contract-review-v1",
+  "sourceCommit": "f07871c300bd9da239b2f8bf97aa6b3db8e46474",
+  "sourceGitTree": "a18f9d8249c591f97e4b3f4c805a77f21cfd4caa",
+  "userAuthorization": "未参与出题和调参的人可以使用子agent来完成",
+  "reviewerType": "AI_AGENT",
+  "freshContexts": 3,
+  "humanReviewClaimed": false,
+  "unseenBlindTestClaimed": false,
+  "reviewedOriginalFormalItems": 100,
+  "providerEvaluationCalls": 0,
+  "providerTokens": 0,
+  "providerCostYuan": 0,
+  "decisions": {
+    "KEEP": 60,
+    "AMBIGUOUS": 10,
+    "REFERENCE_DEFECT": 7,
+    "COINCIDENTAL_EQUIVALENCE": 10,
+    "CONTRACT_CONFLICT": 13
+  },
+  "reviewers": [
+    {
+      "reviewer": "/root/review_basic_time",
+      "reviewFile": "basic_time-review.json",
+      "reviewSha256": "40b2f1f994da5cad3f553e7b0a5093a2191b362b4b066f71c7b0083c7c78dcf0",
+      "items": 56,
+      "decisions": {
+        "KEEP": 44,
+        "AMBIGUOUS": 7,
+        "REFERENCE_DEFECT": 2,
+        "COINCIDENTAL_EQUIVALENCE": 2,
+        "CONTRACT_CONFLICT": 1
+      },
+      "recordedQueryChecks": 104,
+      "declaredProvenance": {
+        "freshContext": true,
+        "participatedInAuthoringOrTuning": false,
+        "readPriorAudit": false,
+        "externalModelCalls": 0
+      }
+    },
+    {
+      "reviewer": "/root/review_joins",
+      "reviewFile": "joins-review.json",
+      "reviewSha256": "900fd67d9a7b65a23cd1b5592aa71f2f68ae28e7aa185159a59c434b748923f4",
+      "items": 22,
+      "decisions": {
+        "AMBIGUOUS": 2,
+        "CONTRACT_CONFLICT": 6,
+        "KEEP": 10,
+        "REFERENCE_DEFECT": 1,
+        "COINCIDENTAL_EQUIVALENCE": 3
+      },
+      "recordedQueryChecks": 38,
+      "declaredProvenance": {
+        "freshContext": true,
+        "participatedInAuthoringOrTuning": false,
+        "readPriorAudit": false,
+        "externalModelCalls": 0
+      }
+    },
+    {
+      "reviewer": "/root/review_deep_business",
+      "reviewFile": "deep_business-review.json",
+      "reviewSha256": "33de5e33a839fe40eaf229d60c54b54a14ede4d149143d4c27541c4d3961d4bd",
+      "items": 22,
+      "decisions": {
+        "CONTRACT_CONFLICT": 6,
+        "COINCIDENTAL_EQUIVALENCE": 5,
+        "AMBIGUOUS": 1,
+        "REFERENCE_DEFECT": 4,
+        "KEEP": 6
+      },
+      "recordedQueryChecks": 37,
+      "declaredProvenance": {
+        "freshContext": true,
+        "participatedInAuthoringOrTuning": false,
+        "readPriorAudit": false,
+        "externalModelCalls": 0,
+        "scope": "Only original formal 22 T5/T6 questions in deep_business-input.json; product defaults read only from the six allowed source files and actual public schema.",
+        "dbRole": "text2sql_ro",
+        "database": "olist",
+        "dbAccess": "docker exec psql -X -qAt -v ON_ERROR_STOP=1; every script BEGIN READ ONLY, statement_timeout 8s, ROLLBACK",
+        "inputSha256": "040e565dcdcf5bd6b0e20058c3336c26f5226ff38d397e89e045b43687ece784",
+        "productSourceSha256": {
+          "src/main/java/com/text2sql/agent/generation/PromptTemplate.java": "a15f3afc299865fb3752bce5cbb595b57af43fe750c5f5cb09809efd690a724b",
+          "src/main/resources/schema/metrics.yml": "78dfc23f9075536aa7568f94c87c41d238cac0c66c553449c9fd7c67c9035192",
+          "src/main/resources/schema/ambiguities.yml": "493dccf3090c7f7ea544162a351e8c8d1e7ab085886ec16aa12797ae89ce3e3a",
+          "src/main/resources/schema/glossary.yml": "b4bc655947ed1f4eb2e243bbdaf3800bdd7919ee4121fc9a7276b647947b99ac",
+          "src/main/java/com/text2sql/agent/clarification/AmbiguityDetector.java": "155f6f879d696083955e4ddf231c52e713695c6361a37b1224ac9e12fcbc8f18",
+          "src/main/java/com/text2sql/agent/retrieval/DatabaseSchemaReader.java": "c264eb79e4c73fa1d8302f355195a02958c9d2e3e15dc09c082506e2da917f6d"
+        },
+        "excludedSources": [
+          "historical model outputs",
+          "other reviewers' conclusions",
+          "docs/review",
+          "docs/EVALUATION_CONTRACT_ERRATA*",
+          "ROADMAP/IMPROVEMENT_PLAN historical states",
+          "other project audit reports"
+        ],
+        "runtimeLimitation": "No production request, model call, or paid evaluation was executed; clarification behavior is source analysis, not claimed runtime measurement."
+      }
+    }
+  ],
+  "previousConfirmedConflicts": 14,
+  "reconciliation": [
+    {
+      "id": "T1-001",
+      "reviewer": "/root/review_basic_time",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "“一共多少笔订单”以orders的一行一订单为对象，主键order_id保证COUNT(*)不会把同一订单重复算入；现值99,441。未要求有效或已送达，不能因为枚举中存在取消状态就自动删订单；空表COUNT为0，无分母和时间边界。",
+      "proposedResolution": "保留。若业务想默认只看有效订单，应明确改题与对外契约，不能静默把全部订单变成有效订单。"
+    },
+    {
+      "id": "T1-003",
+      "reviewer": "/root/review_basic_time",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "对象是已取消订单，不是退款单；order_status=canceled直接对应订单状态，得到625笔。过滤后仍保持一行一订单，不需要关联退款或明细，也不应叠加排除取消的有效订单条件；无匹配时返回0。",
+      "proposedResolution": "保留已取消订单的明确状态覆盖。"
+    },
+    {
+      "id": "T1-005",
+      "reviewer": "/root/review_basic_time",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "题目明确按订单明细“条”计数，order_items复合主键标识每条明细，price>1000严格排除等于1000，当前844条。这里不是不同订单数、商品数或结算毛额，单价numeric且NOT NULL；不增加订单状态过滤。",
+      "proposedResolution": "保留；价格阈值不改成>=。"
+    },
+    {
+      "id": "T1-007",
+      "reviewer": "/root/review_basic_time",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "卖家实体由sellers.seller_id主键定义，COUNT(*)给出3,095个，包括尚无商品明细的卖家。直接数实体表恰好保留零销售卖家，不需要从order_items反推“有交易卖家”。",
+      "proposedResolution": "保留实体全集计数。"
+    },
+    {
+      "id": "T1-009",
+      "reviewer": "/root/review_basic_time",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "当前产品明确规定裸客户数/属性分布默认按客户档案记录，而不是自然人去重。SP有41,746条客户档案、40,302个自然人，Gold选前者符合这个默认；若按行业直觉改成去重人数会改变度量。",
+      "proposedResolution": "按当前产品默认保留；题面可补“客户档案记录”提高跨产品可迁移性。"
+    },
+    {
+      "id": "T1-010",
+      "reviewer": "/root/review_basic_time",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "问题要的是实际出现的订单状态种数，COUNT(DISTINCT order_status)得到8，不是状态定义字典的潜在取值个数。实际列NOT NULL，不存在NULL是否算一种的分歧；订单全状态都应参加状态种类统计。",
+      "proposedResolution": "保留实际状态去重计数。"
+    },
+    {
+      "id": "T1-012",
+      "reviewer": "/root/review_basic_time",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "Gold按明细单价排序，投影完整明细身份(order_id,order_item_id)和price，符合“哪些明细”。第10名价格3,999.90，之上9条、该价格仅1条，没有跨LIMIT边界的并列；若未来同价跨界，应允许任取10条或声明稳定次序。",
+      "proposedResolution": "保留当前参考结果；并列规则作为未来稳定性约定，不把现库无并列的题判错。"
+    },
+    {
+      "id": "T1-014",
+      "reviewer": "/root/review_basic_time",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "一行一条评价，按review_score=1计11,424条；同一订单有多条评价也应逐条计数，因此不对order_id去重。题目是记录数量，没有好评率分母或订单状态要求。",
+      "proposedResolution": "保留按评价记录计数。"
+    },
+    {
+      "id": "T1-016",
+      "reviewer": "/root/review_basic_time",
+      "decision": "AMBIGUOUS",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "最大分期数是24，但实际有18笔支付、分属18个订单并列。Gold返回某一order_id+24，24本身正确；题面与当前实体寻优规则都未约定18个身份中选谁，不能把其中一笔变成唯一标准身份。另外分期字段允许NULL，PostgreSQL DESC默认NULLS FIRST，合成反例会选中未知值。",
+      "proposedResolution": "明确任选一个已知最大分期支付并以完整支付主键稳定排序，或只问最大期数并输出24；不将另一个并列身份自动判错。加NULLS LAST或排除未知值须与题面“已知分期”语义一致。"
+    },
+    {
+      "id": "T1-018",
+      "reviewer": "/root/review_basic_time",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "运费属于订单明细字段freight_value，问“条”对应明细而非订单。严格>50得到4,605条，等于50不计；字段numeric NOT NULL，直接计数不引入商品或支付连接放大。",
+      "proposedResolution": "保留明细运费阈值计数。"
+    },
+    {
+      "id": "T1-021",
+      "reviewer": "/root/review_basic_time",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "对象是卖家所在地，不是客户收货州；seller_state=RJ返回171个卖家。COUNT卖家实体表包括没有订单的RJ卖家，无需交易连接，也不涉及地区主体反问。",
+      "proposedResolution": "保留RJ物理州代码与卖家表。"
+    },
+    {
+      "id": "T1-023",
+      "reviewer": "/root/review_basic_time",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "“没有填写类目”按当前NULL口径解释为product_category_name IS NULL，得到610个商品；空字符串现库为0。维度默认排除NULL不能覆盖这道明确询问NULL的题，亦无需关联类目翻译表把未翻译值混入。",
+      "proposedResolution": "保留；如果业务将空白字符串也视为未填写，需明确扩展题意，不能把未翻译类目算作未填写。"
+    },
+    {
+      "id": "T1-025",
+      "reviewer": "/root/review_basic_time",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "members.status=2由库内列注释和词典共同定义为冻结，当前5,724人。members.customer_unique_id有非空唯一约束，因此数会员行与已知会员身份一一对应；不需要再从customers连接而放大同一个会员。",
+      "proposedResolution": "保留冻结会员实体计数。"
+    },
+    {
+      "id": "T1-027",
+      "reviewer": "/root/review_basic_time",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "仓库实体全集由warehouses主键定义，COUNT(*)返回5；题目没有要求存在库存、发过货或容量大于0。直接数仓库可保留零事实仓库，空表也会返回0。",
+      "proposedResolution": "保留仓库实体全集。"
+    },
+    {
+      "id": "T1-029",
+      "reviewer": "/root/review_basic_time",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "题干明确“已经完成退款”，库内status=4表示已退款，计得4,177笔退款单，身份为refund_id而非order_id。无需因为同一订单可能多张退款单而去重订单，也不能改成只看completed_at，因为该时间与状态存在缺失差异。",
+      "proposedResolution": "保留明确的已退款状态口径；时间质量问题另行治理，不能暗改本题对象。"
+    },
+    {
+      "id": "T1-030",
+      "reviewer": "/root/review_basic_time",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "“因为质量问题发起”对应退款原因QUAL，当前1,925张退款单；“发起”并不要求完成或批准。Gold没有把被申请记录误缩成已退款记录，也没有把退款明细条数当退款单数。",
+      "proposedResolution": "保留原因筛选，不补完成状态。"
+    },
+    {
+      "id": "T1-032",
+      "reviewer": "/root/review_basic_time",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "discount_type=fixed明确映射满减，coupons一行一张券，当前150张。题目统计券的定义数量，不是发放/领取/核销次数，不应转去coupon_usages或按coupon_code多次使用加总。",
+      "proposedResolution": "保留优惠券定义记录计数。"
+    },
+    {
+      "id": "T1-034",
+      "reviewer": "/root/review_basic_time",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "问题要工单分类定义的个数，ticket_categories有6条主键不同的分类。直接数定义表可包含暂时没有工单的分类；按support_tickets.category_id去重反而可能漏掉零工单分类。",
+      "proposedResolution": "保留分类定义全集，不改成已使用分类数。"
+    },
+    {
+      "id": "T1-036",
+      "reviewer": "/root/review_basic_time",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "movement_type=2由列注释定义为出库，当前16,273条流水。这里要记录条数，既不是SUM(quantity)出库件数，也不是去重商品数；退货入库3、盘亏4不能并作普通出库。",
+      "proposedResolution": "保留出库流水记录计数。"
+    },
+    {
+      "id": "T1-038",
+      "reviewer": "/root/review_basic_time",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "regions以region_code主键逐州存储，macro_region=Sudeste得到4个州。题目是纯地区字典问题，没有交易事实地域主体歧义；不需要按客户/卖家来源反问，也不能把geo坐标点当州。",
+      "proposedResolution": "保留地区字典计数。"
+    },
+    {
+      "id": "T2-002",
+      "reviewer": "/root/review_basic_time",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "“所有订单”明确包含全部状态；运费事实在order_items，每条明细的freight_value汇总为2,251,909.54。订单无明细时没有运费事实，SUM不需要用多表重复铺开；金额列numeric，现有两位小数精度可保持。空表SUM为NULL而非伪造0。",
+      "proposedResolution": "保留全部明细运费合计，不叠加有效订单过滤。"
+    },
+    {
+      "id": "T2-004",
+      "reviewer": "/root/review_basic_time",
+      "decision": "REFERENCE_DEFECT",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": true,
+      "needsReconciliation": true,
+      "reason": "题目是平均“每个订单”的明细数，Gold却先从order_items聚合，只保留有明细的订单。现库99,441个订单中775个没有明细，112,650条明细应除以99,441，四舍五入1.13；Gold的有明细订单条件均值为1.14，实际已不同。",
+      "proposedResolution": "以orders LEFT JOIN明细后按order_id计COUNT(oi.order_item_id)，再取AVG；或者将题面改为“有明细的订单平均多少条”，那样现Gold可保留。"
+    },
+    {
+      "id": "T2-006",
+      "reviewer": "/root/review_basic_time",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "题目明确支付记录数，按payment_type分组COUNT(*)，不按订单去重或把分期数当支付笔数。一次订单可组合支付且支付主键含payment_sequential，现有5种方式含3条not_defined；没有要求名称翻译或排除未知方式。",
+      "proposedResolution": "保留各支付方式的记录计数；未出现的方式是否补0不属于本题明确要求。"
+    },
+    {
+      "id": "T2-008",
+      "reviewer": "/root/review_basic_time",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "当前customer_identity_v2规定按属性的裸客户数量默认客户记录数，Gold据此按州计数。第5名PR为5,045，只有1州在该计数，前面4州，没有跨Top5边界的并列；自然人去重是另一个指标。",
+      "proposedResolution": "按现有客户记录默认保留；若问各州客户人数须显式使用customer_unique_id。"
+    },
+    {
+      "id": "T2-011",
+      "reviewer": "/root/review_basic_time",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "“商品销售总额”按order_items.price逐明细累加，不含freight_value，也不是settlements.net_amount。seller_id保持实体身份，ROUND两位后按金额取10；第10位135,171.70无边界并列。此普通商品金额题没有命中GMV或有效订单的明确别名，不据valid_order注释扩大筛选范围。",
+      "proposedResolution": "保留按明细商品金额的Top10；若题意要净成交商品额，另明确订单状态。"
+    },
+    {
+      "id": "T2-013",
+      "reviewer": "/root/review_basic_time",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "请求列举两个非时间业务子集的计数、没有要求状态分布，Gold一行依次输出delivered=96,478与canceled=625，符合当前条件聚合形状约定。过滤写在各COUNT内部，某组为空仍为0，不会因WHERE只保留另一组而丢计数。",
+      "proposedResolution": "保留横向两列计数，不能用有效订单过滤删除取消子集。"
+    },
+    {
+      "id": "T2-015",
+      "reviewer": "/root/review_basic_time",
+      "decision": "AMBIGUOUS",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "按members.level_id分组的平均积分正确保持会员等权，现有4等级全部有会员且points全部非空，Gold当前没有漏已存在会员。但“每个会员等级”是否包含member_levels中零会员等级，当前题面/默认未确定；若需要等级全集，直接分组members会漏掉该等级的NULL均值。",
+      "proposedResolution": "明确“按现有会员记录等级分组”可保留Gold；若明确所有等级定义，改从member_levels LEFT JOIN，零会员平均值为NULL而非0。"
+    },
+    {
+      "id": "T2-017",
+      "reviewer": "/root/review_basic_time",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "regions一行一个州，按macro_region计数能直接回答各大区州数，27州共5区；当前4州的两个大区并列只影响未要求的显示顺序，不改变地区与计数结果。纯字典统计不触发交易地域主体歧义。",
+      "proposedResolution": "保留地区字典聚合；若要求固定显示序才补确定次排序。"
+    },
+    {
+      "id": "T2-019",
+      "reviewer": "/root/review_basic_time",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "每个活动自身只有一条campaigns记录，budget是活动级预算事实，不需要因为中文“总额”就跨活动SUM或关联活动商品反复累加。Gold输出campaign_id与该行budget，保留所有活动包括无商品活动；ID默认展示符合当前契约。",
+      "proposedResolution": "保留活动级预算；不添加活动名称或将同名活动合并。"
+    },
+    {
+      "id": "T2-020",
+      "reviewer": "/root/review_basic_time",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "按优惠券定义的discount_type逐张计数，当前fixed和percent各150张；“每种”明确要求维度行。两组计数同为150并列，题目没有要求次序，因此两行前后交换不构成业务错误，不应从这个并列制造唯一排列。",
+      "proposedResolution": "保留两个类型的券定义数量；若评分依赖行顺序，应独立声明稳定次序而非归因模型。"
+    },
+    {
+      "id": "T2-022",
+      "reviewer": "/root/review_basic_time",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "裸“退款总金额”没有说已退成功，Prompt规则7禁止自行补状态，Gold对全部退款单refund_amount求和649,715.62符合记录总额解释。已退款status=4只合计458,711.50，二者不同；不能凭“退款”一词把后者强制为唯一答案。",
+      "proposedResolution": "按当前不自动加状态的契约保留；若业务要现金已退金额，应把成功状态或完成时间口径写进题目。"
+    },
+    {
+      "id": "T2-024",
+      "reviewer": "/root/review_basic_time",
+      "decision": "AMBIGUOUS",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "inventory一行一个仓库×商品，COUNT(*)确实是库存记录条数，当前5仓均有记录，因此Gold包含全部现有仓库。题目“每个仓库”未明确仓库全集还是有库存记录仓库；无记录仓库合法存在且合成例中仓库2应为0，Gold会完全没有该行。",
+      "proposedResolution": "明确“所有仓库含无库存记录”时从warehouses LEFT JOIN，计COUNT(i.product_id)；若仅已有库存仓库，保留Gold。不把现库全覆盖当成永久约束。"
+    },
+    {
+      "id": "T2-026",
+      "reviewer": "/root/review_basic_time",
+      "decision": "AMBIGUOUS",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "SUM(quantity)按仓库累计库存件数，没有把库存记录数量当库存量，现库5仓的quantity均已填写。歧义在零库存记录仓库是否要列出：Gold从inventory分组会缺整行；另外“无记录”可按0件库存解释，但有记录且quantity全NULL意味着未知，不应一律COALESCE成0。",
+      "proposedResolution": "明确仓库全集及无记录为0后用仓库侧LEFT JOIN，并区分无记录与未知quantity；若只要求库存事实分布，保留Gold。"
+    },
+    {
+      "id": "T2-028",
+      "reviewer": "/root/review_basic_time",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "一行shipments是一张发货单，carrier是承运商维度，COUNT(*)得到各承运商承担的发货单数。订单可能拆成多张发货单，因此不应去重order_id；“承担”没有要求签收状态或存在轨迹，直接数发货事实保留未完成发货单。",
+      "proposedResolution": "保留按发货单记录统计，不关联一对多物流轨迹。"
+    },
+    {
+      "id": "T2-031",
+      "reviewer": "/root/review_basic_time",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "工单按support_tickets.priority原始值分组，1至4分别为低/中/高/紧急；Gold数工单记录并按优先级升序，当前1,353/2,581/2,643/1,357。题目没有要求优先级中文名称，默认保留有业务含义的状态值，也不该只统计已解决工单。",
+      "proposedResolution": "保留优先级编码与工单数量两列。"
+    },
+    {
+      "id": "T2-033",
+      "reviewer": "/root/review_basic_time",
+      "decision": "AMBIGUOUS",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "Gold合计所有结算净额4,821,914.63；“支付给”可理解为已实际打款，也可口语指应结净额。若按status=3已打款则3,905,258.13，按paid_at非空则3,840,854.48，且状态/时间有1,796条不一致。当前词典net_amount同时别名应结/实结，无法唯一决定哪一套凭据优先。",
+      "proposedResolution": "先把题目确定为“全部结算单应结净额”或“已打款净额”，后者再明确以status=3还是paid_at非空为准。不能把任一现库数字当不言自明的唯一Gold。"
+    },
+    {
+      "id": "T2-035",
+      "reviewer": "/root/review_basic_time",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "每条search_logs代表一次搜索，按keyword聚合COUNT(*)是搜索次数，不是独立搜索会员数或result_count结果数量。第10关键词774次，之上9个且该计数唯一，当前没有Top10边界并列；keyword现库无NULL。",
+      "proposedResolution": "保留按搜索日志次数排名；不把无点击搜索删掉。"
+    },
+    {
+      "id": "T2-037",
+      "reviewer": "/root/review_basic_time",
+      "decision": "COINCIDENTAL_EQUIVALENCE",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "题目对象是订单，Gold却数customers记录。现库没有无订单客户关联键，也没有某customer_id关联多订单，所以各州恰好相等，SP等5州阈值结果通过；但orders.customer_id只有外键、没有唯一约束，不能由此推出客户档案恒等订单。只读反例1个SP客户关联5,001订单时，真实应入选而Gold只数1。",
+      "proposedResolution": "从orders关联对应customers记录属性后按订单计数，HAVING COUNT(*)>5000；当前一对一等价仅是快照事实，不是正确性的证明。"
+    },
+    {
+      "id": "T2-039",
+      "reviewer": "/root/review_basic_time",
+      "decision": "COINCIDENTAL_EQUIVALENCE",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "当前好评>=4、分母所有评价，原始小数比率四位输出0.7707，既未乘100也未按订单去重，符合未注册普通比例默认。缺陷在空评价集：COUNT(*)为0，Gold确定除零报错；同一只读空集加NULLIF后返回NULL。现库非空掩盖了这个当前契约明确要求的边界。",
+      "proposedResolution": "保持当前分子/分母与单位，仅把分母改NULLIF(COUNT(*),0)。不把未评分评价悄悄排出“所有评价”分母。"
+    },
+    {
+      "id": "T2-040",
+      "reviewer": "/root/review_basic_time",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "“每个支付方式收上来的钱”对应每条支付记录的payment_value汇总，方式维度不变，不是商品金额、佣金或整单含运费金额。当前credit_card为12,542,084.19，not_defined为0.00；numeric求和两位，组合支付各归其方式，不再关联订单明细而放大。",
+      "proposedResolution": "保留支付事实的方式合计，不额外限定有效订单或成功支付状态。"
+    },
+    {
+      "id": "T3-001",
+      "reviewer": "/root/review_basic_time",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "按下单时间DATE_TRUNC(month)保留年+月并升序，不把2017与2018同月份混合，统计订单记录而非商品条数。当前返回实际有订单的25个月，2016-11没有记录；未给连续日历覆盖默认，所以不把缺少0月份本身判为确定错误。",
+      "proposedResolution": "保留已有订单月份分布；若产品要连续月份含0，需补明确日历范围与覆盖约定。"
+    },
+    {
+      "id": "T3-003",
+      "reviewer": "/root/review_basic_time",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "DATE_TRUNC(quarter,下单时间)按年区分季度，输出季度起始时间戳及订单数并升序，正合当前季度默认。不能只EXTRACT(quarter)把不同年Q1合并，也没有有效订单限定。",
+      "proposedResolution": "保留季度起始时间戳维度及订单数量。"
+    },
+    {
+      "id": "T3-005",
+      "reviewer": "/root/review_basic_time",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "按PostgreSQL周一为起点的DATE_TRUNC(week)分组，当前最大周唯一：2017-11-20起始、3,008订单。week_start转DATE仍保留实际周身份，未改成字符串或丢失年份；当前没有冠军并列，单行LIMIT1能回答题面。",
+      "proposedResolution": "保留周起始日与数量；若未来出现并列第一，需明确选一周还是全列。"
+    },
+    {
+      "id": "T3-007",
+      "reviewer": "/root/review_basic_time",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "运费来自order_items，月份归订单下单事件，JOIN orders只补业务时间且订单主键唯一，不会放大明细运费。Gold是“存在运费明细的月份”分布；实际2018-10虽有4个订单但无明细，因此没有该月运费行，属于未约定的零事实月份覆盖，不能单凭此宣布求和错误。",
+      "proposedResolution": "保留现有运费事实聚合；若明确要每个有订单月份含零运费，需以订单月份日历保留该月并区分无明细与未知运费。"
+    },
+    {
+      "id": "T3-009",
+      "reviewer": "/root/review_basic_time",
+      "decision": "AMBIGUOUS",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "2018年范围采用>=2018-01-01且<2019-01-01，完整包含年末时刻，时间过滤正确。Gold仅输出1至10月，11、12月无订单被省略；“2018年每个月”也能合理要求全年12行并将无事实月填0。当前契约规定分组格式，却没有确定完整年日历覆盖。",
+      "proposedResolution": "明确“有订单的月份”可保留Gold；若为完整2018年月报，生成12个月并LEFT JOIN订单计数。零事实不自动证明数据源已完整观测到年末。"
+    },
+    {
+      "id": "T3-010",
+      "reviewer": "/root/review_basic_time",
+      "decision": "REFERENCE_DEFECT",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": true,
+      "needsReconciliation": true,
+      "reason": "LAG按结果的上一行移动，不识别自然月；源数据2016-11无订单，Gold把2016-12的1笔减2016-10的324笔，得到-323，这不是相比上个月。11月在同一历史区间内为0，12月自然月变化应为+1；不能只加NULLIF或排序修复这个月身份错位。",
+      "proposedResolution": "先构造min至max的连续月份序列，LEFT JOIN订单月计数并对无订单月计0，再LAG；或按m-interval 1 month精确连接，显式定义缺失月的0/未知策略。首月缺历史基期应保持NULL。"
+    },
+    {
+      "id": "T3-012",
+      "reviewer": "/root/review_basic_time",
+      "decision": "AMBIGUOUS",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "Gold按相同月份号对齐2018与2017，输出绝对订单增量，1月6,469笔，这是一种合理“增长多少”解释；当前GMV同比增长率指标不适用于订单量，不能强制乘100。问题在2018“每个月”是否全年覆盖及无当年月份：Gold只保留双方有记录的1至10月，11/12月整行消失，题面未授权只取交集。",
+      "proposedResolution": "明确绝对增加笔数、只比较有数据的同月，可保留Gold；若全年月度比较，用12个月日历对齐，并区分0订单与快照未覆盖。百分比必须另说增长率及基期零处理。"
+    },
+    {
+      "id": "T3-014",
+      "reviewer": "/root/review_basic_time",
+      "decision": "CONTRACT_CONFLICT",
+      "previousConfirmedConflict": true,
+      "nowExplicitConflict": true,
+      "needsReconciliation": false,
+      "reason": "源事件是订单下单时间，先全表MAX得到2018-10-17 17:30:18作为共同锚点是正确的；但Gold用(A-90天,A]滚动窗口，题面没有要求滚动90×24小时。当前规则14默认包含参照日的90个自然日，即[2018-07-20 00:00,2018-10-18 00:00)。两者现库差89个订单/98条明细，商品额1,273,118.74与1,262,279.86，相差10,838.88。",
+      "proposedResolution": "若保持题面，Gold改自然日窗口；若保持Gold，题面明确“以最后下单时刻回溯90×24小时，左开右闭”。这是默认契约冲突，不宣称滚动90天在业务上天然错误。"
+    },
+    {
+      "id": "T3-016",
+      "reviewer": "/root/review_basic_time",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "Gold以DOW整数输出星期维度，0为周日、1为周一，当前唯一冠军1=周一、16,196笔，符合当前默认编号。虽然口语问星期几可用中文，产品已经明确默认DOW；不能把中文或ISO7编号当唯一合理展示。",
+      "proposedResolution": "保留DOW与订单数；若只要星期名称或只要一列，需明确覆盖默认结果形状。"
+    },
+    {
+      "id": "T3-018",
+      "reviewer": "/root/review_basic_time",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "当前delivery_days定义为下单到签收，不是发货到签收；Gold按订单关联键读取该订单客户州，EPOCH/86400保留小数天，再按订单等权求均值两位。实际96,476笔签收时间已知，缺起点/负时长均0；PostgreSQL16中EXTRACT返回numeric，Gold无显式cast仍可运行，不应照Prompt浮点概述误判语法错误。",
+      "proposedResolution": "保留现Gold；不能改走客户自然人的全部档案取州，也不应额外限定order_status=delivered来替代真实签收时间。"
+    },
+    {
+      "id": "T3-021",
+      "reviewer": "/root/review_basic_time",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "退款单自身事件为requested_at，Gold按申请月计退款记录，既不按订单购买月也不按completed_at，从而保留已申请但未完成退款。当前退款时间全已知；未规定连续月份日历，不补无申请月份。",
+      "proposedResolution": "保留退款申请事件月计数；若要完成退款月数，必须明确完成事件。"
+    },
+    {
+      "id": "T3-023",
+      "reviewer": "/root/review_basic_time",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "“新增客服工单”明确对应support_tickets.created_at，按自身创建月COUNT工单，不需要借用orders下单时间或消息创建时间。实际创建时间无NULL；只要新建工单就计，不要求关联订单或已解决，避免INNER JOIN订单漏无订单工单。",
+      "proposedResolution": "保留工单自身创建月计数。"
+    },
+    {
+      "id": "T3-025",
+      "reviewer": "/root/review_basic_time",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "2018上半年用[2018-01-01,2018-07-01)包括整个6月30日，按orders一行一订单计数。州沿o.customer_id定位对应客户档案，FK指向唯一客户键不放大订单；不能通过customer_unique_id连同人其他州档案，也未授权排除取消单。",
+      "proposedResolution": "保留购买时间半年度边界与交易所属州。"
+    },
+    {
+      "id": "T3-027",
+      "reviewer": "/root/review_basic_time",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "会员注册事实与时间是members.register_date，Gold按注册月计会员实体，未把订单新客月当会员注册月。该列date经PostgreSQL DATE_TRUNC会返回带时区月起始时间（当前Asia/Shanghai），不同于orders的无时区时间戳；当前契约允许DATE_TRUNC自身类型，未要求二者强行同型。无注册日期无法归入月份，现库也没有该NULL。",
+      "proposedResolution": "保留本表注册日期分组；对外统一月份类型应作为单独契约决策，不能假称所有DATE_TRUNC输出都是无时区时间戳。"
+    },
+    {
+      "id": "T3-029",
+      "reviewer": "/root/review_basic_time",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "当前词典把佣金月份映射settlements.period_start，Gold按账期开始月累计结算单commission，既不关联结算明细重复加总，也不使用orders下单月。这里按当前账期应计解释“收入”，未明确现金到账，因此不私加status=3或paid_at条件；日期列DATE_TRUNC为带时区月起始。",
+      "proposedResolution": "按当前账期默认保留；若业务改为到账佣金收入，要明确paid_at事件与状态/时间冲突处理。"
+    },
+    {
+      "id": "T3-030",
+      "reviewer": "/root/review_basic_time",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "题干明确“有效订单”，命中valid_order，Gold用NOT IN(canceled,unavailable)过滤，然后按下单季度起始时间戳分组升序。orders.order_status非空，NOT IN不存在NULL状态三值逻辑漏算；没有关联明细，零明细但有效的订单仍会计入。",
+      "proposedResolution": "保留有效订单过滤及季度时间维度。"
+    },
+    {
+      "id": "T4-002",
+      "reviewer": "/root/review_joins",
+      "decision": "AMBIGUOUS",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "“商品销售额”已命中销售额澄清规则的明确口径提示，SUM(order_items.price)不含运费有依据；问题却没有说按买家州还是卖家州。Gold固定使用订单所关联客户档案的customer_state，连接orders主键和customers主键不会放大明细，金额粒度本身正确，但该地域选择不是题干唯一结论。112650条明细中71894条买卖双方州不同；SP按客户州为5202955.05，按卖家州为8753396.21。不能把这当作等价连接路径。题目未给时间和状态范围，不能自行加已送达/有效订单过滤。",
+      "proposedResolution": "先明确地域主体，再保留所选事实路径；不以Gold的既有选择倒推用户意图，不据此修改原正式得分。"
+    },
+    {
+      "id": "T4-004",
+      "reviewer": "/root/review_joins",
+      "decision": "CONTRACT_CONFLICT",
+      "previousConfirmedConflict": true,
+      "nowExplicitConflict": true,
+      "needsReconciliation": false,
+      "reason": "题干只有“销售额”，没有任何现行销售额澄清hint，按AmbiguityDetector的确定性判定应先询问含不含运费；Gold直接选择商品金额。另有独立参考缺陷：INNER JOIN翻译表把2个非NULL原始类目、24条明细、5514.48商品金额丢掉。类目默认只排原始SQL NULL，不授权排未翻译类目；英文名是展示属性，不能靠翻译存在性缩小事实全集。当前第一名health_beauty为1258681.34，保留未翻译类目后第一名恰好不变，现库只有一个第一名；这不能证明内连接方案泛化等价。",
+      "proposedResolution": "保留澄清；先确认金额口径。新版参考应在明确排原始NULL类目的前提下LEFT JOIN翻译，并保留原始类目身份。下列两条只是诊断候选，不能静默改Gold或回填分数。"
+    },
+    {
+      "id": "T4-006",
+      "reviewer": "/root/review_joins",
+      "decision": "CONTRACT_CONFLICT",
+      "previousConfirmedConflict": true,
+      "nowExplicitConflict": true,
+      "needsReconciliation": false,
+      "reason": "卖家所在州已明确，order_items.seller_id连sellers主键是多对一，按seller_state汇总商品明细无连接放大；“每个卖家所在的州和该州卖家的总销售额”是州级结果，不要求再输出每个seller_id。问题中的裸“销售额”仍未说明含不含运费，现行澄清规则会提出选择，Gold无依据地固定SUM(price)。现库23个卖家州，SP商品金额8753396.21；若选择GMV，金额组成及有效订单过滤都要同步按该指标定义，不能只加运费不管事实范围。",
+      "proposedResolution": "维持澄清。确认不含运费后原聚合主体可保留；确认GMV则同时采用对应过滤。原正式集保持原样，新契约候选单列。"
+    },
+    {
+      "id": "T4-008",
+      "reviewer": "/root/review_joins",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "计数对象是members表的会员实体member_id。LEFT JOIN到任意标签映射后仅保留t.member_id IS NULL，匹配者即使有多条标签也全部被WHERE排除，未匹配会员只留一行，所以COUNT(*)不需再DISTINCT。实际与NOT EXISTS都为115/96096个会员；现有映射无孤儿会员。未要求正常状态或有效订单，不应加会员状态、标签定义关联或订单过滤。此处“从来”只能指当前留存映射中没有记录，不能宣称恢复了被物理删除的历史。",
+      "proposedResolution": "保留Gold。若产品将来允许删除映射且要证明历史从未打标，需新增历史契约或审计事实，不能用当前表伪称完整历史。"
+    },
+    {
+      "id": "T4-011",
+      "reviewer": "/root/review_joins",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "平均对象是评价分，每条评价一份权重，按其订单状态分组。order_reviews按order_id关联唯一orders不会放大评价；同一订单多条评价本来就应进入评价均值，不应为“消重”改成每单均值或AVG(DISTINCT review_score)。现库99224条评价覆盖98673笔订单，各8种现存状态都有评价，例如delivered的96361条评价均值4.16。无评价的订单没有可参与平均的评分，不能补0。未授权只留有效/已送达订单，Gold保留canceled及unavailable正确。",
+      "proposedResolution": "保留Gold。若新增一个完全无评价的订单状态并明确要求其也展示，应补NULL均值行；这与当前评价均值算法是否去重是两个问题。"
+    },
+    {
+      "id": "T4-013",
+      "reviewer": "/root/review_joins",
+      "decision": "REFERENCE_DEFECT",
+      "previousConfirmedConflict": true,
+      "nowExplicitConflict": true,
+      "needsReconciliation": false,
+      "reason": "题目数“订单”“笔”，Gold却在评价事实粒度COUNT(*)。reviews只有(review_id,order_id)组合主键，order_id FK不保证一单一评。实际547笔订单有多条评价；14575条1/2分评价只对应14533笔订单，Gold多计42笔，10个州受影响。SP应5251而非5265，RJ应2634而非2647。分值实查都在1到5内，因此<=2与IN(1,2)当前相同；问题核心是订单身份去重，不应删除重复评价记录或用最新评价任意覆盖“有过差评”的集合。",
+      "proposedResolution": "在单独版本中采用COUNT(DISTINCT o.order_id)或EXISTS，保留有至少一条1/2分评价的订单集合；原正式数据和分数不在此修改。"
+    },
+    {
+      "id": "T4-015",
+      "reviewer": "/root/review_joins",
+      "decision": "CONTRACT_CONFLICT",
+      "previousConfirmedConflict": true,
+      "nowExplicitConflict": true,
+      "needsReconciliation": false,
+      "reason": "“大区”和“订单”满足当前regional-subject澄清规则的启动条件，却缺客户/卖家/仓库地域证据，应先澄清。Gold擅自使用客户州映射大区。该路径连接customers与regions唯一主键，当前99441笔订单都可映射且无NULL大区，COUNT(*)在所选路径是正确的；但改为卖家大区会得到另一集合，Sudeste客户订单68266，卖家订单82583（按区域内订单去重），且一单多卖家可跨区，不能跨组加总当全站单量。",
+      "proposedResolution": "维持澄清，让用户选择地域主体；不关闭反问迎合Gold。确认客户所在大区后可采用原路径；其他主体必须重新检查单订单多地域及未知归属。"
+    },
+    {
+      "id": "T4-017",
+      "reviewer": "/root/review_joins",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "订单事实沿orders.customer_id定位客户档案，再按自然人customer_unique_id找到当前会员，这是跨客户关联键识别会员的正确路径。members.customer_unique_id有真实UNIQUE约束，故该连接不会复制订单；四级COUNT(*)分别54605、38080、6571、185，逐级与COUNT(DISTINCT order_id)完全一致。现行维度默认使用事实已有level_id，题干未要求等级名称，Gold不补member_levels名称符合契约。题干未要求历史下单时等级、正常会员或有效订单，不能偷偷改为快照/状态过滤。",
+      "proposedResolution": "保留Gold；在讲解中明确这是当前会员等级归属而不是下单时历史等级，不能把现有UNIQUE结论推广成所有会员表天然一人一行。"
+    },
+    {
+      "id": "T4-019",
+      "reviewer": "/root/review_joins",
+      "decision": "CONTRACT_CONFLICT",
+      "previousConfirmedConflict": true,
+      "nowExplicitConflict": true,
+      "needsReconciliation": false,
+      "reason": "题目没有明确要求标签名称，当前维度默认是事实已有tag_id，Gold却输出并仅按tag_name分组。user_tags.tag_name没有UNIQUE约束，名称不是标签身份；当前6个名称恰好各自唯一，所以现库计数没有暴露同名合并错误，输出投影契约仍不一致。map的(member_id,tag_id)组合主键及COUNT DISTINCT保证每标签会员不重复；6类映射会员数与现存会员连接后完全一致，且当前无零覆盖标签。Gold从map出发还不能展示将来的零会员标签。",
+      "proposedResolution": "先冻结新契约：沿用当前默认则输出tag_id；如果确实要名字，题干明确写名称，内部仍按tag_id区分。候选从标签全集保留零会员标签，并只数真实会员。不得静默回写原Gold。"
+    },
+    {
+      "id": "T4-020",
+      "reviewer": "/root/review_joins",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "“高价值用户”在当前glossary明确映射tag_code=HIGH_VALUE，实查仅tag_id=1且tag_name对应。筛选会员后按自然人连接其所有customer_id，再连订单，符合一个会员跨客户关联键多次下单的行为口径；COUNT(DISTINCT o.order_id)保护订单身份，不能用会员数或客户档案数代替。Gold与订单侧EXISTS均为20001笔，关联行也为20001。题目未指定有效订单、注册时间或下单当时已有该标签，故统计当前被打此标签会员的全量历史订单，不推断历史标签生效时点。",
+      "proposedResolution": "保留Gold；若业务要“打标之后的订单”需另写明确时间边界，不应把tagged_at过滤偷偷加到当前题。"
+    },
+    {
+      "id": "T4-022",
+      "reviewer": "/root/review_joins",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "目标是优惠券使用事实中的优惠金额合计，直接SUM(coupon_usages.discount_amount)即可，usage_id才是事实身份；不需要关联券定义、商品明细或订单支付，从而避开多条券记录与多条商品互乘。实查12054条用券记录、金额422462.87、金额NULL为0条；当前虽没有一单多券，正确性不依赖这一巧合，未来多券也应逐条加总而不是按金额DISTINCT。题目不是折扣率，不触发discount_rate的GMV分母或有效订单过滤。",
+      "proposedResolution": "保留Gold。空事实集合SUM返回NULL符合现行一般聚合语义，不擅自加已完成订单过滤或用券定义的discount_value替代实际优惠。"
+    },
+    {
+      "id": "T4-024",
+      "reviewer": "/root/review_joins",
+      "decision": "COINCIDENTAL_EQUIVALENCE",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "题干明确按仓库名称汇总，因此按warehouse_name合并同名是允许的，不能机械要求额外输出ID。warehouse_id连仓库PK不放大发货单，但Gold从shipments出发的INNER JOIN仅产生有匹配发货单的仓库名称，无法回答零发货仓库；也会丢失nullable warehouse_id的未分配记录，与名称关联保留未知事实的当前规则不一致。当前5仓都有发货，98202张发货单全部匹配且无NULL，所以现库与保留全集的方案恰好一致。只读构造反例中一个零发货仓库会被Gold漏掉。",
+      "proposedResolution": "保持原正式样本；新版明确“包含零发货仓库”和“未分配仓库”展示策略。候选用仓库与发货FULL JOIN，在名称组内COUNT发货主键，既不把空连接计作一单，也保留未知仓库事实。"
+    },
+    {
+      "id": "T4-026",
+      "reviewer": "/root/review_joins",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "问题点名承运商，匹配shipment_delivery_days而非orders下单到签收的delivery_days；事实一行一shipment，直接以carrier分组、两时间均非空后取EPOCH/86400平均并ROUND两位，单位是小数天，符合当前契约，无需轨迹JOIN。四家均有可计时记录，均值9.32/9.34/9.36/9.27天，分别16088/32133/32185/16063条参与平均。实查23条负时长，是源数据质量问题，现契约未授权排除或截为0；这样做会改变范围和均值，不能作为“修Gold”的借口。",
+      "proposedResolution": "保留Gold。另行提交负时长数据质量口径供业务确认；若确认清洗，必须版本化并同时披露剔除数量，不能悄悄过滤。"
+    },
+    {
+      "id": "T4-028",
+      "reviewer": "/root/review_joins",
+      "decision": "CONTRACT_CONFLICT",
+      "previousConfirmedConflict": true,
+      "nowExplicitConflict": true,
+      "needsReconciliation": false,
+      "reason": "实际处理时长应是support_tickets.resolved_at-created_at，小数小时按3600换算，Gold没有误用sla_hours，这一机制正确；但题干没要求名称，当前维度默认使用category_id，Gold输出category_name且仅按名称分组。分类名没有唯一约束；当前6类名称恰好不同、所有工单都有分类且每类都有已解决工单，掩盖了同名合并和空类遗漏边界。当前7934张工单中可计时已解决6292张，发现2556条resolved_at<created_at，不能未经契约授权排除。题目未要求SLA达成率，不应使用SLA分母或阈值。",
+      "proposedResolution": "沿用当前默认则输出category_id；若希望名称，先修改题干契约而非静默换投影。候选保留分类全集及未知分类事实，以AVG天然忽略没有完整起止时间的记录，不把未知耗时补0。负时长另按业务确认处理。"
+    },
+    {
+      "id": "T4-031",
+      "reviewer": "/root/review_joins",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "题干“卖家结算净额”已锁定settlements.net_amount，不能被商品销售金额或settlement_items毛额替换；地域主体明确为卖家州。按settlement_id事实逐笔SUM再按卖家PK取得seller_state，多对一不会放大结算。实查5658条结算全部匹配卖家，关联前后净额都是4821914.63、无NULL金额，结果20州。结算状态1/2/3是枚举而不是本题过滤请求，不能擅自仅数已打款；period_start等时间也未被题干限定。",
+      "proposedResolution": "保留Gold。当前无数据库FK保证settlements.seller_id未来总有效；若接入增量库应监控孤儿结算并明确未知州策略，不能把本次覆盖检查冒充数据库完整性约束。"
+    },
+    {
+      "id": "T4-033",
+      "reviewer": "/root/review_joins",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "按退款原因代码reason_code汇总refunds.refund_amount，事实主键refund_id，直查主退款表不会因退款明细或订单商品连接而放大金额。题干未要求原因名称，code输出符合现行默认；未要求已退款，不得根据status枚举擅自排待审核或已拒绝记录。现库四原因分别LATE=221424.77、QUAL=210843.80、OTHER=109628.71、CUST=107818.34，均无NULL金额。ROUND两位金额单位未变，无时间边界或TopK并列问题。",
+      "proposedResolution": "保留Gold；如果业务想统计已实际退回款项，应另明确status/到账口径，不在本题里补一个看似合理的状态条件。"
+    },
+    {
+      "id": "T4-035",
+      "reviewer": "/root/review_joins",
+      "decision": "COINCIDENTAL_EQUIVALENCE",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "自然人customer_unique_id分组、含运费金额及有效订单过滤均与当前aov定义相容，题干按订单平均不是按人数。Gold INNER JOIN商品明细却将分母缩成“有明细的有效订单”，而不是全部有效订单。现库98207笔有效订单有8笔无明细，涉及8人；其中1人有一笔43.29有明细订单和另一笔无明细有效订单，Gold均值43.29，完整有效订单分母应为21.65。另7人完全无可知金额，不应擅自补0成真实消费。当前Top10不变且第10名4445.50无并列，只说明本题投影的榜单恰好隐藏分母缺陷，不能称一般公式正确。",
+      "proposedResolution": "保留原正式榜单与得分。新版应先按订单合计商品金额，再从完整有效订单出发LEFT JOIN，分母数全部有效订单；纯缺失金额客户不可比较，明确排在榜单之后/不参与数值排名，而非把NULL补0。"
+    },
+    {
+      "id": "T4-037",
+      "reviewer": "/root/review_joins",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "事实是订单商品行，glossary明确一行一个商品，销量以行数COUNT(*)计而非订单去重数；产品照片数量是products属性，只投影不累加。products主键确保连接每条商品行只匹配一次，按product_id及照片数分组不会把不同商品合并。现库32951个商品都出现在明细中，前10销量依次527、488、484、392、388、373、343、323、281、274，第10名仅1件商品，无截止并列。题干不要求有效订单，不能为“销量”臆加订单状态过滤。若出现少于10个有销量商品，“每个商品”是否含零销量应另明确；本次Top10不受影响。",
+      "proposedResolution": "保留Gold。对于榜单截止处将来出现并列，用户未要求全部并列时可加product_id稳定10条选择；不得把当前没有并列当成永远不会并列。"
+    },
+    {
+      "id": "T4-039",
+      "reviewer": "/root/review_joins",
+      "decision": "COINCIDENTAL_EQUIVALENCE",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "问题是搜索记录层有点击记录/全部搜索记录，COUNT(*)按日志主键粒度正确，不需按用户去重或连products。当前题干不包含ctr注册别名“搜索转化率/点击率/搜索点击率”，按metrics文件声明的子串匹配机制不会注入ctr；因此适用未注册普通比例默认小数比率四位，而不能仅因语义像CTR就强行乘100。14392条记录中8651条有点击，Gold=0.6011。Gold缺NULLIF保护，当前非空才避免除零；只读空过滤实查分子分母均0，当前规则要求返回NULL，Gold将触发division by zero。这是一般空集安全缺陷，不是当前数值算错，也不是已证实百分数契约冲突。",
+      "proposedResolution": "新版参考补NULLIF(COUNT(*),0)，保留当前0到1四位小数。若希望这类释义也一律采用注册CTR百分数，应先显式扩充业务契约并版本化，不能倒推本题已命中过别名。"
+    },
+    {
+      "id": "T4-040",
+      "reviewer": "/root/review_joins",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "计数对象是products.product_id，要求从未出现在任意仓库库存记录，而非当前库存量大于0。inventory主键(warehouse_id,product_id)允许一个商品多仓，但只要有任一匹配库存行就被i.product_id IS NULL排除，无匹配商品只保留一行；因此Gold反连接COUNT(*)无需DISTINCT，且不依赖inventory.product_id唯一。现库32951商品中14678无库存记录，NOT EXISTS一致；5336个商品多仓，24行库存量<=0仍属于“进过库存表”，不得过滤后误数未入库。所谓历史仅限留存库存表，不能证明物理删除前的历史。",
+      "proposedResolution": "保留Gold；如产品要真实历史从未入库，需明确使用入库流水/保留历史的事实定义，不能把库存量为0等同于从未入库。"
+    },
+    {
+      "id": "T4-042",
+      "reviewer": "/root/review_joins",
+      "decision": "AMBIGUOUS",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "Gold含义是“历史上至少有一次new_price>old_price的不同商品”，COUNT DISTINCT product_id正确保护历史多事件下商品身份；题干“发生过价格调整的商品里，价格是上调的”也可能指最近一次调整方向，未写至少一次还是最近一次，当前没有相关方向口径来替用户选择。现库9813条历史恰好对应9813个商品，4903个上调，最近一次与曾经上调均为4903；这是当前每商品一条记录的巧合，product_id并无UNIQUE约束。只读反例同商品先100→120再120→90，曾上调=1、最近上调=0，不能以当前相同消灭语义分歧。",
+      "proposedResolution": "保留原正式样本，先把题干固定为“历史上至少上调过一次”或“最近一次调整为上调”；不要强定新默认。选前者可保留原Gold；选最近一次则还要定义changed_at并列/缺失处理，不能随意取一条。"
+    },
+    {
+      "id": "T4-044",
+      "reviewer": "/root/review_joins",
+      "decision": "CONTRACT_CONFLICT",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": true,
+      "needsReconciliation": true,
+      "reason": "当前customer_identity_v2明确区分两个指标：裸“客户有多少个”默认客户档案行/rowKey customer_id；“平均每人下多少单”才按自然人customer_unique_id。Gold把第一列也写成自然人数，不符合当前默认，不能因为同一个结果有“每人”就把所有计数单位扁平化。实查99441客户档案、96096自然人；Sudeste应输出68266档案而Gold65900人，但第二列每人订单数1.04有依据。订单沿customer_id取得该次客户档案的地区，regions PK不放大；LEFT orders保留零订单者的结构正确。22人跨大区记录，组内人数之和不是全站去重人数。当前无零订单档案、无未知大区，不代表这些边界由schema禁止。",
+      "proposedResolution": "不得修改旧分数来迁就新默认。若采用当前默认，新版第一指标计客户档案，第二指标仍按自然人分母；若业务希望两列均是自然人，应明确题干“去重自然人数”，再冻结契约，不称原中文只有一种解释。"
+    },
+    {
+      "id": "T5-001",
+      "reviewer": "/root/review_deep_business",
+      "decision": "CONTRACT_CONFLICT",
+      "previousConfirmedConflict": true,
+      "nowExplicitConflict": true,
+      "needsReconciliation": false,
+      "reason": "商品销售额已有明确不含运费提示，Gold按商品明细price汇总且会员通过customer_unique_id关联正确；会员customer_unique_id有UNIQUE，未发生明细放大。问题没有明确宏观区域归属哪一方，而当前大区规则要求先确认客户/卖家/仓库来源，Gold直接指定customers.customer_state。会员等级按名称是题干显式要求，不能把此处名称输出判错。当前112650条会员商品明细的区域/等级均匹配；549条取消/不可用商品明细被计入，题干没有有效订单要求，不能擅自再过滤。",
+      "proposedResolution": "先确认地域主体。若基准本来意图客户登记州，应把该意图写进问题；若希望由产品自动选客户州，需另行明确修改产品默认，不能把Gold选择伪装成唯一题意。"
+    },
+    {
+      "id": "T5-003",
+      "reviewer": "/root/review_deep_business",
+      "decision": "COINCIDENTAL_EQUIVALENCE",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "退款金额使用refund_items.refund_value，且订单明细按(order_id,order_item_id)完整键关联，粒度正确，不存在退款头金额重复累加。当前5356条退款明细中84条原始类目为SQL NULL，金额9667.78；按当前product_category_nulls_v1默认排除，这部分不是翻译丢失错误。其余原始类目均能匹配翻译，故Gold的INNER JOIN当前等价于保留未翻译名称的LEFT JOIN；但products类目到翻译表没有FK保证，不能宣称以后也等价。前15名边界金额13359.56，只有1组，无截断并列。",
+      "proposedResolution": "保留当前商品原始类目NULL默认；把翻译连接改为LEFT JOIN并单独显式排除原始类目SQL NULL。未翻译的非NULL原类目保留为NULL英文名组。不要追加退款状态或订单状态过滤。"
+    },
+    {
+      "id": "T5-005",
+      "reviewer": "/root/review_deep_business",
+      "decision": "CONTRACT_CONFLICT",
+      "previousConfirmedConflict": true,
+      "nowExplicitConflict": true,
+      "needsReconciliation": false,
+      "reason": "当前产品默认每个活动以campaign_id区分并输出标识，原题没有要求活动名称，而Gold仅按campaign_name分组和输出。campaign_name没有UNIQUE；当前同名活动为0只能证明本快照暂未合并。另Gold把coupon_usages直接连商品明细，会在同一活动同一订单有多条用券记录时重复销售额，COUNT DISTINCT订单只能修计数不能修金额。本快照11926个有效活动-订单恰好各1条用券，Gold与活动-订单去重销售额均1660953.90；这条金额等价不能推广。前10边界无并列。",
+      "proposedResolution": "先把结果维度契约写清：按现有产品默认输出campaign_id；若业务要名称则显式改题，并仍按活动主键隔离同名活动。销售额必须先去重活动-订单，再关联一行一订单商品金额；各指标保留有效订单全集。候选SQL包含全部已定义活动，空活动计数0、金额保持NULL。"
+    },
+    {
+      "id": "T5-007",
+      "reviewer": "/root/review_deep_business",
+      "decision": "CONTRACT_CONFLICT",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": true,
+      "needsReconciliation": true,
+      "reason": "统计对象是有点击的搜索记录，会员及会员等级不是本题指标或维度，Gold多加两个INNER JOIN会额外要求点击者是可匹配等级的会员。当前8651条点击记录都匹配会员/等级，故这部分过滤暂未造成差异；但member_id可空且search_logs没有这条完整性保证。类目原始NULL有162条，当前默认可排除；另有5条非NULL原类目没有英文翻译，被Gold删掉，违反名称查找不能缩小事实的当前契约。Gold纳入8484条；保留缺翻译后为8489条。因缺翻译仅5条、Top20边界77次，当前所选Top20成员不变，不能据此说全链路口径正确。",
+      "proposedResolution": "删掉无题意依据的会员/等级连接；保留原始类目NULL默认过滤；翻译用LEFT JOIN保留非NULL原类目缺译的点击。不能为了凑深度增加会员连接。"
+    },
+    {
+      "id": "T5-009",
+      "reviewer": "/root/review_deep_business",
+      "decision": "AMBIGUOUS",
+      "previousConfirmedConflict": true,
+      "nowExplicitConflict": false,
+      "needsReconciliation": true,
+      "reason": "题干没有规定Top20遇到并列如何处理。当前Gold共282组，第20名计数5，19组更高，另19组同为5；LIMIT20必须任取这19组中的1组，无唯一可审核结果。另1177个低库存仓库×商品行有359个没有当前品牌，Gold的INNER JOIN全部删掉；若保留未知品牌，其5个仓库组分别有66/70/77/67/79个，全部进入Top20。这是实际覆盖差异，但题干尚未说明未知品牌是否保留，也未明确历史品牌或当前品牌。Gold默认名称输出还与当前标识列默认不一致。不能为了贴Gold暗定这些选项。",
+      "proposedResolution": "先确认三项：按仓库×商品行数还是库存件数；当前品牌且缺失是否归入未知组；并列全保留还是按仓库/州/品牌标识确定顺序严格20行。确认后再冻结SQL与门槛。当前数据无多当前品牌，不等于DDL禁止；若未来一商品多当前品牌，还需定义多标签归属还是报数据质量问题。"
+    },
+    {
+      "id": "T5-010",
+      "reviewer": "/root/review_deep_business",
+      "decision": "REFERENCE_DEFECT",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": true,
+      "needsReconciliation": true,
+      "reason": "佣金合计的事实全集是卖家结算明细，不应被英文类目展示的可用性缩小。Gold将商品/翻译全做INNER JOIN，38312条结算明细总佣金535788.39被截成527124.40，少8663.99：699条原始类目NULL少8092.23，20条非NULL缺翻译少571.76。类目计数可以忽略没有英文名称的项目，不能连带删佣金。该问题已进入交付结果：Gold前20中1个卖家佣金少261.92，纠正后另1个卖家进入Top20。订单明细复合键连接本身正确，无需SUM(DISTINCT金额)。",
+      "proposedResolution": "在结算明细原粒度累计佣金，仅将分类查找改为LEFT JOIN；COUNT DISTINCT英文类目自动忽略NULL，不让其过滤佣金。候选SQL保持卖家标识、类目数、佣金三列及佣金Top20。"
+    },
+    {
+      "id": "T5-012",
+      "reviewer": "/root/review_deep_business",
+      "decision": "CONTRACT_CONFLICT",
+      "previousConfirmedConflict": true,
+      "nowExplicitConflict": true,
+      "needsReconciliation": false,
+      "reason": "Gold的会员分母与价格均值链路基本正确：从标签会员出发LEFT JOIN订单/商品，保留没有商品价格的会员，AVG只统计存在的商品明细且不把缺失补0。六类标签各有8至659名无商品明细会员，改INNER JOIN会真实少计。问题没要求标签名称，当前默认应输出tag_id并按完整标签主键分组；Gold只输出和分组tag_name，tag_name没有UNIQUE。当前六个名称各唯一只能解释现库未出现标签合并，不能盖过输出契约冲突。",
+      "proposedResolution": "明确维度契约：若遵循当前默认，输出tag_id并从user_tags保留全部标签；若要标签名称，显式改题并仍按tag_id区分实体。保留无订单会员及NULL均价，商品均价按明细等权，不能先算每会员均价后等权平均。"
+    },
+    {
+      "id": "T5-014",
+      "reviewer": "/root/review_deep_business",
+      "decision": "COINCIDENTAL_EQUIVALENCE",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "题干明确最近一次会员快照，Gold却读取所有member_snapshot，未取MAX(snapshot_date)或按会员排序取最新。当前38471条快照恰好一会员一条，多个快照会员数0，所以Gold与正确latest集合的三组结果同为2110/415/7。这个等价由数据巧合支撑，snapshot_id主键并不保证一会员一条。只读VALUES反例中，同一会员旧快照2、最新快照3、当前等级3，Gold误报1人，latest为0人。不能将本题算成已验证了最新快照能力。",
+      "proposedResolution": "先按member_id选最新snapshot_date，再比较等级。必须定义同日多快照的裁决依据：snapshot_id仅是行标识，不能未经确认就当业务版本。日期NULL、等级NULL与无快照会员是否算不一致也需明确；当前快照日期无NULL且无同日并列。"
+    },
+    {
+      "id": "T5-016",
+      "reviewer": "/root/review_deep_business",
+      "decision": "COINCIDENTAL_EQUIVALENCE",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "按类目与原因统计时，COUNT DISTINCT refund_id正确防止一张退款单同类多明细重复计笔数，SUM refund_value仍逐退款明细累加；跨类目的一张退款可进入多个组，不能再把各类目退款数相加当平台去重退款数。实际5356条明细对应4785笔退款，明细order_id与退款头不一致为0。84条原始类目NULL受当前默认排除；其余类目当前全部可翻译，INNER翻译连接才碰巧等于保留缺译组的LEFT连接。前20边界9490.91仅1组。",
+      "proposedResolution": "保持退款ID去重计数与明细金额，翻译LEFT JOIN并显式仅排除原始类目SQL NULL。缺译非NULL类目保留NULL英文名组；不追加已退款状态、有效订单或其他隐含过滤。"
+    },
+    {
+      "id": "T5-018",
+      "reviewer": "/root/review_deep_business",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "Gold沿shipping_addresses.customer_id直接关联该客户档案及订单，符合客户属性必须沿事实关联键读取的当前身份政策，没有绕customer_unique_id去匹配另一州的档案。is_default由题干明确，COUNT DISTINCT order_id保证同组重复默认地址不加权订单。当前99441条默认地址，所有订单都有默认地址，同客户多默认及冲突默认州均0；因此两个州维度与订单量的链路成立。Top20边界413单仅1组，没有并列截断。",
+      "proposedResolution": "保持题目和Gold当前统计口径。若未来允许同客户多个不同默认州，必须先修默认地址业务约束或定义快照选择，COUNT DISTINCT只能防同组重复，不能决定唯一地域归属。"
+    },
+    {
+      "id": "T6-002",
+      "reviewer": "/root/review_deep_business",
+      "decision": "REFERENCE_DEFECT",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": true,
+      "needsReconciliation": true,
+      "reason": "Gold把有效订单数、下单人数与客单价统一绑在INNER JOIN order_items后的集合，悄悄排除了无商品明细的有效订单。实际有效订单98207单、94990人，Gold只数98199单、94983人，少8单7人；同一商品GMV分子除以错分母后客单价160.24，完整有效订单分母应为160.23。问题明确数有效订单，而不是有商品明细的有效订单；注册客单价分母也写有效订单数。身份按customer_unique_id去重、GMV含运费这两点正确，不能用它们掩盖全集错位。",
+      "proposedResolution": "先保留全部有效订单与自然人身份；商品金额按order_id预聚合后LEFT JOIN。订单数与人数从完整订单集算，缺明细不造0价格，金额聚合保留SQL空值语义。"
+    },
+    {
+      "id": "T6-004",
+      "reviewer": "/root/review_deep_business",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "Gold先在完整有效订单历史按customer_unique_id取首单，再选2017上半年cohort，没有先截报告期而误认新客；下半年回访先DISTINCT自然人，使多笔回访不放大分子。分母LEFT保留未回访用户。按当前retention_rate明确的默认输出规则，题干给出下半年回访窗口且未要求活动月交叉明细，按首单月输出留存率符合当前契约。实际六个cohort用户数为752/1690/2571/2325/3541/3102，回访人数9/15/35/38/64/63。百分比100倍两位与注册单位一致。",
+      "proposedResolution": "保持当前cohort口径和Gold。若业务真正要2017下半年每个活动月分别留存，应另改题明确activity_month维度，不能把它当原Gold唯一等价表达。"
+    },
+    {
+      "id": "T6-006",
+      "reviewer": "/root/review_deep_business",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "Gold用实际签收时间非NULL作为已送达全集，再以实际不晚于预计计准时，与注册on_time_rate一致。当前96476条实际签收订单中88649条准时，91.89%；其中6条订单状态不是delivered，证明若替换成状态筛选会真实改分母。预计时间缺失当前0；未来缺失仍应留分母不计准时，Gold现有FILTER具有该语义。没有商品明细加权订单，也没有擅自排除取消/不可用。",
+      "proposedResolution": "保留当前定义。参考SQL可以加NULLIF(COUNT(*),0)完成空集防除零，但本固定快照的分子分母与结果没有具体逻辑偏差。"
+    },
+    {
+      "id": "T6-008",
+      "reviewer": "/root/review_deep_business",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "Gold将有效订单中出现的不同product_id与独立全量products分母分别聚合，正确保留未动销商品作为分母，没有用库存或销售连接后的商品数。当前全部商品32951、有效动销32729，222个未动销商品未丢，结果99.33%。有效订单过滤来自sell_through_rate，百分比两位与注册单位一致；不存在多明细把商品计多的问题。",
+      "proposedResolution": "保持Gold与题意。可把分母写成NULLIF(allp.n,0)与注册空集策略对齐；不要为追求100%把分母缩成有销量商品。"
+    },
+    {
+      "id": "T6-011",
+      "reviewer": "/root/review_deep_business",
+      "decision": "CONTRACT_CONFLICT",
+      "previousConfirmedConflict": true,
+      "nowExplicitConflict": true,
+      "needsReconciliation": false,
+      "reason": "含运费GMV、有效订单、运费分子和百分比两位均与freight_ratio一致，但原题宏观区域未指定地域主体。当前ambiguities的交易大区规则要求确认客户/卖家/仓库，Gold径取客户登记州；freight_ratio推荐示例同时写客户州，与澄清规则形成当前配置内的优先行为冲突，不能因为示例存在就说题意已明确。选择来源会实际改结果：42190条有效商品明细、6842445.94的GMV在客户大区与卖家大区归属不同。",
+      "proposedResolution": "由业务确认按哪一方地域后再冻结题目及Gold；保留freight_ratio分子分母及百分比单位。若确认原Gold意图客户登记州，可采用候选题干；卖家州也可合法定义，不能为了符合当前示例强制客户来源。"
+    },
+    {
+      "id": "T6-013",
+      "reviewer": "/root/review_deep_business",
+      "decision": "REFERENCE_DEFECT",
+      "previousConfirmedConflict": true,
+      "nowExplicitConflict": true,
+      "needsReconciliation": false,
+      "reason": "Gold直接连接用券记录与商品明细，把每笔订单的discount_amount重复到每个商品上。11926个有效用券订单中1175个有多商品；正确优惠417833.13被Gold算成473711.60，多55878.47，折扣率21.64%被算成24.54%。当前每订单仅1次用券，所以GMV仍碰巧是1930583.35；coupon_usages没有order_id唯一约束，未来多券还会反向重复GMV。COUNT DISTINCT或SUM DISTINCT金额都不能修复两个事实表的交叉放大。",
+      "proposedResolution": "分别预聚合订单级优惠总额和订单级含运费商品金额，再在有用券且有商品明细的有效订单交集一对一连接。该共同全集是当前discount_rate明确契约，不能扩成无券订单或无明细订单。"
+    },
+    {
+      "id": "T6-015",
+      "reviewer": "/root/review_deep_business",
+      "decision": "CONTRACT_CONFLICT",
+      "previousConfirmedConflict": true,
+      "nowExplicitConflict": true,
+      "needsReconciliation": false,
+      "reason": "Gold全工单分母、未解决不计分子、小时EPOCH换算和百分比两位符合sla_rate；但原题没要求类目名称，当前维度默认应使用support_tickets.category_id，Gold输出category_name并仅按名称分组。名称没有UNIQUE；当前6个名称唯一、分类NULL工单0，只说明暂未发生合并/丢失。另实际2556条resolved_at早于created_at的工单全部被当前公式计为SLA成功，这不是Gold独有错误：产品同一表达式也如此，不能悄悄给Gold加非负时长过滤然后宣布纠正。",
+      "proposedResolution": "先明确输出维度，按当前默认候选使用category_id并LEFT保留分类未知工单。负时长另列数据质量决策：修源数据、标记未知、计失败或排除各自改变指标，须由业务确认并版本化，不能在本次审计偷偷改。候选SQL忠实保持当前SLA数学定义。"
+    },
+    {
+      "id": "T6-017",
+      "reviewer": "/root/review_deep_business",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "Gold按推荐记录计算已转化/全部推荐，奖励总额除以已转化推荐数，符合当前conversion_rate与reward_per_converted，而不是自然人去重或每全部推荐均摊。当前4793条推荐、1623条转化，33.86%；奖励总额32481.59，按约定得到20.01。必须揭露该约定的含义：1068条未转化推荐也有正奖励，合计21582.52；若只统计成功推荐上的奖励10899.07，人均是6.72，不能把两者说成等价。这里Gold没有偏离已注册默认，是否接受这个业务定义应另行确认。",
+      "proposedResolution": "保留当前Gold；为产品解释清楚人均实际是每次成功推荐分摊全部奖励。若业务要每个转化会员仅分摊其成功事件奖励，必须另设清楚的新指标，不能据口语人均直接改已有基准。"
+    },
+    {
+      "id": "T6-019",
+      "reviewer": "/root/review_deep_business",
+      "decision": "KEEP",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "Gold严格使用下单到客户签收的时间差，EPOCH/86400.0保留小数天，AVG后两位，符合delivery_days而非承运商发货到送达口径。沿订单customer_id取登记州，没有跨自然人其他客户档案取州。实际96476条签收订单无下单时间缺失、无负时长、州NULL为0；最大209.6286天，证明应保留完整跨月时长。27州中Top10边界20.43仅1州。未擅自套有效订单过滤，符合本指标只要求实际送达的定义。",
+      "proposedResolution": "保持Gold及已注册时间口径。正式长期查询可显式::numeric以免不同时间函数返回类型导致ROUND重载问题；本次只读SQL已在实际PostgreSQL执行同一EPOCH/ROUND计算成功。"
+    },
+    {
+      "id": "T6-020",
+      "reviewer": "/root/review_deep_business",
+      "decision": "COINCIDENTAL_EQUIVALENCE",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "平台总佣金/总毛额与卖家分别聚合后MIN/AVG/MAX的结构正确，平均卖家率是各卖家等权、整体率是按毛额加权，DECIMAL_RATIO四位也符合注册单位。当前2176卖家全部毛额>0，平台/平均0.1000、最小0.0997、最大0.1004，故Gold CASE ELSE0当前没有触发。但Gold对零、负或NULL毛额统统给0，而当前契约是分母0返回NULL；负毛额也不应未经业务定义直接变0。只读零分母反例中Gold卖家均率0.0500，NULLIF约定0.1000，表明当前等价仅由毛额全正维持。",
+      "proposedResolution": "改为SUM(commission_amount)/NULLIF(SUM(gross_amount),0)，零毛额卖家率保持NULL，不以假0压低分布。总平台分母同样NULLIF。负毛额的商业意义应明确，若作为退款净额也要保留符号而非自动置0。"
+    },
+    {
+      "id": "T6-022",
+      "reviewer": "/root/review_deep_business",
+      "decision": "REFERENCE_DEFECT",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": true,
+      "needsReconciliation": true,
+      "reason": "问题同时要求2017与2018各月GMV，再算2018同月同比；Gold却以2018为驱动INNER JOIN2017，只输出两年交集1至9月，删除2017年10/11/12月764756.03、1172191.68、861526.77，合计2798474.48。题目没有仅两年都有数据的月份限定，因此不能为了同比可算就缩小原本两年金额展示范围。2018缺这些月份是数据缺失，不能补0制造-100%同比。含运费、有效订单、百分比两位本身正确。",
+      "proposedResolution": "以1至12月日历为驱动分别LEFT JOIN两年金额；缺失金额及同比返回NULL。候选保留mo、gmv_2017、gmv_2018、yoy_pct。若业务真的只要共同月份，应明确另改题，不能将内连接当自动默认。"
+    },
+    {
+      "id": "T6-024",
+      "reviewer": "/root/review_deep_business",
+      "decision": "COINCIDENTAL_EQUIVALENCE",
+      "previousConfirmedConflict": false,
+      "nowExplicitConflict": false,
+      "needsReconciliation": false,
+      "reason": "当前低分率度量以评价记录为单位，原Gold将退款与评价直接按order_id连接；order_reviews完整身份是(review_id,order_id)，同订单多评价本应各保留。当前每订单只有一笔退款，按原因归属后平均及低分率各组正确：CUST4.04/15.97%、LATE4.07/14.96%、OTHER4.10/14.89%、QUAL4.08/14.60%。但refunds只有refund_id主键，没有order_id或(order_id,reason_code)唯一；同一订单同一原因有两笔退款时，Gold会把同一评价重复加权。只读反例把两条真实评价1分/5分算成均分2.33、低分66.67%，去重原因-订单后应3.00/50.00%。当前结果等价只由退款一单一条的偶然数据维持。",
+      "proposedResolution": "先取DISTINCT(reason_code,order_id)归属集合，再连接所有评价记录；同评价在不同退款原因组可各出现一次，同原因组不得因多退款重复。保留多评价本身，不随意取最新评价，不增有效订单或已完成退款过滤。"
+    }
+  ],
+  "unresolvedDifferences": [
+    "T2-004",
+    "T3-010",
+    "T4-044",
+    "T5-007",
+    "T5-009",
+    "T5-010",
+    "T6-002",
+    "T6-022"
+  ],
+  "originalDataChanged": false,
+  "originalScoresChanged": false,
+  "formalGateChanged": false,
+  "stageAccepted": false,
+  "limits": [
+    "Fresh-context agents share a filesystem; provenance declarations do not enforce OS access isolation.",
+    "Review improves reference credibility; original100 were already seen and do not become a blind test.",
+    "Primary review classifications are preserved; disagreements require evidence, not majority vote."
+  ]
+}

@@ -1,0 +1,138 @@
+{
+  "format": "fresh-contract-review-input-v1",
+  "scope": "Original formal eval only; no previous audit conclusions or model outputs",
+  "items": [
+    {
+      "id": "T5-001",
+      "difficulty": "multi_join_deep",
+      "question": "每个宏观区域下，各会员等级（按等级名称）的商品销售额分别是多少？按销售额从高到低排序。",
+      "gold_sql": "SELECT r.macro_region, ml.level_name, ROUND(SUM(oi.price), 2) AS gmv\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN regions r ON r.region_code = c.customer_state\nJOIN members m ON m.customer_unique_id = c.customer_unique_id\nJOIN member_levels ml ON ml.level_id = m.level_id\nJOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1, 2 ORDER BY gmv DESC;\n"
+    },
+    {
+      "id": "T5-003",
+      "difficulty": "multi_join_deep",
+      "question": "用英文类目名统计退款金额，哪些类目退款最多？取前 15。",
+      "gold_sql": "SELECT t.product_category_name_english, ROUND(SUM(ri.refund_value), 2) AS refund_amt\nFROM refunds r\nJOIN refund_items ri ON ri.refund_id = r.refund_id\nJOIN order_items oi ON oi.order_id = ri.order_id AND oi.order_item_id = ri.order_item_id\nJOIN products p ON p.product_id = oi.product_id\nJOIN product_category_translation t ON t.product_category_name = p.product_category_name\nGROUP BY 1 ORDER BY refund_amt DESC LIMIT 15;\n"
+    },
+    {
+      "id": "T5-005",
+      "difficulty": "multi_join_deep",
+      "question": "每个优惠券活动带来的有效订单数和商品销售额是多少？取前 10。",
+      "gold_sql": "SELECT ca.campaign_name, COUNT(DISTINCT cu.order_id) AS used_orders, ROUND(SUM(oi.price), 2) AS gmv\nFROM coupon_usages cu\nJOIN coupons cp ON cp.coupon_id = cu.coupon_id\nJOIN campaigns ca ON ca.campaign_id = cp.campaign_id\nJOIN orders o ON o.order_id = cu.order_id\nJOIN order_items oi ON oi.order_id = cu.order_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable')\nGROUP BY 1 ORDER BY gmv DESC LIMIT 10;\n"
+    },
+    {
+      "id": "T5-007",
+      "difficulty": "multi_join_deep",
+      "question": "有商品点击的搜索记录中，哪些关键词最常点到哪个英文类目的商品？取前 20。",
+      "gold_sql": "SELECT sl.keyword, t.product_category_name_english, COUNT(*) AS clicks\nFROM search_logs sl\nJOIN products p ON p.product_id = sl.clicked_product_id\nJOIN product_category_translation t ON t.product_category_name = p.product_category_name\nJOIN members m ON m.member_id = sl.member_id\nJOIN member_levels ml ON ml.level_id = m.level_id\nWHERE sl.clicked_product_id IS NOT NULL\nGROUP BY 1, 2 ORDER BY clicks DESC LIMIT 20;\n"
+    },
+    {
+      "id": "T5-009",
+      "difficulty": "multi_join_deep",
+      "question": "库存低于安全库存的商品，按仓库、区域、品牌统计数量，列出前 20。",
+      "gold_sql": "SELECT w.warehouse_name, r.region_name, b.brand_name, COUNT(*) AS low_stock_items\nFROM inventory i\nJOIN warehouses w ON w.warehouse_id = i.warehouse_id\nJOIN regions r ON r.region_code = w.region_code\nJOIN product_brand_map pbm ON pbm.product_id = i.product_id AND pbm.is_current\nJOIN brands b ON b.brand_id = pbm.brand_id\nWHERE i.quantity < i.safety_stock\nGROUP BY 1, 2, 3 ORDER BY low_stock_items DESC LIMIT 20;\n"
+    },
+    {
+      "id": "T5-010",
+      "difficulty": "multi_join_deep",
+      "question": "每个卖家结算明细覆盖了多少个英文商品类目、佣金合计多少？取佣金前 20。",
+      "gold_sql": "SELECT st.seller_id, COUNT(DISTINCT t.product_category_name_english) AS category_cnt,\n       ROUND(SUM(si.commission_amount), 2) AS commission\nFROM settlements st\nJOIN settlement_items si ON si.settlement_id = st.settlement_id\nJOIN order_items oi ON oi.order_id = si.order_id AND oi.order_item_id = si.order_item_id\nJOIN products p ON p.product_id = oi.product_id\nJOIN product_category_translation t ON t.product_category_name = p.product_category_name\nGROUP BY 1 ORDER BY commission DESC LIMIT 20;\n"
+    },
+    {
+      "id": "T5-012",
+      "difficulty": "multi_join_deep",
+      "question": "每类用户标签覆盖多少会员、这些会员订单的平均商品单价是多少？",
+      "gold_sql": "SELECT ut.tag_name, COUNT(DISTINCT m.member_id) AS members, ROUND(AVG(oi.price), 2) AS avg_item_price\nFROM user_tag_map utm\nJOIN user_tags ut ON ut.tag_id = utm.tag_id\nJOIN members m ON m.member_id = utm.member_id\nLEFT JOIN customers c ON c.customer_unique_id = m.customer_unique_id\nLEFT JOIN orders o ON o.customer_id = c.customer_id\nLEFT JOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY members DESC;\n"
+    },
+    {
+      "id": "T5-014",
+      "difficulty": "multi_join_deep",
+      "question": "当前等级与最近一次会员快照等级不一致的会员有多少？按等级名称组合统计。",
+      "gold_sql": "SELECT ml_cur.level_name AS current_level, ml_snap.level_name AS snapshot_level,\n       COUNT(DISTINCT ms.member_id) AS member_cnt\nFROM member_snapshot ms\nJOIN members m ON m.member_id = ms.member_id\nJOIN member_levels ml_cur ON ml_cur.level_id = m.level_id\nJOIN member_levels ml_snap ON ml_snap.level_id = ms.level_id\nWHERE ms.level_id <> m.level_id\nGROUP BY 1, 2 ORDER BY member_cnt DESC;\n"
+    },
+    {
+      "id": "T5-016",
+      "difficulty": "multi_join_deep",
+      "question": "按英文类目和退款原因统计退款笔数与退款金额，列出前 20。",
+      "gold_sql": "SELECT t.product_category_name_english, r.reason_code,\n       COUNT(DISTINCT r.refund_id) AS refunds, ROUND(SUM(ri.refund_value), 2) AS amt\nFROM refunds r\nJOIN refund_items ri ON ri.refund_id = r.refund_id\nJOIN order_items oi ON oi.order_id = ri.order_id AND oi.order_item_id = ri.order_item_id\nJOIN products p ON p.product_id = oi.product_id\nJOIN product_category_translation t ON t.product_category_name = p.product_category_name\nGROUP BY 1, 2 ORDER BY amt DESC LIMIT 20;\n"
+    },
+    {
+      "id": "T5-018",
+      "difficulty": "multi_join_deep",
+      "question": "默认收货地址所在州和客户登记州各组合的订单量对比，列出前 20。",
+      "gold_sql": "SELECT sa.state AS addr_state, c.customer_state, COUNT(DISTINCT o.order_id) AS orders\nFROM shipping_addresses sa\nJOIN customers c ON c.customer_id = sa.customer_id\nJOIN orders o ON o.customer_id = c.customer_id\nWHERE sa.is_default\nGROUP BY 1, 2 ORDER BY orders DESC LIMIT 20;\n"
+    },
+    {
+      "id": "T6-002",
+      "difficulty": "business_semantics",
+      "question": "有效订单（排除已取消和不可用）的订单数、下单人数、客单价分别是多少？",
+      "gold_sql": "SELECT COUNT(DISTINCT o.order_id) AS valid_orders,\n       COUNT(DISTINCT c.customer_unique_id) AS buyers,\n       ROUND(SUM(oi.price + oi.freight_value) / COUNT(DISTINCT o.order_id), 2) AS aov\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN order_items oi ON oi.order_id = o.order_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable');\n"
+    },
+    {
+      "id": "T6-004",
+      "difficulty": "business_semantics",
+      "question": "首单在 2017 年上半年的用户，在 2017 年下半年是否再次下单？按月留存率是多少？",
+      "gold_sql": "WITH first_order AS (\n  SELECT c.customer_unique_id, MIN(o.order_purchase_timestamp) AS first_ts\n  FROM orders o\n  JOIN customers c ON c.customer_id = o.customer_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n  GROUP BY 1\n),\ncohort AS (\n  SELECT customer_unique_id, DATE_TRUNC('month', first_ts)::date AS cohort_month\n  FROM first_order\n  WHERE first_ts >= DATE '2017-01-01' AND first_ts < DATE '2017-07-01'\n),\nreturner AS (\n  SELECT DISTINCT co.customer_unique_id, co.cohort_month\n  FROM cohort co\n  JOIN customers c ON c.customer_unique_id = co.customer_unique_id\n  JOIN orders o ON o.customer_id = c.customer_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n    AND o.order_purchase_timestamp >= DATE '2017-07-01'\n    AND o.order_purchase_timestamp < DATE '2018-01-01'\n)\nSELECT co.cohort_month,\n       ROUND(100.0 * COUNT(re.customer_unique_id) / COUNT(*), 2) AS retention_pct\nFROM cohort co\nLEFT JOIN returner re ON re.customer_unique_id = co.customer_unique_id\nGROUP BY 1 ORDER BY 1;\n"
+    },
+    {
+      "id": "T6-006",
+      "difficulty": "business_semantics",
+      "question": "已送达订单的准时率是多少？（实际送达日期不晚于预计送达日期）",
+      "gold_sql": "SELECT ROUND(100.0 * COUNT(*) FILTER (\n         WHERE o.order_delivered_customer_date <= o.order_estimated_delivery_date\n       ) / COUNT(*), 2) AS on_time_pct\nFROM orders o\nWHERE o.order_delivered_customer_date IS NOT NULL;\n"
+    },
+    {
+      "id": "T6-008",
+      "difficulty": "business_semantics",
+      "question": "商品动销率是多少？（有销量的商品数 / 全部商品数）",
+      "gold_sql": "WITH sold AS (\n  SELECT COUNT(DISTINCT oi.product_id) AS n\n  FROM order_items oi\n  JOIN orders o ON o.order_id = oi.order_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n),\nallp AS (SELECT COUNT(*) AS n FROM products)\nSELECT ROUND(100.0 * s.n / a.n, 2) AS sell_through_pct\nFROM sold s CROSS JOIN allp a;\n"
+    },
+    {
+      "id": "T6-011",
+      "difficulty": "business_semantics",
+      "question": "运费占 GMV 的比例是多少？按宏观区域拆解。",
+      "gold_sql": "SELECT r.macro_region,\n       ROUND(100.0 * SUM(oi.freight_value) / SUM(oi.price + oi.freight_value), 2) AS freight_pct\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN regions r ON r.region_code = c.customer_state\nJOIN order_items oi ON oi.order_id = o.order_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable')\nGROUP BY 1 ORDER BY freight_pct DESC;\n"
+    },
+    {
+      "id": "T6-013",
+      "difficulty": "business_semantics",
+      "question": "优惠券带来的 GMV 和优惠金额分别是多少？用券订单的折扣率是多少？",
+      "gold_sql": "SELECT ROUND(SUM(oi.price + oi.freight_value), 2) AS gmv,\n       ROUND(SUM(cu.discount_amount), 2) AS discount,\n       ROUND(100.0 * SUM(cu.discount_amount) / SUM(oi.price + oi.freight_value), 2) AS discount_pct\nFROM coupon_usages cu\nJOIN orders o ON o.order_id = cu.order_id\nJOIN order_items oi ON oi.order_id = cu.order_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable');\n"
+    },
+    {
+      "id": "T6-015",
+      "difficulty": "business_semantics",
+      "question": "各类工单的 SLA 达成率是多少？（解决时间不超过类目 SLA 小时数）",
+      "gold_sql": "SELECT tc.category_name,\n       ROUND(100.0 * COUNT(*) FILTER (\n         WHERE st.resolved_at IS NOT NULL\n           AND EXTRACT(EPOCH FROM (st.resolved_at - st.created_at)) / 3600.0 <= tc.sla_hours\n       ) / COUNT(*), 2) AS sla_pct\nFROM support_tickets st\nJOIN ticket_categories tc ON tc.category_id = st.category_id\nGROUP BY 1 ORDER BY sla_pct;\n"
+    },
+    {
+      "id": "T6-017",
+      "difficulty": "business_semantics",
+      "question": "推荐活动的转化率和人均奖励是多少？",
+      "gold_sql": "SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE converted_at IS NOT NULL) / COUNT(*), 2) AS conversion_pct,\n       ROUND(SUM(reward_amount) / COUNT(*) FILTER (WHERE converted_at IS NOT NULL), 2) AS reward_per_converted\nFROM referrals;\n"
+    },
+    {
+      "id": "T6-019",
+      "difficulty": "business_semantics",
+      "question": "各州的平均配送时长（下单到签收）是多少天？列出配送最慢的 10 个州。",
+      "gold_sql": "SELECT c.customer_state,\n       ROUND(AVG(EXTRACT(EPOCH FROM (o.order_delivered_customer_date - o.order_purchase_timestamp)) / 86400.0), 2) AS avg_days\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nWHERE o.order_delivered_customer_date IS NOT NULL\nGROUP BY 1 ORDER BY avg_days DESC LIMIT 10;\n"
+    },
+    {
+      "id": "T6-020",
+      "difficulty": "business_semantics",
+      "question": "平台整体佣金率和各卖家佣金率分布（最低、平均、最高）分别是多少？",
+      "gold_sql": "WITH seller_rate AS (\n  SELECT st.seller_id,\n         SUM(si.gross_amount) AS gross,\n         SUM(si.commission_amount) AS commission,\n         CASE WHEN SUM(si.gross_amount) > 0\n              THEN SUM(si.commission_amount) / SUM(si.gross_amount) ELSE 0 END AS rate\n  FROM settlements st\n  JOIN settlement_items si ON si.settlement_id = st.settlement_id\n  GROUP BY 1\n)\nSELECT ROUND(SUM(commission) / SUM(gross), 4) AS platform_rate,\n       ROUND(MIN(rate), 4) AS min_seller_rate,\n       ROUND(AVG(rate), 4) AS avg_seller_rate,\n       ROUND(MAX(rate), 4) AS max_seller_rate\nFROM seller_rate;\n"
+    },
+    {
+      "id": "T6-022",
+      "difficulty": "business_semantics",
+      "question": "2017 年和 2018 年各月 GMV 分别是多少？并计算 2018 年相对 2017 年同月的同比增长率。",
+      "gold_sql": "WITH monthly AS (\n  SELECT EXTRACT(YEAR FROM o.order_purchase_timestamp)::int AS yr,\n         EXTRACT(MONTH FROM o.order_purchase_timestamp)::int AS mo,\n         SUM(oi.price + oi.freight_value) AS gmv\n  FROM orders o\n  JOIN order_items oi ON oi.order_id = o.order_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n  GROUP BY 1, 2\n)\nSELECT m18.mo,\n       ROUND(m17.gmv, 2) AS gmv_2017,\n       ROUND(m18.gmv, 2) AS gmv_2018,\n       ROUND(100.0 * (m18.gmv - m17.gmv) / m17.gmv, 2) AS yoy_pct\nFROM monthly m18\nJOIN monthly m17 ON m17.mo = m18.mo AND m17.yr = 2017\nWHERE m18.yr = 2018\nORDER BY m18.mo;\n"
+    },
+    {
+      "id": "T6-024",
+      "difficulty": "business_semantics",
+      "question": "退款原因与客户评分的关系：各退款原因对应的平均评分和低分率是多少？",
+      "gold_sql": "SELECT r.reason_code,\n       ROUND(AVG(rev.review_score), 2) AS avg_score,\n       ROUND(100.0 * COUNT(*) FILTER (WHERE rev.review_score <= 2) / COUNT(*), 2) AS low_score_pct\nFROM refunds r\nJOIN orders o ON o.order_id = r.order_id\nJOIN order_reviews rev ON rev.order_id = r.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY 1 ORDER BY low_score_pct DESC;\n"
+    }
+  ]
+}

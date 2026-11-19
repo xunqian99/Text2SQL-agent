@@ -1,0 +1,138 @@
+{
+  "format": "fresh-contract-review-input-v1",
+  "scope": "Original formal eval only; no previous audit conclusions or model outputs",
+  "items": [
+    {
+      "id": "T4-002",
+      "difficulty": "multi_join",
+      "question": "每个州的商品销售额是多少？",
+      "gold_sql": "SELECT c.customer_state, ROUND(SUM(oi.price), 2) AS sales\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY sales DESC;\n"
+    },
+    {
+      "id": "T4-004",
+      "difficulty": "multi_join",
+      "question": "用英文类目名统计，哪个类目的销售额最高？",
+      "gold_sql": "SELECT t.product_category_name_english, ROUND(SUM(oi.price), 2) AS sales\nFROM order_items oi\nJOIN products p ON p.product_id = oi.product_id\nJOIN product_category_translation t ON t.product_category_name = p.product_category_name\nGROUP BY 1 ORDER BY sales DESC LIMIT 1;\n"
+    },
+    {
+      "id": "T4-006",
+      "difficulty": "multi_join",
+      "question": "每个卖家所在的州和该州卖家的总销售额是多少？",
+      "gold_sql": "SELECT s.seller_state, ROUND(SUM(oi.price), 2) AS sales\nFROM order_items oi JOIN sellers s ON s.seller_id = oi.seller_id\nGROUP BY 1 ORDER BY sales DESC;\n"
+    },
+    {
+      "id": "T4-008",
+      "difficulty": "multi_join",
+      "question": "有多少个会员从来没有被打过任何标签？",
+      "gold_sql": "SELECT COUNT(*)\nFROM members m\nLEFT JOIN user_tag_map t ON t.member_id = m.member_id\nWHERE t.member_id IS NULL;\n"
+    },
+    {
+      "id": "T4-011",
+      "difficulty": "multi_join",
+      "question": "每个订单状态的平均评价分是多少？",
+      "gold_sql": "SELECT o.order_status, ROUND(AVG(r.review_score), 2) AS avg_score\nFROM orders o JOIN order_reviews r ON r.order_id = o.order_id\nGROUP BY 1 ORDER BY avg_score DESC;\n"
+    },
+    {
+      "id": "T4-013",
+      "difficulty": "multi_join",
+      "question": "差评（1 分或 2 分）的订单里，各州分别有多少笔？",
+      "gold_sql": "SELECT c.customer_state, COUNT(*) AS cnt\nFROM order_reviews r\nJOIN orders o ON o.order_id = r.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nWHERE r.review_score <= 2\nGROUP BY 1 ORDER BY cnt DESC;\n"
+    },
+    {
+      "id": "T4-015",
+      "difficulty": "multi_join",
+      "question": "每个大区的订单数量是多少？",
+      "gold_sql": "SELECT r.macro_region, COUNT(*) AS cnt\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN regions r ON r.region_code = c.customer_state\nGROUP BY 1 ORDER BY cnt DESC;\n"
+    },
+    {
+      "id": "T4-017",
+      "difficulty": "multi_join",
+      "question": "每个会员等级对应的订单数量是多少？",
+      "gold_sql": "SELECT m.level_id, COUNT(*) AS cnt\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN members m ON m.customer_unique_id = c.customer_unique_id\nGROUP BY 1 ORDER BY 1;\n"
+    },
+    {
+      "id": "T4-019",
+      "difficulty": "multi_join",
+      "question": "每种用户标签下各有多少会员？",
+      "gold_sql": "SELECT t.tag_name, COUNT(DISTINCT m.member_id) AS cnt\nFROM user_tag_map m JOIN user_tags t ON t.tag_id = m.tag_id\nGROUP BY 1 ORDER BY cnt DESC;\n"
+    },
+    {
+      "id": "T4-020",
+      "difficulty": "multi_join",
+      "question": "打了\"高价值用户\"标签的会员一共下了多少单？",
+      "gold_sql": "SELECT COUNT(DISTINCT o.order_id) AS cnt\nFROM user_tag_map tm\nJOIN user_tags t ON t.tag_id = tm.tag_id\nJOIN members m ON m.member_id = tm.member_id\nJOIN customers c ON c.customer_unique_id = m.customer_unique_id\nJOIN orders o ON o.customer_id = c.customer_id\nWHERE t.tag_code = 'HIGH_VALUE';\n"
+    },
+    {
+      "id": "T4-022",
+      "difficulty": "multi_join",
+      "question": "通过优惠券一共优惠了多少钱？",
+      "gold_sql": "SELECT ROUND(SUM(discount_amount), 2) FROM coupon_usages;\n"
+    },
+    {
+      "id": "T4-024",
+      "difficulty": "multi_join",
+      "question": "每个仓库（按仓库名称）负责了多少个发货单？",
+      "gold_sql": "SELECT w.warehouse_name, COUNT(*) AS cnt\nFROM shipments s JOIN warehouses w ON w.warehouse_id = s.warehouse_id\nGROUP BY 1 ORDER BY cnt DESC;\n"
+    },
+    {
+      "id": "T4-026",
+      "difficulty": "multi_join",
+      "question": "每家承运商的平均配送时长是多少天？",
+      "gold_sql": "SELECT carrier,\n       ROUND(AVG(EXTRACT(EPOCH FROM (delivered_at - shipped_at)) / 86400), 2) AS avg_days\nFROM shipments\nWHERE delivered_at IS NOT NULL AND shipped_at IS NOT NULL\nGROUP BY 1 ORDER BY avg_days;\n"
+    },
+    {
+      "id": "T4-028",
+      "difficulty": "multi_join",
+      "question": "每个工单分类的平均处理时长是多少小时？",
+      "gold_sql": "SELECT tc.category_name,\n       ROUND(AVG(EXTRACT(EPOCH FROM (st.resolved_at - st.created_at)) / 3600), 2) AS avg_hours\nFROM support_tickets st\nJOIN ticket_categories tc ON tc.category_id = st.category_id\nWHERE st.resolved_at IS NOT NULL\nGROUP BY 1 ORDER BY avg_hours DESC;\n"
+    },
+    {
+      "id": "T4-031",
+      "difficulty": "multi_join",
+      "question": "每个州的卖家结算净额合计是多少？",
+      "gold_sql": "SELECT s.seller_state, ROUND(SUM(st.net_amount), 2) AS total\nFROM settlements st JOIN sellers s ON s.seller_id = st.seller_id\nGROUP BY 1 ORDER BY total DESC;\n"
+    },
+    {
+      "id": "T4-033",
+      "difficulty": "multi_join",
+      "question": "每个退款原因的退款金额合计是多少？",
+      "gold_sql": "SELECT reason_code, ROUND(SUM(refund_amount), 2) AS total\nFROM refunds GROUP BY 1 ORDER BY total DESC;\n"
+    },
+    {
+      "id": "T4-035",
+      "difficulty": "multi_join",
+      "question": "客单价最高的 10 个客户是谁？客单价按订单平均金额算。",
+      "gold_sql": "SELECT c.customer_unique_id,\n       ROUND(SUM(oi.price + oi.freight_value) / COUNT(DISTINCT o.order_id), 2) AS avg_order_value\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN order_items oi ON oi.order_id = o.order_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable')\nGROUP BY 1\nORDER BY avg_order_value DESC LIMIT 10;\n"
+    },
+    {
+      "id": "T4-037",
+      "difficulty": "multi_join",
+      "question": "每个商品的图片数量和它的销量分别是多少？取销量前 10。",
+      "gold_sql": "SELECT p.product_id, p.product_photos_qty, COUNT(*) AS sold\nFROM order_items oi JOIN products p ON p.product_id = oi.product_id\nGROUP BY 1, 2 ORDER BY sold DESC LIMIT 10;\n"
+    },
+    {
+      "id": "T4-039",
+      "difficulty": "multi_join",
+      "question": "搜索后有点击的搜索记录占多少比例？",
+      "gold_sql": "SELECT ROUND(\n  COUNT(*) FILTER (WHERE clicked_product_id IS NOT NULL)::NUMERIC / COUNT(*), 4) AS ctr\nFROM search_logs;\n"
+    },
+    {
+      "id": "T4-040",
+      "difficulty": "multi_join",
+      "question": "有多少个商品从来没有进过任何仓库的库存表？",
+      "gold_sql": "SELECT COUNT(*)\nFROM products p\nLEFT JOIN inventory i ON i.product_id = p.product_id\nWHERE i.product_id IS NULL;\n"
+    },
+    {
+      "id": "T4-042",
+      "difficulty": "multi_join",
+      "question": "发生过价格调整的商品里，有多少个商品的价格是上调的？",
+      "gold_sql": "SELECT COUNT(DISTINCT product_id) FROM product_price_history WHERE new_price > old_price;\n"
+    },
+    {
+      "id": "T4-044",
+      "difficulty": "multi_join",
+      "question": "每个大区有多少个客户？平均每人下多少单？",
+      "gold_sql": "SELECT r.macro_region,\n       COUNT(DISTINCT c.customer_unique_id) AS customers,\n       ROUND(COUNT(o.order_id)::NUMERIC / COUNT(DISTINCT c.customer_unique_id), 2) AS orders_per_customer\nFROM customers c\nJOIN regions r ON r.region_code = c.customer_state\nLEFT JOIN orders o ON o.customer_id = c.customer_id\nGROUP BY 1 ORDER BY customers DESC;\n"
+    }
+  ]
+}

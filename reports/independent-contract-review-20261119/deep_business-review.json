@@ -1,0 +1,1645 @@
+{
+  "reviewer": "/root/review_deep_business",
+  "provenance": {
+    "freshContext": true,
+    "participatedInAuthoringOrTuning": false,
+    "readPriorAudit": false,
+    "externalModelCalls": 0,
+    "scope": "Only original formal 22 T5/T6 questions in deep_business-input.json; product defaults read only from the six allowed source files and actual public schema.",
+    "dbRole": "text2sql_ro",
+    "database": "olist",
+    "dbAccess": "docker exec psql -X -qAt -v ON_ERROR_STOP=1; every script BEGIN READ ONLY, statement_timeout 8s, ROLLBACK",
+    "inputSha256": "040e565dcdcf5bd6b0e20058c3336c26f5226ff38d397e89e045b43687ece784",
+    "productSourceSha256": {
+      "src/main/java/com/text2sql/agent/generation/PromptTemplate.java": "a15f3afc299865fb3752bce5cbb595b57af43fe750c5f5cb09809efd690a724b",
+      "src/main/resources/schema/metrics.yml": "78dfc23f9075536aa7568f94c87c41d238cac0c66c553449c9fd7c67c9035192",
+      "src/main/resources/schema/ambiguities.yml": "493dccf3090c7f7ea544162a351e8c8d1e7ab085886ec16aa12797ae89ce3e3a",
+      "src/main/resources/schema/glossary.yml": "b4bc655947ed1f4eb2e243bbdaf3800bdd7919ee4121fc9a7276b647947b99ac",
+      "src/main/java/com/text2sql/agent/clarification/AmbiguityDetector.java": "155f6f879d696083955e4ddf231c52e713695c6361a37b1224ac9e12fcbc8f18",
+      "src/main/java/com/text2sql/agent/retrieval/DatabaseSchemaReader.java": "c264eb79e4c73fa1d8302f355195a02958c9d2e3e15dc09c082506e2da917f6d"
+    },
+    "excludedSources": [
+      "historical model outputs",
+      "other reviewers' conclusions",
+      "docs/review",
+      "docs/EVALUATION_CONTRACT_ERRATA*",
+      "ROADMAP/IMPROVEMENT_PLAN historical states",
+      "other project audit reports"
+    ],
+    "runtimeLimitation": "No production request, model call, or paid evaluation was executed; clarification behavior is source analysis, not claimed runtime measurement."
+  },
+  "decisionPriority": "REFERENCE_DEFECT: clear question/measure defect with actual result change; CONTRACT_CONFLICT: frozen current product rule disagrees with Gold; AMBIGUOUS: material unresolved business/tie choice; COINCIDENTAL_EQUIVALENCE: actual snapshot equality depends on unsupported shape; KEEP: no concrete fixed-snapshot answer defect under current registered business definition, with separately stated edge limits.",
+  "summary": {
+    "reviewed": 22,
+    "counts": {
+      "CONTRACT_CONFLICT": 6,
+      "COINCIDENTAL_EQUIVALENCE": 5,
+      "AMBIGUOUS": 1,
+      "REFERENCE_DEFECT": 4,
+      "KEEP": 6
+    },
+    "candidateSqlCount": 8,
+    "changedProductionOrBenchmark": false,
+    "gitCommitPerformed": false
+  },
+  "sharedChecks": [
+    {
+      "sql": "BEGIN READ ONLY;\nSET LOCAL statement_timeout = '8s';\nSELECT jsonb_build_object('check','undeclared foreign-key coverage','result',jsonb_build_object(\n 'refund_items_missing_refund',(SELECT COUNT(*) FROM refund_items ri WHERE NOT EXISTS(SELECT 1 FROM refunds r WHERE r.refund_id=ri.refund_id)),\n 'refund_items_missing_order_item',(SELECT COUNT(*) FROM refund_items ri WHERE NOT EXISTS(SELECT 1 FROM order_items oi WHERE oi.order_id=ri.order_id AND oi.order_item_id=ri.order_item_id)),\n 'settlement_items_missing_settlement',(SELECT COUNT(*) FROM settlement_items si WHERE NOT EXISTS(SELECT 1 FROM settlements st WHERE st.settlement_id=si.settlement_id)),\n 'tag_maps_missing_member',(SELECT COUNT(*) FROM user_tag_map utm WHERE NOT EXISTS(SELECT 1 FROM members m WHERE m.member_id=utm.member_id)),\n 'tag_maps_missing_tag',(SELECT COUNT(*) FROM user_tag_map utm WHERE NOT EXISTS(SELECT 1 FROM user_tags ut WHERE ut.tag_id=utm.tag_id)),\n 'refunds_missing_order',(SELECT COUNT(*) FROM refunds r WHERE NOT EXISTS(SELECT 1 FROM orders o WHERE o.order_id=r.order_id)),\n 'snapshots_missing_member',(SELECT COUNT(*) FROM member_snapshot ms WHERE NOT EXISTS(SELECT 1 FROM members m WHERE m.member_id=ms.member_id)),\n 'coupon_usage_missing_order',(SELECT COUNT(*) FROM coupon_usages cu WHERE NOT EXISTS(SELECT 1 FROM orders o WHERE o.order_id=cu.order_id))\n));\nROLLBACK;\n",
+      "result": {
+        "tag_maps_missing_tag": 0,
+        "refunds_missing_order": 0,
+        "tag_maps_missing_member": 0,
+        "snapshots_missing_member": 0,
+        "coupon_usage_missing_order": 0,
+        "refund_items_missing_refund": 0,
+        "refund_items_missing_order_item": 0,
+        "settlement_items_missing_settlement": 0
+      },
+      "interpretation": "未声明外键的关联当前孤儿数均为0；这只是快照核查，不替代DDL完整性保证。"
+    }
+  ],
+  "items": [
+    {
+      "id": "T5-001",
+      "decision": "CONTRACT_CONFLICT",
+      "reason": "商品销售额已有明确不含运费提示，Gold按商品明细price汇总且会员通过customer_unique_id关联正确；会员customer_unique_id有UNIQUE，未发生明细放大。问题没有明确宏观区域归属哪一方，而当前大区规则要求先确认客户/卖家/仓库来源，Gold直接指定customers.customer_state。会员等级按名称是题干显式要求，不能把此处名称输出判错。当前112650条会员商品明细的区域/等级均匹配；549条取消/不可用商品明细被计入，题干没有有效订单要求，不能擅自再过滤。",
+      "contractSource": [
+        "src/main/resources/schema/ambiguities.yml:67 regional-subject及triggerPatterns",
+        "src/main/java/com/text2sql/agent/clarification/AmbiguityDetector.java:decisionsFor（证据组全部满足才免澄清）",
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java:78-85（事实过滤、名称维度）",
+        "实际schema: members.customer_unique_id UNIQUE、members.level_id FK、regions.region_code PK"
+      ],
+      "checks": [
+        {
+          "check": "membership and regional coverage",
+          "evidenceType": "production_snapshot",
+          "sql": "SELECT jsonb_build_object('id','T5-001','check','membership and regional coverage','result',to_jsonb(x)) FROM (\n SELECT COUNT(*) AS item_rows,SUM(oi.price) AS item_amount,\n COUNT(*) FILTER (WHERE r.region_code IS NULL) AS missing_region_items,\n COUNT(*) FILTER (WHERE ml.level_id IS NULL) AS missing_level_items,\n COUNT(*) FILTER (WHERE o.order_status IN ('canceled','unavailable')) AS canceled_or_unavailable_items\n FROM orders o JOIN customers c ON c.customer_id=o.customer_id\n JOIN members m ON m.customer_unique_id=c.customer_unique_id\n JOIN order_items oi ON oi.order_id=o.order_id\n LEFT JOIN regions r ON r.region_code=c.customer_state\n LEFT JOIN member_levels ml ON ml.level_id=m.level_id\n) x;",
+          "result": {
+            "item_rows": 112650,
+            "item_amount": 13591643.7,
+            "missing_level_items": 0,
+            "missing_region_items": 0,
+            "canceled_or_unavailable_items": 549
+          }
+        }
+      ],
+      "proposedResolution": "先确认地域主体。若基准本来意图客户登记州，应把该意图写进问题；若希望由产品自动选客户州，需另行明确修改产品默认，不能把Gold选择伪装成唯一题意。",
+      "secondaryIssues": [
+        {
+          "type": "AMBIGUOUS",
+          "detail": "原题交易地域来源未确定；候选题干采用客户州只是待业务确认的一个选项，卖家州或仓库归属也需各自定义。"
+        }
+      ],
+      "boundaryAssessment": "等级名称明确可合并名称组；会员唯一约束阻止按自然人连接产生会员重复。区域/等级缺失当前为0，不代表所有外部地域映射均有强制FK。没有增加有效订单过滤。",
+      "proposedQuestion": "按客户登记州所属宏观区域，各会员等级（按等级名称）的商品销售额分别是多少？按销售额从高到低排序。",
+      "question": "每个宏观区域下，各会员等级（按等级名称）的商品销售额分别是多少？按销售额从高到低排序。",
+      "originalGoldSql": "SELECT r.macro_region, ml.level_name, ROUND(SUM(oi.price), 2) AS gmv\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN regions r ON r.region_code = c.customer_state\nJOIN members m ON m.customer_unique_id = c.customer_unique_id\nJOIN member_levels ml ON ml.level_id = m.level_id\nJOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1, 2 ORDER BY gmv DESC;\n"
+    },
+    {
+      "id": "T5-003",
+      "decision": "COINCIDENTAL_EQUIVALENCE",
+      "reason": "退款金额使用refund_items.refund_value，且订单明细按(order_id,order_item_id)完整键关联，粒度正确，不存在退款头金额重复累加。当前5356条退款明细中84条原始类目为SQL NULL，金额9667.78；按当前product_category_nulls_v1默认排除，这部分不是翻译丢失错误。其余原始类目均能匹配翻译，故Gold的INNER JOIN当前等价于保留未翻译名称的LEFT JOIN；但products类目到翻译表没有FK保证，不能宣称以后也等价。前15名边界金额13359.56，只有1组，无截断并列。",
+      "contractSource": [
+        "src/main/resources/schema/metrics.yml:477 product_category_nulls_v1",
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java:85（名称关联保留未匹配事实）",
+        "实际schema: refund_items复合PK、order_items复合PK、translation原类目PK；products类目无翻译FK"
+      ],
+      "checks": [
+        {
+          "check": "refund item translation coverage",
+          "evidenceType": "production_snapshot",
+          "sql": "SELECT jsonb_build_object('id','T5-003','check','refund item translation coverage','result',to_jsonb(x)) FROM (\n SELECT COUNT(*) AS refund_items,SUM(ri.refund_value) AS total,\n COUNT(*) FILTER (WHERE p.product_category_name IS NULL) AS null_category_items,\n SUM(ri.refund_value) FILTER (WHERE p.product_category_name IS NULL) AS null_category_amount,\n COUNT(*) FILTER (WHERE p.product_category_name IS NOT NULL AND t.product_category_name IS NULL) AS untranslated_items,\n SUM(ri.refund_value) FILTER (WHERE p.product_category_name IS NOT NULL AND t.product_category_name IS NULL) AS untranslated_amount,\n COUNT(*) FILTER (WHERE t.product_category_name_english IS NULL AND p.product_category_name IS NOT NULL) AS null_english_items\n FROM refunds r JOIN refund_items ri ON ri.refund_id=r.refund_id\n JOIN order_items oi ON oi.order_id=ri.order_id AND oi.order_item_id=ri.order_item_id\n JOIN products p ON p.product_id=oi.product_id\n LEFT JOIN product_category_translation t ON t.product_category_name=p.product_category_name\n) x;",
+          "result": {
+            "total": 630802.47,
+            "refund_items": 5356,
+            "null_english_items": 0,
+            "untranslated_items": 0,
+            "null_category_items": 84,
+            "untranslated_amount": null,
+            "null_category_amount": 9667.78
+          }
+        },
+        {
+          "check": "TopK boundary",
+          "evidenceType": "production_snapshot",
+          "sql": "WITH q AS (SELECT t.product_category_name_english, ROUND(SUM(ri.refund_value), 2) AS refund_amt\nFROM refunds r\nJOIN refund_items ri ON ri.refund_id = r.refund_id\nJOIN order_items oi ON oi.order_id = ri.order_id AND oi.order_item_id = ri.order_item_id\nJOIN products p ON p.product_id = oi.product_id\nJOIN product_category_translation t ON t.product_category_name = p.product_category_name\nGROUP BY 1 ORDER BY refund_amt DESC), z AS (SELECT q.*, ROW_NUMBER() OVER(ORDER BY refund_amt DESC) AS rn FROM q), boundary AS (SELECT refund_amt AS value FROM z WHERE rn=15) SELECT jsonb_build_object('id','T5-003','check','TopK boundary','result',jsonb_build_object('limit',15,'total_groups',(SELECT COUNT(*) FROM q),'boundary_value',(SELECT value FROM boundary),'groups_equal_to_boundary',(SELECT COUNT(*) FROM q,boundary WHERE q.refund_amt=boundary.value),'groups_above_boundary',(SELECT COUNT(*) FROM q,boundary WHERE q.refund_amt>boundary.value)));",
+          "result": {
+            "limit": 15,
+            "total_groups": 66,
+            "boundary_value": 13359.56,
+            "groups_above_boundary": 14,
+            "groups_equal_to_boundary": 1
+          }
+        }
+      ],
+      "proposedResolution": "保留当前商品原始类目NULL默认；把翻译连接改为LEFT JOIN并单独显式排除原始类目SQL NULL。未翻译的非NULL原类目保留为NULL英文名组。不要追加退款状态或订单状态过滤。",
+      "secondaryIssues": [
+        {
+          "type": "NULL_POLICY",
+          "detail": "原始类目NULL与非NULL类目缺英文翻译必须分开；前者受当前排除口径管理，后者不能被翻译INNER JOIN删掉。"
+        }
+      ],
+      "boundaryAssessment": "有多个退款明细时金额逐明细求和；同金额不同退款不得SUM(DISTINCT金额)。现库无非NULL类目缺翻译只是事实，不是完整性保证。",
+      "question": "用英文类目名统计退款金额，哪些类目退款最多？取前 15。",
+      "originalGoldSql": "SELECT t.product_category_name_english, ROUND(SUM(ri.refund_value), 2) AS refund_amt\nFROM refunds r\nJOIN refund_items ri ON ri.refund_id = r.refund_id\nJOIN order_items oi ON oi.order_id = ri.order_id AND oi.order_item_id = ri.order_item_id\nJOIN products p ON p.product_id = oi.product_id\nJOIN product_category_translation t ON t.product_category_name = p.product_category_name\nGROUP BY 1 ORDER BY refund_amt DESC LIMIT 15;\n"
+    },
+    {
+      "id": "T5-005",
+      "decision": "CONTRACT_CONFLICT",
+      "reason": "当前产品默认每个活动以campaign_id区分并输出标识，原题没有要求活动名称，而Gold仅按campaign_name分组和输出。campaign_name没有UNIQUE；当前同名活动为0只能证明本快照暂未合并。另Gold把coupon_usages直接连商品明细，会在同一活动同一订单有多条用券记录时重复销售额，COUNT DISTINCT订单只能修计数不能修金额。本快照11926个有效活动-订单恰好各1条用券，Gold与活动-订单去重销售额均1660953.90；这条金额等价不能推广。前10边界无并列。",
+      "contractSource": [
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java:84（未明确名称默认标识）",
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java:92-98（实体完整主键、金额事实粒度）",
+        "实际schema: coupon_usages仅usage_id PK，无(campaign,order)唯一；campaigns仅campaign_id PK"
+      ],
+      "checks": [
+        {
+          "check": "campaign order grain",
+          "evidenceType": "production_snapshot",
+          "sql": "WITH facts AS (\n SELECT ca.campaign_id,ca.campaign_name,cu.order_id,COUNT(*) AS usages\n FROM coupon_usages cu JOIN coupons cp ON cp.coupon_id=cu.coupon_id\n JOIN campaigns ca ON ca.campaign_id=cp.campaign_id\n JOIN orders o ON o.order_id=cu.order_id\n WHERE o.order_status NOT IN ('canceled','unavailable') GROUP BY 1,2,3\n), ot AS (SELECT order_id,SUM(price) AS sales FROM order_items GROUP BY 1)\nSELECT jsonb_build_object('id','T5-005','check','campaign order grain','result',to_jsonb(x)) FROM (\n SELECT COUNT(*) AS campaign_orders,COUNT(*) FILTER (WHERE usages>1) AS repeated_campaign_orders,\n SUM(usages) AS usage_rows,SUM(ot.sales*usages) AS gold_sales,SUM(ot.sales) AS deduplicated_campaign_order_sales,\n (SELECT COUNT(*) FROM (SELECT campaign_name FROM campaigns GROUP BY 1 HAVING COUNT(*)>1) d) AS duplicate_campaign_names\n FROM facts JOIN ot USING(order_id)\n) x;",
+          "result": {
+            "gold_sales": 1660953.9,
+            "usage_rows": 11926,
+            "campaign_orders": 11926,
+            "duplicate_campaign_names": 0,
+            "repeated_campaign_orders": 0,
+            "deduplicated_campaign_order_sales": 1660953.9
+          }
+        },
+        {
+          "check": "TopK boundary",
+          "evidenceType": "production_snapshot",
+          "sql": "WITH q AS (SELECT ca.campaign_name, COUNT(DISTINCT cu.order_id) AS used_orders, ROUND(SUM(oi.price), 2) AS gmv\nFROM coupon_usages cu\nJOIN coupons cp ON cp.coupon_id = cu.coupon_id\nJOIN campaigns ca ON ca.campaign_id = cp.campaign_id\nJOIN orders o ON o.order_id = cu.order_id\nJOIN order_items oi ON oi.order_id = cu.order_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable')\nGROUP BY 1 ORDER BY gmv DESC), z AS (SELECT q.*, ROW_NUMBER() OVER(ORDER BY gmv DESC) AS rn FROM q), boundary AS (SELECT gmv AS value FROM z WHERE rn=10) SELECT jsonb_build_object('id','T5-005','check','TopK boundary','result',jsonb_build_object('limit',10,'total_groups',(SELECT COUNT(*) FROM q),'boundary_value',(SELECT value FROM boundary),'groups_equal_to_boundary',(SELECT COUNT(*) FROM q,boundary WHERE q.gmv=boundary.value),'groups_above_boundary',(SELECT COUNT(*) FROM q,boundary WHERE q.gmv>boundary.value)));",
+          "result": {
+            "limit": 10,
+            "total_groups": 52,
+            "boundary_value": 35861.04,
+            "groups_above_boundary": 9,
+            "groups_equal_to_boundary": 1
+          }
+        }
+      ],
+      "proposedResolution": "先把结果维度契约写清：按现有产品默认输出campaign_id；若业务要名称则显式改题，并仍按活动主键隔离同名活动。销售额必须先去重活动-订单，再关联一行一订单商品金额；各指标保留有效订单全集。候选SQL包含全部已定义活动，空活动计数0、金额保持NULL。",
+      "secondaryIssues": [
+        {
+          "type": "COINCIDENTAL_EQUIVALENCE",
+          "detail": "现库无同活动多次用券，也无同名活动；Gold的活动粒度与金额未被当前数据揭穿。"
+        }
+      ],
+      "boundaryAssessment": "本题核查以当前只读快照为证据；没有把观测到的唯一性冒充数据库约束。",
+      "proposedGoldSql": "WITH campaign_orders AS (\n SELECT DISTINCT cp.campaign_id, cu.order_id\n FROM coupon_usages cu JOIN coupons cp ON cp.coupon_id=cu.coupon_id\n JOIN orders o ON o.order_id=cu.order_id\n WHERE o.order_status NOT IN ('canceled','unavailable')\n), item_totals AS (\n SELECT order_id,SUM(price) AS sales FROM order_items GROUP BY order_id\n)\nSELECT ca.campaign_id,COUNT(co.order_id) AS used_orders,ROUND(SUM(it.sales),2) AS gmv\nFROM campaigns ca LEFT JOIN campaign_orders co ON co.campaign_id=ca.campaign_id\nLEFT JOIN item_totals it ON it.order_id=co.order_id\nGROUP BY ca.campaign_id ORDER BY gmv DESC NULLS LAST LIMIT 10;",
+      "proposedGoldSqlStatus": "diagnostic_candidate_only_not_applied",
+      "proposedQuestion": "按活动编号统计每个优惠券活动带来的有效订单数和商品销售额，按商品销售额降序取前10；没有有效用券订单的活动也保留。",
+      "question": "每个优惠券活动带来的有效订单数和商品销售额是多少？取前 10。",
+      "originalGoldSql": "SELECT ca.campaign_name, COUNT(DISTINCT cu.order_id) AS used_orders, ROUND(SUM(oi.price), 2) AS gmv\nFROM coupon_usages cu\nJOIN coupons cp ON cp.coupon_id = cu.coupon_id\nJOIN campaigns ca ON ca.campaign_id = cp.campaign_id\nJOIN orders o ON o.order_id = cu.order_id\nJOIN order_items oi ON oi.order_id = cu.order_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable')\nGROUP BY 1 ORDER BY gmv DESC LIMIT 10;\n",
+      "candidateResult": [
+        {
+          "gmv": 41423.64,
+          "campaign_id": 16,
+          "used_orders": 268
+        },
+        {
+          "gmv": 39668.42,
+          "campaign_id": 28,
+          "used_orders": 218
+        },
+        {
+          "gmv": 39626.69,
+          "campaign_id": 49,
+          "used_orders": 225
+        },
+        {
+          "gmv": 38989.22,
+          "campaign_id": 4,
+          "used_orders": 258
+        },
+        {
+          "gmv": 37363.43,
+          "campaign_id": 27,
+          "used_orders": 274
+        },
+        {
+          "gmv": 36990.08,
+          "campaign_id": 12,
+          "used_orders": 242
+        },
+        {
+          "gmv": 36511.68,
+          "campaign_id": 37,
+          "used_orders": 264
+        },
+        {
+          "gmv": 36157.79,
+          "campaign_id": 48,
+          "used_orders": 207
+        },
+        {
+          "gmv": 35945.43,
+          "campaign_id": 41,
+          "used_orders": 210
+        },
+        {
+          "gmv": 35861.04,
+          "campaign_id": 36,
+          "used_orders": 237
+        }
+      ],
+      "candidateResultSqlFile": "deep_business-candidate-results.sql"
+    },
+    {
+      "id": "T5-007",
+      "decision": "CONTRACT_CONFLICT",
+      "reason": "统计对象是有点击的搜索记录，会员及会员等级不是本题指标或维度，Gold多加两个INNER JOIN会额外要求点击者是可匹配等级的会员。当前8651条点击记录都匹配会员/等级，故这部分过滤暂未造成差异；但member_id可空且search_logs没有这条完整性保证。类目原始NULL有162条，当前默认可排除；另有5条非NULL原类目没有英文翻译，被Gold删掉，违反名称查找不能缩小事实的当前契约。Gold纳入8484条；保留缺翻译后为8489条。因缺翻译仅5条、Top20边界77次，当前所选Top20成员不变，不能据此说全链路口径正确。",
+      "contractSource": [
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java:78-85（不得无据加过滤；缺名称保留）",
+        "src/main/resources/schema/metrics.yml:477（仅排除原始SQL NULL）",
+        "实际schema: search_logs.log_id PK、member_id nullable；翻译原类目唯一但不保证覆盖所有products类目"
+      ],
+      "checks": [
+        {
+          "check": "clicked search population",
+          "evidenceType": "production_snapshot",
+          "sql": "SELECT jsonb_build_object('id','T5-007','check','clicked search population','result',to_jsonb(x)) FROM (\n SELECT COUNT(*) AS clicked_logs,\n COUNT(*) FILTER(WHERE p.product_id IS NULL) AS missing_products,\n COUNT(*) FILTER(WHERE m.member_id IS NULL) AS missing_members,\n COUNT(*) FILTER(WHERE ml.level_id IS NULL) AS missing_member_levels,\n COUNT(*) FILTER(WHERE p.product_category_name IS NULL) AS null_category,\n COUNT(*) FILTER(WHERE p.product_category_name IS NOT NULL AND t.product_category_name IS NULL) AS untranslated_category,\n COUNT(*) FILTER(WHERE t.product_category_name IS NOT NULL AND m.member_id IS NOT NULL AND ml.level_id IS NOT NULL) AS gold_logs\n FROM search_logs sl LEFT JOIN products p ON p.product_id=sl.clicked_product_id\n LEFT JOIN product_category_translation t ON t.product_category_name=p.product_category_name\n LEFT JOIN members m ON m.member_id=sl.member_id\n LEFT JOIN member_levels ml ON ml.level_id=m.level_id\n WHERE sl.clicked_product_id IS NOT NULL\n) x;",
+          "result": {
+            "gold_logs": 8484,
+            "clicked_logs": 8651,
+            "null_category": 162,
+            "missing_members": 0,
+            "missing_products": 0,
+            "missing_member_levels": 0,
+            "untranslated_category": 5
+          }
+        },
+        {
+          "check": "TopK boundary",
+          "evidenceType": "production_snapshot",
+          "sql": "WITH q AS (SELECT sl.keyword, t.product_category_name_english, COUNT(*) AS clicks\nFROM search_logs sl\nJOIN products p ON p.product_id = sl.clicked_product_id\nJOIN product_category_translation t ON t.product_category_name = p.product_category_name\nJOIN members m ON m.member_id = sl.member_id\nJOIN member_levels ml ON ml.level_id = m.level_id\nWHERE sl.clicked_product_id IS NOT NULL\nGROUP BY 1, 2 ORDER BY clicks DESC), z AS (SELECT q.*, ROW_NUMBER() OVER(ORDER BY clicks DESC) AS rn FROM q), boundary AS (SELECT clicks AS value FROM z WHERE rn=20) SELECT jsonb_build_object('id','T5-007','check','TopK boundary','result',jsonb_build_object('limit',20,'total_groups',(SELECT COUNT(*) FROM q),'boundary_value',(SELECT value FROM boundary),'groups_equal_to_boundary',(SELECT COUNT(*) FROM q,boundary WHERE q.clicks=boundary.value),'groups_above_boundary',(SELECT COUNT(*) FROM q,boundary WHERE q.clicks>boundary.value)));",
+          "result": {
+            "limit": 20,
+            "total_groups": 546,
+            "boundary_value": 77,
+            "groups_above_boundary": 16,
+            "groups_equal_to_boundary": 4
+          }
+        }
+      ],
+      "proposedResolution": "删掉无题意依据的会员/等级连接；保留原始类目NULL默认过滤；翻译用LEFT JOIN保留非NULL原类目缺译的点击。不能为了凑深度增加会员连接。",
+      "secondaryIssues": [
+        {
+          "type": "COINCIDENTAL_EQUIVALENCE",
+          "detail": "当前会员连接恰好不丢记录；缺翻译组又低于Top20阈值，因此最终Top20相同不能证明参考SQL范围正确。"
+        }
+      ],
+      "boundaryAssessment": "Top20边界有4组同为77次，但恰好16组更高，4组全被包含，并未从并列组中任取一部分。未知产品的原类目归属仍需独立业务定义，本快照缺商品0条。",
+      "proposedGoldSql": "SELECT sl.keyword,t.product_category_name_english,COUNT(*) AS clicks\nFROM search_logs sl JOIN products p ON p.product_id=sl.clicked_product_id\nLEFT JOIN product_category_translation t ON t.product_category_name=p.product_category_name\nWHERE sl.clicked_product_id IS NOT NULL AND p.product_category_name IS NOT NULL\nGROUP BY sl.keyword,t.product_category_name_english ORDER BY clicks DESC LIMIT 20;",
+      "proposedGoldSqlStatus": "diagnostic_candidate_only_not_applied",
+      "question": "有商品点击的搜索记录中，哪些关键词最常点到哪个英文类目的商品？取前 20。",
+      "originalGoldSql": "SELECT sl.keyword, t.product_category_name_english, COUNT(*) AS clicks\nFROM search_logs sl\nJOIN products p ON p.product_id = sl.clicked_product_id\nJOIN product_category_translation t ON t.product_category_name = p.product_category_name\nJOIN members m ON m.member_id = sl.member_id\nJOIN member_levels ml ON ml.level_id = m.level_id\nWHERE sl.clicked_product_id IS NOT NULL\nGROUP BY 1, 2 ORDER BY clicks DESC LIMIT 20;\n",
+      "candidateResult": [
+        {
+          "clicks": 103,
+          "keyword": "背包",
+          "product_category_name_english": "sports_leisure"
+        },
+        {
+          "clicks": 99,
+          "keyword": "背包",
+          "product_category_name_english": "bed_bath_table"
+        },
+        {
+          "clicks": 96,
+          "keyword": "书籍",
+          "product_category_name_english": "sports_leisure"
+        },
+        {
+          "clicks": 94,
+          "keyword": "耳机",
+          "product_category_name_english": "bed_bath_table"
+        },
+        {
+          "clicks": 91,
+          "keyword": "玩具",
+          "product_category_name_english": "bed_bath_table"
+        },
+        {
+          "clicks": 90,
+          "keyword": "手表",
+          "product_category_name_english": "bed_bath_table"
+        },
+        {
+          "clicks": 89,
+          "keyword": "耳机",
+          "product_category_name_english": "sports_leisure"
+        },
+        {
+          "clicks": 89,
+          "keyword": "运动鞋",
+          "product_category_name_english": "bed_bath_table"
+        },
+        {
+          "clicks": 86,
+          "keyword": "香水",
+          "product_category_name_english": "sports_leisure"
+        },
+        {
+          "clicks": 85,
+          "keyword": "书籍",
+          "product_category_name_english": "bed_bath_table"
+        },
+        {
+          "clicks": 85,
+          "keyword": "玩具",
+          "product_category_name_english": "furniture_decor"
+        },
+        {
+          "clicks": 83,
+          "keyword": "沙发",
+          "product_category_name_english": "sports_leisure"
+        },
+        {
+          "clicks": 83,
+          "keyword": "沙发",
+          "product_category_name_english": "bed_bath_table"
+        },
+        {
+          "clicks": 82,
+          "keyword": "香水",
+          "product_category_name_english": "bed_bath_table"
+        },
+        {
+          "clicks": 79,
+          "keyword": "书籍",
+          "product_category_name_english": "housewares"
+        },
+        {
+          "clicks": 78,
+          "keyword": "运动鞋",
+          "product_category_name_english": "furniture_decor"
+        },
+        {
+          "clicks": 77,
+          "keyword": "玩具",
+          "product_category_name_english": "sports_leisure"
+        },
+        {
+          "clicks": 77,
+          "keyword": "香水",
+          "product_category_name_english": "furniture_decor"
+        },
+        {
+          "clicks": 77,
+          "keyword": "书籍",
+          "product_category_name_english": "furniture_decor"
+        },
+        {
+          "clicks": 77,
+          "keyword": "手表",
+          "product_category_name_english": "sports_leisure"
+        }
+      ],
+      "candidateResultSqlFile": "deep_business-candidate-results.sql"
+    },
+    {
+      "id": "T5-009",
+      "decision": "AMBIGUOUS",
+      "reason": "题干没有规定Top20遇到并列如何处理。当前Gold共282组，第20名计数5，19组更高，另19组同为5；LIMIT20必须任取这19组中的1组，无唯一可审核结果。另1177个低库存仓库×商品行有359个没有当前品牌，Gold的INNER JOIN全部删掉；若保留未知品牌，其5个仓库组分别有66/70/77/67/79个，全部进入Top20。这是实际覆盖差异，但题干尚未说明未知品牌是否保留，也未明确历史品牌或当前品牌。Gold默认名称输出还与当前标识列默认不一致。不能为了贴Gold暗定这些选项。",
+      "contractSource": [
+        "原题：库存低于安全库存、按仓库/区域/品牌、前20；没有并列、未知品牌或历史品牌口径",
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java:84-85（标识默认、未知名称覆盖）",
+        "src/main/resources/schema/glossary.yml:346（历史商品品牌关系及is_current）",
+        "实际schema: inventory PK(warehouse_id,product_id)；product_brand_map PK(product_id,brand_id)，无单一当前品牌唯一约束"
+      ],
+      "checks": [
+        {
+          "check": "low inventory grain and names",
+          "evidenceType": "production_snapshot",
+          "sql": "WITH bc AS (SELECT product_id,COUNT(*) FILTER(WHERE is_current) AS current_brands FROM product_brand_map GROUP BY 1)\nSELECT jsonb_build_object('id','T5-009','check','low inventory grain and names','result',to_jsonb(x)) FROM (\n SELECT COUNT(*) AS low_stock_rows,COUNT(*) FILTER(WHERE COALESCE(bc.current_brands,0)=0) AS no_current_brand,\n COUNT(*) FILTER(WHERE bc.current_brands>1) AS multiple_current_brands,\n COUNT(*) FILTER(WHERE w.warehouse_id IS NULL OR r.region_code IS NULL) AS missing_warehouse_or_region,\n (SELECT COUNT(*) FROM (SELECT warehouse_name FROM warehouses GROUP BY 1 HAVING COUNT(*)>1) d) AS duplicate_warehouse_names,\n (SELECT COUNT(*) FROM (SELECT brand_name FROM brands GROUP BY 1 HAVING COUNT(*)>1) d) AS duplicate_brand_names\n FROM inventory i LEFT JOIN bc USING(product_id) LEFT JOIN warehouses w ON w.warehouse_id=i.warehouse_id\n LEFT JOIN regions r ON r.region_code=w.region_code WHERE i.quantity<i.safety_stock\n) x;",
+          "result": {
+            "low_stock_rows": 1177,
+            "no_current_brand": 359,
+            "duplicate_brand_names": 0,
+            "multiple_current_brands": 0,
+            "duplicate_warehouse_names": 0,
+            "missing_warehouse_or_region": 0
+          }
+        },
+        {
+          "check": "TopK boundary",
+          "evidenceType": "production_snapshot",
+          "sql": "WITH q AS (SELECT w.warehouse_name, r.region_name, b.brand_name, COUNT(*) AS low_stock_items\nFROM inventory i\nJOIN warehouses w ON w.warehouse_id = i.warehouse_id\nJOIN regions r ON r.region_code = w.region_code\nJOIN product_brand_map pbm ON pbm.product_id = i.product_id AND pbm.is_current\nJOIN brands b ON b.brand_id = pbm.brand_id\nWHERE i.quantity < i.safety_stock\nGROUP BY 1, 2, 3 ORDER BY low_stock_items DESC), z AS (SELECT q.*, ROW_NUMBER() OVER(ORDER BY low_stock_items DESC) AS rn FROM q), boundary AS (SELECT low_stock_items AS value FROM z WHERE rn=20) SELECT jsonb_build_object('id','T5-009','check','TopK boundary','result',jsonb_build_object('limit',20,'total_groups',(SELECT COUNT(*) FROM q),'boundary_value',(SELECT value FROM boundary),'groups_equal_to_boundary',(SELECT COUNT(*) FROM q,boundary WHERE q.low_stock_items=boundary.value),'groups_above_boundary',(SELECT COUNT(*) FROM q,boundary WHERE q.low_stock_items>boundary.value)));",
+          "result": {
+            "limit": 20,
+            "total_groups": 282,
+            "boundary_value": 5,
+            "groups_above_boundary": 19,
+            "groups_equal_to_boundary": 19
+          }
+        },
+        {
+          "check": "unknown brand population and Top20",
+          "evidenceType": "production_snapshot",
+          "sql": "WITH q AS (SELECT w.warehouse_id,r.region_code,pbm.brand_id,COUNT(*) AS n FROM inventory i JOIN warehouses w USING(warehouse_id) JOIN regions r USING(region_code) LEFT JOIN product_brand_map pbm ON pbm.product_id=i.product_id AND pbm.is_current WHERE i.quantity<i.safety_stock GROUP BY 1,2,3)\nSELECT jsonb_build_object('id','T5-009','check','unknown brand population and Top20','result',jsonb_build_object(\n 'unknown_brand_groups',(SELECT jsonb_agg(x) FROM (SELECT * FROM q WHERE brand_id IS NULL ORDER BY warehouse_id) x),\n 'unknown_brand_groups_in_top20',(SELECT COUNT(*) FROM(SELECT * FROM q ORDER BY n DESC LIMIT 20) z WHERE brand_id IS NULL)));",
+          "result": {
+            "unknown_brand_groups": [
+              {
+                "n": 66,
+                "brand_id": null,
+                "region_code": "SP",
+                "warehouse_id": 1
+              },
+              {
+                "n": 70,
+                "brand_id": null,
+                "region_code": "RJ",
+                "warehouse_id": 2
+              },
+              {
+                "n": 77,
+                "brand_id": null,
+                "region_code": "MG",
+                "warehouse_id": 3
+              },
+              {
+                "n": 67,
+                "brand_id": null,
+                "region_code": "RS",
+                "warehouse_id": 4
+              },
+              {
+                "n": 79,
+                "brand_id": null,
+                "region_code": "BA",
+                "warehouse_id": 5
+              }
+            ],
+            "unknown_brand_groups_in_top20": 5
+          }
+        }
+      ],
+      "proposedResolution": "先确认三项：按仓库×商品行数还是库存件数；当前品牌且缺失是否归入未知组；并列全保留还是按仓库/州/品牌标识确定顺序严格20行。确认后再冻结SQL与门槛。当前数据无多当前品牌，不等于DDL禁止；若未来一商品多当前品牌，还需定义多标签归属还是报数据质量问题。",
+      "secondaryIssues": [
+        {
+          "type": "CONTRACT_CONFLICT",
+          "detail": "原题未明确名称，Gold使用warehouse_name/region_name/brand_name；名称均无业务实体唯一性保证。"
+        },
+        {
+          "type": "FACT_COVERAGE_UNRESOLVED",
+          "detail": "359行缺当前品牌已被Gold删除；未知组会实际改变Top20，需业务选择，不能当作无影响的NULL细节。"
+        }
+      ],
+      "boundaryAssessment": "quantity或safety_stock为NULL时比较不成立，是否算低库存不能推断。当前没有多当前品牌记录，但schema允许；COUNT(*)只在所选品牌归属明确且每品牌每商品唯一时才表示组内商品行数。",
+      "proposedQuestion": "库存低于安全库存时，按仓库编号、仓库州代码及当前品牌编号统计仓库×商品行数；缺当前品牌是否归入未知组？第20名并列时，是全部保留，还是按这三个编号升序取严格20行？",
+      "question": "库存低于安全库存的商品，按仓库、区域、品牌统计数量，列出前 20。",
+      "originalGoldSql": "SELECT w.warehouse_name, r.region_name, b.brand_name, COUNT(*) AS low_stock_items\nFROM inventory i\nJOIN warehouses w ON w.warehouse_id = i.warehouse_id\nJOIN regions r ON r.region_code = w.region_code\nJOIN product_brand_map pbm ON pbm.product_id = i.product_id AND pbm.is_current\nJOIN brands b ON b.brand_id = pbm.brand_id\nWHERE i.quantity < i.safety_stock\nGROUP BY 1, 2, 3 ORDER BY low_stock_items DESC LIMIT 20;\n"
+    },
+    {
+      "id": "T5-010",
+      "decision": "REFERENCE_DEFECT",
+      "reason": "佣金合计的事实全集是卖家结算明细，不应被英文类目展示的可用性缩小。Gold将商品/翻译全做INNER JOIN，38312条结算明细总佣金535788.39被截成527124.40，少8663.99：699条原始类目NULL少8092.23，20条非NULL缺翻译少571.76。类目计数可以忽略没有英文名称的项目，不能连带删佣金。该问题已进入交付结果：Gold前20中1个卖家佣金少261.92，纠正后另1个卖家进入Top20。订单明细复合键连接本身正确，无需SUM(DISTINCT金额)。",
+      "contractSource": [
+        "原题：每个卖家结算明细覆盖的英文类目数及佣金合计，是不同指标全集",
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java:85,94（名称不能缩小事实、每指标独立全集）",
+        "src/main/resources/schema/metrics.yml:477（原始类目NULL默认不等于删独立佣金事实）",
+        "实际schema: settlement_items PK(settlement_id,order_id,order_item_id)，其佣金是原事实金额"
+      ],
+      "checks": [
+        {
+          "check": "settlement coverage before English lookup",
+          "evidenceType": "production_snapshot",
+          "sql": "SELECT jsonb_build_object('id','T5-010','check','settlement coverage before English lookup','result',to_jsonb(x)) FROM (\n SELECT COUNT(*) AS settlement_item_rows,SUM(si.commission_amount) AS all_commission,\n COUNT(*) FILTER(WHERE oi.order_id IS NULL OR p.product_id IS NULL) AS missing_item_product,\n COUNT(*) FILTER(WHERE p.product_category_name IS NULL) AS null_category_items,\n SUM(si.commission_amount) FILTER(WHERE p.product_category_name IS NULL) AS null_category_commission,\n COUNT(*) FILTER(WHERE p.product_category_name IS NOT NULL AND t.product_category_name IS NULL) AS untranslated_items,\n SUM(si.commission_amount) FILTER(WHERE p.product_category_name IS NOT NULL AND t.product_category_name IS NULL) AS untranslated_commission,\n SUM(si.commission_amount) FILTER(WHERE t.product_category_name IS NOT NULL) AS gold_commission\n FROM settlements st JOIN settlement_items si ON si.settlement_id=st.settlement_id\n LEFT JOIN order_items oi ON oi.order_id=si.order_id AND oi.order_item_id=si.order_item_id\n LEFT JOIN products p ON p.product_id=oi.product_id\n LEFT JOIN product_category_translation t ON t.product_category_name=p.product_category_name\n) x;",
+          "result": {
+            "all_commission": 535788.39,
+            "gold_commission": 527124.4,
+            "untranslated_items": 20,
+            "null_category_items": 699,
+            "missing_item_product": 0,
+            "settlement_item_rows": 38312,
+            "untranslated_commission": 571.76,
+            "null_category_commission": 8092.23
+          }
+        },
+        {
+          "check": "TopK boundary",
+          "evidenceType": "production_snapshot",
+          "sql": "WITH q AS (SELECT st.seller_id, COUNT(DISTINCT t.product_category_name_english) AS category_cnt,\n       ROUND(SUM(si.commission_amount), 2) AS commission\nFROM settlements st\nJOIN settlement_items si ON si.settlement_id = st.settlement_id\nJOIN order_items oi ON oi.order_id = si.order_id AND oi.order_item_id = si.order_item_id\nJOIN products p ON p.product_id = oi.product_id\nJOIN product_category_translation t ON t.product_category_name = p.product_category_name\nGROUP BY 1 ORDER BY commission DESC), z AS (SELECT q.*, ROW_NUMBER() OVER(ORDER BY commission DESC) AS rn FROM q), boundary AS (SELECT commission AS value FROM z WHERE rn=20) SELECT jsonb_build_object('id','T5-010','check','TopK boundary','result',jsonb_build_object('limit',20,'total_groups',(SELECT COUNT(*) FROM q),'boundary_value',(SELECT value FROM boundary),'groups_equal_to_boundary',(SELECT COUNT(*) FROM q,boundary WHERE q.commission=boundary.value),'groups_above_boundary',(SELECT COUNT(*) FROM q,boundary WHERE q.commission>boundary.value)));",
+          "result": {
+            "limit": 20,
+            "total_groups": 2131,
+            "boundary_value": 3422.16,
+            "groups_above_boundary": 19,
+            "groups_equal_to_boundary": 1
+          }
+        },
+        {
+          "check": "commission error reaches selected Top20",
+          "evidenceType": "production_snapshot",
+          "sql": "WITH all_commission AS (SELECT st.seller_id,SUM(si.commission_amount) AS commission FROM settlements st JOIN settlement_items si USING(settlement_id) GROUP BY 1),\ngold AS (SELECT st.seller_id,SUM(si.commission_amount) AS commission FROM settlements st JOIN settlement_items si USING(settlement_id) JOIN order_items oi ON oi.order_id=si.order_id AND oi.order_item_id=si.order_item_id JOIN products p USING(product_id) JOIN product_category_translation t USING(product_category_name) GROUP BY 1),\ngold_top AS (SELECT * FROM gold ORDER BY commission DESC LIMIT 20),\nall_top AS (SELECT * FROM all_commission ORDER BY commission DESC LIMIT 20)\nSELECT jsonb_build_object('id','T5-010','check','commission error reaches selected Top20','result',to_jsonb(x)) FROM (\n SELECT COUNT(*) FILTER(WHERE a.commission<>g.commission) AS changed_commissions_in_gold_top20,\n ROUND(SUM(a.commission-g.commission),2) AS omitted_commission_in_gold_top20,\n (SELECT COUNT(*) FROM all_top WHERE seller_id NOT IN(SELECT seller_id FROM gold_top)) AS corrected_new_top20_sellers\n FROM gold_top g JOIN all_commission a USING(seller_id)\n) x;",
+          "result": {
+            "corrected_new_top20_sellers": 1,
+            "omitted_commission_in_gold_top20": 261.92,
+            "changed_commissions_in_gold_top20": 1
+          }
+        }
+      ],
+      "proposedResolution": "在结算明细原粒度累计佣金，仅将分类查找改为LEFT JOIN；COUNT DISTINCT英文类目自动忽略NULL，不让其过滤佣金。候选SQL保持卖家标识、类目数、佣金三列及佣金Top20。",
+      "secondaryIssues": [],
+      "boundaryAssessment": "类目数忽略NULL英文名；佣金仍涵盖无类目/无翻译项目。各右表查找键在当前DDL中唯一，LEFT JOIN不会放大结算明细；如果未来维表键不唯一，应修维表而非SUM(DISTINCT佣金)。",
+      "proposedGoldSql": "SELECT st.seller_id,COUNT(DISTINCT t.product_category_name_english) AS category_cnt,\n ROUND(SUM(si.commission_amount),2) AS commission\nFROM settlements st JOIN settlement_items si ON si.settlement_id=st.settlement_id\nLEFT JOIN order_items oi ON oi.order_id=si.order_id AND oi.order_item_id=si.order_item_id\nLEFT JOIN products p ON p.product_id=oi.product_id\nLEFT JOIN product_category_translation t ON t.product_category_name=p.product_category_name\nGROUP BY st.seller_id ORDER BY commission DESC LIMIT 20;",
+      "proposedGoldSqlStatus": "diagnostic_candidate_only_not_applied",
+      "question": "每个卖家结算明细覆盖了多少个英文商品类目、佣金合计多少？取佣金前 20。",
+      "originalGoldSql": "SELECT st.seller_id, COUNT(DISTINCT t.product_category_name_english) AS category_cnt,\n       ROUND(SUM(si.commission_amount), 2) AS commission\nFROM settlements st\nJOIN settlement_items si ON si.settlement_id = st.settlement_id\nJOIN order_items oi ON oi.order_id = si.order_id AND oi.order_item_id = si.order_item_id\nJOIN products p ON p.product_id = oi.product_id\nJOIN product_category_translation t ON t.product_category_name = p.product_category_name\nGROUP BY 1 ORDER BY commission DESC LIMIT 20;\n",
+      "candidateResult": [
+        {
+          "seller_id": "7c67e1448b00f6e969d365cea6b010ab",
+          "commission": 17559.11,
+          "category_cnt": 6
+        },
+        {
+          "seller_id": "4869f7a5dfa277a7dca6462dcf3b52b2",
+          "commission": 8199.61,
+          "category_cnt": 7
+        },
+        {
+          "seller_id": "7e93a43ef30c4f03f38b393420bc753a",
+          "commission": 8084.53,
+          "category_cnt": 6
+        },
+        {
+          "seller_id": "7d13fca15225358621be4086e1eb0964",
+          "commission": 7504.84,
+          "category_cnt": 7
+        },
+        {
+          "seller_id": "6560211a19b47992c3666cc44a7e94c0",
+          "commission": 7320.77,
+          "category_cnt": 7
+        },
+        {
+          "seller_id": "4a3ca9315b744ce9f8e9374361493884",
+          "commission": 6718.42,
+          "category_cnt": 7
+        },
+        {
+          "seller_id": "955fee9216a65b617aa5c0531780ce60",
+          "commission": 6198.44,
+          "category_cnt": 23
+        },
+        {
+          "seller_id": "1f50f920176fa81dab994f9023523100",
+          "commission": 5854.0,
+          "category_cnt": 3
+        },
+        {
+          "seller_id": "7a67c85e85bb2ce8582c35f2203ad736",
+          "commission": 5730.95,
+          "category_cnt": 2
+        },
+        {
+          "seller_id": "53243585a1d6dc2643021fd1853d8905",
+          "commission": 5362.77,
+          "category_cnt": 2
+        },
+        {
+          "seller_id": "cc419e0650a3c5ba77189a1882b7556a",
+          "commission": 5321.97,
+          "category_cnt": 3
+        },
+        {
+          "seller_id": "37be5a7c751166fbc5f8ccba4119e043",
+          "commission": 5238.24,
+          "category_cnt": 2
+        },
+        {
+          "seller_id": "1025f0e2d44d7041d6cf58b6550e0bfa",
+          "commission": 4843.29,
+          "category_cnt": 4
+        },
+        {
+          "seller_id": "f7ba60f8c3f99e7ee4042fdef03b70c4",
+          "commission": 4549.18,
+          "category_cnt": 2
+        },
+        {
+          "seller_id": "46dc3b2cc0980fb8ec44634e21d2718e",
+          "commission": 4048.9,
+          "category_cnt": 4
+        },
+        {
+          "seller_id": "da8622b14eb17ae2831f4ac5b9dab84a",
+          "commission": 3884.12,
+          "category_cnt": 2
+        },
+        {
+          "seller_id": "fa1c13f2614d7b5c4749cbc52fecda94",
+          "commission": 3864.92,
+          "category_cnt": 2
+        },
+        {
+          "seller_id": "a1043bafd471dff536d0c462352beb48",
+          "commission": 3802.2,
+          "category_cnt": 3
+        },
+        {
+          "seller_id": "620c87c171fb2a6dd6e8bb4dec959fc6",
+          "commission": 3687.85,
+          "category_cnt": 2
+        },
+        {
+          "seller_id": "c826c40d7b19f62a09e2d7c5e7295ee2",
+          "commission": 3651.16,
+          "category_cnt": 0
+        }
+      ],
+      "candidateResultSqlFile": "deep_business-candidate-results.sql"
+    },
+    {
+      "id": "T5-012",
+      "decision": "CONTRACT_CONFLICT",
+      "reason": "Gold的会员分母与价格均值链路基本正确：从标签会员出发LEFT JOIN订单/商品，保留没有商品价格的会员，AVG只统计存在的商品明细且不把缺失补0。六类标签各有8至659名无商品明细会员，改INNER JOIN会真实少计。问题没要求标签名称，当前默认应输出tag_id并按完整标签主键分组；Gold只输出和分组tag_name，tag_name没有UNIQUE。当前六个名称各唯一只能解释现库未出现标签合并，不能盖过输出契约冲突。",
+      "contractSource": [
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java:84,92,94（标识、实体主键、会员独立全集）",
+        "实际schema: user_tag_map PK(member_id,tag_id)，user_tags仅tag_id PK；members.customer_unique_id UNIQUE"
+      ],
+      "checks": [
+        {
+          "check": "tag membership denominator",
+          "evidenceType": "production_snapshot",
+          "sql": "WITH tagged AS (SELECT utm.tag_id,utm.member_id FROM user_tag_map utm JOIN members m USING(member_id)),\nordered AS (SELECT DISTINCT m.member_id FROM members m JOIN customers c USING(customer_unique_id) JOIN orders o USING(customer_id) JOIN order_items oi USING(order_id))\nSELECT jsonb_build_object('id','T5-012','check','tag membership denominator','result',jsonb_agg(x)) FROM (\n SELECT t.tag_id,ut.tag_name,COUNT(*) AS tagged_members,COUNT(*) FILTER(WHERE od.member_id IS NULL) AS no_item_members,\n (SELECT COUNT(*) FROM user_tags u2 WHERE u2.tag_name=ut.tag_name) AS same_name_tags\n FROM tagged t JOIN user_tags ut USING(tag_id) LEFT JOIN ordered od USING(member_id)\n GROUP BY 1,2 ORDER BY 1\n) x;",
+          "result": [
+            {
+              "tag_id": 1,
+              "tag_name": "高价值用户",
+              "same_name_tags": 1,
+              "tagged_members": 19299,
+              "no_item_members": 135
+            },
+            {
+              "tag_id": 2,
+              "tag_name": "流失风险用户",
+              "same_name_tags": 1,
+              "tagged_members": 65998,
+              "no_item_members": 462
+            },
+            {
+              "tag_id": 3,
+              "tag_name": "价格敏感用户",
+              "same_name_tags": 1,
+              "tagged_members": 23004,
+              "no_item_members": 218
+            },
+            {
+              "tag_id": 4,
+              "tag_name": "新客",
+              "same_name_tags": 1,
+              "tagged_members": 11615,
+              "no_item_members": 101
+            },
+            {
+              "tag_id": 5,
+              "tag_name": "复购用户",
+              "same_name_tags": 1,
+              "tagged_members": 2997,
+              "no_item_members": 8
+            },
+            {
+              "tag_id": 6,
+              "tag_name": "活跃评价用户",
+              "same_name_tags": 1,
+              "tagged_members": 95380,
+              "no_item_members": 659
+            }
+          ]
+        }
+      ],
+      "proposedResolution": "明确维度契约：若遵循当前默认，输出tag_id并从user_tags保留全部标签；若要标签名称，显式改题并仍按tag_id区分实体。保留无订单会员及NULL均价，商品均价按明细等权，不能先算每会员均价后等权平均。",
+      "secondaryIssues": [
+        {
+          "type": "COINCIDENTAL_EQUIVALENCE",
+          "detail": "当前无同名标签，Gold的名称分组恰好未合并实体；这不是名称唯一约束。"
+        }
+      ],
+      "boundaryAssessment": "本题核查以当前只读快照为证据；没有把观测到的唯一性冒充数据库约束。",
+      "proposedGoldSql": "SELECT ut.tag_id,COUNT(DISTINCT m.member_id) AS members,ROUND(AVG(oi.price),2) AS avg_item_price\nFROM user_tags ut LEFT JOIN user_tag_map utm ON utm.tag_id=ut.tag_id\nLEFT JOIN members m ON m.member_id=utm.member_id\nLEFT JOIN customers c ON c.customer_unique_id=m.customer_unique_id\nLEFT JOIN orders o ON o.customer_id=c.customer_id\nLEFT JOIN order_items oi ON oi.order_id=o.order_id\nGROUP BY ut.tag_id ORDER BY members DESC;",
+      "proposedGoldSqlStatus": "diagnostic_candidate_only_not_applied",
+      "question": "每类用户标签覆盖多少会员、这些会员订单的平均商品单价是多少？",
+      "originalGoldSql": "SELECT ut.tag_name, COUNT(DISTINCT m.member_id) AS members, ROUND(AVG(oi.price), 2) AS avg_item_price\nFROM user_tag_map utm\nJOIN user_tags ut ON ut.tag_id = utm.tag_id\nJOIN members m ON m.member_id = utm.member_id\nLEFT JOIN customers c ON c.customer_unique_id = m.customer_unique_id\nLEFT JOIN orders o ON o.customer_id = c.customer_id\nLEFT JOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY members DESC;\n",
+      "candidateResult": [
+        {
+          "tag_id": 6,
+          "members": 95380,
+          "avg_item_price": 120.55
+        },
+        {
+          "tag_id": 2,
+          "members": 65998,
+          "avg_item_price": 120.82
+        },
+        {
+          "tag_id": 3,
+          "members": 23004,
+          "avg_item_price": 104.28
+        },
+        {
+          "tag_id": 1,
+          "members": 19299,
+          "avg_item_price": 120.45
+        },
+        {
+          "tag_id": 4,
+          "members": 11615,
+          "avg_item_price": 120.43
+        },
+        {
+          "tag_id": 5,
+          "members": 2997,
+          "avg_item_price": 102.91
+        }
+      ],
+      "candidateResultSqlFile": "deep_business-candidate-results.sql"
+    },
+    {
+      "id": "T5-014",
+      "decision": "COINCIDENTAL_EQUIVALENCE",
+      "reason": "题干明确最近一次会员快照，Gold却读取所有member_snapshot，未取MAX(snapshot_date)或按会员排序取最新。当前38471条快照恰好一会员一条，多个快照会员数0，所以Gold与正确latest集合的三组结果同为2110/415/7。这个等价由数据巧合支撑，snapshot_id主键并不保证一会员一条。只读VALUES反例中，同一会员旧快照2、最新快照3、当前等级3，Gold误报1人，latest为0人。不能将本题算成已验证了最新快照能力。",
+      "contractSource": [
+        "原题：最近一次会员快照",
+        "src/main/resources/schema/glossary.yml:261（会员每日历史快照）",
+        "实际schema: member_snapshot只有snapshot_id PK；member_id/snapshot_date/level_id均可NULL，无(member_id,date)唯一约束"
+      ],
+      "checks": [
+        {
+          "check": "latest snapshot comparison",
+          "evidenceType": "production_snapshot",
+          "sql": "WITH latest_dates AS (SELECT member_id,MAX(snapshot_date) AS snapshot_date FROM member_snapshot GROUP BY 1),\nlatest AS (SELECT ms.* FROM member_snapshot ms JOIN latest_dates ld USING(member_id,snapshot_date)),\ngold_groups AS (SELECT m.level_id AS current_level,ms.level_id AS snapshot_level,COUNT(DISTINCT m.member_id) AS n FROM member_snapshot ms JOIN members m USING(member_id) WHERE ms.level_id<>m.level_id GROUP BY 1,2),\nlatest_groups AS (SELECT m.level_id AS current_level,ms.level_id AS snapshot_level,COUNT(DISTINCT m.member_id) AS n FROM latest ms JOIN members m USING(member_id) WHERE ms.level_id<>m.level_id GROUP BY 1,2)\nSELECT jsonb_build_object('id','T5-014','check','latest snapshot comparison','result',jsonb_build_object(\n 'snapshot_rows',(SELECT COUNT(*) FROM member_snapshot),\n 'members_with_multiple_snapshots',(SELECT COUNT(*) FROM (SELECT member_id FROM member_snapshot GROUP BY 1 HAVING COUNT(*)>1) d),\n 'members_tied_on_latest_date',(SELECT COUNT(*) FROM (SELECT member_id FROM latest GROUP BY 1 HAVING COUNT(*)>1) d),\n 'null_snapshot_date_rows',(SELECT COUNT(*) FROM member_snapshot WHERE snapshot_date IS NULL),\n 'gold_groups',(SELECT jsonb_agg(g) FROM gold_groups g),\n 'latest_groups',(SELECT jsonb_agg(g) FROM latest_groups g)));",
+          "result": {
+            "gold_groups": [
+              {
+                "n": 2110,
+                "current_level": 2,
+                "snapshot_level": 1
+              },
+              {
+                "n": 415,
+                "current_level": 3,
+                "snapshot_level": 2
+              },
+              {
+                "n": 7,
+                "current_level": 4,
+                "snapshot_level": 3
+              }
+            ],
+            "latest_groups": [
+              {
+                "n": 2110,
+                "current_level": 2,
+                "snapshot_level": 1
+              },
+              {
+                "n": 415,
+                "current_level": 3,
+                "snapshot_level": 2
+              },
+              {
+                "n": 7,
+                "current_level": 4,
+                "snapshot_level": 3
+              }
+            ],
+            "snapshot_rows": 38471,
+            "null_snapshot_date_rows": 0,
+            "members_tied_on_latest_date": 0,
+            "members_with_multiple_snapshots": 0
+          }
+        },
+        {
+          "check": "synthetic read-only counterexample, not production records",
+          "evidenceType": "synthetic_counterexample",
+          "sql": "WITH m(member_id,level_id) AS (VALUES(1,3)), ms(member_id,snapshot_date,level_id) AS (VALUES (1,DATE '2020-01-01',2),(1,DATE '2020-02-01',3)), latest AS (SELECT DISTINCT ON(member_id) * FROM ms ORDER BY member_id,snapshot_date DESC)\nSELECT jsonb_build_object('id','T5-014','check','synthetic read-only counterexample, not production records','result',jsonb_build_object(\n 'gold_mismatched_members',(SELECT COUNT(DISTINCT member_id) FROM ms JOIN m USING(member_id) WHERE ms.level_id<>m.level_id),\n 'latest_mismatched_members',(SELECT COUNT(DISTINCT member_id) FROM latest JOIN m USING(member_id) WHERE latest.level_id<>m.level_id)));",
+          "result": {
+            "gold_mismatched_members": 1,
+            "latest_mismatched_members": 0
+          }
+        }
+      ],
+      "proposedResolution": "先按member_id选最新snapshot_date，再比较等级。必须定义同日多快照的裁决依据：snapshot_id仅是行标识，不能未经确认就当业务版本。日期NULL、等级NULL与无快照会员是否算不一致也需明确；当前快照日期无NULL且无同日并列。",
+      "secondaryIssues": [],
+      "boundaryAssessment": "原Gold的<>会跳过任一NULL等级；若业务把未知与已知视作差异须显式采用IS DISTINCT FROM，不能自行改。COUNT DISTINCT只能去重同组会员，不能实现最新记录筛选。",
+      "proposedQuestion": "按每个会员最大snapshot_date对应快照与当前等级比较；同日多条快照如何裁决？等级NULL或没有快照是否单列未知，而不当作已确认不一致？",
+      "question": "当前等级与最近一次会员快照等级不一致的会员有多少？按等级名称组合统计。",
+      "originalGoldSql": "SELECT ml_cur.level_name AS current_level, ml_snap.level_name AS snapshot_level,\n       COUNT(DISTINCT ms.member_id) AS member_cnt\nFROM member_snapshot ms\nJOIN members m ON m.member_id = ms.member_id\nJOIN member_levels ml_cur ON ml_cur.level_id = m.level_id\nJOIN member_levels ml_snap ON ml_snap.level_id = ms.level_id\nWHERE ms.level_id <> m.level_id\nGROUP BY 1, 2 ORDER BY member_cnt DESC;\n"
+    },
+    {
+      "id": "T5-016",
+      "decision": "COINCIDENTAL_EQUIVALENCE",
+      "reason": "按类目与原因统计时，COUNT DISTINCT refund_id正确防止一张退款单同类多明细重复计笔数，SUM refund_value仍逐退款明细累加；跨类目的一张退款可进入多个组，不能再把各类目退款数相加当平台去重退款数。实际5356条明细对应4785笔退款，明细order_id与退款头不一致为0。84条原始类目NULL受当前默认排除；其余类目当前全部可翻译，INNER翻译连接才碰巧等于保留缺译组的LEFT连接。前20边界9490.91仅1组。",
+      "contractSource": [
+        "src/main/resources/schema/metrics.yml:477（类目NULL及跨类目订单/事实口径）",
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java:85,95-100（名称覆盖、完整事实身份）",
+        "实际schema: refunds.refund_id PK，refund_items完整复合PK，翻译表不保证覆盖products的非NULL类目"
+      ],
+      "checks": [
+        {
+          "check": "refund reason category attribution",
+          "evidenceType": "production_snapshot",
+          "sql": "SELECT jsonb_build_object('id','T5-016','check','refund reason category attribution','result',to_jsonb(x)) FROM (\n SELECT COUNT(*) AS detail_rows,COUNT(DISTINCT r.refund_id) AS refunds,\n COUNT(*) FILTER(WHERE ri.order_id<>r.order_id) AS refund_header_detail_order_mismatches,\n SUM(ri.refund_value) FILTER(WHERE p.product_category_name IS NOT NULL AND t.product_category_name IS NULL) AS untranslated_amount,\n COUNT(*) FILTER(WHERE p.product_category_name IS NOT NULL AND t.product_category_name IS NULL) AS untranslated_items,\n COUNT(*) FILTER(WHERE p.product_category_name IS NULL) AS null_category_items\n FROM refunds r JOIN refund_items ri ON ri.refund_id=r.refund_id\n JOIN order_items oi ON oi.order_id=ri.order_id AND oi.order_item_id=ri.order_item_id\n JOIN products p ON p.product_id=oi.product_id\n LEFT JOIN product_category_translation t ON t.product_category_name=p.product_category_name\n) x;",
+          "result": {
+            "refunds": 4785,
+            "detail_rows": 5356,
+            "untranslated_items": 0,
+            "null_category_items": 84,
+            "untranslated_amount": null,
+            "refund_header_detail_order_mismatches": 0
+          }
+        },
+        {
+          "check": "TopK boundary",
+          "evidenceType": "production_snapshot",
+          "sql": "WITH q AS (SELECT t.product_category_name_english, r.reason_code,\n       COUNT(DISTINCT r.refund_id) AS refunds, ROUND(SUM(ri.refund_value), 2) AS amt\nFROM refunds r\nJOIN refund_items ri ON ri.refund_id = r.refund_id\nJOIN order_items oi ON oi.order_id = ri.order_id AND oi.order_item_id = ri.order_item_id\nJOIN products p ON p.product_id = oi.product_id\nJOIN product_category_translation t ON t.product_category_name = p.product_category_name\nGROUP BY 1, 2 ORDER BY amt DESC), z AS (SELECT q.*, ROW_NUMBER() OVER(ORDER BY amt DESC) AS rn FROM q), boundary AS (SELECT amt AS value FROM z WHERE rn=20) SELECT jsonb_build_object('id','T5-016','check','TopK boundary','result',jsonb_build_object('limit',20,'total_groups',(SELECT COUNT(*) FROM q),'boundary_value',(SELECT value FROM boundary),'groups_equal_to_boundary',(SELECT COUNT(*) FROM q,boundary WHERE q.amt=boundary.value),'groups_above_boundary',(SELECT COUNT(*) FROM q,boundary WHERE q.amt>boundary.value)));",
+          "result": {
+            "limit": 20,
+            "total_groups": 228,
+            "boundary_value": 9490.91,
+            "groups_above_boundary": 19,
+            "groups_equal_to_boundary": 1
+          }
+        }
+      ],
+      "proposedResolution": "保持退款ID去重计数与明细金额，翻译LEFT JOIN并显式仅排除原始类目SQL NULL。缺译非NULL类目保留NULL英文名组；不追加已退款状态、有效订单或其他隐含过滤。",
+      "secondaryIssues": [],
+      "boundaryAssessment": "多个原因由退款头reason_code决定，不改用明细order_id上的其他退款。当前头明细订单一致为0异常但DDL无关联约束，未来需数据校验；不能靠额外无题意过滤掩盖。",
+      "question": "按英文类目和退款原因统计退款笔数与退款金额，列出前 20。",
+      "originalGoldSql": "SELECT t.product_category_name_english, r.reason_code,\n       COUNT(DISTINCT r.refund_id) AS refunds, ROUND(SUM(ri.refund_value), 2) AS amt\nFROM refunds r\nJOIN refund_items ri ON ri.refund_id = r.refund_id\nJOIN order_items oi ON oi.order_id = ri.order_id AND oi.order_item_id = ri.order_item_id\nJOIN products p ON p.product_id = oi.product_id\nJOIN product_category_translation t ON t.product_category_name = p.product_category_name\nGROUP BY 1, 2 ORDER BY amt DESC LIMIT 20;\n"
+    },
+    {
+      "id": "T5-018",
+      "decision": "KEEP",
+      "reason": "Gold沿shipping_addresses.customer_id直接关联该客户档案及订单，符合客户属性必须沿事实关联键读取的当前身份政策，没有绕customer_unique_id去匹配另一州的档案。is_default由题干明确，COUNT DISTINCT order_id保证同组重复默认地址不加权订单。当前99441条默认地址，所有订单都有默认地址，同客户多默认及冲突默认州均0；因此两个州维度与订单量的链路成立。Top20边界413单仅1组，没有并列截断。",
+      "contractSource": [
+        "原题：默认收货地址所在州与客户登记州组合",
+        "src/main/resources/schema/metrics.yml:490 customer_identity_v2（沿事实关联客户记录取属性）",
+        "src/main/resources/schema/glossary.yml:529 shipping_addresses",
+        "实际schema: orders.customer_id FK、customers.customer_id PK"
+      ],
+      "checks": [
+        {
+          "check": "default address association",
+          "evidenceType": "production_snapshot",
+          "sql": "SELECT jsonb_build_object('id','T5-018','check','default address association','result',to_jsonb(x)) FROM (\n SELECT (SELECT COUNT(*) FROM shipping_addresses WHERE is_default) AS default_addresses,\n (SELECT COUNT(*) FROM (SELECT customer_id FROM shipping_addresses WHERE is_default GROUP BY 1 HAVING COUNT(*)>1) d) AS customers_with_multiple_defaults,\n (SELECT COUNT(*) FROM (SELECT customer_id FROM shipping_addresses WHERE is_default GROUP BY 1 HAVING COUNT(DISTINCT state)>1) d) AS customers_with_conflicting_default_states,\n (SELECT COUNT(*) FROM orders o WHERE NOT EXISTS(SELECT 1 FROM shipping_addresses sa WHERE sa.customer_id=o.customer_id AND sa.is_default)) AS orders_without_default,\n (SELECT COUNT(*) FROM shipping_addresses sa LEFT JOIN customers c USING(customer_id) WHERE sa.is_default AND c.customer_id IS NULL) AS orphan_defaults\n) x;",
+          "result": {
+            "orphan_defaults": 0,
+            "default_addresses": 99441,
+            "orders_without_default": 0,
+            "customers_with_multiple_defaults": 0,
+            "customers_with_conflicting_default_states": 0
+          }
+        },
+        {
+          "check": "TopK boundary",
+          "evidenceType": "production_snapshot",
+          "sql": "WITH q AS (SELECT sa.state AS addr_state, c.customer_state, COUNT(DISTINCT o.order_id) AS orders\nFROM shipping_addresses sa\nJOIN customers c ON c.customer_id = sa.customer_id\nJOIN orders o ON o.customer_id = c.customer_id\nWHERE sa.is_default\nGROUP BY 1, 2 ORDER BY orders DESC), z AS (SELECT q.*, ROW_NUMBER() OVER(ORDER BY orders DESC) AS rn FROM q), boundary AS (SELECT orders AS value FROM z WHERE rn=20) SELECT jsonb_build_object('id','T5-018','check','TopK boundary','result',jsonb_build_object('limit',20,'total_groups',(SELECT COUNT(*) FROM q),'boundary_value',(SELECT value FROM boundary),'groups_equal_to_boundary',(SELECT COUNT(*) FROM q,boundary WHERE q.orders=boundary.value),'groups_above_boundary',(SELECT COUNT(*) FROM q,boundary WHERE q.orders>boundary.value)));",
+          "result": {
+            "limit": 20,
+            "total_groups": 27,
+            "boundary_value": 413,
+            "groups_above_boundary": 19,
+            "groups_equal_to_boundary": 1
+          }
+        }
+      ],
+      "proposedResolution": "保持题目和Gold当前统计口径。若未来允许同客户多个不同默认州，必须先修默认地址业务约束或定义快照选择，COUNT DISTINCT只能防同组重复，不能决定唯一地域归属。",
+      "secondaryIssues": [],
+      "boundaryAssessment": "无默认地址不属于可构成默认地址州组合的集合，本题未要求未知组；有默认但state NULL时Gold保留NULL州组。没有题意依据添加有效订单过滤。",
+      "question": "默认收货地址所在州和客户登记州各组合的订单量对比，列出前 20。",
+      "originalGoldSql": "SELECT sa.state AS addr_state, c.customer_state, COUNT(DISTINCT o.order_id) AS orders\nFROM shipping_addresses sa\nJOIN customers c ON c.customer_id = sa.customer_id\nJOIN orders o ON o.customer_id = c.customer_id\nWHERE sa.is_default\nGROUP BY 1, 2 ORDER BY orders DESC LIMIT 20;\n"
+    },
+    {
+      "id": "T6-002",
+      "decision": "REFERENCE_DEFECT",
+      "reason": "Gold把有效订单数、下单人数与客单价统一绑在INNER JOIN order_items后的集合，悄悄排除了无商品明细的有效订单。实际有效订单98207单、94990人，Gold只数98199单、94983人，少8单7人；同一商品GMV分子除以错分母后客单价160.24，完整有效订单分母应为160.23。问题明确数有效订单，而不是有商品明细的有效订单；注册客单价分母也写有效订单数。身份按customer_unique_id去重、GMV含运费这两点正确，不能用它们掩盖全集错位。",
+      "contractSource": [
+        "原题明确排除canceled/unavailable，无有明细限制",
+        "src/main/resources/schema/metrics.yml:39 valid_order、60 unique_buyers、129 aov",
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java:94-100（每指标独立全集、计数身份）"
+      ],
+      "checks": [
+        {
+          "check": "order population independent of items",
+          "evidenceType": "production_snapshot",
+          "sql": "WITH vo AS (SELECT o.* FROM orders o WHERE o.order_status NOT IN ('canceled','unavailable'))\nSELECT jsonb_build_object('id','T6-002','check','order population independent of items','result',to_jsonb(x)) FROM (\n SELECT COUNT(*) AS all_valid_orders,COUNT(DISTINCT c.customer_unique_id) AS all_valid_buyers,\n COUNT(*) FILTER(WHERE EXISTS(SELECT 1 FROM order_items oi WHERE oi.order_id=vo.order_id)) AS gold_valid_orders,\n COUNT(DISTINCT c.customer_unique_id) FILTER(WHERE EXISTS(SELECT 1 FROM order_items oi WHERE oi.order_id=vo.order_id)) AS gold_valid_buyers,\n ROUND((SELECT SUM(oi.price+oi.freight_value) FROM order_items oi JOIN vo v2 USING(order_id))/COUNT(*),2) AS all_order_aov,\n ROUND((SELECT SUM(oi.price+oi.freight_value) FROM order_items oi JOIN vo v2 USING(order_id))/COUNT(*) FILTER(WHERE EXISTS(SELECT 1 FROM order_items oi WHERE oi.order_id=vo.order_id)),2) AS gold_aov\n FROM vo JOIN customers c USING(customer_id)\n) x;",
+          "result": {
+            "gold_aov": 160.24,
+            "all_order_aov": 160.23,
+            "all_valid_buyers": 94990,
+            "all_valid_orders": 98207,
+            "gold_valid_buyers": 94983,
+            "gold_valid_orders": 98199
+          }
+        }
+      ],
+      "proposedResolution": "先保留全部有效订单与自然人身份；商品金额按order_id预聚合后LEFT JOIN。订单数与人数从完整订单集算，缺明细不造0价格，金额聚合保留SQL空值语义。",
+      "secondaryIssues": [],
+      "boundaryAssessment": "customer_unique_id非NULL且客户FK完整，故COUNT DISTINCT人数不额外丢未知身份；若业务未来允许未知身份，订单总数仍保留。空订单集客单价NULL，计数0。",
+      "proposedGoldSql": "WITH valid_orders AS (\n SELECT o.order_id,c.customer_unique_id FROM orders o JOIN customers c ON c.customer_id=o.customer_id\n WHERE o.order_status NOT IN ('canceled','unavailable')\n), item_totals AS (\n SELECT order_id,SUM(price+freight_value) AS gmv FROM order_items GROUP BY order_id\n)\nSELECT COUNT(*) AS valid_orders,COUNT(DISTINCT vo.customer_unique_id) AS buyers,\n ROUND(SUM(it.gmv)/NULLIF(COUNT(*),0),2) AS aov\nFROM valid_orders vo LEFT JOIN item_totals it ON it.order_id=vo.order_id;",
+      "proposedGoldSqlStatus": "diagnostic_candidate_only_not_applied",
+      "question": "有效订单（排除已取消和不可用）的订单数、下单人数、客单价分别是多少？",
+      "originalGoldSql": "SELECT COUNT(DISTINCT o.order_id) AS valid_orders,\n       COUNT(DISTINCT c.customer_unique_id) AS buyers,\n       ROUND(SUM(oi.price + oi.freight_value) / COUNT(DISTINCT o.order_id), 2) AS aov\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN order_items oi ON oi.order_id = o.order_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable');\n",
+      "candidateResult": [
+        {
+          "aov": 160.23,
+          "buyers": 94990,
+          "valid_orders": 98207
+        }
+      ],
+      "candidateResultSqlFile": "deep_business-candidate-results.sql"
+    },
+    {
+      "id": "T6-004",
+      "decision": "KEEP",
+      "reason": "Gold先在完整有效订单历史按customer_unique_id取首单，再选2017上半年cohort，没有先截报告期而误认新客；下半年回访先DISTINCT自然人，使多笔回访不放大分子。分母LEFT保留未回访用户。按当前retention_rate明确的默认输出规则，题干给出下半年回访窗口且未要求活动月交叉明细，按首单月输出留存率符合当前契约。实际六个cohort用户数为752/1690/2571/2325/3541/3102，回访人数9/15/35/38/64/63。百分比100倍两位与注册单位一致。",
+      "contractSource": [
+        "src/main/resources/schema/metrics.yml:388 retention_rate（同期群、请求回访窗口、去重、输出cohort维度）",
+        "实际schema: customers.customer_unique_id非NULL"
+      ],
+      "checks": [
+        {
+          "check": "monthly first-order cohorts and H2 returns",
+          "evidenceType": "production_snapshot",
+          "sql": "WITH fo AS (SELECT c.customer_unique_id,MIN(o.order_purchase_timestamp) AS ts FROM orders o JOIN customers c USING(customer_id) WHERE o.order_status NOT IN ('canceled','unavailable') GROUP BY 1),\nco AS (SELECT *,DATE_TRUNC('month',ts)::date AS mo FROM fo WHERE ts>=DATE '2017-01-01' AND ts<DATE '2017-07-01')\nSELECT jsonb_build_object('id','T6-004','check','monthly first-order cohorts and H2 returns','result',jsonb_agg(x)) FROM (\n SELECT co.mo,COUNT(*) AS cohort_users,COUNT(*) FILTER(WHERE EXISTS(SELECT 1 FROM customers c JOIN orders o USING(customer_id) WHERE c.customer_unique_id=co.customer_unique_id AND o.order_status NOT IN ('canceled','unavailable') AND o.order_purchase_timestamp>=DATE '2017-07-01' AND o.order_purchase_timestamp<DATE '2018-01-01')) AS returning_users\n FROM co GROUP BY 1 ORDER BY 1\n) x;",
+          "result": [
+            {
+              "mo": "2017-01-01",
+              "cohort_users": 752,
+              "returning_users": 9
+            },
+            {
+              "mo": "2017-02-01",
+              "cohort_users": 1690,
+              "returning_users": 15
+            },
+            {
+              "mo": "2017-03-01",
+              "cohort_users": 2571,
+              "returning_users": 35
+            },
+            {
+              "mo": "2017-04-01",
+              "cohort_users": 2325,
+              "returning_users": 38
+            },
+            {
+              "mo": "2017-05-01",
+              "cohort_users": 3541,
+              "returning_users": 64
+            },
+            {
+              "mo": "2017-06-01",
+              "cohort_users": 3102,
+              "returning_users": 63
+            }
+          ]
+        }
+      ],
+      "proposedResolution": "保持当前cohort口径和Gold。若业务真正要2017下半年每个活动月分别留存，应另改题明确activity_month维度，不能把它当原Gold唯一等价表达。",
+      "secondaryIssues": [],
+      "boundaryAssessment": "每个输出cohort至少一人，Gold组内分母非0；无cohort月份不会输出行，要求空月份也展示时需另定日历范围。客户身份非NULL；没有将NULL身份当一个人。",
+      "question": "首单在 2017 年上半年的用户，在 2017 年下半年是否再次下单？按月留存率是多少？",
+      "originalGoldSql": "WITH first_order AS (\n  SELECT c.customer_unique_id, MIN(o.order_purchase_timestamp) AS first_ts\n  FROM orders o\n  JOIN customers c ON c.customer_id = o.customer_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n  GROUP BY 1\n),\ncohort AS (\n  SELECT customer_unique_id, DATE_TRUNC('month', first_ts)::date AS cohort_month\n  FROM first_order\n  WHERE first_ts >= DATE '2017-01-01' AND first_ts < DATE '2017-07-01'\n),\nreturner AS (\n  SELECT DISTINCT co.customer_unique_id, co.cohort_month\n  FROM cohort co\n  JOIN customers c ON c.customer_unique_id = co.customer_unique_id\n  JOIN orders o ON o.customer_id = c.customer_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n    AND o.order_purchase_timestamp >= DATE '2017-07-01'\n    AND o.order_purchase_timestamp < DATE '2018-01-01'\n)\nSELECT co.cohort_month,\n       ROUND(100.0 * COUNT(re.customer_unique_id) / COUNT(*), 2) AS retention_pct\nFROM cohort co\nLEFT JOIN returner re ON re.customer_unique_id = co.customer_unique_id\nGROUP BY 1 ORDER BY 1;\n"
+    },
+    {
+      "id": "T6-006",
+      "decision": "KEEP",
+      "reason": "Gold用实际签收时间非NULL作为已送达全集，再以实际不晚于预计计准时，与注册on_time_rate一致。当前96476条实际签收订单中88649条准时，91.89%；其中6条订单状态不是delivered，证明若替换成状态筛选会真实改分母。预计时间缺失当前0；未来缺失仍应留分母不计准时，Gold现有FILTER具有该语义。没有商品明细加权订单，也没有擅自排除取消/不可用。",
+      "contractSource": [
+        "src/main/resources/schema/metrics.yml:156 on_time_rate（签收事实、未知预计分母、订单粒度、PERCENT两位）"
+      ],
+      "checks": [
+        {
+          "check": "on-time denominator and NULL handling",
+          "evidenceType": "production_snapshot",
+          "sql": "SELECT jsonb_build_object('id','T6-006','check','on-time denominator and NULL handling','result',to_jsonb(x)) FROM (\n SELECT COUNT(*) AS delivered_timestamp_rows,COUNT(*) FILTER(WHERE order_status<>'delivered') AS non_delivered_status_rows,\n COUNT(*) FILTER(WHERE order_estimated_delivery_date IS NULL) AS missing_estimate,\n COUNT(*) FILTER(WHERE order_delivered_customer_date<=order_estimated_delivery_date) AS on_time,\n ROUND(100.0*COUNT(*) FILTER(WHERE order_delivered_customer_date<=order_estimated_delivery_date)/NULLIF(COUNT(*),0),2) AS on_time_pct\n FROM orders WHERE order_delivered_customer_date IS NOT NULL\n) x;",
+          "result": {
+            "on_time": 88649,
+            "on_time_pct": 91.89,
+            "missing_estimate": 0,
+            "delivered_timestamp_rows": 96476,
+            "non_delivered_status_rows": 6
+          }
+        }
+      ],
+      "proposedResolution": "保留当前定义。参考SQL可以加NULLIF(COUNT(*),0)完成空集防除零，但本固定快照的分子分母与结果没有具体逻辑偏差。",
+      "secondaryIssues": [
+        {
+          "type": "EMPTY_SET_BOUNDARY",
+          "detail": "Gold缺NULLIF，在已签收集合为空时会除零，当前产品契约要求NULL；此处KEEP限于题目固定快照，不能宣称Gold可直接用于任意空库。"
+        }
+      ],
+      "boundaryAssessment": "NULL预计时间比较为UNKNOWN，不计分子但在COUNT(*)分母；这与过滤掉未知预计订单不同。无符号/单位冲突。",
+      "question": "已送达订单的准时率是多少？（实际送达日期不晚于预计送达日期）",
+      "originalGoldSql": "SELECT ROUND(100.0 * COUNT(*) FILTER (\n         WHERE o.order_delivered_customer_date <= o.order_estimated_delivery_date\n       ) / COUNT(*), 2) AS on_time_pct\nFROM orders o\nWHERE o.order_delivered_customer_date IS NOT NULL;\n"
+    },
+    {
+      "id": "T6-008",
+      "decision": "KEEP",
+      "reason": "Gold将有效订单中出现的不同product_id与独立全量products分母分别聚合，正确保留未动销商品作为分母，没有用库存或销售连接后的商品数。当前全部商品32951、有效动销32729，222个未动销商品未丢，结果99.33%。有效订单过滤来自sell_through_rate，百分比两位与注册单位一致；不存在多明细把商品计多的问题。",
+      "contractSource": [
+        "src/main/resources/schema/metrics.yml:206 sell_through_rate（有效销量/全部商品、独立分母、PERCENT两位）",
+        "实际schema: order_items.product_id NOT NULL且FK引用products"
+      ],
+      "checks": [
+        {
+          "check": "independent complete product denominator",
+          "evidenceType": "production_snapshot",
+          "sql": "SELECT jsonb_build_object('id','T6-008','check','independent complete product denominator','result',to_jsonb(x)) FROM (\n SELECT (SELECT COUNT(*) FROM products) AS all_products,\n COUNT(DISTINCT oi.product_id) AS sold_products,\n ROUND(100.0*COUNT(DISTINCT oi.product_id)/NULLIF((SELECT COUNT(*) FROM products),0),2) AS sell_through_pct\n FROM order_items oi JOIN orders o USING(order_id) WHERE o.order_status NOT IN ('canceled','unavailable')\n) x;",
+          "result": {
+            "all_products": 32951,
+            "sold_products": 32729,
+            "sell_through_pct": 99.33
+          }
+        }
+      ],
+      "proposedResolution": "保持Gold与题意。可把分母写成NULLIF(allp.n,0)与注册空集策略对齐；不要为追求100%把分母缩成有销量商品。",
+      "secondaryIssues": [
+        {
+          "type": "EMPTY_SET_BOUNDARY",
+          "detail": "Gold在products为空时除零，产品契约期望NULL；当前固定快照32951条商品使该边界不触发。"
+        }
+      ],
+      "boundaryAssessment": "商品主键及商品外键保证分子是真实商品子集；空分子COUNT为0，非空商品分母下结果0%，不是NULL。",
+      "question": "商品动销率是多少？（有销量的商品数 / 全部商品数）",
+      "originalGoldSql": "WITH sold AS (\n  SELECT COUNT(DISTINCT oi.product_id) AS n\n  FROM order_items oi\n  JOIN orders o ON o.order_id = oi.order_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n),\nallp AS (SELECT COUNT(*) AS n FROM products)\nSELECT ROUND(100.0 * s.n / a.n, 2) AS sell_through_pct\nFROM sold s CROSS JOIN allp a;\n"
+    },
+    {
+      "id": "T6-011",
+      "decision": "CONTRACT_CONFLICT",
+      "reason": "含运费GMV、有效订单、运费分子和百分比两位均与freight_ratio一致，但原题宏观区域未指定地域主体。当前ambiguities的交易大区规则要求确认客户/卖家/仓库，Gold径取客户登记州；freight_ratio推荐示例同时写客户州，与澄清规则形成当前配置内的优先行为冲突，不能因为示例存在就说题意已明确。选择来源会实际改结果：42190条有效商品明细、6842445.94的GMV在客户大区与卖家大区归属不同。",
+      "contractSource": [
+        "src/main/resources/schema/ambiguities.yml:67-96（大区主体证据与交易触发）",
+        "src/main/java/com/text2sql/agent/clarification/AmbiguityDetector.java:decisionsFor",
+        "src/main/resources/schema/metrics.yml:280 freight_ratio（含运费有效订单指标及客户州示例）",
+        "src/main/resources/schema/glossary.yml:542 regions（客户/卖家地域路径）"
+      ],
+      "checks": [
+        {
+          "check": "region subject changes attribution",
+          "evidenceType": "production_snapshot",
+          "sql": "SELECT jsonb_build_object('id','T6-011','check','region subject changes attribution','result',to_jsonb(x)) FROM (\n SELECT COUNT(*) AS valid_item_rows,COUNT(*) FILTER(WHERE cr.macro_region IS DISTINCT FROM sr.macro_region) AS different_customer_seller_macro_items,\n SUM(oi.price+oi.freight_value) FILTER(WHERE cr.macro_region IS DISTINCT FROM sr.macro_region) AS differently_attributed_gmv,\n COUNT(*) FILTER(WHERE cr.region_code IS NULL) AS missing_customer_region,\n COUNT(*) FILTER(WHERE sr.region_code IS NULL) AS missing_seller_region\n FROM order_items oi JOIN orders o USING(order_id) JOIN customers c USING(customer_id) JOIN sellers s USING(seller_id)\n LEFT JOIN regions cr ON cr.region_code=c.customer_state LEFT JOIN regions sr ON sr.region_code=s.seller_state\n WHERE o.order_status NOT IN ('canceled','unavailable')\n) x;",
+          "result": {
+            "valid_item_rows": 112101,
+            "missing_seller_region": 0,
+            "missing_customer_region": 0,
+            "differently_attributed_gmv": 6842445.94,
+            "different_customer_seller_macro_items": 42190
+          }
+        }
+      ],
+      "proposedResolution": "由业务确认按哪一方地域后再冻结题目及Gold；保留freight_ratio分子分母及百分比单位。若确认原Gold意图客户登记州，可采用候选题干；卖家州也可合法定义，不能为了符合当前示例强制客户来源。",
+      "secondaryIssues": [
+        {
+          "type": "CURRENT_CONFIG_INCONSISTENCY",
+          "detail": "指标推荐SQL隐含客户州，而澄清规则要求题干提供地域主体；运行时若澄清启用，题目会先被反问。未执行产品请求或模型调用，不声称实测了运行时结果。"
+        }
+      ],
+      "boundaryAssessment": "当前客户/卖家区域映射缺失均0，只代表快照覆盖。GMV分母0必须NULLIF，Gold未保护空/零集合；不把缺地域事实自动当客户区域。",
+      "proposedQuestion": "按客户登记州所属宏观区域，运费占含运费GMV的百分比是多少？仅统计有效订单。",
+      "question": "运费占 GMV 的比例是多少？按宏观区域拆解。",
+      "originalGoldSql": "SELECT r.macro_region,\n       ROUND(100.0 * SUM(oi.freight_value) / SUM(oi.price + oi.freight_value), 2) AS freight_pct\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN regions r ON r.region_code = c.customer_state\nJOIN order_items oi ON oi.order_id = o.order_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable')\nGROUP BY 1 ORDER BY freight_pct DESC;\n"
+    },
+    {
+      "id": "T6-013",
+      "decision": "REFERENCE_DEFECT",
+      "reason": "Gold直接连接用券记录与商品明细，把每笔订单的discount_amount重复到每个商品上。11926个有效用券订单中1175个有多商品；正确优惠417833.13被Gold算成473711.60，多55878.47，折扣率21.64%被算成24.54%。当前每订单仅1次用券，所以GMV仍碰巧是1930583.35；coupon_usages没有order_id唯一约束，未来多券还会反向重复GMV。COUNT DISTINCT或SUM DISTINCT金额都不能修复两个事实表的交叉放大。",
+      "contractSource": [
+        "src/main/resources/schema/metrics.yml:325 discount_rate（先按订单分别汇总cu和oi、同一订单集合、PERCENT两位）",
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java:93（先原事实聚合，禁SUM DISTINCT金额）",
+        "实际schema: coupon_usages usage_id PK；order_items复合PK"
+      ],
+      "checks": [
+        {
+          "check": "coupon and item preaggregation",
+          "evidenceType": "production_snapshot",
+          "sql": "WITH cu AS (SELECT order_id,COUNT(*) AS usages,SUM(discount_amount) AS discount FROM coupon_usages GROUP BY 1),\noi AS (SELECT order_id,COUNT(*) AS items,SUM(price+freight_value) AS gmv FROM order_items GROUP BY 1),\nf AS (SELECT cu.*,oi.items,oi.gmv FROM cu JOIN oi USING(order_id) JOIN orders o USING(order_id) WHERE o.order_status NOT IN ('canceled','unavailable'))\nSELECT jsonb_build_object('id','T6-013','check','coupon and item preaggregation','result',to_jsonb(x)) FROM (\n SELECT COUNT(*) AS valid_coupon_orders,SUM(usages) AS usage_rows,COUNT(*) FILTER(WHERE usages>1) AS orders_with_multiple_usages,\n COUNT(*) FILTER(WHERE items>1) AS orders_with_multiple_items,\n ROUND(SUM(gmv*usages),2) AS gold_gmv,ROUND(SUM(gmv),2) AS correct_gmv,\n ROUND(SUM(discount*items),2) AS gold_discount,ROUND(SUM(discount),2) AS correct_discount,\n ROUND(100.0*SUM(discount*items)/NULLIF(SUM(gmv*usages),0),2) AS gold_discount_pct,\n ROUND(100.0*SUM(discount)/NULLIF(SUM(gmv),0),2) AS correct_discount_pct\n FROM f\n) x;",
+          "result": {
+            "gold_gmv": 1930583.35,
+            "usage_rows": 11926,
+            "correct_gmv": 1930583.35,
+            "gold_discount": 473711.6,
+            "correct_discount": 417833.13,
+            "gold_discount_pct": 24.54,
+            "valid_coupon_orders": 11926,
+            "correct_discount_pct": 21.64,
+            "orders_with_multiple_items": 1175,
+            "orders_with_multiple_usages": 0
+          }
+        }
+      ],
+      "proposedResolution": "分别预聚合订单级优惠总额和订单级含运费商品金额，再在有用券且有商品明细的有效订单交集一对一连接。该共同全集是当前discount_rate明确契约，不能扩成无券订单或无明细订单。",
+      "secondaryIssues": [],
+      "boundaryAssessment": "两端均先按order_id归并，完全消除cu行数×商品行数的乘法；等额不同优惠仍各自保留。总GMV0时率NULL；SUM折扣为NULL不补0制造奖励或优惠。",
+      "proposedGoldSql": "WITH coupon_totals AS (\n SELECT order_id,SUM(discount_amount) AS discount_amount FROM coupon_usages GROUP BY order_id\n), order_totals AS (\n SELECT order_id,SUM(price+freight_value) AS order_gmv FROM order_items GROUP BY order_id\n)\nSELECT ROUND(SUM(ot.order_gmv),2) AS gmv,ROUND(SUM(ct.discount_amount),2) AS discount,\n ROUND(100.0*SUM(ct.discount_amount)/NULLIF(SUM(ot.order_gmv),0),2) AS discount_pct\nFROM coupon_totals ct JOIN orders o ON o.order_id=ct.order_id\nJOIN order_totals ot ON ot.order_id=ct.order_id\nWHERE o.order_status NOT IN ('canceled','unavailable');",
+      "proposedGoldSqlStatus": "diagnostic_candidate_only_not_applied",
+      "question": "优惠券带来的 GMV 和优惠金额分别是多少？用券订单的折扣率是多少？",
+      "originalGoldSql": "SELECT ROUND(SUM(oi.price + oi.freight_value), 2) AS gmv,\n       ROUND(SUM(cu.discount_amount), 2) AS discount,\n       ROUND(100.0 * SUM(cu.discount_amount) / SUM(oi.price + oi.freight_value), 2) AS discount_pct\nFROM coupon_usages cu\nJOIN orders o ON o.order_id = cu.order_id\nJOIN order_items oi ON oi.order_id = cu.order_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable');\n",
+      "candidateResult": [
+        {
+          "gmv": 1930583.35,
+          "discount": 417833.13,
+          "discount_pct": 21.64
+        }
+      ],
+      "candidateResultSqlFile": "deep_business-candidate-results.sql"
+    },
+    {
+      "id": "T6-015",
+      "decision": "CONTRACT_CONFLICT",
+      "reason": "Gold全工单分母、未解决不计分子、小时EPOCH换算和百分比两位符合sla_rate；但原题没要求类目名称，当前维度默认应使用support_tickets.category_id，Gold输出category_name并仅按名称分组。名称没有UNIQUE；当前6个名称唯一、分类NULL工单0，只说明暂未发生合并/丢失。另实际2556条resolved_at早于created_at的工单全部被当前公式计为SLA成功，这不是Gold独有错误：产品同一表达式也如此，不能悄悄给Gold加非负时长过滤然后宣布纠正。",
+      "contractSource": [
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java:84,92（名称显式、实体身份分组）",
+        "src/main/resources/schema/metrics.yml:312 sla_rate（全部工单分母、已解决且时长<=SLA）",
+        "实际schema: ticket_categories只有category_id PK，category_name非唯一；support_tickets.category_id nullable FK"
+      ],
+      "checks": [
+        {
+          "check": "ticket identity category coverage and SLA",
+          "evidenceType": "production_snapshot",
+          "sql": "SELECT jsonb_build_object('id','T6-015','check','ticket identity category coverage and SLA','result',jsonb_build_object(\n 'null_category_tickets',(SELECT COUNT(*) FROM support_tickets WHERE category_id IS NULL),\n 'duplicate_category_names',(SELECT COUNT(*) FROM (SELECT category_name FROM ticket_categories GROUP BY 1 HAVING COUNT(*)>1) d),\n 'negative_duration_tickets',(SELECT COUNT(*) FROM support_tickets WHERE resolved_at<created_at),\n 'by_category',(SELECT jsonb_agg(x) FROM (\n SELECT tc.category_id,tc.category_name,COUNT(*) AS tickets,COUNT(*) FILTER(WHERE st.resolved_at IS NULL) AS unresolved,\n ROUND(100.0*COUNT(*) FILTER(WHERE st.resolved_at IS NOT NULL AND EXTRACT(EPOCH FROM(st.resolved_at-st.created_at))/3600.0<=tc.sla_hours)/NULLIF(COUNT(*),0),2) AS sla_pct\n FROM support_tickets st JOIN ticket_categories tc USING(category_id) GROUP BY 1,2 ORDER BY 1) x)));",
+          "result": {
+            "by_category": [
+              {
+                "sla_pct": 33.5,
+                "tickets": 803,
+                "unresolved": 179,
+                "category_id": 1,
+                "category_name": "物流延迟"
+              },
+              {
+                "sla_pct": 37.96,
+                "tickets": 1628,
+                "unresolved": 337,
+                "category_id": 2,
+                "category_name": "商品质量问题"
+              },
+              {
+                "sla_pct": 32.39,
+                "tickets": 1655,
+                "unresolved": 341,
+                "category_id": 3,
+                "category_name": "退款咨询"
+              },
+              {
+                "sla_pct": 40.09,
+                "tickets": 1524,
+                "unresolved": 285,
+                "category_id": 4,
+                "category_name": "发票问题"
+              },
+              {
+                "sla_pct": 32.55,
+                "tickets": 1579,
+                "unresolved": 339,
+                "category_id": 5,
+                "category_name": "账号问题"
+              },
+              {
+                "sla_pct": 37.18,
+                "tickets": 745,
+                "unresolved": 161,
+                "category_id": 6,
+                "category_name": "其他"
+              }
+            ],
+            "null_category_tickets": 0,
+            "duplicate_category_names": 0,
+            "negative_duration_tickets": 2556
+          }
+        },
+        {
+          "check": "negative handling times in current metric",
+          "evidenceType": "production_snapshot",
+          "sql": "WITH negatives AS (SELECT st.*,tc.sla_hours FROM support_tickets st JOIN ticket_categories tc USING(category_id) WHERE st.resolved_at<st.created_at)\nSELECT jsonb_build_object('id','T6-015','check','negative handling times in current metric','result',to_jsonb(x)) FROM (\n SELECT COUNT(*) AS negative_duration_tickets,COUNT(*) FILTER(WHERE EXTRACT(EPOCH FROM(resolved_at-created_at))/3600.0<=sla_hours) AS counted_as_sla_success\n FROM negatives\n) x;",
+          "result": {
+            "counted_as_sla_success": 2556,
+            "negative_duration_tickets": 2556
+          }
+        }
+      ],
+      "proposedResolution": "先明确输出维度，按当前默认候选使用category_id并LEFT保留分类未知工单。负时长另列数据质量决策：修源数据、标记未知、计失败或排除各自改变指标，须由业务确认并版本化，不能在本次审计偷偷改。候选SQL忠实保持当前SLA数学定义。",
+      "secondaryIssues": [
+        {
+          "type": "DATA_QUALITY_UNRESOLVED",
+          "detail": "2556个负时长全部被算达成；Gold和产品都受影响，正确业务处置尚未给定。"
+        }
+      ],
+      "boundaryAssessment": "resolved_at NULL不计成功但留分母；created_at或sla_hours NULL也无法确认成功。未知类目保留NULL组，不能借查SLA删除工单。",
+      "proposedGoldSql": "SELECT st.category_id,ROUND(100.0*COUNT(*) FILTER(\n WHERE st.resolved_at IS NOT NULL\n AND EXTRACT(EPOCH FROM(st.resolved_at-st.created_at))/3600.0<=tc.sla_hours\n)/NULLIF(COUNT(*),0),2) AS sla_pct\nFROM support_tickets st LEFT JOIN ticket_categories tc ON tc.category_id=st.category_id\nGROUP BY st.category_id ORDER BY sla_pct;",
+      "proposedGoldSqlStatus": "diagnostic_candidate_only_not_applied",
+      "question": "各类工单的 SLA 达成率是多少？（解决时间不超过类目 SLA 小时数）",
+      "originalGoldSql": "SELECT tc.category_name,\n       ROUND(100.0 * COUNT(*) FILTER (\n         WHERE st.resolved_at IS NOT NULL\n           AND EXTRACT(EPOCH FROM (st.resolved_at - st.created_at)) / 3600.0 <= tc.sla_hours\n       ) / COUNT(*), 2) AS sla_pct\nFROM support_tickets st\nJOIN ticket_categories tc ON tc.category_id = st.category_id\nGROUP BY 1 ORDER BY sla_pct;\n",
+      "candidateResult": [
+        {
+          "sla_pct": 32.39,
+          "category_id": 3
+        },
+        {
+          "sla_pct": 32.55,
+          "category_id": 5
+        },
+        {
+          "sla_pct": 33.5,
+          "category_id": 1
+        },
+        {
+          "sla_pct": 37.18,
+          "category_id": 6
+        },
+        {
+          "sla_pct": 37.96,
+          "category_id": 2
+        },
+        {
+          "sla_pct": 40.09,
+          "category_id": 4
+        }
+      ],
+      "candidateResultSqlFile": "deep_business-candidate-results.sql"
+    },
+    {
+      "id": "T6-017",
+      "decision": "KEEP",
+      "reason": "Gold按推荐记录计算已转化/全部推荐，奖励总额除以已转化推荐数，符合当前conversion_rate与reward_per_converted，而不是自然人去重或每全部推荐均摊。当前4793条推荐、1623条转化，33.86%；奖励总额32481.59，按约定得到20.01。必须揭露该约定的含义：1068条未转化推荐也有正奖励，合计21582.52；若只统计成功推荐上的奖励10899.07，人均是6.72，不能把两者说成等价。这里Gold没有偏离已注册默认，是否接受这个业务定义应另行确认。",
+      "contractSource": [
+        "src/main/resources/schema/metrics.yml:368 conversion_rate、377 reward_per_converted（奖励总额/转化推荐数）",
+        "实际schema: referrals以referral_id为PK，未强制邀请人/被邀请人唯一"
+      ],
+      "checks": [
+        {
+          "check": "registered referral grain",
+          "evidenceType": "production_snapshot",
+          "sql": "SELECT jsonb_build_object('id','T6-017','check','registered referral grain','result',to_jsonb(x)) FROM (\n SELECT COUNT(*) AS referral_records,COUNT(*) FILTER(WHERE converted_at IS NOT NULL) AS converted_referrals,\n COUNT(DISTINCT invitee_member_id) FILTER(WHERE converted_at IS NOT NULL) AS distinct_converted_invitees,\n SUM(reward_amount) FILTER(WHERE converted_at IS NULL) AS unconverted_rewards,\n ROUND(100.0*COUNT(*) FILTER(WHERE converted_at IS NOT NULL)/NULLIF(COUNT(*),0),2) AS conversion_pct,\n ROUND(SUM(reward_amount)/NULLIF(COUNT(*) FILTER(WHERE converted_at IS NOT NULL),0),2) AS reward_per_converted\n FROM referrals\n) x;",
+          "result": {
+            "conversion_pct": 33.86,
+            "referral_records": 4793,
+            "converted_referrals": 1623,
+            "unconverted_rewards": 21582.52,
+            "reward_per_converted": 20.01,
+            "distinct_converted_invitees": 1623
+          }
+        },
+        {
+          "check": "reward numerator is not conversion-only",
+          "evidenceType": "production_snapshot",
+          "sql": "SELECT jsonb_build_object('id','T6-017','check','reward numerator is not conversion-only','result',to_jsonb(x)) FROM (\n SELECT SUM(reward_amount) AS total_rewards,SUM(reward_amount) FILTER(WHERE converted_at IS NOT NULL) AS converted_rewards,\n COUNT(*) FILTER(WHERE converted_at IS NULL AND reward_amount>0) AS unconverted_rewarded_records,\n ROUND(SUM(reward_amount) FILTER(WHERE converted_at IS NOT NULL)/NULLIF(COUNT(*) FILTER(WHERE converted_at IS NOT NULL),0),2) AS conversion_only_reward_average\n FROM referrals\n) x;",
+          "result": {
+            "total_rewards": 32481.59,
+            "converted_rewards": 10899.07,
+            "unconverted_rewarded_records": 1068,
+            "conversion_only_reward_average": 6.72
+          }
+        }
+      ],
+      "proposedResolution": "保留当前Gold；为产品解释清楚人均实际是每次成功推荐分摊全部奖励。若业务要每个转化会员仅分摊其成功事件奖励，必须另设清楚的新指标，不能据口语人均直接改已有基准。",
+      "secondaryIssues": [
+        {
+          "type": "BUSINESS_LABEL_CAVEAT",
+          "detail": "指标名人均不意味着COUNT DISTINCT会员；当前合同明确按转化推荐事件。当前已转化invitee去重数恰好1623也不能当普遍唯一保证。"
+        },
+        {
+          "type": "EMPTY_SET_BOUNDARY",
+          "detail": "Gold缺NULLIF；没有推荐或没有转化时除零，产品注册式要求NULL。当前集合两分母均正。"
+        }
+      ],
+      "boundaryAssessment": "reward_amount NULL由SUM忽略；未转化奖励当前有实值且在总额内，不擅自假设它们恒0，也不自行排除。",
+      "question": "推荐活动的转化率和人均奖励是多少？",
+      "originalGoldSql": "SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE converted_at IS NOT NULL) / COUNT(*), 2) AS conversion_pct,\n       ROUND(SUM(reward_amount) / COUNT(*) FILTER (WHERE converted_at IS NOT NULL), 2) AS reward_per_converted\nFROM referrals;\n"
+    },
+    {
+      "id": "T6-019",
+      "decision": "KEEP",
+      "reason": "Gold严格使用下单到客户签收的时间差，EPOCH/86400.0保留小数天，AVG后两位，符合delivery_days而非承运商发货到送达口径。沿订单customer_id取登记州，没有跨自然人其他客户档案取州。实际96476条签收订单无下单时间缺失、无负时长、州NULL为0；最大209.6286天，证明应保留完整跨月时长。27州中Top10边界20.43仅1州。未擅自套有效订单过滤，符合本指标只要求实际送达的定义。",
+      "contractSource": [
+        "src/main/resources/schema/metrics.yml:427 delivery_days",
+        "src/main/resources/schema/metrics.yml:490 customer_identity_v2（事实所属客户档案）",
+        "原题明确下单到签收，排除shipment_delivery_days解释"
+      ],
+      "checks": [
+        {
+          "check": "delivery duration bounds and state identity",
+          "evidenceType": "production_snapshot",
+          "sql": "SELECT jsonb_build_object('id','T6-019','check','delivery duration bounds and state identity','result',to_jsonb(x)) FROM (\n SELECT COUNT(*) AS timestamp_delivered_orders,\n COUNT(*) FILTER(WHERE order_purchase_timestamp IS NULL) AS missing_purchase_time,\n COUNT(*) FILTER(WHERE order_delivered_customer_date<order_purchase_timestamp) AS negative_durations,\n COUNT(*) FILTER(WHERE c.customer_state IS NULL) AS null_customer_states,\n MAX(EXTRACT(EPOCH FROM(order_delivered_customer_date-order_purchase_timestamp))/86400.0) AS max_days\n FROM orders o JOIN customers c USING(customer_id) WHERE order_delivered_customer_date IS NOT NULL\n) x;",
+          "result": {
+            "max_days": 209.6286111111111,
+            "negative_durations": 0,
+            "null_customer_states": 0,
+            "missing_purchase_time": 0,
+            "timestamp_delivered_orders": 96476
+          }
+        },
+        {
+          "check": "TopK boundary",
+          "evidenceType": "production_snapshot",
+          "sql": "WITH q AS (SELECT c.customer_state,\n       ROUND(AVG(EXTRACT(EPOCH FROM (o.order_delivered_customer_date - o.order_purchase_timestamp)) / 86400.0), 2) AS avg_days\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nWHERE o.order_delivered_customer_date IS NOT NULL\nGROUP BY 1 ORDER BY avg_days DESC), z AS (SELECT q.*, ROW_NUMBER() OVER(ORDER BY avg_days DESC) AS rn FROM q), boundary AS (SELECT avg_days AS value FROM z WHERE rn=10) SELECT jsonb_build_object('id','T6-019','check','TopK boundary','result',jsonb_build_object('limit',10,'total_groups',(SELECT COUNT(*) FROM q),'boundary_value',(SELECT value FROM boundary),'groups_equal_to_boundary',(SELECT COUNT(*) FROM q,boundary WHERE q.avg_days=boundary.value),'groups_above_boundary',(SELECT COUNT(*) FROM q,boundary WHERE q.avg_days>boundary.value)));",
+          "result": {
+            "limit": 10,
+            "total_groups": 27,
+            "boundary_value": 20.43,
+            "groups_above_boundary": 9,
+            "groups_equal_to_boundary": 1
+          }
+        }
+      ],
+      "proposedResolution": "保持Gold及已注册时间口径。正式长期查询可显式::numeric以免不同时间函数返回类型导致ROUND重载问题；本次只读SQL已在实际PostgreSQL执行同一EPOCH/ROUND计算成功。",
+      "secondaryIssues": [],
+      "boundaryAssessment": "签收NULL不参与；下单时间NULL时AVG忽略时长，未来若出现应单列质量指标而不是把缺时间记0天。州归属是订单对应客户记录的州，不猜最新州。",
+      "question": "各州的平均配送时长（下单到签收）是多少天？列出配送最慢的 10 个州。",
+      "originalGoldSql": "SELECT c.customer_state,\n       ROUND(AVG(EXTRACT(EPOCH FROM (o.order_delivered_customer_date - o.order_purchase_timestamp)) / 86400.0), 2) AS avg_days\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nWHERE o.order_delivered_customer_date IS NOT NULL\nGROUP BY 1 ORDER BY avg_days DESC LIMIT 10;\n"
+    },
+    {
+      "id": "T6-020",
+      "decision": "COINCIDENTAL_EQUIVALENCE",
+      "reason": "平台总佣金/总毛额与卖家分别聚合后MIN/AVG/MAX的结构正确，平均卖家率是各卖家等权、整体率是按毛额加权，DECIMAL_RATIO四位也符合注册单位。当前2176卖家全部毛额>0，平台/平均0.1000、最小0.0997、最大0.1004，故Gold CASE ELSE0当前没有触发。但Gold对零、负或NULL毛额统统给0，而当前契约是分母0返回NULL；负毛额也不应未经业务定义直接变0。只读零分母反例中Gold卖家均率0.0500，NULLIF约定0.1000，表明当前等价仅由毛额全正维持。",
+      "contractSource": [
+        "src/main/resources/schema/metrics.yml:357 commission_rate（总额率、卖家分布、DECIMAL_RATIO四位）",
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java:105（零分母NULL而非0）"
+      ],
+      "checks": [
+        {
+          "check": "seller denominators and unweighted distribution",
+          "evidenceType": "production_snapshot",
+          "sql": "WITH seller_rate AS (SELECT st.seller_id,SUM(si.gross_amount) AS gross,SUM(si.commission_amount) AS commission FROM settlements st JOIN settlement_items si USING(settlement_id) GROUP BY 1)\nSELECT jsonb_build_object('id','T6-020','check','seller denominators and unweighted distribution','result',to_jsonb(x)) FROM (\n SELECT COUNT(*) AS sellers,COUNT(*) FILTER(WHERE gross<=0 OR gross IS NULL) AS nonpositive_or_null_gross_sellers,\n ROUND(SUM(commission)/NULLIF(SUM(gross),0),4) AS platform_rate,\n ROUND(MIN(commission/NULLIF(gross,0)),4) AS min_seller_rate,\n ROUND(AVG(commission/NULLIF(gross,0)),4) AS avg_seller_rate,\n ROUND(MAX(commission/NULLIF(gross,0)),4) AS max_seller_rate\n FROM seller_rate\n) x;",
+          "result": {
+            "sellers": 2176,
+            "platform_rate": 0.1,
+            "avg_seller_rate": 0.1,
+            "max_seller_rate": 0.1004,
+            "min_seller_rate": 0.0997,
+            "nonpositive_or_null_gross_sellers": 0
+          }
+        },
+        {
+          "check": "synthetic zero denominator, not production records",
+          "evidenceType": "synthetic_counterexample",
+          "sql": "WITH s(seller_id,gross,commission) AS (VALUES(1,0::numeric,0::numeric),(2,100::numeric,10::numeric))\nSELECT jsonb_build_object('id','T6-020','check','synthetic zero denominator, not production records','result',jsonb_build_object(\n 'gold_avg_rate',(SELECT ROUND(AVG(CASE WHEN gross>0 THEN commission/gross ELSE 0 END),4) FROM s),\n 'contract_avg_rate',(SELECT ROUND(AVG(commission/NULLIF(gross,0)),4) FROM s)));",
+          "result": {
+            "gold_avg_rate": 0.05,
+            "contract_avg_rate": 0.1
+          }
+        }
+      ],
+      "proposedResolution": "改为SUM(commission_amount)/NULLIF(SUM(gross_amount),0)，零毛额卖家率保持NULL，不以假0压低分布。总平台分母同样NULLIF。负毛额的商业意义应明确，若作为退款净额也要保留符号而非自动置0。",
+      "secondaryIssues": [],
+      "boundaryAssessment": "分布只覆盖有结算明细的卖家；无结算卖家的率未定义，题干没有要求把他们用0塞入分布。现库2176卖家全正不是表约束。",
+      "question": "平台整体佣金率和各卖家佣金率分布（最低、平均、最高）分别是多少？",
+      "originalGoldSql": "WITH seller_rate AS (\n  SELECT st.seller_id,\n         SUM(si.gross_amount) AS gross,\n         SUM(si.commission_amount) AS commission,\n         CASE WHEN SUM(si.gross_amount) > 0\n              THEN SUM(si.commission_amount) / SUM(si.gross_amount) ELSE 0 END AS rate\n  FROM settlements st\n  JOIN settlement_items si ON si.settlement_id = st.settlement_id\n  GROUP BY 1\n)\nSELECT ROUND(SUM(commission) / SUM(gross), 4) AS platform_rate,\n       ROUND(MIN(rate), 4) AS min_seller_rate,\n       ROUND(AVG(rate), 4) AS avg_seller_rate,\n       ROUND(MAX(rate), 4) AS max_seller_rate\nFROM seller_rate;\n"
+    },
+    {
+      "id": "T6-022",
+      "decision": "REFERENCE_DEFECT",
+      "reason": "问题同时要求2017与2018各月GMV，再算2018同月同比；Gold却以2018为驱动INNER JOIN2017，只输出两年交集1至9月，删除2017年10/11/12月764756.03、1172191.68、861526.77，合计2798474.48。题目没有仅两年都有数据的月份限定，因此不能为了同比可算就缩小原本两年金额展示范围。2018缺这些月份是数据缺失，不能补0制造-100%同比。含运费、有效订单、百分比两位本身正确。",
+      "contractSource": [
+        "原题：2017年和2018年各月GMV分别是多少，并计算同比",
+        "src/main/resources/schema/metrics.yml:456 yoy_growth（交集仅在用户明确要求；缺期NULL、不造0、保留请求覆盖）",
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java:systemPrompt第17号规则（输出契约不得改变时间覆盖）"
+      ],
+      "checks": [
+        {
+          "check": "month coverage both years",
+          "evidenceType": "production_snapshot",
+          "sql": "WITH monthly AS (SELECT EXTRACT(YEAR FROM o.order_purchase_timestamp)::int AS yr,EXTRACT(MONTH FROM o.order_purchase_timestamp)::int AS mo,SUM(oi.price+oi.freight_value) AS gmv FROM orders o JOIN order_items oi USING(order_id) WHERE o.order_status NOT IN ('canceled','unavailable') GROUP BY 1,2)\nSELECT jsonb_build_object('id','T6-022','check','month coverage both years','result',jsonb_agg(x)) FROM (\n SELECT mo,ROUND(SUM(gmv) FILTER(WHERE yr=2017),2) AS gmv_2017,ROUND(SUM(gmv) FILTER(WHERE yr=2018),2) AS gmv_2018,\n BOOL_OR(yr=2017) AND BOOL_OR(yr=2018) AS emitted_by_gold\n FROM monthly WHERE yr IN (2017,2018) GROUP BY 1 ORDER BY 1\n) x;",
+          "result": [
+            {
+              "mo": 1,
+              "gmv_2017": 136943.46,
+              "gmv_2018": 1101920.01,
+              "emitted_by_gold": true
+            },
+            {
+              "mo": 2,
+              "gmv_2017": 283561.69,
+              "gmv_2018": 979486.16,
+              "emitted_by_gold": true
+            },
+            {
+              "mo": 3,
+              "gmv_2017": 425617.96,
+              "gmv_2018": 1152656.99,
+              "emitted_by_gold": true
+            },
+            {
+              "mo": 4,
+              "gmv_2017": 405848.61,
+              "gmv_2018": 1156248.89,
+              "emitted_by_gold": true
+            },
+            {
+              "mo": 5,
+              "gmv_2017": 582710.83,
+              "gmv_2018": 1145686.46,
+              "emitted_by_gold": true
+            },
+            {
+              "mo": 6,
+              "gmv_2017": 499652.24,
+              "gmv_2018": 1020381.9,
+              "emitted_by_gold": true
+            },
+            {
+              "mo": 7,
+              "gmv_2017": 578753.73,
+              "gmv_2018": 1039783.58,
+              "emitted_by_gold": true
+            },
+            {
+              "mo": 8,
+              "gmv_2017": 661903.52,
+              "gmv_2018": 996973.51,
+              "emitted_by_gold": true
+            },
+            {
+              "mo": 9,
+              "gmv_2017": 717102.72,
+              "gmv_2018": 166.46,
+              "emitted_by_gold": true
+            },
+            {
+              "mo": 10,
+              "gmv_2017": 764756.03,
+              "gmv_2018": null,
+              "emitted_by_gold": false
+            },
+            {
+              "mo": 11,
+              "gmv_2017": 1172191.68,
+              "gmv_2018": null,
+              "emitted_by_gold": false
+            },
+            {
+              "mo": 12,
+              "gmv_2017": 861526.77,
+              "gmv_2018": null,
+              "emitted_by_gold": false
+            }
+          ]
+        }
+      ],
+      "proposedResolution": "以1至12月日历为驱动分别LEFT JOIN两年金额；缺失金额及同比返回NULL。候选保留mo、gmv_2017、gmv_2018、yoy_pct。若业务真的只要共同月份，应明确另改题，不能将内连接当自动默认。",
+      "secondaryIssues": [],
+      "boundaryAssessment": "2017为0或NULL时同比NULL；2018缺失不补0，2017已知仍展示。日期半开边界保留2018最后一刻。候选结果对照另存，明确9行交集与12行完整月份差别。",
+      "proposedGoldSql": "WITH monthly AS (\n SELECT EXTRACT(YEAR FROM o.order_purchase_timestamp)::int AS yr,\n EXTRACT(MONTH FROM o.order_purchase_timestamp)::int AS mo,SUM(oi.price+oi.freight_value) AS gmv\n FROM orders o JOIN order_items oi ON oi.order_id=o.order_id\n WHERE o.order_status NOT IN ('canceled','unavailable')\n AND o.order_purchase_timestamp>=DATE '2017-01-01' AND o.order_purchase_timestamp<DATE '2019-01-01'\n GROUP BY 1,2\n), months AS (SELECT generate_series(1,12) AS mo)\nSELECT m.mo,ROUND(m17.gmv,2) AS gmv_2017,ROUND(m18.gmv,2) AS gmv_2018,\n ROUND(100.0*(m18.gmv-m17.gmv)/NULLIF(m17.gmv,0),2) AS yoy_pct\nFROM months m LEFT JOIN monthly m17 ON m17.mo=m.mo AND m17.yr=2017\nLEFT JOIN monthly m18 ON m18.mo=m.mo AND m18.yr=2018 ORDER BY m.mo;",
+      "proposedGoldSqlStatus": "diagnostic_candidate_only_not_applied",
+      "question": "2017 年和 2018 年各月 GMV 分别是多少？并计算 2018 年相对 2017 年同月的同比增长率。",
+      "originalGoldSql": "WITH monthly AS (\n  SELECT EXTRACT(YEAR FROM o.order_purchase_timestamp)::int AS yr,\n         EXTRACT(MONTH FROM o.order_purchase_timestamp)::int AS mo,\n         SUM(oi.price + oi.freight_value) AS gmv\n  FROM orders o\n  JOIN order_items oi ON oi.order_id = o.order_id\n  WHERE o.order_status NOT IN ('canceled', 'unavailable')\n  GROUP BY 1, 2\n)\nSELECT m18.mo,\n       ROUND(m17.gmv, 2) AS gmv_2017,\n       ROUND(m18.gmv, 2) AS gmv_2018,\n       ROUND(100.0 * (m18.gmv - m17.gmv) / m17.gmv, 2) AS yoy_pct\nFROM monthly m18\nJOIN monthly m17 ON m17.mo = m18.mo AND m17.yr = 2017\nWHERE m18.yr = 2018\nORDER BY m18.mo;\n",
+      "candidateResult": [
+        {
+          "mo": 1,
+          "yoy_pct": 704.65,
+          "gmv_2017": 136943.46,
+          "gmv_2018": 1101920.01
+        },
+        {
+          "mo": 2,
+          "yoy_pct": 245.42,
+          "gmv_2017": 283561.69,
+          "gmv_2018": 979486.16
+        },
+        {
+          "mo": 3,
+          "yoy_pct": 170.82,
+          "gmv_2017": 425617.96,
+          "gmv_2018": 1152656.99
+        },
+        {
+          "mo": 4,
+          "yoy_pct": 184.9,
+          "gmv_2017": 405848.61,
+          "gmv_2018": 1156248.89
+        },
+        {
+          "mo": 5,
+          "yoy_pct": 96.61,
+          "gmv_2017": 582710.83,
+          "gmv_2018": 1145686.46
+        },
+        {
+          "mo": 6,
+          "yoy_pct": 104.22,
+          "gmv_2017": 499652.24,
+          "gmv_2018": 1020381.9
+        },
+        {
+          "mo": 7,
+          "yoy_pct": 79.66,
+          "gmv_2017": 578753.73,
+          "gmv_2018": 1039783.58
+        },
+        {
+          "mo": 8,
+          "yoy_pct": 50.62,
+          "gmv_2017": 661903.52,
+          "gmv_2018": 996973.51
+        },
+        {
+          "mo": 9,
+          "yoy_pct": -99.98,
+          "gmv_2017": 717102.72,
+          "gmv_2018": 166.46
+        },
+        {
+          "mo": 10,
+          "yoy_pct": null,
+          "gmv_2017": 764756.03,
+          "gmv_2018": null
+        },
+        {
+          "mo": 11,
+          "yoy_pct": null,
+          "gmv_2017": 1172191.68,
+          "gmv_2018": null
+        },
+        {
+          "mo": 12,
+          "yoy_pct": null,
+          "gmv_2017": 861526.77,
+          "gmv_2018": null
+        }
+      ],
+      "candidateResultSqlFile": "deep_business-candidate-results.sql"
+    },
+    {
+      "id": "T6-024",
+      "decision": "COINCIDENTAL_EQUIVALENCE",
+      "reason": "当前低分率度量以评价记录为单位，原Gold将退款与评价直接按order_id连接；order_reviews完整身份是(review_id,order_id)，同订单多评价本应各保留。当前每订单只有一笔退款，按原因归属后平均及低分率各组正确：CUST4.04/15.97%、LATE4.07/14.96%、OTHER4.10/14.89%、QUAL4.08/14.60%。但refunds只有refund_id主键，没有order_id或(order_id,reason_code)唯一；同一订单同一原因有两笔退款时，Gold会把同一评价重复加权。只读反例把两条真实评价1分/5分算成均分2.33、低分66.67%，去重原因-订单后应3.00/50.00%。当前结果等价只由退款一单一条的偶然数据维持。",
+      "contractSource": [
+        "src/main/resources/schema/metrics.yml:255 low_score_rate（评价记录分母；退款集合不叠订单状态）",
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java:95-100（完整记录身份，连接不能改变计数对象）",
+        "src/main/resources/schema/glossary.yml:182（一行一评价）",
+        "实际schema: order_reviews PK(review_id,order_id)，refunds仅refund_id PK"
+      ],
+      "checks": [
+        {
+          "check": "review records versus refund-review multiplication",
+          "evidenceType": "production_snapshot",
+          "sql": "WITH rr AS (SELECT reason_code,order_id,COUNT(*) AS refunds FROM refunds GROUP BY 1,2),\nweighted AS (SELECT rr.reason_code,rr.refunds,rev.review_id,rev.order_id,rev.review_score FROM rr JOIN order_reviews rev USING(order_id))\nSELECT jsonb_build_object('id','T6-024','check','review records versus refund-review multiplication','result',jsonb_build_object(\n 'repeated_order_reason_pairs',(SELECT COUNT(*) FROM rr WHERE refunds>1),\n 'orders_with_multiple_refunds',(SELECT COUNT(*) FROM (SELECT order_id FROM refunds GROUP BY 1 HAVING COUNT(*)>1) d),\n 'reviews_with_null_score',(SELECT COUNT(*) FROM weighted WHERE review_score IS NULL),\n 'groups',(SELECT jsonb_agg(x) FROM (\n SELECT reason_code,COUNT(*) AS unique_reason_review_records,SUM(refunds) AS gold_join_rows,\n ROUND(AVG(review_score),2) AS review_grain_avg,\n ROUND(SUM(review_score*refunds)::numeric/NULLIF(SUM(refunds) FILTER(WHERE review_score IS NOT NULL),0),2) AS gold_avg,\n ROUND(100.0*COUNT(*) FILTER(WHERE review_score<=2)/NULLIF(COUNT(*),0),2) AS review_grain_low_pct,\n ROUND(100.0*SUM(refunds) FILTER(WHERE review_score<=2)/NULLIF(SUM(refunds),0),2) AS gold_low_pct\n FROM weighted GROUP BY 1 ORDER BY 1) x)));",
+          "result": {
+            "groups": [
+              {
+                "gold_avg": 4.04,
+                "reason_code": "CUST",
+                "gold_low_pct": 15.97,
+                "gold_join_rows": 983,
+                "review_grain_avg": 4.04,
+                "review_grain_low_pct": 15.97,
+                "unique_reason_review_records": 983
+              },
+              {
+                "gold_avg": 4.07,
+                "reason_code": "LATE",
+                "gold_low_pct": 14.96,
+                "gold_join_rows": 2005,
+                "review_grain_avg": 4.07,
+                "review_grain_low_pct": 14.96,
+                "unique_reason_review_records": 2005
+              },
+              {
+                "gold_avg": 4.1,
+                "reason_code": "OTHER",
+                "gold_low_pct": 14.89,
+                "gold_join_rows": 994,
+                "review_grain_avg": 4.1,
+                "review_grain_low_pct": 14.89,
+                "unique_reason_review_records": 994
+              },
+              {
+                "gold_avg": 4.08,
+                "reason_code": "QUAL",
+                "gold_low_pct": 14.6,
+                "gold_join_rows": 1918,
+                "review_grain_avg": 4.08,
+                "review_grain_low_pct": 14.6,
+                "unique_reason_review_records": 1918
+              }
+            ],
+            "reviews_with_null_score": 0,
+            "repeated_order_reason_pairs": 0,
+            "orders_with_multiple_refunds": 0
+          }
+        },
+        {
+          "check": "synthetic read-only counterexample, not production records",
+          "evidenceType": "synthetic_counterexample",
+          "sql": "WITH r(order_id,reason_code) AS (VALUES(1,'QUAL'),(1,'QUAL'),(2,'QUAL')), v(review_id,order_id,review_score) AS (VALUES(1,1,1),(2,2,5))\nSELECT jsonb_build_object('id','T6-024','check','synthetic read-only counterexample, not production records','result',jsonb_build_object(\n 'gold_avg',(SELECT ROUND(AVG(review_score),2) FROM r JOIN v USING(order_id)),\n 'review_grain_avg',(SELECT ROUND(AVG(review_score),2) FROM v WHERE EXISTS(SELECT 1 FROM r WHERE r.order_id=v.order_id)),\n 'gold_low_pct',(SELECT ROUND(100.0*COUNT(*) FILTER(WHERE review_score<=2)/COUNT(*),2) FROM r JOIN v USING(order_id)),\n 'review_grain_low_pct',(SELECT ROUND(100.0*COUNT(*) FILTER(WHERE review_score<=2)/COUNT(*),2) FROM v WHERE EXISTS(SELECT 1 FROM r WHERE r.order_id=v.order_id))));",
+          "result": {
+            "gold_avg": 2.33,
+            "gold_low_pct": 66.67,
+            "review_grain_avg": 3.0,
+            "review_grain_low_pct": 50.0
+          }
+        }
+      ],
+      "proposedResolution": "先取DISTINCT(reason_code,order_id)归属集合，再连接所有评价记录；同评价在不同退款原因组可各出现一次，同原因组不得因多退款重复。保留多评价本身，不随意取最新评价，不增有效订单或已完成退款过滤。",
+      "secondaryIssues": [],
+      "boundaryAssessment": "AVG忽略NULL评分；低分率COUNT(*)分母包含NULL评分评价，符合当前registered metric，未知不计低分。实际NULL评分0。订单/客户连接受强制FK/PK保障当前不放大，无需额外加入它们完成本题。",
+      "question": "退款原因与客户评分的关系：各退款原因对应的平均评分和低分率是多少？",
+      "originalGoldSql": "SELECT r.reason_code,\n       ROUND(AVG(rev.review_score), 2) AS avg_score,\n       ROUND(100.0 * COUNT(*) FILTER (WHERE rev.review_score <= 2) / COUNT(*), 2) AS low_score_pct\nFROM refunds r\nJOIN orders o ON o.order_id = r.order_id\nJOIN order_reviews rev ON rev.order_id = r.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY 1 ORDER BY low_score_pct DESC;\n"
+    }
+  ]
+}

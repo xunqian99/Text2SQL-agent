@@ -1,0 +1,4653 @@
+{
+  "reviewer": "/root/review_basic_time",
+  "provenance": {
+    "freshContext": true,
+    "participatedInAuthoringOrTuning": false,
+    "readPriorAudit": false,
+    "externalModelCalls": 0
+  },
+  "scope": {
+    "input": "reports/independent-contract-review-20261119/basic_time-input.json",
+    "questionCount": 56,
+    "tiers": [
+      "T1",
+      "T2",
+      "T3"
+    ],
+    "productionEdits": false,
+    "gitCommit": false
+  },
+  "method": {
+    "allowedCurrentContractSources": [
+      "src/main/java/com/text2sql/agent/generation/PromptTemplate.java",
+      "src/main/java/com/text2sql/agent/retrieval/DatabaseSchemaReader.java",
+      "src/main/resources/schema/metrics.yml",
+      "src/main/resources/schema/ambiguities.yml",
+      "src/main/resources/schema/glossary.yml"
+    ],
+    "readOnlyDatabase": "text2sql-postgres/olist via text2sql_ro",
+    "transaction": "BEGIN READ ONLY; SET LOCAL statement_timeout=8s; ... ROLLBACK",
+    "checksExecuted": 90,
+    "goldExecutionSuccesses": 56,
+    "syntheticCases": "Only CTE/VALUES/generate_series in read-only SELECT, no data writes",
+    "evidenceFile": "basic_time-query-results.json"
+  },
+  "decisionDefinitions": {
+    "KEEP": "未发现足以否定Gold的具体问题；合理的当前默认可保留。附注不表示所有潜在库状态均已证明。",
+    "REFERENCE_DEFECT": "题意关键事实对象/时间关系确定，且现库已出现可证错误。",
+    "CONTRACT_CONFLICT": "Gold体现一种合理解释，但与允许读取的当前产品明确默认不同。",
+    "AMBIGUOUS": "题面/当前默认未唯一约定关键覆盖、凭据或并列身份，不能单方面宣判Gold错误。",
+    "COINCIDENTAL_EQUIVALENCE": "Gold当前数值通过，但独立合法反例证明关键语义或空集行为不等价；不据快照相同泛化。"
+  },
+  "summary": {
+    "KEEP": 44,
+    "AMBIGUOUS": 7,
+    "REFERENCE_DEFECT": 2,
+    "COINCIDENTAL_EQUIVALENCE": 2,
+    "CONTRACT_CONFLICT": 1
+  },
+  "crossCuttingNotes": [
+    "valid_order是按别名匹配注入的指标；不能仅凭其notes中广义默认一句，就给所有裸记录计数强加有效订单过滤。Prompt规则7同时明确禁止无依据事实过滤。",
+    "当前实体身份契约明确裸客户数为客户记录数；自然人与订单关联键仍需区分。此默认自身可以被业务质疑，但本审查不悄悄改默认。",
+    "月份是否补零没有全局明确默认。一般观测事实的按月分组未被强判错；明确全年每月题列为歧义；涉及上个月运算则必须保持真正相邻月份。",
+    "Prompt规则3要求多行带LIMIT，而若干Gold未带。这里只将其记录为语法/生成约定差异，不把语义完整的聚合结果一概判错；不能随意用小LIMIT截断完整分组。",
+    "当前PG16的EXTRACT(EPOCH...)为numeric；date参数DATE_TRUNC为timestamptz，timestamp参数为timestamp。实际类型检查优先于提示文字中的概述。"
+  ],
+  "multiRowGoldWithoutLimit": [
+    "T2-004",
+    "T2-006",
+    "T2-015",
+    "T2-017",
+    "T2-019",
+    "T2-020",
+    "T2-024",
+    "T2-026",
+    "T2-028",
+    "T2-031",
+    "T2-037",
+    "T2-040",
+    "T3-001",
+    "T3-003",
+    "T3-007",
+    "T3-009",
+    "T3-010",
+    "T3-012",
+    "T3-014",
+    "T3-018",
+    "T3-021",
+    "T3-023",
+    "T3-025",
+    "T3-027",
+    "T3-029",
+    "T3-030"
+  ],
+  "items": [
+    {
+      "id": "T1-001",
+      "question": "一共有多少笔订单？",
+      "decision": "KEEP",
+      "reason": "“一共多少笔订单”以orders的一行一订单为对象，主键order_id保证COUNT(*)不会把同一订单重复算入；现值99,441。未要求有效或已送达，不能因为枚举中存在取消状态就自动删订单；空表COUNT为0，无分母和时间边界。",
+      "contractSource": [
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则7、10",
+        "src/main/resources/schema/metrics.yml valid_order的aliases与entityPolicies末段",
+        "实际schema：orders_pkey"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT COUNT(*) FROM orders",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "count": 99441
+              }
+            ]
+          },
+          "evidenceKey": "T1-001:gold"
+        }
+      ],
+      "proposedResolution": "保留。若业务想默认只看有效订单，应明确改题与对外契约，不能静默把全部订单变成有效订单。"
+    },
+    {
+      "id": "T1-003",
+      "question": "已取消的订单有多少笔？",
+      "decision": "KEEP",
+      "reason": "对象是已取消订单，不是退款单；order_status=canceled直接对应订单状态，得到625笔。过滤后仍保持一行一订单，不需要关联退款或明细，也不应叠加排除取消的有效订单条件；无匹配时返回0。",
+      "contractSource": [
+        "src/main/resources/schema/glossary.yml orders.order_status",
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则7、10、15"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT COUNT(*) FROM orders WHERE order_status = 'canceled'",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "count": 625
+              }
+            ]
+          },
+          "evidenceKey": "T1-003:gold"
+        }
+      ],
+      "proposedResolution": "保留已取消订单的明确状态覆盖。"
+    },
+    {
+      "id": "T1-005",
+      "question": "单价超过 1000 的订单明细有多少条？",
+      "decision": "KEEP",
+      "reason": "题目明确按订单明细“条”计数，order_items复合主键标识每条明细，price>1000严格排除等于1000，当前844条。这里不是不同订单数、商品数或结算毛额，单价numeric且NOT NULL；不增加订单状态过滤。",
+      "contractSource": [
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则10、16",
+        "实际schema：order_items(price numeric NOT NULL；复合主键)"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT COUNT(*) FROM order_items WHERE price > 1000",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "count": 844
+              }
+            ]
+          },
+          "evidenceKey": "T1-005:gold"
+        }
+      ],
+      "proposedResolution": "保留；价格阈值不改成>=。"
+    },
+    {
+      "id": "T1-007",
+      "question": "一共有多少个卖家？",
+      "decision": "KEEP",
+      "reason": "卖家实体由sellers.seller_id主键定义，COUNT(*)给出3,095个，包括尚无商品明细的卖家。直接数实体表恰好保留零销售卖家，不需要从order_items反推“有交易卖家”。",
+      "contractSource": [
+        "src/main/resources/schema/glossary.yml sellers",
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则10",
+        "实际schema：sellers_pkey"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT COUNT(*) FROM sellers",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "count": 3095
+              }
+            ]
+          },
+          "evidenceKey": "T1-007:gold"
+        }
+      ],
+      "proposedResolution": "保留实体全集计数。"
+    },
+    {
+      "id": "T1-009",
+      "question": "圣保罗州（SP）的客户有多少个？",
+      "decision": "KEEP",
+      "reason": "当前产品明确规定裸客户数/属性分布默认按客户档案记录，而不是自然人去重。SP有41,746条客户档案、40,302个自然人，Gold选前者符合这个默认；若按行业直觉改成去重人数会改变度量。",
+      "contractSource": [
+        "src/main/resources/schema/metrics.yml entityPolicies.customer_identity_v2(populationCountUnit=ROW_KEY)",
+        "src/main/resources/schema/glossary.yml customers.customer_state"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT COUNT(*) FROM customers WHERE customer_state = 'SP'",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "count": 41746
+              }
+            ]
+          },
+          "evidenceKey": "T1-009:gold"
+        },
+        {
+          "sql": "SELECT\n (SELECT COUNT(*) FROM customers) AS customer_rows,\n (SELECT COUNT(DISTINCT customer_unique_id) FROM customers) AS customer_people,\n (SELECT COUNT(*) FROM customers WHERE customer_state='SP') AS sp_rows,\n (SELECT COUNT(DISTINCT customer_unique_id) FROM customers WHERE customer_state='SP') AS sp_people,\n (SELECT COUNT(*) FROM products WHERE product_category_name IS NULL) AS null_categories,\n (SELECT COUNT(*) FROM products WHERE product_category_name='') AS empty_categories,\n (SELECT COUNT(*) FROM order_payments WHERE payment_installments IS NULL) AS null_installments,\n (SELECT COUNT(*) FROM order_reviews WHERE review_score IS NULL) AS null_review_scores,\n (SELECT COUNT(*) FROM search_logs WHERE keyword IS NULL) AS null_keywords",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "sp_rows": 41746,
+                "sp_people": 40302,
+                "customer_rows": 99441,
+                "null_keywords": 0,
+                "customer_people": 96096,
+                "null_categories": 610,
+                "empty_categories": 0,
+                "null_installments": 0,
+                "null_review_scores": 0
+              }
+            ]
+          },
+          "evidenceKey": "basic-identity-nulls"
+        }
+      ],
+      "proposedResolution": "按当前产品默认保留；题面可补“客户档案记录”提高跨产品可迁移性。"
+    },
+    {
+      "id": "T1-010",
+      "question": "订单状态一共有几种？",
+      "decision": "KEEP",
+      "reason": "问题要的是实际出现的订单状态种数，COUNT(DISTINCT order_status)得到8，不是状态定义字典的潜在取值个数。实际列NOT NULL，不存在NULL是否算一种的分歧；订单全状态都应参加状态种类统计。",
+      "contractSource": [
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则7、10",
+        "实际schema：orders.order_status NOT NULL"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT COUNT(DISTINCT order_status) FROM orders",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "count": 8
+              }
+            ]
+          },
+          "evidenceKey": "T1-010:gold"
+        }
+      ],
+      "proposedResolution": "保留实际状态去重计数。"
+    },
+    {
+      "id": "T1-012",
+      "question": "价格最高的 10 条订单明细是哪些？",
+      "decision": "KEEP",
+      "reason": "Gold按明细单价排序，投影完整明细身份(order_id,order_item_id)和price，符合“哪些明细”。第10名价格3,999.90，之上9条、该价格仅1条，没有跨LIMIT边界的并列；若未来同价跨界，应允许任取10条或声明稳定次序。",
+      "contractSource": [
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则8、10、16",
+        "实际schema：order_items复合主键"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT order_id, order_item_id, price\nFROM order_items ORDER BY price DESC LIMIT 10",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "price": 6735.0,
+                "order_id": "0812eb902a67711a1cb742b3cdaa65ae",
+                "order_item_id": 1
+              },
+              {
+                "price": 6729.0,
+                "order_id": "fefacc66af859508bf1a7934eab1e97f",
+                "order_item_id": 1
+              },
+              {
+                "price": 6499.0,
+                "order_id": "f5136e38d1a14a4dbd87dff67da82701",
+                "order_item_id": 1
+              },
+              {
+                "price": 4799.0,
+                "order_id": "a96610ab360d42a2e5335a3998b4718a",
+                "order_item_id": 1
+              },
+              {
+                "price": 4690.0,
+                "order_id": "199af31afc78c699f0dbf71fb178d4d4",
+                "order_item_id": 1
+              },
+              {
+                "price": 4590.0,
+                "order_id": "8dbc85d1447242f3b127dda390d56e19",
+                "order_item_id": 1
+              },
+              {
+                "price": 4399.87,
+                "order_id": "426a9742b533fc6fed17d1fd6d143d7e",
+                "order_item_id": 1
+              },
+              {
+                "price": 4099.99,
+                "order_id": "68101694e5c5dc7330c91e1bbc36214f",
+                "order_item_id": 1
+              },
+              {
+                "price": 4059.0,
+                "order_id": "b239ca7cd485940b31882363b52e6674",
+                "order_item_id": 1
+              },
+              {
+                "price": 3999.9,
+                "order_id": "86c4eab1571921a6a6e248ed312f5a5a",
+                "order_item_id": 1
+              }
+            ]
+          },
+          "evidenceKey": "T1-012:gold"
+        },
+        {
+          "sql": "WITH ranked AS (SELECT price, RANK() OVER(ORDER BY price DESC) AS r FROM order_items),\ncutoff AS (SELECT MIN(price) AS p FROM (SELECT price FROM order_items ORDER BY price DESC LIMIT 10) t)\nSELECT p AS tenth_price, (SELECT COUNT(*) FROM order_items WHERE price>p) AS above,\n(SELECT COUNT(*) FROM order_items WHERE price=p) AS tied_at_cutoff FROM cutoff",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "above": 9,
+                "tenth_price": 3999.9,
+                "tied_at_cutoff": 1
+              }
+            ]
+          },
+          "evidenceKey": "T1-012:cutoff"
+        }
+      ],
+      "proposedResolution": "保留当前参考结果；并列规则作为未来稳定性约定，不把现库无并列的题判错。"
+    },
+    {
+      "id": "T1-014",
+      "question": "评价分数为 1 分的评价有多少条？",
+      "decision": "KEEP",
+      "reason": "一行一条评价，按review_score=1计11,424条；同一订单有多条评价也应逐条计数，因此不对order_id去重。题目是记录数量，没有好评率分母或订单状态要求。",
+      "contractSource": [
+        "src/main/resources/schema/glossary.yml order_reviews",
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则10"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT COUNT(*) FROM order_reviews WHERE review_score = 1",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "count": 11424
+              }
+            ]
+          },
+          "evidenceKey": "T1-014:gold"
+        }
+      ],
+      "proposedResolution": "保留按评价记录计数。"
+    },
+    {
+      "id": "T1-016",
+      "question": "分期数最多的那一笔支付分了多少期？",
+      "decision": "AMBIGUOUS",
+      "reason": "最大分期数是24，但实际有18笔支付、分属18个订单并列。Gold返回某一order_id+24，24本身正确；题面与当前实体寻优规则都未约定18个身份中选谁，不能把其中一笔变成唯一标准身份。另外分期字段允许NULL，PostgreSQL DESC默认NULLS FIRST，合成反例会选中未知值。",
+      "contractSource": [
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则8（实体寻优）",
+        "实际schema：order_payments主键(order_id,payment_sequential)，payment_installments可空"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT order_id, payment_installments\nFROM order_payments ORDER BY payment_installments DESC LIMIT 1",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "order_id": "70b7e94ea46d3e8b5bc12a50186edaf0",
+                "payment_installments": 24
+              }
+            ]
+          },
+          "evidenceKey": "T1-016:gold"
+        },
+        {
+          "sql": "SELECT payment_installments, COUNT(*) AS payments, COUNT(DISTINCT order_id) AS orders\nFROM order_payments WHERE payment_installments=(SELECT MAX(payment_installments) FROM order_payments)\nGROUP BY payment_installments",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "orders": 18,
+                "payments": 18,
+                "payment_installments": 24
+              }
+            ]
+          },
+          "evidenceKey": "T1-016:ties"
+        },
+        {
+          "sql": "WITH payments(order_id,payment_sequential,payment_installments) AS\n (VALUES ('a',1,24),('b',1,NULL::int))\nSELECT order_id,payment_installments FROM payments ORDER BY payment_installments DESC LIMIT 1",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "order_id": "b",
+                "payment_installments": null
+              }
+            ]
+          },
+          "evidenceKey": "T1-016:null-counterexample"
+        }
+      ],
+      "proposedResolution": "明确任选一个已知最大分期支付并以完整支付主键稳定排序，或只问最大期数并输出24；不将另一个并列身份自动判错。加NULLS LAST或排除未知值须与题面“已知分期”语义一致。",
+      "secondaryIssues": [
+        "现库null_installments=0，NULL排序反例证明的是允许状态下的缺口，不宣称本次结果选到了NULL。",
+        "order_id不是全库支付记录的完整主键；当前18笔最大值恰好分属不同订单，暂未造成身份碰撞。"
+      ],
+      "proposedQuestion": "仅考虑分期数已知的支付，找出分期数最多的一笔；并列时按order_id、payment_sequential升序取第一笔，输出这两个支付标识及分期期数。",
+      "pendingChoices": [
+        "稳定选择一笔已知最大值支付，输出完整主键与期数。",
+        "只问最大分期期数，不要求是哪笔支付。",
+        "列出全部并列最大分期支付。"
+      ],
+      "proposedQuestionStatus": "消歧候选，不替业务确认，不改原题。"
+    },
+    {
+      "id": "T1-018",
+      "question": "订单明细里运费超过 50 的有多少条？",
+      "decision": "KEEP",
+      "reason": "运费属于订单明细字段freight_value，问“条”对应明细而非订单。严格>50得到4,605条，等于50不计；字段numeric NOT NULL，直接计数不引入商品或支付连接放大。",
+      "contractSource": [
+        "src/main/resources/schema/glossary.yml order_items.freight_value",
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则10、16"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT COUNT(*) FROM order_items WHERE freight_value > 50",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "count": 4605
+              }
+            ]
+          },
+          "evidenceKey": "T1-018:gold"
+        }
+      ],
+      "proposedResolution": "保留明细运费阈值计数。"
+    },
+    {
+      "id": "T1-021",
+      "question": "里约热内卢州（RJ）的卖家有多少个？",
+      "decision": "KEEP",
+      "reason": "对象是卖家所在地，不是客户收货州；seller_state=RJ返回171个卖家。COUNT卖家实体表包括没有订单的RJ卖家，无需交易连接，也不涉及地区主体反问。",
+      "contractSource": [
+        "src/main/resources/schema/glossary.yml sellers.seller_state",
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则15"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT COUNT(*) FROM sellers WHERE seller_state = 'RJ'",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "count": 171
+              }
+            ]
+          },
+          "evidenceKey": "T1-021:gold"
+        }
+      ],
+      "proposedResolution": "保留RJ物理州代码与卖家表。"
+    },
+    {
+      "id": "T1-023",
+      "question": "没有填写类目的商品有多少个？",
+      "decision": "KEEP",
+      "reason": "“没有填写类目”按当前NULL口径解释为product_category_name IS NULL，得到610个商品；空字符串现库为0。维度默认排除NULL不能覆盖这道明确询问NULL的题，亦无需关联类目翻译表把未翻译值混入。",
+      "contractSource": [
+        "src/main/resources/schema/metrics.yml dimensionPolicies.product_category_nulls_v1",
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则7",
+        "src/main/resources/schema/glossary.yml products.product_category_name"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT COUNT(*) FROM products WHERE product_category_name IS NULL",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "count": 610
+              }
+            ]
+          },
+          "evidenceKey": "T1-023:gold"
+        },
+        {
+          "sql": "SELECT\n (SELECT COUNT(*) FROM customers) AS customer_rows,\n (SELECT COUNT(DISTINCT customer_unique_id) FROM customers) AS customer_people,\n (SELECT COUNT(*) FROM customers WHERE customer_state='SP') AS sp_rows,\n (SELECT COUNT(DISTINCT customer_unique_id) FROM customers WHERE customer_state='SP') AS sp_people,\n (SELECT COUNT(*) FROM products WHERE product_category_name IS NULL) AS null_categories,\n (SELECT COUNT(*) FROM products WHERE product_category_name='') AS empty_categories,\n (SELECT COUNT(*) FROM order_payments WHERE payment_installments IS NULL) AS null_installments,\n (SELECT COUNT(*) FROM order_reviews WHERE review_score IS NULL) AS null_review_scores,\n (SELECT COUNT(*) FROM search_logs WHERE keyword IS NULL) AS null_keywords",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "sp_rows": 41746,
+                "sp_people": 40302,
+                "customer_rows": 99441,
+                "null_keywords": 0,
+                "customer_people": 96096,
+                "null_categories": 610,
+                "empty_categories": 0,
+                "null_installments": 0,
+                "null_review_scores": 0
+              }
+            ]
+          },
+          "evidenceKey": "basic-identity-nulls"
+        }
+      ],
+      "proposedResolution": "保留；如果业务将空白字符串也视为未填写，需明确扩展题意，不能把未翻译类目算作未填写。"
+    },
+    {
+      "id": "T1-025",
+      "question": "状态为冻结的会员有多少人？",
+      "decision": "KEEP",
+      "reason": "members.status=2由库内列注释和词典共同定义为冻结，当前5,724人。members.customer_unique_id有非空唯一约束，因此数会员行与已知会员身份一一对应；不需要再从customers连接而放大同一个会员。",
+      "contractSource": [
+        "src/main/resources/schema/glossary.yml members.status",
+        "实际schema：members.status注释、customer_unique_id UNIQUE NOT NULL"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT COUNT(*) FROM members WHERE status = 2",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "count": 5724
+              }
+            ]
+          },
+          "evidenceKey": "T1-025:gold"
+        }
+      ],
+      "proposedResolution": "保留冻结会员实体计数。"
+    },
+    {
+      "id": "T1-027",
+      "question": "一共有几个仓库？",
+      "decision": "KEEP",
+      "reason": "仓库实体全集由warehouses主键定义，COUNT(*)返回5；题目没有要求存在库存、发过货或容量大于0。直接数仓库可保留零事实仓库，空表也会返回0。",
+      "contractSource": [
+        "src/main/resources/schema/glossary.yml warehouses",
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则10"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT COUNT(*) FROM warehouses",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "count": 5
+              }
+            ]
+          },
+          "evidenceKey": "T1-027:gold"
+        }
+      ],
+      "proposedResolution": "保留仓库实体全集。"
+    },
+    {
+      "id": "T1-029",
+      "question": "已经完成退款的退款单有多少笔？",
+      "decision": "KEEP",
+      "reason": "题干明确“已经完成退款”，库内status=4表示已退款，计得4,177笔退款单，身份为refund_id而非order_id。无需因为同一订单可能多张退款单而去重订单，也不能改成只看completed_at，因为该时间与状态存在缺失差异。",
+      "contractSource": [
+        "src/main/resources/schema/glossary.yml refunds.status",
+        "实际schema：refunds.status注释",
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则15"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT COUNT(*) FROM refunds WHERE status = 4",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "count": 4177
+              }
+            ]
+          },
+          "evidenceKey": "T1-029:gold"
+        },
+        {
+          "sql": "SELECT status,COUNT(*) AS n,ROUND(SUM(refund_amount),2) AS amount,\nCOUNT(*) FILTER(WHERE completed_at IS NOT NULL) AS completed_time FROM refunds GROUP BY 1 ORDER BY 1",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "n": 244,
+                "amount": 25819.18,
+                "status": 1,
+                "completed_time": 170
+              },
+              {
+                "n": 1489,
+                "amount": 165184.94,
+                "status": 2,
+                "completed_time": 1069
+              },
+              {
+                "n": 4177,
+                "amount": 458711.5,
+                "status": 4,
+                "completed_time": 2896
+              }
+            ]
+          },
+          "evidenceKey": "T2-022:status"
+        }
+      ],
+      "proposedResolution": "保留明确的已退款状态口径；时间质量问题另行治理，不能暗改本题对象。"
+    },
+    {
+      "id": "T1-030",
+      "question": "因为质量问题发起的退款有多少笔？",
+      "decision": "KEEP",
+      "reason": "“因为质量问题发起”对应退款原因QUAL，当前1,925张退款单；“发起”并不要求完成或批准。Gold没有把被申请记录误缩成已退款记录，也没有把退款明细条数当退款单数。",
+      "contractSource": [
+        "src/main/resources/schema/glossary.yml refunds.reason_code",
+        "实际schema：refunds.reason_code注释",
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则7、15"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT COUNT(*) FROM refunds WHERE reason_code = 'QUAL'",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "count": 1925
+              }
+            ]
+          },
+          "evidenceKey": "T1-030:gold"
+        }
+      ],
+      "proposedResolution": "保留原因筛选，不补完成状态。"
+    },
+    {
+      "id": "T1-032",
+      "question": "满减类型的优惠券有多少张？",
+      "decision": "KEEP",
+      "reason": "discount_type=fixed明确映射满减，coupons一行一张券，当前150张。题目统计券的定义数量，不是发放/领取/核销次数，不应转去coupon_usages或按coupon_code多次使用加总。",
+      "contractSource": [
+        "src/main/resources/schema/glossary.yml coupons.discount_type",
+        "实际schema：coupons主键及coupon_code唯一约束"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT COUNT(*) FROM coupons WHERE discount_type = 'fixed'",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "count": 150
+              }
+            ]
+          },
+          "evidenceKey": "T1-032:gold"
+        }
+      ],
+      "proposedResolution": "保留优惠券定义记录计数。"
+    },
+    {
+      "id": "T1-034",
+      "question": "客服工单一共有几个分类？",
+      "decision": "KEEP",
+      "reason": "问题要工单分类定义的个数，ticket_categories有6条主键不同的分类。直接数定义表可包含暂时没有工单的分类；按support_tickets.category_id去重反而可能漏掉零工单分类。",
+      "contractSource": [
+        "src/main/resources/schema/glossary.yml ticket_categories",
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则10"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT COUNT(*) FROM ticket_categories",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "count": 6
+              }
+            ]
+          },
+          "evidenceKey": "T1-034:gold"
+        }
+      ],
+      "proposedResolution": "保留分类定义全集，不改成已使用分类数。"
+    },
+    {
+      "id": "T1-036",
+      "question": "出库类型的库存变动记录有多少条？",
+      "decision": "KEEP",
+      "reason": "movement_type=2由列注释定义为出库，当前16,273条流水。这里要记录条数，既不是SUM(quantity)出库件数，也不是去重商品数；退货入库3、盘亏4不能并作普通出库。",
+      "contractSource": [
+        "src/main/resources/schema/glossary.yml inventory_movements.movement_type",
+        "实际schema：movement_type枚举注释"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT COUNT(*) FROM inventory_movements WHERE movement_type = 2",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "count": 16273
+              }
+            ]
+          },
+          "evidenceKey": "T1-036:gold"
+        }
+      ],
+      "proposedResolution": "保留出库流水记录计数。"
+    },
+    {
+      "id": "T1-038",
+      "question": "有多少个州属于「Sudeste」这个大区？",
+      "decision": "KEEP",
+      "reason": "regions以region_code主键逐州存储，macro_region=Sudeste得到4个州。题目是纯地区字典问题，没有交易事实地域主体歧义；不需要按客户/卖家来源反问，也不能把geo坐标点当州。",
+      "contractSource": [
+        "src/main/resources/schema/glossary.yml regions",
+        "src/main/resources/schema/ambiguities.yml 大区.triggerPatterns（不触发纯字典题）",
+        "实际schema：regions_pkey"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT COUNT(*) FROM regions WHERE macro_region = 'Sudeste'",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "count": 4
+              }
+            ]
+          },
+          "evidenceKey": "T1-038:gold"
+        }
+      ],
+      "proposedResolution": "保留地区字典计数。"
+    },
+    {
+      "id": "T2-002",
+      "question": "所有订单的运费总额是多少？",
+      "decision": "KEEP",
+      "reason": "“所有订单”明确包含全部状态；运费事实在order_items，每条明细的freight_value汇总为2,251,909.54。订单无明细时没有运费事实，SUM不需要用多表重复铺开；金额列numeric，现有两位小数精度可保持。空表SUM为NULL而非伪造0。",
+      "contractSource": [
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则7、12、16",
+        "src/main/resources/schema/glossary.yml order_items.freight_value"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT SUM(freight_value) FROM order_items",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "sum": 2251909.54
+              }
+            ]
+          },
+          "evidenceKey": "T2-002:gold"
+        }
+      ],
+      "proposedResolution": "保留全部明细运费合计，不叠加有效订单过滤。"
+    },
+    {
+      "id": "T2-004",
+      "question": "平均每个订单有多少条明细？",
+      "decision": "REFERENCE_DEFECT",
+      "reason": "题目是平均“每个订单”的明细数，Gold却先从order_items聚合，只保留有明细的订单。现库99,441个订单中775个没有明细，112,650条明细应除以99,441，四舍五入1.13；Gold的有明细订单条件均值为1.14，实际已不同。",
+      "contractSource": [
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则9、10（事实全集与零事实）",
+        "实际schema：orders主键，order_items外键不保证每单必有明细"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT ROUND(AVG(cnt), 2) FROM (\n  SELECT order_id, COUNT(*) AS cnt FROM order_items GROUP BY order_id\n) t",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "round": 1.14
+              }
+            ]
+          },
+          "evidenceKey": "T2-004:gold"
+        },
+        {
+          "sql": "WITH per_order AS (SELECT o.order_id,COUNT(oi.order_item_id) AS n FROM orders o\nLEFT JOIN order_items oi ON oi.order_id=o.order_id GROUP BY o.order_id)\nSELECT COUNT(*) AS all_orders,COUNT(*) FILTER(WHERE n=0) AS zero_item_orders,\n SUM(n) AS items,ROUND(AVG(n),2) AS all_order_avg,\n ROUND(AVG(n) FILTER(WHERE n>0),2) AS fact_only_avg FROM per_order",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "items": 112650,
+                "all_orders": 99441,
+                "all_order_avg": 1.13,
+                "fact_only_avg": 1.14,
+                "zero_item_orders": 775
+              }
+            ]
+          },
+          "evidenceKey": "T2-004:denominator"
+        },
+        {
+          "sql": "SELECT ROUND(AVG(cnt),2) FROM (\n SELECT o.order_id,COUNT(oi.order_item_id) AS cnt\n FROM orders o LEFT JOIN order_items oi ON oi.order_id=o.order_id\n GROUP BY o.order_id\n) t",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "round": 1.13
+              }
+            ]
+          },
+          "evidenceKey": "T2-004:proposed-gold"
+        }
+      ],
+      "proposedResolution": "以orders LEFT JOIN明细后按order_id计COUNT(oi.order_item_id)，再取AVG；或者将题面改为“有明细的订单平均多少条”，那样现Gold可保留。",
+      "proposedGoldSql": "SELECT ROUND(AVG(cnt),2) FROM (\n SELECT o.order_id,COUNT(oi.order_item_id) AS cnt\n FROM orders o LEFT JOIN order_items oi ON oi.order_id=o.order_id\n GROUP BY o.order_id\n) t;",
+      "proposedGoldSqlStatus": "只读诊断候选，已在现库执行；未改原始Gold。"
+    },
+    {
+      "id": "T2-006",
+      "question": "每种支付方式各有多少笔支付记录？",
+      "decision": "KEEP",
+      "reason": "题目明确支付记录数，按payment_type分组COUNT(*)，不按订单去重或把分期数当支付笔数。一次订单可组合支付且支付主键含payment_sequential，现有5种方式含3条not_defined；没有要求名称翻译或排除未知方式。",
+      "contractSource": [
+        "src/main/resources/schema/glossary.yml order_payments",
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则8、10、17",
+        "实际schema：order_payments复合主键"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT payment_type, COUNT(*) AS cnt\nFROM order_payments GROUP BY payment_type ORDER BY cnt DESC",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "cnt": 76795,
+                "payment_type": "credit_card"
+              },
+              {
+                "cnt": 19784,
+                "payment_type": "boleto"
+              },
+              {
+                "cnt": 5775,
+                "payment_type": "voucher"
+              },
+              {
+                "cnt": 1529,
+                "payment_type": "debit_card"
+              },
+              {
+                "cnt": 3,
+                "payment_type": "not_defined"
+              }
+            ]
+          },
+          "evidenceKey": "T2-006:gold"
+        }
+      ],
+      "proposedResolution": "保留各支付方式的记录计数；未出现的方式是否补0不属于本题明确要求。"
+    },
+    {
+      "id": "T2-008",
+      "question": "客户数量最多的 5 个州是哪些？各有多少客户？",
+      "decision": "KEEP",
+      "reason": "当前customer_identity_v2规定按属性的裸客户数量默认客户记录数，Gold据此按州计数。第5名PR为5,045，只有1州在该计数，前面4州，没有跨Top5边界的并列；自然人去重是另一个指标。",
+      "contractSource": [
+        "src/main/resources/schema/metrics.yml entityPolicies.customer_identity_v2",
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则8、10"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT customer_state, COUNT(*) AS cnt\nFROM customers GROUP BY customer_state ORDER BY cnt DESC LIMIT 5",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "cnt": 41746,
+                "customer_state": "SP"
+              },
+              {
+                "cnt": 12852,
+                "customer_state": "RJ"
+              },
+              {
+                "cnt": 11635,
+                "customer_state": "MG"
+              },
+              {
+                "cnt": 5466,
+                "customer_state": "RS"
+              },
+              {
+                "cnt": 5045,
+                "customer_state": "PR"
+              }
+            ]
+          },
+          "evidenceKey": "T2-008:gold"
+        },
+        {
+          "sql": "WITH counts AS (SELECT customer_state,COUNT(*) AS n FROM customers GROUP BY 1),\ncutoff AS (SELECT MIN(n) AS n FROM (SELECT n FROM counts ORDER BY n DESC LIMIT 5) q)\nSELECT n AS fifth_count,(SELECT COUNT(*) FROM counts c WHERE c.n>cutoff.n) AS above,\n(SELECT COUNT(*) FROM counts c WHERE c.n=cutoff.n) AS tied FROM cutoff",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "tied": 1,
+                "above": 4,
+                "fifth_count": 5045
+              }
+            ]
+          },
+          "evidenceKey": "T2-008:cutoff"
+        },
+        {
+          "sql": "SELECT\n (SELECT COUNT(*) FROM customers) AS customer_rows,\n (SELECT COUNT(DISTINCT customer_unique_id) FROM customers) AS customer_people,\n (SELECT COUNT(*) FROM customers WHERE customer_state='SP') AS sp_rows,\n (SELECT COUNT(DISTINCT customer_unique_id) FROM customers WHERE customer_state='SP') AS sp_people,\n (SELECT COUNT(*) FROM products WHERE product_category_name IS NULL) AS null_categories,\n (SELECT COUNT(*) FROM products WHERE product_category_name='') AS empty_categories,\n (SELECT COUNT(*) FROM order_payments WHERE payment_installments IS NULL) AS null_installments,\n (SELECT COUNT(*) FROM order_reviews WHERE review_score IS NULL) AS null_review_scores,\n (SELECT COUNT(*) FROM search_logs WHERE keyword IS NULL) AS null_keywords",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "sp_rows": 41746,
+                "sp_people": 40302,
+                "customer_rows": 99441,
+                "null_keywords": 0,
+                "customer_people": 96096,
+                "null_categories": 610,
+                "empty_categories": 0,
+                "null_installments": 0,
+                "null_review_scores": 0
+              }
+            ]
+          },
+          "evidenceKey": "basic-identity-nulls"
+        }
+      ],
+      "proposedResolution": "按现有客户记录默认保留；若问各州客户人数须显式使用customer_unique_id。"
+    },
+    {
+      "id": "T2-011",
+      "question": "每个卖家的商品销售总额是多少？取金额最高的 10 个卖家。",
+      "decision": "KEEP",
+      "reason": "“商品销售总额”按order_items.price逐明细累加，不含freight_value，也不是settlements.net_amount。seller_id保持实体身份，ROUND两位后按金额取10；第10位135,171.70无边界并列。此普通商品金额题没有命中GMV或有效订单的明确别名，不据valid_order注释扩大筛选范围。",
+      "contractSource": [
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则7、9、12、16",
+        "src/main/resources/schema/ambiguities.yml 销售额.hints含商品销售额",
+        "src/main/resources/schema/metrics.yml valid_order与sales_without_freight别名范围"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT seller_id, ROUND(SUM(price), 2) AS total\nFROM order_items GROUP BY seller_id ORDER BY total DESC LIMIT 10",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "total": 229472.63,
+                "seller_id": "4869f7a5dfa277a7dca6462dcf3b52b2"
+              },
+              {
+                "total": 222776.05,
+                "seller_id": "53243585a1d6dc2643021fd1853d8905"
+              },
+              {
+                "total": 200472.92,
+                "seller_id": "4a3ca9315b744ce9f8e9374361493884"
+              },
+              {
+                "total": 194042.03,
+                "seller_id": "fa1c13f2614d7b5c4749cbc52fecda94"
+              },
+              {
+                "total": 187923.89,
+                "seller_id": "7c67e1448b00f6e969d365cea6b010ab"
+              },
+              {
+                "total": 176431.87,
+                "seller_id": "7e93a43ef30c4f03f38b393420bc753a"
+              },
+              {
+                "total": 160236.57,
+                "seller_id": "da8622b14eb17ae2831f4ac5b9dab84a"
+              },
+              {
+                "total": 141745.53,
+                "seller_id": "7a67c85e85bb2ce8582c35f2203ad736"
+              },
+              {
+                "total": 138968.55,
+                "seller_id": "1025f0e2d44d7041d6cf58b6550e0bfa"
+              },
+              {
+                "total": 135171.7,
+                "seller_id": "955fee9216a65b617aa5c0531780ce60"
+              }
+            ]
+          },
+          "evidenceKey": "T2-011:gold"
+        },
+        {
+          "sql": "WITH counts AS (SELECT seller_id,ROUND(SUM(price),2) AS n FROM order_items GROUP BY 1),\ncutoff AS (SELECT MIN(n) AS n FROM (SELECT n FROM counts ORDER BY n DESC LIMIT 10) q)\nSELECT n AS tenth_amount,(SELECT COUNT(*) FROM counts c WHERE c.n>cutoff.n) AS above,\n(SELECT COUNT(*) FROM counts c WHERE c.n=cutoff.n) AS tied FROM cutoff",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "tied": 1,
+                "above": 9,
+                "tenth_amount": 135171.7
+              }
+            ]
+          },
+          "evidenceKey": "T2-011:cutoff"
+        }
+      ],
+      "proposedResolution": "保留按明细商品金额的Top10；若题意要净成交商品额，另明确订单状态。"
+    },
+    {
+      "id": "T2-013",
+      "question": "已送达订单和已取消订单各有多少笔？",
+      "decision": "KEEP",
+      "reason": "请求列举两个非时间业务子集的计数、没有要求状态分布，Gold一行依次输出delivered=96,478与canceled=625，符合当前条件聚合形状约定。过滤写在各COUNT内部，某组为空仍为0，不会因WHERE只保留另一组而丢计数。",
+      "contractSource": [
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则17（非时间子集计数）",
+        "src/main/resources/schema/glossary.yml orders.order_status"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT\n  COUNT(*) FILTER (WHERE order_status = 'delivered') AS delivered,\n  COUNT(*) FILTER (WHERE order_status = 'canceled')  AS canceled\nFROM orders",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "canceled": 625,
+                "delivered": 96478
+              }
+            ]
+          },
+          "evidenceKey": "T2-013:gold"
+        }
+      ],
+      "proposedResolution": "保留横向两列计数，不能用有效订单过滤删除取消子集。"
+    },
+    {
+      "id": "T2-015",
+      "question": "每个会员等级的平均积分是多少？",
+      "decision": "AMBIGUOUS",
+      "reason": "按members.level_id分组的平均积分正确保持会员等权，现有4等级全部有会员且points全部非空，Gold当前没有漏已存在会员。但“每个会员等级”是否包含member_levels中零会员等级，当前题面/默认未确定；若需要等级全集，直接分组members会漏掉该等级的NULL均值。",
+      "contractSource": [
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则8、9、12",
+        "src/main/resources/schema/glossary.yml members.level_id及member_levels",
+        "实际schema：members到member_levels外键"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT level_id, ROUND(AVG(points), 2) AS avg_points\nFROM members GROUP BY level_id ORDER BY level_id",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "level_id": 1,
+                "avg_points": 2496.1
+              },
+              {
+                "level_id": 2,
+                "avg_points": 2507.12
+              },
+              {
+                "level_id": 3,
+                "avg_points": 2501.35
+              },
+              {
+                "level_id": 4,
+                "avg_points": 2525.2
+              }
+            ]
+          },
+          "evidenceKey": "T2-015:gold"
+        },
+        {
+          "sql": "SELECT l.level_id,COUNT(m.member_id) AS members,COUNT(m.points) AS known_points\nFROM member_levels l LEFT JOIN members m ON m.level_id=l.level_id GROUP BY 1 ORDER BY 1",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "members": 52722,
+                "level_id": 1,
+                "known_points": 52722
+              },
+              {
+                "members": 36853,
+                "level_id": 2,
+                "known_points": 36853
+              },
+              {
+                "members": 6339,
+                "level_id": 3,
+                "known_points": 6339
+              },
+              {
+                "members": 182,
+                "level_id": 4,
+                "known_points": 182
+              }
+            ]
+          },
+          "evidenceKey": "T2-015:coverage"
+        }
+      ],
+      "proposedResolution": "明确“按现有会员记录等级分组”可保留Gold；若明确所有等级定义，改从member_levels LEFT JOIN，零会员平均值为NULL而非0。",
+      "proposedQuestion": "按现有会员记录的会员等级编号分组，每个等级的平均已知积分是多少？",
+      "pendingChoices": [
+        "只按会员记录里实际出现的等级分组，保留现Gold。",
+        "列出member_levels所有等级，零会员等级平均积分为NULL。"
+      ],
+      "proposedQuestionStatus": "消歧候选，不替业务确认，不改原题。"
+    },
+    {
+      "id": "T2-017",
+      "question": "每个大区各包含多少个州？",
+      "decision": "KEEP",
+      "reason": "regions一行一个州，按macro_region计数能直接回答各大区州数，27州共5区；当前4州的两个大区并列只影响未要求的显示顺序，不改变地区与计数结果。纯字典统计不触发交易地域主体歧义。",
+      "contractSource": [
+        "src/main/resources/schema/glossary.yml regions",
+        "src/main/resources/schema/ambiguities.yml 大区.triggerPatterns",
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则8、10"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT macro_region, COUNT(*) AS cnt\nFROM regions GROUP BY macro_region ORDER BY cnt DESC",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "cnt": 9,
+                "macro_region": "Nordeste"
+              },
+              {
+                "cnt": 7,
+                "macro_region": "Norte"
+              },
+              {
+                "cnt": 4,
+                "macro_region": "Centro-Oeste"
+              },
+              {
+                "cnt": 4,
+                "macro_region": "Sudeste"
+              },
+              {
+                "cnt": 3,
+                "macro_region": "Sul"
+              }
+            ]
+          },
+          "evidenceKey": "T2-017:gold"
+        }
+      ],
+      "proposedResolution": "保留地区字典聚合；若要求固定显示序才补确定次排序。"
+    },
+    {
+      "id": "T2-019",
+      "question": "每个活动的预算总额是多少？",
+      "decision": "KEEP",
+      "reason": "每个活动自身只有一条campaigns记录，budget是活动级预算事实，不需要因为中文“总额”就跨活动SUM或关联活动商品反复累加。Gold输出campaign_id与该行budget，保留所有活动包括无商品活动；ID默认展示符合当前契约。",
+      "contractSource": [
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则8、9（预算不随子表累加）",
+        "src/main/resources/schema/glossary.yml campaigns.budget",
+        "实际schema：campaigns_pkey"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT campaign_id, budget FROM campaigns ORDER BY budget DESC",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "budget": 104707.16,
+                "campaign_id": 43
+              },
+              {
+                "budget": 101491.59,
+                "campaign_id": 27
+              },
+              {
+                "budget": 99248.67,
+                "campaign_id": 47
+              },
+              {
+                "budget": 98822.68,
+                "campaign_id": 48
+              },
+              {
+                "budget": 97763.65,
+                "campaign_id": 24
+              },
+              {
+                "budget": 95783.49,
+                "campaign_id": 21
+              },
+              {
+                "budget": 94565.32,
+                "campaign_id": 44
+              },
+              {
+                "budget": 92016.85,
+                "campaign_id": 49
+              },
+              {
+                "budget": 90860.55,
+                "campaign_id": 23
+              },
+              {
+                "budget": 89260.19,
+                "campaign_id": 32
+              },
+              {
+                "budget": 88742.74,
+                "campaign_id": 19
+              },
+              {
+                "budget": 85630.93,
+                "campaign_id": 40
+              },
+              {
+                "budget": 84411.07,
+                "campaign_id": 12
+              },
+              {
+                "budget": 84122.38,
+                "campaign_id": 34
+              },
+              {
+                "budget": 81569.65,
+                "campaign_id": 52
+              },
+              {
+                "budget": 80978.98,
+                "campaign_id": 39
+              },
+              {
+                "budget": 80856.43,
+                "campaign_id": 22
+              },
+              {
+                "budget": 79905.67,
+                "campaign_id": 20
+              },
+              {
+                "budget": 77447.92,
+                "campaign_id": 7
+              },
+              {
+                "budget": 71573.95,
+                "campaign_id": 35
+              },
+              {
+                "budget": 69345.95,
+                "campaign_id": 42
+              },
+              {
+                "budget": 68599.32,
+                "campaign_id": 4
+              },
+              {
+                "budget": 66279.94,
+                "campaign_id": 18
+              },
+              {
+                "budget": 58387.32,
+                "campaign_id": 1
+              },
+              {
+                "budget": 58249.27,
+                "campaign_id": 38
+              },
+              {
+                "budget": 56191.87,
+                "campaign_id": 50
+              },
+              {
+                "budget": 53880.34,
+                "campaign_id": 13
+              },
+              {
+                "budget": 53674.32,
+                "campaign_id": 17
+              },
+              {
+                "budget": 53429.07,
+                "campaign_id": 10
+              },
+              {
+                "budget": 52065.54,
+                "campaign_id": 8
+              },
+              {
+                "budget": 51379.76,
+                "campaign_id": 3
+              },
+              {
+                "budget": 49925.31,
+                "campaign_id": 15
+              },
+              {
+                "budget": 49825.89,
+                "campaign_id": 28
+              },
+              {
+                "budget": 49209.69,
+                "campaign_id": 25
+              },
+              {
+                "budget": 47276.08,
+                "campaign_id": 2
+              },
+              {
+                "budget": 45275.34,
+                "campaign_id": 36
+              },
+              {
+                "budget": 42310.8,
+                "campaign_id": 5
+              },
+              {
+                "budget": 38518.29,
+                "campaign_id": 9
+              },
+              {
+                "budget": 37334.44,
+                "campaign_id": 51
+              },
+              {
+                "budget": 37199.84,
+                "campaign_id": 14
+              },
+              {
+                "budget": 37013.07,
+                "campaign_id": 46
+              },
+              {
+                "budget": 36862.05,
+                "campaign_id": 41
+              },
+              {
+                "budget": 31037.84,
+                "campaign_id": 31
+              },
+              {
+                "budget": 29341.04,
+                "campaign_id": 33
+              },
+              {
+                "budget": 28450.03,
+                "campaign_id": 26
+              },
+              {
+                "budget": 26239.94,
+                "campaign_id": 16
+              },
+              {
+                "budget": 16818.09,
+                "campaign_id": 30
+              },
+              {
+                "budget": 15549.51,
+                "campaign_id": 6
+              },
+              {
+                "budget": 11747.21,
+                "campaign_id": 29
+              },
+              {
+                "budget": 11261.49,
+                "campaign_id": 11
+              },
+              {
+                "budget": 11003.77,
+                "campaign_id": 37
+              },
+              {
+                "budget": 8358.26,
+                "campaign_id": 45
+              }
+            ]
+          },
+          "evidenceKey": "T2-019:gold"
+        }
+      ],
+      "proposedResolution": "保留活动级预算；不添加活动名称或将同名活动合并。"
+    },
+    {
+      "id": "T2-020",
+      "question": "每种折扣类型的优惠券各有多少张？",
+      "decision": "KEEP",
+      "reason": "按优惠券定义的discount_type逐张计数，当前fixed和percent各150张；“每种”明确要求维度行。两组计数同为150并列，题目没有要求次序，因此两行前后交换不构成业务错误，不应从这个并列制造唯一排列。",
+      "contractSource": [
+        "src/main/resources/schema/glossary.yml coupons.discount_type",
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则10、17"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT discount_type, COUNT(*) AS cnt\nFROM coupons GROUP BY discount_type ORDER BY cnt DESC",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "cnt": 150,
+                "discount_type": "fixed"
+              },
+              {
+                "cnt": 150,
+                "discount_type": "percent"
+              }
+            ]
+          },
+          "evidenceKey": "T2-020:gold"
+        }
+      ],
+      "proposedResolution": "保留两个类型的券定义数量；若评分依赖行顺序，应独立声明稳定次序而非归因模型。"
+    },
+    {
+      "id": "T2-022",
+      "question": "退款总金额是多少？",
+      "decision": "KEEP",
+      "reason": "裸“退款总金额”没有说已退成功，Prompt规则7禁止自行补状态，Gold对全部退款单refund_amount求和649,715.62符合记录总额解释。已退款status=4只合计458,711.50，二者不同；不能凭“退款”一词把后者强制为唯一答案。",
+      "contractSource": [
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则7、12",
+        "src/main/resources/schema/glossary.yml refunds.refund_amount与status"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT ROUND(SUM(refund_amount), 2) FROM refunds",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "round": 649715.62
+              }
+            ]
+          },
+          "evidenceKey": "T2-022:gold"
+        },
+        {
+          "sql": "SELECT status,COUNT(*) AS n,ROUND(SUM(refund_amount),2) AS amount,\nCOUNT(*) FILTER(WHERE completed_at IS NOT NULL) AS completed_time FROM refunds GROUP BY 1 ORDER BY 1",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "n": 244,
+                "amount": 25819.18,
+                "status": 1,
+                "completed_time": 170
+              },
+              {
+                "n": 1489,
+                "amount": 165184.94,
+                "status": 2,
+                "completed_time": 1069
+              },
+              {
+                "n": 4177,
+                "amount": 458711.5,
+                "status": 4,
+                "completed_time": 2896
+              }
+            ]
+          },
+          "evidenceKey": "T2-022:status"
+        }
+      ],
+      "proposedResolution": "按当前不自动加状态的契约保留；若业务要现金已退金额，应把成功状态或完成时间口径写进题目。"
+    },
+    {
+      "id": "T2-024",
+      "question": "每个仓库各有多少条库存记录？",
+      "decision": "AMBIGUOUS",
+      "reason": "inventory一行一个仓库×商品，COUNT(*)确实是库存记录条数，当前5仓均有记录，因此Gold包含全部现有仓库。题目“每个仓库”未明确仓库全集还是有库存记录仓库；无记录仓库合法存在且合成例中仓库2应为0，Gold会完全没有该行。",
+      "contractSource": [
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则9、10",
+        "src/main/resources/schema/glossary.yml inventory粒度及warehouses",
+        "实际schema：inventory复合主键"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT warehouse_id, COUNT(*) AS cnt\nFROM inventory GROUP BY warehouse_id ORDER BY warehouse_id",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "cnt": 4948,
+                "warehouse_id": 1
+              },
+              {
+                "cnt": 4928,
+                "warehouse_id": 2
+              },
+              {
+                "cnt": 4775,
+                "warehouse_id": 3
+              },
+              {
+                "cnt": 4877,
+                "warehouse_id": 4
+              },
+              {
+                "cnt": 5052,
+                "warehouse_id": 5
+              }
+            ]
+          },
+          "evidenceKey": "T2-024:gold"
+        },
+        {
+          "sql": "SELECT w.warehouse_id,COUNT(i.product_id) AS inventory_rows,SUM(i.quantity) AS quantity,\nCOUNT(i.quantity) AS known_quantities FROM warehouses w LEFT JOIN inventory i\nON i.warehouse_id=w.warehouse_id GROUP BY 1 ORDER BY 1",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "quantity": 1250032,
+                "warehouse_id": 1,
+                "inventory_rows": 4948,
+                "known_quantities": 4948
+              },
+              {
+                "quantity": 1219929,
+                "warehouse_id": 2,
+                "inventory_rows": 4928,
+                "known_quantities": 4928
+              },
+              {
+                "quantity": 1192808,
+                "warehouse_id": 3,
+                "inventory_rows": 4775,
+                "known_quantities": 4775
+              },
+              {
+                "quantity": 1224732,
+                "warehouse_id": 4,
+                "inventory_rows": 4877,
+                "known_quantities": 4877
+              },
+              {
+                "quantity": 1256233,
+                "warehouse_id": 5,
+                "inventory_rows": 5052,
+                "known_quantities": 5052
+              }
+            ]
+          },
+          "evidenceKey": "T2-024-026:warehouse-coverage"
+        },
+        {
+          "sql": "WITH warehouses(warehouse_id) AS (VALUES(1),(2)),\n inventory(warehouse_id,product_id,quantity) AS (VALUES(1,'p',3))\nSELECT w.warehouse_id,COUNT(i.product_id) AS inventory_rows,COALESCE(SUM(i.quantity),0) AS quantity\nFROM warehouses w LEFT JOIN inventory i ON i.warehouse_id=w.warehouse_id GROUP BY 1 ORDER BY 1",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "quantity": 3,
+                "warehouse_id": 1,
+                "inventory_rows": 1
+              },
+              {
+                "quantity": 0,
+                "warehouse_id": 2,
+                "inventory_rows": 0
+              }
+            ]
+          },
+          "evidenceKey": "T2-024-026:zero-counterexample"
+        }
+      ],
+      "proposedResolution": "明确“所有仓库含无库存记录”时从warehouses LEFT JOIN，计COUNT(i.product_id)；若仅已有库存仓库，保留Gold。不把现库全覆盖当成永久约束。",
+      "proposedQuestion": "有库存记录的每个仓库，各有多少条仓库×商品库存记录？",
+      "pendingChoices": [
+        "仅列已有库存记录仓库，保留现Gold。",
+        "列出所有仓库，零库存记录仓库计0。"
+      ],
+      "proposedQuestionStatus": "消歧候选，不替业务确认，不改原题。"
+    },
+    {
+      "id": "T2-026",
+      "question": "每个仓库的库存总数量是多少？",
+      "decision": "AMBIGUOUS",
+      "reason": "SUM(quantity)按仓库累计库存件数，没有把库存记录数量当库存量，现库5仓的quantity均已填写。歧义在零库存记录仓库是否要列出：Gold从inventory分组会缺整行；另外“无记录”可按0件库存解释，但有记录且quantity全NULL意味着未知，不应一律COALESCE成0。",
+      "contractSource": [
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则7、9",
+        "src/main/resources/schema/glossary.yml inventory.quantity及warehouses",
+        "实际schema：inventory.quantity可空"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT warehouse_id, SUM(quantity) AS total_qty\nFROM inventory GROUP BY warehouse_id ORDER BY warehouse_id",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "total_qty": 1250032,
+                "warehouse_id": 1
+              },
+              {
+                "total_qty": 1219929,
+                "warehouse_id": 2
+              },
+              {
+                "total_qty": 1192808,
+                "warehouse_id": 3
+              },
+              {
+                "total_qty": 1224732,
+                "warehouse_id": 4
+              },
+              {
+                "total_qty": 1256233,
+                "warehouse_id": 5
+              }
+            ]
+          },
+          "evidenceKey": "T2-026:gold"
+        },
+        {
+          "sql": "SELECT w.warehouse_id,COUNT(i.product_id) AS inventory_rows,SUM(i.quantity) AS quantity,\nCOUNT(i.quantity) AS known_quantities FROM warehouses w LEFT JOIN inventory i\nON i.warehouse_id=w.warehouse_id GROUP BY 1 ORDER BY 1",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "quantity": 1250032,
+                "warehouse_id": 1,
+                "inventory_rows": 4948,
+                "known_quantities": 4948
+              },
+              {
+                "quantity": 1219929,
+                "warehouse_id": 2,
+                "inventory_rows": 4928,
+                "known_quantities": 4928
+              },
+              {
+                "quantity": 1192808,
+                "warehouse_id": 3,
+                "inventory_rows": 4775,
+                "known_quantities": 4775
+              },
+              {
+                "quantity": 1224732,
+                "warehouse_id": 4,
+                "inventory_rows": 4877,
+                "known_quantities": 4877
+              },
+              {
+                "quantity": 1256233,
+                "warehouse_id": 5,
+                "inventory_rows": 5052,
+                "known_quantities": 5052
+              }
+            ]
+          },
+          "evidenceKey": "T2-024-026:warehouse-coverage"
+        },
+        {
+          "sql": "WITH warehouses(warehouse_id) AS (VALUES(1),(2)),\n inventory(warehouse_id,product_id,quantity) AS (VALUES(1,'p',3))\nSELECT w.warehouse_id,COUNT(i.product_id) AS inventory_rows,COALESCE(SUM(i.quantity),0) AS quantity\nFROM warehouses w LEFT JOIN inventory i ON i.warehouse_id=w.warehouse_id GROUP BY 1 ORDER BY 1",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "quantity": 3,
+                "warehouse_id": 1,
+                "inventory_rows": 1
+              },
+              {
+                "quantity": 0,
+                "warehouse_id": 2,
+                "inventory_rows": 0
+              }
+            ]
+          },
+          "evidenceKey": "T2-024-026:zero-counterexample"
+        }
+      ],
+      "proposedResolution": "明确仓库全集及无记录为0后用仓库侧LEFT JOIN，并区分无记录与未知quantity；若只要求库存事实分布，保留Gold。",
+      "proposedQuestion": "有库存记录的每个仓库，其库存数量quantity合计是多少？",
+      "pendingChoices": [
+        "仅列已有库存事实仓库，SUM按已知quantity计算，保留现Gold。",
+        "列出所有仓库，无记录为0；有记录但quantity全未知仍为NULL。"
+      ],
+      "proposedQuestionStatus": "消歧候选，不替业务确认，不改原题。"
+    },
+    {
+      "id": "T2-028",
+      "question": "每家承运商各承担了多少个发货单？",
+      "decision": "KEEP",
+      "reason": "一行shipments是一张发货单，carrier是承运商维度，COUNT(*)得到各承运商承担的发货单数。订单可能拆成多张发货单，因此不应去重order_id；“承担”没有要求签收状态或存在轨迹，直接数发货事实保留未完成发货单。",
+      "contractSource": [
+        "src/main/resources/schema/glossary.yml shipments.carrier",
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则7、10"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT carrier, COUNT(*) AS cnt\nFROM shipments GROUP BY carrier ORDER BY cnt DESC",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "cnt": 32754,
+                "carrier": "Loggi"
+              },
+              {
+                "cnt": 32749,
+                "carrier": "Jadlog"
+              },
+              {
+                "cnt": 16353,
+                "carrier": "Correios"
+              },
+              {
+                "cnt": 16346,
+                "carrier": "Total Express"
+              }
+            ]
+          },
+          "evidenceKey": "T2-028:gold"
+        }
+      ],
+      "proposedResolution": "保留按发货单记录统计，不关联一对多物流轨迹。"
+    },
+    {
+      "id": "T2-031",
+      "question": "每个优先级的工单各有多少个？",
+      "decision": "KEEP",
+      "reason": "工单按support_tickets.priority原始值分组，1至4分别为低/中/高/紧急；Gold数工单记录并按优先级升序，当前1,353/2,581/2,643/1,357。题目没有要求优先级中文名称，默认保留有业务含义的状态值，也不该只统计已解决工单。",
+      "contractSource": [
+        "src/main/resources/schema/glossary.yml support_tickets.priority",
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则7、8、10"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT priority, COUNT(*) AS cnt\nFROM support_tickets GROUP BY priority ORDER BY priority",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "cnt": 1353,
+                "priority": 1
+              },
+              {
+                "cnt": 2581,
+                "priority": 2
+              },
+              {
+                "cnt": 2643,
+                "priority": 3
+              },
+              {
+                "cnt": 1357,
+                "priority": 4
+              }
+            ]
+          },
+          "evidenceKey": "T2-031:gold"
+        }
+      ],
+      "proposedResolution": "保留优先级编码与工单数量两列。"
+    },
+    {
+      "id": "T2-033",
+      "question": "平台支付给卖家的结算净额合计是多少？",
+      "decision": "AMBIGUOUS",
+      "reason": "Gold合计所有结算净额4,821,914.63；“支付给”可理解为已实际打款，也可口语指应结净额。若按status=3已打款则3,905,258.13，按paid_at非空则3,840,854.48，且状态/时间有1,796条不一致。当前词典net_amount同时别名应结/实结，无法唯一决定哪一套凭据优先。",
+      "contractSource": [
+        "src/main/resources/schema/glossary.yml settlements.net_amount、status、paid_at",
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则7、12",
+        "实际schema：settlements.status注释"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT ROUND(SUM(net_amount), 2) FROM settlements",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "round": 4821914.63
+              }
+            ]
+          },
+          "evidenceKey": "T2-033:gold"
+        },
+        {
+          "sql": "SELECT status,COUNT(*) AS n,ROUND(SUM(net_amount),2) AS amount,\nCOUNT(*) FILTER(WHERE paid_at IS NOT NULL) AS paid_time FROM settlements GROUP BY 1 ORDER BY 1",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "n": 1106,
+                "amount": 916656.5,
+                "status": 2,
+                "paid_time": 875
+              },
+              {
+                "n": 4552,
+                "amount": 3905258.13,
+                "status": 3,
+                "paid_time": 3631
+              }
+            ]
+          },
+          "evidenceKey": "T2-033:status"
+        },
+        {
+          "sql": "SELECT version() AS server_version,current_setting('TimeZone') AS session_timezone,\n (SELECT ROUND(SUM(net_amount),2) FROM settlements WHERE status=3) AS status3_paid_net,\n (SELECT ROUND(SUM(net_amount),2) FROM settlements WHERE paid_at IS NOT NULL) AS timestamp_paid_net,\n (SELECT COUNT(*) FROM settlements WHERE (status=3) IS DISTINCT FROM (paid_at IS NOT NULL)) AS status_time_disagreements,\n pg_typeof(DATE_TRUNC('month',DATE '2018-01-10'))::text AS date_month_type,\n pg_typeof(DATE_TRUNC('month',TIMESTAMP '2018-01-10'))::text AS timestamp_month_type",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "server_version": "PostgreSQL 16.15 (Debian 16.15-1.pgdg12+2) on x86_64-pc-linux-gnu, compiled by gcc (Debian 12.2.0-14+deb12u1) 12.2.0, 64-bit",
+                "date_month_type": "timestamp with time zone",
+                "session_timezone": "Asia/Shanghai",
+                "status3_paid_net": 3905258.13,
+                "timestamp_paid_net": 3840854.48,
+                "timestamp_month_type": "timestamp without time zone",
+                "status_time_disagreements": 1796
+              }
+            ]
+          },
+          "evidenceKey": "session-and-paid-bases"
+        }
+      ],
+      "proposedResolution": "先把题目确定为“全部结算单应结净额”或“已打款净额”，后者再明确以status=3还是paid_at非空为准。不能把任一现库数字当不言自明的唯一Gold。",
+      "proposedQuestion": "全部卖家结算单的应结净额net_amount合计是多少？",
+      "pendingChoices": [
+        "全部结算单应结净额，保留现Gold。",
+        "只统计status=3的已打款结算单净额。",
+        "只统计paid_at非空的结算单净额。"
+      ],
+      "proposedQuestionStatus": "消歧候选，不替业务确认，不改原题。"
+    },
+    {
+      "id": "T2-035",
+      "question": "搜索次数最多的 10 个关键词是哪些？",
+      "decision": "KEEP",
+      "reason": "每条search_logs代表一次搜索，按keyword聚合COUNT(*)是搜索次数，不是独立搜索会员数或result_count结果数量。第10关键词774次，之上9个且该计数唯一，当前没有Top10边界并列；keyword现库无NULL。",
+      "contractSource": [
+        "src/main/resources/schema/glossary.yml search_logs",
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则10"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT keyword, COUNT(*) AS cnt\nFROM search_logs GROUP BY keyword ORDER BY cnt DESC LIMIT 10",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "cnt": 1646,
+                "keyword": "玩具"
+              },
+              {
+                "cnt": 1638,
+                "keyword": "香水"
+              },
+              {
+                "cnt": 1614,
+                "keyword": "书籍"
+              },
+              {
+                "cnt": 1598,
+                "keyword": "耳机"
+              },
+              {
+                "cnt": 1592,
+                "keyword": "运动鞋"
+              },
+              {
+                "cnt": 1588,
+                "keyword": "背包"
+              },
+              {
+                "cnt": 1583,
+                "keyword": "手表"
+              },
+              {
+                "cnt": 1576,
+                "keyword": "沙发"
+              },
+              {
+                "cnt": 783,
+                "keyword": "台灯"
+              },
+              {
+                "cnt": 774,
+                "keyword": "手机壳"
+              }
+            ]
+          },
+          "evidenceKey": "T2-035:gold"
+        },
+        {
+          "sql": "WITH counts AS (SELECT keyword,COUNT(*) AS n FROM search_logs GROUP BY 1),\ncutoff AS (SELECT MIN(n) AS n FROM (SELECT n FROM counts ORDER BY n DESC LIMIT 10) q)\nSELECT n AS tenth_count,(SELECT COUNT(*) FROM counts c WHERE c.n>cutoff.n) AS above,\n(SELECT COUNT(*) FROM counts c WHERE c.n=cutoff.n) AS tied FROM cutoff",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "tied": 1,
+                "above": 9,
+                "tenth_count": 774
+              }
+            ]
+          },
+          "evidenceKey": "T2-035:cutoff"
+        },
+        {
+          "sql": "SELECT\n (SELECT COUNT(*) FROM customers) AS customer_rows,\n (SELECT COUNT(DISTINCT customer_unique_id) FROM customers) AS customer_people,\n (SELECT COUNT(*) FROM customers WHERE customer_state='SP') AS sp_rows,\n (SELECT COUNT(DISTINCT customer_unique_id) FROM customers WHERE customer_state='SP') AS sp_people,\n (SELECT COUNT(*) FROM products WHERE product_category_name IS NULL) AS null_categories,\n (SELECT COUNT(*) FROM products WHERE product_category_name='') AS empty_categories,\n (SELECT COUNT(*) FROM order_payments WHERE payment_installments IS NULL) AS null_installments,\n (SELECT COUNT(*) FROM order_reviews WHERE review_score IS NULL) AS null_review_scores,\n (SELECT COUNT(*) FROM search_logs WHERE keyword IS NULL) AS null_keywords",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "sp_rows": 41746,
+                "sp_people": 40302,
+                "customer_rows": 99441,
+                "null_keywords": 0,
+                "customer_people": 96096,
+                "null_categories": 610,
+                "empty_categories": 0,
+                "null_installments": 0,
+                "null_review_scores": 0
+              }
+            ]
+          },
+          "evidenceKey": "basic-identity-nulls"
+        }
+      ],
+      "proposedResolution": "保留按搜索日志次数排名；不把无点击搜索删掉。"
+    },
+    {
+      "id": "T2-037",
+      "question": "订单数超过 5000 的州有哪些？",
+      "decision": "COINCIDENTAL_EQUIVALENCE",
+      "reason": "题目对象是订单，Gold却数customers记录。现库没有无订单客户关联键，也没有某customer_id关联多订单，所以各州恰好相等，SP等5州阈值结果通过；但orders.customer_id只有外键、没有唯一约束，不能由此推出客户档案恒等订单。只读反例1个SP客户关联5,001订单时，真实应入选而Gold只数1。",
+      "contractSource": [
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则10（计数身份）",
+        "src/main/resources/schema/metrics.yml customer_identity_v2",
+        "实际schema：orders_customer_id_fkey并非UNIQUE"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT customer_state, COUNT(*) AS cnt\nFROM customers GROUP BY customer_state\nHAVING COUNT(*) > 5000 ORDER BY cnt DESC",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "cnt": 41746,
+                "customer_state": "SP"
+              },
+              {
+                "cnt": 12852,
+                "customer_state": "RJ"
+              },
+              {
+                "cnt": 11635,
+                "customer_state": "MG"
+              },
+              {
+                "cnt": 5466,
+                "customer_state": "RS"
+              },
+              {
+                "cnt": 5045,
+                "customer_state": "PR"
+              }
+            ]
+          },
+          "evidenceKey": "T2-037:gold"
+        },
+        {
+          "sql": "WITH customer_counts AS (SELECT customer_state,COUNT(*) AS n FROM customers GROUP BY 1),\norder_counts AS (SELECT c.customer_state,COUNT(*) AS n FROM orders o\n JOIN customers c ON c.customer_id=o.customer_id GROUP BY 1)\nSELECT c.customer_state,c.n AS customer_rows,o.n AS order_rows\nFROM customer_counts c FULL JOIN order_counts o USING(customer_state) ORDER BY customer_state",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "order_rows": 81,
+                "customer_rows": 81,
+                "customer_state": "AC"
+              },
+              {
+                "order_rows": 413,
+                "customer_rows": 413,
+                "customer_state": "AL"
+              },
+              {
+                "order_rows": 148,
+                "customer_rows": 148,
+                "customer_state": "AM"
+              },
+              {
+                "order_rows": 68,
+                "customer_rows": 68,
+                "customer_state": "AP"
+              },
+              {
+                "order_rows": 3380,
+                "customer_rows": 3380,
+                "customer_state": "BA"
+              },
+              {
+                "order_rows": 1336,
+                "customer_rows": 1336,
+                "customer_state": "CE"
+              },
+              {
+                "order_rows": 2140,
+                "customer_rows": 2140,
+                "customer_state": "DF"
+              },
+              {
+                "order_rows": 2033,
+                "customer_rows": 2033,
+                "customer_state": "ES"
+              },
+              {
+                "order_rows": 2020,
+                "customer_rows": 2020,
+                "customer_state": "GO"
+              },
+              {
+                "order_rows": 747,
+                "customer_rows": 747,
+                "customer_state": "MA"
+              },
+              {
+                "order_rows": 11635,
+                "customer_rows": 11635,
+                "customer_state": "MG"
+              },
+              {
+                "order_rows": 715,
+                "customer_rows": 715,
+                "customer_state": "MS"
+              },
+              {
+                "order_rows": 907,
+                "customer_rows": 907,
+                "customer_state": "MT"
+              },
+              {
+                "order_rows": 975,
+                "customer_rows": 975,
+                "customer_state": "PA"
+              },
+              {
+                "order_rows": 536,
+                "customer_rows": 536,
+                "customer_state": "PB"
+              },
+              {
+                "order_rows": 1652,
+                "customer_rows": 1652,
+                "customer_state": "PE"
+              },
+              {
+                "order_rows": 495,
+                "customer_rows": 495,
+                "customer_state": "PI"
+              },
+              {
+                "order_rows": 5045,
+                "customer_rows": 5045,
+                "customer_state": "PR"
+              },
+              {
+                "order_rows": 12852,
+                "customer_rows": 12852,
+                "customer_state": "RJ"
+              },
+              {
+                "order_rows": 485,
+                "customer_rows": 485,
+                "customer_state": "RN"
+              },
+              {
+                "order_rows": 253,
+                "customer_rows": 253,
+                "customer_state": "RO"
+              },
+              {
+                "order_rows": 46,
+                "customer_rows": 46,
+                "customer_state": "RR"
+              },
+              {
+                "order_rows": 5466,
+                "customer_rows": 5466,
+                "customer_state": "RS"
+              },
+              {
+                "order_rows": 3637,
+                "customer_rows": 3637,
+                "customer_state": "SC"
+              },
+              {
+                "order_rows": 350,
+                "customer_rows": 350,
+                "customer_state": "SE"
+              },
+              {
+                "order_rows": 41746,
+                "customer_rows": 41746,
+                "customer_state": "SP"
+              },
+              {
+                "order_rows": 280,
+                "customer_rows": 280,
+                "customer_state": "TO"
+              }
+            ]
+          },
+          "evidenceKey": "T2-037:state-comparison"
+        },
+        {
+          "sql": "SELECT (SELECT COUNT(*) FROM customers c WHERE NOT EXISTS(SELECT 1 FROM orders o WHERE o.customer_id=c.customer_id)) AS no_order_customers,\n (SELECT COUNT(*) FROM (SELECT customer_id FROM orders GROUP BY 1 HAVING COUNT(*)<>1) q) AS multi_order_keys",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "multi_order_keys": 0,
+                "no_order_customers": 0
+              }
+            ]
+          },
+          "evidenceKey": "T2-037:multiplicity"
+        },
+        {
+          "sql": "WITH customers(customer_id,customer_state) AS (VALUES('c','SP')),\norders(order_id,customer_id) AS (SELECT 'o'||i,'c' FROM generate_series(1,5001) AS i)\nSELECT c.customer_state,COUNT(DISTINCT c.customer_id) AS customer_count,COUNT(o.order_id) AS order_count\nFROM customers c JOIN orders o ON o.customer_id=c.customer_id GROUP BY 1 HAVING COUNT(o.order_id)>5000",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "order_count": 5001,
+                "customer_count": 1,
+                "customer_state": "SP"
+              }
+            ]
+          },
+          "evidenceKey": "T2-037:counterexample"
+        },
+        {
+          "sql": "SELECT c.customer_state,COUNT(*) AS cnt FROM orders o\nJOIN customers c ON c.customer_id=o.customer_id\nGROUP BY c.customer_state HAVING COUNT(*)>5000 ORDER BY cnt DESC",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "cnt": 41746,
+                "customer_state": "SP"
+              },
+              {
+                "cnt": 12852,
+                "customer_state": "RJ"
+              },
+              {
+                "cnt": 11635,
+                "customer_state": "MG"
+              },
+              {
+                "cnt": 5466,
+                "customer_state": "RS"
+              },
+              {
+                "cnt": 5045,
+                "customer_state": "PR"
+              }
+            ]
+          },
+          "evidenceKey": "T2-037:proposed-gold"
+        }
+      ],
+      "proposedResolution": "从orders关联对应customers记录属性后按订单计数，HAVING COUNT(*)>5000；当前一对一等价仅是快照事实，不是正确性的证明。",
+      "proposedGoldSql": "SELECT c.customer_state,COUNT(*) AS cnt FROM orders o\nJOIN customers c ON c.customer_id=o.customer_id\nGROUP BY c.customer_state HAVING COUNT(*)>5000 ORDER BY cnt DESC;",
+      "proposedGoldSqlStatus": "只读诊断候选，已在现库执行；未改原始Gold。"
+    },
+    {
+      "id": "T2-039",
+      "question": "好评（4 分及以上）占所有评价的比例是多少？",
+      "decision": "COINCIDENTAL_EQUIVALENCE",
+      "reason": "当前好评>=4、分母所有评价，原始小数比率四位输出0.7707，既未乘100也未按订单去重，符合未注册普通比例默认。缺陷在空评价集：COUNT(*)为0，Gold确定除零报错；同一只读空集加NULLIF后返回NULL。现库非空掩盖了这个当前契约明确要求的边界。",
+      "contractSource": [
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则10、12（普通比例四位及分母零NULLIF）",
+        "src/main/resources/schema/glossary.yml order_reviews.review_score"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT ROUND(\n  COUNT(*) FILTER (WHERE review_score >= 4)::NUMERIC / COUNT(*), 4\n) AS good_rate\nFROM order_reviews",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "good_rate": 0.7707
+              }
+            ]
+          },
+          "evidenceKey": "T2-039:gold"
+        },
+        {
+          "sql": "WITH reviews(review_score) AS (SELECT 4 WHERE FALSE)\nSELECT ROUND(COUNT(*) FILTER(WHERE review_score>=4)::numeric / COUNT(*),4) AS good_rate FROM reviews",
+          "result": {
+            "exitCode": 3,
+            "error": "ERROR:  division by zero"
+          },
+          "evidenceKey": "T2-039:empty-counterexample"
+        },
+        {
+          "sql": "WITH reviews(review_score) AS (SELECT 4 WHERE FALSE)\nSELECT ROUND(COUNT(*) FILTER(WHERE review_score>=4)::numeric / NULLIF(COUNT(*),0),4) AS good_rate FROM reviews",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "good_rate": null
+              }
+            ]
+          },
+          "evidenceKey": "T2-039:empty-safe-control"
+        },
+        {
+          "sql": "SELECT\n (SELECT COUNT(*) FROM customers) AS customer_rows,\n (SELECT COUNT(DISTINCT customer_unique_id) FROM customers) AS customer_people,\n (SELECT COUNT(*) FROM customers WHERE customer_state='SP') AS sp_rows,\n (SELECT COUNT(DISTINCT customer_unique_id) FROM customers WHERE customer_state='SP') AS sp_people,\n (SELECT COUNT(*) FROM products WHERE product_category_name IS NULL) AS null_categories,\n (SELECT COUNT(*) FROM products WHERE product_category_name='') AS empty_categories,\n (SELECT COUNT(*) FROM order_payments WHERE payment_installments IS NULL) AS null_installments,\n (SELECT COUNT(*) FROM order_reviews WHERE review_score IS NULL) AS null_review_scores,\n (SELECT COUNT(*) FROM search_logs WHERE keyword IS NULL) AS null_keywords",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "sp_rows": 41746,
+                "sp_people": 40302,
+                "customer_rows": 99441,
+                "null_keywords": 0,
+                "customer_people": 96096,
+                "null_categories": 610,
+                "empty_categories": 0,
+                "null_installments": 0,
+                "null_review_scores": 0
+              }
+            ]
+          },
+          "evidenceKey": "basic-identity-nulls"
+        },
+        {
+          "sql": "SELECT ROUND(COUNT(*) FILTER(WHERE review_score>=4)::numeric/NULLIF(COUNT(*),0),4) AS good_rate\nFROM order_reviews",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "good_rate": 0.7707
+              }
+            ]
+          },
+          "evidenceKey": "T2-039:proposed-gold"
+        }
+      ],
+      "proposedResolution": "保持当前分子/分母与单位，仅把分母改NULLIF(COUNT(*),0)。不把未评分评价悄悄排出“所有评价”分母。",
+      "proposedGoldSql": "SELECT ROUND(COUNT(*) FILTER(WHERE review_score>=4)::numeric/NULLIF(COUNT(*),0),4) AS good_rate\nFROM order_reviews;",
+      "proposedGoldSqlStatus": "只读诊断候选，已在现库执行；未改原始Gold。"
+    },
+    {
+      "id": "T2-040",
+      "question": "每个支付方式收上来的钱合计是多少？",
+      "decision": "KEEP",
+      "reason": "“每个支付方式收上来的钱”对应每条支付记录的payment_value汇总，方式维度不变，不是商品金额、佣金或整单含运费金额。当前credit_card为12,542,084.19，not_defined为0.00；numeric求和两位，组合支付各归其方式，不再关联订单明细而放大。",
+      "contractSource": [
+        "src/main/resources/schema/glossary.yml order_payments.payment_value",
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则9、12"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT payment_type, ROUND(SUM(payment_value), 2) AS total\nFROM order_payments GROUP BY payment_type ORDER BY total DESC",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "total": 12542084.19,
+                "payment_type": "credit_card"
+              },
+              {
+                "total": 2869361.27,
+                "payment_type": "boleto"
+              },
+              {
+                "total": 379436.87,
+                "payment_type": "voucher"
+              },
+              {
+                "total": 217989.79,
+                "payment_type": "debit_card"
+              },
+              {
+                "total": 0.0,
+                "payment_type": "not_defined"
+              }
+            ]
+          },
+          "evidenceKey": "T2-040:gold"
+        }
+      ],
+      "proposedResolution": "保留支付事实的方式合计，不额外限定有效订单或成功支付状态。"
+    },
+    {
+      "id": "T3-001",
+      "question": "每个月的订单数量是多少？按月份排序。",
+      "decision": "KEEP",
+      "reason": "按下单时间DATE_TRUNC(month)保留年+月并升序，不把2017与2018同月份混合，统计订单记录而非商品条数。当前返回实际有订单的25个月，2016-11没有记录；未给连续日历覆盖默认，所以不把缺少0月份本身判为确定错误。",
+      "contractSource": [
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则7、13、17",
+        "src/main/resources/schema/glossary.yml orders.order_purchase_timestamp"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT DATE_TRUNC('month', order_purchase_timestamp) AS month,\n       COUNT(*) AS cnt\nFROM orders GROUP BY 1 ORDER BY 1",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "cnt": 4,
+                "month": "2016-09-01T00:00:00"
+              },
+              {
+                "cnt": 324,
+                "month": "2016-10-01T00:00:00"
+              },
+              {
+                "cnt": 1,
+                "month": "2016-12-01T00:00:00"
+              },
+              {
+                "cnt": 800,
+                "month": "2017-01-01T00:00:00"
+              },
+              {
+                "cnt": 1780,
+                "month": "2017-02-01T00:00:00"
+              },
+              {
+                "cnt": 2682,
+                "month": "2017-03-01T00:00:00"
+              },
+              {
+                "cnt": 2404,
+                "month": "2017-04-01T00:00:00"
+              },
+              {
+                "cnt": 3700,
+                "month": "2017-05-01T00:00:00"
+              },
+              {
+                "cnt": 3245,
+                "month": "2017-06-01T00:00:00"
+              },
+              {
+                "cnt": 4026,
+                "month": "2017-07-01T00:00:00"
+              },
+              {
+                "cnt": 4331,
+                "month": "2017-08-01T00:00:00"
+              },
+              {
+                "cnt": 4285,
+                "month": "2017-09-01T00:00:00"
+              },
+              {
+                "cnt": 4631,
+                "month": "2017-10-01T00:00:00"
+              },
+              {
+                "cnt": 7544,
+                "month": "2017-11-01T00:00:00"
+              },
+              {
+                "cnt": 5673,
+                "month": "2017-12-01T00:00:00"
+              },
+              {
+                "cnt": 7269,
+                "month": "2018-01-01T00:00:00"
+              },
+              {
+                "cnt": 6728,
+                "month": "2018-02-01T00:00:00"
+              },
+              {
+                "cnt": 7211,
+                "month": "2018-03-01T00:00:00"
+              },
+              {
+                "cnt": 6939,
+                "month": "2018-04-01T00:00:00"
+              },
+              {
+                "cnt": 6873,
+                "month": "2018-05-01T00:00:00"
+              },
+              {
+                "cnt": 6167,
+                "month": "2018-06-01T00:00:00"
+              },
+              {
+                "cnt": 6292,
+                "month": "2018-07-01T00:00:00"
+              },
+              {
+                "cnt": 6512,
+                "month": "2018-08-01T00:00:00"
+              },
+              {
+                "cnt": 16,
+                "month": "2018-09-01T00:00:00"
+              },
+              {
+                "cnt": 4,
+                "month": "2018-10-01T00:00:00"
+              }
+            ]
+          },
+          "evidenceKey": "T3-001:gold"
+        },
+        {
+          "sql": "SELECT 'orders' AS source,MIN(order_purchase_timestamp) AS min_ts,MAX(order_purchase_timestamp) AS max_ts,COUNT(*) FILTER(WHERE order_purchase_timestamp IS NULL) AS nulls FROM orders\nUNION ALL SELECT 'refunds',MIN(requested_at),MAX(requested_at),COUNT(*) FILTER(WHERE requested_at IS NULL) FROM refunds\nUNION ALL SELECT 'tickets',MIN(created_at),MAX(created_at),COUNT(*) FILTER(WHERE created_at IS NULL) FROM support_tickets\nUNION ALL SELECT 'members',MIN(register_date),MAX(register_date),COUNT(*) FILTER(WHERE register_date IS NULL) FROM members\nUNION ALL SELECT 'settlements',MIN(period_start),MAX(period_start),COUNT(*) FILTER(WHERE period_start IS NULL) FROM settlements",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "nulls": 0,
+                "max_ts": "2018-10-17T17:30:18",
+                "min_ts": "2016-09-04T21:15:19",
+                "source": "orders"
+              },
+              {
+                "nulls": 0,
+                "max_ts": "2018-10-08T04:33:37.60972",
+                "min_ts": "2016-10-05T10:15:34.300565",
+                "source": "refunds"
+              },
+              {
+                "nulls": 0,
+                "max_ts": "2018-10-14T17:58:19.94912",
+                "min_ts": "2016-10-05T22:05:42.019516",
+                "source": "tickets"
+              },
+              {
+                "nulls": 0,
+                "max_ts": "2018-09-27T00:00:00",
+                "min_ts": "2016-01-01T00:00:00",
+                "source": "members"
+              },
+              {
+                "nulls": 0,
+                "max_ts": "2018-08-24T00:00:00",
+                "min_ts": "2017-01-01T00:00:00",
+                "source": "settlements"
+              }
+            ]
+          },
+          "evidenceKey": "T3:time-coverage"
+        }
+      ],
+      "proposedResolution": "保留已有订单月份分布；若产品要连续月份含0，需补明确日历范围与覆盖约定。",
+      "secondaryIssues": [
+        "与T3-010不同：本题没有“上个月”计算，缺月只影响展示覆盖，不会把另一个月当作上月。"
+      ]
+    },
+    {
+      "id": "T3-003",
+      "question": "每个季度有多少笔订单？",
+      "decision": "KEEP",
+      "reason": "DATE_TRUNC(quarter,下单时间)按年区分季度，输出季度起始时间戳及订单数并升序，正合当前季度默认。不能只EXTRACT(quarter)把不同年Q1合并，也没有有效订单限定。",
+      "contractSource": [
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则7、13、17"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT DATE_TRUNC('quarter', order_purchase_timestamp) AS quarter, COUNT(*) AS cnt\nFROM orders GROUP BY 1 ORDER BY 1",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "cnt": 4,
+                "quarter": "2016-07-01T00:00:00"
+              },
+              {
+                "cnt": 325,
+                "quarter": "2016-10-01T00:00:00"
+              },
+              {
+                "cnt": 5262,
+                "quarter": "2017-01-01T00:00:00"
+              },
+              {
+                "cnt": 9349,
+                "quarter": "2017-04-01T00:00:00"
+              },
+              {
+                "cnt": 12642,
+                "quarter": "2017-07-01T00:00:00"
+              },
+              {
+                "cnt": 17848,
+                "quarter": "2017-10-01T00:00:00"
+              },
+              {
+                "cnt": 21208,
+                "quarter": "2018-01-01T00:00:00"
+              },
+              {
+                "cnt": 19979,
+                "quarter": "2018-04-01T00:00:00"
+              },
+              {
+                "cnt": 12820,
+                "quarter": "2018-07-01T00:00:00"
+              },
+              {
+                "cnt": 4,
+                "quarter": "2018-10-01T00:00:00"
+              }
+            ]
+          },
+          "evidenceKey": "T3-003:gold"
+        },
+        {
+          "sql": "SELECT 'orders' AS source,MIN(order_purchase_timestamp) AS min_ts,MAX(order_purchase_timestamp) AS max_ts,COUNT(*) FILTER(WHERE order_purchase_timestamp IS NULL) AS nulls FROM orders\nUNION ALL SELECT 'refunds',MIN(requested_at),MAX(requested_at),COUNT(*) FILTER(WHERE requested_at IS NULL) FROM refunds\nUNION ALL SELECT 'tickets',MIN(created_at),MAX(created_at),COUNT(*) FILTER(WHERE created_at IS NULL) FROM support_tickets\nUNION ALL SELECT 'members',MIN(register_date),MAX(register_date),COUNT(*) FILTER(WHERE register_date IS NULL) FROM members\nUNION ALL SELECT 'settlements',MIN(period_start),MAX(period_start),COUNT(*) FILTER(WHERE period_start IS NULL) FROM settlements",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "nulls": 0,
+                "max_ts": "2018-10-17T17:30:18",
+                "min_ts": "2016-09-04T21:15:19",
+                "source": "orders"
+              },
+              {
+                "nulls": 0,
+                "max_ts": "2018-10-08T04:33:37.60972",
+                "min_ts": "2016-10-05T10:15:34.300565",
+                "source": "refunds"
+              },
+              {
+                "nulls": 0,
+                "max_ts": "2018-10-14T17:58:19.94912",
+                "min_ts": "2016-10-05T22:05:42.019516",
+                "source": "tickets"
+              },
+              {
+                "nulls": 0,
+                "max_ts": "2018-09-27T00:00:00",
+                "min_ts": "2016-01-01T00:00:00",
+                "source": "members"
+              },
+              {
+                "nulls": 0,
+                "max_ts": "2018-08-24T00:00:00",
+                "min_ts": "2017-01-01T00:00:00",
+                "source": "settlements"
+              }
+            ]
+          },
+          "evidenceKey": "T3:time-coverage"
+        }
+      ],
+      "proposedResolution": "保留季度起始时间戳维度及订单数量。"
+    },
+    {
+      "id": "T3-005",
+      "question": "订单量最多的那一周是哪一周？有多少笔？",
+      "decision": "KEEP",
+      "reason": "按PostgreSQL周一为起点的DATE_TRUNC(week)分组，当前最大周唯一：2017-11-20起始、3,008订单。week_start转DATE仍保留实际周身份，未改成字符串或丢失年份；当前没有冠军并列，单行LIMIT1能回答题面。",
+      "contractSource": [
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则8、13",
+        "src/main/resources/schema/glossary.yml orders.order_purchase_timestamp"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT DATE_TRUNC('week', order_purchase_timestamp)::DATE AS week_start, COUNT(*) AS cnt\nFROM orders GROUP BY 1 ORDER BY cnt DESC LIMIT 1",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "cnt": 3008,
+                "week_start": "2017-11-20"
+              }
+            ]
+          },
+          "evidenceKey": "T3-005:gold"
+        },
+        {
+          "sql": "WITH c AS (SELECT DATE_TRUNC('week',order_purchase_timestamp) AS w,COUNT(*) AS n FROM orders GROUP BY 1)\nSELECT w,n FROM c WHERE n=(SELECT MAX(n) FROM c) ORDER BY w",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "n": 3008,
+                "w": "2017-11-20T00:00:00"
+              }
+            ]
+          },
+          "evidenceKey": "T3-005:ties"
+        }
+      ],
+      "proposedResolution": "保留周起始日与数量；若未来出现并列第一，需明确选一周还是全列。"
+    },
+    {
+      "id": "T3-007",
+      "question": "每个月的运费总额是多少？",
+      "decision": "KEEP",
+      "reason": "运费来自order_items，月份归订单下单事件，JOIN orders只补业务时间且订单主键唯一，不会放大明细运费。Gold是“存在运费明细的月份”分布；实际2018-10虽有4个订单但无明细，因此没有该月运费行，属于未约定的零事实月份覆盖，不能单凭此宣布求和错误。",
+      "contractSource": [
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则9、12、13、16",
+        "src/main/resources/schema/glossary.yml order_items.freight_value与orders.order_purchase_timestamp"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT DATE_TRUNC('month', o.order_purchase_timestamp) AS month,\n       ROUND(SUM(oi.freight_value), 2) AS freight\nFROM orders o JOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1 ORDER BY 1",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "month": "2016-09-01T00:00:00",
+                "freight": 87.39
+              },
+              {
+                "month": "2016-10-01T00:00:00",
+                "freight": 7301.18
+              },
+              {
+                "month": "2016-12-01T00:00:00",
+                "freight": 8.72
+              },
+              {
+                "month": "2017-01-01T00:00:00",
+                "freight": 16875.62
+              },
+              {
+                "month": "2017-02-01T00:00:00",
+                "freight": 38977.6
+              },
+              {
+                "month": "2017-03-01T00:00:00",
+                "freight": 57704.29
+              },
+              {
+                "month": "2017-04-01T00:00:00",
+                "freight": 52495.01
+              },
+              {
+                "month": "2017-05-01T00:00:00",
+                "freight": 80119.81
+              },
+              {
+                "month": "2017-06-01T00:00:00",
+                "freight": 69924.44
+              },
+              {
+                "month": "2017-07-01T00:00:00",
+                "freight": 86940.14
+              },
+              {
+                "month": "2017-08-01T00:00:00",
+                "freight": 94232.92
+              },
+              {
+                "month": "2017-09-01T00:00:00",
+                "freight": 95997.22
+              },
+              {
+                "month": "2017-10-01T00:00:00",
+                "freight": 105092.94
+              },
+              {
+                "month": "2017-11-01T00:00:00",
+                "freight": 168872.4
+              },
+              {
+                "month": "2017-12-01T00:00:00",
+                "freight": 119633.06
+              },
+              {
+                "month": "2018-01-01T00:00:00",
+                "freight": 157271.53
+              },
+              {
+                "month": "2018-02-01T00:00:00",
+                "freight": 142730.25
+              },
+              {
+                "month": "2018-03-01T00:00:00",
+                "freight": 171913.38
+              },
+              {
+                "month": "2018-04-01T00:00:00",
+                "freight": 163050.29
+              },
+              {
+                "month": "2018-05-01T00:00:00",
+                "freight": 153264.14
+              },
+              {
+                "month": "2018-06-01T00:00:00",
+                "freight": 157552.8
+              },
+              {
+                "month": "2018-07-01T00:00:00",
+                "freight": 163220.81
+              },
+              {
+                "month": "2018-08-01T00:00:00",
+                "freight": 148622.14
+              },
+              {
+                "month": "2018-09-01T00:00:00",
+                "freight": 21.46
+              }
+            ]
+          },
+          "evidenceKey": "T3-007:gold"
+        },
+        {
+          "sql": "SELECT DATE_TRUNC('month',o.order_purchase_timestamp) AS m,COUNT(DISTINCT o.order_id) AS orders,\nCOUNT(oi.order_id) AS item_rows FROM orders o LEFT JOIN order_items oi ON oi.order_id=o.order_id\nGROUP BY 1 HAVING COUNT(oi.order_id)=0 ORDER BY 1",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "m": "2018-10-01T00:00:00",
+                "orders": 4,
+                "item_rows": 0
+              }
+            ]
+          },
+          "evidenceKey": "T3-007:zero-months"
+        }
+      ],
+      "proposedResolution": "保留现有运费事实聚合；若明确要每个有订单月份含零运费，需以订单月份日历保留该月并区分无明细与未知运费。",
+      "secondaryIssues": [
+        "目前题面没有要求完整月份/含0，因此该覆盖差异保留为说明，不计确定缺陷。"
+      ]
+    },
+    {
+      "id": "T3-009",
+      "question": "2018 年每个月的订单量是多少？",
+      "decision": "AMBIGUOUS",
+      "reason": "2018年范围采用>=2018-01-01且<2019-01-01，完整包含年末时刻，时间过滤正确。Gold仅输出1至10月，11、12月无订单被省略；“2018年每个月”也能合理要求全年12行并将无事实月填0。当前契约规定分组格式，却没有确定完整年日历覆盖。",
+      "contractSource": [
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则13、14、17",
+        "src/main/java/com/text2sql/agent/retrieval/DatabaseSchemaReader.java 历史快照说明"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT DATE_TRUNC('month', order_purchase_timestamp) AS month,\n       COUNT(*) AS cnt\nFROM orders\nWHERE order_purchase_timestamp >= '2018-01-01'\n  AND order_purchase_timestamp < '2019-01-01'\nGROUP BY 1 ORDER BY 1",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "cnt": 7269,
+                "month": "2018-01-01T00:00:00"
+              },
+              {
+                "cnt": 6728,
+                "month": "2018-02-01T00:00:00"
+              },
+              {
+                "cnt": 7211,
+                "month": "2018-03-01T00:00:00"
+              },
+              {
+                "cnt": 6939,
+                "month": "2018-04-01T00:00:00"
+              },
+              {
+                "cnt": 6873,
+                "month": "2018-05-01T00:00:00"
+              },
+              {
+                "cnt": 6167,
+                "month": "2018-06-01T00:00:00"
+              },
+              {
+                "cnt": 6292,
+                "month": "2018-07-01T00:00:00"
+              },
+              {
+                "cnt": 6512,
+                "month": "2018-08-01T00:00:00"
+              },
+              {
+                "cnt": 16,
+                "month": "2018-09-01T00:00:00"
+              },
+              {
+                "cnt": 4,
+                "month": "2018-10-01T00:00:00"
+              }
+            ]
+          },
+          "evidenceKey": "T3-009:gold"
+        },
+        {
+          "sql": "SELECT EXTRACT(YEAR FROM order_purchase_timestamp)::int AS y,\nEXTRACT(MONTH FROM order_purchase_timestamp)::int AS m,COUNT(*) AS n\nFROM orders WHERE order_purchase_timestamp >= '2017-01-01' AND order_purchase_timestamp < '2019-01-01'\nGROUP BY 1,2 ORDER BY 1,2",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "m": 1,
+                "n": 800,
+                "y": 2017
+              },
+              {
+                "m": 2,
+                "n": 1780,
+                "y": 2017
+              },
+              {
+                "m": 3,
+                "n": 2682,
+                "y": 2017
+              },
+              {
+                "m": 4,
+                "n": 2404,
+                "y": 2017
+              },
+              {
+                "m": 5,
+                "n": 3700,
+                "y": 2017
+              },
+              {
+                "m": 6,
+                "n": 3245,
+                "y": 2017
+              },
+              {
+                "m": 7,
+                "n": 4026,
+                "y": 2017
+              },
+              {
+                "m": 8,
+                "n": 4331,
+                "y": 2017
+              },
+              {
+                "m": 9,
+                "n": 4285,
+                "y": 2017
+              },
+              {
+                "m": 10,
+                "n": 4631,
+                "y": 2017
+              },
+              {
+                "m": 11,
+                "n": 7544,
+                "y": 2017
+              },
+              {
+                "m": 12,
+                "n": 5673,
+                "y": 2017
+              },
+              {
+                "m": 1,
+                "n": 7269,
+                "y": 2018
+              },
+              {
+                "m": 2,
+                "n": 6728,
+                "y": 2018
+              },
+              {
+                "m": 3,
+                "n": 7211,
+                "y": 2018
+              },
+              {
+                "m": 4,
+                "n": 6939,
+                "y": 2018
+              },
+              {
+                "m": 5,
+                "n": 6873,
+                "y": 2018
+              },
+              {
+                "m": 6,
+                "n": 6167,
+                "y": 2018
+              },
+              {
+                "m": 7,
+                "n": 6292,
+                "y": 2018
+              },
+              {
+                "m": 8,
+                "n": 6512,
+                "y": 2018
+              },
+              {
+                "m": 9,
+                "n": 16,
+                "y": 2018
+              },
+              {
+                "m": 10,
+                "n": 4,
+                "y": 2018
+              }
+            ]
+          },
+          "evidenceKey": "T3-009-012:year-months"
+        },
+        {
+          "sql": "SELECT 'orders' AS source,MIN(order_purchase_timestamp) AS min_ts,MAX(order_purchase_timestamp) AS max_ts,COUNT(*) FILTER(WHERE order_purchase_timestamp IS NULL) AS nulls FROM orders\nUNION ALL SELECT 'refunds',MIN(requested_at),MAX(requested_at),COUNT(*) FILTER(WHERE requested_at IS NULL) FROM refunds\nUNION ALL SELECT 'tickets',MIN(created_at),MAX(created_at),COUNT(*) FILTER(WHERE created_at IS NULL) FROM support_tickets\nUNION ALL SELECT 'members',MIN(register_date),MAX(register_date),COUNT(*) FILTER(WHERE register_date IS NULL) FROM members\nUNION ALL SELECT 'settlements',MIN(period_start),MAX(period_start),COUNT(*) FILTER(WHERE period_start IS NULL) FROM settlements",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "nulls": 0,
+                "max_ts": "2018-10-17T17:30:18",
+                "min_ts": "2016-09-04T21:15:19",
+                "source": "orders"
+              },
+              {
+                "nulls": 0,
+                "max_ts": "2018-10-08T04:33:37.60972",
+                "min_ts": "2016-10-05T10:15:34.300565",
+                "source": "refunds"
+              },
+              {
+                "nulls": 0,
+                "max_ts": "2018-10-14T17:58:19.94912",
+                "min_ts": "2016-10-05T22:05:42.019516",
+                "source": "tickets"
+              },
+              {
+                "nulls": 0,
+                "max_ts": "2018-09-27T00:00:00",
+                "min_ts": "2016-01-01T00:00:00",
+                "source": "members"
+              },
+              {
+                "nulls": 0,
+                "max_ts": "2018-08-24T00:00:00",
+                "min_ts": "2017-01-01T00:00:00",
+                "source": "settlements"
+              }
+            ]
+          },
+          "evidenceKey": "T3:time-coverage"
+        }
+      ],
+      "proposedResolution": "明确“有订单的月份”可保留Gold；若为完整2018年月报，生成12个月并LEFT JOIN订单计数。零事实不自动证明数据源已完整观测到年末。",
+      "proposedQuestion": "2018年实际有订单的各个月份，订单量是多少？按月份排序。",
+      "pendingChoices": [
+        "只输出有订单月份，保留现Gold。",
+        "完整输出2018年12个月，空月份按已观测零订单补0。",
+        "仅输出快照实际覆盖期内的连续月份；不将快照后月份当已观测0。"
+      ],
+      "proposedQuestionStatus": "消歧候选，不替业务确认，不改原题。"
+    },
+    {
+      "id": "T3-010",
+      "question": "每个月的订单量，以及相比上个月的变化量是多少？",
+      "decision": "REFERENCE_DEFECT",
+      "reason": "LAG按结果的上一行移动，不识别自然月；源数据2016-11无订单，Gold把2016-12的1笔减2016-10的324笔，得到-323，这不是相比上个月。11月在同一历史区间内为0，12月自然月变化应为+1；不能只加NULLIF或排序修复这个月身份错位。",
+      "contractSource": [
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则13、17（时间维度保持实际月份）",
+        "题面“上个月”的相邻自然月语义"
+      ],
+      "checks": [
+        {
+          "sql": "WITH monthly AS (\n  SELECT DATE_TRUNC('month', order_purchase_timestamp) AS m, COUNT(*) AS cnt\n  FROM orders GROUP BY 1\n)\nSELECT m AS month,\n       cnt,\n       cnt - LAG(cnt) OVER (ORDER BY m) AS mom_change\nFROM monthly ORDER BY m",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "cnt": 4,
+                "month": "2016-09-01T00:00:00",
+                "mom_change": null
+              },
+              {
+                "cnt": 324,
+                "month": "2016-10-01T00:00:00",
+                "mom_change": 320
+              },
+              {
+                "cnt": 1,
+                "month": "2016-12-01T00:00:00",
+                "mom_change": -323
+              },
+              {
+                "cnt": 800,
+                "month": "2017-01-01T00:00:00",
+                "mom_change": 799
+              },
+              {
+                "cnt": 1780,
+                "month": "2017-02-01T00:00:00",
+                "mom_change": 980
+              },
+              {
+                "cnt": 2682,
+                "month": "2017-03-01T00:00:00",
+                "mom_change": 902
+              },
+              {
+                "cnt": 2404,
+                "month": "2017-04-01T00:00:00",
+                "mom_change": -278
+              },
+              {
+                "cnt": 3700,
+                "month": "2017-05-01T00:00:00",
+                "mom_change": 1296
+              },
+              {
+                "cnt": 3245,
+                "month": "2017-06-01T00:00:00",
+                "mom_change": -455
+              },
+              {
+                "cnt": 4026,
+                "month": "2017-07-01T00:00:00",
+                "mom_change": 781
+              },
+              {
+                "cnt": 4331,
+                "month": "2017-08-01T00:00:00",
+                "mom_change": 305
+              },
+              {
+                "cnt": 4285,
+                "month": "2017-09-01T00:00:00",
+                "mom_change": -46
+              },
+              {
+                "cnt": 4631,
+                "month": "2017-10-01T00:00:00",
+                "mom_change": 346
+              },
+              {
+                "cnt": 7544,
+                "month": "2017-11-01T00:00:00",
+                "mom_change": 2913
+              },
+              {
+                "cnt": 5673,
+                "month": "2017-12-01T00:00:00",
+                "mom_change": -1871
+              },
+              {
+                "cnt": 7269,
+                "month": "2018-01-01T00:00:00",
+                "mom_change": 1596
+              },
+              {
+                "cnt": 6728,
+                "month": "2018-02-01T00:00:00",
+                "mom_change": -541
+              },
+              {
+                "cnt": 7211,
+                "month": "2018-03-01T00:00:00",
+                "mom_change": 483
+              },
+              {
+                "cnt": 6939,
+                "month": "2018-04-01T00:00:00",
+                "mom_change": -272
+              },
+              {
+                "cnt": 6873,
+                "month": "2018-05-01T00:00:00",
+                "mom_change": -66
+              },
+              {
+                "cnt": 6167,
+                "month": "2018-06-01T00:00:00",
+                "mom_change": -706
+              },
+              {
+                "cnt": 6292,
+                "month": "2018-07-01T00:00:00",
+                "mom_change": 125
+              },
+              {
+                "cnt": 6512,
+                "month": "2018-08-01T00:00:00",
+                "mom_change": 220
+              },
+              {
+                "cnt": 16,
+                "month": "2018-09-01T00:00:00",
+                "mom_change": -6496
+              },
+              {
+                "cnt": 4,
+                "month": "2018-10-01T00:00:00",
+                "mom_change": -12
+              }
+            ]
+          },
+          "evidenceKey": "T3-010:gold"
+        },
+        {
+          "sql": "WITH monthly AS (SELECT DATE_TRUNC('month',order_purchase_timestamp) AS m,COUNT(*) AS n FROM orders GROUP BY 1),\ncompared AS (SELECT m,n,LAG(m) OVER(ORDER BY m) AS previous_m,LAG(n) OVER(ORDER BY m) AS previous_n FROM monthly)\nSELECT *,n-previous_n AS gold_delta,n AS calendar_zero_delta FROM compared WHERE m>previous_m+INTERVAL '1 month'",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "m": "2016-12-01T00:00:00",
+                "n": 1,
+                "gold_delta": -323,
+                "previous_m": "2016-10-01T00:00:00",
+                "previous_n": 324,
+                "calendar_zero_delta": 1
+              }
+            ]
+          },
+          "evidenceKey": "T3-010:gaps"
+        },
+        {
+          "sql": "WITH monthly AS (\n SELECT DATE_TRUNC('month',order_purchase_timestamp) AS m,COUNT(*) AS cnt\n FROM orders GROUP BY 1\n), calendar AS (\n SELECT generate_series(MIN(m),MAX(m),INTERVAL '1 month') AS m FROM monthly\n), filled AS (\n SELECT c.m,COALESCE(m.cnt,0) AS cnt FROM calendar c LEFT JOIN monthly m ON m.m=c.m\n)\nSELECT m AS month,cnt,cnt-LAG(cnt) OVER(ORDER BY m) AS mom_change FROM filled ORDER BY m",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "cnt": 4,
+                "month": "2016-09-01T00:00:00",
+                "mom_change": null
+              },
+              {
+                "cnt": 324,
+                "month": "2016-10-01T00:00:00",
+                "mom_change": 320
+              },
+              {
+                "cnt": 0,
+                "month": "2016-11-01T00:00:00",
+                "mom_change": -324
+              },
+              {
+                "cnt": 1,
+                "month": "2016-12-01T00:00:00",
+                "mom_change": 1
+              },
+              {
+                "cnt": 800,
+                "month": "2017-01-01T00:00:00",
+                "mom_change": 799
+              },
+              {
+                "cnt": 1780,
+                "month": "2017-02-01T00:00:00",
+                "mom_change": 980
+              },
+              {
+                "cnt": 2682,
+                "month": "2017-03-01T00:00:00",
+                "mom_change": 902
+              },
+              {
+                "cnt": 2404,
+                "month": "2017-04-01T00:00:00",
+                "mom_change": -278
+              },
+              {
+                "cnt": 3700,
+                "month": "2017-05-01T00:00:00",
+                "mom_change": 1296
+              },
+              {
+                "cnt": 3245,
+                "month": "2017-06-01T00:00:00",
+                "mom_change": -455
+              },
+              {
+                "cnt": 4026,
+                "month": "2017-07-01T00:00:00",
+                "mom_change": 781
+              },
+              {
+                "cnt": 4331,
+                "month": "2017-08-01T00:00:00",
+                "mom_change": 305
+              },
+              {
+                "cnt": 4285,
+                "month": "2017-09-01T00:00:00",
+                "mom_change": -46
+              },
+              {
+                "cnt": 4631,
+                "month": "2017-10-01T00:00:00",
+                "mom_change": 346
+              },
+              {
+                "cnt": 7544,
+                "month": "2017-11-01T00:00:00",
+                "mom_change": 2913
+              },
+              {
+                "cnt": 5673,
+                "month": "2017-12-01T00:00:00",
+                "mom_change": -1871
+              },
+              {
+                "cnt": 7269,
+                "month": "2018-01-01T00:00:00",
+                "mom_change": 1596
+              },
+              {
+                "cnt": 6728,
+                "month": "2018-02-01T00:00:00",
+                "mom_change": -541
+              },
+              {
+                "cnt": 7211,
+                "month": "2018-03-01T00:00:00",
+                "mom_change": 483
+              },
+              {
+                "cnt": 6939,
+                "month": "2018-04-01T00:00:00",
+                "mom_change": -272
+              },
+              {
+                "cnt": 6873,
+                "month": "2018-05-01T00:00:00",
+                "mom_change": -66
+              },
+              {
+                "cnt": 6167,
+                "month": "2018-06-01T00:00:00",
+                "mom_change": -706
+              },
+              {
+                "cnt": 6292,
+                "month": "2018-07-01T00:00:00",
+                "mom_change": 125
+              },
+              {
+                "cnt": 6512,
+                "month": "2018-08-01T00:00:00",
+                "mom_change": 220
+              },
+              {
+                "cnt": 16,
+                "month": "2018-09-01T00:00:00",
+                "mom_change": -6496
+              },
+              {
+                "cnt": 4,
+                "month": "2018-10-01T00:00:00",
+                "mom_change": -12
+              }
+            ]
+          },
+          "evidenceKey": "T3-010:proposed-gold"
+        }
+      ],
+      "proposedResolution": "先构造min至max的连续月份序列，LEFT JOIN订单月计数并对无订单月计0，再LAG；或按m-interval 1 month精确连接，显式定义缺失月的0/未知策略。首月缺历史基期应保持NULL。",
+      "proposedGoldSql": "WITH monthly AS (\n SELECT DATE_TRUNC('month',order_purchase_timestamp) AS m,COUNT(*) AS cnt\n FROM orders GROUP BY 1\n), calendar AS (\n SELECT generate_series(MIN(m),MAX(m),INTERVAL '1 month') AS m FROM monthly\n), filled AS (\n SELECT c.m,COALESCE(m.cnt,0) AS cnt FROM calendar c LEFT JOIN monthly m ON m.m=c.m\n)\nSELECT m AS month,cnt,cnt-LAG(cnt) OVER(ORDER BY m) AS mom_change FROM filled ORDER BY m;",
+      "proposedGoldSqlStatus": "只读诊断候选，已在现库执行；未改原始Gold。"
+    },
+    {
+      "id": "T3-012",
+      "question": "2018 年每个月的订单量相比 2017 年同期增长了多少？",
+      "decision": "AMBIGUOUS",
+      "reason": "Gold按相同月份号对齐2018与2017，输出绝对订单增量，1月6,469笔，这是一种合理“增长多少”解释；当前GMV同比增长率指标不适用于订单量，不能强制乘100。问题在2018“每个月”是否全年覆盖及无当年月份：Gold只保留双方有记录的1至10月，11/12月整行消失，题面未授权只取交集。",
+      "contractSource": [
+        "src/main/resources/schema/metrics.yml yoy_growth.requiredContextAny与notes（只定义GMV率）",
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则8、12、13、17"
+      ],
+      "checks": [
+        {
+          "sql": "WITH monthly AS (\n  SELECT EXTRACT(YEAR FROM order_purchase_timestamp)::INT AS yr,\n         EXTRACT(MONTH FROM order_purchase_timestamp)::INT AS mo,\n         COUNT(*) AS cnt\n  FROM orders\n  WHERE EXTRACT(YEAR FROM order_purchase_timestamp) IN (2017, 2018)\n  GROUP BY 1, 2\n)\nSELECT cur.mo AS month,\n       cur.cnt - prev.cnt AS yoy_change\nFROM monthly cur\nJOIN monthly prev ON prev.mo = cur.mo AND prev.yr = 2017\nWHERE cur.yr = 2018\nORDER BY cur.mo",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "month": 1,
+                "yoy_change": 6469
+              },
+              {
+                "month": 2,
+                "yoy_change": 4948
+              },
+              {
+                "month": 3,
+                "yoy_change": 4529
+              },
+              {
+                "month": 4,
+                "yoy_change": 4535
+              },
+              {
+                "month": 5,
+                "yoy_change": 3173
+              },
+              {
+                "month": 6,
+                "yoy_change": 2922
+              },
+              {
+                "month": 7,
+                "yoy_change": 2266
+              },
+              {
+                "month": 8,
+                "yoy_change": 2181
+              },
+              {
+                "month": 9,
+                "yoy_change": -4269
+              },
+              {
+                "month": 10,
+                "yoy_change": -4627
+              }
+            ]
+          },
+          "evidenceKey": "T3-012:gold"
+        },
+        {
+          "sql": "SELECT EXTRACT(YEAR FROM order_purchase_timestamp)::int AS y,\nEXTRACT(MONTH FROM order_purchase_timestamp)::int AS m,COUNT(*) AS n\nFROM orders WHERE order_purchase_timestamp >= '2017-01-01' AND order_purchase_timestamp < '2019-01-01'\nGROUP BY 1,2 ORDER BY 1,2",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "m": 1,
+                "n": 800,
+                "y": 2017
+              },
+              {
+                "m": 2,
+                "n": 1780,
+                "y": 2017
+              },
+              {
+                "m": 3,
+                "n": 2682,
+                "y": 2017
+              },
+              {
+                "m": 4,
+                "n": 2404,
+                "y": 2017
+              },
+              {
+                "m": 5,
+                "n": 3700,
+                "y": 2017
+              },
+              {
+                "m": 6,
+                "n": 3245,
+                "y": 2017
+              },
+              {
+                "m": 7,
+                "n": 4026,
+                "y": 2017
+              },
+              {
+                "m": 8,
+                "n": 4331,
+                "y": 2017
+              },
+              {
+                "m": 9,
+                "n": 4285,
+                "y": 2017
+              },
+              {
+                "m": 10,
+                "n": 4631,
+                "y": 2017
+              },
+              {
+                "m": 11,
+                "n": 7544,
+                "y": 2017
+              },
+              {
+                "m": 12,
+                "n": 5673,
+                "y": 2017
+              },
+              {
+                "m": 1,
+                "n": 7269,
+                "y": 2018
+              },
+              {
+                "m": 2,
+                "n": 6728,
+                "y": 2018
+              },
+              {
+                "m": 3,
+                "n": 7211,
+                "y": 2018
+              },
+              {
+                "m": 4,
+                "n": 6939,
+                "y": 2018
+              },
+              {
+                "m": 5,
+                "n": 6873,
+                "y": 2018
+              },
+              {
+                "m": 6,
+                "n": 6167,
+                "y": 2018
+              },
+              {
+                "m": 7,
+                "n": 6292,
+                "y": 2018
+              },
+              {
+                "m": 8,
+                "n": 6512,
+                "y": 2018
+              },
+              {
+                "m": 9,
+                "n": 16,
+                "y": 2018
+              },
+              {
+                "m": 10,
+                "n": 4,
+                "y": 2018
+              }
+            ]
+          },
+          "evidenceKey": "T3-009-012:year-months"
+        }
+      ],
+      "proposedResolution": "明确绝对增加笔数、只比较有数据的同月，可保留Gold；若全年月度比较，用12个月日历对齐，并区分0订单与快照未覆盖。百分比必须另说增长率及基期零处理。",
+      "proposedQuestion": "2018年有订单且2017年同月也有订单的各个月份，订单量相比2017年同月增加多少笔？只输出月份编号和增加笔数。",
+      "pendingChoices": [
+        "双方有数据月份的绝对增加笔数，保留现Gold。",
+        "全年12个月的绝对增加笔数，另定快照未覆盖月份是0还是未知。",
+        "按同比增长率输出，另明确百分比/小数单位和基期零值处理。"
+      ],
+      "proposedQuestionStatus": "消歧候选，不替业务确认，不改原题。"
+    },
+    {
+      "id": "T3-014",
+      "question": "数据里最后 90 天，每周的商品销售额分别是多少？",
+      "decision": "CONTRACT_CONFLICT",
+      "reason": "源事件是订单下单时间，先全表MAX得到2018-10-17 17:30:18作为共同锚点是正确的；但Gold用(A-90天,A]滚动窗口，题面没有要求滚动90×24小时。当前规则14默认包含参照日的90个自然日，即[2018-07-20 00:00,2018-10-18 00:00)。两者现库差89个订单/98条明细，商品额1,273,118.74与1,262,279.86，相差10,838.88。",
+      "contractSource": [
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则14（自然日与滚动时长）",
+        "src/main/java/com/text2sql/agent/retrieval/DatabaseSchemaReader.java readDataProfile事件源全表MAX",
+        "src/main/resources/schema/ambiguities.yml 销售额.hints含商品销售额"
+      ],
+      "checks": [
+        {
+          "sql": "WITH anchor AS (SELECT MAX(order_purchase_timestamp) AS mx FROM orders)\nSELECT DATE_TRUNC('week', o.order_purchase_timestamp)::DATE AS week_start,\n       ROUND(SUM(oi.price), 2) AS sales\nFROM orders o\nJOIN order_items oi ON oi.order_id = o.order_id\nCROSS JOIN anchor a\nWHERE o.order_purchase_timestamp > a.mx - INTERVAL '90 days'\n  AND o.order_purchase_timestamp <= a.mx\nGROUP BY 1 ORDER BY 1",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "sales": 91737.32,
+                "week_start": "2018-07-16"
+              },
+              {
+                "sales": 242163.15,
+                "week_start": "2018-07-23"
+              },
+              {
+                "sales": 276573.9,
+                "week_start": "2018-07-30"
+              },
+              {
+                "sales": 279889.59,
+                "week_start": "2018-08-06"
+              },
+              {
+                "sales": 245609.63,
+                "week_start": "2018-08-13"
+              },
+              {
+                "sales": 126434.29,
+                "week_start": "2018-08-20"
+              },
+              {
+                "sales": 10565.86,
+                "week_start": "2018-08-27"
+              },
+              {
+                "sales": 145.0,
+                "week_start": "2018-09-03"
+              }
+            ]
+          },
+          "evidenceKey": "T3-014:gold"
+        },
+        {
+          "sql": "WITH anchor AS(SELECT MAX(order_purchase_timestamp) AS a FROM orders),flags AS(\nSELECT o.order_id,oi.price,o.order_purchase_timestamp,a.a,\n(o.order_purchase_timestamp>a.a-INTERVAL '90 days' AND o.order_purchase_timestamp<=a.a) AS rolling,\n(o.order_purchase_timestamp>=a.a::date-INTERVAL '89 days' AND o.order_purchase_timestamp<a.a::date+INTERVAL '1 day') AS calendar\nFROM orders o JOIN order_items oi ON oi.order_id=o.order_id CROSS JOIN anchor a)\nSELECT MAX(a) AS anchor,MIN(a-INTERVAL '90 days') AS rolling_lower,\nMIN(a::date-INTERVAL '89 days') AS calendar_lower,\nCOUNT(*) FILTER(WHERE rolling<>calendar) AS changed_items,\nCOUNT(DISTINCT order_id) FILTER(WHERE rolling<>calendar) AS changed_orders,\nROUND(SUM(price) FILTER(WHERE rolling),2) AS rolling_sales,\nROUND(SUM(price) FILTER(WHERE calendar),2) AS calendar_sales FROM flags",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "anchor": "2018-10-17T17:30:18",
+                "changed_items": 98,
+                "rolling_lower": "2018-07-19T17:30:18",
+                "rolling_sales": 1273118.74,
+                "calendar_lower": "2018-07-20T00:00:00",
+                "calendar_sales": 1262279.86,
+                "changed_orders": 89
+              }
+            ]
+          },
+          "evidenceKey": "T3-014:window-difference"
+        },
+        {
+          "sql": "WITH anchor AS(SELECT MAX(order_purchase_timestamp) AS mx FROM orders)\nSELECT DATE_TRUNC('week',o.order_purchase_timestamp)::date AS week_start,\n ROUND(SUM(oi.price),2) AS sales\nFROM orders o JOIN order_items oi ON oi.order_id=o.order_id CROSS JOIN anchor a\nWHERE o.order_purchase_timestamp>=a.mx::date-INTERVAL '89 days'\n AND o.order_purchase_timestamp<a.mx::date+INTERVAL '1 day'\nGROUP BY 1 ORDER BY 1",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "sales": 80898.44,
+                "week_start": "2018-07-16"
+              },
+              {
+                "sales": 242163.15,
+                "week_start": "2018-07-23"
+              },
+              {
+                "sales": 276573.9,
+                "week_start": "2018-07-30"
+              },
+              {
+                "sales": 279889.59,
+                "week_start": "2018-08-06"
+              },
+              {
+                "sales": 245609.63,
+                "week_start": "2018-08-13"
+              },
+              {
+                "sales": 126434.29,
+                "week_start": "2018-08-20"
+              },
+              {
+                "sales": 10565.86,
+                "week_start": "2018-08-27"
+              },
+              {
+                "sales": 145.0,
+                "week_start": "2018-09-03"
+              }
+            ]
+          },
+          "evidenceKey": "T3-014:proposed-gold"
+        }
+      ],
+      "proposedResolution": "若保持题面，Gold改自然日窗口；若保持Gold，题面明确“以最后下单时刻回溯90×24小时，左开右闭”。这是默认契约冲突，不宣称滚动90天在业务上天然错误。",
+      "secondaryIssues": [
+        "商品销售额已明确不含运费；不应再触发销售额含运费反问。",
+        "DATE_TRUNC周维度可能包含窗口首尾的部分周；题面没有要求完整自然周，不应把这些周扩大成整周筛选。"
+      ],
+      "proposedGoldSql": "WITH anchor AS(SELECT MAX(order_purchase_timestamp) AS mx FROM orders)\nSELECT DATE_TRUNC('week',o.order_purchase_timestamp)::date AS week_start,\n ROUND(SUM(oi.price),2) AS sales\nFROM orders o JOIN order_items oi ON oi.order_id=o.order_id CROSS JOIN anchor a\nWHERE o.order_purchase_timestamp>=a.mx::date-INTERVAL '89 days'\n AND o.order_purchase_timestamp<a.mx::date+INTERVAL '1 day'\nGROUP BY 1 ORDER BY 1;",
+      "proposedGoldSqlStatus": "只读诊断候选，已在现库执行；未改原始Gold。"
+    },
+    {
+      "id": "T3-016",
+      "question": "一周中星期几的订单量最多？",
+      "decision": "KEEP",
+      "reason": "Gold以DOW整数输出星期维度，0为周日、1为周一，当前唯一冠军1=周一、16,196笔，符合当前默认编号。虽然口语问星期几可用中文，产品已经明确默认DOW；不能把中文或ISO7编号当唯一合理展示。",
+      "contractSource": [
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则13（DOW默认）"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT EXTRACT(DOW FROM order_purchase_timestamp)::INT AS dow, COUNT(*) AS cnt\nFROM orders GROUP BY 1 ORDER BY cnt DESC LIMIT 1",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "cnt": 16196,
+                "dow": 1
+              }
+            ]
+          },
+          "evidenceKey": "T3-016:gold"
+        },
+        {
+          "sql": "WITH c AS(SELECT EXTRACT(DOW FROM order_purchase_timestamp)::int AS d,COUNT(*) AS n FROM orders GROUP BY 1)\nSELECT d,n FROM c WHERE n=(SELECT MAX(n) FROM c)",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "d": 1,
+                "n": 16196
+              }
+            ]
+          },
+          "evidenceKey": "T3-016:ties"
+        }
+      ],
+      "proposedResolution": "保留DOW与订单数；若只要星期名称或只要一列，需明确覆盖默认结果形状。"
+    },
+    {
+      "id": "T3-018",
+      "question": "每个州的平均配送时长是多少天？",
+      "decision": "KEEP",
+      "reason": "当前delivery_days定义为下单到签收，不是发货到签收；Gold按订单关联键读取该订单客户州，EPOCH/86400保留小数天，再按订单等权求均值两位。实际96,476笔签收时间已知，缺起点/负时长均0；PostgreSQL16中EXTRACT返回numeric，Gold无显式cast仍可运行，不应照Prompt浮点概述误判语法错误。",
+      "contractSource": [
+        "src/main/resources/schema/metrics.yml delivery_days",
+        "src/main/resources/schema/metrics.yml customer_identity_v2交易属性来源",
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则12、16",
+        "实际schema：orders时间为timestamp without time zone"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT c.customer_state,\n       ROUND(AVG(EXTRACT(EPOCH FROM (o.order_delivered_customer_date - o.order_purchase_timestamp)) / 86400), 2) AS avg_days\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nWHERE o.order_delivered_customer_date IS NOT NULL\nGROUP BY 1 ORDER BY avg_days DESC",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "avg_days": 29.39,
+                "customer_state": "RR"
+              },
+              {
+                "avg_days": 27.19,
+                "customer_state": "AP"
+              },
+              {
+                "avg_days": 26.43,
+                "customer_state": "AM"
+              },
+              {
+                "avg_days": 24.54,
+                "customer_state": "AL"
+              },
+              {
+                "avg_days": 23.77,
+                "customer_state": "PA"
+              },
+              {
+                "avg_days": 21.57,
+                "customer_state": "MA"
+              },
+              {
+                "avg_days": 21.52,
+                "customer_state": "SE"
+              },
+              {
+                "avg_days": 21.27,
+                "customer_state": "CE"
+              },
+              {
+                "avg_days": 21.04,
+                "customer_state": "AC"
+              },
+              {
+                "avg_days": 20.43,
+                "customer_state": "PB"
+              },
+              {
+                "avg_days": 19.46,
+                "customer_state": "PI"
+              },
+              {
+                "avg_days": 19.37,
+                "customer_state": "RO"
+              },
+              {
+                "avg_days": 19.34,
+                "customer_state": "BA"
+              },
+              {
+                "avg_days": 19.28,
+                "customer_state": "RN"
+              },
+              {
+                "avg_days": 18.45,
+                "customer_state": "PE"
+              },
+              {
+                "avg_days": 18.06,
+                "customer_state": "MT"
+              },
+              {
+                "avg_days": 17.66,
+                "customer_state": "TO"
+              },
+              {
+                "avg_days": 15.79,
+                "customer_state": "ES"
+              },
+              {
+                "avg_days": 15.62,
+                "customer_state": "MS"
+              },
+              {
+                "avg_days": 15.61,
+                "customer_state": "GO"
+              },
+              {
+                "avg_days": 15.31,
+                "customer_state": "RJ"
+              },
+              {
+                "avg_days": 15.3,
+                "customer_state": "RS"
+              },
+              {
+                "avg_days": 14.96,
+                "customer_state": "SC"
+              },
+              {
+                "avg_days": 12.97,
+                "customer_state": "DF"
+              },
+              {
+                "avg_days": 12.01,
+                "customer_state": "MG"
+              },
+              {
+                "avg_days": 11.99,
+                "customer_state": "PR"
+              },
+              {
+                "avg_days": 8.76,
+                "customer_state": "SP"
+              }
+            ]
+          },
+          "evidenceKey": "T3-018:gold"
+        },
+        {
+          "sql": "SELECT COUNT(*) FILTER(WHERE order_delivered_customer_date IS NOT NULL) AS delivered_time,\nCOUNT(*) FILTER(WHERE order_delivered_customer_date IS NOT NULL AND order_purchase_timestamp IS NULL) AS missing_start,\nCOUNT(*) FILTER(WHERE order_delivered_customer_date<order_purchase_timestamp) AS negative,\npg_typeof(EXTRACT(EPOCH FROM INTERVAL '1 day'))::text AS extract_type,\nROUND(AVG(EXTRACT(EPOCH FROM(order_delivered_customer_date-order_purchase_timestamp))/86400),2) AS avg_days FROM orders",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "avg_days": 12.56,
+                "negative": 0,
+                "extract_type": "numeric",
+                "missing_start": 0,
+                "delivered_time": 96476
+              }
+            ]
+          },
+          "evidenceKey": "T3-018:quality"
+        }
+      ],
+      "proposedResolution": "保留现Gold；不能改走客户自然人的全部档案取州，也不应额外限定order_status=delivered来替代真实签收时间。",
+      "secondaryIssues": [
+        "每州均值只针对可计算配送事实，零已签收订单的州是否列NULL未被明确要求；无需把未签收者补0参与平均。"
+      ]
+    },
+    {
+      "id": "T3-021",
+      "question": "每个月的退款单数量是多少？",
+      "decision": "KEEP",
+      "reason": "退款单自身事件为requested_at，Gold按申请月计退款记录，既不按订单购买月也不按completed_at，从而保留已申请但未完成退款。当前退款时间全已知；未规定连续月份日历，不补无申请月份。",
+      "contractSource": [
+        "src/main/resources/schema/glossary.yml refunds.requested_at(退款时间/申请月份)",
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则7、13"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT DATE_TRUNC('month', requested_at) AS month, COUNT(*) AS cnt\nFROM refunds GROUP BY 1 ORDER BY 1",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "cnt": 16,
+                "month": "2016-10-01T00:00:00"
+              },
+              {
+                "cnt": 6,
+                "month": "2016-11-01T00:00:00"
+              },
+              {
+                "cnt": 14,
+                "month": "2017-01-01T00:00:00"
+              },
+              {
+                "cnt": 68,
+                "month": "2017-02-01T00:00:00"
+              },
+              {
+                "cnt": 112,
+                "month": "2017-03-01T00:00:00"
+              },
+              {
+                "cnt": 119,
+                "month": "2017-04-01T00:00:00"
+              },
+              {
+                "cnt": 152,
+                "month": "2017-05-01T00:00:00"
+              },
+              {
+                "cnt": 231,
+                "month": "2017-06-01T00:00:00"
+              },
+              {
+                "cnt": 241,
+                "month": "2017-07-01T00:00:00"
+              },
+              {
+                "cnt": 263,
+                "month": "2017-08-01T00:00:00"
+              },
+              {
+                "cnt": 249,
+                "month": "2017-09-01T00:00:00"
+              },
+              {
+                "cnt": 269,
+                "month": "2017-10-01T00:00:00"
+              },
+              {
+                "cnt": 304,
+                "month": "2017-11-01T00:00:00"
+              },
+              {
+                "cnt": 452,
+                "month": "2017-12-01T00:00:00"
+              },
+              {
+                "cnt": 366,
+                "month": "2018-01-01T00:00:00"
+              },
+              {
+                "cnt": 397,
+                "month": "2018-02-01T00:00:00"
+              },
+              {
+                "cnt": 432,
+                "month": "2018-03-01T00:00:00"
+              },
+              {
+                "cnt": 407,
+                "month": "2018-04-01T00:00:00"
+              },
+              {
+                "cnt": 422,
+                "month": "2018-05-01T00:00:00"
+              },
+              {
+                "cnt": 365,
+                "month": "2018-06-01T00:00:00"
+              },
+              {
+                "cnt": 340,
+                "month": "2018-07-01T00:00:00"
+              },
+              {
+                "cnt": 476,
+                "month": "2018-08-01T00:00:00"
+              },
+              {
+                "cnt": 205,
+                "month": "2018-09-01T00:00:00"
+              },
+              {
+                "cnt": 4,
+                "month": "2018-10-01T00:00:00"
+              }
+            ]
+          },
+          "evidenceKey": "T3-021:gold"
+        },
+        {
+          "sql": "SELECT 'orders' AS source,MIN(order_purchase_timestamp) AS min_ts,MAX(order_purchase_timestamp) AS max_ts,COUNT(*) FILTER(WHERE order_purchase_timestamp IS NULL) AS nulls FROM orders\nUNION ALL SELECT 'refunds',MIN(requested_at),MAX(requested_at),COUNT(*) FILTER(WHERE requested_at IS NULL) FROM refunds\nUNION ALL SELECT 'tickets',MIN(created_at),MAX(created_at),COUNT(*) FILTER(WHERE created_at IS NULL) FROM support_tickets\nUNION ALL SELECT 'members',MIN(register_date),MAX(register_date),COUNT(*) FILTER(WHERE register_date IS NULL) FROM members\nUNION ALL SELECT 'settlements',MIN(period_start),MAX(period_start),COUNT(*) FILTER(WHERE period_start IS NULL) FROM settlements",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "nulls": 0,
+                "max_ts": "2018-10-17T17:30:18",
+                "min_ts": "2016-09-04T21:15:19",
+                "source": "orders"
+              },
+              {
+                "nulls": 0,
+                "max_ts": "2018-10-08T04:33:37.60972",
+                "min_ts": "2016-10-05T10:15:34.300565",
+                "source": "refunds"
+              },
+              {
+                "nulls": 0,
+                "max_ts": "2018-10-14T17:58:19.94912",
+                "min_ts": "2016-10-05T22:05:42.019516",
+                "source": "tickets"
+              },
+              {
+                "nulls": 0,
+                "max_ts": "2018-09-27T00:00:00",
+                "min_ts": "2016-01-01T00:00:00",
+                "source": "members"
+              },
+              {
+                "nulls": 0,
+                "max_ts": "2018-08-24T00:00:00",
+                "min_ts": "2017-01-01T00:00:00",
+                "source": "settlements"
+              }
+            ]
+          },
+          "evidenceKey": "T3:time-coverage"
+        }
+      ],
+      "proposedResolution": "保留退款申请事件月计数；若要完成退款月数，必须明确完成事件。"
+    },
+    {
+      "id": "T3-023",
+      "question": "每个月新增多少张客服工单？",
+      "decision": "KEEP",
+      "reason": "“新增客服工单”明确对应support_tickets.created_at，按自身创建月COUNT工单，不需要借用orders下单时间或消息创建时间。实际创建时间无NULL；只要新建工单就计，不要求关联订单或已解决，避免INNER JOIN订单漏无订单工单。",
+      "contractSource": [
+        "src/main/resources/schema/glossary.yml support_tickets.created_at",
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则7、13"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT DATE_TRUNC('month', created_at) AS month, COUNT(*) AS cnt\nFROM support_tickets GROUP BY 1 ORDER BY 1",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "cnt": 16,
+                "month": "2016-10-01T00:00:00"
+              },
+              {
+                "cnt": 4,
+                "month": "2016-11-01T00:00:00"
+              },
+              {
+                "cnt": 12,
+                "month": "2017-01-01T00:00:00"
+              },
+              {
+                "cnt": 111,
+                "month": "2017-02-01T00:00:00"
+              },
+              {
+                "cnt": 184,
+                "month": "2017-03-01T00:00:00"
+              },
+              {
+                "cnt": 186,
+                "month": "2017-04-01T00:00:00"
+              },
+              {
+                "cnt": 214,
+                "month": "2017-05-01T00:00:00"
+              },
+              {
+                "cnt": 267,
+                "month": "2017-06-01T00:00:00"
+              },
+              {
+                "cnt": 262,
+                "month": "2017-07-01T00:00:00"
+              },
+              {
+                "cnt": 369,
+                "month": "2017-08-01T00:00:00"
+              },
+              {
+                "cnt": 358,
+                "month": "2017-09-01T00:00:00"
+              },
+              {
+                "cnt": 345,
+                "month": "2017-10-01T00:00:00"
+              },
+              {
+                "cnt": 407,
+                "month": "2017-11-01T00:00:00"
+              },
+              {
+                "cnt": 644,
+                "month": "2017-12-01T00:00:00"
+              },
+              {
+                "cnt": 521,
+                "month": "2018-01-01T00:00:00"
+              },
+              {
+                "cnt": 529,
+                "month": "2018-02-01T00:00:00"
+              },
+              {
+                "cnt": 600,
+                "month": "2018-03-01T00:00:00"
+              },
+              {
+                "cnt": 558,
+                "month": "2018-04-01T00:00:00"
+              },
+              {
+                "cnt": 613,
+                "month": "2018-05-01T00:00:00"
+              },
+              {
+                "cnt": 456,
+                "month": "2018-06-01T00:00:00"
+              },
+              {
+                "cnt": 492,
+                "month": "2018-07-01T00:00:00"
+              },
+              {
+                "cnt": 600,
+                "month": "2018-08-01T00:00:00"
+              },
+              {
+                "cnt": 185,
+                "month": "2018-09-01T00:00:00"
+              },
+              {
+                "cnt": 1,
+                "month": "2018-10-01T00:00:00"
+              }
+            ]
+          },
+          "evidenceKey": "T3-023:gold"
+        },
+        {
+          "sql": "SELECT 'orders' AS source,MIN(order_purchase_timestamp) AS min_ts,MAX(order_purchase_timestamp) AS max_ts,COUNT(*) FILTER(WHERE order_purchase_timestamp IS NULL) AS nulls FROM orders\nUNION ALL SELECT 'refunds',MIN(requested_at),MAX(requested_at),COUNT(*) FILTER(WHERE requested_at IS NULL) FROM refunds\nUNION ALL SELECT 'tickets',MIN(created_at),MAX(created_at),COUNT(*) FILTER(WHERE created_at IS NULL) FROM support_tickets\nUNION ALL SELECT 'members',MIN(register_date),MAX(register_date),COUNT(*) FILTER(WHERE register_date IS NULL) FROM members\nUNION ALL SELECT 'settlements',MIN(period_start),MAX(period_start),COUNT(*) FILTER(WHERE period_start IS NULL) FROM settlements",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "nulls": 0,
+                "max_ts": "2018-10-17T17:30:18",
+                "min_ts": "2016-09-04T21:15:19",
+                "source": "orders"
+              },
+              {
+                "nulls": 0,
+                "max_ts": "2018-10-08T04:33:37.60972",
+                "min_ts": "2016-10-05T10:15:34.300565",
+                "source": "refunds"
+              },
+              {
+                "nulls": 0,
+                "max_ts": "2018-10-14T17:58:19.94912",
+                "min_ts": "2016-10-05T22:05:42.019516",
+                "source": "tickets"
+              },
+              {
+                "nulls": 0,
+                "max_ts": "2018-09-27T00:00:00",
+                "min_ts": "2016-01-01T00:00:00",
+                "source": "members"
+              },
+              {
+                "nulls": 0,
+                "max_ts": "2018-08-24T00:00:00",
+                "min_ts": "2017-01-01T00:00:00",
+                "source": "settlements"
+              }
+            ]
+          },
+          "evidenceKey": "T3:time-coverage"
+        }
+      ],
+      "proposedResolution": "保留工单自身创建月计数。"
+    },
+    {
+      "id": "T3-025",
+      "question": "2018 年上半年（1 到 6 月）每个州的订单量是多少？",
+      "decision": "KEEP",
+      "reason": "2018上半年用[2018-01-01,2018-07-01)包括整个6月30日，按orders一行一订单计数。州沿o.customer_id定位对应客户档案，FK指向唯一客户键不放大订单；不能通过customer_unique_id连同人其他州档案，也未授权排除取消单。",
+      "contractSource": [
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则7、10、14",
+        "src/main/resources/schema/metrics.yml customer_identity_v2交易属性来源",
+        "实际schema：orders到customers外键"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT c.customer_state, COUNT(*) AS cnt\nFROM orders o JOIN customers c ON c.customer_id = o.customer_id\nWHERE o.order_purchase_timestamp >= '2018-01-01'\n  AND o.order_purchase_timestamp < '2018-07-01'\nGROUP BY 1 ORDER BY cnt DESC",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "cnt": 17831,
+                "customer_state": "SP"
+              },
+              {
+                "cnt": 5105,
+                "customer_state": "RJ"
+              },
+              {
+                "cnt": 4811,
+                "customer_state": "MG"
+              },
+              {
+                "cnt": 2164,
+                "customer_state": "RS"
+              },
+              {
+                "cnt": 2102,
+                "customer_state": "PR"
+              },
+              {
+                "cnt": 1501,
+                "customer_state": "SC"
+              },
+              {
+                "cnt": 1369,
+                "customer_state": "BA"
+              },
+              {
+                "cnt": 902,
+                "customer_state": "DF"
+              },
+              {
+                "cnt": 833,
+                "customer_state": "ES"
+              },
+              {
+                "cnt": 821,
+                "customer_state": "GO"
+              },
+              {
+                "cnt": 651,
+                "customer_state": "PE"
+              },
+              {
+                "cnt": 524,
+                "customer_state": "CE"
+              },
+              {
+                "cnt": 397,
+                "customer_state": "MT"
+              },
+              {
+                "cnt": 366,
+                "customer_state": "PA"
+              },
+              {
+                "cnt": 330,
+                "customer_state": "MS"
+              },
+              {
+                "cnt": 286,
+                "customer_state": "MA"
+              },
+              {
+                "cnt": 214,
+                "customer_state": "PI"
+              },
+              {
+                "cnt": 198,
+                "customer_state": "RN"
+              },
+              {
+                "cnt": 193,
+                "customer_state": "PB"
+              },
+              {
+                "cnt": 165,
+                "customer_state": "AL"
+              },
+              {
+                "cnt": 111,
+                "customer_state": "TO"
+              },
+              {
+                "cnt": 103,
+                "customer_state": "SE"
+              },
+              {
+                "cnt": 87,
+                "customer_state": "RO"
+              },
+              {
+                "cnt": 51,
+                "customer_state": "AM"
+              },
+              {
+                "cnt": 31,
+                "customer_state": "AP"
+              },
+              {
+                "cnt": 21,
+                "customer_state": "RR"
+              },
+              {
+                "cnt": 20,
+                "customer_state": "AC"
+              }
+            ]
+          },
+          "evidenceKey": "T3-025:gold"
+        }
+      ],
+      "proposedResolution": "保留购买时间半年度边界与交易所属州。"
+    },
+    {
+      "id": "T3-027",
+      "question": "每个月的会员注册数量是多少？",
+      "decision": "KEEP",
+      "reason": "会员注册事实与时间是members.register_date，Gold按注册月计会员实体，未把订单新客月当会员注册月。该列date经PostgreSQL DATE_TRUNC会返回带时区月起始时间（当前Asia/Shanghai），不同于orders的无时区时间戳；当前契约允许DATE_TRUNC自身类型，未要求二者强行同型。无注册日期无法归入月份，现库也没有该NULL。",
+      "contractSource": [
+        "src/main/resources/schema/glossary.yml members.register_date",
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则13",
+        "实际schema：members.register_date date"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT DATE_TRUNC('month', register_date) AS month, COUNT(*) AS cnt\nFROM members WHERE register_date IS NOT NULL GROUP BY 1 ORDER BY 1",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "cnt": 2830,
+                "month": "2016-01-01T00:00:00+08:00"
+              },
+              {
+                "cnt": 2773,
+                "month": "2016-02-01T00:00:00+08:00"
+              },
+              {
+                "cnt": 2954,
+                "month": "2016-03-01T00:00:00+08:00"
+              },
+              {
+                "cnt": 2977,
+                "month": "2016-04-01T00:00:00+08:00"
+              },
+              {
+                "cnt": 2927,
+                "month": "2016-05-01T00:00:00+08:00"
+              },
+              {
+                "cnt": 2908,
+                "month": "2016-06-01T00:00:00+08:00"
+              },
+              {
+                "cnt": 3016,
+                "month": "2016-07-01T00:00:00+08:00"
+              },
+              {
+                "cnt": 2920,
+                "month": "2016-08-01T00:00:00+08:00"
+              },
+              {
+                "cnt": 2811,
+                "month": "2016-09-01T00:00:00+08:00"
+              },
+              {
+                "cnt": 2952,
+                "month": "2016-10-01T00:00:00+08:00"
+              },
+              {
+                "cnt": 2812,
+                "month": "2016-11-01T00:00:00+08:00"
+              },
+              {
+                "cnt": 2941,
+                "month": "2016-12-01T00:00:00+08:00"
+              },
+              {
+                "cnt": 3061,
+                "month": "2017-01-01T00:00:00+08:00"
+              },
+              {
+                "cnt": 2681,
+                "month": "2017-02-01T00:00:00+08:00"
+              },
+              {
+                "cnt": 2957,
+                "month": "2017-03-01T00:00:00+08:00"
+              },
+              {
+                "cnt": 2863,
+                "month": "2017-04-01T00:00:00+08:00"
+              },
+              {
+                "cnt": 3020,
+                "month": "2017-05-01T00:00:00+08:00"
+              },
+              {
+                "cnt": 2857,
+                "month": "2017-06-01T00:00:00+08:00"
+              },
+              {
+                "cnt": 3057,
+                "month": "2017-07-01T00:00:00+08:00"
+              },
+              {
+                "cnt": 2956,
+                "month": "2017-08-01T00:00:00+08:00"
+              },
+              {
+                "cnt": 2924,
+                "month": "2017-09-01T00:00:00+08:00"
+              },
+              {
+                "cnt": 2995,
+                "month": "2017-10-01T00:00:00+08:00"
+              },
+              {
+                "cnt": 2858,
+                "month": "2017-11-01T00:00:00+08:00"
+              },
+              {
+                "cnt": 2950,
+                "month": "2017-12-01T00:00:00+08:00"
+              },
+              {
+                "cnt": 2981,
+                "month": "2018-01-01T00:00:00+08:00"
+              },
+              {
+                "cnt": 2585,
+                "month": "2018-02-01T00:00:00+08:00"
+              },
+              {
+                "cnt": 3091,
+                "month": "2018-03-01T00:00:00+08:00"
+              },
+              {
+                "cnt": 2830,
+                "month": "2018-04-01T00:00:00+08:00"
+              },
+              {
+                "cnt": 2994,
+                "month": "2018-05-01T00:00:00+08:00"
+              },
+              {
+                "cnt": 2921,
+                "month": "2018-06-01T00:00:00+08:00"
+              },
+              {
+                "cnt": 3011,
+                "month": "2018-07-01T00:00:00+08:00"
+              },
+              {
+                "cnt": 3018,
+                "month": "2018-08-01T00:00:00+08:00"
+              },
+              {
+                "cnt": 2665,
+                "month": "2018-09-01T00:00:00+08:00"
+              }
+            ]
+          },
+          "evidenceKey": "T3-027:gold"
+        },
+        {
+          "sql": "SELECT 'orders' AS source,MIN(order_purchase_timestamp) AS min_ts,MAX(order_purchase_timestamp) AS max_ts,COUNT(*) FILTER(WHERE order_purchase_timestamp IS NULL) AS nulls FROM orders\nUNION ALL SELECT 'refunds',MIN(requested_at),MAX(requested_at),COUNT(*) FILTER(WHERE requested_at IS NULL) FROM refunds\nUNION ALL SELECT 'tickets',MIN(created_at),MAX(created_at),COUNT(*) FILTER(WHERE created_at IS NULL) FROM support_tickets\nUNION ALL SELECT 'members',MIN(register_date),MAX(register_date),COUNT(*) FILTER(WHERE register_date IS NULL) FROM members\nUNION ALL SELECT 'settlements',MIN(period_start),MAX(period_start),COUNT(*) FILTER(WHERE period_start IS NULL) FROM settlements",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "nulls": 0,
+                "max_ts": "2018-10-17T17:30:18",
+                "min_ts": "2016-09-04T21:15:19",
+                "source": "orders"
+              },
+              {
+                "nulls": 0,
+                "max_ts": "2018-10-08T04:33:37.60972",
+                "min_ts": "2016-10-05T10:15:34.300565",
+                "source": "refunds"
+              },
+              {
+                "nulls": 0,
+                "max_ts": "2018-10-14T17:58:19.94912",
+                "min_ts": "2016-10-05T22:05:42.019516",
+                "source": "tickets"
+              },
+              {
+                "nulls": 0,
+                "max_ts": "2018-09-27T00:00:00",
+                "min_ts": "2016-01-01T00:00:00",
+                "source": "members"
+              },
+              {
+                "nulls": 0,
+                "max_ts": "2018-08-24T00:00:00",
+                "min_ts": "2017-01-01T00:00:00",
+                "source": "settlements"
+              }
+            ]
+          },
+          "evidenceKey": "T3:time-coverage"
+        },
+        {
+          "sql": "SELECT version() AS server_version,current_setting('TimeZone') AS session_timezone,\n (SELECT ROUND(SUM(net_amount),2) FROM settlements WHERE status=3) AS status3_paid_net,\n (SELECT ROUND(SUM(net_amount),2) FROM settlements WHERE paid_at IS NOT NULL) AS timestamp_paid_net,\n (SELECT COUNT(*) FROM settlements WHERE (status=3) IS DISTINCT FROM (paid_at IS NOT NULL)) AS status_time_disagreements,\n pg_typeof(DATE_TRUNC('month',DATE '2018-01-10'))::text AS date_month_type,\n pg_typeof(DATE_TRUNC('month',TIMESTAMP '2018-01-10'))::text AS timestamp_month_type",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "server_version": "PostgreSQL 16.15 (Debian 16.15-1.pgdg12+2) on x86_64-pc-linux-gnu, compiled by gcc (Debian 12.2.0-14+deb12u1) 12.2.0, 64-bit",
+                "date_month_type": "timestamp with time zone",
+                "session_timezone": "Asia/Shanghai",
+                "status3_paid_net": 3905258.13,
+                "timestamp_paid_net": 3840854.48,
+                "timestamp_month_type": "timestamp without time zone",
+                "status_time_disagreements": 1796
+              }
+            ]
+          },
+          "evidenceKey": "session-and-paid-bases"
+        }
+      ],
+      "proposedResolution": "保留本表注册日期分组；对外统一月份类型应作为单独契约决策，不能假称所有DATE_TRUNC输出都是无时区时间戳。"
+    },
+    {
+      "id": "T3-029",
+      "question": "每个月的佣金收入是多少？",
+      "decision": "KEEP",
+      "reason": "当前词典把佣金月份映射settlements.period_start，Gold按账期开始月累计结算单commission，既不关联结算明细重复加总，也不使用orders下单月。这里按当前账期应计解释“收入”，未明确现金到账，因此不私加status=3或paid_at条件；日期列DATE_TRUNC为带时区月起始。",
+      "contractSource": [
+        "src/main/resources/schema/glossary.yml settlements.period_start及commission",
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则7、9、12、13"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT DATE_TRUNC('month', period_start) AS month,\n       ROUND(SUM(commission), 2) AS total\nFROM settlements GROUP BY 1 ORDER BY 1",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "month": "2017-01-01T00:00:00+08:00",
+                "total": 14690.2
+              },
+              {
+                "month": "2017-03-01T00:00:00+08:00",
+                "total": 14425.65
+              },
+              {
+                "month": "2017-04-01T00:00:00+08:00",
+                "total": 15017.19
+              },
+              {
+                "month": "2017-05-01T00:00:00+08:00",
+                "total": 38919.34
+              },
+              {
+                "month": "2017-06-01T00:00:00+08:00",
+                "total": 18961.52
+              },
+              {
+                "month": "2017-07-01T00:00:00+08:00",
+                "total": 21880.39
+              },
+              {
+                "month": "2017-08-01T00:00:00+08:00",
+                "total": 22178.7
+              },
+              {
+                "month": "2017-09-01T00:00:00+08:00",
+                "total": 21336.52
+              },
+              {
+                "month": "2017-10-01T00:00:00+08:00",
+                "total": 35021.78
+              },
+              {
+                "month": "2017-11-01T00:00:00+08:00",
+                "total": 36284.67
+              },
+              {
+                "month": "2017-12-01T00:00:00+08:00",
+                "total": 29052.76
+              },
+              {
+                "month": "2018-01-01T00:00:00+08:00",
+                "total": 32433.67
+              },
+              {
+                "month": "2018-02-01T00:00:00+08:00",
+                "total": 37562.55
+              },
+              {
+                "month": "2018-03-01T00:00:00+08:00",
+                "total": 38950.8
+              },
+              {
+                "month": "2018-04-01T00:00:00+08:00",
+                "total": 42065.71
+              },
+              {
+                "month": "2018-05-01T00:00:00+08:00",
+                "total": 34694.76
+              },
+              {
+                "month": "2018-06-01T00:00:00+08:00",
+                "total": 33809.99
+              },
+              {
+                "month": "2018-07-01T00:00:00+08:00",
+                "total": 46871.91
+              },
+              {
+                "month": "2018-08-01T00:00:00+08:00",
+                "total": 1630.28
+              }
+            ]
+          },
+          "evidenceKey": "T3-029:gold"
+        },
+        {
+          "sql": "SELECT 'orders' AS source,MIN(order_purchase_timestamp) AS min_ts,MAX(order_purchase_timestamp) AS max_ts,COUNT(*) FILTER(WHERE order_purchase_timestamp IS NULL) AS nulls FROM orders\nUNION ALL SELECT 'refunds',MIN(requested_at),MAX(requested_at),COUNT(*) FILTER(WHERE requested_at IS NULL) FROM refunds\nUNION ALL SELECT 'tickets',MIN(created_at),MAX(created_at),COUNT(*) FILTER(WHERE created_at IS NULL) FROM support_tickets\nUNION ALL SELECT 'members',MIN(register_date),MAX(register_date),COUNT(*) FILTER(WHERE register_date IS NULL) FROM members\nUNION ALL SELECT 'settlements',MIN(period_start),MAX(period_start),COUNT(*) FILTER(WHERE period_start IS NULL) FROM settlements",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "nulls": 0,
+                "max_ts": "2018-10-17T17:30:18",
+                "min_ts": "2016-09-04T21:15:19",
+                "source": "orders"
+              },
+              {
+                "nulls": 0,
+                "max_ts": "2018-10-08T04:33:37.60972",
+                "min_ts": "2016-10-05T10:15:34.300565",
+                "source": "refunds"
+              },
+              {
+                "nulls": 0,
+                "max_ts": "2018-10-14T17:58:19.94912",
+                "min_ts": "2016-10-05T22:05:42.019516",
+                "source": "tickets"
+              },
+              {
+                "nulls": 0,
+                "max_ts": "2018-09-27T00:00:00",
+                "min_ts": "2016-01-01T00:00:00",
+                "source": "members"
+              },
+              {
+                "nulls": 0,
+                "max_ts": "2018-08-24T00:00:00",
+                "min_ts": "2017-01-01T00:00:00",
+                "source": "settlements"
+              }
+            ]
+          },
+          "evidenceKey": "T3:time-coverage"
+        },
+        {
+          "sql": "SELECT version() AS server_version,current_setting('TimeZone') AS session_timezone,\n (SELECT ROUND(SUM(net_amount),2) FROM settlements WHERE status=3) AS status3_paid_net,\n (SELECT ROUND(SUM(net_amount),2) FROM settlements WHERE paid_at IS NOT NULL) AS timestamp_paid_net,\n (SELECT COUNT(*) FROM settlements WHERE (status=3) IS DISTINCT FROM (paid_at IS NOT NULL)) AS status_time_disagreements,\n pg_typeof(DATE_TRUNC('month',DATE '2018-01-10'))::text AS date_month_type,\n pg_typeof(DATE_TRUNC('month',TIMESTAMP '2018-01-10'))::text AS timestamp_month_type",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "server_version": "PostgreSQL 16.15 (Debian 16.15-1.pgdg12+2) on x86_64-pc-linux-gnu, compiled by gcc (Debian 12.2.0-14+deb12u1) 12.2.0, 64-bit",
+                "date_month_type": "timestamp with time zone",
+                "session_timezone": "Asia/Shanghai",
+                "status3_paid_net": 3905258.13,
+                "timestamp_paid_net": 3840854.48,
+                "timestamp_month_type": "timestamp without time zone",
+                "status_time_disagreements": 1796
+              }
+            ]
+          },
+          "evidenceKey": "session-and-paid-bases"
+        }
+      ],
+      "proposedResolution": "按当前账期默认保留；若业务改为到账佣金收入，要明确paid_at事件与状态/时间冲突处理。"
+    },
+    {
+      "id": "T3-030",
+      "question": "每个季度的有效订单量分别是多少？按季度排序。",
+      "decision": "KEEP",
+      "reason": "题干明确“有效订单”，命中valid_order，Gold用NOT IN(canceled,unavailable)过滤，然后按下单季度起始时间戳分组升序。orders.order_status非空，NOT IN不存在NULL状态三值逻辑漏算；没有关联明细，零明细但有效的订单仍会计入。",
+      "contractSource": [
+        "src/main/resources/schema/metrics.yml valid_order",
+        "src/main/java/com/text2sql/agent/generation/PromptTemplate.java 规则7、10、13、17",
+        "实际schema：orders.order_status NOT NULL"
+      ],
+      "checks": [
+        {
+          "sql": "SELECT DATE_TRUNC('quarter', order_purchase_timestamp) AS quarter,\n       COUNT(*) AS cnt\nFROM orders\nWHERE order_status NOT IN ('canceled', 'unavailable')\nGROUP BY 1 ORDER BY 1",
+          "result": {
+            "exitCode": 0,
+            "rows": [
+              {
+                "cnt": 2,
+                "quarter": "2016-07-01T00:00:00"
+              },
+              {
+                "cnt": 294,
+                "quarter": "2016-10-01T00:00:00"
+              },
+              {
+                "cnt": 5122,
+                "quarter": "2017-01-01T00:00:00"
+              },
+              {
+                "cnt": 9222,
+                "quarter": "2017-04-01T00:00:00"
+              },
+              {
+                "cnt": 12445,
+                "quarter": "2017-07-01T00:00:00"
+              },
+              {
+                "cnt": 17590,
+                "quarter": "2017-10-01T00:00:00"
+              },
+              {
+                "cnt": 20980,
+                "quarter": "2018-01-01T00:00:00"
+              },
+              {
+                "cnt": 19897,
+                "quarter": "2018-04-01T00:00:00"
+              },
+              {
+                "cnt": 12655,
+                "quarter": "2018-07-01T00:00:00"
+              }
+            ]
+          },
+          "evidenceKey": "T3-030:gold"
+        }
+      ],
+      "proposedResolution": "保留有效订单过滤及季度时间维度。"
+    }
+  ]
+}
