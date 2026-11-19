@@ -513,9 +513,14 @@ def aggregate_run(report, ledger, dry, system, data, gold=None):
     require(meta["productionSelfCorrectionEnabled"] and meta["productionSelfCorrectionMaxAttempts"] == 2
             and not meta["selfCorrectionEnabled"], "retry contract")
     config = meta["effectiveConfig"]
+    legacy = system.get("sourceCommit") == BASE_COMMIT
+    legacy_unreported = {"explicitReasoningEnabled", "fewshotRequireAvailableTables", "metricDefinitionsSha256"}
     for k, v in CONFIG.items():
+        if legacy and k in legacy_unreported and k not in config:
+            continue
         require(config.get(k) == v, "configuration " + k)
-    require(config.get("metricDefinitionsSha256") == system["metricDefinitionsSha256"], "metric definitions resource")
+    if not legacy or "metricDefinitionsSha256" in config:
+        require(config.get("metricDefinitionsSha256") == system["metricDefinitionsSha256"], "metric definitions resource")
     if data["javaSuiteManifest"]:
         suite = config.get("evaluationSuite", {})
         require(suite.get("manifestSha256") == data["sealSha256"] and suite.get("declaredIndependentReview") is True
@@ -568,6 +573,7 @@ def aggregate_run(report, ledger, dry, system, data, gold=None):
     group["datasetSha256"] = meta["datasetSha256"]
     group["sampleIdsSha256"] = meta["sampleIdsSha256"]
     group["effectiveConfigSha256"] = digest(config)
+    group["legacyUnreportedFields"] = sorted(legacy_unreported - set(config)) if legacy else []
     # Blind errors never include identities, SQL, questions, selections or slowest-item lists.
     if errors:
         raise Refused("Evidence audit failed: " + str(len(errors)) + " invariants; sha256=" + digest(errors))

@@ -536,6 +536,18 @@ class ArchivedAudit(unittest.TestCase):
         with self.assertRaises(ctl.Refused):
             ctl.aggregate_run(report, ledger, True, system, data)
 
+    def test_pinned_historical_report_uses_documented_static_evidence(self):
+        report, ledger, system, data = reports(True)
+        system["sourceCommit"] = ctl.BASE_COMMIT
+        fields = {"explicitReasoningEnabled", "fewshotRequireAvailableTables", "metricDefinitionsSha256"}
+        for name in fields:
+            report["meta"]["effectiveConfig"].pop(name)
+        group = ctl.aggregate_run(report, ledger, True, system, data)
+        self.assertEqual(set(group["legacyUnreportedFields"]), fields)
+        system["sourceCommit"] = ctl.CANDIDATE_SOURCE
+        with self.assertRaises(ctl.Refused):
+            ctl.aggregate_run(report, ledger, True, system, data)
+
     def test_registered_report_path_cannot_escape_archive(self):
         self.state["runs"][0]["report"] = self.state["runs"][1]["report"]
         ctl.save(self.directory, self.state)
