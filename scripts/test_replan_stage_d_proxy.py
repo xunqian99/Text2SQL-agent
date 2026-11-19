@@ -20,7 +20,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from unittest.mock import patch
 from urllib.parse import urlsplit
 
-from replan_stage_d_proxy import MAX_BODY_BYTES, ModelProxy, OFFICIAL_URL
+from replan_stage_d_proxy import MAX_BODY_BYTES, MAX_CHUNKS, MAX_CHUNK_LINE_BYTES, ModelProxy, OFFICIAL_URL
 
 
 KEY = "unit-test-key-not-a-provider-credential"
@@ -126,6 +126,31 @@ def request(base_url, raw=None, path="/v1/chat/completions", method="POST", head
         return response.status, response.read()
     finally:
         connection.close()
+
+
+def wire_request(base_url, headers, framed_body=b"", version=b"HTTP/1.1"):
+    """Preserve duplicate headers and deliberately malformed framing for tests."""
+    parsed = urlsplit(base_url)
+    client = socket.create_connection((parsed.hostname, parsed.port), timeout=3)
+    try:
+        wire = (b"POST /v1/chat/completions " + version + b"\r\nHost: 127.0.0.1\r\n"
+                + b"\r\n".join(headers) + b"\r\n\r\n" + framed_body)
+        try:
+            client.sendall(wire)
+            client.shutdown(socket.SHUT_WR)
+        except (BrokenPipeError, ConnectionResetError):
+            pass
+        response = http.client.HTTPResponse(client)
+        response.begin()
+        return response.status, response.read()
+    finally:
+        client.close()
+
+
+def chunk_frame(raw, size=4088):
+    # JDK-style ~4KiB wire chunks: 0xff8 payload + 3 hex + 2 CRLF pairs.
+    return b"".join(f"{len(raw[i:i+size]):x}\r\n".encode() + raw[i:i+size] + b"\r\n"
+                    for i in range(0, len(raw), size)) + b"0\r\n\r\n"
 
 
 def proxy_for(stub, recorder=None, **overrides):
@@ -495,6 +520,254 @@ class ProxyTests(unittest.TestCase):
                     worker.join(3)
                     if not proxy._closing.is_set():
                         proxy.__exit__(None, None, None)
+
+    def test_chunked_jdk_style_preserves_decoded_json_bytes_and_usage(self):
+        recorder = Recorder()
+        payload = dict(REQUEST, messages=[{"role": "user", "content": "订单数量和金额 " * 3500}])
+        raw = json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8") + b"\n"
+        self.assertGreater(len(raw), 4088)
+        with LocalUpstream() as stub, proxy_for(stub, recorder) as proxy:
+            status, body = wire_request(proxy.base_url, [
+                b"Transfer-Encoding: chunked", b"Content-Type: application/json; charset=UTF-8",
+                b"User-Agent: Java/17", b"Connection: keep-alive"], chunk_frame(raw))
+            proxy.drain(1)
+            self.assertEqual((200, BODY), (status, body))
+            self.assertEqual([(payload, raw)], recorder.before)
+            self.assertEqual([raw], stub.requests)
+            result = self.assert_record(recorder, True, 200, True)
+            self.assertEqual(22, result["responseJson"]["usage"]["total_tokens"])
+            self.assertEqual([], proxy.errors)
+
+    def test_chunked_extensions_declared_trailer_and_expect_continue(self):
+        recorder = Recorder()
+        raw = json.dumps(REQUEST, indent=2).encode()
+        framed = (f"{len(raw):X}; name=token; quoted=\"escaped\\\" value\"\r\n".encode()
+                  + raw + b"\r\n0; end=true\r\nX-Trace-Id: local-trace\r\n\r\n")
+        with LocalUpstream() as stub, proxy_for(stub, recorder) as proxy:
+            status, body = wire_request(proxy.base_url, [b"Transfer-Encoding: ChUnKeD",
+                b"Trailer: X-Trace-Id", b"Expect: 100-continue"], framed)
+            proxy.drain(1)
+            self.assertEqual((200, BODY), (status, body))
+            self.assertEqual([(REQUEST, raw)], recorder.before)
+            self.assertEqual([raw], stub.requests)
+
+    def test_chunked_framing_ambiguities_are_rejected_before_gate(self):
+        recorder = Recorder()
+        cases = [
+            [b"Transfer-Encoding: chunked", b"Content-Length: 0"],
+            [b"Transfer-Encoding: chunked", b"Transfer-Encoding: chunked"],
+            [b"Transfer-Encoding: chunked, chunked"],
+            [b"Transfer-Encoding: gzip, chunked"],
+            [b"Transfer-Encoding: gzip"],
+            [b"Transfer-Encoding:"],
+            [b"Transfer-Encoding: chunked; x=1"],
+            [b"Transfer-Encoding: chunked", b"Content-Length: 100", b"Expect: 100-continue"],
+        ]
+        with LocalUpstream() as stub, proxy_for(stub, recorder) as proxy:
+            for headers in cases:
+                with self.subTest(headers=headers):
+                    self.assertEqual(400, wire_request(proxy.base_url, headers, b"0\r\n\r\n")[0])
+            self.assertEqual(400, wire_request(proxy.base_url, [b"Transfer-Encoding: chunked"],
+                                               b"0\r\n\r\n", version=b"HTTP/1.0")[0])
+            proxy.drain(1)
+            self.assertEqual([], recorder.before)
+            self.assertEqual([], recorder.after)
+            self.assertEqual([], stub.requests)
+
+    def test_chunked_invalid_sizes_crlf_and_extensions_never_send(self):
+        recorder = Recorder()
+        bodies = [
+            b"g\r\n{}\r\n0\r\n\r\n", b"+2\r\n{}\r\n0\r\n\r\n",
+            b" 2\r\n{}\r\n0\r\n\r\n", b"0x2\r\n{}\r\n0\r\n\r\n",
+            b"2\n{}\r\n0\r\n\r\n", b"2\r\n{}xx0\r\n\r\n",
+            b"3\r\n{}", b"2\r\n{}\r\n0\r\n",
+            b"2;=missingname\r\n{}\r\n0\r\n\r\n",
+            b'2;x="unterminated\r\n{}\r\n0\r\n\r\n',
+            b"2;bad name=x\r\n{}\r\n0\r\n\r\n",
+            b"1" * (MAX_CHUNK_LINE_BYTES + 1) + b"\r\n",
+        ]
+        with LocalUpstream() as stub, proxy_for(stub, recorder) as proxy:
+            for index, framed in enumerate(bodies):
+                with self.subTest(framing=index):
+                    self.assertEqual(400, wire_request(proxy.base_url,
+                        [b"Transfer-Encoding: chunked"], framed)[0])
+            proxy.drain(1)
+            self.assertEqual([], recorder.before)
+            self.assertEqual([], recorder.after)
+            self.assertEqual([], stub.requests)
+
+    def test_chunked_exact_one_mib_decoded_limit_is_accepted(self):
+        recorder = Recorder()
+        raw = json.dumps(REQUEST).encode()
+        raw += b" " * (MAX_BODY_BYTES - len(raw))
+        with LocalUpstream() as stub, proxy_for(stub, recorder) as proxy:
+            self.assertEqual(200, wire_request(proxy.base_url,
+                [b"Transfer-Encoding: chunked"], chunk_frame(raw))[0])
+            proxy.drain(1)
+            self.assertEqual([(REQUEST, raw)], recorder.before)
+            self.assertEqual([raw], stub.requests)
+
+    def test_chunked_cumulative_size_and_chunk_count_limits_reject(self):
+        recorder = Recorder()
+        cases = [
+            (f"{MAX_BODY_BYTES+1:x}\r\n".encode(), 413),
+            (f"{MAX_BODY_BYTES:x}\r\n".encode() + b" " * MAX_BODY_BYTES + b"\r\n1\r\n", 413),
+            (b"1\r\n \r\n" * (MAX_CHUNKS + 1) + b"0\r\n\r\n", 400),
+        ]
+        with LocalUpstream() as stub, proxy_for(stub, recorder) as proxy:
+            for index, (framed, status) in enumerate(cases):
+                with self.subTest(limit=index):
+                    self.assertEqual(status, wire_request(proxy.base_url,
+                        [b"Transfer-Encoding: chunked"], framed)[0])
+            proxy.drain(1)
+            self.assertEqual([], recorder.before)
+            self.assertEqual([], recorder.after)
+            self.assertEqual([], stub.requests)
+
+    def test_chunked_illegal_trailers_are_rejected(self):
+        recorder = Recorder()
+        cases = [
+            ([], b"X-Trace: undeclared\r\n"),
+            ([b"Trailer: Authorization"], b"Authorization: never-forward\r\n"),
+            ([b"Trailer: Content-Length"], b"Content-Length: 2\r\n"),
+            ([b"Trailer: X-Trace", b"Connection: X-Trace"], b"X-Trace: x\r\n"),
+            ([b"Trailer: X-Trace", b"Trailer: X-Other"], b""),
+            ([b"Trailer: X-Trace, X-Trace"], b""),
+            ([b"Trailer: X-Trace"], b" X-Trace: folded\r\n"),
+            ([b"Trailer: X-Trace"], b"X-Trace : whitespace-name\r\n"),
+            ([b"Trailer: X-Trace"], b"X-Trace: bad\x00value\r\n"),
+            ([b"Trailer: X-Trace"], b"X-Trace: bad\x7fvalue\r\n"),
+            ([b"Trailer: X-Trace"], b"X-Trace: a\r\nX-Trace: b\r\n"),
+            ([b"Trailer: X-Trace"], b"X-Trace: missing-crlf\n"),
+            ([b"Trailer: X-Trace"], b"X-Trace: " + b"x" * MAX_CHUNK_LINE_BYTES + b"\r\n"),
+        ]
+        with LocalUpstream() as stub, proxy_for(stub, recorder) as proxy:
+            for index, (headers, trailer) in enumerate(cases):
+                with self.subTest(trailer=index):
+                    self.assertEqual(400, wire_request(proxy.base_url,
+                        [b"Transfer-Encoding: chunked"] + headers,
+                        b"2\r\n{}\r\n0\r\n" + trailer + b"\r\n")[0])
+            proxy.drain(1)
+            self.assertEqual([], recorder.before)
+            self.assertEqual([], recorder.after)
+            self.assertEqual([], stub.requests)
+
+    def test_chunked_trailer_section_and_field_limits_reject(self):
+        recorder = Recorder()
+        names = [f"X-Local-{i}".encode() for i in range(33)]
+        cases = [
+            (names, b""),
+            (names[:9], b"".join(name + b": " + b"a" * 995 + b"\r\n" for name in names[:9])),
+            (names[:32], b"".join(name + b": x\r\n" for name in names[:32]) + names[0] + b": x\r\n"),
+        ]
+        with LocalUpstream() as stub, proxy_for(stub, recorder) as proxy:
+            for index, (declared, trailer) in enumerate(cases):
+                with self.subTest(limit=index):
+                    self.assertEqual(400, wire_request(proxy.base_url,
+                        [b"Transfer-Encoding: chunked", b"Trailer: " + b", ".join(declared)],
+                        b"2\r\n{}\r\n0\r\n" + trailer + b"\r\n")[0])
+            proxy.drain(1)
+            self.assertEqual([], recorder.before)
+            self.assertEqual([], stub.requests)
+
+    def test_chunked_line_and_body_trickle_share_absolute_local_deadline(self):
+        self._assert_local_body_deadline(b"Transfer-Encoding: chunked", b"1\r\n \r\n")
+        self._assert_local_body_deadline(b"Transfer-Encoding: chunked", b"f")
+
+    def test_content_length_trickle_uses_absolute_local_body_deadline(self):
+        self._assert_local_body_deadline(b"Content-Length: 100", b" ")
+
+    def _assert_local_body_deadline(self, framing_header, repeated_part):
+        recorder = Recorder()
+        stopped = threading.Event()
+        with LocalUpstream() as stub, proxy_for(stub, recorder) as proxy:
+            parsed = urlsplit(proxy.base_url)
+            client = socket.create_connection((parsed.hostname, parsed.port), timeout=2)
+            with patch("replan_stage_d_proxy.LOCAL_BODY_TIMEOUT_SECONDS", .13):
+                client.sendall(b"POST /v1/chat/completions HTTP/1.1\r\nHost: 127.0.0.1\r\n"
+                               + framing_header + b"\r\n\r\n")
+                def trickle():
+                    try:
+                        while not stopped.is_set():
+                            client.sendall(repeated_part)
+                            stopped.wait(.04)
+                    except OSError:
+                        pass
+                sender = threading.Thread(target=trickle)
+                started = time.monotonic()
+                sender.start()
+                try:
+                    response = http.client.HTTPResponse(client)
+                    response.begin()
+                    response.read()
+                    self.assertEqual(408, response.status)
+                    self.assertLess(time.monotonic() - started, .45)
+                finally:
+                    stopped.set()
+                    sender.join(1)
+                    client.close()
+            proxy.drain(1)
+            self.assertEqual([], recorder.before)
+            self.assertEqual([], recorder.after)
+            self.assertEqual([], stub.requests)
+            self.assertEqual([], proxy.errors)
+
+    def test_chunked_decoding_precedes_gate_rejection_without_upstream(self):
+        seen = []
+        recorder = Recorder()
+        raw = json.dumps(REQUEST, indent=2).encode()
+        def reject(payload, raw_body):
+            seen.append((payload, raw_body))
+            raise ValueError("synthetic peak gate")
+        with LocalUpstream() as stub, proxy_for(stub, recorder, before_send=reject) as proxy:
+            status, body = wire_request(proxy.base_url, [b"Transfer-Encoding: chunked"], chunk_frame(raw, 7))
+            proxy.drain(1)
+            self.assertEqual(503, status)
+            self.assertIn("D_LOCAL_GATE:", json.loads(body)["error"]["message"])
+            self.assertEqual([(REQUEST, raw)], seen)
+            self.assertEqual([], recorder.after)
+            self.assertEqual([], stub.requests)
+
+    def test_request_recursive_duplicate_json_keys_never_reach_gate(self):
+        recorder = Recorder()
+        bodies = [
+            b'{"model":"a","model":"b"}',
+            b'{"model":"a","\\u006dodel":"b"}',
+            b'{"messages":[{"role":"user","content":"a","content":"b"}]}',
+            b'{"options":{"nested":[{"max_tokens":1,"max_tokens":2}]}}',
+            b'{"stream":false,"stream":true}',
+        ]
+        with LocalUpstream() as stub, proxy_for(stub, recorder) as proxy:
+            for index, raw in enumerate(bodies):
+                for chunked in (False, True):
+                    with self.subTest(body=index, chunked=chunked):
+                        status, body = (wire_request(proxy.base_url, [b"Transfer-Encoding: chunked"], chunk_frame(raw, 7))
+                                        if chunked else request(proxy.base_url, raw=raw))
+                        self.assertEqual(400, status)
+                        self.assertIn("duplicate JSON object member", json.loads(body)["error"]["message"])
+            proxy.drain(1)
+            self.assertEqual([], recorder.before)
+            self.assertEqual([], recorder.after)
+            self.assertEqual([], stub.requests)
+
+    def test_response_recursive_duplicate_json_keys_leave_usage_unknown(self):
+        bodies = [
+            b'{"usage":{"total_tokens":10,"total_tokens":0}}',
+            b'{"usage":{"total_tokens":10},"usage":{"total_tokens":0}}',
+            b'{"usage":{"total_tokens":10},"choices":[{"message":{"content":"a","content":"b"}}]}',
+            b'{"usage":{"total_tokens":10,"\\u0074otal_tokens":0}}',
+        ]
+        for index, raw in enumerate(bodies):
+            with self.subTest(response=index):
+                recorder = Recorder()
+                with LocalUpstream(body=raw) as stub, proxy_for(stub, recorder) as proxy:
+                    self.assertEqual((200, raw), request(proxy.base_url))
+                    proxy.drain(1)
+                    result = self.assert_record(recorder, True, 200, True)
+                    self.assertIsNone(result["responseJson"])
+                    self.assertIn("D_LOCAL_RESPONSE:duplicate JSON object member; usage is unknown", result["error"])
+                    self.assertEqual(hashlib.sha256(raw).hexdigest(), result["responseBodySha256"])
+                    self.assertEqual(1, len(stub.requests))
 
 
 class EvidenceResult(unittest.TextTestResult):

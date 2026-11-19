@@ -41,7 +41,7 @@ result字段：
 
 ### 1. 核心机制与数据流
 
-例如Java发送 `{"model":"已登记模型","messages":[{"role":"user","content":"查询订单数"}],"stream":false}`。本机服务先检查路径、POST、单一Content-Length、1MiB限制、JSON对象和非流式。主控制器核对该问题及额度，持久化预留，给出 `token=问数请求ID/第1次调用` 和剩余父请求的绝对deadline。转发器不重写原始请求body，仅在内存添加真实Authorization，向登记上游尝试一次。
+例如Java发送 `{"model":"已登记模型","messages":[{"role":"user","content":"查询订单数"}],"stream":false}`。本机服务先检查路径、POST、无歧义的Content-Length或单一chunked分帧、解码后1MiB限制、无重复字段的JSON对象和非流式。主控制器核对该问题及额度，持久化预留，给出 `token=问数请求ID/第1次调用` 和剩余父请求的绝对deadline。转发器不重写原始JSON body，仅在内存添加真实Authorization，向登记上游尝试一次。
 
 完整响应如 `{"usage":{"prompt_tokens":17,"completion_tokens":5,"total_tokens":22},...}` 会先连同token、状态、字节哈希、时间交给after记账，再将**原始body字节与状态**返回Java。即使Java已断开，after仍保存已收到的usage。若发送后断网、超时且没有usage，`responseJson=null`，保持用量未知，不写成0。仅收到部分但仍可解析的JSON时保留它，同时标记 `responseComplete=false`，不把残缺响应伪装成成功。
 
@@ -59,8 +59,11 @@ result字段：
 |---|---|---|---|
 | first-run.json | 首版18/18测试通过，0失败、0错误 | 3896.789ms | 0 / 0 |
 | final-run.json | 增加关闭中DNS恢复与建连前耗尽两项，最终20/20通过，0失败、0错误 | 4108.183ms | 0 / 0 |
+| chunked-first-run.json | 后续兼容修复专项13/13通过，0失败、0错误；历史20项未重跑 | 1742.940ms | 0 / 0 |
 
 最终测试实际接收了12次**本机HTTP替身请求**。`counters.gateCalls/afterCalls`只计通用Recorder的调用；自定义拒绝/故障回调不计入该计数，不能拿它们冒充全体问数或模型调用分母。工程测试20项不折算为业务正确率、真实Token/费用、真实模型P95或D阶段通过。
+
+后续发现原p9发送chunked被旧实现误拒，修复详情见[兼容性补充](CHUNKED_COMPATIBILITY.md)。新专项有7次本机替身上游HTTP请求，未重跑或覆盖历史18/20项证据；不能把历史20与新增13相加宣称最终版全量33/33已运行。
 
 覆盖了：高峰门禁拒绝0发送、原body/usage一次透传、客户端放弃后仍留已知usage、超时和断线未知用量、429无重试、路径/方法/流式/JSON/超大body拒绝、endpoint约束、permit过期/无效/复用、回调错误可见与key脱敏、慢响应头与慢body绝对截止、残缺body证据、系统代理忽略、drain超时、关闭后回调/DNS恢复仍不能发送、退出join并关闭监听端口。
 

@@ -28,6 +28,65 @@ from urllib.parse import urlsplit
 OFFICIAL_URL = "https://api.deepseek.com/v1/chat/completions"
 MODEL_PATH = "/v1/chat/completions"
 MAX_BODY_BYTES = 1024 * 1024
+LOCAL_BODY_TIMEOUT_SECONDS = 15
+MAX_CHUNK_LINE_BYTES = 1024
+MAX_CHUNKS = 4096
+MAX_TRAILER_BYTES = 8192
+MAX_TRAILER_FIELDS = 32
+_TOKEN = rb"[!#$%&'*+.^_`|~0-9A-Za-z-]+"
+_QUOTED = rb'"(?:[\t\x20-\x21\x23-\x5b\x5d-\x7e\x80-\xff]|\\[\t\x20-\x7e\x80-\xff])*"'
+_CHUNK_LINE = re.compile(rb"([0-9A-Fa-f]+)(?:[ \t]*;[ \t]*" + _TOKEN
+                         + rb"(?:[ \t]*=[ \t]*(?:" + _TOKEN + rb"|" + _QUOTED + rb"))?)*")
+_FORBIDDEN_TRAILERS = frozenset({
+    "transfer-encoding", "content-length", "host", "connection", "trailer", "te",
+    "upgrade", "keep-alive", "proxy-connection", "authorization", "proxy-authorization",
+    "www-authenticate", "proxy-authenticate", "authentication-info", "proxy-authentication-info",
+    "content-type", "content-encoding", "content-range", "range", "expect", "cookie",
+    "set-cookie", "cache-control", "max-forwards", "if-match", "if-none-match",
+    "if-modified-since", "if-unmodified-since", "if-range",
+})
+
+
+class _DuplicateJSONKey(ValueError):
+    pass
+
+
+def _unique_object(pairs):
+    value = {}
+    for key, item in pairs:
+        if key in value:
+            # Do not echo model/user-controlled member names into evidence.
+            raise _DuplicateJSONKey("duplicate JSON object member")
+        value[key] = item
+    return value
+
+
+def _strict_json(raw_body):
+    # object_pairs_hook applies recursively, including objects inside arrays and
+    # escaped spellings of the same member name. Never accept last-key-wins.
+    return json.loads(raw_body, object_pairs_hook=_unique_object)
+
+
+class _BodyError(ValueError):
+    def __init__(self, status, message):
+        super().__init__(message)
+        self.status = status
+
+
+class _LocalRequestReader(io.RawIOBase):
+    """Enforce one body deadline at each recv, even within buffered readline."""
+
+    def __init__(self, handler):
+        super().__init__()
+        self.handler = handler
+
+    def readable(self):
+        return True
+
+    def readinto(self, buffer):
+        handler = self.handler
+        handler.connection.settimeout(handler._body_remaining())
+        return handler.connection.recv_into(buffer)
 
 
 def _utc_now() -> str:
@@ -205,6 +264,24 @@ class _Handler(BaseHTTPRequestHandler):
     server_version = "StageDLocalProxy"
     sys_version = ""
 
+    def setup(self):
+        super().setup()
+        self._body_deadline = None
+        self.rfile.close()
+        self.rfile = io.BufferedReader(_LocalRequestReader(self))
+
+    def _start_body_deadline(self):
+        if self._body_deadline is None:
+            self._body_deadline = time.monotonic() + LOCAL_BODY_TIMEOUT_SECONDS
+
+    def _body_remaining(self):
+        if self._body_deadline is None:
+            return LOCAL_BODY_TIMEOUT_SECONDS
+        remaining = self._body_deadline - time.monotonic()
+        if remaining <= 0:
+            raise TimeoutError("absolute local body deadline expired")
+        return remaining
+
     def log_message(self, format, *args):
         pass
 
@@ -231,6 +308,7 @@ class _Handler(BaseHTTPRequestHandler):
         # Do not invite an unbounded body before validating its framing.
         if not self._valid_request_headers():
             return False
+        self._start_body_deadline()
         self.send_response_only(100)
         self.end_headers()
         return True
@@ -242,12 +320,30 @@ class _Handler(BaseHTTPRequestHandler):
         if self.path != MODEL_PATH:
             self._error(404, "D_LOCAL_REQUEST:unknown path")
             return False
-        if self.headers.get("Transfer-Encoding"):
-            self._error(400, "D_LOCAL_REQUEST:transfer encoding is unsupported")
-            return False
+        encodings = self.headers.get_all("Transfer-Encoding", [])
         lengths = self.headers.get_all("Content-Length", [])
+        if encodings:
+            if lengths:
+                self._error(400, "D_LOCAL_REQUEST:Transfer-Encoding conflicts with Content-Length")
+                return False
+            if len(encodings) != 1 or encodings[0].strip().lower() != "chunked":
+                self._error(400, "D_LOCAL_REQUEST:one chunked transfer encoding is required")
+                return False
+            if self.request_version != "HTTP/1.1":
+                self._error(400, "D_LOCAL_REQUEST:chunked requires HTTP/1.1")
+                return False
+            try:
+                self._declared_trailers = self._trailer_declarations()
+            except _BodyError as exc:
+                self._error(exc.status, "D_LOCAL_REQUEST:" + str(exc))
+                return False
+            self._chunked_body = True
+            return True
+        if self.headers.get_all("Trailer", []):
+            self._error(400, "D_LOCAL_REQUEST:trailers require chunked transfer encoding")
+            return False
         if not lengths:
-            self._error(411, "D_LOCAL_REQUEST:Content-Length is required")
+            self._error(411, "D_LOCAL_REQUEST:Content-Length or chunked transfer encoding is required")
             return False
         if len(lengths) != 1 or not re.fullmatch(r"[0-9]+", lengths[0]):
             self._error(400, "D_LOCAL_REQUEST:invalid Content-Length")
@@ -256,19 +352,98 @@ class _Handler(BaseHTTPRequestHandler):
         if len(lengths[0]) > 7 or int(lengths[0]) > MAX_BODY_BYTES:
             self._error(413, "D_LOCAL_REQUEST:body exceeds 1 MiB")
             return False
+        self._chunked_body = False
         return True
 
+    def _trailer_declarations(self):
+        headers = self.headers.get_all("Trailer", [])
+        if not headers:
+            return set()
+        if len(headers) != 1 or len(headers[0]) > MAX_TRAILER_BYTES:
+            raise _BodyError(400, "invalid trailer declaration")
+        names = [part.strip().lower() for part in headers[0].split(",")]
+        connection_names = {name.strip().lower() for value in self.headers.get_all("Connection", [])
+                            for name in value.split(",")}
+        forbidden = _FORBIDDEN_TRAILERS | connection_names
+        if (len(names) > MAX_TRAILER_FIELDS or len(names) != len(set(names))
+                or any(not re.fullmatch(_TOKEN, name.encode("latin-1")) or name in forbidden for name in names)):
+            raise _BodyError(400, "forbidden or invalid trailer declaration")
+        return set(names)
+
+    def _body_read_exact(self, size):
+        self._body_remaining()
+        block = self.rfile.read(size)
+        if len(block) != size:
+            raise _BodyError(400, "incomplete request body")
+        return block
+
+    def _body_read_line(self, limit):
+        self._body_remaining()
+        line = self.rfile.readline(limit + 1)
+        if len(line) > limit or not line.endswith(b"\r\n"):
+            raise _BodyError(400, "invalid or overlong chunk/trailer line")
+        return line
+
+    def _read_trailers(self):
+        total, fields, seen = 0, 0, set()
+        while True:
+            line = self._body_read_line(MAX_CHUNK_LINE_BYTES)
+            total += len(line)
+            if total > MAX_TRAILER_BYTES:
+                raise _BodyError(400, "trailer section exceeds limit")
+            if line == b"\r\n":
+                return
+            fields += 1
+            if fields > MAX_TRAILER_FIELDS:
+                raise _BodyError(400, "too many trailer fields")
+            name, separator, value = line[:-2].partition(b":")
+            if (not separator or not re.fullmatch(_TOKEN, name)
+                    or any(byte < 32 and byte != 9 or byte == 127 for byte in value)):
+                raise _BodyError(400, "invalid trailer field")
+            normalized = name.decode("ascii").lower()
+            if normalized not in self._declared_trailers or normalized in seen:
+                raise _BodyError(400, "undeclared or duplicate trailer field")
+            seen.add(normalized)
+
+    def _read_chunked_body(self):
+        decoded = bytearray()
+        chunks = 0
+        while True:
+            line = self._body_read_line(MAX_CHUNK_LINE_BYTES)
+            matched = _CHUNK_LINE.fullmatch(line[:-2])
+            if matched is None:
+                raise _BodyError(400, "invalid chunk size or extension")
+            size = int(matched[1], 16)
+            if size == 0:
+                self._read_trailers()
+                return bytes(decoded)
+            chunks += 1
+            if chunks > MAX_CHUNKS:
+                raise _BodyError(400, "too many body chunks")
+            if size > MAX_BODY_BYTES - len(decoded):
+                raise _BodyError(413, "decoded body exceeds 1 MiB")
+            decoded.extend(self._body_read_exact(size))
+            if self._body_read_exact(2) != b"\r\n":
+                raise _BodyError(400, "missing chunk data CRLF")
+
     def do_POST(self):
+        self._start_body_deadline()
         if not self._valid_request_headers():
             return
-        length = int(self.headers["Content-Length"])
         try:
-            raw_body = self.rfile.read(length)
-            if len(raw_body) != length:
-                self._error(400, "D_LOCAL_REQUEST:incomplete request body")
-                return
-            payload = json.loads(raw_body)
-        except (ValueError, UnicodeError):
+            raw_body = (self._read_chunked_body() if self._chunked_body
+                        else self._body_read_exact(int(self.headers["Content-Length"])))
+            payload = _strict_json(raw_body)
+        except _BodyError as exc:
+            self._error(exc.status, "D_LOCAL_REQUEST:" + str(exc))
+            return
+        except TimeoutError:
+            self._error(408, "D_LOCAL_REQUEST:absolute local body deadline expired")
+            return
+        except _DuplicateJSONKey:
+            self._error(400, "D_LOCAL_REQUEST:duplicate JSON object member")
+            return
+        except (ValueError, UnicodeError, RecursionError):
             self._error(400, "D_LOCAL_REQUEST:invalid JSON")
             return
         if not isinstance(payload, dict):
@@ -476,8 +651,12 @@ class ModelProxy:
             result["responseBodySha256"] = hashlib.sha256(body).hexdigest()
             result["responseBytes"] = len(body)
             try:
-                result["responseJson"] = json.loads(body)
-            except (ValueError, UnicodeError):
+                result["responseJson"] = _strict_json(body)
+            except _DuplicateJSONKey:
+                duplicate_error = "D_LOCAL_RESPONSE:duplicate JSON object member; usage is unknown"
+                result["error"] = (result["error"] + "; " + duplicate_error
+                                   if result["error"] else duplicate_error)
+            except (ValueError, UnicodeError, RecursionError):
                 pass
             try:
                 self._after_send(permit, result)
