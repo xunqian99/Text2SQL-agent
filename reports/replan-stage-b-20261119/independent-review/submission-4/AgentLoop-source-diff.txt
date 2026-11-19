@@ -1,0 +1,177 @@
+diff --git a/src/main/java/com/text2sql/agent/tool/AgentLoop.java b/src/main/java/com/text2sql/agent/tool/AgentLoop.java
+index c7f5a53..f9288fb 100644
+--- a/src/main/java/com/text2sql/agent/tool/AgentLoop.java
++++ b/src/main/java/com/text2sql/agent/tool/AgentLoop.java
+@@ -93,95 +93,91 @@ public class AgentLoop {
+         String lastRaw = "";
+         String finalSql = null;
+ 
+-        for (int round = 1; round <= maxRounds; round++) {
+-            boolean finalRound = (round == maxRounds);
+-            // 最后一轮**仍然给工具**。
+-            //
+-            // 早期版本在最后一轮把 tools 置空，想用「协议层没有工具可调」强制收口。
+-            // 实测 DeepSeek 思考模式在这种情况下不会乖乖给 SQL，而是把它想调的工具
+-            // 以内部 DSML 文本形式吐出来（`<｜｜DSML｜｜ calls>...`），被当成 SQL
+-            // 送进校验层直接 REJECTED。所以收口改成「轮次用完后再要一次」，
+-            // 而不是靠抽掉工具。
+-            List<ToolCallback> available = callbacks;
+-
+-            // 第一轮追加一次性指令，逼模型先侦察。
+-            //
+-            // 为什么需要：实测模型即使手里有工具，也会直接凭 schema 猜——
+-            // 问"加州"时它没查 customer_state，直接断言"加州 = 'CA'"（实际是巴西州），
+-            // 自信地给出 0 行。DeepSeek 思考模式不支持 tool_choice（400），
+-            // 协议层强制不了，只能在第一轮明确要求。
+-            //
+-            // 这条指令放在临时列表里、不写进 history：否则它会在后续轮次继续生效，
+-            // 模型会一直侦察不肯定稿。
+-            List<Message> roundMessages = history;
+-            if (round == 1 && maxRounds > 1 && properties.getToolUse().isForceFirstInvestigation()) {
+-                roundMessages = new ArrayList<>(history);
+-                roundMessages.add(new UserMessage(
+-                        "【第一轮要求】这一轮先不要写 SQL。请调用工具确认你写这条 SQL 之前最不确定的一件事："
+-                                + "某个字段的实际取值、两张表该怎么连、或者数据的时间范围。"
+-                                + "只调用工具，不要输出 SQL。"));
+-            }
++        try {
++            for (int round = 1; round <= maxRounds; round++) {
++                boolean finalRound = (round == maxRounds);
++                // 最后一轮**仍然给工具**。
++                //
++                // 早期版本在最后一轮把 tools 置空，想用「协议层没有工具可调」强制收口。
++                // 实测 DeepSeek 思考模式在这种情况下不会乖乖给 SQL，而是把它想调的工具
++                // 以内部 DSML 文本形式吐出来（`<｜｜DSML｜｜ calls>...`），被当成 SQL
++                // 送进校验层直接 REJECTED。所以收口改成「轮次用完后再要一次」，
++                // 而不是靠抽掉工具。
++                List<ToolCallback> available = callbacks;
++
++                // 第一轮追加一次性指令，逼模型先侦察。
++                //
++                // 为什么需要：实测模型即使手里有工具，也会直接凭 schema 猜——
++                // 问"加州"时它没查 customer_state，直接断言"加州 = 'CA'"（实际是巴西州），
++                // 自信地给出 0 行。DeepSeek 思考模式不支持 tool_choice（400），
++                // 协议层强制不了，只能在第一轮明确要求。
++                //
++                // 这条指令放在临时列表里、不写进 history：否则它会在后续轮次继续生效，
++                // 模型会一直侦察不肯定稿。
++                List<Message> roundMessages = history;
++                if (round == 1 && maxRounds > 1 && properties.getToolUse().isForceFirstInvestigation()) {
++                    roundMessages = new ArrayList<>(history);
++                    roundMessages.add(new UserMessage(
++                            "【第一轮要求】这一轮先不要写 SQL。请调用工具确认你写这条 SQL 之前最不确定的一件事："
++                                    + "某个字段的实际取值、两张表该怎么连、或者数据的时间范围。"
++                                    + "只调用工具，不要输出 SQL。"));
++                }
+ 
+-            LlmSqlGenerator.AgentTurn turn = nextTurn(combinedRecord,
+-                    roundMessages, available, "AGENT_ROUND_" + round, modelOverride, apiKeyOverride);
+-            combinedRecord = LlmCallRecord.combine(combinedRecord, turn.call());
+-            lastRaw = turn.raw();
++                LlmSqlGenerator.AgentTurn turn = generator.callWithTools(
++                        roundMessages, available, "AGENT_ROUND_" + round, modelOverride, apiKeyOverride);
++                combinedRecord = LlmCallRecord.combine(combinedRecord, turn.call());
++                lastRaw = turn.raw();
+ 
+-            AssistantMessage output = turn.response().getResult().getOutput();
+-            if (!output.hasToolCalls()) {
+-                finalSql = SqlExtractor.extract(stripToolMarkup(output.getText()));
+-                log.info("Agent 第 {} 轮直接给出最终 SQL：{}", round, finalSql);
+-                break;
+-            }
++                AssistantMessage output = turn.response().getResult().getOutput();
++                if (!output.hasToolCalls()) {
++                    finalSql = SqlExtractor.extract(stripToolMarkup(output.getText()));
++                    log.info("Agent 第 {} 轮直接给出最终 SQL：{}", round, finalSql);
++                    break;
++                }
+ 
+-            log.info("Agent 第 {} 轮请求 {} 个工具：{}", round, output.getToolCalls().size(),
+-                    output.getToolCalls().stream().map(AssistantMessage.ToolCall::name).toList());
+-
+-            history.add(output);
+-            List<ToolResponseMessage.ToolResponse> responses = new ArrayList<>();
+-            for (AssistantMessage.ToolCall toolCall : output.getToolCalls()) {
+-                responses.add(new ToolResponseMessage.ToolResponse(
+-                        toolCall.id(), toolCall.name(), invoke(byName, toolCall)));
+-                if (functions.schemaUnavailable()) {
+-                    throw new GenerationException(GenerationException.Reason.SCHEMA_UNAVAILABLE,
+-                            ToolResult.catalogUnavailable().output(), combinedRecord);
++                log.info("Agent 第 {} 轮请求 {} 个工具：{}", round, output.getToolCalls().size(),
++                        output.getToolCalls().stream().map(AssistantMessage.ToolCall::name).toList());
++
++                history.add(output);
++                List<ToolResponseMessage.ToolResponse> responses = new ArrayList<>();
++                for (AssistantMessage.ToolCall toolCall : output.getToolCalls()) {
++                    responses.add(new ToolResponseMessage.ToolResponse(
++                            toolCall.id(), toolCall.name(), invoke(byName, toolCall)));
++                    if (functions.schemaUnavailable()) {
++                        throw new GenerationException(GenerationException.Reason.SCHEMA_UNAVAILABLE,
++                                ToolResult.catalogUnavailable().output());
++                    }
++                }
++                history.add(ToolResponseMessage.builder().responses(responses).build());
++
++                if (finalRound) {
++                    // 轮次用完还在侦察：这批工具结果已经执行，再要一次，这次明确禁止调用。
++                    log.warn("Agent {} 轮用尽仍在调用工具，发起一次强制收口", maxRounds);
++                    history.add(new UserMessage(
++                            "工具调用轮次已用完，现在没有工具可用了。不要再输出任何工具调用或标记，"
++                                    + "直接根据已有信息输出最终 SQL 语句。"));
++                    LlmSqlGenerator.AgentTurn finish = generator.callWithTools(
++                            history, List.of(), "AGENT_FINALIZE", modelOverride, apiKeyOverride);
++                    combinedRecord = LlmCallRecord.combine(combinedRecord, finish.call());
++                    lastRaw = finish.raw();
++                    finalSql = SqlExtractor.extract(stripToolMarkup(finish.response().getResult().getOutput().getText()));
++                    log.info("Agent 强制收口产出：{}", finalSql);
+                 }
+             }
+-            history.add(ToolResponseMessage.builder().responses(responses).build());
+-
+-            if (finalRound) {
+-                // 轮次用完还在侦察：这批工具结果已经执行，再要一次，这次明确禁止调用。
+-                log.warn("Agent {} 轮用尽仍在调用工具，发起一次强制收口", maxRounds);
+-                history.add(new UserMessage(
+-                        "工具调用轮次已用完，现在没有工具可用了。不要再输出任何工具调用或标记，"
+-                                + "直接根据已有信息输出最终 SQL 语句。"));
+-                LlmSqlGenerator.AgentTurn finish = nextTurn(combinedRecord,
+-                        history, List.of(), "AGENT_FINALIZE", modelOverride, apiKeyOverride);
+-                combinedRecord = LlmCallRecord.combine(combinedRecord, finish.call());
+-                lastRaw = finish.raw();
+-                finalSql = SqlExtractor.extract(stripToolMarkup(finish.response().getResult().getOutput().getText()));
+-                log.info("Agent 强制收口产出：{}", finalSql);
+-            }
+-        }
+-
+-        if (finalSql == null || finalSql.isBlank()) {
+-            throw new GenerationException(GenerationException.Reason.UNPARSEABLE,
+-                    "Agent 在 " + maxRounds + " 轮内未产出可解析的 SQL");
+-        }
+-        return new GeneratedSql(finalSql, lastRaw, combinedRecord);
+-    }
+ 
+-    private LlmSqlGenerator.AgentTurn nextTurn(LlmCallRecord prior, List<Message> messages,
+-                                               List<ToolCallback> callbacks, String tag,
+-                                               String modelOverride, String apiKeyOverride) {
+-        try {
+-            return generator.callWithTools(messages, callbacks, tag, modelOverride, apiKeyOverride);
++            if (finalSql == null || finalSql.isBlank()) {
++                throw new GenerationException(GenerationException.Reason.UNPARSEABLE,
++                        "Agent 在 " + maxRounds + " 轮内未产出可解析的 SQL");
++            }
++            return new GeneratedSql(finalSql, lastRaw, combinedRecord);
+         } catch (GenerationException failure) {
+-            if (failure.getReason() != GenerationException.Reason.SCHEMA_UNAVAILABLE) throw failure;
+-            // Budget-enabled paths also retain usage in RequestBudget. Keep it in the
+-            // exception too, so disabling the request budget cannot erase earlier calls.
++            // The generator owns the current failed turn's record; the loop owns all
++            // earlier completed turns. Parsing happens after a turn is already added
++            // to combinedRecord, so extraction exceptions carry no additional record.
++            // Merge once here for EVERY failure reason, including length/empty output,
++            // before an upstream catalog gate can turn it into a terminal rejection.
+             throw new GenerationException(failure.getReason(), failure.getMessage(),
+-                    LlmCallRecord.combine(prior, failure.getCallRecord()), failure);
++                    LlmCallRecord.combine(combinedRecord, failure.getCallRecord()), failure);
+         }
+     }
+ 

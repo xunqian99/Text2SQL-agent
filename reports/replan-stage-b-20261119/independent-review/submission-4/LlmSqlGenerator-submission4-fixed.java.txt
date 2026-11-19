@@ -1,0 +1,577 @@
+package com.text2sql.agent.generation;
+
+import com.text2sql.agent.config.AgentProperties;
+import com.text2sql.agent.observability.LlmCallRecord;
+import com.text2sql.agent.retrieval.SchemaContext;
+import com.text2sql.agent.retrieval.AuthorizedSchemaCatalog;
+import com.text2sql.agent.retrieval.BusinessSchemaUnavailableException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.ai.chat.messages.AssistantMessage;
+import org.springframework.ai.chat.messages.Message;
+import org.springframework.ai.chat.messages.SystemMessage;
+import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.chat.metadata.ChatResponseMetadata;
+import org.springframework.ai.chat.metadata.Usage;
+import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.ai.openai.OpenAiChatModel;
+import org.springframework.ai.openai.OpenAiChatOptions;
+import org.springframework.ai.openai.api.OpenAiApi;
+import org.springframework.ai.tool.ToolCallback;
+import com.text2sql.agent.budget.BudgetHttpRequestFactory;
+import com.text2sql.agent.budget.RequestBudget;
+import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
+import org.springframework.web.client.RestClient;
+
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * 生成层：调用 LLM，把「问题 + schema」变成 SQL。
+ *
+ * <p>这个类是整条链路里唯一需要联网、唯一花钱、唯一有不确定性的环节。
+ * 所以它做了三件别的类不需要做的事：记录成本、把失败分类、允许未配置时优雅降级。
+ *
+ * <p><b>为什么不用 Spring AI 的自动配置</b>：{@code spring-ai-starter-model-openai}
+ * 的自动配置默认 base-url 指向 api.openai.com，且没有 Key 时会在启动阶段抛异常，
+ * 导致「只想跑评估器」或「只想验证校验器」的人被一个网络依赖卡死。
+ * 这里改为在构造时判断：有 Key 才建客户端，没有就置空，调用时抛
+ * {@code NOT_CONFIGURED}。这样数据库链路、校验链路、评估链路都能离线验证——
+ * 这恰恰是「评估器自检」能成立的前提。
+ *
+ * <p><b>为什么温度设 0</b>：Text2SQL 是确定性任务，不是创作任务。
+ * 温度 0 只在供应商支持的模式下减少采样波动，不能保证确定性；
+ * 例如 DeepSeek 思考模式会忽略温度。必须另记生成模式配置，并重复运行评估。
+ */
+@Component
+public class LlmSqlGenerator {
+
+    private static final Logger log = LoggerFactory.getLogger(LlmSqlGenerator.class);
+
+    private final AgentProperties properties;
+    private final PromptTemplate promptTemplate;
+    private final com.text2sql.agent.observability.LlmCallLog callLog;
+    private final com.text2sql.agent.cost.CostQuota costQuota;
+    private final AuthorizedSchemaCatalog authorizedCatalog;
+    private final com.text2sql.agent.budget.DeepSeekOffPeakPolicy offPeak =
+            new com.text2sql.agent.budget.DeepSeekOffPeakPolicy(java.time.Clock.systemUTC());
+
+    /** 未配置 Key 时为 null。这是刻意的：把「配置缺失」变成一个可检查的状态，而不是异常。 */
+    private final ChatModel chatModel;
+    /**
+     * BYOK 动态客户端池：按用户自带的 API Key 缓存 ChatModel。
+     *
+     * <p><b>为什么必须有容量上限</b>：这个 Map 的键来自请求头
+     * {@code X-Api-Key}，是**调用方可完全控制**的值。早先这里用的是无界
+     * {@code ConcurrentHashMap}，每次换一个不同的 Key 就会新建一个客户端并
+     * 永久留在内存里——持续发不同 Key 就能把堆撑爆，而这条路径不需要任何
+     * 鉴权。属于典型的「输入决定内存占用」型缺陷。
+     *
+     * <p>改为 LRU + 上限后，超限时淘汰最久未使用的客户端。容量取 32 是够用的：
+     * 正常场景里同时活跃的 BYOK Key 只有个位数，32 已经留了充足余量。
+     */
+    private static final int MAX_DYNAMIC_MODELS = 32;
+
+    private final Map<String, ChatModel> dynamicChatModels = Collections.synchronizedMap(
+            new LinkedHashMap<>(16, 0.75f, true) {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<String, ChatModel> eldest) {
+                    return size() > MAX_DYNAMIC_MODELS;
+                }
+            });
+
+    public LlmSqlGenerator(AgentProperties properties, PromptTemplate promptTemplate,
+                           com.text2sql.agent.observability.LlmCallLog callLog,
+                           AuthorizedSchemaCatalog authorizedCatalog) {
+        this(properties, promptTemplate, callLog, com.text2sql.agent.cost.CostQuota.disabled(), authorizedCatalog);
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public LlmSqlGenerator(AgentProperties properties, PromptTemplate promptTemplate,
+                           com.text2sql.agent.observability.LlmCallLog callLog, com.text2sql.agent.cost.CostQuota costQuota,
+                           AuthorizedSchemaCatalog authorizedCatalog) {
+        this.properties = properties;
+        this.promptTemplate = promptTemplate;
+        this.callLog = callLog;
+        this.costQuota = costQuota;
+        this.authorizedCatalog = java.util.Objects.requireNonNull(authorizedCatalog, "Authorized catalog is required");
+        this.chatModel = buildChatModel(properties, properties.getLlm().getApiKey());
+        if (this.chatModel == null) {
+            log.warn("未配置全局 agent.llm.api-key，进入 BYOK（用户自带密钥）模式；用户可在前端输入个人 API Key 体验。");
+        } else {
+            // 把完整端点打出来，而不是只打 baseUrl。厂商之间差别最大的就是路径
+            // （通义 /v1/chat/completions、千帆 /v2/chat/completions），
+            // 只打 baseUrl 时「路径配错了」在日志里看不出来，要等到 404 才发现。
+            log.info("LLM 已就绪：provider={} model={} endpoint={}{}",
+                    properties.getLlm().getProvider(),
+                    properties.getLlm().getModel(),
+                    properties.getLlm().getBaseUrl(),
+                    properties.getLlm().getCompletionsPath());
+        }
+    }
+
+    public boolean isConfigured() {
+        return chatModel != null || !dynamicChatModels.isEmpty();
+    }
+
+    /** A previous BYOK request must not make the server-wide readiness look configured. */
+    public boolean isGloballyConfigured() {
+        return chatModel != null;
+    }
+
+    public boolean isConfigured(String apiKeyOverride) {
+        return resolveChatModel(apiKeyOverride) != null;
+    }
+
+    public ChatModel resolveChatModel(String apiKeyOverride) {
+        if (costQuota.enabled() && StringUtils.hasText(apiKeyOverride)) {
+            throw new RequestBudget.Exceeded("BYOK_DISABLED_BY_COST_QUOTA");
+        }
+        if (!StringUtils.hasText(apiKeyOverride)) {
+            return this.chatModel;
+        }
+        String key = apiKeyOverride.strip();
+        ChatModel cached = dynamicChatModels.get(key);
+        if (cached != null) {
+            return cached;
+        }
+        // 构建客户端有开销，放在锁外做；只有写入时才加锁，并在锁内二次检查，
+        // 避免同一个 Key 在并发首用时被重复构建。重复构建本身不致命，
+        // 但会浪费连接与对象，而且后写的会覆盖先写的。
+        ChatModel built = buildChatModel(properties, key);
+        if (built == null) {
+            return null;
+        }
+        synchronized (dynamicChatModels) {
+            ChatModel existing = dynamicChatModels.get(key);
+            if (existing != null) {
+                return existing;
+            }
+            dynamicChatModels.put(key, built);
+            return built;
+        }
+    }
+
+    /**
+     * 生成 SQL。
+     *
+     * @param question 用户的中文问题
+     * @param schema   检索层给出的 schema 上下文
+     */
+    public GeneratedSql generate(String question, SchemaContext schema) {
+        return generate(question, schema, null, null);
+    }
+
+    /**
+     * 生成 SQL。
+     *
+     * @param modelOverride 非空时用这个模型替代配置里的默认模型（阶段 6 的升级路由）
+     */
+    public GeneratedSql generate(String question, SchemaContext schema, String modelOverride) {
+        return generate(question, schema, modelOverride, null);
+    }
+
+    /**
+     * 生成 SQL（支持动态 API Key 覆盖）。
+     */
+    public GeneratedSql generate(String question, SchemaContext schema, String modelOverride, String apiKeyOverride) {
+        ChatModel targetModel = resolveChatModel(apiKeyOverride);
+        if (targetModel == null) {
+            throw new GenerationException(GenerationException.Reason.NOT_CONFIGURED,
+                    "未配置 API Key，无法生成 SQL。请在页面右上角【⚙️配置 API Key】中输入你的 DeepSeek 密钥。");
+        }
+
+        String system = promptTemplate.systemPrompt();
+        String user = promptTemplate.userPrompt(schema, question);
+        int promptChars = system.length() + user.length();
+
+        List<Message> messages = List.of(new SystemMessage(system), new UserMessage(user));
+        String promptSha256 = PromptFingerprint.messagesSha256(messages);
+        String model = (modelOverride == null || modelOverride.isBlank())
+                ? properties.getLlm().getModel() : modelOverride;
+        OpenAiChatOptions options = optionsBuilder(model)
+                .build();
+
+        long started = System.nanoTime();
+        ChatResponse response;
+        try {
+            response = invoke(targetModel, new Prompt(messages, options), promptSha256);
+        } catch (Exception e) {
+            if (e instanceof GenerationException failure
+                    && failure.getReason() == GenerationException.Reason.SCHEMA_UNAVAILABLE) throw failure;
+            if (e instanceof RequestBudget.Exceeded expired) throw expired;
+            if (e instanceof com.text2sql.agent.budget.DeepSeekOffPeakPolicy.Rejected rejected) throw rejected;
+            com.text2sql.agent.observability.EvaluationTrace.call(null, "CALL_FAILED", promptSha256);
+            throw new GenerationException(GenerationException.Reason.CALL_FAILED,
+                    "模型服务调用失败，请核对服务配置或稍后重试。", e);
+        }
+        long latencyMs = (System.nanoTime() - started) / 1_000_000;
+
+        //获取模型的output
+        String raw = extractText(response);
+        LlmCallRecord record = buildRecord(response, promptChars, latencyMs, model);
+        String sql;
+        try {
+            requireComplete(response, record);
+            sql = SqlExtractor.extract(raw);
+        } catch (GenerationException e) {
+            log.warn("LLM 返回内容无法提取 SQL：{}", record.summary());
+            callLog.record(record, e.getReason().name(), user, raw, promptSha256);
+            throw new GenerationException(e.getReason(), e.getMessage(), record, e);
+        }
+        log.info("LLM 调用完成：{}", record.summary());
+        callLog.record(record, "OK", user, raw, promptSha256);
+        return new GeneratedSql(sql, raw, record);
+    }
+
+    /**
+     * 阶段 5 自纠错：把上一条 SQL 和结构化反馈一起交给模型，只生成一条修正版 SQL。
+     */
+    public GeneratedSql generateCorrection(String question, SchemaContext schema,
+                                            String previousSql, String feedback) {
+        return generateCorrection(question, schema, previousSql, feedback, null, null);
+    }
+
+    /**
+     * 自纠错 / 升级重试。
+     *
+     * @param modelOverride 非空时换用这个模型——阶段 6 的「失败后升级到强模型」就走这里。
+     *                      它和自纠错共用同一次重试机会：既带上错误信息，也可以换模型。
+     */
+    public GeneratedSql generateCorrection(String question, SchemaContext schema,
+                                            String previousSql, String feedback,
+                                            String modelOverride) {
+        return generateCorrection(question, schema, previousSql, feedback, modelOverride, null);
+    }
+
+    /**
+     * 自纠错 / 升级重试（支持动态 API Key 覆盖）。
+     */
+    public GeneratedSql generateCorrection(String question, SchemaContext schema,
+                                            String previousSql, String feedback,
+                                            String modelOverride, String apiKeyOverride) {
+        ChatModel targetModel = resolveChatModel(apiKeyOverride);
+        if (targetModel == null) {
+            throw new GenerationException(GenerationException.Reason.NOT_CONFIGURED,
+                    "未配置 API Key，无法执行自纠错。");
+        }
+
+        String system = promptTemplate.systemPrompt();
+        String user = promptTemplate.correctionPrompt(schema, question, previousSql, feedback);
+        int promptChars = system.length() + user.length();
+        List<Message> messages = List.of(new SystemMessage(system), new UserMessage(user));
+        String promptSha256 = PromptFingerprint.messagesSha256(messages);
+        String model = (modelOverride == null || modelOverride.isBlank())
+                ? properties.getLlm().getModel() : modelOverride;
+        OpenAiChatOptions options = optionsBuilder(model)
+                .build();
+
+        long started = System.nanoTime();
+        ChatResponse response;
+        try {
+            response = invoke(targetModel, new Prompt(messages, options), promptSha256);
+        } catch (Exception e) {
+            if (e instanceof GenerationException failure
+                    && failure.getReason() == GenerationException.Reason.SCHEMA_UNAVAILABLE) throw failure;
+            if (e instanceof RequestBudget.Exceeded expired) throw expired;
+            if (e instanceof com.text2sql.agent.budget.DeepSeekOffPeakPolicy.Rejected rejected) throw rejected;
+            com.text2sql.agent.observability.EvaluationTrace.call(null, "CALL_FAILED_CORRECTION", promptSha256);
+            throw new GenerationException(GenerationException.Reason.CALL_FAILED,
+                    "模型纠错调用失败，请核对服务配置或稍后重试。", e);
+        }
+        long latencyMs = (System.nanoTime() - started) / 1_000_000;
+        String raw = extractText(response);
+        LlmCallRecord record = buildRecord(response, promptChars, latencyMs, model);
+        String sql;
+        try {
+            requireComplete(response, record);
+            sql = SqlExtractor.extract(raw);
+        } catch (GenerationException e) {
+            log.warn("LLM 自纠错返回内容无法提取 SQL：{}", record.summary());
+            callLog.record(record, e.getReason().name() + "_CORRECTION", user, raw, promptSha256);
+            throw new GenerationException(e.getReason(), e.getMessage(), record, e);
+        }
+        log.info("LLM 自纠错完成：{}", record.summary());
+        callLog.record(record, "CORRECTION", user, raw, promptSha256);
+        return new GeneratedSql(sql, raw, record);
+    }
+
+    /**
+     * 支持 Agent 多轮对话交互的通用 LLM 调用接口。
+     */
+    public GeneratedSql callMessages(List<Message> messages, String logTag, String modelOverride) {
+        return callMessages(messages, logTag, modelOverride, null);
+    }
+
+    /**
+     * 支持 Agent 多轮对话交互的通用 LLM 调用接口（支持动态 API Key 覆盖）。
+     */
+    public GeneratedSql callMessages(List<Message> messages, String logTag, String modelOverride, String apiKeyOverride) {
+        ChatModel targetModel = resolveChatModel(apiKeyOverride);
+        if (targetModel == null) {
+            throw new GenerationException(GenerationException.Reason.NOT_CONFIGURED,
+                    "未配置 API Key，无法调用 LLM。");
+        }
+
+        int promptChars = messages.stream().mapToInt(m -> m.getText() == null ? 0 : m.getText().length()).sum();
+        String promptSha256 = PromptFingerprint.messagesSha256(messages);
+        String model = (modelOverride == null || modelOverride.isBlank())
+                ? properties.getLlm().getModel() : modelOverride;
+        OpenAiChatOptions options = optionsBuilder(model)
+                .build();
+
+        long started = System.nanoTime();
+        ChatResponse response;
+        try {
+            response = invoke(targetModel, new Prompt(messages, options), promptSha256);
+        } catch (Exception e) {
+            if (e instanceof GenerationException failure
+                    && failure.getReason() == GenerationException.Reason.SCHEMA_UNAVAILABLE) throw failure;
+            if (e instanceof RequestBudget.Exceeded expired) throw expired;
+            if (e instanceof com.text2sql.agent.budget.DeepSeekOffPeakPolicy.Rejected rejected) throw rejected;
+            com.text2sql.agent.observability.EvaluationTrace.call(null, "CALL_FAILED_" + logTag, promptSha256);
+            throw new GenerationException(GenerationException.Reason.CALL_FAILED,
+                    "模型服务调用失败，请核对服务配置或稍后重试。", e);
+        }
+        long latencyMs = (System.nanoTime() - started) / 1_000_000;
+        String raw = extractText(response);
+        LlmCallRecord record = buildRecord(response, promptChars, latencyMs, model);
+        String sql;
+        try {
+            requireComplete(response, record);
+            sql = SqlExtractor.extract(raw);
+        } catch (GenerationException e) {
+            log.warn("LLM [{}] 返回内容无法提取 SQL：{}", logTag, record.summary());
+            callLog.record(record, e.getReason().name() + "_" + logTag, "messages[" + messages.size() + "]", raw, promptSha256);
+            throw new GenerationException(e.getReason(), e.getMessage(), record, e);
+        }
+        log.info("LLM [{}] 调用完成：{}", logTag, record.summary());
+        callLog.record(record, logTag, "messages[" + messages.size() + "]", raw, promptSha256);
+        return new GeneratedSql(sql, raw, record);
+    }
+
+    /**
+     * Agent 循环专用：带原生工具的多轮调用，返回**原始响应**而不是抽好的 SQL。
+     *
+     * <p>和 {@link #callMessages} 的区别：那个方法假定响应里一定有 SQL，会直接调
+     * {@code SqlExtractor.extract}，遇到「只有 tool_calls、没有文本」的响应就抛
+     * {@code UNPARSEABLE}。Agent 循环恰恰需要看到 tool_calls 本身，所以这里把
+     * ChatResponse 原样交回给调用方判断。
+     *
+     * @param callbacks 本轮可用的工具；传空列表表示**本轮禁止调用工具**——
+     *                  这比在 prompt 里写「禁止调用」可靠，因为协议层根本没有工具可调
+     */
+    public AgentTurn callWithTools(List<Message> messages, List<ToolCallback> callbacks,
+                                   String logTag, String modelOverride, String apiKeyOverride) {
+        ChatModel targetModel = resolveChatModel(apiKeyOverride);
+        if (targetModel == null) {
+            throw new GenerationException(GenerationException.Reason.NOT_CONFIGURED,
+                    "未配置 API Key，无法调用 LLM。");
+        }
+
+        int promptChars = messages.stream().mapToInt(m -> m.getText() == null ? 0 : m.getText().length()).sum();
+        String promptSha256 = PromptFingerprint.messagesSha256(messages);
+        String model = (modelOverride == null || modelOverride.isBlank())
+                ? properties.getLlm().getModel() : modelOverride;
+
+        var optionsBuilder = optionsBuilder(model)
+                // 必须关掉框架内部的工具执行循环。
+                //
+                // Spring AI 默认 internalToolExecutionEnabled=true：它会自己执行工具、
+                // 自己继续追问模型，直到模型不再发起调用，最后只把**最终文本**返回。
+                // 结果是调用方永远看不到 tool_calls，自定义的 AgentLoop 会误判成
+                // 「模型一次工具都没调」——实测就是这么被误导的。
+                // 关掉之后，每轮的 tool_calls 原样交回，由 AgentLoop 决定执行哪些、
+                // 什么时候收口、以及怎么记账。
+                .internalToolExecutionEnabled(false);
+        if (callbacks != null && !callbacks.isEmpty()) {
+            optionsBuilder.toolCallbacks(callbacks);
+        }
+
+        long started = System.nanoTime();
+        ChatResponse response;
+        try {
+            response = invoke(targetModel, new Prompt(messages, optionsBuilder.build()), promptSha256);
+        } catch (Exception e) {
+            if (e instanceof GenerationException failure
+                    && failure.getReason() == GenerationException.Reason.SCHEMA_UNAVAILABLE) throw failure;
+            if (e instanceof RequestBudget.Exceeded expired) throw expired;
+            if (e instanceof com.text2sql.agent.budget.DeepSeekOffPeakPolicy.Rejected rejected) throw rejected;
+            com.text2sql.agent.observability.EvaluationTrace.call(null, "CALL_FAILED_" + logTag, promptSha256);
+            throw new GenerationException(GenerationException.Reason.CALL_FAILED,
+                    "模型服务调用失败，请核对服务配置或稍后重试。", e);
+        }
+        long latencyMs = (System.nanoTime() - started) / 1_000_000;
+
+        String raw = extractText(response);
+        LlmCallRecord record = buildRecord(response, promptChars, latencyMs, model);
+        try {
+            requireComplete(response, record);
+        } catch (GenerationException e) {
+            callLog.record(record, e.getReason().name() + "_" + logTag,
+                    "messages[" + messages.size() + "]", raw, promptSha256);
+            throw e;
+        }
+        log.info("LLM [{}] 调用完成：{}", logTag, record.summary());
+        callLog.record(record, logTag, "messages[" + messages.size() + "]", raw, promptSha256);
+        return new AgentTurn(response, record, raw);
+    }
+
+    /**
+     * 一轮 Agent 调用的产物。
+     *
+     * @param response 原始响应，调用方从 {@code getResult().getOutput().getToolCalls()} 判断是否有工具调用
+     * @param call     本轮调用的计量记录
+     * @param raw      模型输出的文本部分（可能为空，例如只有 tool_calls 时）
+     */
+    public record AgentTurn(ChatResponse response, LlmCallRecord call, String raw) {}
+
+    /** 四条调用路径共用配置；provider-default 仅用于审计，绝不能发给供应商。 */
+    private OpenAiChatOptions.Builder optionsBuilder(String model) {
+        if (costQuota.enabled() && !properties.getLlm().getModel().equals(model)) {
+            throw new RequestBudget.Exceeded("MODEL_DISABLED_BY_COST_QUOTA");
+        }
+        var options = OpenAiChatOptions.builder()
+                .model(model)
+                .temperature(properties.getLlm().getTemperature())
+                .maxTokens(properties.getLlm().getMaxTokens());
+        String effort = properties.getLlm().getReasoningEffort();
+        if (!"provider-default".equals(effort)) options.reasoningEffort(effort);
+        return options;
+    }
+
+    /** 只依据服务端结束原因，不凭 token 数猜测截断；完整回答也可能刚好用满预算。 */
+    static void requireComplete(ChatResponse response, LlmCallRecord record) {
+        if (response != null && response.getResult() != null
+                && response.getResult().getMetadata() != null
+                && "length".equalsIgnoreCase(response.getResult().getMetadata().getFinishReason())) {
+            throw new GenerationException(GenerationException.Reason.OUTPUT_TRUNCATED,
+                    "模型输出达到 token 上限，回答被截断；请检查 agent.llm.max-tokens（推理与最终 SQL 共用预算）",
+                    record);
+        }
+    }
+
+    private String extractText(ChatResponse response) {
+        if (response == null || response.getResult() == null) {
+            throw new GenerationException(GenerationException.Reason.CALL_FAILED, "LLM 返回空响应");
+        }
+        AssistantMessage output = response.getResult().getOutput();
+        if (output == null) {
+            return null;
+        }
+        String text = output.getText();
+        if ((text == null || text.isBlank()) && output.getMetadata() != null) {
+            Object reasoning = output.getMetadata().get("reasoning_content");
+            if (reasoning instanceof String rs && !rs.isBlank()) {
+                log.info("LLM 主内容为空，尝试从 reasoning_content 提取 SQL");
+                return rs;
+            }
+        }
+        return text;
+    }
+
+    private LlmCallRecord buildRecord(ChatResponse response, int promptChars, long latencyMs, String model) {
+        Integer in = null;
+        Integer out = null;
+        Integer cacheHit = null;
+        Integer cacheMiss = null;
+        ChatResponseMetadata metadata = response.getMetadata();
+        if (metadata != null) {
+            Usage usage = metadata.getUsage();
+            if (usage != null) {
+                in = usage.getPromptTokens();
+                out = usage.getCompletionTokens();
+                // DeepSeek 在 prompt_tokens_details.cached_tokens 里给出缓存命中数；
+                // Spring AI 的 OpenAiApi.Usage 会把它映射到 PromptTokensDetails。
+                if (usage.getNativeUsage() instanceof OpenAiApi.Usage nativeUsage
+                        && nativeUsage.promptTokensDetails() != null) {
+                    cacheHit = nativeUsage.promptTokensDetails().cachedTokens();
+                    if (cacheHit != null && in != null) {
+                        cacheMiss = Math.max(0, in - cacheHit);
+                    }
+                }
+            }
+        }
+        return LlmCallRecord.of(model, in, out, cacheHit, cacheMiss, promptChars, latencyMs,
+                properties.getLlm().getInputPricePer1k(),
+                properties.getLlm().getOutputPricePer1k(),
+                properties.getLlm().getCacheHitPricePer1k());
+    }
+
+    /**
+     * 手工装配 OpenAI 兼容客户端。
+     *
+     * <p>关键点：{@code baseUrl} 可配置，所以同一份代码既能连 OpenAI，
+     * 也能连 DeepSeek（https://api.deepseek.com）、通义兼容模式、本地 vLLM。
+     * 这是「OpenAI 兼容协议」这个事实带来的杠杆——换供应商不用改代码。
+     *
+     * <p>超时单独设置：默认的 RestClient 没有读超时，一次模型卡住会让
+     * 整个评估运行器挂在那里，而评估要跑 200 次。给一个明确的 60 秒上限，
+     * 失败就记一次失败，继续下一条。
+     */
+    private ChatResponse invoke(ChatModel model, Prompt prompt, String hash) {
+        // All model paths converge here, including failures before a tool callback runs.
+        // An unsent catalog failure must create neither a cost reservation nor a call.
+        // Keep this independent of RequestBudget/CostQuota switches and BYOK resolution.
+        try {
+            authorizedCatalog.require();
+        } catch (BusinessSchemaUnavailableException unavailable) {
+            throw new GenerationException(GenerationException.Reason.SCHEMA_UNAVAILABLE,
+                    unavailable.getMessage(), unavailable);
+        }
+        boolean guarded = model instanceof OpenAiChatModel
+                && com.text2sql.agent.budget.DeepSeekOffPeakPolicy.appliesTo(
+                java.net.URI.create(properties.getLlm().getBaseUrl()), prompt.getOptions().getModel());
+        var horizon = com.text2sql.agent.budget.DeepSeekOffPeakPolicy.horizon(properties.getLlm().getTimeoutSeconds());
+        if (guarded) offPeak.requireAllowed(horizon);
+        RequestBudget budget = RequestBudget.current();
+        try (var lease = costQuota.reserve(budget == null ? java.util.UUID.randomUUID().toString() : budget.id(),
+                budget == null ? 1 : budget.callNumber() + 1, hash)) {
+            try {
+                if (guarded) offPeak.requireAllowed(horizon);
+                if (budget != null) budget.startModelCall(hash);
+            } catch (RuntimeException rejectedBeforeTransport) {
+                lease.cancelUnsent();
+                throw rejectedBeforeTransport;
+            }
+            try {
+                ChatResponse response = model.call(prompt);
+                lease.complete(response);
+                return response;
+            } catch (com.text2sql.agent.budget.DeepSeekOffPeakPolicy.Rejected unsent) {
+                lease.cancelUnsent();
+                throw unsent;
+            }
+        }
+    }
+
+    private static ChatModel buildChatModel(AgentProperties properties, String apiKey) {
+        if (!StringUtils.hasText(apiKey)) {
+            return null;
+        }
+        var requestFactory = new BudgetHttpRequestFactory(properties.getLlm().getTimeoutSeconds(),
+                com.text2sql.agent.budget.DeepSeekOffPeakPolicy.appliesTo(
+                        java.net.URI.create(properties.getLlm().getBaseUrl()), properties.getLlm().getModel()));
+
+        OpenAiApi api = OpenAiApi.builder()
+                .baseUrl(properties.getLlm().getBaseUrl())
+                .completionsPath(properties.getLlm().getCompletionsPath())
+                .apiKey(apiKey)
+                .restClientBuilder(RestClient.builder().requestFactory(requestFactory))
+                .build();
+
+        return OpenAiChatModel.builder()
+                .openAiApi(api)
+                .retryTemplate(org.springframework.retry.support.RetryTemplate.builder().maxAttempts(1).build())
+                .defaultOptions(OpenAiChatOptions.builder()
+                        .model(properties.getLlm().getModel())
+                        .temperature(properties.getLlm().getTemperature())
+                        .build())
+                .build();
+    }
+}

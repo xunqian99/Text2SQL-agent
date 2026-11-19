@@ -1,0 +1,44 @@
+{
+  "submission": 4,
+  "decision": "REJECT",
+  "stageBAccepted": false,
+  "b0Established": false,
+  "paidEvaluationAdmitted": false,
+  "candidateSourceCommit": "9d0c3908ec461f2d92821e5a41d9aa42a6b50390",
+  "candidateJarSha256": "187b7ccf081c0449cc9c78b9af0ddb510a31acc4839993337e2c1622c279d389",
+  "blockingFinding": "B-04: nonnull ChatResponse with empty choices and known metadata usage is charged by CostQuota but loses the known call record before extractText failure reaches AgentLoop/orchestrator",
+  "batches": [
+    {"name":"original-101-adapted","total":101,"passed":101,"failed":0,"path":"original-101-results-first.json"},
+    {"name":"complete-real-send-matrix","total":338,"passed":338,"failed":0,"path":"real-send-results-first.json","note":"Prior 12 harness assumptions are corrected; UNPARSEABLE uses actual empty text; qualified missing-column controls stay in scope."},
+    {"name":"supplemental-entry-and-accounting","total":30,"passed":30,"failed":0,"path":"supplemental/supplemental-results-first.json"},
+    {"name":"mandatory-dependency-construction","total":4,"passed":4,"failed":0,"path":"supplemental/supplemental-results-first.json"},
+    {"name":"actual-empty-tool-output","total":4,"passed":4,"failed":0,"path":"empty-tool-output/empty-tool-output-results-first.json"},
+    {"name":"empty-choices-known-usage","total":2,"passed":0,"failed":2,"path":"empty-choices/empty-choices-results-first.json"}
+  ],
+  "independentAssertions": {"total":479,"passed":477,"failed":2,"reruns":0,"notBusinessAccuracy":true},
+  "knownLimitationObservations": {"total":2,"matched":2,"countedAsPassingBAssertions":false,"path":"real-send-results-first.json","note":"Bare unknown column enters mock SAMPLE_QUERY; preserved public preexisting limit, with separate qualified-column rejection controls."},
+  "submission3BlockingCounterexamples": {"total":3,"passed":3,"duplicateUsageObserved":false,"paths":["supplemental/supplemental-results-first.json","empty-tool-output/empty-tool-output-results-first.json"]},
+  "blockingCounterexamples": [
+    {"id":"empty-choices-known-usage-budgetfalse","actualModelCalls":1,"sqlExecutions":0,"explainCalls":0,"expectedKnownPromptTokens":19,"expectedKnownCompletionTokens":7,"expectedKnownTotalTokens":26,"expectedKnownCacheHitTokens":5,"expectedKnownCacheMissTokens":14,"expectedSyntheticCostYuan":0.0351,"responseLlmCall":null,"traceCalls":0},
+    {"id":"empty-choices-known-usage-budgettrue","actualModelCalls":1,"sqlExecutions":0,"explainCalls":0,"expectedKnownTotalTokens":26,"expectedSyntheticCostYuan":0.0351,"responseLlmCall":null,"responseUnknownUsageCalls":1,"traceStatus":"IN_FLIGHT","costQuotaKnownCalls":1,"costQuotaKnownCostYuan":0.0351,"costQuotaUnknownCalls":0,"costQuotaHeldYuan":0}
+  ],
+  "newDangerousObjectAllowancesObserved":0,
+  "identityVerification": {"manifestFiles":524,"sourceAndResourceFiles":255,"compiledFiles":431,"packagedProductionFiles":240,"dependenciesComparedWithP21":79,"drift":0,"finalCompiledDrift":0,"actualFirstMessagesExactlyEqual":400,"submission1EvidenceDrift":0,"submission2EvidenceChecked":396,"submission2EvidenceDrift":0,"submission3ReviewFiles":669,"submission3ReviewDrift":0,"submission3PreservedCompiledFiles":431,"submission3PreservedCompiledDrift":0},
+  "implementationEvidenceVerifiedNotIndependentlyRerun": {"finalMavenSuites":100,"finalMavenTests":1399,"failures":0,"errors":0,"skipped":0,"catalogSendBoundaryTests":166,"catalogValidationTests":47,"goldExecutable":400,"protectedHttpProbeGroups":5},
+  "preexistingBareColumnControl": {"p21AndCandidateSameBehavior":true,"readonlySelectAttempts":2,"sqlStates":["42703","42703"],"returnedRows":0,"databaseConnections":1,"paths":["bare-column-baseline-first.json","bare-column-candidate-first.json","local-readonly-sqlstate-first.json"]},
+  "limitations": [
+    "Known metadata usage cannot legitimately be downgraded to unknown merely because choices are empty; this is the blocking contract failure.",
+    "Bare columns, derived relation typing and cross-scope aliases retain the documented preexisting static-analysis limits.",
+    "Catalog remains a process snapshot, not a live DB/DDL/authorization refresh.",
+    "Full Maven, Gold400 and protected HTTP evidence were verified as fixed implementation evidence, not independently rerun.",
+    "No model accuracy, real provider P95 or provider cost improvement was measured."
+  ],
+  "providerCalls":0,
+  "providerTokens":0,
+  "providerCostYuan":0,
+  "readBlindOrHoldout":false,
+  "modifiedProductionSourcesOrExistingTests":false,
+  "modifiedReferencesScoringOrThresholds":false,
+  "gitCommitPerformed":false,
+  "priorRejectionsPreserved":true
+}
