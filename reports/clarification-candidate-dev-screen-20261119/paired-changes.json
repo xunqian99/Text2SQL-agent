@@ -1,0 +1,122 @@
+[
+  {
+    "id": "T1-026",
+    "beforeCorrect": true,
+    "afterCorrect": false,
+    "beforeStatus": "SUCCESS",
+    "afterStatus": "SUCCESS",
+    "beforeSql": "SELECT member_id, points\nFROM members\nORDER BY points DESC\nLIMIT 10;",
+    "afterSql": "SELECT member_id, points\nFROM members\nORDER BY points DESC, member_id ASC\nLIMIT 10;",
+    "firstPromptUnchanged": true
+  },
+  {
+    "id": "T2-030",
+    "beforeCorrect": false,
+    "afterCorrect": true,
+    "beforeStatus": "SUCCESS",
+    "afterStatus": "SUCCESS",
+    "beforeSql": "SELECT tc.category_name, COUNT(st.ticket_id) AS ticket_count\nFROM support_tickets st\nLEFT JOIN ticket_categories tc ON tc.category_id = st.category_id\nGROUP BY tc.category_id, tc.category_name\nORDER BY ticket_count DESC\nLIMIT 100;",
+    "afterSql": "SELECT tc.category_id, COUNT(st.ticket_id) AS ticket_count\nFROM ticket_categories tc\nLEFT JOIN support_tickets st ON st.category_id = tc.category_id\nGROUP BY tc.category_id\nORDER BY ticket_count DESC\nLIMIT 100;",
+    "firstPromptUnchanged": true
+  },
+  {
+    "id": "T3-008",
+    "beforeCorrect": false,
+    "afterCorrect": true,
+    "beforeStatus": "SUCCESS",
+    "afterStatus": "SUCCESS",
+    "beforeSql": "SELECT DATE_TRUNC('month', o.order_purchase_timestamp) AS month,\n       ROUND(SUM(oi.price)::numeric / NULLIF(COUNT(DISTINCT o.order_id), 0), 2) AS avg_order_amount\nFROM orders o\nJOIN order_items oi ON oi.order_id = o.order_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable')\nGROUP BY 1\nORDER BY 1\nLIMIT 100;",
+    "afterSql": "SELECT DATE_TRUNC('month', o.order_purchase_timestamp) AS month,\n       ROUND(AVG(order_totals.order_amount), 2) AS avg_order_amount\nFROM (\n    SELECT order_id, SUM(price) AS order_amount\n    FROM order_items\n    GROUP BY order_id\n) AS order_totals\nJOIN orders o ON o.order_id = order_totals.order_id\nGROUP BY 1\nORDER BY 1\nLIMIT 1000;",
+    "firstPromptUnchanged": false
+  },
+  {
+    "id": "T3-028",
+    "beforeCorrect": true,
+    "afterCorrect": false,
+    "beforeStatus": "SUCCESS",
+    "afterStatus": "SUCCESS",
+    "beforeSql": "SELECT COUNT(*) AS member_count\nFROM members\nWHERE last_login_date > (SELECT MAX(last_login_date) FROM members) - INTERVAL '30 days'\n  AND last_login_date <= (SELECT MAX(last_login_date) FROM members);",
+    "afterSql": "SELECT COUNT(*) AS member_count\nFROM members\nWHERE last_login_date >= (SELECT MAX(last_login_date) FROM members) - INTERVAL '30 days';",
+    "firstPromptUnchanged": true
+  },
+  {
+    "id": "T4-001",
+    "beforeCorrect": true,
+    "afterCorrect": false,
+    "beforeStatus": "SUCCESS",
+    "afterStatus": "SUCCESS",
+    "beforeSql": "SELECT c.customer_unique_id, COUNT(DISTINCT o.order_id) AS order_count\nFROM customers c\nJOIN orders o ON o.customer_id = c.customer_id\nGROUP BY c.customer_unique_id\nORDER BY order_count DESC\nLIMIT 10;",
+    "afterSql": "SELECT c.customer_unique_id, COUNT(DISTINCT o.order_id) AS order_count\nFROM customers c\nJOIN orders o ON o.customer_id = c.customer_id\nGROUP BY c.customer_unique_id\nORDER BY order_count DESC, c.customer_unique_id\nLIMIT 10;",
+    "firstPromptUnchanged": true
+  },
+  {
+    "id": "T4-010",
+    "beforeCorrect": false,
+    "afterCorrect": true,
+    "beforeStatus": "SUCCESS",
+    "afterStatus": "SUCCESS",
+    "beforeSql": "SELECT o.order_status, ROUND(COALESCE(SUM(oi.price), 0), 2) AS total_sales\nFROM orders o\nLEFT JOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY o.order_status\nLIMIT 100;",
+    "afterSql": "SELECT o.order_status, ROUND(SUM(oi.price), 2) AS total_sales\nFROM orders o\nJOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY o.order_status\nORDER BY total_sales DESC\nLIMIT 100;",
+    "firstPromptUnchanged": true
+  },
+  {
+    "id": "T4-025",
+    "beforeCorrect": true,
+    "afterCorrect": false,
+    "beforeStatus": "SUCCESS",
+    "afterStatus": "SUCCESS",
+    "beforeSql": "SELECT r.macro_region, SUM(w.capacity) AS total_capacity\nFROM warehouses w\nJOIN regions r ON r.region_code = w.region_code\nGROUP BY r.macro_region\nLIMIT 100;",
+    "afterSql": "SELECT r.macro_region, COALESCE(SUM(w.capacity), 0) AS total_capacity\nFROM regions r\nLEFT JOIN warehouses w ON w.region_code = r.region_code\nGROUP BY r.macro_region\nORDER BY r.macro_region\nLIMIT 100;",
+    "firstPromptUnchanged": true
+  },
+  {
+    "id": "T4-036",
+    "beforeCorrect": false,
+    "afterCorrect": true,
+    "beforeStatus": "REQUEST_TIMEOUT",
+    "afterStatus": "SUCCESS",
+    "beforeSql": null,
+    "afterSql": "-- 按州统计：总消费金额 / 该州下单客户身份去重数 = 人均消费\nSELECT\n  c.customer_state,\n  ROUND(SUM(oi.price) / COUNT(DISTINCT c.customer_unique_id), 2) AS avg_customer_spend\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY c.customer_state\nORDER BY avg_customer_spend DESC\nLIMIT 100;",
+    "firstPromptUnchanged": true
+  },
+  {
+    "id": "T5-002",
+    "beforeCorrect": true,
+    "afterCorrect": false,
+    "beforeStatus": "SUCCESS",
+    "afterStatus": "REQUEST_TIMEOUT",
+    "beforeSql": "SELECT ml.level_name, ROUND(COALESCE(SUM(oi.price), 0), 2) AS sales_amount\nFROM member_levels ml\nLEFT JOIN members m ON m.level_id = ml.level_id\nLEFT JOIN customers c ON c.customer_unique_id = m.customer_unique_id\nLEFT JOIN orders o ON o.customer_id = c.customer_id\nLEFT JOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY ml.level_id, ml.level_name\nORDER BY sales_amount DESC\nLIMIT 100;",
+    "afterSql": null,
+    "firstPromptUnchanged": true
+  },
+  {
+    "id": "T5-006",
+    "beforeCorrect": true,
+    "afterCorrect": false,
+    "beforeStatus": "SUCCESS",
+    "afterStatus": "REQUEST_TIMEOUT",
+    "beforeSql": "SELECT c.customer_state, ml.level_name, COUNT(*) AS ticket_count\nFROM support_tickets st\nJOIN ticket_categories tc ON tc.category_id = st.category_id\nJOIN orders o ON o.order_id = st.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN members m ON m.member_id = st.member_id\nJOIN member_levels ml ON ml.level_id = m.level_id\nWHERE tc.category_name = '物流延迟'\nGROUP BY c.customer_state, ml.level_id, ml.level_name\nORDER BY ticket_count DESC, c.customer_state, ml.level_name\nLIMIT 20;",
+    "afterSql": null,
+    "firstPromptUnchanged": true
+  },
+  {
+    "id": "T5-017",
+    "beforeCorrect": false,
+    "afterCorrect": true,
+    "beforeStatus": "REQUEST_TIMEOUT",
+    "afterStatus": "SUCCESS",
+    "beforeSql": null,
+    "afterSql": "SELECT tc.category_name,\n       st.priority,\n       COUNT(DISTINCT st.ticket_id) AS ticket_count,\n       COUNT(tm.message_id) AS message_count\nFROM support_tickets st\nJOIN ticket_categories tc ON tc.category_id = st.category_id\nLEFT JOIN ticket_messages tm ON tm.ticket_id = st.ticket_id\nGROUP BY tc.category_name, st.priority\nLIMIT 1000;",
+    "firstPromptUnchanged": true
+  },
+  {
+    "id": "T6-009",
+    "beforeCorrect": true,
+    "afterCorrect": false,
+    "beforeStatus": "SUCCESS",
+    "afterStatus": "REQUEST_TIMEOUT",
+    "beforeSql": "SELECT c.customer_state,\n       ROUND(100.0 * COUNT(*) FILTER (WHERE r.review_score <= 2) / NULLIF(COUNT(*), 0), 2) AS low_score_rate\nFROM order_reviews r\nJOIN orders o ON o.order_id = r.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable')\nGROUP BY c.customer_state\nORDER BY low_score_rate DESC\nLIMIT 10;",
+    "afterSql": null,
+    "firstPromptUnchanged": true
+  }
+]

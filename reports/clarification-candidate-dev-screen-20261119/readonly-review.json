@@ -1,0 +1,3306 @@
+{
+  "format": "clarification-readonly-review-v1",
+  "reviewedAt": "2026-11-19T01:05:21.623475+00:00",
+  "measuredCommit": "d084170f7a3c74a3e445b648a60ef0aa9903cf8c",
+  "reportSha256": "6d7629616a57d67c21d43460246ff79d2893420de9f8883101f2a4e9cfe83e2a",
+  "executedFailureCount": 14,
+  "readonlyStatements": 54,
+  "categoryCounts": {
+    "top_k_ties": 2,
+    "projection": 4,
+    "time_boundary": 1,
+    "display_and_population": 1,
+    "population": 2,
+    "display": 2,
+    "projection_and_null_population": 1,
+    "extra_reference_join": 1
+  },
+  "diagnostics": [
+    {
+      "name": "member_login_boundary",
+      "sql": "SELECT MAX(last_login_date) AS anchor,\n       COUNT(*) FILTER (WHERE last_login_date=(SELECT MAX(last_login_date) FROM members)-30) AS at_lower,\n       COUNT(*) FILTER (WHERE last_login_date>(SELECT MAX(last_login_date) FROM members)-30) AS exclusive_count,\n       COUNT(*) FILTER (WHERE last_login_date>=(SELECT MAX(last_login_date) FROM members)-30) AS inclusive_count\n       FROM members",
+      "rows": [
+        {
+          "anchor": "2018-10-23",
+          "at_lower": 137,
+          "exclusive_count": 4321,
+          "inclusive_count": 4458
+        }
+      ]
+    },
+    {
+      "name": "member_top10_cutoff",
+      "sql": "WITH cutoff AS (SELECT points FROM members ORDER BY points DESC OFFSET 9 LIMIT 1)\n       SELECT (SELECT points FROM cutoff) AS cutoff,\n       COUNT(*) FILTER (WHERE points>(SELECT points FROM cutoff)) AS strictly_above,\n       COUNT(*) FILTER (WHERE points=(SELECT points FROM cutoff)) AS tied_at_cutoff FROM members",
+      "rows": [
+        {
+          "cutoff": 4999,
+          "strictly_above": 6,
+          "tied_at_cutoff": 20
+        }
+      ]
+    },
+    {
+      "name": "customer_top10_cutoff",
+      "sql": "WITH counts AS (SELECT c.customer_unique_id,COUNT(*) AS n\n       FROM orders o JOIN customers c ON c.customer_id=o.customer_id GROUP BY 1),\n       cutoff AS (SELECT n FROM counts ORDER BY n DESC OFFSET 9 LIMIT 1)\n       SELECT (SELECT n FROM cutoff) AS cutoff,\n       COUNT(*) FILTER(WHERE n>(SELECT n FROM cutoff)) AS strictly_above,\n       COUNT(*) FILTER(WHERE n=(SELECT n FROM cutoff)) AS tied_at_cutoff FROM counts",
+      "rows": [
+        {
+          "cutoff": 6,
+          "strictly_above": 5,
+          "tied_at_cutoff": 6
+        }
+      ]
+    },
+    {
+      "name": "regions_without_warehouses",
+      "sql": "SELECT r.macro_region, COUNT(*) AS regions\n       FROM regions r WHERE NOT EXISTS(SELECT 1 FROM warehouses w WHERE w.region_code=r.region_code)\n       GROUP BY r.macro_region ORDER BY 1",
+      "rows": [
+        {
+          "macro_region": "Centro-Oeste",
+          "regions": 4
+        },
+        {
+          "macro_region": "Nordeste",
+          "regions": 8
+        },
+        {
+          "macro_region": "Norte",
+          "regions": 7
+        },
+        {
+          "macro_region": "Sudeste",
+          "regions": 1
+        },
+        {
+          "macro_region": "Sul",
+          "regions": 2
+        }
+      ]
+    },
+    {
+      "name": "shipments_without_tracking",
+      "sql": "SELECT s.status,COUNT(*) AS shipments FROM shipments s\n       WHERE NOT EXISTS(SELECT 1 FROM shipment_tracking t WHERE t.shipment_id=s.shipment_id)\n       GROUP BY s.status ORDER BY 1",
+      "rows": [
+        {
+          "status": 1,
+          "shipments": 618
+        },
+        {
+          "status": 3,
+          "shipments": 1
+        }
+      ]
+    },
+    {
+      "name": "campaigns_without_usages",
+      "sql": "SELECT c.campaign_id,c.campaign_name FROM campaigns c\n       WHERE NOT EXISTS(SELECT 1 FROM coupons p JOIN coupon_usages u ON u.coupon_id=p.coupon_id\n       WHERE p.campaign_id=c.campaign_id) ORDER BY 1",
+      "rows": []
+    },
+    {
+      "name": "unknown_weights",
+      "sql": "SELECT product_category_name,COUNT(*) AS all_products,\n       COUNT(product_weight_g) AS known_weights FROM products WHERE product_category_name IS NOT NULL\n       GROUP BY 1 HAVING COUNT(*)<>COUNT(product_weight_g) ORDER BY all_products DESC",
+      "rows": [
+        {
+          "product_category_name": "bebes",
+          "all_products": 919,
+          "known_weights": 918
+        }
+      ]
+    },
+    {
+      "name": "tracking_excluded_by_reference_item_join",
+      "sql": "SELECT COUNT(*) AS tracking_records,\n       COUNT(DISTINCT s.shipment_id) AS shipments FROM shipment_tracking st\n       JOIN shipments s ON s.shipment_id=st.shipment_id JOIN orders o ON o.order_id=s.order_id\n       WHERE NOT EXISTS(SELECT 1 FROM order_items oi WHERE oi.order_id=o.order_id)",
+      "rows": [
+        {
+          "tracking_records": 3,
+          "shipments": 1
+        }
+      ]
+    },
+    {
+      "name": "shipment_missing_order_or_customer",
+      "sql": "SELECT COUNT(*) AS shipments,\n       COUNT(*) FILTER(WHERE o.order_id IS NULL) AS missing_orders,\n       COUNT(*) FILTER(WHERE o.order_id IS NOT NULL AND c.customer_id IS NULL) AS missing_customers\n       FROM shipments s LEFT JOIN orders o ON o.order_id=s.order_id\n       LEFT JOIN customers c ON c.customer_id=o.customer_id",
+      "rows": [
+        {
+          "shipments": 98202,
+          "missing_orders": 0,
+          "missing_customers": 0
+        }
+      ]
+    },
+    {
+      "name": "duplicate_display_names",
+      "sql": "SELECT 'warehouses' AS source,COUNT(*)-COUNT(DISTINCT warehouse_name) AS duplicates\n       FROM warehouses UNION ALL SELECT 'campaigns',COUNT(*)-COUNT(DISTINCT campaign_name) FROM campaigns\n       UNION ALL SELECT 'regions',COUNT(*)-COUNT(DISTINCT region_name) FROM regions",
+      "rows": [
+        {
+          "source": "warehouses",
+          "duplicates": 0
+        },
+        {
+          "source": "campaigns",
+          "duplicates": 0
+        },
+        {
+          "source": "regions",
+          "duplicates": 0
+        }
+      ]
+    }
+  ],
+  "items": [
+    {
+      "id": "T1-026",
+      "question": "积分最高的 10 个会员是谁？",
+      "category": "top_k_ties",
+      "frozenStrictCorrect": false,
+      "actualSql": "SELECT member_id, points\nFROM members\nORDER BY points DESC, member_id ASC\nLIMIT 10",
+      "goldSql": "SELECT member_id, points FROM members ORDER BY points DESC LIMIT 10",
+      "actualRows": [
+        {
+          "member_id": 101665,
+          "points": 5000
+        },
+        {
+          "member_id": 112521,
+          "points": 5000
+        },
+        {
+          "member_id": 120654,
+          "points": 5000
+        },
+        {
+          "member_id": 153282,
+          "points": 5000
+        },
+        {
+          "member_id": 165825,
+          "points": 5000
+        },
+        {
+          "member_id": 188328,
+          "points": 5000
+        },
+        {
+          "member_id": 100592,
+          "points": 4999
+        },
+        {
+          "member_id": 105142,
+          "points": 4999
+        },
+        {
+          "member_id": 117497,
+          "points": 4999
+        },
+        {
+          "member_id": 119338,
+          "points": 4999
+        }
+      ],
+      "goldRows": [
+        {
+          "member_id": 112521,
+          "points": 5000
+        },
+        {
+          "member_id": 165825,
+          "points": 5000
+        },
+        {
+          "member_id": 188328,
+          "points": 5000
+        },
+        {
+          "member_id": 101665,
+          "points": 5000
+        },
+        {
+          "member_id": 120654,
+          "points": 5000
+        },
+        {
+          "member_id": 153282,
+          "points": 5000
+        },
+        {
+          "member_id": 174231,
+          "points": 4999
+        },
+        {
+          "member_id": 161204,
+          "points": 4999
+        },
+        {
+          "member_id": 170447,
+          "points": 4999
+        },
+        {
+          "member_id": 151869,
+          "points": 4999
+        }
+      ],
+      "sameMultisetIgnoringOrder": false,
+      "diagnosticTargetSql": "SELECT member_id, points FROM members ORDER BY points DESC LIMIT 10",
+      "sameMultisetAfterReferenceProjection": false,
+      "variants": []
+    },
+    {
+      "id": "T1-028",
+      "question": "容量最大的仓库是哪一个？",
+      "category": "projection",
+      "frozenStrictCorrect": false,
+      "actualSql": "SELECT warehouse_id, warehouse_name\nFROM warehouses\nORDER BY capacity DESC\nLIMIT 1",
+      "goldSql": "SELECT warehouse_id, warehouse_name, capacity\nFROM warehouses ORDER BY capacity DESC LIMIT 1",
+      "actualRows": [
+        {
+          "warehouse_id": 1,
+          "warehouse_name": "圣保罗中心仓"
+        }
+      ],
+      "goldRows": [
+        {
+          "warehouse_id": 1,
+          "warehouse_name": "圣保罗中心仓",
+          "capacity": 50000
+        }
+      ],
+      "sameMultisetIgnoringOrder": false,
+      "diagnosticTargetSql": "SELECT warehouse_id,warehouse_name FROM (SELECT warehouse_id, warehouse_name, capacity\nFROM warehouses ORDER BY capacity DESC LIMIT 1) q",
+      "sameMultisetAfterReferenceProjection": true,
+      "variants": []
+    },
+    {
+      "id": "T2-036",
+      "question": "商品数量超过 1500 个的类目有哪些？",
+      "category": "projection",
+      "frozenStrictCorrect": false,
+      "actualSql": "SELECT product_category_name\nFROM products\nWHERE product_category_name IS NOT NULL\nGROUP BY product_category_name\nHAVING COUNT(*) > 1500\nORDER BY product_category_name\nLIMIT 100",
+      "goldSql": "SELECT product_category_name, COUNT(*) AS cnt\nFROM products\nWHERE product_category_name IS NOT NULL\nGROUP BY product_category_name\nHAVING COUNT(*) > 1500\nORDER BY cnt DESC",
+      "actualRows": [
+        {
+          "product_category_name": "automotivo"
+        },
+        {
+          "product_category_name": "beleza_saude"
+        },
+        {
+          "product_category_name": "cama_mesa_banho"
+        },
+        {
+          "product_category_name": "esporte_lazer"
+        },
+        {
+          "product_category_name": "informatica_acessorios"
+        },
+        {
+          "product_category_name": "moveis_decoracao"
+        },
+        {
+          "product_category_name": "utilidades_domesticas"
+        }
+      ],
+      "goldRows": [
+        {
+          "product_category_name": "cama_mesa_banho",
+          "cnt": 3029
+        },
+        {
+          "product_category_name": "esporte_lazer",
+          "cnt": 2867
+        },
+        {
+          "product_category_name": "moveis_decoracao",
+          "cnt": 2657
+        },
+        {
+          "product_category_name": "beleza_saude",
+          "cnt": 2444
+        },
+        {
+          "product_category_name": "utilidades_domesticas",
+          "cnt": 2335
+        },
+        {
+          "product_category_name": "automotivo",
+          "cnt": 1900
+        },
+        {
+          "product_category_name": "informatica_acessorios",
+          "cnt": 1639
+        }
+      ],
+      "sameMultisetIgnoringOrder": false,
+      "diagnosticTargetSql": "SELECT product_category_name FROM (SELECT product_category_name, COUNT(*) AS cnt\nFROM products\nWHERE product_category_name IS NOT NULL\nGROUP BY product_category_name\nHAVING COUNT(*) > 1500\nORDER BY cnt DESC) q",
+      "sameMultisetAfterReferenceProjection": true,
+      "variants": []
+    },
+    {
+      "id": "T3-011",
+      "question": "每个月的订单量环比增长率是多少？",
+      "category": "projection",
+      "frozenStrictCorrect": false,
+      "actualSql": "WITH monthly_orders AS (\n  SELECT DATE_TRUNC('month', order_purchase_timestamp) AS month,\n         COUNT(*) AS order_cnt\n  FROM orders\n  GROUP BY 1\n)\nSELECT month,\n       ROUND(\n         (order_cnt - LAG(order_cnt) OVER (ORDER BY month))::numeric\n         / NULLIF(LAG(order_cnt) OVER (ORDER BY month), 0),\n         4\n       ) AS mom_growth_rate\nFROM monthly_orders\nORDER BY month\nLIMIT 100",
+      "goldSql": "WITH monthly AS (\n  SELECT DATE_TRUNC('month', order_purchase_timestamp) AS m, COUNT(*) AS cnt\n  FROM orders GROUP BY 1\n)\nSELECT m AS month,\n       cnt,\n       ROUND((cnt - LAG(cnt) OVER (ORDER BY m))::NUMERIC\n             / NULLIF(LAG(cnt) OVER (ORDER BY m), 0), 4) AS mom_rate\nFROM monthly ORDER BY m",
+      "actualRows": [
+        {
+          "month": "2016-09-01T00:00:00",
+          "mom_growth_rate": null
+        },
+        {
+          "month": "2016-10-01T00:00:00",
+          "mom_growth_rate": "80.0000"
+        },
+        {
+          "month": "2016-12-01T00:00:00",
+          "mom_growth_rate": "-0.9969"
+        },
+        {
+          "month": "2017-01-01T00:00:00",
+          "mom_growth_rate": "799.0000"
+        },
+        {
+          "month": "2017-02-01T00:00:00",
+          "mom_growth_rate": "1.2250"
+        },
+        {
+          "month": "2017-03-01T00:00:00",
+          "mom_growth_rate": "0.5067"
+        },
+        {
+          "month": "2017-04-01T00:00:00",
+          "mom_growth_rate": "-0.1037"
+        },
+        {
+          "month": "2017-05-01T00:00:00",
+          "mom_growth_rate": "0.5391"
+        },
+        {
+          "month": "2017-06-01T00:00:00",
+          "mom_growth_rate": "-0.1230"
+        },
+        {
+          "month": "2017-07-01T00:00:00",
+          "mom_growth_rate": "0.2407"
+        },
+        {
+          "month": "2017-08-01T00:00:00",
+          "mom_growth_rate": "0.0758"
+        },
+        {
+          "month": "2017-09-01T00:00:00",
+          "mom_growth_rate": "-0.0106"
+        },
+        {
+          "month": "2017-10-01T00:00:00",
+          "mom_growth_rate": "0.0807"
+        },
+        {
+          "month": "2017-11-01T00:00:00",
+          "mom_growth_rate": "0.6290"
+        },
+        {
+          "month": "2017-12-01T00:00:00",
+          "mom_growth_rate": "-0.2480"
+        },
+        {
+          "month": "2018-01-01T00:00:00",
+          "mom_growth_rate": "0.2813"
+        },
+        {
+          "month": "2018-02-01T00:00:00",
+          "mom_growth_rate": "-0.0744"
+        },
+        {
+          "month": "2018-03-01T00:00:00",
+          "mom_growth_rate": "0.0718"
+        },
+        {
+          "month": "2018-04-01T00:00:00",
+          "mom_growth_rate": "-0.0377"
+        },
+        {
+          "month": "2018-05-01T00:00:00",
+          "mom_growth_rate": "-0.0095"
+        },
+        {
+          "month": "2018-06-01T00:00:00",
+          "mom_growth_rate": "-0.1027"
+        },
+        {
+          "month": "2018-07-01T00:00:00",
+          "mom_growth_rate": "0.0203"
+        },
+        {
+          "month": "2018-08-01T00:00:00",
+          "mom_growth_rate": "0.0350"
+        },
+        {
+          "month": "2018-09-01T00:00:00",
+          "mom_growth_rate": "-0.9975"
+        },
+        {
+          "month": "2018-10-01T00:00:00",
+          "mom_growth_rate": "-0.7500"
+        }
+      ],
+      "goldRows": [
+        {
+          "month": "2016-09-01T00:00:00",
+          "cnt": 4,
+          "mom_rate": null
+        },
+        {
+          "month": "2016-10-01T00:00:00",
+          "cnt": 324,
+          "mom_rate": "80.0000"
+        },
+        {
+          "month": "2016-12-01T00:00:00",
+          "cnt": 1,
+          "mom_rate": "-0.9969"
+        },
+        {
+          "month": "2017-01-01T00:00:00",
+          "cnt": 800,
+          "mom_rate": "799.0000"
+        },
+        {
+          "month": "2017-02-01T00:00:00",
+          "cnt": 1780,
+          "mom_rate": "1.2250"
+        },
+        {
+          "month": "2017-03-01T00:00:00",
+          "cnt": 2682,
+          "mom_rate": "0.5067"
+        },
+        {
+          "month": "2017-04-01T00:00:00",
+          "cnt": 2404,
+          "mom_rate": "-0.1037"
+        },
+        {
+          "month": "2017-05-01T00:00:00",
+          "cnt": 3700,
+          "mom_rate": "0.5391"
+        },
+        {
+          "month": "2017-06-01T00:00:00",
+          "cnt": 3245,
+          "mom_rate": "-0.1230"
+        },
+        {
+          "month": "2017-07-01T00:00:00",
+          "cnt": 4026,
+          "mom_rate": "0.2407"
+        },
+        {
+          "month": "2017-08-01T00:00:00",
+          "cnt": 4331,
+          "mom_rate": "0.0758"
+        },
+        {
+          "month": "2017-09-01T00:00:00",
+          "cnt": 4285,
+          "mom_rate": "-0.0106"
+        },
+        {
+          "month": "2017-10-01T00:00:00",
+          "cnt": 4631,
+          "mom_rate": "0.0807"
+        },
+        {
+          "month": "2017-11-01T00:00:00",
+          "cnt": 7544,
+          "mom_rate": "0.6290"
+        },
+        {
+          "month": "2017-12-01T00:00:00",
+          "cnt": 5673,
+          "mom_rate": "-0.2480"
+        },
+        {
+          "month": "2018-01-01T00:00:00",
+          "cnt": 7269,
+          "mom_rate": "0.2813"
+        },
+        {
+          "month": "2018-02-01T00:00:00",
+          "cnt": 6728,
+          "mom_rate": "-0.0744"
+        },
+        {
+          "month": "2018-03-01T00:00:00",
+          "cnt": 7211,
+          "mom_rate": "0.0718"
+        },
+        {
+          "month": "2018-04-01T00:00:00",
+          "cnt": 6939,
+          "mom_rate": "-0.0377"
+        },
+        {
+          "month": "2018-05-01T00:00:00",
+          "cnt": 6873,
+          "mom_rate": "-0.0095"
+        },
+        {
+          "month": "2018-06-01T00:00:00",
+          "cnt": 6167,
+          "mom_rate": "-0.1027"
+        },
+        {
+          "month": "2018-07-01T00:00:00",
+          "cnt": 6292,
+          "mom_rate": "0.0203"
+        },
+        {
+          "month": "2018-08-01T00:00:00",
+          "cnt": 6512,
+          "mom_rate": "0.0350"
+        },
+        {
+          "month": "2018-09-01T00:00:00",
+          "cnt": 16,
+          "mom_rate": "-0.9975"
+        },
+        {
+          "month": "2018-10-01T00:00:00",
+          "cnt": 4,
+          "mom_rate": "-0.7500"
+        }
+      ],
+      "sameMultisetIgnoringOrder": false,
+      "diagnosticTargetSql": "SELECT month,mom_rate FROM (WITH monthly AS (\n  SELECT DATE_TRUNC('month', order_purchase_timestamp) AS m, COUNT(*) AS cnt\n  FROM orders GROUP BY 1\n)\nSELECT m AS month,\n       cnt,\n       ROUND((cnt - LAG(cnt) OVER (ORDER BY m))::NUMERIC\n             / NULLIF(LAG(cnt) OVER (ORDER BY m), 0), 4) AS mom_rate\nFROM monthly ORDER BY m) q",
+      "sameMultisetAfterReferenceProjection": true,
+      "variants": []
+    },
+    {
+      "id": "T3-028",
+      "question": "最近 30 天内有登录记录的会员有多少人？",
+      "category": "time_boundary",
+      "frozenStrictCorrect": false,
+      "actualSql": "SELECT COUNT(*) AS member_count\nFROM members\nWHERE last_login_date >= (SELECT MAX(last_login_date) FROM members) - INTERVAL '30 days'",
+      "goldSql": "SELECT COUNT(*) FROM members\nWHERE last_login_date > (SELECT MAX(last_login_date) FROM members) - 30",
+      "actualRows": [
+        {
+          "member_count": 4458
+        }
+      ],
+      "goldRows": [
+        {
+          "count": 4321
+        }
+      ],
+      "sameMultisetIgnoringOrder": false,
+      "diagnosticTargetSql": "SELECT COUNT(*) FROM members\nWHERE last_login_date > (SELECT MAX(last_login_date) FROM members) - 30",
+      "sameMultisetAfterReferenceProjection": false,
+      "variants": [
+        {
+          "name": "exclude_lower_boundary",
+          "sql": "SELECT COUNT(*) AS member_count\nFROM members\nWHERE last_login_date > (SELECT MAX(last_login_date) FROM members) - INTERVAL '30 days'",
+          "rows": [
+            {
+              "member_count": 4321
+            }
+          ],
+          "sameMultisetAsDiagnosticTarget": true
+        }
+      ]
+    },
+    {
+      "id": "T4-001",
+      "question": "每个客户的订单数量是多少？取订单最多的 10 个客户。",
+      "category": "top_k_ties",
+      "frozenStrictCorrect": false,
+      "actualSql": "SELECT c.customer_unique_id, COUNT(DISTINCT o.order_id) AS order_count\nFROM customers c\nJOIN orders o ON o.customer_id = c.customer_id\nGROUP BY c.customer_unique_id\nORDER BY order_count DESC, c.customer_unique_id\nLIMIT 10",
+      "goldSql": "SELECT c.customer_unique_id, COUNT(*) AS cnt\nFROM orders o JOIN customers c ON c.customer_id = o.customer_id\nGROUP BY 1 ORDER BY cnt DESC LIMIT 10",
+      "actualRows": [
+        {
+          "customer_unique_id": "8d50f5eadf50201ccdcedfb9e2ac8455",
+          "order_count": 17
+        },
+        {
+          "customer_unique_id": "3e43e6105506432c953e165fb2acf44c",
+          "order_count": 9
+        },
+        {
+          "customer_unique_id": "1b6c7548a2a1f9037c1fd3ddfed95f33",
+          "order_count": 7
+        },
+        {
+          "customer_unique_id": "6469f99c1f9dfae7733b25662e7f1782",
+          "order_count": 7
+        },
+        {
+          "customer_unique_id": "ca77025e7201e3b30c44b472ff346268",
+          "order_count": 7
+        },
+        {
+          "customer_unique_id": "12f5d6e1cbf93dafd9dcc19095df0b3d",
+          "order_count": 6
+        },
+        {
+          "customer_unique_id": "47c1a3033b8b77b3ab6e109eb4d5fdf3",
+          "order_count": 6
+        },
+        {
+          "customer_unique_id": "63cfc61cee11cbe306bff5857d00bfe4",
+          "order_count": 6
+        },
+        {
+          "customer_unique_id": "dc813062e0fc23409cd255f7f53c7074",
+          "order_count": 6
+        },
+        {
+          "customer_unique_id": "de34b16117594161a6a89c50b289d35a",
+          "order_count": 6
+        }
+      ],
+      "goldRows": [
+        {
+          "customer_unique_id": "8d50f5eadf50201ccdcedfb9e2ac8455",
+          "cnt": 17
+        },
+        {
+          "customer_unique_id": "3e43e6105506432c953e165fb2acf44c",
+          "cnt": 9
+        },
+        {
+          "customer_unique_id": "ca77025e7201e3b30c44b472ff346268",
+          "cnt": 7
+        },
+        {
+          "customer_unique_id": "1b6c7548a2a1f9037c1fd3ddfed95f33",
+          "cnt": 7
+        },
+        {
+          "customer_unique_id": "6469f99c1f9dfae7733b25662e7f1782",
+          "cnt": 7
+        },
+        {
+          "customer_unique_id": "63cfc61cee11cbe306bff5857d00bfe4",
+          "cnt": 6
+        },
+        {
+          "customer_unique_id": "12f5d6e1cbf93dafd9dcc19095df0b3d",
+          "cnt": 6
+        },
+        {
+          "customer_unique_id": "f0e310a6839dce9de1638e0fe5ab282a",
+          "cnt": 6
+        },
+        {
+          "customer_unique_id": "de34b16117594161a6a89c50b289d35a",
+          "cnt": 6
+        },
+        {
+          "customer_unique_id": "dc813062e0fc23409cd255f7f53c7074",
+          "cnt": 6
+        }
+      ],
+      "sameMultisetIgnoringOrder": false,
+      "diagnosticTargetSql": "SELECT c.customer_unique_id, COUNT(*) AS cnt\nFROM orders o JOIN customers c ON c.customer_id = o.customer_id\nGROUP BY 1 ORDER BY cnt DESC LIMIT 10",
+      "sameMultisetAfterReferenceProjection": false,
+      "variants": []
+    },
+    {
+      "id": "T4-012",
+      "question": "每个州的评价平均分是多少？取评价数最多的 10 个州。",
+      "category": "projection",
+      "frozenStrictCorrect": false,
+      "actualSql": "SELECT c.customer_state,\n       ROUND(AVG(r.review_score), 2) AS avg_review_score\nFROM order_reviews r\nJOIN orders o ON o.order_id = r.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY c.customer_state\nORDER BY COUNT(*) DESC\nLIMIT 10",
+      "goldSql": "SELECT c.customer_state, ROUND(AVG(r.review_score), 2) AS avg_score, COUNT(*) AS cnt\nFROM order_reviews r\nJOIN orders o ON o.order_id = r.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY 1 ORDER BY cnt DESC LIMIT 10",
+      "actualRows": [
+        {
+          "customer_state": "SP",
+          "avg_review_score": "4.17"
+        },
+        {
+          "customer_state": "RJ",
+          "avg_review_score": "3.87"
+        },
+        {
+          "customer_state": "MG",
+          "avg_review_score": "4.14"
+        },
+        {
+          "customer_state": "RS",
+          "avg_review_score": "4.13"
+        },
+        {
+          "customer_state": "PR",
+          "avg_review_score": "4.18"
+        },
+        {
+          "customer_state": "SC",
+          "avg_review_score": "4.07"
+        },
+        {
+          "customer_state": "BA",
+          "avg_review_score": "3.86"
+        },
+        {
+          "customer_state": "DF",
+          "avg_review_score": "4.06"
+        },
+        {
+          "customer_state": "GO",
+          "avg_review_score": "4.04"
+        },
+        {
+          "customer_state": "ES",
+          "avg_review_score": "4.04"
+        }
+      ],
+      "goldRows": [
+        {
+          "customer_state": "SP",
+          "avg_score": "4.17",
+          "cnt": 41690
+        },
+        {
+          "customer_state": "RJ",
+          "avg_score": "3.87",
+          "cnt": 12765
+        },
+        {
+          "customer_state": "MG",
+          "avg_score": "4.14",
+          "cnt": 11625
+        },
+        {
+          "customer_state": "RS",
+          "avg_score": "4.13",
+          "cnt": 5483
+        },
+        {
+          "customer_state": "PR",
+          "avg_score": "4.18",
+          "cnt": 5038
+        },
+        {
+          "customer_state": "SC",
+          "avg_score": "4.07",
+          "cnt": 3623
+        },
+        {
+          "customer_state": "BA",
+          "avg_score": "3.86",
+          "cnt": 3357
+        },
+        {
+          "customer_state": "DF",
+          "avg_score": "4.06",
+          "cnt": 2148
+        },
+        {
+          "customer_state": "GO",
+          "avg_score": "4.04",
+          "cnt": 2024
+        },
+        {
+          "customer_state": "ES",
+          "avg_score": "4.04",
+          "cnt": 2016
+        }
+      ],
+      "sameMultisetIgnoringOrder": false,
+      "diagnosticTargetSql": "SELECT customer_state,avg_score FROM (SELECT c.customer_state, ROUND(AVG(r.review_score), 2) AS avg_score, COUNT(*) AS cnt\nFROM order_reviews r\nJOIN orders o ON o.order_id = r.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY 1 ORDER BY cnt DESC LIMIT 10) q",
+      "sameMultisetAfterReferenceProjection": true,
+      "variants": []
+    },
+    {
+      "id": "T4-021",
+      "question": "每个活动带来的用券次数是多少？",
+      "category": "display_and_population",
+      "frozenStrictCorrect": false,
+      "actualSql": "SELECT c.campaign_id, COUNT(u.usage_id) AS usage_count\nFROM campaigns c\nLEFT JOIN coupons cp ON cp.campaign_id = c.campaign_id\nLEFT JOIN coupon_usages u ON u.coupon_id = cp.coupon_id\nGROUP BY c.campaign_id\nORDER BY c.campaign_id\nLIMIT 1000",
+      "goldSql": "SELECT c.campaign_name, COUNT(*) AS cnt\nFROM coupon_usages cu\nJOIN coupons cp ON cp.coupon_id = cu.coupon_id\nJOIN campaigns c ON c.campaign_id = cp.campaign_id\nGROUP BY 1 ORDER BY cnt DESC",
+      "actualRows": [
+        {
+          "campaign_id": 1,
+          "usage_count": 191
+        },
+        {
+          "campaign_id": 2,
+          "usage_count": 218
+        },
+        {
+          "campaign_id": 3,
+          "usage_count": 251
+        },
+        {
+          "campaign_id": 4,
+          "usage_count": 260
+        },
+        {
+          "campaign_id": 5,
+          "usage_count": 242
+        },
+        {
+          "campaign_id": 6,
+          "usage_count": 223
+        },
+        {
+          "campaign_id": 7,
+          "usage_count": 249
+        },
+        {
+          "campaign_id": 8,
+          "usage_count": 245
+        },
+        {
+          "campaign_id": 9,
+          "usage_count": 209
+        },
+        {
+          "campaign_id": 10,
+          "usage_count": 225
+        },
+        {
+          "campaign_id": 11,
+          "usage_count": 213
+        },
+        {
+          "campaign_id": 12,
+          "usage_count": 247
+        },
+        {
+          "campaign_id": 13,
+          "usage_count": 240
+        },
+        {
+          "campaign_id": 14,
+          "usage_count": 228
+        },
+        {
+          "campaign_id": 15,
+          "usage_count": 245
+        },
+        {
+          "campaign_id": 16,
+          "usage_count": 272
+        },
+        {
+          "campaign_id": 17,
+          "usage_count": 245
+        },
+        {
+          "campaign_id": 18,
+          "usage_count": 255
+        },
+        {
+          "campaign_id": 19,
+          "usage_count": 244
+        },
+        {
+          "campaign_id": 20,
+          "usage_count": 220
+        },
+        {
+          "campaign_id": 21,
+          "usage_count": 269
+        },
+        {
+          "campaign_id": 22,
+          "usage_count": 238
+        },
+        {
+          "campaign_id": 23,
+          "usage_count": 258
+        },
+        {
+          "campaign_id": 24,
+          "usage_count": 273
+        },
+        {
+          "campaign_id": 25,
+          "usage_count": 256
+        },
+        {
+          "campaign_id": 26,
+          "usage_count": 234
+        },
+        {
+          "campaign_id": 27,
+          "usage_count": 276
+        },
+        {
+          "campaign_id": 28,
+          "usage_count": 218
+        },
+        {
+          "campaign_id": 29,
+          "usage_count": 225
+        },
+        {
+          "campaign_id": 30,
+          "usage_count": 222
+        },
+        {
+          "campaign_id": 31,
+          "usage_count": 221
+        },
+        {
+          "campaign_id": 32,
+          "usage_count": 247
+        },
+        {
+          "campaign_id": 33,
+          "usage_count": 228
+        },
+        {
+          "campaign_id": 34,
+          "usage_count": 236
+        },
+        {
+          "campaign_id": 35,
+          "usage_count": 232
+        },
+        {
+          "campaign_id": 36,
+          "usage_count": 240
+        },
+        {
+          "campaign_id": 37,
+          "usage_count": 269
+        },
+        {
+          "campaign_id": 38,
+          "usage_count": 246
+        },
+        {
+          "campaign_id": 39,
+          "usage_count": 225
+        },
+        {
+          "campaign_id": 40,
+          "usage_count": 232
+        },
+        {
+          "campaign_id": 41,
+          "usage_count": 211
+        },
+        {
+          "campaign_id": 42,
+          "usage_count": 186
+        },
+        {
+          "campaign_id": 43,
+          "usage_count": 205
+        },
+        {
+          "campaign_id": 44,
+          "usage_count": 239
+        },
+        {
+          "campaign_id": 45,
+          "usage_count": 208
+        },
+        {
+          "campaign_id": 46,
+          "usage_count": 206
+        },
+        {
+          "campaign_id": 47,
+          "usage_count": 204
+        },
+        {
+          "campaign_id": 48,
+          "usage_count": 208
+        },
+        {
+          "campaign_id": 49,
+          "usage_count": 225
+        },
+        {
+          "campaign_id": 50,
+          "usage_count": 174
+        },
+        {
+          "campaign_id": 51,
+          "usage_count": 202
+        },
+        {
+          "campaign_id": 52,
+          "usage_count": 219
+        }
+      ],
+      "goldRows": [
+        {
+          "campaign_name": "活动_27",
+          "cnt": 276
+        },
+        {
+          "campaign_name": "活动_24",
+          "cnt": 273
+        },
+        {
+          "campaign_name": "活动_16",
+          "cnt": 272
+        },
+        {
+          "campaign_name": "活动_37",
+          "cnt": 269
+        },
+        {
+          "campaign_name": "活动_21",
+          "cnt": 269
+        },
+        {
+          "campaign_name": "活动_4",
+          "cnt": 260
+        },
+        {
+          "campaign_name": "活动_23",
+          "cnt": 258
+        },
+        {
+          "campaign_name": "活动_25",
+          "cnt": 256
+        },
+        {
+          "campaign_name": "活动_18",
+          "cnt": 255
+        },
+        {
+          "campaign_name": "活动_3",
+          "cnt": 251
+        },
+        {
+          "campaign_name": "活动_7",
+          "cnt": 249
+        },
+        {
+          "campaign_name": "活动_32",
+          "cnt": 247
+        },
+        {
+          "campaign_name": "活动_12",
+          "cnt": 247
+        },
+        {
+          "campaign_name": "活动_38",
+          "cnt": 246
+        },
+        {
+          "campaign_name": "活动_15",
+          "cnt": 245
+        },
+        {
+          "campaign_name": "活动_8",
+          "cnt": 245
+        },
+        {
+          "campaign_name": "活动_17",
+          "cnt": 245
+        },
+        {
+          "campaign_name": "活动_19",
+          "cnt": 244
+        },
+        {
+          "campaign_name": "活动_5",
+          "cnt": 242
+        },
+        {
+          "campaign_name": "活动_13",
+          "cnt": 240
+        },
+        {
+          "campaign_name": "活动_36",
+          "cnt": 240
+        },
+        {
+          "campaign_name": "活动_44",
+          "cnt": 239
+        },
+        {
+          "campaign_name": "活动_22",
+          "cnt": 238
+        },
+        {
+          "campaign_name": "活动_34",
+          "cnt": 236
+        },
+        {
+          "campaign_name": "活动_26",
+          "cnt": 234
+        },
+        {
+          "campaign_name": "活动_40",
+          "cnt": 232
+        },
+        {
+          "campaign_name": "活动_35",
+          "cnt": 232
+        },
+        {
+          "campaign_name": "活动_33",
+          "cnt": 228
+        },
+        {
+          "campaign_name": "活动_14",
+          "cnt": 228
+        },
+        {
+          "campaign_name": "活动_39",
+          "cnt": 225
+        },
+        {
+          "campaign_name": "活动_10",
+          "cnt": 225
+        },
+        {
+          "campaign_name": "活动_49",
+          "cnt": 225
+        },
+        {
+          "campaign_name": "活动_29",
+          "cnt": 225
+        },
+        {
+          "campaign_name": "活动_6",
+          "cnt": 223
+        },
+        {
+          "campaign_name": "活动_30",
+          "cnt": 222
+        },
+        {
+          "campaign_name": "活动_31",
+          "cnt": 221
+        },
+        {
+          "campaign_name": "活动_20",
+          "cnt": 220
+        },
+        {
+          "campaign_name": "活动_52",
+          "cnt": 219
+        },
+        {
+          "campaign_name": "活动_2",
+          "cnt": 218
+        },
+        {
+          "campaign_name": "活动_28",
+          "cnt": 218
+        },
+        {
+          "campaign_name": "活动_11",
+          "cnt": 213
+        },
+        {
+          "campaign_name": "活动_41",
+          "cnt": 211
+        },
+        {
+          "campaign_name": "活动_9",
+          "cnt": 209
+        },
+        {
+          "campaign_name": "活动_48",
+          "cnt": 208
+        },
+        {
+          "campaign_name": "活动_45",
+          "cnt": 208
+        },
+        {
+          "campaign_name": "活动_46",
+          "cnt": 206
+        },
+        {
+          "campaign_name": "活动_43",
+          "cnt": 205
+        },
+        {
+          "campaign_name": "活动_47",
+          "cnt": 204
+        },
+        {
+          "campaign_name": "活动_51",
+          "cnt": 202
+        },
+        {
+          "campaign_name": "活动_1",
+          "cnt": 191
+        },
+        {
+          "campaign_name": "活动_42",
+          "cnt": 186
+        },
+        {
+          "campaign_name": "活动_50",
+          "cnt": 174
+        }
+      ],
+      "sameMultisetIgnoringOrder": false,
+      "diagnosticTargetSql": "SELECT c.campaign_name, COUNT(*) AS cnt\nFROM coupon_usages cu\nJOIN coupons cp ON cp.coupon_id = cu.coupon_id\nJOIN campaigns c ON c.campaign_id = cp.campaign_id\nGROUP BY 1 ORDER BY cnt DESC",
+      "sameMultisetAfterReferenceProjection": false,
+      "variants": [
+        {
+          "name": "resolve_id_to_name",
+          "sql": "SELECT c.campaign_name,a.usage_count FROM (SELECT c.campaign_id, COUNT(u.usage_id) AS usage_count\nFROM campaigns c\nLEFT JOIN coupons cp ON cp.campaign_id = c.campaign_id\nLEFT JOIN coupon_usages u ON u.coupon_id = cp.coupon_id\nGROUP BY c.campaign_id\nORDER BY c.campaign_id\nLIMIT 1000) a JOIN campaigns c ON c.campaign_id=a.campaign_id",
+          "rows": [
+            {
+              "campaign_name": "活动_1",
+              "usage_count": 191
+            },
+            {
+              "campaign_name": "活动_2",
+              "usage_count": 218
+            },
+            {
+              "campaign_name": "活动_3",
+              "usage_count": 251
+            },
+            {
+              "campaign_name": "活动_4",
+              "usage_count": 260
+            },
+            {
+              "campaign_name": "活动_5",
+              "usage_count": 242
+            },
+            {
+              "campaign_name": "活动_6",
+              "usage_count": 223
+            },
+            {
+              "campaign_name": "活动_7",
+              "usage_count": 249
+            },
+            {
+              "campaign_name": "活动_8",
+              "usage_count": 245
+            },
+            {
+              "campaign_name": "活动_9",
+              "usage_count": 209
+            },
+            {
+              "campaign_name": "活动_10",
+              "usage_count": 225
+            },
+            {
+              "campaign_name": "活动_11",
+              "usage_count": 213
+            },
+            {
+              "campaign_name": "活动_12",
+              "usage_count": 247
+            },
+            {
+              "campaign_name": "活动_13",
+              "usage_count": 240
+            },
+            {
+              "campaign_name": "活动_14",
+              "usage_count": 228
+            },
+            {
+              "campaign_name": "活动_15",
+              "usage_count": 245
+            },
+            {
+              "campaign_name": "活动_16",
+              "usage_count": 272
+            },
+            {
+              "campaign_name": "活动_17",
+              "usage_count": 245
+            },
+            {
+              "campaign_name": "活动_18",
+              "usage_count": 255
+            },
+            {
+              "campaign_name": "活动_19",
+              "usage_count": 244
+            },
+            {
+              "campaign_name": "活动_20",
+              "usage_count": 220
+            },
+            {
+              "campaign_name": "活动_21",
+              "usage_count": 269
+            },
+            {
+              "campaign_name": "活动_22",
+              "usage_count": 238
+            },
+            {
+              "campaign_name": "活动_23",
+              "usage_count": 258
+            },
+            {
+              "campaign_name": "活动_24",
+              "usage_count": 273
+            },
+            {
+              "campaign_name": "活动_25",
+              "usage_count": 256
+            },
+            {
+              "campaign_name": "活动_26",
+              "usage_count": 234
+            },
+            {
+              "campaign_name": "活动_27",
+              "usage_count": 276
+            },
+            {
+              "campaign_name": "活动_28",
+              "usage_count": 218
+            },
+            {
+              "campaign_name": "活动_29",
+              "usage_count": 225
+            },
+            {
+              "campaign_name": "活动_30",
+              "usage_count": 222
+            },
+            {
+              "campaign_name": "活动_31",
+              "usage_count": 221
+            },
+            {
+              "campaign_name": "活动_32",
+              "usage_count": 247
+            },
+            {
+              "campaign_name": "活动_33",
+              "usage_count": 228
+            },
+            {
+              "campaign_name": "活动_34",
+              "usage_count": 236
+            },
+            {
+              "campaign_name": "活动_35",
+              "usage_count": 232
+            },
+            {
+              "campaign_name": "活动_36",
+              "usage_count": 240
+            },
+            {
+              "campaign_name": "活动_37",
+              "usage_count": 269
+            },
+            {
+              "campaign_name": "活动_38",
+              "usage_count": 246
+            },
+            {
+              "campaign_name": "活动_39",
+              "usage_count": 225
+            },
+            {
+              "campaign_name": "活动_40",
+              "usage_count": 232
+            },
+            {
+              "campaign_name": "活动_41",
+              "usage_count": 211
+            },
+            {
+              "campaign_name": "活动_42",
+              "usage_count": 186
+            },
+            {
+              "campaign_name": "活动_43",
+              "usage_count": 205
+            },
+            {
+              "campaign_name": "活动_44",
+              "usage_count": 239
+            },
+            {
+              "campaign_name": "活动_45",
+              "usage_count": 208
+            },
+            {
+              "campaign_name": "活动_46",
+              "usage_count": 206
+            },
+            {
+              "campaign_name": "活动_47",
+              "usage_count": 204
+            },
+            {
+              "campaign_name": "活动_48",
+              "usage_count": 208
+            },
+            {
+              "campaign_name": "活动_49",
+              "usage_count": 225
+            },
+            {
+              "campaign_name": "活动_50",
+              "usage_count": 174
+            },
+            {
+              "campaign_name": "活动_51",
+              "usage_count": 202
+            },
+            {
+              "campaign_name": "活动_52",
+              "usage_count": 219
+            }
+          ],
+          "sameMultisetAsDiagnosticTarget": true
+        },
+        {
+          "name": "resolve_and_exclude_zero_usage",
+          "sql": "SELECT c.campaign_name,a.usage_count FROM (SELECT c.campaign_id, COUNT(u.usage_id) AS usage_count\nFROM campaigns c\nLEFT JOIN coupons cp ON cp.campaign_id = c.campaign_id\nLEFT JOIN coupon_usages u ON u.coupon_id = cp.coupon_id\nGROUP BY c.campaign_id\nORDER BY c.campaign_id\nLIMIT 1000) a JOIN campaigns c ON c.campaign_id=a.campaign_id WHERE a.usage_count>0",
+          "rows": [
+            {
+              "campaign_name": "活动_1",
+              "usage_count": 191
+            },
+            {
+              "campaign_name": "活动_2",
+              "usage_count": 218
+            },
+            {
+              "campaign_name": "活动_3",
+              "usage_count": 251
+            },
+            {
+              "campaign_name": "活动_4",
+              "usage_count": 260
+            },
+            {
+              "campaign_name": "活动_5",
+              "usage_count": 242
+            },
+            {
+              "campaign_name": "活动_6",
+              "usage_count": 223
+            },
+            {
+              "campaign_name": "活动_7",
+              "usage_count": 249
+            },
+            {
+              "campaign_name": "活动_8",
+              "usage_count": 245
+            },
+            {
+              "campaign_name": "活动_9",
+              "usage_count": 209
+            },
+            {
+              "campaign_name": "活动_10",
+              "usage_count": 225
+            },
+            {
+              "campaign_name": "活动_11",
+              "usage_count": 213
+            },
+            {
+              "campaign_name": "活动_12",
+              "usage_count": 247
+            },
+            {
+              "campaign_name": "活动_13",
+              "usage_count": 240
+            },
+            {
+              "campaign_name": "活动_14",
+              "usage_count": 228
+            },
+            {
+              "campaign_name": "活动_15",
+              "usage_count": 245
+            },
+            {
+              "campaign_name": "活动_16",
+              "usage_count": 272
+            },
+            {
+              "campaign_name": "活动_17",
+              "usage_count": 245
+            },
+            {
+              "campaign_name": "活动_18",
+              "usage_count": 255
+            },
+            {
+              "campaign_name": "活动_19",
+              "usage_count": 244
+            },
+            {
+              "campaign_name": "活动_20",
+              "usage_count": 220
+            },
+            {
+              "campaign_name": "活动_21",
+              "usage_count": 269
+            },
+            {
+              "campaign_name": "活动_22",
+              "usage_count": 238
+            },
+            {
+              "campaign_name": "活动_23",
+              "usage_count": 258
+            },
+            {
+              "campaign_name": "活动_24",
+              "usage_count": 273
+            },
+            {
+              "campaign_name": "活动_25",
+              "usage_count": 256
+            },
+            {
+              "campaign_name": "活动_26",
+              "usage_count": 234
+            },
+            {
+              "campaign_name": "活动_27",
+              "usage_count": 276
+            },
+            {
+              "campaign_name": "活动_28",
+              "usage_count": 218
+            },
+            {
+              "campaign_name": "活动_29",
+              "usage_count": 225
+            },
+            {
+              "campaign_name": "活动_30",
+              "usage_count": 222
+            },
+            {
+              "campaign_name": "活动_31",
+              "usage_count": 221
+            },
+            {
+              "campaign_name": "活动_32",
+              "usage_count": 247
+            },
+            {
+              "campaign_name": "活动_33",
+              "usage_count": 228
+            },
+            {
+              "campaign_name": "活动_34",
+              "usage_count": 236
+            },
+            {
+              "campaign_name": "活动_35",
+              "usage_count": 232
+            },
+            {
+              "campaign_name": "活动_36",
+              "usage_count": 240
+            },
+            {
+              "campaign_name": "活动_37",
+              "usage_count": 269
+            },
+            {
+              "campaign_name": "活动_38",
+              "usage_count": 246
+            },
+            {
+              "campaign_name": "活动_39",
+              "usage_count": 225
+            },
+            {
+              "campaign_name": "活动_40",
+              "usage_count": 232
+            },
+            {
+              "campaign_name": "活动_41",
+              "usage_count": 211
+            },
+            {
+              "campaign_name": "活动_42",
+              "usage_count": 186
+            },
+            {
+              "campaign_name": "活动_43",
+              "usage_count": 205
+            },
+            {
+              "campaign_name": "活动_44",
+              "usage_count": 239
+            },
+            {
+              "campaign_name": "活动_45",
+              "usage_count": 208
+            },
+            {
+              "campaign_name": "活动_46",
+              "usage_count": 206
+            },
+            {
+              "campaign_name": "活动_47",
+              "usage_count": 204
+            },
+            {
+              "campaign_name": "活动_48",
+              "usage_count": 208
+            },
+            {
+              "campaign_name": "活动_49",
+              "usage_count": 225
+            },
+            {
+              "campaign_name": "活动_50",
+              "usage_count": 174
+            },
+            {
+              "campaign_name": "活动_51",
+              "usage_count": 202
+            },
+            {
+              "campaign_name": "活动_52",
+              "usage_count": 219
+            }
+          ],
+          "sameMultisetAsDiagnosticTarget": true
+        }
+      ]
+    },
+    {
+      "id": "T4-025",
+      "question": "每个大区的仓库容量合计是多少？",
+      "category": "population",
+      "frozenStrictCorrect": false,
+      "actualSql": "SELECT r.macro_region, COALESCE(SUM(w.capacity), 0) AS total_capacity\nFROM regions r\nLEFT JOIN warehouses w ON w.region_code = r.region_code\nGROUP BY r.macro_region\nORDER BY r.macro_region\nLIMIT 100",
+      "goldSql": "SELECT r.macro_region, SUM(w.capacity) AS total_capacity\nFROM warehouses w JOIN regions r ON r.region_code = w.region_code\nGROUP BY 1 ORDER BY total_capacity DESC",
+      "actualRows": [
+        {
+          "macro_region": "Centro-Oeste",
+          "total_capacity": 0
+        },
+        {
+          "macro_region": "Nordeste",
+          "total_capacity": 12000
+        },
+        {
+          "macro_region": "Norte",
+          "total_capacity": 0
+        },
+        {
+          "macro_region": "Sudeste",
+          "total_capacity": 85000
+        },
+        {
+          "macro_region": "Sul",
+          "total_capacity": 18000
+        }
+      ],
+      "goldRows": [
+        {
+          "macro_region": "Sudeste",
+          "total_capacity": 85000
+        },
+        {
+          "macro_region": "Sul",
+          "total_capacity": 18000
+        },
+        {
+          "macro_region": "Nordeste",
+          "total_capacity": 12000
+        }
+      ],
+      "sameMultisetIgnoringOrder": false,
+      "diagnosticTargetSql": "SELECT r.macro_region, SUM(w.capacity) AS total_capacity\nFROM warehouses w JOIN regions r ON r.region_code = w.region_code\nGROUP BY 1 ORDER BY total_capacity DESC",
+      "sameMultisetAfterReferenceProjection": false,
+      "variants": [
+        {
+          "name": "only_regions_with_warehouses",
+          "sql": "SELECT r.macro_region, COALESCE(SUM(w.capacity), 0) AS total_capacity\nFROM regions r\nJOIN warehouses w ON w.region_code = r.region_code\nGROUP BY r.macro_region\nORDER BY r.macro_region\nLIMIT 100",
+          "rows": [
+            {
+              "macro_region": "Nordeste",
+              "total_capacity": 12000
+            },
+            {
+              "macro_region": "Sudeste",
+              "total_capacity": 85000
+            },
+            {
+              "macro_region": "Sul",
+              "total_capacity": 18000
+            }
+          ],
+          "sameMultisetAsDiagnosticTarget": true
+        }
+      ]
+    },
+    {
+      "id": "T4-027",
+      "question": "每个仓库的库存总量和平均库存量分别是多少？",
+      "category": "display",
+      "frozenStrictCorrect": false,
+      "actualSql": "SELECT warehouse_id,\n       SUM(quantity) AS total_quantity,\n       ROUND(AVG(quantity)::numeric, 2) AS avg_quantity\nFROM inventory\nGROUP BY warehouse_id\nORDER BY total_quantity DESC\nLIMIT 100",
+      "goldSql": "SELECT w.warehouse_name, SUM(i.quantity) AS total_qty, ROUND(AVG(i.quantity), 2) AS avg_qty\nFROM inventory i JOIN warehouses w ON w.warehouse_id = i.warehouse_id\nGROUP BY 1 ORDER BY total_qty DESC",
+      "actualRows": [
+        {
+          "warehouse_id": 5,
+          "total_quantity": 1256233,
+          "avg_quantity": "248.66"
+        },
+        {
+          "warehouse_id": 1,
+          "total_quantity": 1250032,
+          "avg_quantity": "252.63"
+        },
+        {
+          "warehouse_id": 4,
+          "total_quantity": 1224732,
+          "avg_quantity": "251.12"
+        },
+        {
+          "warehouse_id": 2,
+          "total_quantity": 1219929,
+          "avg_quantity": "247.55"
+        },
+        {
+          "warehouse_id": 3,
+          "total_quantity": 1192808,
+          "avg_quantity": "249.80"
+        }
+      ],
+      "goldRows": [
+        {
+          "warehouse_name": "东北仓",
+          "total_qty": 1256233,
+          "avg_qty": "248.66"
+        },
+        {
+          "warehouse_name": "圣保罗中心仓",
+          "total_qty": 1250032,
+          "avg_qty": "252.63"
+        },
+        {
+          "warehouse_name": "南部仓",
+          "total_qty": 1224732,
+          "avg_qty": "251.12"
+        },
+        {
+          "warehouse_name": "里约分仓",
+          "total_qty": 1219929,
+          "avg_qty": "247.55"
+        },
+        {
+          "warehouse_name": "米纳斯仓",
+          "total_qty": 1192808,
+          "avg_qty": "249.80"
+        }
+      ],
+      "sameMultisetIgnoringOrder": false,
+      "diagnosticTargetSql": "SELECT w.warehouse_name, SUM(i.quantity) AS total_qty, ROUND(AVG(i.quantity), 2) AS avg_qty\nFROM inventory i JOIN warehouses w ON w.warehouse_id = i.warehouse_id\nGROUP BY 1 ORDER BY total_qty DESC",
+      "sameMultisetAfterReferenceProjection": false,
+      "variants": [
+        {
+          "name": "resolve_id_to_name",
+          "sql": "SELECT w.warehouse_name,a.total_quantity,a.avg_quantity FROM (SELECT warehouse_id,\n       SUM(quantity) AS total_quantity,\n       ROUND(AVG(quantity)::numeric, 2) AS avg_quantity\nFROM inventory\nGROUP BY warehouse_id\nORDER BY total_quantity DESC\nLIMIT 100) a JOIN warehouses w ON w.warehouse_id=a.warehouse_id",
+          "rows": [
+            {
+              "warehouse_name": "圣保罗中心仓",
+              "total_quantity": 1250032,
+              "avg_quantity": "252.63"
+            },
+            {
+              "warehouse_name": "里约分仓",
+              "total_quantity": 1219929,
+              "avg_quantity": "247.55"
+            },
+            {
+              "warehouse_name": "米纳斯仓",
+              "total_quantity": 1192808,
+              "avg_quantity": "249.80"
+            },
+            {
+              "warehouse_name": "南部仓",
+              "total_quantity": 1224732,
+              "avg_quantity": "251.12"
+            },
+            {
+              "warehouse_name": "东北仓",
+              "total_quantity": 1256233,
+              "avg_quantity": "248.66"
+            }
+          ],
+          "sameMultisetAsDiagnosticTarget": true
+        }
+      ]
+    },
+    {
+      "id": "T4-043",
+      "question": "每个发货状态的发货单平均有几条物流轨迹记录？",
+      "category": "population",
+      "frozenStrictCorrect": false,
+      "actualSql": "SELECT s.status,\n       ROUND(AVG(COALESCE(t.tracking_count, 0))::numeric, 2) AS avg_tracking_records\nFROM shipments s\nLEFT JOIN (\n    SELECT shipment_id, COUNT(*) AS tracking_count\n    FROM shipment_tracking\n    GROUP BY shipment_id\n) t ON t.shipment_id = s.shipment_id\nGROUP BY s.status\nORDER BY s.status\nLIMIT 100",
+      "goldSql": "SELECT s.status, ROUND(AVG(t.cnt), 2) AS avg_events\nFROM shipments s\nJOIN (SELECT shipment_id, COUNT(*) AS cnt FROM shipment_tracking GROUP BY 1) t\n  ON t.shipment_id = s.shipment_id\nGROUP BY 1 ORDER BY 1",
+      "actualRows": [
+        {
+          "status": 1,
+          "avg_tracking_records": "0.00"
+        },
+        {
+          "status": 2,
+          "avg_tracking_records": "3.00"
+        },
+        {
+          "status": 3,
+          "avg_tracking_records": "3.00"
+        }
+      ],
+      "goldRows": [
+        {
+          "status": 2,
+          "avg_events": "3.00"
+        },
+        {
+          "status": 3,
+          "avg_events": "3.00"
+        }
+      ],
+      "sameMultisetIgnoringOrder": false,
+      "diagnosticTargetSql": "SELECT s.status, ROUND(AVG(t.cnt), 2) AS avg_events\nFROM shipments s\nJOIN (SELECT shipment_id, COUNT(*) AS cnt FROM shipment_tracking GROUP BY 1) t\n  ON t.shipment_id = s.shipment_id\nGROUP BY 1 ORDER BY 1",
+      "sameMultisetAfterReferenceProjection": false,
+      "variants": [
+        {
+          "name": "only_shipments_with_tracking",
+          "sql": "SELECT s.status,\n       ROUND(AVG(COALESCE(t.tracking_count, 0))::numeric, 2) AS avg_tracking_records\nFROM shipments s\nJOIN (\n    SELECT shipment_id, COUNT(*) AS tracking_count\n    FROM shipment_tracking\n    GROUP BY shipment_id\n) t ON t.shipment_id = s.shipment_id\nGROUP BY s.status\nORDER BY s.status\nLIMIT 100",
+          "rows": [
+            {
+              "status": 2,
+              "avg_tracking_records": "3.00"
+            },
+            {
+              "status": 3,
+              "avg_tracking_records": "3.00"
+            }
+          ],
+          "sameMultisetAsDiagnosticTarget": true
+        }
+      ]
+    },
+    {
+      "id": "T4-045",
+      "question": "每个类目的平均商品重量是多少？取商品数最多的 10 个类目。",
+      "category": "projection_and_null_population",
+      "frozenStrictCorrect": false,
+      "actualSql": "SELECT p.product_category_name,\n       ROUND(AVG(p.product_weight_g)::numeric, 2) AS avg_product_weight_g\nFROM products p\nWHERE p.product_category_name IS NOT NULL\nGROUP BY p.product_category_name\nORDER BY COUNT(*) DESC\nLIMIT 10",
+      "goldSql": "SELECT p.product_category_name,\n       COUNT(*) AS product_cnt,\n       ROUND(AVG(p.product_weight_g), 2) AS avg_weight\nFROM products p\nWHERE p.product_category_name IS NOT NULL AND p.product_weight_g IS NOT NULL\nGROUP BY 1 ORDER BY product_cnt DESC LIMIT 10",
+      "actualRows": [
+        {
+          "product_category_name": "cama_mesa_banho",
+          "avg_product_weight_g": "2456.41"
+        },
+        {
+          "product_category_name": "esporte_lazer",
+          "avg_product_weight_g": "2024.67"
+        },
+        {
+          "product_category_name": "moveis_decoracao",
+          "avg_product_weight_g": "3008.27"
+        },
+        {
+          "product_category_name": "beleza_saude",
+          "avg_product_weight_g": "1434.79"
+        },
+        {
+          "product_category_name": "utilidades_domesticas",
+          "avg_product_weight_g": "3020.79"
+        },
+        {
+          "product_category_name": "automotivo",
+          "avg_product_weight_g": "2654.65"
+        },
+        {
+          "product_category_name": "informatica_acessorios",
+          "avg_product_weight_g": "898.38"
+        },
+        {
+          "product_category_name": "brinquedos",
+          "avg_product_weight_g": "1869.36"
+        },
+        {
+          "product_category_name": "relogios_presentes",
+          "avg_product_weight_g": "509.29"
+        },
+        {
+          "product_category_name": "telefonia",
+          "avg_product_weight_g": "236.51"
+        }
+      ],
+      "goldRows": [
+        {
+          "product_category_name": "cama_mesa_banho",
+          "product_cnt": 3029,
+          "avg_weight": "2456.41"
+        },
+        {
+          "product_category_name": "esporte_lazer",
+          "product_cnt": 2867,
+          "avg_weight": "2024.67"
+        },
+        {
+          "product_category_name": "moveis_decoracao",
+          "product_cnt": 2657,
+          "avg_weight": "3008.27"
+        },
+        {
+          "product_category_name": "beleza_saude",
+          "product_cnt": 2444,
+          "avg_weight": "1434.79"
+        },
+        {
+          "product_category_name": "utilidades_domesticas",
+          "product_cnt": 2335,
+          "avg_weight": "3020.79"
+        },
+        {
+          "product_category_name": "automotivo",
+          "product_cnt": 1900,
+          "avg_weight": "2654.65"
+        },
+        {
+          "product_category_name": "informatica_acessorios",
+          "product_cnt": 1639,
+          "avg_weight": "898.38"
+        },
+        {
+          "product_category_name": "brinquedos",
+          "product_cnt": 1411,
+          "avg_weight": "1869.36"
+        },
+        {
+          "product_category_name": "relogios_presentes",
+          "product_cnt": 1329,
+          "avg_weight": "509.29"
+        },
+        {
+          "product_category_name": "telefonia",
+          "product_cnt": 1134,
+          "avg_weight": "236.51"
+        }
+      ],
+      "sameMultisetIgnoringOrder": false,
+      "diagnosticTargetSql": "SELECT product_category_name,avg_weight FROM (SELECT p.product_category_name,\n       COUNT(*) AS product_cnt,\n       ROUND(AVG(p.product_weight_g), 2) AS avg_weight\nFROM products p\nWHERE p.product_category_name IS NOT NULL AND p.product_weight_g IS NOT NULL\nGROUP BY 1 ORDER BY product_cnt DESC LIMIT 10) q",
+      "sameMultisetAfterReferenceProjection": true,
+      "variants": [
+        {
+          "name": "exclude_null_weights_from_ranking_population",
+          "sql": "SELECT p.product_category_name,\n       ROUND(AVG(p.product_weight_g)::numeric, 2) AS avg_product_weight_g\nFROM products p\nWHERE p.product_category_name IS NOT NULL AND p.product_weight_g IS NOT NULL\nGROUP BY p.product_category_name\nORDER BY COUNT(*) DESC\nLIMIT 10",
+          "rows": [
+            {
+              "product_category_name": "cama_mesa_banho",
+              "avg_product_weight_g": "2456.41"
+            },
+            {
+              "product_category_name": "esporte_lazer",
+              "avg_product_weight_g": "2024.67"
+            },
+            {
+              "product_category_name": "moveis_decoracao",
+              "avg_product_weight_g": "3008.27"
+            },
+            {
+              "product_category_name": "beleza_saude",
+              "avg_product_weight_g": "1434.79"
+            },
+            {
+              "product_category_name": "utilidades_domesticas",
+              "avg_product_weight_g": "3020.79"
+            },
+            {
+              "product_category_name": "automotivo",
+              "avg_product_weight_g": "2654.65"
+            },
+            {
+              "product_category_name": "informatica_acessorios",
+              "avg_product_weight_g": "898.38"
+            },
+            {
+              "product_category_name": "brinquedos",
+              "avg_product_weight_g": "1869.36"
+            },
+            {
+              "product_category_name": "relogios_presentes",
+              "avg_product_weight_g": "509.29"
+            },
+            {
+              "product_category_name": "telefonia",
+              "avg_product_weight_g": "236.51"
+            }
+          ],
+          "sameMultisetAsDiagnosticTarget": true
+        }
+      ]
+    },
+    {
+      "id": "T5-004",
+      "question": "每个仓库所在区域的发货单量和覆盖订单数分别是多少？",
+      "category": "display",
+      "frozenStrictCorrect": false,
+      "actualSql": "SELECT w.region_code,\n       COUNT(*) AS shipment_count,\n       COUNT(DISTINCT s.order_id) AS covered_order_count\nFROM shipments s\nJOIN warehouses w ON w.warehouse_id = s.warehouse_id\nGROUP BY w.region_code\nORDER BY w.region_code\nLIMIT 100",
+      "goldSql": "SELECT r.region_name, COUNT(DISTINCT s.shipment_id) AS shipments, COUNT(DISTINCT o.order_id) AS orders\nFROM shipments s\nJOIN warehouses w ON w.warehouse_id = s.warehouse_id\nJOIN regions r ON r.region_code = w.region_code\nJOIN orders o ON o.order_id = s.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY 1 ORDER BY shipments DESC",
+      "actualRows": [
+        {
+          "region_code": "BA",
+          "shipment_count": 12318,
+          "covered_order_count": 12318
+        },
+        {
+          "region_code": "MG",
+          "shipment_count": 24359,
+          "covered_order_count": 24359
+        },
+        {
+          "region_code": "RJ",
+          "shipment_count": 24729,
+          "covered_order_count": 24729
+        },
+        {
+          "region_code": "RS",
+          "shipment_count": 24497,
+          "covered_order_count": 24497
+        },
+        {
+          "region_code": "SP",
+          "shipment_count": 12299,
+          "covered_order_count": 12299
+        }
+      ],
+      "goldRows": [
+        {
+          "region_name": "Rio de Janeiro",
+          "shipments": 24729,
+          "orders": 24729
+        },
+        {
+          "region_name": "Rio Grande do Sul",
+          "shipments": 24497,
+          "orders": 24497
+        },
+        {
+          "region_name": "Minas Gerais",
+          "shipments": 24359,
+          "orders": 24359
+        },
+        {
+          "region_name": "Bahia",
+          "shipments": 12318,
+          "orders": 12318
+        },
+        {
+          "region_name": "São Paulo",
+          "shipments": 12299,
+          "orders": 12299
+        }
+      ],
+      "sameMultisetIgnoringOrder": false,
+      "diagnosticTargetSql": "SELECT r.region_name, COUNT(DISTINCT s.shipment_id) AS shipments, COUNT(DISTINCT o.order_id) AS orders\nFROM shipments s\nJOIN warehouses w ON w.warehouse_id = s.warehouse_id\nJOIN regions r ON r.region_code = w.region_code\nJOIN orders o ON o.order_id = s.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY 1 ORDER BY shipments DESC",
+      "sameMultisetAfterReferenceProjection": false,
+      "variants": [
+        {
+          "name": "resolve_region_code_to_name",
+          "sql": "SELECT r.region_name,a.shipment_count,a.covered_order_count FROM (SELECT w.region_code,\n       COUNT(*) AS shipment_count,\n       COUNT(DISTINCT s.order_id) AS covered_order_count\nFROM shipments s\nJOIN warehouses w ON w.warehouse_id = s.warehouse_id\nGROUP BY w.region_code\nORDER BY w.region_code\nLIMIT 100) a JOIN regions r ON r.region_code=a.region_code",
+          "rows": [
+            {
+              "region_name": "Bahia",
+              "shipment_count": 12318,
+              "covered_order_count": 12318
+            },
+            {
+              "region_name": "Minas Gerais",
+              "shipment_count": 24359,
+              "covered_order_count": 24359
+            },
+            {
+              "region_name": "Rio de Janeiro",
+              "shipment_count": 24729,
+              "covered_order_count": 24729
+            },
+            {
+              "region_name": "Rio Grande do Sul",
+              "shipment_count": 24497,
+              "covered_order_count": 24497
+            },
+            {
+              "region_name": "São Paulo",
+              "shipment_count": 12299,
+              "covered_order_count": 12299
+            }
+          ],
+          "sameMultisetAsDiagnosticTarget": true
+        }
+      ]
+    },
+    {
+      "id": "T5-015",
+      "question": "物流轨迹事件类型按客户所在州分布，列出前 20 组（按发货单去重）。",
+      "category": "extra_reference_join",
+      "frozenStrictCorrect": false,
+      "actualSql": "SELECT st.event_code, c.customer_state, COUNT(DISTINCT s.shipment_id) AS shipment_count\nFROM shipment_tracking st\nJOIN shipments s ON s.shipment_id = st.shipment_id\nJOIN orders o ON o.order_id = s.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY st.event_code, c.customer_state\nORDER BY shipment_count DESC\nLIMIT 20",
+      "goldSql": "SELECT st.event_code, c.customer_state, COUNT(DISTINCT s.shipment_id) AS shipments\nFROM shipment_tracking st\nJOIN shipments s ON s.shipment_id = st.shipment_id\nJOIN orders o ON o.order_id = s.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1, 2 ORDER BY shipments DESC LIMIT 20",
+      "actualRows": [
+        {
+          "event_code": "OUT_FOR_DELIVERY",
+          "customer_state": "SP",
+          "shipment_count": 40828
+        },
+        {
+          "event_code": "IN_TRANSIT",
+          "customer_state": "SP",
+          "shipment_count": 40828
+        },
+        {
+          "event_code": "ARRIVED",
+          "customer_state": "SP",
+          "shipment_count": 40828
+        },
+        {
+          "event_code": "IN_TRANSIT",
+          "customer_state": "RJ",
+          "shipment_count": 12639
+        },
+        {
+          "event_code": "OUT_FOR_DELIVERY",
+          "customer_state": "RJ",
+          "shipment_count": 12639
+        },
+        {
+          "event_code": "ARRIVED",
+          "customer_state": "RJ",
+          "shipment_count": 12639
+        },
+        {
+          "event_code": "OUT_FOR_DELIVERY",
+          "customer_state": "MG",
+          "shipment_count": 11425
+        },
+        {
+          "event_code": "ARRIVED",
+          "customer_state": "MG",
+          "shipment_count": 11425
+        },
+        {
+          "event_code": "IN_TRANSIT",
+          "customer_state": "MG",
+          "shipment_count": 11425
+        },
+        {
+          "event_code": "ARRIVED",
+          "customer_state": "RS",
+          "shipment_count": 5381
+        },
+        {
+          "event_code": "OUT_FOR_DELIVERY",
+          "customer_state": "RS",
+          "shipment_count": 5381
+        },
+        {
+          "event_code": "IN_TRANSIT",
+          "customer_state": "RS",
+          "shipment_count": 5381
+        },
+        {
+          "event_code": "IN_TRANSIT",
+          "customer_state": "PR",
+          "shipment_count": 4952
+        },
+        {
+          "event_code": "OUT_FOR_DELIVERY",
+          "customer_state": "PR",
+          "shipment_count": 4952
+        },
+        {
+          "event_code": "ARRIVED",
+          "customer_state": "PR",
+          "shipment_count": 4952
+        },
+        {
+          "event_code": "IN_TRANSIT",
+          "customer_state": "SC",
+          "shipment_count": 3574
+        },
+        {
+          "event_code": "ARRIVED",
+          "customer_state": "SC",
+          "shipment_count": 3574
+        },
+        {
+          "event_code": "OUT_FOR_DELIVERY",
+          "customer_state": "SC",
+          "shipment_count": 3574
+        },
+        {
+          "event_code": "ARRIVED",
+          "customer_state": "BA",
+          "shipment_count": 3324
+        },
+        {
+          "event_code": "IN_TRANSIT",
+          "customer_state": "BA",
+          "shipment_count": 3324
+        }
+      ],
+      "goldRows": [
+        {
+          "event_code": "OUT_FOR_DELIVERY",
+          "customer_state": "SP",
+          "shipments": 40828
+        },
+        {
+          "event_code": "IN_TRANSIT",
+          "customer_state": "SP",
+          "shipments": 40828
+        },
+        {
+          "event_code": "ARRIVED",
+          "customer_state": "SP",
+          "shipments": 40828
+        },
+        {
+          "event_code": "IN_TRANSIT",
+          "customer_state": "RJ",
+          "shipments": 12639
+        },
+        {
+          "event_code": "OUT_FOR_DELIVERY",
+          "customer_state": "RJ",
+          "shipments": 12639
+        },
+        {
+          "event_code": "ARRIVED",
+          "customer_state": "RJ",
+          "shipments": 12639
+        },
+        {
+          "event_code": "OUT_FOR_DELIVERY",
+          "customer_state": "MG",
+          "shipments": 11425
+        },
+        {
+          "event_code": "ARRIVED",
+          "customer_state": "MG",
+          "shipments": 11425
+        },
+        {
+          "event_code": "IN_TRANSIT",
+          "customer_state": "MG",
+          "shipments": 11425
+        },
+        {
+          "event_code": "ARRIVED",
+          "customer_state": "RS",
+          "shipments": 5380
+        },
+        {
+          "event_code": "OUT_FOR_DELIVERY",
+          "customer_state": "RS",
+          "shipments": 5380
+        },
+        {
+          "event_code": "IN_TRANSIT",
+          "customer_state": "RS",
+          "shipments": 5380
+        },
+        {
+          "event_code": "IN_TRANSIT",
+          "customer_state": "PR",
+          "shipments": 4952
+        },
+        {
+          "event_code": "OUT_FOR_DELIVERY",
+          "customer_state": "PR",
+          "shipments": 4952
+        },
+        {
+          "event_code": "ARRIVED",
+          "customer_state": "PR",
+          "shipments": 4952
+        },
+        {
+          "event_code": "IN_TRANSIT",
+          "customer_state": "SC",
+          "shipments": 3574
+        },
+        {
+          "event_code": "ARRIVED",
+          "customer_state": "SC",
+          "shipments": 3574
+        },
+        {
+          "event_code": "OUT_FOR_DELIVERY",
+          "customer_state": "SC",
+          "shipments": 3574
+        },
+        {
+          "event_code": "ARRIVED",
+          "customer_state": "BA",
+          "shipments": 3324
+        },
+        {
+          "event_code": "IN_TRANSIT",
+          "customer_state": "BA",
+          "shipments": 3324
+        }
+      ],
+      "sameMultisetIgnoringOrder": false,
+      "diagnosticTargetSql": "SELECT st.event_code, c.customer_state, COUNT(DISTINCT s.shipment_id) AS shipments\nFROM shipment_tracking st\nJOIN shipments s ON s.shipment_id = st.shipment_id\nJOIN orders o ON o.order_id = s.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1, 2 ORDER BY shipments DESC LIMIT 20",
+      "sameMultisetAfterReferenceProjection": false,
+      "variants": [
+        {
+          "name": "add_reference_item_filter",
+          "sql": "SELECT st.event_code, c.customer_state, COUNT(DISTINCT s.shipment_id) AS shipment_count\nFROM shipment_tracking st\nJOIN shipments s ON s.shipment_id = st.shipment_id\nJOIN orders o ON o.order_id = s.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN order_items oi ON oi.order_id=o.order_id\nGROUP BY st.event_code, c.customer_state\nORDER BY shipment_count DESC\nLIMIT 20",
+          "rows": [
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "SP",
+              "shipment_count": 40828
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "SP",
+              "shipment_count": 40828
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "SP",
+              "shipment_count": 40828
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "RJ",
+              "shipment_count": 12639
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "RJ",
+              "shipment_count": 12639
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "RJ",
+              "shipment_count": 12639
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "MG",
+              "shipment_count": 11425
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "MG",
+              "shipment_count": 11425
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "MG",
+              "shipment_count": 11425
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "RS",
+              "shipment_count": 5380
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "RS",
+              "shipment_count": 5380
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "RS",
+              "shipment_count": 5380
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "PR",
+              "shipment_count": 4952
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "PR",
+              "shipment_count": 4952
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "PR",
+              "shipment_count": 4952
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "SC",
+              "shipment_count": 3574
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "SC",
+              "shipment_count": 3574
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "SC",
+              "shipment_count": 3574
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "BA",
+              "shipment_count": 3324
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "BA",
+              "shipment_count": 3324
+            }
+          ],
+          "sameMultisetAsDiagnosticTarget": true
+        },
+        {
+          "name": "actual_without_top20",
+          "sql": "SELECT st.event_code, c.customer_state, COUNT(DISTINCT s.shipment_id) AS shipment_count\nFROM shipment_tracking st\nJOIN shipments s ON s.shipment_id = st.shipment_id\nJOIN orders o ON o.order_id = s.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY st.event_code, c.customer_state\nORDER BY shipment_count DESC",
+          "rows": [
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "SP",
+              "shipment_count": 40828
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "SP",
+              "shipment_count": 40828
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "SP",
+              "shipment_count": 40828
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "RJ",
+              "shipment_count": 12639
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "RJ",
+              "shipment_count": 12639
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "RJ",
+              "shipment_count": 12639
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "MG",
+              "shipment_count": 11425
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "MG",
+              "shipment_count": 11425
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "MG",
+              "shipment_count": 11425
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "RS",
+              "shipment_count": 5381
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "RS",
+              "shipment_count": 5381
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "RS",
+              "shipment_count": 5381
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "PR",
+              "shipment_count": 4952
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "PR",
+              "shipment_count": 4952
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "PR",
+              "shipment_count": 4952
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "SC",
+              "shipment_count": 3574
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "SC",
+              "shipment_count": 3574
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "SC",
+              "shipment_count": 3574
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "BA",
+              "shipment_count": 3324
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "BA",
+              "shipment_count": 3324
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "BA",
+              "shipment_count": 3324
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "DF",
+              "shipment_count": 2110
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "DF",
+              "shipment_count": 2110
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "DF",
+              "shipment_count": 2110
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "ES",
+              "shipment_count": 2012
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "ES",
+              "shipment_count": 2012
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "ES",
+              "shipment_count": 2012
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "GO",
+              "shipment_count": 1988
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "GO",
+              "shipment_count": 1988
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "GO",
+              "shipment_count": 1988
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "PE",
+              "shipment_count": 1628
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "PE",
+              "shipment_count": 1628
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "PE",
+              "shipment_count": 1628
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "CE",
+              "shipment_count": 1317
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "CE",
+              "shipment_count": 1317
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "CE",
+              "shipment_count": 1317
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "PA",
+              "shipment_count": 965
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "PA",
+              "shipment_count": 965
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "PA",
+              "shipment_count": 965
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "MT",
+              "shipment_count": 900
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "MT",
+              "shipment_count": 900
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "MT",
+              "shipment_count": 900
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "MA",
+              "shipment_count": 734
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "MA",
+              "shipment_count": 734
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "MA",
+              "shipment_count": 734
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "MS",
+              "shipment_count": 704
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "MS",
+              "shipment_count": 704
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "MS",
+              "shipment_count": 704
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "PB",
+              "shipment_count": 528
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "PB",
+              "shipment_count": 528
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "PB",
+              "shipment_count": 528
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "PI",
+              "shipment_count": 483
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "PI",
+              "shipment_count": 483
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "PI",
+              "shipment_count": 483
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "RN",
+              "shipment_count": 481
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "RN",
+              "shipment_count": 481
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "RN",
+              "shipment_count": 481
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "AL",
+              "shipment_count": 406
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "AL",
+              "shipment_count": 406
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "AL",
+              "shipment_count": 406
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "SE",
+              "shipment_count": 344
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "SE",
+              "shipment_count": 344
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "SE",
+              "shipment_count": 344
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "TO",
+              "shipment_count": 277
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "TO",
+              "shipment_count": 277
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "TO",
+              "shipment_count": 277
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "RO",
+              "shipment_count": 243
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "RO",
+              "shipment_count": 243
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "RO",
+              "shipment_count": 243
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "AM",
+              "shipment_count": 147
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "AM",
+              "shipment_count": 147
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "AM",
+              "shipment_count": 147
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "AC",
+              "shipment_count": 81
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "AC",
+              "shipment_count": 81
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "AC",
+              "shipment_count": 81
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "AP",
+              "shipment_count": 67
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "AP",
+              "shipment_count": 67
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "AP",
+              "shipment_count": 67
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "RR",
+              "shipment_count": 45
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "RR",
+              "shipment_count": 45
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "RR",
+              "shipment_count": 45
+            }
+          ],
+          "sameMultisetAsDiagnosticTarget": false
+        },
+        {
+          "name": "gold_without_top20",
+          "sql": "SELECT st.event_code, c.customer_state, COUNT(DISTINCT s.shipment_id) AS shipments\nFROM shipment_tracking st\nJOIN shipments s ON s.shipment_id = st.shipment_id\nJOIN orders o ON o.order_id = s.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN order_items oi ON oi.order_id = o.order_id\nGROUP BY 1, 2 ORDER BY shipments DESC",
+          "rows": [
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "SP",
+              "shipments": 40828
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "SP",
+              "shipments": 40828
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "SP",
+              "shipments": 40828
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "RJ",
+              "shipments": 12639
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "RJ",
+              "shipments": 12639
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "RJ",
+              "shipments": 12639
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "MG",
+              "shipments": 11425
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "MG",
+              "shipments": 11425
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "MG",
+              "shipments": 11425
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "RS",
+              "shipments": 5380
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "RS",
+              "shipments": 5380
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "RS",
+              "shipments": 5380
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "PR",
+              "shipments": 4952
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "PR",
+              "shipments": 4952
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "PR",
+              "shipments": 4952
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "SC",
+              "shipments": 3574
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "SC",
+              "shipments": 3574
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "SC",
+              "shipments": 3574
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "BA",
+              "shipments": 3324
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "BA",
+              "shipments": 3324
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "BA",
+              "shipments": 3324
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "DF",
+              "shipments": 2110
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "DF",
+              "shipments": 2110
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "DF",
+              "shipments": 2110
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "ES",
+              "shipments": 2012
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "ES",
+              "shipments": 2012
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "ES",
+              "shipments": 2012
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "GO",
+              "shipments": 1988
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "GO",
+              "shipments": 1988
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "GO",
+              "shipments": 1988
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "PE",
+              "shipments": 1628
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "PE",
+              "shipments": 1628
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "PE",
+              "shipments": 1628
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "CE",
+              "shipments": 1317
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "CE",
+              "shipments": 1317
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "CE",
+              "shipments": 1317
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "PA",
+              "shipments": 965
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "PA",
+              "shipments": 965
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "PA",
+              "shipments": 965
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "MT",
+              "shipments": 900
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "MT",
+              "shipments": 900
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "MT",
+              "shipments": 900
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "MA",
+              "shipments": 734
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "MA",
+              "shipments": 734
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "MA",
+              "shipments": 734
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "MS",
+              "shipments": 704
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "MS",
+              "shipments": 704
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "MS",
+              "shipments": 704
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "PB",
+              "shipments": 528
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "PB",
+              "shipments": 528
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "PB",
+              "shipments": 528
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "PI",
+              "shipments": 483
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "PI",
+              "shipments": 483
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "PI",
+              "shipments": 483
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "RN",
+              "shipments": 481
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "RN",
+              "shipments": 481
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "RN",
+              "shipments": 481
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "AL",
+              "shipments": 406
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "AL",
+              "shipments": 406
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "AL",
+              "shipments": 406
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "SE",
+              "shipments": 344
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "SE",
+              "shipments": 344
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "SE",
+              "shipments": 344
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "TO",
+              "shipments": 277
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "TO",
+              "shipments": 277
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "TO",
+              "shipments": 277
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "RO",
+              "shipments": 243
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "RO",
+              "shipments": 243
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "RO",
+              "shipments": 243
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "AM",
+              "shipments": 147
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "AM",
+              "shipments": 147
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "AM",
+              "shipments": 147
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "AC",
+              "shipments": 81
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "AC",
+              "shipments": 81
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "AC",
+              "shipments": 81
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "AP",
+              "shipments": 67
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "AP",
+              "shipments": 67
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "AP",
+              "shipments": 67
+            },
+            {
+              "event_code": "OUT_FOR_DELIVERY",
+              "customer_state": "RR",
+              "shipments": 45
+            },
+            {
+              "event_code": "IN_TRANSIT",
+              "customer_state": "RR",
+              "shipments": 45
+            },
+            {
+              "event_code": "ARRIVED",
+              "customer_state": "RR",
+              "shipments": 45
+            }
+          ],
+          "sameMultisetAsDiagnosticTarget": false
+        }
+      ]
+    }
+  ],
+  "providerCalls": 0,
+  "providerTokens": 0,
+  "providerCostYuan": 0,
+  "originalScore": 68,
+  "rescored": false,
+  "limits": [
+    "Diagnostic variants are hand-written explanations, never model successes.",
+    "Multiset comparisons ignore row order only to isolate differences; the frozen scorer is unchanged.",
+    "Current-database agreement does not prove equivalence on all data or resolve ambiguous intent."
+  ]
+}

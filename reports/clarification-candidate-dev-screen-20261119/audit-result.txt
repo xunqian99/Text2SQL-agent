@@ -1,0 +1,114 @@
+{
+  "format": "clarification-candidate-dev-screen-v1",
+  "codeCommit": "d084170f7a3c74a3e445b648a60ef0aa9903cf8c",
+  "report": "eval-20261119-085723.json",
+  "reportSha256": "6d7629616a57d67c21d43460246ff79d2893420de9f8883101f2a4e9cfe83e2a",
+  "passedEvidenceAudit": true,
+  "errors": [],
+  "actualFirstPromptsMatched": 95,
+  "screenGates": {
+    "correctAtLeast71": false,
+    "deepAtLeast4": false,
+    "businessAtLeast6": true,
+    "timeoutsAtMost9": false,
+    "budgetAndCleanup": true,
+    "evidence": true
+  },
+  "candidateForConfirmation": false,
+  "stageAccepted": false,
+  "stage3Deferred": true,
+  "latestFormalAccuracyPercent": 78.0,
+  "formalMinimumPercent": 89,
+  "registeredResourceChange": {
+    "before": "d8012d2812c04a6b90d06e0bd04f52e0edca35c3f185bbf7caad754e50708d26",
+    "candidate": "78dfc23f9075536aa7568f94c87c41d238cac0c66c553449c9fd7c67c9035192"
+  },
+  "targets": [
+    {
+      "id": "T3-020",
+      "status": "SUCCESS",
+      "correct": true,
+      "finalSql": "SELECT ROUND(COUNT(*) FILTER (WHERE o.order_delivered_customer_date IS NOT NULL AND o.order_delivered_customer_date > o.order_estimated_delivery_date)::numeric / NULLIF(COUNT(*) FILTER (WHERE o.order_delivered_customer_date IS NOT NULL), 0), 4) AS late_delivery_rate FROM orders o LIMIT 201"
+    },
+    {
+      "id": "T4-021",
+      "status": "SUCCESS",
+      "correct": false,
+      "finalSql": "SELECT c.campaign_id, COUNT(u.usage_id) AS usage_count\nFROM campaigns c\nLEFT JOIN coupons cp ON cp.campaign_id = c.campaign_id\nLEFT JOIN coupon_usages u ON u.coupon_id = cp.coupon_id\nGROUP BY c.campaign_id\nORDER BY c.campaign_id\nLIMIT 1000;"
+    },
+    {
+      "id": "T4-027",
+      "status": "SUCCESS",
+      "correct": false,
+      "finalSql": "SELECT warehouse_id,\n       SUM(quantity) AS total_quantity,\n       ROUND(AVG(quantity)::numeric, 2) AS avg_quantity\nFROM inventory\nGROUP BY warehouse_id\nORDER BY total_quantity DESC\nLIMIT 100;"
+    },
+    {
+      "id": "T5-006",
+      "status": "REQUEST_TIMEOUT",
+      "correct": false,
+      "finalSql": null
+    },
+    {
+      "id": "T5-015",
+      "status": "SUCCESS",
+      "correct": false,
+      "finalSql": "SELECT st.event_code, c.customer_state, COUNT(DISTINCT s.shipment_id) AS shipment_count\nFROM shipment_tracking st\nJOIN shipments s ON s.shipment_id = st.shipment_id\nJOIN orders o ON o.order_id = s.order_id\nJOIN customers c ON c.customer_id = o.customer_id\nGROUP BY st.event_code, c.customer_state\nORDER BY shipment_count DESC\nLIMIT 20;"
+    },
+    {
+      "id": "T6-025",
+      "status": "REQUEST_TIMEOUT",
+      "correct": false,
+      "finalSql": null
+    }
+  ],
+  "gained": [
+    "T2-030",
+    "T3-008",
+    "T4-010",
+    "T4-036",
+    "T5-017"
+  ],
+  "lost": [
+    "T1-026",
+    "T3-028",
+    "T4-001",
+    "T4-025",
+    "T5-002",
+    "T5-006",
+    "T6-009"
+  ],
+  "lostWithUnchangedFirstPrompt": [
+    "T1-026",
+    "T3-028",
+    "T4-001",
+    "T4-025",
+    "T5-002",
+    "T5-006",
+    "T6-009"
+  ],
+  "limits": [
+    "Historical comparison does not establish causal attribution.",
+    "Unknown usage is not zero cost; development scores do not replace formal evaluation."
+  ]
+}
+{
+  "correct": 68,
+  "sqlValid": 82,
+  "calls": 95,
+  "wallAvgMs": 4813.72,
+  "wallP95Ms": 15011,
+  "statusCounts": {
+    "SUCCESS": 82,
+    "REQUEST_TIMEOUT": 13,
+    "NEEDS_CLARIFICATION": 5
+  },
+  "unresolvedUsageCalls": 13,
+  "fullKnownConfiguredCostYuan": 0.11512902,
+  "fullKnownTokens": {
+    "promptTokens": 267815,
+    "completionTokens": 23385,
+    "totalTokens": 291200,
+    "cacheHitTokens": 251251,
+    "cacheMissTokens": 16564
+  }
+}
