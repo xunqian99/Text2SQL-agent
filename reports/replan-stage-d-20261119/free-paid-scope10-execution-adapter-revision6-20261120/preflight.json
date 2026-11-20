@@ -1,0 +1,57 @@
+{
+  "format": "stage-d-paid-scope10-adapter-preflight-v1",
+  "passed": true,
+  "checks": {
+    "scopePlanShaVerified": true,
+    "authorizationBindingVerified": true,
+    "oldLedgerInheritanceVerified": true,
+    "oldUnknownPermanent": true,
+    "stagedQuotaExact": true,
+    "reservationWithinLimit": true,
+    "peakRejected": true,
+    "boundaryRejected": true,
+    "offPeakAllowed": true,
+    "executionDisabled": true,
+    "providerCallsZero": true,
+    "keyReadsZero": true
+  },
+  "peakCases": {
+    "morningPeak": {
+      "allowed": false,
+      "reason": "PEAK_HOURS",
+      "checkedAt": "2026-11-20T02:00:00+00:00",
+      "nextAllowedAt": "2026-11-20T12:00:00+08:00",
+      "guardSeconds": 120
+    },
+    "morningBoundary": {
+      "allowed": false,
+      "reason": "PEAK_BOUNDARY_RESERVE",
+      "checkedAt": "2026-11-20T00:59:00+00:00",
+      "nextAllowedAt": "2026-11-20T12:00:00+08:00",
+      "guardSeconds": 120
+    },
+    "afterMorningPeak": {
+      "allowed": true,
+      "reason": "OFF_PEAK",
+      "checkedAt": "2026-11-20T04:00:00+00:00",
+      "guardSeconds": 120
+    },
+    "weekend": {
+      "allowed": true,
+      "reason": "OFF_PEAK",
+      "checkedAt": "2026-11-21T02:00:00+00:00",
+      "guardSeconds": 120
+    }
+  },
+  "stagedLimitYuan": "10.00",
+  "reservationYuan": "0.10",
+  "currentCandidateCommitmentYuan": "0.993767460",
+  "nextReservationCommitmentYuan": "1.093767460",
+  "oldUnknownHolds": 7,
+  "oldUnknownReleased": 0,
+  "providerCalls": 0,
+  "keyReads": 0,
+  "runNextInvoked": false,
+  "executionEnabled": false,
+  "realQuotaMigrationProofPresent": false
+}
