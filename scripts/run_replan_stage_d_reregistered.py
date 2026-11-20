@@ -40,6 +40,7 @@ REVIEW_ROOT = BASE / "independent-review/reregistered-dev-1/revision-4"
 CANDIDATE = BASE / "reregistration-candidate"
 AUTH_SCHEMA = CANDIDATE / "human-paid-authorization.schema.json"
 AUTH_NAME = "human-paid-authorization.json"
+SCOPE_DECISION = BASE / "post-interruption-feasibility-20261120/human-scope-decision.json"
 NEW_FORMAT = "replan-d-reregistered-c1-v1"
 REGISTRATION = "batch-1/reregistered-dev-1/revision-4"
 REJECTED_FREE_PLAN_SHA = "91c67f5a2484fd6fd0e63a1f86c09ebb8e20737f5a7a3d4c4850b9b63c9c17b4"
@@ -445,6 +446,17 @@ def verify(plan, *, database=True):
 
 def require_human_authorization():
     """File is minted only from an explicit human reply, never by prepare or review."""
+    # A later direct-user decision can close a previously consumed approval.
+    # Check this before touching the old authorization or any credential path.
+    # The old plan intentionally remains bound to its pre-lock source bytes;
+    # changing this file therefore makes that plan fail closed until a new plan
+    # and a new direct approval are created.
+    require(SCOPE_DECISION.is_file() and not SCOPE_DECISION.is_symlink(),
+            "Current paid-scope decision is missing; refuse paid execution")
+    scope_decision = d.read(SCOPE_DECISION)
+    require(scope_decision.get("newPaidAuthorizationGranted") is True
+            and scope_decision.get("decision") == "APPROVED_NEW_SCOPE",
+            "Direct user decision declines additional paid evaluation")
     plan_path = d.BATCH / "plan.json"
     auth_path = d.BATCH / AUTH_NAME
     require(auth_path.is_file() and not auth_path.is_symlink(), "Explicit direct-user authorization for this extra paid DEV100 is absent")
