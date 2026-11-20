@@ -1,0 +1,77 @@
+{
+  "token": "80243708113548a2b5b8fa4c74e56be0",
+  "round": "DEV_F",
+  "questionId": "T3-022",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2206427.7547666,
+  "admittedAt": "2026-11-20T04:05:31.063792+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-20T04:05:31.063687+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "b72d73e9d7e69a52a452556f42cbcc65267e7884a106958091a161148be2ad7d",
+  "requestBytes": 10694,
+  "inputTokenEstimate": 11718,
+  "promptChars": 5495,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00064964",
+  "result": {
+    "startedAtUtc": "2026-11-20T04:05:31.104Z",
+    "finishedAtUtc": "2026-11-20T04:05:32.464Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "f3d58fc4-d626-48ca-ac5b-8d52eafd2712",
+      "object": "chat.completion",
+      "created": 1795147517,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT DATE_TRUNC('month', requested_at) AS month,\n       ROUND(SUM(refund_amount), 2) AS refund_amount\nFROM refunds\nGROUP BY 1\nORDER BY 1;",
+            "reasoning_content": "Simple: monthly refund amount sum from refunds by requested_at month. Need consider status? User asks refund amount total; no filter specified. Use refunds.refund_amount grouped by month of requested_at. Rules say don't add filters."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2665,
+        "completion_tokens": 92,
+        "total_tokens": 2757,
+        "prompt_tokens_details": {
+          "cached_tokens": 2432
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 48
+        },
+        "prompt_cache_hit_tokens": 2432,
+        "prompt_cache_miss_tokens": 233
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseBodySha256": "5a1e15a42c2a5e4dbf3e20e266cb526ce858af469d7e181318e07b627737d1a5",
+    "responseBytes": 914,
+    "error": null,
+    "upstreamAttempted": true,
+    "responseComplete": true,
+    "responseBodyFile": "80243708113548a2b5b8fa4c74e56be0-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 2665,
+    "completion_tokens": 92,
+    "total_tokens": 2757,
+    "prompt_tokens_details": {
+      "cached_tokens": 2432
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 48
+    },
+    "prompt_cache_hit_tokens": 2432,
+    "prompt_cache_miss_tokens": 233
+  }
+}

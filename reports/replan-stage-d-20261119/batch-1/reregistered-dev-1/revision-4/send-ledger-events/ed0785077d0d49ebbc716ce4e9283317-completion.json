@@ -1,0 +1,77 @@
+{
+  "token": "ed0785077d0d49ebbc716ce4e9283317",
+  "round": "DEV_F",
+  "questionId": "T3-017",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2206415.6989154,
+  "admittedAt": "2026-11-20T04:05:19.006253+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-20T04:05:19.006057+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "ff66c309736aa817ae77fc3b6b4c0f750f30ee275b1cc18ac6c7854a2005fc30",
+  "requestBytes": 11762,
+  "inputTokenEstimate": 12786,
+  "promptChars": 6565,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00076876",
+  "result": {
+    "startedAtUtc": "2026-11-20T04:05:19.044Z",
+    "finishedAtUtc": "2026-11-20T04:05:20.429Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "0043a2a9-05da-4140-8ccd-52abbb7926b3",
+      "object": "chat.completion",
+      "created": 1795147505,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT ROUND(AVG(EXTRACT(EPOCH FROM (order_delivered_customer_date - order_purchase_timestamp))::numeric / 86400), 2) AS avg_days\nFROM orders\nWHERE order_delivered_customer_date IS NOT NULL AND order_purchase_timestamp IS NOT NULL;",
+            "reasoning_content": "Need compute average days from order_purchase_timestamp to order_delivered_customer_date. Only where delivered not null. Use AVG on epoch / 86400, cast numeric, round 2.\n\nSingle row aggregate, no LIMIT needed."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2927,
+        "completion_tokens": 119,
+        "total_tokens": 3046,
+        "prompt_tokens_details": {
+          "cached_tokens": 2688
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 51
+        },
+        "prompt_cache_hit_tokens": 2688,
+        "prompt_cache_miss_tokens": 239
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseBodySha256": "cb65580b397fdd852daf333195d23705ffe317f9ec4063055d0246ab7abab11e",
+    "responseBytes": 984,
+    "error": null,
+    "upstreamAttempted": true,
+    "responseComplete": true,
+    "responseBodyFile": "ed0785077d0d49ebbc716ce4e9283317-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 2927,
+    "completion_tokens": 119,
+    "total_tokens": 3046,
+    "prompt_tokens_details": {
+      "cached_tokens": 2688
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 51
+    },
+    "prompt_cache_hit_tokens": 2688,
+    "prompt_cache_miss_tokens": 239
+  }
+}

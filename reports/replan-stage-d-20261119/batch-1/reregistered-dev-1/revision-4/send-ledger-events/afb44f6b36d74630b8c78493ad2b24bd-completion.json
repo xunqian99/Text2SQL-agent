@@ -1,0 +1,77 @@
+{
+  "token": "afb44f6b36d74630b8c78493ad2b24bd",
+  "round": "DEV_F",
+  "questionId": "T2-010",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2206271.0597915,
+  "admittedAt": "2026-11-20T04:02:54.376798+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-20T04:02:54.376713+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "a0c29362b8364de2e7d18b58c3d98558cf8f93650554069034becfc8c1a4105a",
+  "requestBytes": 11604,
+  "inputTokenEstimate": 12628,
+  "promptChars": 6349,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00069176",
+  "result": {
+    "startedAtUtc": "2026-11-20T04:02:54.411Z",
+    "finishedAtUtc": "2026-11-20T04:02:56.444Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "6895096b-cb3e-4d57-a598-6a9591bbff67",
+      "object": "chat.completion",
+      "created": 1795147361,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT seller_state, COUNT(*) AS seller_count\nFROM sellers\nGROUP BY seller_state\nORDER BY seller_count DESC\nLIMIT 100;",
+            "reasoning_content": "Need count sellers per state. Table sellers has seller_state. Count sellers grouped by state, order desc. Each seller one row. LIMIT needed? Group by, output one row per state. Rule 3 must LIMIT unless single-row aggregate without group. Add LIMIT. Probably TopN? Question doesn't specify N; still need LIMIT due hard rule. Add LIMIT 100 maybe. Use seller_state."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2866,
+        "completion_tokens": 115,
+        "total_tokens": 2981,
+        "prompt_tokens_details": {
+          "cached_tokens": 2688
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 85
+        },
+        "prompt_cache_hit_tokens": 2688,
+        "prompt_cache_miss_tokens": 178
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseBodySha256": "db430468912c167c43ced338b56460e16e5a5204d38b4fcb09d03172a2190a92",
+    "responseBytes": 1024,
+    "error": null,
+    "upstreamAttempted": true,
+    "responseComplete": true,
+    "responseBodyFile": "afb44f6b36d74630b8c78493ad2b24bd-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 2866,
+    "completion_tokens": 115,
+    "total_tokens": 2981,
+    "prompt_tokens_details": {
+      "cached_tokens": 2688
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 85
+    },
+    "prompt_cache_hit_tokens": 2688,
+    "prompt_cache_miss_tokens": 178
+  }
+}

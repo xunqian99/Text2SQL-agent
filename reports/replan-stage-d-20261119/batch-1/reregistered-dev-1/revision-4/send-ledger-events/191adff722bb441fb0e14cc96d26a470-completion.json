@@ -1,0 +1,77 @@
+{
+  "token": "191adff722bb441fb0e14cc96d26a470",
+  "round": "DEV_F",
+  "questionId": "T1-035",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2206235.5075518,
+  "admittedAt": "2026-11-20T04:02:18.826933+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-20T04:02:18.826852+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "4c827d38258f71f55cbc6f87dc4bb468f135746587ac79313c64ff8669c8d30d",
+  "requestBytes": 12182,
+  "inputTokenEstimate": 13206,
+  "promptChars": 6859,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00087932",
+  "result": {
+    "startedAtUtc": "2026-11-20T04:02:18.867Z",
+    "finishedAtUtc": "2026-11-20T04:02:21.396Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "884e973d-fd3d-4a5e-bcc2-c5e5e943e79e",
+      "object": "chat.completion",
+      "created": 1795147325,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT COUNT(*) AS record_count\nFROM inventory\nWHERE quantity < safety_stock;",
+            "reasoning_content": "We need answer SQL only. Need count records in inventory where quantity < safety_stock. Must LIMIT? Rule 3: must LIMIT except single-row no group by COUNT/SUM/AVG etc aggregate. This is count aggregate single row, no limit required. Need only select count. \"记录有多少条\" count rows. inventory primary key combined. Count(*). No filter other than quantity < safety_stock. Output alias maybe 记录数. Need direct SQL. Ensure lowercase. Could use COUNT(*) AS record_count or count. Chinese alias acceptable? SQL identifiers unquoted Chinese maybe no. Use AS count. They request no explanation. SQL only."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 3027,
+        "completion_tokens": 153,
+        "total_tokens": 3180,
+        "prompt_tokens_details": {
+          "cached_tokens": 2816
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 135
+        },
+        "prompt_cache_hit_tokens": 2816,
+        "prompt_cache_miss_tokens": 211
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseBodySha256": "b4baa899d24773bef300dbc7d4885435cec54cd9544f5c8944570fd002da35b5",
+    "responseBytes": 1231,
+    "error": null,
+    "upstreamAttempted": true,
+    "responseComplete": true,
+    "responseBodyFile": "191adff722bb441fb0e14cc96d26a470-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 3027,
+    "completion_tokens": 153,
+    "total_tokens": 3180,
+    "prompt_tokens_details": {
+      "cached_tokens": 2816
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 135
+    },
+    "prompt_cache_hit_tokens": 2816,
+    "prompt_cache_miss_tokens": 211
+  }
+}

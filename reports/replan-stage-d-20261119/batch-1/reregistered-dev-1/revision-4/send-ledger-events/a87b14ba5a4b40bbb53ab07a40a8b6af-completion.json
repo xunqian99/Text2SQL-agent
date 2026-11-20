@@ -1,0 +1,77 @@
+{
+  "token": "a87b14ba5a4b40bbb53ab07a40a8b6af",
+  "round": "DEV_F",
+  "questionId": "T3-028",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2206441.7604786,
+  "admittedAt": "2026-11-20T04:05:45.103320+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-20T04:05:45.103087+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "7439af73efd40dc952495c82062664447b42cca229dc213fd2e1f994f9621b85",
+  "requestBytes": 11387,
+  "inputTokenEstimate": 12411,
+  "promptChars": 6152,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00224276",
+  "result": {
+    "startedAtUtc": "2026-11-20T04:05:45.154Z",
+    "finishedAtUtc": "2026-11-20T04:05:48.976Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "b2c76869-8a85-46a4-b258-4ee643bd9239",
+      "object": "chat.completion",
+      "created": 1795147532,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT COUNT(*) AS member_count\nFROM members\nWHERE last_login_date >= (SELECT MAX(last_login_date) FROM members) - INTERVAL '29 days'\n  AND last_login_date <= (SELECT MAX(last_login_date) FROM members);",
+            "reasoning_content": "我们需要回答SQL。中文问题：以会员表最大最近登录日期为参考日，含参考日在内最近30个自然日登录过的会员有多少人？\n\n需要查询 members，参考日 = MAX(last_login_date) 全表。含参考日在内最近30个自然日：窗口 [D-(30-1)天, D] 即 >= D - 29 days 且 <= D。登录过的会员有多少人：计数会员（members行）登录日期在窗口内。last_login_date 是会员最近登录日期，每个会员一行。COUNT(*) 或 COUNT(member_id) 都可以。需要只输出一条SELECT，LIMIT? 聚合单行无GROUP BY例外，不需要LIMIT。需要计算动态参考日。SQL: SELECT COUNT(*) AS member_count FROM members WHERE last_login_date >= (SELECT MAX(last_login_date) FROM members) - INTERVAL '29 days' AND last_login_date <= (SELECT MAX(last_login_date) FROM members); 但注意 NULL 排除自然。含参考日。计数会员人数。因为参考日最大日期可能多个会员在该日，包含。用 COUNT(*) 计数行，每行会员唯一。也可 COUNT(DISTINCT member_id) 但主键唯一。需要确保使用 last_login_date 日期类型，减 interval 返回 timestamp? date - interval 返回 timestamp，比较 date 可 cast. PostgreSQL date - interval -> timestamp。last_login_date <= max date. 窗口没有问题。需要可能使用 CTE 取参考日。只输出SQL，无解释。需要 \"最近30个自然日\" = N=30，D-(N-1)=D-29。很好。输出列名？问题问有多少人，可用 member_count 或 logged_members。需要只投影计数。别名用 member_count。SQL:\n\nSELECT COUNT(*) AS member_count\nFROM members\nWHERE last_login_date >= (SELECT MAX(last_login_date) FROM members) - INTERVAL '29 days'\n  AND last_login_date <= (SELECT MAX(last_login_date) FROM members);\n\n这满足。注意 \"登录过\" 用 last_login_date 可能仅最近登录，但业务字段如此。参考日全表 MAX。无其他过滤。输出。"
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2837,
+        "completion_tokens": 510,
+        "total_tokens": 3347,
+        "prompt_tokens_details": {
+          "cached_tokens": 2688
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 461
+        },
+        "prompt_cache_hit_tokens": 2688,
+        "prompt_cache_miss_tokens": 149
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseBodySha256": "f04ba89165579ad7baaa1ae0a757546ae684c8b22d59dd3180da61852ef3acd1",
+    "responseBytes": 2675,
+    "error": null,
+    "upstreamAttempted": true,
+    "responseComplete": true,
+    "responseBodyFile": "a87b14ba5a4b40bbb53ab07a40a8b6af-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 2837,
+    "completion_tokens": 510,
+    "total_tokens": 3347,
+    "prompt_tokens_details": {
+      "cached_tokens": 2688
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 461
+    },
+    "prompt_cache_hit_tokens": 2688,
+    "prompt_cache_miss_tokens": 149
+  }
+}

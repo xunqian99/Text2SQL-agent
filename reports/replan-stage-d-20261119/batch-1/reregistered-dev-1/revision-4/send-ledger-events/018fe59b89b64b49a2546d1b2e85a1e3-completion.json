@@ -1,0 +1,77 @@
+{
+  "token": "018fe59b89b64b49a2546d1b2e85a1e3",
+  "round": "DEV_F",
+  "questionId": "T2-003",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2206256.0462321,
+  "admittedAt": "2026-11-20T04:02:39.348104+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-20T04:02:39.348021+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "2880d1cd4a5f506eb4f31ee0f14aef8fdb4065a9e01c85664994d54ed5e6422e",
+  "requestBytes": 10889,
+  "inputTokenEstimate": 11913,
+  "promptChars": 5786,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.0007282",
+  "result": {
+    "startedAtUtc": "2026-11-20T04:02:39.387Z",
+    "finishedAtUtc": "2026-11-20T04:02:41.164Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "57ad53f6-9b95-492e-88ea-e6300deef9a8",
+      "object": "chat.completion",
+      "created": 1795147346,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT ROUND(AVG(price), 2) AS avg_item_price\nFROM order_items;",
+            "reasoning_content": "我们需要回答SQL。问题：订单明细的平均商品价格是多少？需要一条SELECT，平均商品价格。订单明细表 order_items，price 商品价格。平均商品价格 = AVG(price) per order item. 单行聚合无需LIMIT。需要ROUND两位，因为金额/平均。AVG(price) numeric? price numeric so avg numeric. SELECT ROUND(AVG(price), 2) AS avg_price FROM order_items; 输出别名？ average item price. 只用真实列。不要过滤。最终只SQL。"
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2697,
+        "completion_tokens": 135,
+        "total_tokens": 2832,
+        "prompt_tokens_details": {
+          "cached_tokens": 2560
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 114
+        },
+        "prompt_cache_hit_tokens": 2560,
+        "prompt_cache_miss_tokens": 137
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseBodySha256": "d489a7f29ecf9ba6883808e63316b11845da29f585b3e3787b4e493bcd71d46d",
+    "responseBytes": 1085,
+    "error": null,
+    "upstreamAttempted": true,
+    "responseComplete": true,
+    "responseBodyFile": "018fe59b89b64b49a2546d1b2e85a1e3-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 2697,
+    "completion_tokens": 135,
+    "total_tokens": 2832,
+    "prompt_tokens_details": {
+      "cached_tokens": 2560
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 114
+    },
+    "prompt_cache_hit_tokens": 2560,
+    "prompt_cache_miss_tokens": 137
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "token": "a5994840598d4625b8021d8a45136d47",
+  "round": "DEV_F",
+  "questionId": "T1-022",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2206213.897608,
+  "admittedAt": "2026-11-20T04:01:57.241111+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-20T04:01:57.240912+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "ec628891508904db09cf83c313026dd30ba43084d9a3b768ff4ec3e36b2c7984",
+  "requestBytes": 11719,
+  "inputTokenEstimate": 12743,
+  "promptChars": 6430,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00090576",
+  "result": {
+    "startedAtUtc": "2026-11-20T04:01:57.283Z",
+    "finishedAtUtc": "2026-11-20T04:01:59.676Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "bbb80cce-21ed-44af-8c6e-81b8b582de49",
+      "object": "chat.completion",
+      "created": 1795147304,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT COUNT(*) AS detail_count\nFROM order_items\nWHERE price < 10;",
+            "reasoning_content": "We need answer SQL only. Need interpret \"价格低于10元的订单明细有多少条？\" Table order_items price. Count rows where price < 10. Need LIMIT? Aggregate single row exempt. SQL: SELECT COUNT(*) AS cnt FROM order_items WHERE price < 10; Need maybe \"订单明细\" count records order_items rows. No extra filters. Output alias maybe low_price_items. Must only SQL. Need no explanation. Ensure lowercase columns. Use price < 10. Count(*) okay. Since PK composite. Direct. Could alias \"order_items_count\" or \"cnt\". Question asks 多少条. Output one count. Use COUNT(*) AS detail_count."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2924,
+        "completion_tokens": 154,
+        "total_tokens": 3078,
+        "prompt_tokens_details": {
+          "cached_tokens": 2688
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 136
+        },
+        "prompt_cache_hit_tokens": 2688,
+        "prompt_cache_miss_tokens": 236
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseBodySha256": "57d7b983dc9d116431ea644103ad0d3364b381fdaa0695bb2f422dcd2569844d",
+    "responseBytes": 1212,
+    "error": null,
+    "upstreamAttempted": true,
+    "responseComplete": true,
+    "responseBodyFile": "a5994840598d4625b8021d8a45136d47-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 2924,
+    "completion_tokens": 154,
+    "total_tokens": 3078,
+    "prompt_tokens_details": {
+      "cached_tokens": 2688
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 136
+    },
+    "prompt_cache_hit_tokens": 2688,
+    "prompt_cache_miss_tokens": 236
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "token": "f28bae92eea6483c906496886aa808d2",
+  "round": "DEV_F",
+  "questionId": "T2-021",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2206295.7762588,
+  "admittedAt": "2026-11-20T04:03:19.108914+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-20T04:03:19.108807+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "6b9c23c9b197561c41d974dc135da22ba61ca749727a50fa4a944c3d16f2602e",
+  "requestBytes": 10060,
+  "inputTokenEstimate": 11084,
+  "promptChars": 4978,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00236608",
+  "result": {
+    "startedAtUtc": "2026-11-20T04:03:19.150Z",
+    "finishedAtUtc": "2026-11-20T04:03:25.510Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "1bf68152-2a27-4796-ae68-259e8110e943",
+      "object": "chat.completion",
+      "created": 1795147386,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT reason_code, COUNT(*) AS refund_count\nFROM refunds\nGROUP BY reason_code\nORDER BY reason_code NULLS LAST\nLIMIT 100;",
+            "reasoning_content": "我们需要回答中文问题，输出一条SQL。需要根据schema。问题：每个退款原因各有多少笔退款？ 表 refunds，reason_code。计数退款笔数。每个退款原因分组。需要只输出SQL。注意是否过滤？不应擅自加状态过滤。每个退款原因各有多少笔退款。计数应该是COUNT(*)每退款记录，因为refunds.refund_id primary key，每行退款。按reason_code分组。需要包含所有原因，NULL也保留？reason_code可能NULL，普通列表保留未知，分组保留NULL。排序？未指定，可能需要按退款原因，或数量降序？问题“每个...各有多少”没有排序。通常 GROUP BY reason_code。可加 ORDER BY reason_code? 规则11 不为信息更全加排序？但“仅当需要”排序。如果无指定，可能不需要ORDER BY，但输出可读。规则默认时间升序 for 时间比较。这里不是时间。TopN? 不是。我们只需SELECT reason_code, COUNT(*) AS refund_count FROM refunds GROUP BY reason_code; LIMIT? 有GROUP BY，必须LIMIT? 硬性规则3：必须LIMIT，单行无GROUP BY的聚合除外。有GROUP BY需要LIMIT。需要给个合理的 LIMIT 比如 100? 问题每个退款原因，原因枚举少。可LIMIT 100。或者不加？规则必须LIMIT。应加ORDER BY reason_code NULLS LAST, LIMIT 100. 但规则8：状态、州代码、分类值沿用原值。输出原因代码。可能别名 refund_count。中文没问题。 注意\"多少笔退款\"退款记录笔数=COUNT(*) 或 COUNT(refund_id)。refund_id PK。COUNT(*). 需要不需要JOIN? 不需要。 reason_code枚举4值，可能NULL。GROUP BY. 输出排序：如果要每原因一行。ORDER BY reason_code NULLS LAST 可稳定。但规则11说不为信息更全加列分组排序；排序可能不必要。LIMIT在没有排序时随意返回。Postgres group by may arbitrary. Better order by reason_code to deterministic. 但可能不违反。最终SQL一行。只输出SELECT。用LIMIT 100。是否需要CASE转换？不，用原值。输出列reason_code, refund_count。"
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2536,
+        "completion_tokens": 522,
+        "total_tokens": 3058,
+        "prompt_tokens_details": {
+          "cached_tokens": 2304
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 489
+        },
+        "prompt_cache_hit_tokens": 2304,
+        "prompt_cache_miss_tokens": 232
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseBodySha256": "869f1e349e75ab673bde47349f630efcabb926df0c1c312e19bf070a0abda709",
+    "responseBytes": 2738,
+    "error": null,
+    "upstreamAttempted": true,
+    "responseComplete": true,
+    "responseBodyFile": "f28bae92eea6483c906496886aa808d2-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 2536,
+    "completion_tokens": 522,
+    "total_tokens": 3058,
+    "prompt_tokens_details": {
+      "cached_tokens": 2304
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 489
+    },
+    "prompt_cache_hit_tokens": 2304,
+    "prompt_cache_miss_tokens": 232
+  }
+}

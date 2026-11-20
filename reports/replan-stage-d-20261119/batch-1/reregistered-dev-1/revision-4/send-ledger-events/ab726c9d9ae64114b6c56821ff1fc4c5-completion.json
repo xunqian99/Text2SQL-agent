@@ -1,0 +1,77 @@
+{
+  "token": "ab726c9d9ae64114b6c56821ff1fc4c5",
+  "round": "DEV_F",
+  "questionId": "T2-009",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2206265.7630958,
+  "admittedAt": "2026-11-20T04:02:49.070957+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-20T04:02:49.070869+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "5cd1e7ee6678709a54dbbd3669cf930398c924dc7e257edee5349b489492bb00",
+  "requestBytes": 12274,
+  "inputTokenEstimate": 13298,
+  "promptChars": 6435,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00119632",
+  "result": {
+    "startedAtUtc": "2026-11-20T04:02:49.112Z",
+    "finishedAtUtc": "2026-11-20T04:02:52.325Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "8a1d5ce1-d883-4d80-8f27-bb0c45a522da",
+      "object": "chat.completion",
+      "created": 1795147356,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT product_category_name, COUNT(*) AS product_count\nFROM products\nWHERE product_category_name IS NOT NULL\nGROUP BY product_category_name\nORDER BY product_count DESC, product_category_name ASC\nLIMIT 10;",
+            "reasoning_content": "We need answer SQL only. Need interpret: 商品数量最多的 10 个类目是哪些？ Need count products per category, top10. Use products. Dimension policy product_category_nulls_v1 applies when category as grouping dimension: exclude null category. Count products. Need limit 10. Need maybe product_category_name. Could use product_category_name English? User asks 类目; no explicit English. Use current fact product_category_name. Count product_id. Order count desc, tie break maybe category asc. Need not translate. SQL one select with LIMIT. Need no explanation/code fences. Must include product_category_name IS NOT NULL. count(*) or count(product_id). Product_id primary key. \"商品数量\" count products. Use count(*) per category. Top 10. Order by cnt desc, product_category_name asc. LIMIT 10. Ensure no deterministic ties? Fine. Return category and product count. Could alias product_count. We need only SQL."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2980,
+        "completion_tokens": 244,
+        "total_tokens": 3224,
+        "prompt_tokens_details": {
+          "cached_tokens": 2816
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 199
+        },
+        "prompt_cache_hit_tokens": 2816,
+        "prompt_cache_miss_tokens": 164
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseBodySha256": "2da6b2d235130d72fceb48301e6c784b782f537396d2221605fe77bf2d39afc3",
+    "responseBytes": 1678,
+    "error": null,
+    "upstreamAttempted": true,
+    "responseComplete": true,
+    "responseBodyFile": "ab726c9d9ae64114b6c56821ff1fc4c5-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 2980,
+    "completion_tokens": 244,
+    "total_tokens": 3224,
+    "prompt_tokens_details": {
+      "cached_tokens": 2816
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 199
+    },
+    "prompt_cache_hit_tokens": 2816,
+    "prompt_cache_miss_tokens": 164
+  }
+}

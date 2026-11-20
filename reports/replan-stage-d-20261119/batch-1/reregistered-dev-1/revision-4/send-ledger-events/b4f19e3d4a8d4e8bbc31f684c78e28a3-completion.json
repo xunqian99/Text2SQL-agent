@@ -1,0 +1,77 @@
+{
+  "token": "b4f19e3d4a8d4e8bbc31f684c78e28a3",
+  "round": "DEV_F",
+  "questionId": "T2-023",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2206304.2471849,
+  "admittedAt": "2026-11-20T04:03:27.579097+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-20T04:03:27.578985+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "50c3f814710ca613881a34735edc95ee67aea0782c9e7a3e4a7601899dd73f05",
+  "requestBytes": 11456,
+  "inputTokenEstimate": 12480,
+  "promptChars": 6154,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00109376",
+  "result": {
+    "startedAtUtc": "2026-11-20T04:03:27.623Z",
+    "finishedAtUtc": "2026-11-20T04:03:30.124Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "192021e7-576d-414a-89d6-d337cca83c2c",
+      "object": "chat.completion",
+      "created": 1795147394,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT ROUND(SUM(refund_amount), 2) AS total_refund_amount\nFROM refunds\nWHERE status = 4;",
+            "reasoning_content": "We need answer SQL only. Need parse. \"已经退款的订单，退款金额合计是多少？\" Tables refunds, status smallint: 4=已退款. Need sum refund_amount for status=4. Single table count no group no limit requirement exception. Need output only SQL. Need consider \"已经退款的订单\" could refunds.status=4. Sum refund_amount. Use ROUND? Currency sum maybe round two? Rule 12 amounts/unit prices/averages round two. Sum? \"其余金额/单价/均值ROUND两位\" yes amount round 2. But if aggregate sum numeric, ROUND(SUM(refund_amount),2). Alias maybe total_refund_amount. No filters extra. SQL:\n\nSELECT ROUND(SUM(refund_amount), 2) AS total_refund_amount FROM refunds WHERE status = 4;\n\nNeed no LIMIT because single-row aggregate. Direct."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2868,
+        "completion_tokens": 215,
+        "total_tokens": 3083,
+        "prompt_tokens_details": {
+          "cached_tokens": 2688
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 186
+        },
+        "prompt_cache_hit_tokens": 2688,
+        "prompt_cache_miss_tokens": 180
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseBodySha256": "6869d607456ae2b36e968dfeff3d2d95bb99e4180d9700f24824570995e7fd3c",
+    "responseBytes": 1394,
+    "error": null,
+    "upstreamAttempted": true,
+    "responseComplete": true,
+    "responseBodyFile": "b4f19e3d4a8d4e8bbc31f684c78e28a3-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 2868,
+    "completion_tokens": 215,
+    "total_tokens": 3083,
+    "prompt_tokens_details": {
+      "cached_tokens": 2688
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 186
+    },
+    "prompt_cache_hit_tokens": 2688,
+    "prompt_cache_miss_tokens": 180
+  }
+}

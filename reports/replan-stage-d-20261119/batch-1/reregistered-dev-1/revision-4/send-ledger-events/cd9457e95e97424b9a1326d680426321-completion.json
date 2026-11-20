@@ -1,0 +1,77 @@
+{
+  "token": "cd9457e95e97424b9a1326d680426321",
+  "round": "DEV_F",
+  "questionId": "T2-034",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2206332.8971741,
+  "admittedAt": "2026-11-20T04:03:56.186911+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-20T04:03:56.186775+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "2faaa15d0f6659bb114b1dafef0c1273b3e167f83d5cfd7a06ef2bfb0f24d764",
+  "requestBytes": 10356,
+  "inputTokenEstimate": 11380,
+  "promptChars": 5126,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00089208",
+  "result": {
+    "startedAtUtc": "2026-11-20T04:03:56.226Z",
+    "finishedAtUtc": "2026-11-20T04:03:57.781Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "089d47d5-09ab-4e7a-af85-a33bf569c2d7",
+      "object": "chat.completion",
+      "created": 1795147423,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT ROUND(SUM(commission), 2) AS total_commission FROM settlements;",
+            "reasoning_content": "需要取 settlements.commission 总额？\"平台从卖家那里收取的佣金总额\" — 佣金总额。表 settlements 有 commission；settlement_items 有 commission_amount。哪个口径？平台从卖家收取佣金 = commission。参考 METRICS 未给出。使用 settlements.commission 的 SUM。要注意 status? 不应擅加过滤。直接 SUM(commission) FROM settlements。ROUND 两位金额。单行聚合无需LIMIT。\n\n不过可能有重复问题：settlements 每行一个结算，commission 是结算的佣金。直接 SUM。\n\n输出 SELECT ROUND(SUM(commission), 2) FROM settlements;"
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2546,
+        "completion_tokens": 151,
+        "total_tokens": 2697,
+        "prompt_tokens_details": {
+          "cached_tokens": 2304
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 132
+        },
+        "prompt_cache_hit_tokens": 2304,
+        "prompt_cache_miss_tokens": 242
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseBodySha256": "ec55659951b7ce56fdb5a80c7a6bdeffd840ea6d420b12447a972e79bb8ab1ce",
+    "responseBytes": 1219,
+    "error": null,
+    "upstreamAttempted": true,
+    "responseComplete": true,
+    "responseBodyFile": "cd9457e95e97424b9a1326d680426321-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 2546,
+    "completion_tokens": 151,
+    "total_tokens": 2697,
+    "prompt_tokens_details": {
+      "cached_tokens": 2304
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 132
+    },
+    "prompt_cache_hit_tokens": 2304,
+    "prompt_cache_miss_tokens": 242
+  }
+}

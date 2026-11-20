@@ -1,0 +1,77 @@
+{
+  "token": "4bf5d1c1ae1547b3b27d2d7f6877c2a7",
+  "round": "DEV_F",
+  "questionId": "T2-014",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2206285.2922321,
+  "admittedAt": "2026-11-20T04:03:08.596967+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-20T04:03:08.596882+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "fb760e61a6097eccd469b158219eed3bc29a720d05b86a3f691a44a369adfc7d",
+  "requestBytes": 10453,
+  "inputTokenEstimate": 11477,
+  "promptChars": 5065,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00063464",
+  "result": {
+    "startedAtUtc": "2026-11-20T04:03:08.632Z",
+    "finishedAtUtc": "2026-11-20T04:03:09.925Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "4418584a-6fdf-46ae-b156-3c89ea2e9be1",
+      "object": "chat.completion",
+      "created": 1795147375,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT COUNT(*) FILTER (WHERE payment_type = 'credit_card') AS credit_card_cnt,\n       COUNT(*) FILTER (WHERE payment_type = 'boleto') AS boleto_cnt\nFROM order_payments;",
+            "reasoning_content": "The contract says return one row with exactly 2 count columns: credit_card count and boleto count from order_payments.\n\nNote \"各占多少笔\" — counts. Contract explicit. No GROUP BY.\n\nNeed LIMIT? Aggregates without GROUP BY don't need LIMIT."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2602,
+        "completion_tokens": 104,
+        "total_tokens": 2706,
+        "prompt_tokens_details": {
+          "cached_tokens": 2432
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 59
+        },
+        "prompt_cache_hit_tokens": 2432,
+        "prompt_cache_miss_tokens": 170
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseBodySha256": "c2fca0cc4b5d08110966af0b9cbc0fb6b564a1a0ed988f26393d7b817b40ff2d",
+    "responseBytes": 962,
+    "error": null,
+    "upstreamAttempted": true,
+    "responseComplete": true,
+    "responseBodyFile": "4bf5d1c1ae1547b3b27d2d7f6877c2a7-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 2602,
+    "completion_tokens": 104,
+    "total_tokens": 2706,
+    "prompt_tokens_details": {
+      "cached_tokens": 2432
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 59
+    },
+    "prompt_cache_hit_tokens": 2432,
+    "prompt_cache_miss_tokens": 170
+  }
+}

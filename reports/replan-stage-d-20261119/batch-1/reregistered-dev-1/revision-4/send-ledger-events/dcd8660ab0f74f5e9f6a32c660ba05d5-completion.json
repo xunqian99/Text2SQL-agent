@@ -1,0 +1,77 @@
+{
+  "token": "dcd8660ab0f74f5e9f6a32c660ba05d5",
+  "round": "DEV_F",
+  "questionId": "T3-002",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2206347.5108775,
+  "admittedAt": "2026-11-20T04:04:10.804950+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-20T04:04:10.804767+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "b5d5bfa4d3a50c8d47a2b17f1f9f9ec26e0c41ebf1ca7b0532c1a32ae75bc4fb",
+  "requestBytes": 11551,
+  "inputTokenEstimate": 12575,
+  "promptChars": 6405,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00173076",
+  "result": {
+    "startedAtUtc": "2026-11-20T04:04:10.847Z",
+    "finishedAtUtc": "2026-11-20T04:04:15.093Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "931e251f-6d2a-4a0c-a674-57185cfb5d4c",
+      "object": "chat.completion",
+      "created": 1795147437,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT EXTRACT(YEAR FROM order_purchase_timestamp)::int AS year,\n       COUNT(*) AS order_count\nFROM orders\nWHERE order_purchase_timestamp >= '2017-01-01 00:00:00'\n  AND order_purchase_timestamp < '2019-01-01 00:00:00'\nGROUP BY 1\nORDER BY 1\nLIMIT 2;",
+            "reasoning_content": "We need answer SQL only. Need count orders by year 2017,2018. Need use orders order_purchase_timestamp. Question asks \"2017 年和 2018 年各有多少笔订单？\" Shape: time comparison same metric, probably each year one row? \"每维度值一行，维度列+指标列，时间升序\". Count distinct order? orders PK order_id, one row per order, COUNT(*). Filter years 2017,2018 by purchase timestamp. Year extract. Need maybe include both years even if no orders? Data has both. Output year, count. Alias maybe order_count. LIMIT. Since grouped, must include LIMIT per rule 3? Must LIMIT unless single-row aggregate without group. Here group, so LIMIT. Use WHERE EXTRACT(YEAR FROM order_purchase_timestamp) IN (2017,2018) GROUP BY 1 ORDER BY 1 LIMIT 2. Could also filter >= '2017-01-01' < '2019-01-01' better. SELECT EXTRACT(YEAR FROM order_purchase_timestamp)::int AS year, COUNT(*) AS order_count. Need be careful year alias maybe reserved? year okay. No code fence.\n\nNeed perhaps \"各有多少笔订单\" count orders. Use orders table. no status filter per rule 7 not add.\n\nFinal only SQL."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2873,
+        "completion_tokens": 373,
+        "total_tokens": 3246,
+        "prompt_tokens_details": {
+          "cached_tokens": 2688
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 287
+        },
+        "prompt_cache_hit_tokens": 2688,
+        "prompt_cache_miss_tokens": 185
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseBodySha256": "335179164a13865aef74122bce2a8970261194fae214462352efb69ac1b6fbde",
+    "responseBytes": 1903,
+    "error": null,
+    "upstreamAttempted": true,
+    "responseComplete": true,
+    "responseBodyFile": "dcd8660ab0f74f5e9f6a32c660ba05d5-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 2873,
+    "completion_tokens": 373,
+    "total_tokens": 3246,
+    "prompt_tokens_details": {
+      "cached_tokens": 2688
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 287
+    },
+    "prompt_cache_hit_tokens": 2688,
+    "prompt_cache_miss_tokens": 185
+  }
+}

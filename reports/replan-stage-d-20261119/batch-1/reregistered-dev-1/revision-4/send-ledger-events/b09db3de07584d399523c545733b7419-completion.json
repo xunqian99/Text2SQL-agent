@@ -1,0 +1,77 @@
+{
+  "token": "b09db3de07584d399523c545733b7419",
+  "round": "DEV_F",
+  "questionId": "T4-021",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2206547.1558432,
+  "admittedAt": "2026-11-20T04:07:30.462696+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-20T04:07:30.462340+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "36fb947f79b6972e8c3975a0c22c576a8da22f23c47cc793842b887294d2856f",
+  "requestBytes": 11476,
+  "inputTokenEstimate": 12500,
+  "promptChars": 6176,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00139176",
+  "result": {
+    "startedAtUtc": "2026-11-20T04:07:30.507Z",
+    "finishedAtUtc": "2026-11-20T04:07:33.323Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "1712fd80-0d23-4f1f-b449-42e5bf037ebd",
+      "object": "chat.completion",
+      "created": 1795147637,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT ca.campaign_id, COUNT(*) AS usage_count\nFROM campaigns ca\nJOIN coupons co ON co.campaign_id = ca.campaign_id\nJOIN coupon_usages cu ON cu.coupon_id = co.coupon_id\nGROUP BY ca.campaign_id\nORDER BY ca.campaign_id\nLIMIT 1000;",
+            "reasoning_content": "Need SQL: campaigns join coupons join coupon_usages, count usages per campaign_id, only those with usage records, output campaign_id and count.\n\nCount usage records: coupon_usages primary key usage_id, count(*) per campaign. Could a usage row duplicated? Join coupons via coupon_id unique, so count(*) fine.\n\nGROUP BY campaign_id. Order? not specified; can order by count desc maybe. Just output.\n\nSELECT c.campaign_id, COUNT(*) AS usage_count FROM campaigns c JOIN coupons co ON co.campaign_id=c.campaign_id JOIN coupon_usages cu ON cu.coupon_id=co.coupon_id GROUP BY c.campaign_id ORDER BY c.campaign_id LIMIT? Requirement LIMIT required unless single row aggregate. Use LIMIT 100? Hmm default TopN? No explicit N. Rule 3 must LIMIT. Use LIMIT 100.\n\nActually campaigns table only needed for campaign_id exists in coupons; could query coupons directly. But entity activity id; coupons.campaign_id. Use campaigns join to ensure entity. Fine."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2874,
+        "completion_tokens": 288,
+        "total_tokens": 3162,
+        "prompt_tokens_details": {
+          "cached_tokens": 2688
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 217
+        },
+        "prompt_cache_hit_tokens": 2688,
+        "prompt_cache_miss_tokens": 186
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseBodySha256": "ce694dea48362dbea97ef35fb9d19bb7bae436d541ca50ff249b55f073037b4a",
+    "responseBytes": 1724,
+    "error": null,
+    "upstreamAttempted": true,
+    "responseComplete": true,
+    "responseBodyFile": "b09db3de07584d399523c545733b7419-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 2874,
+    "completion_tokens": 288,
+    "total_tokens": 3162,
+    "prompt_tokens_details": {
+      "cached_tokens": 2688
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 217
+    },
+    "prompt_cache_hit_tokens": 2688,
+    "prompt_cache_miss_tokens": 186
+  }
+}

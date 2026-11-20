@@ -1,0 +1,77 @@
+{
+  "token": "80ab654f96ed4705b517057b81f144ad",
+  "round": "DEV_F",
+  "questionId": "T3-024",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2206431.2598076,
+  "admittedAt": "2026-11-20T04:05:34.595827+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-20T04:05:34.595676+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "087347ff202d57c6edc276c58ed2e587c2be9b7746a86a1814a73f40e67043d5",
+  "requestBytes": 11512,
+  "inputTokenEstimate": 12536,
+  "promptChars": 6359,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00184076",
+  "result": {
+    "startedAtUtc": "2026-11-20T04:05:34.639Z",
+    "finishedAtUtc": "2026-11-20T04:05:38.747Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "2eda4984-59bc-4aa8-b7b1-cbb02fdd0c14",
+      "object": "chat.completion",
+      "created": 1795147521,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT ROUND(AVG(EXTRACT(EPOCH FROM (resolved_at - created_at)) / 3600.0)::numeric, 2) AS avg_resolution_hours\nFROM support_tickets\nWHERE resolved_at IS NOT NULL;",
+            "reasoning_content": "We need answer only SQL. Need parse: average hours from creation to resolution for support tickets. Use support_tickets resolved_at - created_at. Need maybe only resolved tickets? \"从创建到解决平均\" implies actual duration tickets with resolved_at. Use AVG(EXTRACT(EPOCH FROM (resolved_at - created_at))/3600). Need round 2 numeric cast. Need no group, aggregate single row, LIMIT not needed? Rule: must LIMIT except single-row no GROUP BY COUNT/SUM/AVG etc. AVG allowed. Output alias maybe avg_resolution_hours. Use ROUND(AVG(EXTRACT(EPOCH...))::numeric, 2). EXTRACT returns numeric in PostgreSQL? extract epoch returns numeric? OID? Actually extract returns numeric for timestamp difference? In PG, EXTRACT returns numeric. But rule says EXTRACT EPOCH maybe double? They say cast if double. Safe cast: ROUND((AVG(EXTRACT(EPOCH FROM (resolved_at - created_at)) / 3600.0))::numeric, 2). Need only resolved tickets where resolved_at is not null? AVG ignores null differences. But if resolved_at null, subtraction null, ignored. Fine. Could filter resolved_at IS NOT NULL? That's not adding invalid; but avg ignores anyway. For semantic maybe WHERE resolved_at IS NOT NULL. Is that extra filter? It just excludes unresolved, necessary because duration only for resolved. The question asks from creation to resolution, only resolved. So yes. Need maybe \"客服工单\" all support_tickets. No join. Output one row. SQL only no code fences."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2883,
+        "completion_tokens": 398,
+        "total_tokens": 3281,
+        "prompt_tokens_details": {
+          "cached_tokens": 2688
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 344
+        },
+        "prompt_cache_hit_tokens": 2688,
+        "prompt_cache_miss_tokens": 195
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseBodySha256": "cef098829cbe67ea184359c54e3e9bae72723c000e7417e6db21788174a12f50",
+    "responseBytes": 2152,
+    "error": null,
+    "upstreamAttempted": true,
+    "responseComplete": true,
+    "responseBodyFile": "80ab654f96ed4705b517057b81f144ad-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 2883,
+    "completion_tokens": 398,
+    "total_tokens": 3281,
+    "prompt_tokens_details": {
+      "cached_tokens": 2688
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 344
+    },
+    "prompt_cache_hit_tokens": 2688,
+    "prompt_cache_miss_tokens": 195
+  }
+}

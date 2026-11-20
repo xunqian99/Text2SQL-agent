@@ -1,0 +1,77 @@
+{
+  "token": "36c25408549a425cb6a4b1b5b779aa2f",
+  "round": "DEV_F",
+  "questionId": "T3-026",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2206437.506342,
+  "admittedAt": "2026-11-20T04:05:40.824696+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-20T04:05:40.824499+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "2ceb0ef5962a13741518fd109ae69a24949a926cdb6d2ddd8181e5952f95684a",
+  "requestBytes": 10179,
+  "inputTokenEstimate": 11203,
+  "promptChars": 5146,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00088608",
+  "result": {
+    "startedAtUtc": "2026-11-20T04:05:40.868Z",
+    "finishedAtUtc": "2026-11-20T04:05:42.934Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "b7da9e0d-8a43-45f2-be55-ecac40ff80ee",
+      "object": "chat.completion",
+      "created": 1795147527,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT DATE_TRUNC('month', review_creation_date) AS month, ROUND(AVG(review_score), 2) AS avg_review_score FROM order_reviews GROUP BY 1 ORDER BY 1 LIMIT 100;",
+            "reasoning_content": "Simple: group by month of review_creation_date, avg review_score, order by month.\n\nTime grouping: 月用 DATE_TRUNC('month', review_creation_date).\n\nROUND numeric with 2 decimals.\n\nNeed LIMIT? GROUP BY query with aggregate — must LIMIT per rule 3 unless single row count. Add LIMIT? Rule 3 says 必须LIMIT，单行无GROUP BY的聚合除外. So add LIMIT.\n\nOrder by month ascending."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2556,
+        "completion_tokens": 147,
+        "total_tokens": 2703,
+        "prompt_tokens_details": {
+          "cached_tokens": 2304
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 98
+        },
+        "prompt_cache_hit_tokens": 2304,
+        "prompt_cache_miss_tokens": 252
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseBodySha256": "f6705f8f3c7519ca16af3f803197bd21857e760df36f4cb4bd8d98bb23544646",
+    "responseBytes": 1091,
+    "error": null,
+    "upstreamAttempted": true,
+    "responseComplete": true,
+    "responseBodyFile": "36c25408549a425cb6a4b1b5b779aa2f-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 2556,
+    "completion_tokens": 147,
+    "total_tokens": 2703,
+    "prompt_tokens_details": {
+      "cached_tokens": 2304
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 98
+    },
+    "prompt_cache_hit_tokens": 2304,
+    "prompt_cache_miss_tokens": 252
+  }
+}
