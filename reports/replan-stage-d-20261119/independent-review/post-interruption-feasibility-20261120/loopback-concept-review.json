@@ -1,0 +1,96 @@
+{
+  "format": "independent-loopback-concept-source-and-metadata-review-v1",
+  "reviewMethod": "Read source and existing synthetic result only; did not rerun POC or invoke production monitor",
+  "sourceHashes": {
+    "reports/replan-stage-d-20261119/post-interruption-feasibility-20261120/loopback_accounting_probe.py": "acb76e4fe240c4da933e16f5f069ad867610ae4cc8c7be5eda9ecd01a41ce01b",
+    "reports/replan-stage-d-20261119/post-interruption-feasibility-20261120/loopback-check-3/result.json": "9f0148116e29dcb525f960814aa01ef4a3461a37005d0aef07b262d20bcfc871",
+    "reports/replan-stage-d-20261119/post-interruption-feasibility-20261120/loopback-check-2/result.json": "1525330f60bfb140cbc4cd384b99d3992b741defb15fa4f82e8a7b7f922de1a2",
+    "reports/replan-stage-d-20261119/post-interruption-feasibility-20261120/proposal.json": "0c72656803e63dce968d8d94edf3eb5ed191274bdfc304c6004fee2018422c0c",
+    "docs/REPLAN_STAGE_D_ACCOUNTING_CONTINUATION_PROPOSAL_20261120.md": "330d47016efc7fc072660a3c7537199c2130d9d1636aa34fc80acad5cd3fabc0",
+    "scripts/replan_stage_d_proxy.py": "e3aa8b4c04d15f990a5a15a160e874d3a9edd4a74c45f90e1661172debf731f1",
+    "scripts/run_replan_stage_d.py": "079ec048dc29348cc032e05b592dfbf2540f3b3480fe078c461a8a10e344e4b8",
+    "scripts/replan_quota_monitor.py": "35b86ea00752c4e4a986480c8be266e87345c0617bd041214cbf17f53e7cb9db"
+  },
+  "currentSourceMatchesCheck3": true,
+  "check2HistoricalSourceHash": "d831ad6929c05aa380137830f70e1c9e8d893cd2cc738e56d92e37431cc51d1e",
+  "check2HistoricalSourceIsNotCurrentSource": true,
+  "historicalSourceDriftCaughtBeforeReviewAndResolvedByNewCheck3": true,
+  "suppliedScenarios": 8,
+  "suppliedAssertions": 9,
+  "suppliedAssertionsTrue": 9,
+  "suppliedRunWallMs": 4212.92,
+  "independentNetworkReruns": 0,
+  "scopedAcceptance": "Conceptual late accounting collection feasibility only",
+  "productionAccepted": false,
+  "newPaidEvaluationAuthorized": false,
+  "observed": {
+    "scaledAnswerMs": 250.0,
+    "waitingClient504ElapsedMs": 553.744,
+    "waitingClientAnswerDeadlinePreservationProven": false,
+    "lateResponseBytes": 228,
+    "expiredPermitPosts": 0,
+    "oldTransportCollectsLateUsage": false,
+    "extendedTransportCollectsLateUsage": true,
+    "collectionCutoffStillUnknown": true,
+    "missingUsageStillUnknown": true,
+    "contradictoryUsageStillUnknown": true
+  },
+  "blockers": [
+    {
+      "id": "P0-send-deadline",
+      "detail": "Override returns accounting deadline to inherited connect/TLS/sendall socket timeouts; pre-send checks do not bound blocking writes to original answer deadline."
+    },
+    {
+      "id": "P0-answer-timing",
+      "detail": "Waiting client receives 504 after 553.744 ms, beyond 250 ms answer window; late SQL suppression alone does not preserve the business deadline."
+    },
+    {
+      "id": "P0-integration-provenance",
+      "detail": "Minimal callbacks do not exercise Java CostQuota, RequestBudget, durable common events, monitor A/B snapshots, permit fences, or concurrent next-question completion."
+    },
+    {
+      "id": "P0-accounting-validity",
+      "detail": "Check3 adds five integer fields and p+c=t/h+m=p, but does not execute real SendGate.after estimate/cost guards, events or persistence."
+    },
+    {
+      "id": "P0-round-and-peak",
+      "detail": "Current per-question 1620 s check excludes final drain; all collection, shutdown, callbacks and strict off-peak boundary need explicit end-to-end bounds."
+    },
+    {
+      "id": "P0-resource-lifecycle",
+      "detail": "Bound collector count, response bytes, stale sockets, shutdown/crash behavior, callback exactly-once persistence and all accepted-thread joins before admission."
+    }
+  ],
+  "sourceLevelMonitorCompatibility": {
+    "commonLateKnownWithUnchangedCandidateUnknown": "Conditionally compatible by source inspection; not integration tested",
+    "originalIdentityFields": [
+      "permit.token",
+      "permitFences",
+      "requestFence",
+      "hold.requestId",
+      "hold.callNumber",
+      "hold.promptSha256"
+    ],
+    "observedUnknownsMustRemainExact": true,
+    "finalCommonCompletionWrittenOnce": true,
+    "historicalEmptyCompletionMayBeOverwritten": false,
+    "commonKnownDoesNotReleaseCandidateHold": true
+  },
+  "proposalReview": {
+    "scopeConcrete": true,
+    "totalsIndependentlyMatch": true,
+    "proposed1740SecondsIsNewRequiredHardBoundNotExistingGuarantee": true,
+    "tenYuanDoesNotGuaranteeCompletion": true,
+    "onlyLimitFieldMayChangeInDerivedCandidateSeed": true,
+    "scopeReviewIsNotEngineeringAcceptanceOrHumanAuthorization": true,
+    "noRequiredScopeExpansionOrGateRelaxationFound": true
+  },
+  "separateRealJavaProbeNotReviewedHere": true,
+  "noActualBatchReadOrWritten": true,
+  "old68AnswersOrSqlParsed": false,
+  "unseenRead": false,
+  "providerCallsAdded": 0,
+  "keyReadsAdded": 0,
+  "productionMonitorInvoked": false,
+  "oldUnknownsReleased": false
+}
