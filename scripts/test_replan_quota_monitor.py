@@ -18,7 +18,7 @@ from unittest.mock import patch
 import run_replan_stage_d_reregistered as n
 import replan_quota_monitor as q
 
-EVIDENCE = n.CANDIDATE / "quota-monitor-checks-5"
+EVIDENCE = n.CANDIDATE / "revision-4-monitor-checks-2"
 
 
 def bytes_for(value):
@@ -45,7 +45,10 @@ class MonitorChecks(unittest.TestCase):
                          limitYuan=1, reservationYuan=.1, knownCalls=67, knownCostYuan=.16312188,
                          reservationBreached=False, holds={f"legacy-{i}": dict(requestId=f"legacy-request-{i}",
                          callNumber=1, promptSha256=str(i) * 64, status="UNKNOWN") for i in range(1, 4)})
-        replace_json(self.directory / "plan.json", dict(synthetic=True, test=self._testMethodName))
+        reference = self.directory / "dev-reference.json"
+        replace_json(reference, dict(items=[dict(id="T1-002", question="测试"), dict(id="T1-next", question="下一题")]))
+        replace_json(self.directory / "plan.json", dict(synthetic=True, test=self._testMethodName,
+                     files={reference.relative_to(n.ROOT).as_posix(): n.sha(reference)}))
         self.plan_sha = n.sha(self.directory / "plan.json")
         replace_json(self.directory / "candidate-cost-quota.json", self.seed)
         replace_json(self.directory / "candidate-quota-initial-snapshot.json", self.seed)
@@ -63,12 +66,13 @@ class MonitorChecks(unittest.TestCase):
     def java(self, value):
         replace_json(self.directory / "candidate-cost-quota.json", value)
 
-    def start(self, side="F"):
+    def start(self, side="F", *, active=True):
         state = q.read(self.monitor.state)
         state["rounds"] = {"DEV_F": dict(status="RUNNING", side=side)}
         self.monitor.persist(self.monitor.state, state)
         self.monitor.observe("APPLICATION_ENTER", update=lambda k, quota: k.update(runtimeStarted=True, activeSide=side))
-        self.monitor.observe("QUESTION_BEGIN", update=lambda k, quota: k.update(activeQuestion="T1-002"))
+        if active:
+            self.monitor.observe("QUESTION_BEGIN", update=lambda k, quota: k.update(activeQuestion="T1-002"))
 
     def pending(self, identity="new-hold", *, payload=None):
         value = self.runtime()
@@ -267,12 +271,15 @@ class MonitorChecks(unittest.TestCase):
 
     def real_gate(self, *, side="F"):
         # Use the production factory/lock/write hooks against this complete base.
-        key = (self.directory.resolve(), self.plan_sha)
+        owner = n.controller_locked(); owner.__enter__()
+        self.addCleanup(lambda: owner.__exit__(None, None, None))
         production = n.quota_monitor()
         self.monitor = production
-        self.start(side)
+        self.start(side, active=False)
         gate = n.SendGate(self.directory / "send-ledger.json", self.plan_sha, "DEV_F",
                           clock=lambda: datetime(2026, 11, 21, 12, tzinfo=n.d.BEIJING), monotonic=lambda: 10.)
+        state = q.read(self.monitor.state); state["requestsStarted"] += 1
+        n.write(self.monitor.state, state, replace=True)
         gate.begin(dict(id="T1-002", question="测试"), 25.)
         return gate
 
@@ -325,7 +332,9 @@ class MonitorChecks(unittest.TestCase):
         def fail(path, value, **kwargs): raise PermissionError("synthetic no disk")
         self.monitor.writer = fail
         with self.assertRaises(PermissionError): gate.before(payload, raw)
-        self.assertEqual(gate.data["calls"], [])
+        self.assertEqual(len(gate.data["calls"]), 1)  # Private immutable permit exists, but never escaped.
+        self.assertEqual(q.read(self.monitor.ledger)["calls"], [])
+        self.assertTrue(self.monitor.poisoned)
         self.assertEqual(self.runtime()["holds"][identity]["status"], "PENDING")
 
     def test_after_persistence_failure_keeps_pre_send_unknown_commitment(self):
@@ -442,6 +451,279 @@ class MonitorChecks(unittest.TestCase):
         with self.assertRaises(PermissionError): self.monitor.persist(self.monitor.state, state)
         with self.assertRaises(q.QuotaRefused): q.QuotaMonitor(self.directory, self.plan_sha, n.raw_write).observe("NO_REBUILD")
 
+    def java_pending(self, payload=None, *, identity="new-hold", attempt=1):
+        value = self.runtime()
+        value["holds"][identity] = dict(requestId="new-request", callNumber=attempt,
+            promptSha256=q.prompt_sha(payload or self.payload()[0]), status="PENDING")
+        self.java(value)
+        return identity
+
+    def sequence(self):
+        return q.read(self.monitor.head)["sequence"]
+
+    def mutate_after_snapshot_a(self, mutation):
+        original = self.monitor._snapshot
+        first = True
+        def snapshot():
+            nonlocal first
+            result = original()
+            if first:
+                first = False
+                value = self.runtime(); mutation(value); self.java(value)
+            return result
+        return patch.object(self.monitor, "_snapshot", side_effect=snapshot)
+
+    def test_merged_callbacks_and_http_each_commit_once_begin_end_zero(self):
+        gate = self.real_gate(); sequence = self.sequence()
+        gate.end(); self.assertEqual(self.sequence(), sequence)
+        response = dict(status="SUCCESS")
+        self.monitor.finish_http(copy.deepcopy(gate._admitted_fence), response=response, evidence=self.returned(response))
+        state = q.read(self.monitor.state); state["requestsStarted"] += 1
+        n.write(self.monitor.state, state, replace=True)
+        sequence = self.sequence(); gate.begin(dict(id="T1-next", question="下一题"), 25.)
+        self.assertEqual(self.sequence(), sequence)
+        payload, _ = self.payload(); payload["messages"][1]["content"] = "=== 用户问题 ===\n下一题\n"
+        self.java_pending(payload)
+        permit = gate.before(payload, bytes_for(payload)); self.assertEqual(self.sequence(), sequence + 1)
+        self.completed(gate, permit); self.assertEqual(self.sequence(), sequence + 2)
+        response = dict(status="SUCCESS")
+        fence = copy.deepcopy(gate.current_fence); gate.end()
+        self.monitor.finish_http(fence, response=response, evidence=self.returned(response, question="T1-next"))
+        self.assertEqual(self.sequence(), sequence + 3)
+        self.assertIsNone(self.monitor._load(fast=True)[1]["knowledge"]["activeQuestion"])
+        gate.end(); self.assertEqual(self.sequence(), sequence + 3)
+
+    def test_callback_archives_both_exact_source_snapshots(self):
+        gate = self.real_gate(); payload, raw = self.payload(); self.java_pending(payload)
+        before = (self.directory / "candidate-cost-quota.json").read_bytes()
+        permit = gate.before(payload, raw)
+        event = self.monitor._load(fast=True)[1]
+        self.assertEqual(len(event["quotaSnapshots"]), 2)
+        self.assertTrue(all(base64.b64decode(s["rawBase64"]) == before for s in event["quotaSnapshots"]))
+        self.completed(gate, permit)
+        fresh = q.QuotaMonitor(self.directory, self.plan_sha, n.raw_write)
+        self.assertEqual(len(fresh._load()[1]["quotaSnapshots"]), 2)
+
+    def test_callback_a_unknown_removed_in_b_is_sticky_stop(self):
+        gate = self.real_gate(); payload, raw = self.payload(); self.java_pending(payload)
+        value = self.runtime(); value["holds"]["flash-unknown"] = dict(requestId="flash", callNumber=1,
+            promptSha256="b" * 64, status="UNKNOWN"); self.java(value)
+        with self.mutate_after_snapshot_a(lambda v: v["holds"].pop("flash-unknown")):
+            with self.assertRaises(q.QuotaRefused): gate.before(payload, raw)
+        latest = self.checkpoint()
+        self.assertIn("flash-unknown", latest["knowledge"]["unknowns"])
+        self.assertIn("stopReason", latest["knowledge"])
+        self.assertEqual(len(latest["quotaSnapshots"]), 2)
+        self.assertEqual(len(q.read(self.monitor.ledger)["calls"]), 1)
+        with self.assertRaises(q.QuotaRefused): gate.before(payload, raw)
+        self.assertEqual(len(q.read(self.monitor.ledger)["calls"]), 1)
+
+    def test_callback_a_known_highwater_survives_b_rollback(self):
+        gate = self.real_gate(); payload, raw = self.payload(); self.java_pending(payload)
+        value = self.runtime(); value.update(knownCalls=68, knownCostYuan=".17312188"); self.java(value)
+        def rollback(v): v.update(knownCalls=67, knownCostYuan=".16312188")
+        with self.mutate_after_snapshot_a(rollback):
+            with self.assertRaises(q.QuotaRefused): gate.before(payload, raw)
+        known = self.checkpoint()["knowledge"]
+        self.assertEqual(known["knownCalls"], 68); self.assertEqual(known["knownCostYuan"], "0.17312188")
+
+    def test_callback_pending_identity_mutation_before_escape_stops(self):
+        gate = self.real_gate(); payload, raw = self.payload(); self.java_pending(payload)
+        with self.mutate_after_snapshot_a(lambda v: v["holds"]["new-hold"].update(requestId="mutated")):
+            with self.assertRaisesRegex(q.QuotaRefused, "identity changed"): gate.before(payload, raw)
+        knowledge = self.checkpoint()["knowledge"]
+        self.assertIn("new-hold", knowledge["pending"])
+        self.assertNotIn("new-hold", knowledge["bindings"])
+        self.assertIn("stopReason", knowledge)
+
+    def test_original_rejection_is_committed_once_then_sdk_correction_stops(self):
+        gate = self.real_gate(); payload, raw = self.payload(); self.java_pending(payload)
+        payload["temperature"] = 1
+        # The exact altered Java prompt still matches; the original common option gate rejects.
+        with self.assertRaisesRegex(n.Refused, "MODEL_OR_TEMPERATURE"): gate.before(payload, bytes_for(payload))
+        self.assertEqual(len(q.read(self.monitor.ledger)["rejections"]), 1)
+        self.assertEqual(q.read(self.monitor.ledger)["calls"], [])
+        self.assertEqual(self.checkpoint()["context"], "QUOTA_STOP")
+        payload["temperature"] = 0
+        with self.assertRaises(q.QuotaRefused): gate.before(payload, raw)
+        self.assertEqual(len(q.read(self.monitor.ledger)["rejections"]), 1)
+
+    def test_new_original_raw_tamper_stops_without_repair(self):
+        gate = self.real_gate(); payload, raw = self.payload(); self.java_pending(payload)
+        permit = gate.before(payload, raw)
+        body = b"{}"
+        with self.assertRaises(q.QuotaRefused): gate.after(permit, dict(responseBodyRaw=body,
+            responseBodySha256="a" * 64, responseBytes=len(body), responseComplete=True, upstreamAttempted=True))
+        self.assertTrue(self.monitor.poisoned)
+        stop = q.read(self.monitor.failure)
+        self.assertEqual(len(stop["quotaSnapshots"]), 2)
+        self.assertTrue((gate.events / (permit["token"] + "-upstream.body.bin")).is_file())
+        self.assertIsNone(q.read(self.monitor.ledger)["calls"][0]["result"])
+
+    def test_fresh_monitor_cannot_inherit_fast_capability(self):
+        self.real_gate()
+        fresh = q.QuotaMonitor(self.directory, self.plan_sha, n.raw_write, n.observation_owner, n.controller_identity)
+        with self.assertRaisesRegex(q.QuotaRefused, "capability"): fresh.observe("FAKE", fast=True)
+
+    def test_invalidated_owner_cannot_use_fast_capability(self):
+        gate = self.real_gate(); self.monitor.invalidate_owner(gate.owner)
+        with self.assertRaisesRegex(q.QuotaRefused, "capability"): self.monitor.observe("FAKE", fast=True)
+
+    def test_different_owner_cannot_use_fast_capability(self):
+        self.real_gate()
+        with patch.object(self.monitor, "owner_identity", return_value=object()):
+            with self.assertRaisesRegex(q.QuotaRefused, "capability"): self.monitor.observe("FAKE", fast=True)
+
+    def test_wrong_round_fence_or_head_capability_is_rejected(self):
+        self.real_gate(); original = copy.copy(self.monitor._capability)
+        for key, value in (("round", "WRONG"), ("fence", {}), ("head", {}), ("planSha256", "wrong")):
+            self.monitor._capability = {**original, key: value}
+            with self.assertRaisesRegex(q.QuotaRefused, "capability"): self.monitor.observe("FAKE", fast=True)
+        self.monitor._capability = original
+
+    def test_duplicate_begin_and_question_mismatch_are_rejected(self):
+        gate = self.real_gate()
+        with self.assertRaises(n.Refused): gate.begin(dict(id="T1-002", question="测试"), 25.)
+        gate.end()
+        response = dict(status="SUCCESS")
+        self.monitor.finish_http(copy.deepcopy(gate._admitted_fence), response=response, evidence=self.returned(response))
+        state = q.read(self.monitor.state); state["requestsStarted"] += 1
+        n.write(self.monitor.state, state, replace=True)
+        with self.assertRaises(n.Refused): gate.begin(dict(id="T1-next", question="改题"), 25.)
+        self.assertIsNone(gate.current)
+
+    def test_question_counter_cannot_skip_admission(self):
+        gate = self.real_gate(); gate.end()
+        state = q.read(self.monitor.state); state["requestsStarted"] += 2
+        with self.assertRaisesRegex(n.Refused, "exactly one"): n.write(self.monitor.state, state, replace=True)
+        self.assertEqual(q.read(self.monitor.state)["requestsStarted"], 1)
+
+    def test_unbound_reference_cannot_create_real_gate(self):
+        owner = n.controller_locked(); owner.__enter__(); self.addCleanup(lambda: owner.__exit__(None, None, None))
+        reference = self.directory / "dev-reference.json"; reference.write_bytes(reference.read_bytes() + b" ")
+        with self.assertRaisesRegex(n.Refused, "reference"):
+            n.SendGate(self.directory / "send-ledger.json", self.plan_sha, "DEV_F")
+
+    def test_historical_same_name_tamper_deferred_until_next_full(self):
+        gate = self.real_gate(); payload, raw = self.payload(); self.java_pending(payload)
+        permit = gate.before(payload, raw); self.completed(gate, permit)
+        self.monitor.observe("PRE_NEXT_CALLBACK_FULL")
+        historical = gate.events / (permit["token"] + "-upstream.body.bin")
+        historical.write_bytes(historical.read_bytes() + b"tampered")
+        payload["messages"][1]["content"] += "\n\n=== 上一次 SQL 与评估反馈 ===\nfixed"
+        self.java_pending(payload, identity="second", attempt=2)
+        second = gate.before(payload, bytes_for(payload))
+        self.assertEqual(second["attempt"], 2)
+        knowledge = self.monitor._load(fast=True)[1]["knowledge"]
+        self.assertEqual(knowledge["knownCostYuan"], "0.16312188")
+        self.assertEqual(len(knowledge["unknowns"]), 3)
+        with self.assertRaisesRegex(q.QuotaRefused, "lost/changed"): self.monitor.observe("NEXT_FULL_NO_PROMOTION")
+
+    def test_fast_detects_orphan_and_missing_event_immediately(self):
+        gate = self.real_gate(); payload, raw = self.payload(); self.java_pending(payload)
+        permit = gate.before(payload, raw)
+        path = gate.events / (permit["token"] + "-permit.json"); original = path.read_bytes(); path.unlink()
+        with self.assertRaisesRegex(q.QuotaRefused, "common event"): self.monitor.observe("FAST", fast=True)
+        path.write_bytes(original); (gate.events / "orphan").write_bytes(b"x")
+        with self.assertRaisesRegex(q.QuotaRefused, "common event"): self.monitor.observe("FAST", fast=True)
+
+    def test_late_after_retains_original_fence_after_next_admission(self):
+        gate = self.real_gate(); payload, raw = self.payload(); self.java_pending(payload)
+        permit = gate.before(payload, raw); original_fence = copy.deepcopy(gate.current_fence)
+        response = dict(status="REQUEST_TIMEOUT")
+        gate.end(); self.monitor.finish_http(original_fence, response=response, evidence=self.returned(response))
+        state = q.read(self.monitor.state); state["requestsStarted"] += 1
+        n.write(self.monitor.state, state, replace=True); gate.begin(dict(id="T1-next", question="下一题"), 25.)
+        self.completed(gate, permit)
+        latest = self.monitor._load(fast=True)[1]
+        self.assertEqual(latest["evidence"]["requestFence"], original_fence)
+        self.assertEqual(latest["knowledge"]["activeQuestion"], "T1-next")
+        self.assertEqual(latest["knowledge"]["pending"]["new-hold"]["requestFence"], original_fence)
+
+    def test_http_without_pending_still_observes_highwater_and_unknown(self):
+        gate = self.real_gate(); fence = copy.deepcopy(gate.current_fence)
+        value = self.runtime(); value.update(knownCalls=68, knownCostYuan=".17312188")
+        value["holds"]["new"] = dict(requestId="new", callNumber=1, promptSha256="a" * 64, status="UNKNOWN"); self.java(value)
+        response = dict(status="SUCCESS"); gate.end()
+        self.monitor.finish_http(fence, response=response, evidence=self.returned(response))
+        knowledge = self.monitor._load(fast=True)[1]["knowledge"]
+        self.assertEqual(knowledge["knownCalls"], 68); self.assertIn("new", knowledge["unknowns"])
+
+    def test_http_pending_known_settlement_is_in_same_close_commit(self):
+        gate = self.real_gate(); payload, raw = self.payload(); self.java_pending(payload)
+        permit = gate.before(payload, raw); self.completed(gate, permit)
+        value = self.runtime(); value["holds"].pop("new-hold"); value.update(knownCalls=68, knownCostYuan=".16312688"); self.java(value)
+        response = dict(status="SUCCESS"); fence = copy.deepcopy(gate.current_fence); sequence = self.sequence(); gate.end()
+        self.monitor.finish_http(fence, response=response, evidence=self.returned(response))
+        latest = self.checkpoint(); self.assertEqual(self.sequence(), sequence + 1)
+        self.assertEqual(latest["knowledge"]["retired"]["new-hold"]["outcome"], "KNOWN")
+        self.assertIsNone(latest["knowledge"]["activeQuestion"])
+
+    def test_returned_quota_and_gate_mutation_cannot_pollute_verified_cache(self):
+        gate = self.real_gate(); payload, raw = self.payload(); self.java_pending(payload)
+        permit = gate.before(payload, raw)
+        returned = self.monitor.observe("RETURN_VALUE_ALIAS", fast=True)
+        returned["knownCalls"] = 999; returned["holds"].clear()
+        gate.data["calls"][0]["questionId"] = "memory-tamper"
+        latest = self.monitor._load(fast=True)[1]
+        self.assertEqual(latest["quota"]["knownCalls"], 67)
+        self.assertEqual(len(latest["quota"]["holds"]), 4)
+        with self.assertRaisesRegex(q.QuotaRefused, "In-memory common ledger"):
+            self.completed(gate, permit)
+
+    def test_duplicate_quota_json_member_fails_before_private_permit(self):
+        gate = self.real_gate(); payload, raw = self.payload(); self.java_pending(payload)
+        original = (self.directory / "candidate-cost-quota.json").read_bytes()
+        (self.directory / "candidate-cost-quota.json").write_bytes(original.replace(b'"knownCalls": 67', b'"knownCalls": 67, "knownCalls": 0'))
+        with self.assertRaisesRegex(q.QuotaRefused, "Duplicate JSON member"): gate.before(payload, raw)
+        self.assertEqual(q.read(self.monitor.ledger)["calls"], [])
+        stop = q.read(self.monitor.failure)
+        self.assertEqual(base64.b64decode(stop["invalidRuntimeRawBase64"]), (self.directory / "candidate-cost-quota.json").read_bytes())
+        (self.directory / "candidate-cost-quota.json").write_bytes(original)
+        with self.assertRaises(q.QuotaRefused): gate.before(payload, raw)
+        fresh = q.QuotaMonitor(self.directory, self.plan_sha, n.raw_write)
+        with self.assertRaisesRegex(q.QuotaRefused, "Permanent quota persistence stop"): fresh.observe("RESTORED_RUNTIME")
+        self.assertEqual(q.read(self.monitor.ledger)["calls"], [])
+
+    def test_malformed_b_snapshot_retains_a_and_original_invalid_bytes(self):
+        gate = self.real_gate(); payload, raw = self.payload(); self.java_pending(payload)
+        original_snapshot = self.monitor._snapshot
+        first = True
+        def snapshot():
+            nonlocal first
+            result = original_snapshot()
+            if first:
+                first = False
+                (self.directory / "candidate-cost-quota.json").write_bytes(b'{"partial":')
+            return result
+        with patch.object(self.monitor, "_snapshot", side_effect=snapshot):
+            with self.assertRaises(ValueError): gate.before(payload, raw)
+        latest = self.checkpoint()
+        self.assertEqual(latest["context"], "QUOTA_STOP")
+        self.assertEqual(len(latest["quotaSnapshots"]), 1)
+        self.assertIn("new-hold", latest["knowledge"]["pending"])
+        self.assertEqual(base64.b64decode(latest["evidence"]["invalidRuntimeRawBase64"]), b'{"partial":')
+        self.java(self.seed)
+        with self.assertRaises(q.QuotaRefused): gate.before(payload, raw)
+
+    def test_callback_preload_failure_remains_stopped_after_evidence_restore(self):
+        gate = self.real_gate(); payload, raw = self.payload(); self.java_pending(payload)
+        original = self.monitor.journal.read_bytes()
+        self.monitor.journal.write_bytes(original + b"tampered")
+        with self.assertRaises(q.QuotaRefused): gate.before(payload, raw)
+        self.monitor.journal.write_bytes(original)
+        with self.assertRaises(q.QuotaRefused): gate.before(payload, raw)
+        with self.assertRaises(q.QuotaRefused): q.QuotaMonitor(self.directory, self.plan_sha, n.raw_write).observe("RESTORED_JOURNAL")
+        self.assertEqual(q.read(self.monitor.ledger)["calls"], [])
+
+    def test_callback_capability_failure_never_falls_back_after_manual_restore(self):
+        gate = self.real_gate(); payload, raw = self.payload(); self.java_pending(payload)
+        original = self.monitor._capability; self.monitor._capability = None
+        with self.assertRaisesRegex(q.QuotaRefused, "capability"): gate.before(payload, raw)
+        self.monitor._capability = original
+        with self.assertRaises(q.QuotaRefused): gate.before(payload, raw)
+        self.assertEqual(q.read(self.monitor.ledger)["calls"], [])
+
 
 if __name__ == "__main__":
     EVIDENCE.mkdir(parents=True, exist_ok=False)
@@ -451,7 +733,8 @@ if __name__ == "__main__":
                   failures=len(result.failures), errors=len(result.errors),
                   failureDetails=[dict(test=str(t), trace=s) for t, s in result.errors + result.failures],
                   realSupplierCalls=0, realKeyReads=0, javaProcesses=0,
-                  syntheticOnly=True, sourceSha256=n.sha(Path(q.__file__)))
+                  syntheticOnly=True, sourceSha256=n.sha(Path(q.__file__)),
+                  driverSha256=n.sha(Path(n.__file__)), testSha256=n.sha(Path(__file__)))
     replace_json(EVIDENCE / "verification.json", report)
     print(json.dumps({k: report[k] for k in ("testsRun", "passed", "failures", "errors")}))
     if not result.wasSuccessful(): sys.exit(1)

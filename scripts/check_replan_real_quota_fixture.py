@@ -28,9 +28,12 @@ def initialize(batch):
     batch.mkdir(parents=True, exist_ok=False)
     # The inherited quota is permitted aggregate/identity evidence, not paid SQL.
     seed_raw = (n.OLD_BATCH / "candidate-cost-quota.json").read_bytes()
+    reference = batch / "dev-reference.json"
+    n.write_bytes(reference, (n.OLD_BATCH / "dev-reference.json").read_bytes())
     n.raw_write(batch / "plan.json", dict(syntheticEngineeringFixture=True,
                 frozenCandidate=n.d.SYSTEMS["F"], sourceSha256=n.sha(Path(n.__file__)),
-                monitorSha256=n.sha(Path(q.__file__)), noPaidAuthorization=True))
+                monitorSha256=n.sha(Path(q.__file__)), noPaidAuthorization=True,
+                files={reference.relative_to(n.ROOT).as_posix(): n.sha(reference)}))
     plan_sha = n.sha(batch / "plan.json")
     n.write_bytes(batch / "candidate-cost-quota.json", seed_raw)
     n.write_bytes(batch / "candidate-quota-initial-snapshot.json", seed_raw)

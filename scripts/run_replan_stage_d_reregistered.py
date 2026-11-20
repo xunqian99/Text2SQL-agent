@@ -30,13 +30,18 @@ OLD_BATCH = BASE / "batch-1/revision-2"
 FIRST_FREE_BATCH = BASE / "batch-1/reregistered-dev-1"
 REJECTED_FREE_BATCH = FIRST_FREE_BATCH / "revision-2"
 REJECTED_FREE_REVIEW = BASE / "independent-review/reregistered-dev-1/revision-2"
-BATCH = FIRST_FREE_BATCH / "revision-3"
-REVIEW_ROOT = BASE / "independent-review/reregistered-dev-1/revision-3"
+REJECTED_REV3_BATCH = FIRST_FREE_BATCH / "revision-3"
+REJECTED_REV3_REVIEW = BASE / "independent-review/reregistered-dev-1/revision-3"
+REJECTED_REV3_PLAN_SHA = "9b32def424104c383d8088cb538ec54698f9bda12bbbb45a3d6472b65db5d41c"
+REJECTED_REV3_DECISION_SHA = "7997a901b684d5c3715cfdfca5258798413374dd428db2562c2923567a5aaa67"
+REJECTED_REV3_MANIFEST_SHA = "49b7b39bd8aabf505a59ac9184b105e06a574da7c5a1fe1feac0ebfba6146eee"
+BATCH = FIRST_FREE_BATCH / "revision-4"
+REVIEW_ROOT = BASE / "independent-review/reregistered-dev-1/revision-4"
 CANDIDATE = BASE / "reregistration-candidate"
 AUTH_SCHEMA = CANDIDATE / "human-paid-authorization.schema.json"
 AUTH_NAME = "human-paid-authorization.json"
 NEW_FORMAT = "replan-d-reregistered-c1-v1"
-REGISTRATION = "batch-1/reregistered-dev-1/revision-3"
+REGISTRATION = "batch-1/reregistered-dev-1/revision-4"
 REJECTED_FREE_PLAN_SHA = "91c67f5a2484fd6fd0e63a1f86c09ebb8e20737f5a7a3d4c4850b9b63c9c17b4"
 REJECTED_FREE_DECISION_SHA = "d1050ff782c6ab98e96dae5db29bc1b65d8f3aa13c5e378162dba74a97179242"
 REJECTED_FREE_MANIFEST_SHA = "af434a921708d5acbf5a402f9c733ff2e43ce60fbb506ca629caa708ef5b10b4"
@@ -89,6 +94,7 @@ _old_preflight = d.preflight
 _active_controller = None
 _monitors = {}
 _real_endpoints = set()
+_owner_gate = {}
 
 
 def require(condition, message):
@@ -116,7 +122,11 @@ def raw_write(path, value, *, replace=False):
     path = owned(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     require(replace or not path.exists(), "Never overwrite evidence: " + path.name)
-    data = (json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False) + "\n").encode("utf-8")
+    compact = path.parent == d.BATCH.resolve() and path.name in ("state.json", "send-ledger.json")
+    # Mutable current anchors use compact JSON; every immutable original
+    # permit/completion/raw/rejection retains the frozen writer's format.
+    data = (json.dumps(value, ensure_ascii=False, indent=None if compact else 2,
+                       separators=(",", ":") if compact else None, allow_nan=False) + "\n").encode("utf-8")
     if not replace:
         write_bytes(path, data)
         return
@@ -130,6 +140,9 @@ def raw_write(path, value, *, replace=False):
 def write(path, value, *, replace=False):
     path = owned(path)
     if replace and path.name in ("state.json", "send-ledger.json") and path.parent == d.BATCH.resolve():
+        gate = _owner_gate.get(controller_identity())
+        if path.name == "state.json" and gate is not None:
+            return gate.persist_state(value)
         return quota_monitor().persist(path, value)
     return raw_write(path, value, replace=replace)
 
@@ -141,20 +154,28 @@ def controller_locked():
     path = d.BATCH.resolve()
     require(_active_controller is None, "Controller session cannot be reentered")
     with _old_locked():
-        _active_controller = path
+        owner = object()
+        _active_controller = (path, owner)
         try:
             yield
         finally:
+            _owner_gate.pop(owner, None)
+            for monitor in _monitors.values():
+                monitor.invalidate_owner(owner)
             _active_controller = None
 
 
 @contextmanager
 def observation_owner():
-    if _active_controller == d.BATCH.resolve():
+    if controller_identity() is not None:
         yield  # Proxy callbacks belong to the live owning controller process.
     else:
         with controller_locked():
             yield
+
+
+def controller_identity():
+    return (_active_controller[1] if _active_controller is not None and _active_controller[0] == d.BATCH.resolve() else None)
 
 
 def quota_monitor():
@@ -162,7 +183,7 @@ def quota_monitor():
     plan_sha = sha(path / "plan.json")
     key = (path, plan_sha)
     if key not in _monitors:
-        _monitors[key] = QuotaMonitor(path, plan_sha, raw_write, observation_owner)
+        _monitors[key] = QuotaMonitor(path, plan_sha, raw_write, observation_owner, controller_identity)
     return _monitors[key]
 
 
@@ -269,6 +290,39 @@ def rejected_free_facts():
                 driverGitCommit="02364ab073360c352d94c698f69d59b0496fd5c1", requestsStarted=0, addedProviderCalls=0)
 
 
+def rejected_revision3_facts():
+    decision_path = REJECTED_REV3_REVIEW / "decision.json"
+    manifest_path = REJECTED_REV3_REVIEW / "source-evidence-manifest.json"
+    require(sha(decision_path) == REJECTED_REV3_DECISION_SHA and sha(manifest_path) == REJECTED_REV3_MANIFEST_SHA,
+            "Rejected revision-3 independent identity changed")
+    decision = d.read(decision_path)
+    require(decision.get("accepted") is False and decision.get("planSha256") == REJECTED_REV3_PLAN_SHA
+            and decision.get("implementationCommit") == "b178a4b2fe454cf5b5df90e4f62de665fce1fe6c"
+            and decision.get("sourceDriverSha256") == "7fb43d4450b5db061ac544694ed5a7b0207399dd18b2d0595d51920b2a6da277"
+            and decision.get("sourceHelperSha256") == "20871566cf63cee846e5e7813f23d267fe22e3340f458258cfd7767286d2db1a",
+            "Revision-3 rejection or original Git source identity changed")
+    bound_files(d.read(manifest_path)["files"])
+    original = d.read(REJECTED_REV3_REVIEW / "actual-batch-before.json")
+    after = d.read(REJECTED_REV3_REVIEW / "actual-batch-after.json")
+    require(original["files"] == after["files"] and len(original["files"]) == 380,
+            "Revision-3 sealed actual package denominator changed")
+    bound_files(original["files"])
+    require({p.relative_to(ROOT).as_posix() for p in REJECTED_REV3_BATCH.rglob("*") if p.is_file()} == set(original["files"]),
+            "Rejected revision-3 actual package file set changed")
+    state = d.read(REJECTED_REV3_BATCH / "state.json")
+    ledger = d.read(REJECTED_REV3_BATCH / "send-ledger.json")
+    require(sha(REJECTED_REV3_BATCH / "plan.json") == REJECTED_REV3_PLAN_SHA
+            and state.get("planSha256") == REJECTED_REV3_PLAN_SHA and state.get("requestsStarted") == 0
+            and state.get("rounds") == {} and state.get("terminal") is None
+            and ledger.get("planSha256") == REJECTED_REV3_PLAN_SHA
+            and not ledger["calls"] and not ledger["rejections"] and not ledger["breaches"]
+            and not (REJECTED_REV3_BATCH / AUTH_NAME).exists(), "Rejected revision-3 acquired paid/runtime state")
+    return dict(planSha256=REJECTED_REV3_PLAN_SHA, decisionSha256=REJECTED_REV3_DECISION_SHA,
+                manifestSha256=REJECTED_REV3_MANIFEST_SHA, actualFiles=380, requestsStarted=0, addedProviderCalls=0,
+                sourceGitCommit=decision["implementationCommit"], sourceDriverSha256=decision["sourceDriverSha256"],
+                sourceHelperSha256=decision["sourceHelperSha256"])
+
+
 def first_free_facts():
     """The failed free draft is superseded without changing or replaying it."""
     manifest_path = BASE / "reregistration-first-free-failure.json"
@@ -299,6 +353,8 @@ def tool_files():
         OLD_BATCH / "send-ledger.json", OLD_BATCH / "candidate-cost-quota.json"]
     paths.extend(REJECTED_FREE_REVIEW / name for name in ("decision.json", "source-evidence-manifest.json", "protected-state-final-verification.json"))
     paths.extend(p for p in REJECTED_FREE_BATCH.rglob("*") if p.is_file())
+    paths.extend(REJECTED_REV3_REVIEW / name for name in ("decision.json", "source-evidence-manifest.json", "actual-batch-before.json", "actual-batch-after.json"))
+    paths.extend(p for p in REJECTED_REV3_BATCH.rglob("*") if p.is_file())
     paths.extend(BASE / p for p in PINNED)
     return sorted(set(paths))
 
@@ -308,6 +364,7 @@ def prepare():
     legacy = legacy_facts()  # Verify old terminal, audit and every original SHA before creating anything.
     superseded_free = first_free_facts()
     rejected_free = rejected_free_facts()
+    rejected_rev3 = rejected_revision3_facts()
     for side in d.SYSTEMS.values():
         require(sha(ROOT / side["jar"]) == side["sha256"], "Frozen JAR drift")
     decision = d.read(ROOT / "reports/replan-stage-c-20261119/independent-review/c1-submission-1/decision.json")
@@ -330,7 +387,8 @@ def prepare():
     files.append(d.BATCH / "candidate-quota-genesis-policy.json")
     files.extend(p for p in (d.BATCH / "tool-runtime").rglob("*") if p.is_file())
     plan = dict(format=NEW_FORMAT, createdAt=d.stamp(), systems=d.SYSTEMS, order=list(d.ORDER),
-        registration=REGISTRATION, freeRevision=3, supersededFreeDraft=superseded_free, rejectedFreeRevision2=rejected_free,
+        registration=REGISTRATION, freeRevision=4, supersededFreeDraft=superseded_free, rejectedFreeRevision2=rejected_free,
+        rejectedFreeRevision3=rejected_rev3, quotaObservationPolicy=copy.deepcopy(QUOTA_POLICY),
         statusAtRegistration="DRAFT_REQUIRES_DIRECT_USER_PAID_AUTHORIZATION",
         selectedCandidate="C1 only; unchanged candidate and gates; C2 not admitted", legacy=legacy,
         limits=dict(requests=CURRENT_REQUESTS, calls=CURRENT_CALLS,
@@ -371,6 +429,8 @@ def verify(plan, *, database=True):
     require(plan.get("legacy") == legacy_facts(), "New plan does not preserve full legacy accounting")
     require(plan.get("supersededFreeDraft") == first_free_facts(), "First free failure was not preserved")
     require(plan.get("rejectedFreeRevision2") == rejected_free_facts(), "Rejected revision-2 was not preserved")
+    require(plan.get("rejectedFreeRevision3") == rejected_revision3_facts()
+            and plan.get("quotaObservationPolicy") == QUOTA_POLICY, "Revision-3 or observation policy was not preserved")
     limits = plan.get("limits", {})
     for key, value in dict(requests=902, calls=1870, cumulativeRequests=970, cumulativeCalls=1940,
                            legacyRequestsCharged=68, legacyApplicationCallsCharged=70,
@@ -497,6 +557,10 @@ def http_json(url, **kwargs):
         status, response = _old_http_json(url, **kwargs)
         return status, response
     finally:
+        gate = _owner_gate.get(controller_identity())
+        require(gate is not None and gate.current_fence is not None, "Real HTTP return has no owning admitted question")
+        fence = copy.deepcopy(gate.current_fence)
+        gate.end()  # Close new sends immediately; late completions retain their token/fence.
         evidence = kwargs.get("evidence")
         record = dict(returnedBodyAvailable=response is not None)
         if evidence:
@@ -505,7 +569,7 @@ def http_json(url, **kwargs):
                           responseBodySha256=sha(Path(evidence).with_suffix(".body.bin")))
         if response:
             record["budget"] = response.get("budget")
-        quota_monitor().observe("HTTP_RETURN" if response is not None else "HTTP_FAILURE", response=response, evidence=record)
+        quota_monitor().finish_http(fence, response=response, evidence=record)
 
 
 def offline_preflight(plan, output):
@@ -520,27 +584,82 @@ def offline_preflight(plan, output):
     return result
 
 
+def bound_round_items(round_name):
+    dataset = "dev" if round_name == "DEV_F" else "targets" if round_name == "TARGETS" else "formal"
+    reference = d.BATCH / (dataset + "-reference.json")
+    plan = d.read(d.BATCH / "plan.json")
+    require(plan.get("files", {}).get(reference.relative_to(ROOT).as_posix()) == sha(reference),
+            "Question admission reference is not bound to the exact current plan")
+    return d.read(reference)["items"]
+
+
 class SendGate(_old_send_gate):
     def __init__(self, path, plan_sha, round_name, **kwargs):
         self.legacy = copy.deepcopy(LEGACY)
         self.real = not round_name.startswith("OFFLINE_")
+        self._stage = None
+        self.current_fence = None
+        self._admitted_fence = None
+        self._admission_used = False
+        self.owner = controller_identity()
         if self.real:
             with quota_monitor().serial():
+                require(self.owner is not None, "Real gate requires an owning controller session")
                 super().__init__(path, plan_sha, round_name, **kwargs)
-                quota_monitor().observe("SEND_GATE_OPEN", evidence=dict(round=round_name))
+                quota_monitor().open_round(round_name)
+                require(self.owner not in _owner_gate, "Only one real gate may belong to a controller owner")
+                _owner_gate[self.owner] = self
+                state = d.read(d.BATCH / "state.json")
+                self.requests_base = state["requestsStarted"]
+                self.items = bound_round_items(round_name)
         else:
             super().__init__(path, plan_sha, round_name, **kwargs)
         if self.path.resolve() == (d.BATCH / "send-ledger.json").resolve():
             require(self.data.get("legacyManifestSha256") == PINNED["paid-interruption-manifest.json"],
                     "New send ledger is not bound to immutable legacy accounting")
 
+    def persist_state(self, value):
+        prior = d.read(d.BATCH / "state.json")
+        require(value.get("requestsStarted") in (prior["requestsStarted"], prior["requestsStarted"] + 1),
+                "Question counter must remain fixed or admit exactly one request")
+        if value.get("requestsStarted") == prior["requestsStarted"] + 1:
+            require(self.real and self.owner is controller_identity() and self.current is None
+                    and value.get("terminal") is None and value.get("rounds", {}).get(self.round, {}).get("status") == "RUNNING"
+                    and set(value["rounds"]) == set(prior["rounds"]), "Question increment has no valid owning round")
+            index = value["requestsStarted"] - self.requests_base - 1
+            require(0 <= index < len(self.items), "Question admission index outside fixed reference")
+            item = self.items[index]
+            fence = dict(planSha256=self.plan_sha, round=self.round, ordinal=value["requestsStarted"],
+                         questionId=item["id"], questionSha256=hashlib.sha256(item["question"].strip().encode("utf-8")).hexdigest())
+            result = quota_monitor().admit(value, fence)
+            self._admitted_fence = fence
+            self._admission_used = False
+            return result
+        return quota_monitor().persist(d.BATCH / "state.json", value)
+
+    def save(self):
+        if self._stage is not None:
+            require(self.real and self.owner is controller_identity()
+                    and self._stage["threadId"] == d.threading.get_ident(), "Ledger staging belongs to another callback owner/thread")
+            # The monitor->gate locks and thread identity cover this entire
+            # callback. No nested data is mutated after inherited save returns
+            # and before immediate validation/hash/persistence completes.
+            self._stage["ledger"] = self.data
+            return
+        return super().save()
+
     def begin(self, item, deadline):
         if not self.real:
             return super().begin(item, deadline)
         with quota_monitor().serial():
+            fence = self._admitted_fence
+            require(self.owner is controller_identity() and fence is not None and not self._admission_used
+                    and fence["questionId"] == item["id"]
+                    and fence["questionSha256"] == hashlib.sha256(item["question"].strip().encode("utf-8")).hexdigest(),
+                    "Question begin does not match its durable admission fence")
             result = super().begin(item, deadline)
-            quota_monitor().observe("QUESTION_BEGIN", update=lambda k, q: k.update(activeQuestion=item["id"]),
-                                    evidence=dict(questionId=item["id"], upstreamDeadlineMonotonic=deadline))
+            self.current_fence = copy.deepcopy(fence)
+            self._admission_used = True
             return result
 
     def end(self):
@@ -548,7 +667,7 @@ class SendGate(_old_send_gate):
             return super().end()
         with quota_monitor().serial():
             super().end()
-            quota_monitor().observe("QUESTION_END", update=lambda k, q: k.update(activeQuestion=None))
+            self.current_fence = None
 
     def before(self, payload, raw):
         if not self.real:
@@ -557,19 +676,27 @@ class SendGate(_old_send_gate):
         with quota_monitor().serial():
             current = self.current or {}
             attempt = 1 + sum(c["round"] == self.round and c["questionId"] == current.get("id") for c in self.data["calls"])
-            hold_id = quota_monitor().before(payload, current.get("id"), attempt)
-            permit = super().before(payload, raw)
-            quota_monitor().bind(hold_id, permit)  # Durable before permit can reach transport.
+            with quota_monitor().callback("BEFORE", self.data, fence=self.current_fence, payload=payload, attempt=attempt) as stage:
+                stage["threadId"] = d.threading.get_ident()
+                self._stage = stage
+                try:
+                    permit = super().before(payload, raw)
+                    stage["permit"] = permit
+                finally:
+                    self._stage = None
             return permit
 
     def after(self, permit, result):
         if not self.real:
             return super().after(permit, result)
         with quota_monitor().serial():
-            super().after(permit, result)
-            quota_monitor().observe("PROXY_AFTER", evidence=dict(token=permit["token"],
-                                    upstreamAttempted=result.get("upstreamAttempted"),
-                                    responseComplete=result.get("responseComplete")))
+            with quota_monitor().callback("AFTER", self.data, permit=permit) as stage:
+                stage["threadId"] = d.threading.get_ident()
+                self._stage = stage
+                try:
+                    super().after(permit, result)
+                finally:
+                    self._stage = None
 
     def committed(self):
         return Decimal(self.legacy["commonCommittedYuan"]) + super().committed()

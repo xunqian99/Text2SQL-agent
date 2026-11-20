@@ -1,84 +1,81 @@
-# 新登记控制器 revision-3：免费工程候选，新增付费仍待直接人类授权
+# 新登记控制器 revision-4：免费工程候选，未取得D额外付费授权
 
-旧 `batch-1/revision-2` 固定 `INTERRUPTED_NO_REPLAY`。本包没有补题、重放或改写旧分数/账目；没有读取真实密钥、启动供应商请求或访问未见题。主任务应先对本包执行免费 prepare、真实 JAR 本地替身 preflight 和独立工程审查，再仅就新增一次开发100题请求用户明确授权。
+revision-3 虽通过免费接入测试，仍被独立审查拒绝：902最坏存储形状下，两调用的同步回调耗时10757.916ms，连同begin/HTTP_RETURN/end达14069.733ms，几乎吃完整个原15秒预算。revision-4减少事务并改变历史原件检查时机，必须重新独立审查；不能用旧accepted或既有B授权放行新增D开发100题。
 
-## 使用与固定路径
+本实现任务没有准备实际revision-4批次、没有创建实际人类授权、没有读取真实密钥、没有调用供应商、没有读取未见题或解析旧68题答案。实际prepare、真实C1本机替身、最终组合回归和独立审查由主任务统一完成。以下数字属于免费内部工程检查，不是模型准确率、应用P95或付费准入结论。
 
-新入口为 `scripts/run_replan_stage_d_reregistered.py`，当前免费修订固定目录为 `reports/replan-stage-d-20261119/batch-1/reregistered-dev-1/revision-3`；独立新审查目录为 `reports/replan-stage-d-20261119/independent-review/reregistered-dev-1/revision-3`。只在新进程导入原冻结模块并替换全局路径/写盘/门禁，不编辑原文件。当前不由实现任务准备实际批次，主任务统一 prepare/真实替身预检/冻结/独立审查。
+## 路径和历史身份
 
-免费 revision-2 已由独立审查正式拒绝：新已知费用/新 UNKNOWN 可回退 seed，以及真实 C1 ready-only 的 JSON 重排被原字节门禁误杀。拒绝 decision SHA `d1050ff782c6ab98e96dae5db29bc1b65d8f3aa13c5e378162dba74a97179242`，独立 manifest SHA `af434a921708d5acbf5a402f9c733ff2e43ce60fbb506ca629caa708ef5b10b4`。新 prepare 核其原目录文件集/零 state/空 ledger/无人类授权、固定原 plan、预检与独立证据；旧 driver 以 Git commit `02364ab073360c352d94c698f69d59b0496fd5c1` 的原 SHA 记录，不改写旧 plan 迎合新源码。
+入口 `scripts/run_replan_stage_d_reregistered.py`；实际新目录固定为 `reports/replan-stage-d-20261119/batch-1/reregistered-dev-1/revision-4`，审查目录为 `reports/replan-stage-d-20261119/independent-review/reregistered-dev-1/revision-4`。新进程局部绑定冻结旧控制器；旧Java、controller、proxy和paid历史不改。
 
-第一份免费draft的B预检通过、F在就绪前因quota价格身份不符而失败：`CostQuota`的身份除模型/价格外还包含`agent.llm.base-url`，随机代理端口与旧59900不同。其原plan、零paid状态、原错误诊断和33份文件已由 `reregistration-first-free-failure.json` 封存，修订prepare先核该manifest、原plan、state/ledger均0且无授权/成功preflight，不覆盖原目录。原错误`inherited-quota-after-load.json`保留为失败现场，不能再据其`passed=true`解释为JAR加载成功。
+- 旧付费 `batch-1/revision-2` 始终 `INTERRUPTED_NO_REPLAY`，不得补题、续跑或复制旧答案进新轮次。独立聚合审计提供计数与账目，详细历史文件仅逐字SHA核验。
+- 第一免费draft原33文件和失败原因原样封存，不能把原seed保留诊断解释成JAR已启动成功。
+- 免费revision-2正式拒绝：decision SHA `d1050ff782c6ab98e96dae5db29bc1b65d8f3aa13c5e378162dba74a97179242`，manifest SHA `af434a921708d5acbf5a402f9c733ff2e43ce60fbb506ca629caa708ef5b10b4`；原源码Git `02364ab073360c352d94c698f69d59b0496fd5c1`，不改旧plan迎合新源码。
+- 免费revision-3正式拒绝：plan `9b32def424104c383d8088cb538ec54698f9bda12bbbb45a3d6472b65db5d41c`，decision SHA `7997a901b684d5c3715cfdfca5258798413374dd428db2562c2923567a5aaa67`，manifest SHA `49b7b39bd8aabf505a59ac9184b105e06a574da7c5a1fe1feac0ebfba6146eee`，实现Git `b178a4b2fe454cf5b5df90e4f62de665fce1fe6c`。prepare核before/after两份实际380文件清单一致、原bytes、requests0/rounds空/ledger空/授权缺失，不重验证其旧plan为新源码。
 
-```powershell
-python scripts/run_replan_stage_d_reregistered.py prepare
-python scripts/run_replan_stage_d_reregistered.py preflight
-python scripts/run_replan_stage_d_reregistered.py audit
-```
+免费入口仍是prepare→preflight→audit，存在目录拒绝覆盖。prepare复用已审核公开dev/formal/targets参考原bytes，继承旧quota完整bytes和3 UNKNOWN，核B0/旧D只读数据库身份；不执行候选SQL重评旧答案。
 
-以上步骤无需付费授权且不读真实 key。prepare 先核独立中断审计结论、旧终态、401项中断 manifest、356项独立审计输入和冻结旧源码/plan/运行环境指纹，再CREATE_NEW新目录；存在就拒绝，不自动恢复。它复用已审核的公开 dev/formal/targets 参考原字节，重新从固定C1 JAR编译共同评分桥，并核 B0/旧D相同只读数据库身份。它不重新执行候选 SQL，不把旧68答复制进新轮次。
+## revision-4机制与检查边界
 
-新正式运行态 `candidate-cost-quota.json` 从旧文件逐字复制，保留原 `budgetId/pricingIdentity/known/3 UNKNOWN holds`；不可变 seed 与 genesis-policy 由 plan 绑定。独立 `replan_quota_monitor.py` 观察可变运行态，原字节一致仅用于真正未开始（rounds 严格为空、requests0、calls空、未进入真实应用）；RUNNING/ready 后接受 JSON 顺序和小数等值变化。每次只捕获一份 runtime 原 bytes，原件以 base64 保存，SHA 与规范语义来自同份快照。
+以DEV_F公开T1-002为例：控制器在原`started+15`之前执行FULL verify，再把requests+1与固定公开reference对应的题目fence一并持久化。fence包含plan SHA、round、累计ordinal、questionId和strip后的UTF-8题文SHA；跳号、改题、重复begin、未绑定reference均拒绝。begin只校验内存准入凭据并保留原deadline，不追加观察。
 
-观察采用唯一 `candidate-quota-observations.jsonl`，每条事件含 sequence/前条SHA、原 quota bytes、语义、knowledge 叶变更、公共事件新增 SHA。只用 O_APPEND+fsync 追加，半条尾部/截断不恢复。checkpoint 固定最后序号/事件SHA/全 journal 字节数与SHA；同一 head 同时写入 state 和 send-ledger 的 `candidateQuotaObservation`。每次先重新读取并 SHA 校验整个 journal，原字节完全相同才复用解析状态；新进程必须重建全链。公共 permit/completion/raw 格式不变，位于原目录，每次串行观察重新读取和校验其实际原 bytes，不用 mtime 缓存。state/ledger未走事务的改写、孤儿/缺失发送事件、锚错位、checkpoint缺失或回滚均停止；多文件写到一半也停止，不自动补齐。
+Java产生PENDING后，before执行一个FAST事务：核当前完整journal SHA、checkpoint与state/ledger锚及其规范内容；读取quota快照A；用Java compact `[[SYSTEM,text],[USER,text]]` SHA和callNumber匹配唯一PENDING；调用冻结原gate创建私有permit与暂存ledger；读取快照B并检查A→B未回退；同一提交保存A/B原bytes、hold→token绑定、token→原fence、journal和三处锚。所有持久化成功后permit才返回proxy，代理仍检查原父deadline。after同样只有一个FAST事务，原raw/completion/rejection格式不变，Java在此时仍可PENDING。
 
-身份用 hold UUID + requestId + callNumber + promptSha256 + status 跟踪；UNKNOWN 一经观察，旧/新都不可删除或改内容。knownCalls 与 Decimal knownCost 分别取持久最高水位，允许调用数增加而费用零增。拒绝快照若已成功解析，也把新水位/全部未知内容与永久 stop 记录落盘后再拒绝，恢复旧 runtime 不能重新开闸。PENDING 不扁平化成 UNKNOWN：F proxy-before 用 Java compact `[[SYSTEM,text],[USER,text]]` 指纹和 callNumber 匹配唯一 PENDING，再将其绑定到不可变 permit token。after 时 Java 还可能未收到响应，所以允许仍 PENDING；消失必须有对应 common known completion，且已知调用/精确费用增量吻合。明确未发送取消还必须有 hash 固定的原 HTTP body/元数据、题号/requestId 与结构化预算拒绝；空闲时段分支要求完整原失败格式。凭据不足保守停机，UNKNOWN 不能走退款路径。`.10 PENDING → .00005 known` 会让 committed 正常下降，单调约束保护的是已知水位和 UNKNOWN，不是 committed 总额。
+HTTP_RETURN合并quota结算、原HTTP证据验证和durable question close。旧outer end是幂等内存关闭。两个调用原13次观察变为5次FAST提交；事务数减少本身不证明延迟达标。晚到after以持久token→原fence归属原题，不能套用当前题身份。
 
-覆盖全部真实 B/F 的 verify、应用 enter/ready/exit、proxy-before/after、HTTP返回/异常；B 使用共享 quota 也观察，但不强行假设旧 B JAR 实现 candidate hold。锁序统一为 monitor 事务锁→gate RLock；audit/preflight/run-next服从同一独占 controller owner，跨进程无法并发改锚，崩溃锁不自动清理。发送前任何观察/绑定写盘失败均不能返回许可；发送后失败保留此前已落盘的未知公共承诺/PENDING，不伪造已知结算或释放未知费用。父 deadline 不刷新。
+FULL每题之前、轮次结束/排空、首owner或新进程执行，重新读所有历史common permit/completion/raw/rejection实际bytes并SHA核验。FAST每次仍重新读并SHA整个journal、核全部当前锚/规范ledger、核quota A/B身份/费用水位/UNKNOWN/PENDING，并核公共目录精确文件集合及类型；只读本事务新增的原件内容。历史同名raw在一题内部被改，可能到下一次FULL才检出，届时禁止继续/晋级。其内容不参与当前费用重算，当前费用来自已锚ledger/journal与quota，不会因此释放UNKNOWN。该时机变化写入POLICY和新plan，不能隐藏成每回调仍核所有旧raw。
 
-永久 quota stop 后只允许一次严格的中断封存：唯一原 RUNNING 轮次改 INTERRUPTED 并写 `INTERRUPTED_NO_REPLAY`，requests/round集合/其他字段不动；仍使用已封存拒绝快照、原 knowledge/费用/UNKNOWN/stopReason，不能读取还原后的 runtime 解套。新增轮次、增加题数、改成COMPLETED、清stop或改账本都拒绝。结构/锚已损坏或磁盘全坏时不能保证终态写出，仍靠已存证据与fail-close阻止继续；不声称所有故障都能完整落盘。
+FAST凭据只驻内存，绑定同一个真实controller owner对象、plan、round、admitted fence和当前head。缺凭据直接拒绝，没有自动FULL降级放行，没有mtime、路径或fixture标记授权。owner退出即销毁；新进程必须FULL重建。monitor→gate固定锁序及callback线程身份保护暂存ledger；只复制会增删的工作集合，cache/事件快照边界仍防御性深复制，外部返回quota或后续gate内存改动不能污染已验证历史。
 
-本地 journal/双锚可以发现部分回滚，无法抵抗整个目录、全部锚和完整历史被协调重写到同一旧状态；该保证需要外部可信签名锚，本项目没有声称提供。
+journal采用O_APPEND+fsync，每条包含sequence、前条SHA、quota原bytes/base64/SHA、规范语义、knowledge叶变更、公共新增原件SHA。checkpoint记录全journal字节数/SHA和末事件身份，head同时锚在state和ledger。可变state/ledger使用紧凑JSON，规范内容身份不变；不可变公共原件仍使用冻结格式。禁止半条尾部修复、锚错位修复、孤儿原件补齐或自动重建。
 
-新增 `replan_stable_proxy.py` 固定Java看到的代理入口为旧 `http://127.0.0.1:59900`，保持原quota身份，不迁移哈希、不清零预算。Windows listener显式独占 `SO_EXCLUSIVEADDRUSE=1`、`SO_REUSEADDR=0`；占用就失败，没有随机备用端口。它仅替换监听构造，继承冻结handler、转发、父deadline、解析和关闭逻辑；旧proxy源码SHA不变。新driver只在自身run/preflight调用期间临时绑定该类，调用结束恢复，不全局修改`os.replace`或旧proxy源码。helper本身也在plan指纹内。
+callback预加载、首快照畸形或原件/锚半写导致正常事务无法提交时，CREATE_NEW的`candidate-quota-persistence-stop.json`尽力保留已捕获A/B原件、畸形quota原bytes、fence和原因，新实例也硬拒绝，不改原文件、不补锚。磁盘全部不可写时不能保证再写旁证，已有未配对锚/原件和持久PENDING仍禁止恢复，不能宣称所有故障都能完整存证。
 
-真实免费 preflight 对 F 启动前，从seed逐字复制到 `offline-cost-quota.json`；本地合成调用只修改该离线副本。F进程结束后核预算/价格身份、旧3份UNKNOWN与已知值保留，写 `inherited-quota-after-load.json`；新诊断明确区分`applicationReachedReady/applicationBodyCompleted/inheritedQuotaDataPreserved`，只有就绪并正常完成预检体时`passed=true`，启动失败只能说数据仍保留。正式运行态不被免费预检更新。旧预检的“两份真实本机HTTP+98份显式合成Gold”仍只是接入测试，不是模型准确率。
+## 费用与失败保护
 
-## 两层账目与上限
+数据出身由旧/新目录、manifest/plan SHA、hold UUID + requestId + callNumber + promptSha256 + status、token和requestFence共同追踪，不将PENDING/UNKNOWN或两层账目扁平混算。没有评分权重、TopK、失败过滤或样本筛选来改善分数。
 
-旧历史固定：68题、应用预算70次、共同许可69个、传输尝试68次、用量已知67次、已知费用¥0.16312188。共同2未知保留¥0.20，共同配置占用¥0.36312188；候选应用3未知保留¥0.30，该层占用¥0.46312188。两层各自约束，不能相加冒充供应商账单，也不能借新登记释放UNKNOWN。
+knownCalls和Decimal knownCost分别保留持久最高水位；UNKNOWN观察后不可删除或改内容。A出现、B撤销的新UNKNOWN/更高known水位仍进入永久stop；未知内容变体也保留。PENDING消失必须有原token对应已知completion和严格相等的调用/费用增量，或原HTTP完整bytes、题号/requestId和结构化未发送证据；UNKNOWN不能走未发送退款。正常`.10 PENDING→.000005 known`可降低总committed，单调保护的是known水位和UNKNOWN，不能误把合法结算降占用当回退。
 
-新当前send-ledger只存新事件，绑定旧manifest SHA；共同 `committed()` 在当前费用/预留上始终加旧¥0.36312188。当前新路线仍至多902题，累计970题；共同当前许可上限1870，由累计1940减历史**应用70次**得到，口径比只减69许可更保守。每题最多2调用，因此完整新902路线实际自身最多1804调用，所有上限共同生效。全局1002题/2004调用、¥1共享估价配额、¥0.10单次预留、15秒/2调用、单次SDK尝试、空闲窗口、开发与正式门槛、C1/JAR/公开参考均不降低。
+原common gate拒绝保留唯一原rejection并永久停机，之后SDK纠错不能再送。before提交失败不返回permit；私有不可变permit可能已经生成，不能谎称磁盘零permit。after失败仍保留之前的未知公共承诺和候选PENDING，不伪造结算。永久quota stop仅允许同一原RUNNING轮次严格封成INTERRUPTED与`INTERRUPTED_NO_REPLAY`，不能增加题数/轮次、改COMPLETED、清stop或改账本。结构已坏时终态未必能写出，但禁止继续。
 
-真实付费summary保留 `currentRoundAccounting/currentAllRoundsAccounting/legacyAccounting/cumulativeCommonAccounting`，许可数与传输尝试数分开。免费替身summary使用 `syntheticCurrentAccounting`，明确本次新增外部调用/真实费用为0，不把模拟usage加到旧真实账单；旧费用仍单列存在。供应商完整费用仍受UNKNOWN影响，不能说整个历史批次0费用。
+本地journal/双锚只能发现部分回滚，无法抵抗整个目录、所有锚和完整历史被协调重写；项目没有外部可信签名锚。
 
-## 额外付费授权文件：精确契约
+历史账目固定：68题、应用预算70次、共同许可69、传输68、known67、¥0.16312188；共同UNKNOWN2保留¥0.20，占用¥0.36312188；候选UNKNOWN3保留¥0.30，占用¥0.46312188。两层分别约束，不能相加冒充供应商账单。新共同ledger只记新事件但committed加旧占用；许可上限1870=1940−历史应用70。新路线至多902题、累计970题、每题2调用、新路线自身最多1804调用；全局1002/2004、¥1、¥.10预留、15秒、SDK attempts1、原时段/门槛均不放松。
 
-实际文件固定为新批次下 `human-paid-authorization.json`，本包**没有创建**。精确结构见同目录 `human-paid-authorization.schema.json`。它要求：
+固定代理仍是旧 `http://127.0.0.1:59900`，保留旧pricingIdentity；Windows exclusive=1/reuse=0，占用即拒绝、无随机备用口。离线preflight从seed复制独立offline quota，本机合成usage不改正式quota，不进入真实历史账单；只有JAR就绪且预检体完成才可passed。既有“两份本机HTTP+98份显式合成Gold”是接入检查，不是模型准确率。
 
-- `format="replan-d-direct-user-paid-authorization-v1"`，`approved=true`，`authority="DIRECT_HUMAN_USER"`。
-- `scope="ONE_ADDITIONAL_FULL_DEV100_FIXED_C1_EXISTING_GATES"`；`planSha256` 必须是最终新plan的原字节SHA。
-- `approvedAt` 必须有时区且不晚于当前时间；`directUserMessage` 是人类明确批准原文，`directUserMessageSha256` 核其精确UTF-8；`legacyManifestSha256` 为固定旧manifest身份。
-- `limits` 与 schema 的100/902/970/1940/¥1/¥.10完全相等；`acknowledgments` 必须完整承认旧中断不重放、历史68/70、已知费用、共同¥.20/候选¥.30继续持有、两层不相加、未见仍锁、工程接受不能代替付费授权。
+## 免费验证数字
 
-这是由可信主任务根据真实人类回复生成的授权证据门禁，不能用代理输出或独立审查决定代填；本地JSON不是密码学的人类签名。没有额外默认授权来源，没有自动创建授权的CLI。
+主优化批次：`revision-4-directed-tests-2` 39/39，固定旧436文件bytes不变；`revision-4-monitor-checks-2` 69/69，供应商、真实key、Java进程均0。这两批绑定失败分支补封前helper `3137e6a538340299f3887e05c2d30a744e648e696efc9395c81c3bbf30240fb5`。最后发现首快照畸形后若恢复runtime，原代码还可再尝试callback，已收紧为永久stop；预加载/首快照/B畸形与恢复后禁发、费用责任/持久失败/别名组成一批 `revision-4-failure-boundary-checks-1` 12/12通过，绑定最终helper `35b86ea00752c4e4a986480c8be266e87345c0617bd041214cbf17f53e7cb9db`。最终monitor共有72项，主任务负责最终同版完整组合，不能把先前69/69冒充最终源码完整回归。monitor首轮67项66通过，唯一失败是测试自己未HTTP关闭便准入下一题，生产拒绝正确；原失败`revision-4-monitor-checks-1`与补1/1保留，不能伪称首轮全绿。69项批次额外覆盖返回值/内存别名污染和重复JSON成员拒绝。
 
-`run-next` 在进入原付费流程前先核授权；之后继承原预检/独立审查/完整分母/时段/配额门禁，在原 `real_key()` 被调用前再次核授权并CREATE_NEW保存消费指纹。未获授权不会写RUNNING、增加题数、拿key或发模型。消费后修改该授权也拒绝。新完整DEV_F通过后，T3-002只复用**新完整开发轮唯一响应**，不从旧68答或不同来源挑高分；原目标/正式/新未见的所有停止条件保持。
+性能使用真实新SendGate、真实owner/admission、真实before/after、真实HTTP wrapper和本地合成Java quota文件更新，无socket/JAR/model/SQL/key。每尺度一个样本，均保留43,473,492B、15318观察的902历史形状，尾题后1804calls/5412公共原件；102历史为4,865,175B/1718观察，尾题后204calls/612原件。不是拿小fixture外推。
 
-## 免费验证数字与限制
+| 同版免费工程测量 | 102四回调ms | 102完整ms | 902四回调ms | 902完整ms |
+|---|---:|---:|---:|---:|
+| performance-4 首实现 | 488.403 | 678.889 | 1888.393 | 2283.429 |
+| performance-5 削减ledger复制 | 379.327 | 527.426 | 1208.601 | 1586.474 |
+| performance-6 工作集合/紧凑锚 | 362.396 | 507.513 | 1090.217 | 1438.505 |
+| performance-7 失败分支补封前 | 359.585 | 530.920 | **1070.506** | **1365.076** |
 
-历史34/34、38/38保留；revision-3 旧门禁定向39/39（`directed-tests-4`）、最终monitor定向48/48（`quota-monitor-checks-5`）通过，436/436既有固定文件原 bytes 不变。monitor新增6项验证严格终态封存及禁止题数/轮次增长、完成/恢复/改身份、终态写失败；中间 `quota-monitor-checks-4` 的6个真实失败原件保留，其原因是新增终态代码重复加载时误把正在合法提交的permit当孤儿，已经修正为原单次事务加载路径，未放松事件校验。所有纯定向检查真实供应商/key/JAR均0。主任务最终同版组合回归、真实C1替身集成与独立审查仍待完成。
+performance-7绑定helper `3137e6a538340299f3887e05c2d30a744e648e696efc9395c81c3bbf30240fb5`；其后仅收紧失败封存分支，未补跑性能，不以最终helper SHA冒充旧测量。两者driver同为 `bda005614aa90c7f872f9451d0654a958204b2d4f5f807038d999245892d1d4e`。完整指begin→两对回调→HTTP_RETURN/end，含模拟quota更新和真实证据写盘。工程目标是四回调≤1000ms、完整≤1500ms；最后一次测量的902四回调仍严格超1000ms，目标标记false，完整标记true，交独审裁定，不改阈值、不择优补测。新实例FULL2588.471ms、gateOpen FULL1771.661ms、准入216.605ms在父15秒之前；post-question FULL1019.254ms。首新实例无解码cache但文件刚构造，OS冷盘未受控，不能称冷盘或产品P95。FULL整轮累计成本和真实C1的总链路仍由主任务核验。
 
-性能反例完整保留 `quota-monitor-performance-2/`：小文件 delta 链在102题/204calls/1735观察约4.91MB时首观测11946ms、后586/625ms；902题/1804calls/15335观察约43.52MB时首观测95515ms、后6128/5742ms。该结构不能准入，改成唯一追加 journal。`quota-monitor-performance-3/` 给出同规模日志/公共证据实际全字节复核：102题295.400/189.221/180.258ms；902题2589.395/1049.263/1043.110ms。首轮仅“新实例、无解析缓存”，文件此前构造写过，不能称受控OS冷盘。902首轮分项：journal读+SHA45.131ms、链解码1370.975ms、公共原件读取738.894ms、公共SHA/结构106.408ms、追加/锚持久45.071ms。warm后每观察仍约1秒，发送前3次、after2次可占约5秒，两调用约10秒，15秒父时限不刷新；这不是性能门槛已过，也不证明应用P95/准确率。完整n.verify旧证据核验还计入整轮1620秒，由主任务另实测。
+performance-2/3和revision-3独立拒绝原件全部保留；revision-4各轮原目录也保留。大体积原件通过`revision-4-implementation-delivery/`的ZIP、逐文件SHA清单和ZIP逐件回读校验入Git，不能把ZIP说成原始单文件，也不删除磁盘原目录。
 
-性能报告绑定当时精确源码SHA，早于后补的严格终态封存分支；正常观察与全部原bytes核验机制保留，没有用新源码SHA冒充旧实测版本。性能2/3所有原目录仍完整留在磁盘，Git以 `revision-3-implementation-delivery/quota-monitor-performance-{2,3}.zip` 和对应逐文件SHA清单、原verification入库，ZIP是原目录文件的归档，不能称ZIP本身就是原始单文件。归档对应文件数、字节数、SHA与逐件回读结果见同目录 `delivery-manifest.json`；原目录大体积夹具未逐文件加入Git，也未删除。
+真实免费入口仍是 `scripts/check_replan_real_quota_fixture.py --output <candidate内全新绝对目录>`：复制公开reference并绑定plan，经真实准入/gate跑C1 ready-only，再另一基座跑公开T1-002本机已知usage；退出JVM后两次独立Python子进程FULL冷重建。脚本存在及本次改动不等于revision-4真实集成已通过，主任务负责执行和独立冻结。
 
-真实监控链免费集成入口 `scripts/check_replan_real_quota_fixture.py --output <candidate内全新绝对目录>`：真实冻结 C1 ready-only 0题，另一个基座仅公开 T1-002 经真实应用、真实 monitor before/after 与本机合成上游已知结算。继承原 UNKNOWN 不动、不评分、不读旧paid答案、不产生人类授权、原实际注册前后不变。每个基座退出 JVM 后另启独立 Python `--validate-existing` 全链冷重建，保存 child 原 stdout/stderr/验证报告；fresh instance 与真正跨进程分别标记。脚本由主任务统一运行，存在源码不代表已通过。
+## 额外付费授权边界
 
-固定listener另有7/7真实Windows检查，5次仅loopback合成上游请求；新增外部供应商API/真实key读取/费用仍为0。B→F同进程关闭后立即重开、两个子进程先后关闭重开均成功；观察到59900的两条TIME_WAIT，独占仍可按本次已验序列重新绑定。活动proxy独占时第二proxy被拒；独立进程占用时子进程WinError10048，许可/完成回调均0，无线程泄露、无备用端口；实测socket exclusive=1/reuse=0。原handler/forward/deadline/drain/shutdown方法身份相同。原始探针3/3及完整7项证据保留于 `stable-port-initial-probe.json`、`stable-proxy-checks-1/`。这些是本机本次状态证据，不承诺所有未来TIME_WAIT/进程占用都会可重开；失败仍关闭流程，不提高地址复用权限。
+实际 `human-paid-authorization.json` 本实现未创建。精确契约见`human-paid-authorization.schema.json`：DIRECT_HUMAN_USER、ONE_ADDITIONAL_FULL_DEV100_FIXED_C1_EXISTING_GATES、最终revision-4 plan原bytes SHA、带时区且非未来的批准时间、直接用户批准原文及UTF-8 SHA、固定旧manifest、100/902/970/1940/¥1/¥.10与全部旧账/UNKNOWN/不重放/未见锁定承认。工程accepted、既有B授权和代理输出均不能代填D额外付费授权；本地JSON也不是密码学人类签名。
 
-覆盖授权缺失/错误plan/非人类authority/错原文哈希/超限费用/未来时间/缺UNKNOWN承认/消费后漂移，授权缺失在原run前拒绝，当前同ID不与历史混合，旧共同费用占用，新许可上限扣应用70，候选quota全字节继承/禁止清零/层额度独立，helper默认参数接入、同temp同bytes重试只产生一个permit、持久失败不返回许可也不释放预留、新写入禁止触及旧批次、免费prepare/preflight控制流、F离线seed复制及关闭后保持检查、合成usage不进入真实累计。
-
-有界helper只重试同一已fsync临时文件到同一目标的 `os.replace`；新入口仅用默认0.5秒退避重试预算/12次尝试，不暴露可调参数。同步 `os.replace` 本身不能强杀，不能保证绝对wall≤0.5秒；父15秒deadline不刷新，proxy在permit后仍检查过期并拒绝发送，整轮/发送时段门禁保留。没有HTTP/模型/题目重试。此修订的真实JAR免费预检和独立成套审查由主任务接着完成，不能把上述套接字或替身检查宣称成它们已通过。
+run-next进入旧付费路径前核一次，读取真实key前再核并CREATE_NEW消费指纹；缺授权不写RUNNING、不加题数、不拿key、不送模型。新增完整DEV_F通过后，T3-002仅能复用新完整轮唯一响应，不能挑旧68答或跨来源高分。原正式/未见停止条件均保持。
 
 ## 技术与设计导读
 
-以新DEV_F里的T1-002为例：控制器从冻结开发参考拿题，新ledger的第一次许可仍是attempt1；旧同ID许可留在旧目录，不参与新题的2次上限，却通过固定历史占用继续约束全局预算。before先写新唯一permit，再把同bytes新账本临时文件fsync并有界replace；成功才返回proxy，父deadline已过则proxy仍拒绝上游。真实HTTP答案进入新100题完整分母。新轮次任何中断仍封存，不补题。
+实现抓手是固定公开reference准入fence、内存owner能力、双quota原快照、hold→token→原fence身份链、唯一追加journal/三处锚、原gate局部暂存和明确FULL/FAST边界。具体输入仍是T1-002题文；输出是保留原deadline的私有permit、原HTTP答案以及可独立重建的收费/未知责任证据，不是新业务算法。
 
-技术抓手是已审核原控制器复用、Python进程局部绑定、不可变旧manifest/独立审计SHA、独立新事件ledger、原子文件替换helper、预算seed与可变运行态分离、固定独占loopback入口、匹配精确plan的双重人类授权门禁。数据出身用旧/新目录及manifest/planSHA区分；没有打分权重、TopK或失败过滤，不能靠选择性排除旧账目或新失败题改善分数。
+收益是把两调用13次同步观察压成5次提交，最后一次免费902回调测量由独立revision-3的10757.916ms降到1070.506ms；这只是不同已注明源码的工程对照，不能偷换成模型效果提升。代价是题内历史同名raw篡改延后至下一FULL发现，且四回调严格1秒目标仍未过。拒绝mtime授权和跨进程cache，因为它们无法证明原bytes未变；拒绝完全不落盘的异步结算，因为许可逃逸前没有责任凭据。也不能为了速度释放UNKNOWN或刷新15秒。
 
-拒绝直接续跑旧轮或复制旧events，因为会破坏中断不重放承诺、冲突同题attempt，并掩盖真实分母。拒绝把工程审查accepted当付费次数授权；拒绝重置quota，因为未知费用仍有风险。面试追问一：新ledger空是否清零？回答同时指出旧SHA固定、committed加旧占用、当前调用限额扣历史应用70和quota原bytes继承。追问二：本地replace重试会多发模型吗？回答retry循环只有原子替换，许可持久化成功前proxy无发送入口，deadline仍由原代理约束。
+面试追问一：为什么FAST不会洗掉费用？回答应沿原hold身份、A/B快照、known最高水位、sticky UNKNOWN、精确completion与HTTP证据说明，而非只说“有锁”。追问二：为什么不每回调读全部旧raw？直接说明独立实测原方案耗时、当前检查时机与篡改窗口、当前费用不依赖旧raw重算以及下一FULL阻止晋级的保底，不隐瞒该权衡。
 
-价格身份包含代理地址会令随机端口破坏恢复，但本轮禁止改生产/JAR或迁移旧账目，因此选择固定原入口。没有用SO_REUSEADDR抢占监听，因为已有owner必须安全拒绝；代价是59900不可用会令流程中断，不能保证任何未来运行都成功。候选层继承占用¥0.46312188后余¥0.53687812，预算不变，不能承诺完成开发或后续正式。
-
-用户当前无需启动外部服务；最后需要的只是对完成免费预检与独立审查后的新付费100题作明确决定。需要核对的是数据流的旧/新身份、三种调用数字与两层费用占用，以及本地持久化故障与生成/评分错误的归因。
+用户当前无需操作外部服务；需要自行核对旧/新身份如何流转、许可/传输/应用调用数及两层费用如何对账、故障究竟在准入/持久化/模型/SQL/评分哪一层。新增D付费100题仅在免费真实集成和独审完成后，由直接用户另作决定。

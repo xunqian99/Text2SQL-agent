@@ -17,7 +17,7 @@ from unittest.mock import patch
 
 import run_replan_stage_d_reregistered as n
 
-EVIDENCE = n.CANDIDATE / "directed-tests-4"
+EVIDENCE = n.CANDIDATE / "revision-4-directed-tests-2"
 
 
 class ExplicitUnrelatedTestMonitor:
@@ -26,6 +26,14 @@ class ExplicitUnrelatedTestMonitor:
     initialize = staticmethod(lambda: None)
     before = staticmethod(lambda *a, **k: None)
     bind = staticmethod(lambda *a, **k: None)
+    open_round = staticmethod(lambda *a, **k: None)
+
+    @contextmanager
+    def callback(self, *args, **kwargs):
+        stage = dict(ledger=None)
+        yield stage
+        if stage["ledger"] is not None:
+            n.raw_write(n.d.BATCH / "send-ledger.json", stage["ledger"], replace=True)
 
     def observe(self, *args, **kwargs):
         path = n.d.BATCH / "candidate-cost-quota.json"
@@ -71,6 +79,12 @@ class DirectedChecks(unittest.TestCase):
         self.addCleanup(self.scope.stop)
         guard = patch.object(n, "quota_monitor", return_value=ExplicitUnrelatedTestMonitor())
         guard.start(); self.addCleanup(guard.stop)
+        owner = object()
+        guard = patch.object(n, "controller_identity", return_value=owner)
+        guard.start(); self.addCleanup(guard.stop)
+        self.addCleanup(lambda: n._owner_gate.pop(owner, None))
+        guard = patch.object(n, "bound_round_items", return_value=[dict(id="T1-002", question="同一题号的新完整开发轮")])
+        guard.start(); self.addCleanup(guard.stop)
         # No test may read the environment/registry key, reach a socket, or spawn a JAR.
         for target in ((n, "_old_real_key"), (socket.socket, "connect"), (subprocess, "run"), (subprocess, "Popen")):
             guard = patch.object(*target, side_effect=AssertionError("Real key/network/process forbidden in directed tests"))
@@ -94,6 +108,7 @@ class DirectedChecks(unittest.TestCase):
         return path
 
     def gate(self, **kwargs):
+        dump(self.directory / "state.json", dict(requestsStarted=0, rounds={}))
         return n.SendGate(self.empty_ledger(), "fixture-plan", "DEV_F",
             clock=lambda: datetime(2026, 11, 21, 12, tzinfo=n.d.BEIJING), monotonic=lambda: 10., **kwargs)
 
@@ -105,6 +120,7 @@ class DirectedChecks(unittest.TestCase):
         return payload, json.dumps(payload, ensure_ascii=False).encode()
 
     def begin(self, gate):
+        gate._admitted_fence = dict(questionId="T1-002", questionSha256=hashlib.sha256("同一题号的新完整开发轮".encode()).hexdigest())
         gate.begin(dict(id="T1-002", question="同一题号的新完整开发轮"), 25.)
 
     def test_legacy_full_manifest_and_independent_accounting_match(self):
@@ -433,7 +449,8 @@ if __name__ == "__main__":
         syntheticAuthorizationExistsOnlyInTestSubdirectories=True,
         actualRegistrationAuthorizationExists=(n.BATCH / n.AUTH_NAME).exists(),
         legacyAccounting=n.LEGACY, twoQuotaLayersAreNotSummedAsBill=True,
-        sourceSha256=n.sha(n.ROOT / "scripts/run_replan_stage_d_reregistered.py"))
+        sourceSha256=n.sha(n.ROOT / "scripts/run_replan_stage_d_reregistered.py"),
+        helperSha256=n.sha(n.ROOT / "scripts/replan_quota_monitor.py"), testSha256=n.sha(Path(__file__)))
     dump(EVIDENCE / "verification.json", report)
     print(json.dumps({k: report[k] for k in ("testsRun", "passed", "failures", "errors", "oldFrozenFilesVerified", "oldFrozenBytesUnchanged")}))
     if not result.wasSuccessful() or not exact: sys.exit(1)
