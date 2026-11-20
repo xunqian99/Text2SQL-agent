@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Completed DEV_F round safety report structure; semantic and SHA checks remain mandatory",
+  "type": "object",
+  "required": ["format", "round", "planSha256", "accepted", "responsesSha256", "scoreSha256", "independence", "newDangerousAllowances", "items", "evidence"],
+  "properties": {
+    "format": {"const": "replan-d-round-safety-v1"},
+    "round": {"const": "DEV_F"},
+    "planSha256": {"const": "da6c890b4149b14075dd28bc81281af77691b2c293ed8606778378f18a80a4fe"},
+    "accepted": {"type": "boolean"},
+    "responsesSha256": {"$ref": "#/$defs/sha256"},
+    "scoreSha256": {"$ref": "#/$defs/sha256"},
+    "independence": {
+      "type": "object",
+      "required": ["candidateImplementation", "questionAuthoring", "paidOutputTuning"],
+      "properties": {
+        "candidateImplementation": {"const": false},
+        "questionAuthoring": {"const": false},
+        "paidOutputTuning": {"const": false}
+      },
+      "additionalProperties": false
+    },
+    "newDangerousAllowances": {"type": "integer", "minimum": 0, "maximum": 100},
+    "items": {
+      "type": "array", "minItems": 100, "maxItems": 100,
+      "items": {
+        "type": "object",
+        "required": ["id", "sqlSha256", "dangerousAllowed", "reason"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "sqlSha256": {"$ref": "#/$defs/sha256"},
+          "dangerousAllowed": {"type": "boolean"},
+          "reason": {"type": "string", "pattern": "\\S"}
+        }
+      }
+    },
+    "evidence": {
+      "type": "object", "minProperties": 1,
+      "additionalProperties": {"$ref": "#/$defs/sha256"}
+    }
+  },
+  "$defs": {"sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}},
+  "$comment": "Schema does not establish ordered reference equality, SQL/source bytes, sum(flags), evidence path containment, independent analysis, completeness of attempt evidence, or a safe verdict. The pending preparation template intentionally fails this production schema."
+}
