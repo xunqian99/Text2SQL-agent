@@ -10,14 +10,32 @@ import socket
 import subprocess
 import sys
 import unittest
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from datetime import datetime, timezone
 from decimal import Decimal
 from unittest.mock import patch
 
 import run_replan_stage_d_reregistered as n
 
-EVIDENCE = n.CANDIDATE / "directed-tests-2"
+EVIDENCE = n.CANDIDATE / "directed-tests-4"
+
+
+class ExplicitUnrelatedTestMonitor:
+    """Injected only into legacy small fixtures; real monitor has its own suite."""
+    serial = staticmethod(nullcontext)
+    initialize = staticmethod(lambda: None)
+    before = staticmethod(lambda *a, **k: None)
+    bind = staticmethod(lambda *a, **k: None)
+
+    def observe(self, *args, **kwargs):
+        path = n.d.BATCH / "candidate-cost-quota.json"
+        seed = n.d.BATCH / "candidate-quota-initial-snapshot.json"
+        if path.exists() and seed.exists():
+            return n.validate_seed(n.quota_read(seed, exact=True), n.quota_read(path, exact=True))
+        return n.d.read(path) if path.exists() else None
+
+    def persist(self, path, value):
+        return n.raw_write(path, value, replace=True)
 
 
 def dump(path, value):
@@ -51,6 +69,8 @@ class DirectedChecks(unittest.TestCase):
         self.scope = patch.object(n.d, "BATCH", self.directory)
         self.scope.start()
         self.addCleanup(self.scope.stop)
+        guard = patch.object(n, "quota_monitor", return_value=ExplicitUnrelatedTestMonitor())
+        guard.start(); self.addCleanup(guard.stop)
         # No test may read the environment/registry key, reach a socket, or spawn a JAR.
         for target in ((n, "_old_real_key"), (socket.socket, "connect"), (subprocess, "run"), (subprocess, "Popen")):
             guard = patch.object(*target, side_effect=AssertionError("Real key/network/process forbidden in directed tests"))
@@ -239,23 +259,27 @@ class DirectedChecks(unittest.TestCase):
     def test_exact_candidate_quota_copy_preserves_budget_and_all_holds(self):
         source = n.OLD_BATCH / "candidate-cost-quota.json"
         n.write_bytes(self.directory / "candidate-cost-quota.json", source.read_bytes())
+        n.write_bytes(self.directory / "candidate-quota-initial-snapshot.json", source.read_bytes())
         self.assertEqual(n.sha(source), n.sha(self.directory / "candidate-cost-quota.json"))
         self.assertEqual(len(n.check_candidate_quota()["holds"]), 3)
 
     def test_candidate_unknown_cannot_be_removed(self):
+        n.write_bytes(self.directory / "candidate-quota-initial-snapshot.json", (n.OLD_BATCH / "candidate-cost-quota.json").read_bytes())
         quota = n.d.read(n.OLD_BATCH / "candidate-cost-quota.json"); quota["holds"].pop(next(iter(quota["holds"])))
         dump(self.directory / "candidate-cost-quota.json", quota)
-        with self.assertRaises(n.Refused): n.check_candidate_quota()
+        with self.assertRaises(n.QuotaRefused): n.check_candidate_quota()
 
     def test_candidate_budget_id_cannot_be_reset(self):
+        n.write_bytes(self.directory / "candidate-quota-initial-snapshot.json", (n.OLD_BATCH / "candidate-cost-quota.json").read_bytes())
         quota = n.d.read(n.OLD_BATCH / "candidate-cost-quota.json"); quota["budgetId"] = "fresh-reset"
         dump(self.directory / "candidate-cost-quota.json", quota)
-        with self.assertRaises(n.Refused): n.check_candidate_quota()
+        with self.assertRaises(n.QuotaRefused): n.check_candidate_quota()
 
     def test_candidate_layer_exhaustion_is_not_bypassed_by_common_budget(self):
+        n.write_bytes(self.directory / "candidate-quota-initial-snapshot.json", (n.OLD_BATCH / "candidate-cost-quota.json").read_bytes())
         quota = n.d.read(n.OLD_BATCH / "candidate-cost-quota.json"); quota["knownCostYuan"] = 0.8
         dump(self.directory / "candidate-cost-quota.json", quota)
-        with self.assertRaises(n.Refused): n.check_candidate_quota()
+        with self.assertRaises(n.QuotaRefused): n.check_candidate_quota()
 
     def test_prepare_checks_old_terminal_before_creating_new_directory(self):
         self.directory.rmdir()
@@ -353,6 +377,12 @@ class DirectedChecks(unittest.TestCase):
         self.assertEqual(facts["planSha256"], n.FIRST_FREE_PLAN_SHA)
         self.assertEqual(facts["requestsStarted"], 0)
         self.assertEqual(facts["addedProviderCalls"], 0)
+
+    def test_revision2_rejection_is_bound_without_loading_old_driver(self):
+        facts = n.rejected_free_facts()
+        self.assertEqual(facts["planSha256"], n.REJECTED_FREE_PLAN_SHA)
+        self.assertEqual(facts["driverSha256"], n.REJECTED_DRIVER_SHA)
+        self.assertEqual(facts["requestsStarted"], 0)
 
     def test_stable_proxy_binding_is_scoped_and_restored_on_failure(self):
         import replan_stage_d_proxy as proxy

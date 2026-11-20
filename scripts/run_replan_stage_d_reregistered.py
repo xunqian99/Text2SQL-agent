@@ -21,18 +21,26 @@ from datetime import datetime
 
 from replan_durable_write import replace_with_retry
 from replan_stable_proxy import StableModelProxy, BASE_URL as STABLE_PROXY_URL
+from replan_quota_monitor import (QuotaMonitor, QuotaRefused, POLICY as QUOTA_POLICY,
+                                 read as quota_read, validate_seed)
 
 ROOT = Path(__file__).resolve().parent.parent
 BASE = ROOT / "reports/replan-stage-d-20261119"
 OLD_BATCH = BASE / "batch-1/revision-2"
 FIRST_FREE_BATCH = BASE / "batch-1/reregistered-dev-1"
-BATCH = FIRST_FREE_BATCH / "revision-2"
-REVIEW_ROOT = BASE / "independent-review/reregistered-dev-1/revision-2"
+REJECTED_FREE_BATCH = FIRST_FREE_BATCH / "revision-2"
+REJECTED_FREE_REVIEW = BASE / "independent-review/reregistered-dev-1/revision-2"
+BATCH = FIRST_FREE_BATCH / "revision-3"
+REVIEW_ROOT = BASE / "independent-review/reregistered-dev-1/revision-3"
 CANDIDATE = BASE / "reregistration-candidate"
 AUTH_SCHEMA = CANDIDATE / "human-paid-authorization.schema.json"
 AUTH_NAME = "human-paid-authorization.json"
 NEW_FORMAT = "replan-d-reregistered-c1-v1"
-REGISTRATION = "batch-1/reregistered-dev-1/revision-2"
+REGISTRATION = "batch-1/reregistered-dev-1/revision-3"
+REJECTED_FREE_PLAN_SHA = "91c67f5a2484fd6fd0e63a1f86c09ebb8e20737f5a7a3d4c4850b9b63c9c17b4"
+REJECTED_FREE_DECISION_SHA = "d1050ff782c6ab98e96dae5db29bc1b65d8f3aa13c5e378162dba74a97179242"
+REJECTED_FREE_MANIFEST_SHA = "af434a921708d5acbf5a402f9c733ff2e43ce60fbb506ca629caa708ef5b10b4"
+REJECTED_DRIVER_SHA = "fb80cc04eb939bb48ab3f3d8408a678fb92a363f882f8cbb7a9cb26a454f3e4c"
 FIRST_FREE_PLAN_SHA = "c5ee4606b41f88f9933f69a423b10fa9eb2edab604e3460658194dc87d8d2c2f"
 FIRST_FREE_MANIFEST_SHA = "b2f872984fdaf7e42aec9858bae51b6640136c8a21fe30cd487c2a6b2f9e7ce1"
 OLD_PLAN_SHA = "de6c10f1365f53345a37d238efafd1c00afadb506bab75d102b36f050d601016"
@@ -75,6 +83,12 @@ _old_real_key = d.real_key
 _old_app_command = d.app_command
 _old_application = d.application
 _old_offline_preflight = d.offline_preflight
+_old_http_json = d.http_json
+_old_locked = d.locked
+_old_preflight = d.preflight
+_active_controller = None
+_monitors = {}
+_real_endpoints = set()
 
 
 def require(condition, message):
@@ -98,7 +112,7 @@ def write_bytes(path, data):
         os.fsync(stream.fileno())
 
 
-def write(path, value, *, replace=False):
+def raw_write(path, value, *, replace=False):
     path = owned(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     require(replace or not path.exists(), "Never overwrite evidence: " + path.name)
@@ -111,6 +125,45 @@ def write(path, value, *, replace=False):
     # Default 0.5s retry/backoff budget and 12 attempts only. No HTTP retry.
     # An individual synchronous os.replace cannot be forcibly time-bounded.
     replace_with_retry(temp, path)
+
+
+def write(path, value, *, replace=False):
+    path = owned(path)
+    if replace and path.name in ("state.json", "send-ledger.json") and path.parent == d.BATCH.resolve():
+        return quota_monitor().persist(path, value)
+    return raw_write(path, value, replace=replace)
+
+
+@contextmanager
+def controller_locked():
+    """One process owns all mutable observations, including audit/preflight."""
+    global _active_controller
+    path = d.BATCH.resolve()
+    require(_active_controller is None, "Controller session cannot be reentered")
+    with _old_locked():
+        _active_controller = path
+        try:
+            yield
+        finally:
+            _active_controller = None
+
+
+@contextmanager
+def observation_owner():
+    if _active_controller == d.BATCH.resolve():
+        yield  # Proxy callbacks belong to the live owning controller process.
+    else:
+        with controller_locked():
+            yield
+
+
+def quota_monitor():
+    path = d.BATCH.resolve()
+    plan_sha = sha(path / "plan.json")
+    key = (path, plan_sha)
+    if key not in _monitors:
+        _monitors[key] = QuotaMonitor(path, plan_sha, raw_write, observation_owner)
+    return _monitors[key]
 
 
 def bound_files(mapping):
@@ -157,15 +210,9 @@ def legacy_facts():
                     full100AccuracyOrP95Available=False, roundSafetyAcceptedForPromotion=False,
                     auditProviderCalls=0)
     require(all(audit.get(k) == v for k, v in expected.items()), "Independent interruption accounting changed")
-    ledger = d.read(OLD_BATCH / "send-ledger.json")
-    calls = ledger["calls"]
-    known = [c for c in calls if c.get("usageKnown") is True]
-    unknown = [c for c in calls if c.get("usageKnown") is False]
-    known_cost = sum((Decimal(c["costYuan"]) for c in known), Decimal(0))
-    require(ledger.get("planSha256") == OLD_PLAN_SHA and len(calls) == 69 and len(known) == 67
-            and len(unknown) == 2 and known_cost == Decimal(LEGACY["knownCostYuan"])
-            and sum(bool((c.get("result") or {}).get("upstreamAttempted")) for c in calls) == 68
-            and len(ledger["rejections"]) == 2 and not ledger["breaches"], "Legacy common ledger accounting drift")
+    # Detailed paid answers are sealed, hash-checked above, never reparsed here.
+    # The independent aggregate audit is the source of the retained cost/counts.
+    known_cost = Decimal(audit["knownCostYuan"])
     quota = d.read(OLD_BATCH / "candidate-cost-quota.json")
     require(quota["knownCalls"] == 67 and Decimal(str(quota["knownCostYuan"])) == known_cost
             and Decimal(str(quota["limitYuan"])) == d.LIMIT
@@ -181,19 +228,45 @@ def legacy_facts():
 
 
 def check_candidate_quota():
-    """Old UNKNOWN identities stay reserved in the new copy for the whole route."""
-    old = d.read(OLD_BATCH / "candidate-cost-quota.json")
-    quota = d.read(d.BATCH / "candidate-cost-quota.json")
-    for key in ("version", "budgetId", "pricingIdentity", "limitYuan", "reservationYuan"):
-        require(quota.get(key) == old[key], "Inherited candidate quota identity changed: " + key)
-    require(type(quota.get("knownCalls")) is int and quota["knownCalls"] >= old["knownCalls"]
-            and Decimal(str(quota.get("knownCostYuan"))) >= Decimal(str(old["knownCostYuan"]))
-            and quota.get("reservationBreached") is False, "Candidate known quota/breach regressed")
-    require(isinstance(quota.get("holds"), dict)
-            and all(quota["holds"].get(k) == v for k, v in old["holds"].items()), "Legacy UNKNOWN hold removed or altered")
-    require(Decimal(str(quota["knownCostYuan"])) + d.RESERVE * len(quota["holds"]) <= d.LIMIT,
-            "Inherited candidate quota layer is exhausted")
-    return quota
+    """Always require the initialized independent history, never seed-only fallback."""
+    return quota_monitor().observe("VERIFY")
+
+
+def rejected_free_facts():
+    """Preserve the rejected free package without re-verifying its old driver."""
+    decision_path = REJECTED_FREE_REVIEW / "decision.json"
+    manifest_path = REJECTED_FREE_REVIEW / "source-evidence-manifest.json"
+    require(sha(decision_path) == REJECTED_FREE_DECISION_SHA and sha(manifest_path) == REJECTED_FREE_MANIFEST_SHA,
+            "Rejected revision-2 independent evidence changed")
+    decision = d.read(decision_path)
+    require(decision.get("accepted") is False and decision.get("planSha256") == REJECTED_FREE_PLAN_SHA,
+            "Revision-2 is not independently rejected")
+    manifest = d.read(manifest_path); bound_files(manifest["files"])
+    protected = d.read(REJECTED_FREE_REVIEW / "protected-state-final-verification.json")["protectedFiles"]
+    for relative, expected in protected.items():
+        if relative.startswith(REJECTED_FREE_BATCH.relative_to(ROOT).as_posix() + "/"):
+            require(sha(ROOT / relative) == expected, "Rejected free package bytes changed")
+    rejected_plan = d.read(REJECTED_FREE_BATCH / "plan.json")
+    prefix = REJECTED_FREE_BATCH.relative_to(ROOT).as_posix() + "/"
+    original_files = {relative: expected for relative, expected in rejected_plan["files"].items() if relative.startswith(prefix)}
+    original_files.update(d.read(REJECTED_FREE_BATCH / "preflight.json")["evidence"])
+    original_files.update({relative: expected for relative, expected in protected.items() if relative.startswith(prefix)})
+    bound_files(original_files)
+    require({p.relative_to(ROOT).as_posix() for p in REJECTED_FREE_BATCH.rglob("*") if p.is_file()} == set(original_files),
+            "Rejected free package file set changed")
+    # The rejected plan intentionally binds the earlier source bytes. Its exact
+    # Git source identity is recorded, not rewritten to match this new revision.
+    require(protected.get("scripts/run_replan_stage_d_reregistered.py") == REJECTED_DRIVER_SHA,
+            "Rejected driver identity lost")
+    state = d.read(REJECTED_FREE_BATCH / "state.json")
+    ledger = d.read(REJECTED_FREE_BATCH / "send-ledger.json")
+    require(sha(REJECTED_FREE_BATCH / "plan.json") == REJECTED_FREE_PLAN_SHA
+            and state.get("requestsStarted") == 0 and state.get("rounds") == {} and state.get("terminal") is None
+            and not ledger["calls"] and not ledger["rejections"] and not ledger["breaches"]
+            and not (REJECTED_FREE_BATCH / AUTH_NAME).exists(), "Rejected free revision acquired runtime/paid state")
+    return dict(planSha256=REJECTED_FREE_PLAN_SHA, decisionSha256=REJECTED_FREE_DECISION_SHA,
+                manifestSha256=REJECTED_FREE_MANIFEST_SHA, driverSha256=REJECTED_DRIVER_SHA,
+                driverGitCommit="02364ab073360c352d94c698f69d59b0496fd5c1", requestsStarted=0, addedProviderCalls=0)
 
 
 def first_free_facts():
@@ -218,12 +291,14 @@ def first_free_facts():
 
 
 def tool_files():
-    paths = _old_tool_files() + [Path(__file__), ROOT / "scripts/replan_durable_write.py",
+    paths = _old_tool_files() + [Path(__file__), ROOT / "scripts/replan_durable_write.py", ROOT / "scripts/replan_quota_monitor.py",
         ROOT / "scripts/replan_stable_proxy.py", BASE / "reregistration-first-free-failure.json",
         FIRST_FREE_BATCH / "plan.json", FIRST_FREE_BATCH / "state.json", FIRST_FREE_BATCH / "send-ledger.json",
         ROOT / "docs/REPLAN_STAGE_D_INTERRUPTION_20261119.md", AUTH_SCHEMA,
         BASE / "paid-interruption-manifest.json", OLD_BATCH / "plan.json", OLD_BATCH / "state.json",
         OLD_BATCH / "send-ledger.json", OLD_BATCH / "candidate-cost-quota.json"]
+    paths.extend(REJECTED_FREE_REVIEW / name for name in ("decision.json", "source-evidence-manifest.json", "protected-state-final-verification.json"))
+    paths.extend(p for p in REJECTED_FREE_BATCH.rglob("*") if p.is_file())
     paths.extend(BASE / p for p in PINNED)
     return sorted(set(paths))
 
@@ -232,6 +307,7 @@ def prepare():
     require(not d.BATCH.exists(), "New registration directory already exists; never reset, resume or overwrite")
     legacy = legacy_facts()  # Verify old terminal, audit and every original SHA before creating anything.
     superseded_free = first_free_facts()
+    rejected_free = rejected_free_facts()
     for side in d.SYSTEMS.values():
         require(sha(ROOT / side["jar"]) == side["sha256"], "Frozen JAR drift")
     decision = d.read(ROOT / "reports/replan-stage-c-20261119/independent-review/c1-submission-1/decision.json")
@@ -244,14 +320,17 @@ def prepare():
         write_bytes(d.BATCH / (name + "-reference.json"), (OLD_BATCH / (name + "-reference.json")).read_bytes())
     write_bytes(d.BATCH / "candidate-cost-quota.json", (OLD_BATCH / "candidate-cost-quota.json").read_bytes())
     write_bytes(d.BATCH / "candidate-quota-initial-snapshot.json", (OLD_BATCH / "candidate-cost-quota.json").read_bytes())
+    write(d.BATCH / "candidate-quota-genesis-policy.json", {**QUOTA_POLICY,
+          "seedSha256": sha(d.BATCH / "candidate-quota-initial-snapshot.json")})
     database = d.database_snapshot()
     require(database == old_database() == d.read(ROOT / "reports/replan-stage-b-20261119/b0-identity.json")["database"],
             "Database differs from accepted B0 or stopped D plan")
     files = tool_files() + d.dataset_files() + [d.BATCH / (n + "-reference.json") for n in ("dev", "formal", "targets")]
     files.append(d.BATCH / "candidate-quota-initial-snapshot.json")
+    files.append(d.BATCH / "candidate-quota-genesis-policy.json")
     files.extend(p for p in (d.BATCH / "tool-runtime").rglob("*") if p.is_file())
     plan = dict(format=NEW_FORMAT, createdAt=d.stamp(), systems=d.SYSTEMS, order=list(d.ORDER),
-        registration=REGISTRATION, freeRevision=2, supersededFreeDraft=superseded_free,
+        registration=REGISTRATION, freeRevision=3, supersededFreeDraft=superseded_free, rejectedFreeRevision2=rejected_free,
         statusAtRegistration="DRAFT_REQUIRES_DIRECT_USER_PAID_AUTHORIZATION",
         selectedCandidate="C1 only; unchanged candidate and gates; C2 not admitted", legacy=legacy,
         limits=dict(requests=CURRENT_REQUESTS, calls=CURRENT_CALLS,
@@ -278,6 +357,7 @@ def prepare():
     write(d.BATCH / "state.json", dict(format=NEW_FORMAT, planSha256=plan_sha, requestsStarted=0, rounds={}, terminal=None))
     write(d.BATCH / "send-ledger.json", dict(planSha256=plan_sha, legacyManifestSha256=legacy["manifestSha256"],
                                            calls=[], rejections=[], breaches=[]))
+    quota_monitor().initialize()
     print("New free registration prepared; direct human paid authorization is still absent", flush=True)
 
 
@@ -290,6 +370,7 @@ def verify(plan, *, database=True):
             "Wrong new registration identity")
     require(plan.get("legacy") == legacy_facts(), "New plan does not preserve full legacy accounting")
     require(plan.get("supersededFreeDraft") == first_free_facts(), "First free failure was not preserved")
+    require(plan.get("rejectedFreeRevision2") == rejected_free_facts(), "Rejected revision-2 was not preserved")
     limits = plan.get("limits", {})
     for key, value in dict(requests=902, calls=1870, cumulativeRequests=970, cumulativeCalls=1940,
                            legacyRequestsCharged=68, legacyApplicationCallsCharged=70,
@@ -300,11 +381,6 @@ def verify(plan, *, database=True):
     require(all(p.relative_to(ROOT).as_posix() in plan["files"] for p in tool_files()), "New helper/source/schema not bound in plan")
     _old_verify(plan, database=database)
     check_candidate_quota()
-    state = d.read(d.BATCH / "state.json")
-    ledger = d.read(d.BATCH / "send-ledger.json")
-    if state.get("requestsStarted") == 0 and not ledger.get("calls"):
-        require(sha(d.BATCH / "candidate-cost-quota.json") == sha(d.BATCH / "candidate-quota-initial-snapshot.json"),
-                "Before first paid start, inherited candidate runtime quota must equal its exact seed")
 
 
 def require_human_authorization():
@@ -374,12 +450,25 @@ def app_command(side, port, base_url, out, *, offline=False):
 def application(side, proxy, out, *, offline=False):
     reached_ready = False
     body_completed = False
+    endpoint_url = None
+    if not offline:
+        quota_monitor().observe("APPLICATION_ENTER", update=lambda k, q: k.update(runtimeStarted=True, activeSide=side),
+                                evidence=dict(side=side, output=Path(out).relative_to(d.BATCH).as_posix()))
     try:
         with _old_application(side, proxy, out, offline=offline) as endpoint:
             reached_ready = True
+            if not offline:
+                endpoint_url = endpoint[0]
+                _real_endpoints.add(endpoint_url)
+                quota_monitor().observe("APPLICATION_READY", evidence=dict(side=side))
             yield endpoint
             body_completed = True
     finally:
+        if endpoint_url is not None:
+            _real_endpoints.discard(endpoint_url)
+        if not offline:
+            quota_monitor().observe("APPLICATION_EXIT", update=lambda k, q: k.update(activeSide=None),
+                                    evidence=dict(side=side, reachedReady=reached_ready, bodyCompleted=body_completed))
         if offline and side == "F" and (Path(out) / "offline-cost-quota.json").is_file():
             seed = d.read(d.BATCH / "candidate-quota-initial-snapshot.json")
             restored = d.read(Path(out) / "offline-cost-quota.json")
@@ -399,6 +488,26 @@ def application(side, proxy, out, *, offline=False):
                        if reached_ready and body_completed else "Seed/UNKNOWN data preserved; application load or preflight not verified")))
 
 
+def http_json(url, **kwargs):
+    real = url.endswith("/api/ask") and url[:-len("/api/ask")] in _real_endpoints
+    if not real:
+        return _old_http_json(url, **kwargs)
+    response = None
+    try:
+        status, response = _old_http_json(url, **kwargs)
+        return status, response
+    finally:
+        evidence = kwargs.get("evidence")
+        record = dict(returnedBodyAvailable=response is not None)
+        if evidence:
+            record.update(httpEvidence=Path(evidence).relative_to(d.BATCH).as_posix(),
+                          questionId=Path(evidence).stem, httpEvidenceSha256=sha(evidence),
+                          responseBodySha256=sha(Path(evidence).with_suffix(".body.bin")))
+        if response:
+            record["budget"] = response.get("budget")
+        quota_monitor().observe("HTTP_RETURN" if response is not None else "HTTP_FAILURE", response=response, evidence=record)
+
+
 def offline_preflight(plan, output):
     with fixed_proxy_runtime():
         result = _old_offline_preflight(plan, output)
@@ -414,10 +523,53 @@ def offline_preflight(plan, output):
 class SendGate(_old_send_gate):
     def __init__(self, path, plan_sha, round_name, **kwargs):
         self.legacy = copy.deepcopy(LEGACY)
-        super().__init__(path, plan_sha, round_name, **kwargs)
+        self.real = not round_name.startswith("OFFLINE_")
+        if self.real:
+            with quota_monitor().serial():
+                super().__init__(path, plan_sha, round_name, **kwargs)
+                quota_monitor().observe("SEND_GATE_OPEN", evidence=dict(round=round_name))
+        else:
+            super().__init__(path, plan_sha, round_name, **kwargs)
         if self.path.resolve() == (d.BATCH / "send-ledger.json").resolve():
             require(self.data.get("legacyManifestSha256") == PINNED["paid-interruption-manifest.json"],
                     "New send ledger is not bound to immutable legacy accounting")
+
+    def begin(self, item, deadline):
+        if not self.real:
+            return super().begin(item, deadline)
+        with quota_monitor().serial():
+            result = super().begin(item, deadline)
+            quota_monitor().observe("QUESTION_BEGIN", update=lambda k, q: k.update(activeQuestion=item["id"]),
+                                    evidence=dict(questionId=item["id"], upstreamDeadlineMonotonic=deadline))
+            return result
+
+    def end(self):
+        if not self.real:
+            return super().end()
+        with quota_monitor().serial():
+            super().end()
+            quota_monitor().observe("QUESTION_END", update=lambda k, q: k.update(activeQuestion=None))
+
+    def before(self, payload, raw):
+        if not self.real:
+            return super().before(payload, raw)
+        # Uniform lock order: monitor transaction first, then inherited gate lock.
+        with quota_monitor().serial():
+            current = self.current or {}
+            attempt = 1 + sum(c["round"] == self.round and c["questionId"] == current.get("id") for c in self.data["calls"])
+            hold_id = quota_monitor().before(payload, current.get("id"), attempt)
+            permit = super().before(payload, raw)
+            quota_monitor().bind(hold_id, permit)  # Durable before permit can reach transport.
+            return permit
+
+    def after(self, permit, result):
+        if not self.real:
+            return super().after(permit, result)
+        with quota_monitor().serial():
+            super().after(permit, result)
+            quota_monitor().observe("PROXY_AFTER", evidence=dict(token=permit["token"],
+                                    upstreamAttempted=result.get("upstreamAttempted"),
+                                    responseComplete=result.get("responseComplete")))
 
     def committed(self):
         return Decimal(self.legacy["commonCommittedYuan"]) + super().committed()
@@ -452,6 +604,11 @@ def run_next():
         return d.run_next()
 
 
+def preflight():
+    with controller_locked():
+        return _old_preflight()
+
+
 @contextmanager
 def fixed_proxy_runtime():
     """Limit the proxy-class binding to this new controller's active call."""
@@ -479,6 +636,9 @@ def install():
     d.app_command = app_command
     d.application = application
     d.offline_preflight = offline_preflight
+    d.http_json = http_json
+    d.locked = controller_locked
+    d.preflight = preflight
 
 
 install()
@@ -495,18 +655,19 @@ def main():
     elif args.action == "run-next":
         run_next()
     else:
-        plan = d.read(d.BATCH / "plan.json")
-        verify(plan)
-        state = d.read(d.BATCH / "state.json")
-        d.validate_completed_rounds(state)
-        print(json.dumps(dict(current=d.audited_rounds(state), legacy=plan["legacy"],
-                             humanPaidAuthorizationPresent=(d.BATCH / AUTH_NAME).is_file()), ensure_ascii=False, indent=2))
+        with controller_locked():
+            plan = d.read(d.BATCH / "plan.json")
+            verify(plan)
+            state = d.read(d.BATCH / "state.json")
+            d.validate_completed_rounds(state)
+            print(json.dumps(dict(current=d.audited_rounds(state), legacy=plan["legacy"],
+                                 humanPaidAuthorizationPresent=(d.BATCH / AUTH_NAME).is_file()), ensure_ascii=False, indent=2))
 
 
 if __name__ == "__main__":
     sys.stdout.reconfigure(encoding="utf-8", errors="backslashreplace")
     try:
         main()
-    except Refused as error:
+    except (Refused, QuotaRefused) as error:
         print("REFUSED:", str(error), file=sys.stderr)
         sys.exit(2)
