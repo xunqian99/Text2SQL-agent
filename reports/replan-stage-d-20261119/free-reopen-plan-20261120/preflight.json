@@ -1,0 +1,54 @@
+{
+  "format": "stage-d-reopen-preflight-v1",
+  "passed": true,
+  "checks": {
+    "baseUnchanged": true,
+    "authorizationBound": true,
+    "limitsExact": true,
+    "executionDisabled": true,
+    "legacyPermanentLockVerified": true,
+    "peakWindowRules": true,
+    "originalLimits": true,
+    "quotaRefusesNextReservation": true
+  },
+  "peakCases": {
+    "insideMorningPeak": {
+      "allowed": false,
+      "reason": "PEAK_HOURS",
+      "checkedAt": "2026-11-20T02:00:00+00:00",
+      "nextAllowedAt": "2026-11-20T12:00:00+08:00",
+      "guardSeconds": 120
+    },
+    "morningBoundaryOverlap": {
+      "allowed": false,
+      "reason": "PEAK_BOUNDARY_RESERVE",
+      "checkedAt": "2026-11-20T00:59:00+00:00",
+      "nextAllowedAt": "2026-11-20T12:00:00+08:00",
+      "guardSeconds": 120
+    },
+    "afterMorningPeak": {
+      "allowed": true,
+      "reason": "OFF_PEAK",
+      "checkedAt": "2026-11-20T04:00:00+00:00",
+      "guardSeconds": 120
+    },
+    "weekend": {
+      "allowed": true,
+      "reason": "OFF_PEAK",
+      "checkedAt": "2026-11-21T02:00:00+00:00",
+      "guardSeconds": 120
+    }
+  },
+  "providerCalls": 0,
+  "keyReads": 0,
+  "runNextInvoked": false,
+  "executionEnabled": false,
+  "quotaAdmission": "REFUSED_EXISTING_ONE_YUAN_COMMITMENT",
+  "limitYuan": "1.00",
+  "reservationYuan": "0.10",
+  "knownCostYuan": "0.293767460",
+  "unknownHolds": 7,
+  "configuredCommittedYuan": "0.993767460",
+  "nextReservationCommitmentYuan": "1.093767460",
+  "sourceScope": "only metadata and deterministic clock checks; no database/JAR/provider access"
+}
