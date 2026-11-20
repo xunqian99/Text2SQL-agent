@@ -1,0 +1,54 @@
+{
+  "results": [
+    {
+      "case": "cross-process-known-rollback",
+      "passed": true,
+      "child": {
+        "refused": true,
+        "reason": "Latest known quota rolled back"
+      },
+      "persistedStopAfterRuntimeRestore": "Persisted quota observation stop; no rollback/recovery"
+    },
+    {
+      "case": "cross-process-new-unknown-removal",
+      "passed": true,
+      "child": {
+        "refused": true,
+        "reason": "Observed UNKNOWN removed/changed"
+      },
+      "persistedStopAfterRuntimeRestore": "Persisted quota observation stop; no rollback/recovery"
+    },
+    {
+      "case": "two-pending-exact-settlement",
+      "passed": true,
+      "validPairAccepted": true,
+      "refusal": null,
+      "oldUnknownsStillPresent": 3
+    },
+    {
+      "case": "two-pending-under-counted-settlement",
+      "passed": true,
+      "validPairAccepted": false,
+      "refusal": "PENDING completion lacks corresponding known usage/cost",
+      "oldUnknownsStillPresent": 3
+    },
+    {
+      "case": "partial-commit-state.json",
+      "passed": true,
+      "restartRefused": "Quota journal truncated/changed or checkpoint rolled back"
+    },
+    {
+      "case": "partial-commit-send-ledger.json",
+      "passed": true,
+      "restartRefused": "Quota journal truncated/changed or checkpoint rolled back"
+    },
+    {
+      "case": "partial-commit-candidate-quota-checkpoint.json",
+      "passed": true,
+      "restartRefused": "Quota journal truncated/changed or checkpoint rolled back"
+    }
+  ],
+  "passed": 7,
+  "providerCalls": 0,
+  "realAuthorizationCreated": false
+}
