@@ -100,6 +100,32 @@ class ExecutionAdapterTests(unittest.TestCase):
         self.assertEqual(result["providerCalls"], 0)
         self.assertEqual(result["keyReads"], 0)
 
+    def test_execute_rejects_mismatched_real_migration_proof(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            for name in ("adapter-manifest.json", "preflight.json", "dry-run.json"):
+                shutil.copy2(p.HERE / name, output / name)
+            proof = {
+                "format": p.PROOF_FORMAT,
+                "productionApplied": True,
+                "sourceQuotaSha256": "0" * 64,
+                "targetStagedQuotaSha256": p.SCOPE_STAGED_QUOTA_SHA256,
+                "budgetId": p.verify_scope()["closedQuota"]["budgetId"],
+                "pricingIdentity": p.verify_scope()["closedQuota"]["pricingIdentity"],
+                "targetLimitYuan": "10.00",
+                "unknownHoldDigest": p.verify_scope()["holdDigest"],
+                "oldUnknownReleased": 0,
+            }
+            (output / "real-quota-migration-proof.json").write_text(
+                json.dumps(proof, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+            )
+            with mock.patch.object(p, "HERE", output):
+                result = p.execute(output=output, at=datetime(2026, 11, 20, 4, tzinfo=timezone.utc), persist=False)
+            self.assertFalse(result["passed"])
+            self.assertEqual(result["refusalReason"], "REAL_QUOTA_MIGRATION_PROOF_MISMATCH")
+            self.assertEqual(result["providerCalls"], 0)
+            self.assertEqual(result["keyReads"], 0)
+
     def test_execute_requires_old_unknown_hold_identity(self):
         result = p.read_json(p.HERE / "execute-result.json")
         self.assertEqual(result["oldUnknownReleased"], 0)

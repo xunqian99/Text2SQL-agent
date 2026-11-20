@@ -9,7 +9,7 @@
 | 文件 | 作用 | SHA-256 |
 |---|---|---|
 | [`execution_adapter.py`](execution_adapter.py) | 独立 scope 复核、时间/配额门禁、离线 dry-run 和拒绝式 execute | `6ca87a80315ecf931f5fb2c4d00097b51ffbffa2dc6f8b60d3e0248d87fc27c1` |
-| [`test_execution_adapter.py`](test_execution_adapter.py) | 20 个本地测试，覆盖篡改拒绝、峰时边界、配额、调用和账务标记 | `6d64326a086a34b8e1d931f92884506eb72034037c5a6818341a5000b0ec961a` |
+| [`test_execution_adapter.py`](test_execution_adapter.py) | 21 个本地测试，覆盖篡改拒绝、峰时边界、配额、调用和账务标记 | `52ffea09314f4254d70a8222249301d8a9b27ed2c3dd739fa1c693bc96ae1ec3` |
 | [`adapter-manifest.json`](adapter-manifest.json) | 适配器身份与执行关闭声明 | `83cbb5e6eb6b28269c2be57c9a5ed1291c3f4b2a344a0eb60be7287ce2415281` |
 | [`prepare-result.json`](prepare-result.json) | prepare 数字结果 | `e9bdd99841c0b1e45bf4732d7bd8011a9cab3b5693f3c15c4375e53fe8ef05b0` |
 | [`preflight.json`](preflight.json) | 免费门禁结果 | `ddaafab89b611171b674a8870468ec710a0c376bdf057c0a14f56787c6814b17` |
@@ -35,7 +35,7 @@ execute 又做同样的身份检查，并检查北京时间发送 guard。空闲
 
 ## 数字验收
 
-执行 `python -m unittest -q test_execution_adapter.py`：**20/20 通过，0 失败，0 错误；PowerShell wall time 508.440 ms**（unittest 内部 155.121 ms）。
+执行 `python -m unittest -q test_execution_adapter.py`：**21/21 通过，0 失败，0 错误；PowerShell wall time 570.602 ms**（unittest 内部 211 ms）。新增错误迁移证明拒绝探针，证明字段任一不匹配也不会进入执行。
 
 | 指标 | 数值 |
 |---|---:|
