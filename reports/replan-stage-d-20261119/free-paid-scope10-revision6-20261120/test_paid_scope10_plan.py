@@ -100,6 +100,31 @@ class PaidScope10PlanTests(unittest.TestCase):
             with self.assertRaises(p.Refused):
                 p.verify_output(output)
 
+    def _assert_binding_tamper_refused(self, field, value):
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            for name in ("base-snapshot.json", "paid-scope10-authorization.json", "staged-candidate-quota.json",
+                         "plan.json", "authorization-binding.json"):
+                shutil.copy2(p.HERE / name, output / name)
+            binding_path = output / "authorization-binding.json"
+            binding = json.loads(binding_path.read_text(encoding="utf-8"))
+            binding[field] = value
+            binding_path.write_text(json.dumps(binding, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            with self.assertRaises(p.Refused):
+                p.verify_output(output)
+
+    def test_binding_execution_enabled_tamper_refused(self):
+        self._assert_binding_tamper_refused("executionEnabled", True)
+
+    def test_binding_append_only_tamper_refused(self):
+        self._assert_binding_tamper_refused("appendOnly", False)
+
+    def test_binding_base_snapshot_hash_tamper_refused(self):
+        self._assert_binding_tamper_refused("baseSnapshotSha256", "0" * 64)
+
+    def test_binding_prior_reopen_hash_tamper_refused(self):
+        self._assert_binding_tamper_refused("priorReopenPlanSha256", "0" * 64)
+
     def _assert_closed_byte_tamper_refused(self, file_name):
         with tempfile.TemporaryDirectory() as temporary:
             closed = Path(temporary)
