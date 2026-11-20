@@ -1,0 +1,73 @@
+{
+  "format": "replan-d-free-paid-lock-independent-review-v1",
+  "reviewedCommit": "e1739186",
+  "scope": {
+    "providerCalls": 0,
+    "realKeyReads": 0,
+    "runNextInvoked": false,
+    "applicationStarted": false,
+    "old68AnswerSqlOpened": false,
+    "unseenOpened": false,
+    "actualBatchModified": false
+  },
+  "currentDecision": {
+    "path": "reports/replan-stage-d-20261119/post-interruption-feasibility-20261120/human-scope-decision.json",
+    "sha256": "4e5b824568e7f2a87070b4390a24f6fa5f713c27afb17b68ee374adc8e509f87",
+    "decision": "DECLINED_NO_ADDITIONAL_PAID_EVALUATION",
+    "newPaidAuthorizationGranted": false,
+    "currentConfiguredLimitYuan": "1.00",
+    "currentCumulativeQuestionLimit": 970,
+    "currentCumulativeApplicationCallLimit": 1940,
+    "newProviderCalls": 0,
+    "realKeysRead": 0
+  },
+  "currentBatch": {
+    "planSha256": "da6c890b4149b14075dd28bc81281af77691b2c293ed8606778378f18a80a4fe",
+    "stateSha256": "dca6197ce04a4fc1ed87f665b7954cf25a1f0f3216620b78eb2dc6f3f9d11025",
+    "stateRequestsStarted": 76,
+    "stateTerminal": "INTERRUPTED_NO_REPLAY",
+    "roundStatus": "INTERRUPTED",
+    "completedAnswers": 76,
+    "candidateQuotaSha256": "f9ed89b775ff2c57e4394c1bf39d55533752f0d19e3c0bae13286dc4aceccc86",
+    "candidateKnownCalls": 139,
+    "candidateKnownCostYuan": "0.29376746",
+    "candidateUnknownHolds": 7,
+    "reservationYuan": "0.10",
+    "nextReservationCommitmentYuan": "1.093767460",
+    "limitYuan": "1.00",
+    "humanPaidAuthorizationPresent": true,
+    "consumedSealPresent": true
+  },
+  "guardOrder": {
+    "scopeCheckBeforeAuthorizationFile": true,
+    "scopeCheckBeforeCredentialReader": true,
+    "runNextEntryCallsAuthorization": true,
+    "directApplicationHelperCallsScopeCheck": false,
+    "directHttpHelperCallsScopeCheck": false,
+    "declinedScopeSyntheticKeyReaderCalls": 0,
+    "declinedScopeRefusal": "Direct user decision declines additional paid evaluation"
+  },
+  "isolatedResidualProbe": {
+    "artifact": "residual-probe.json",
+    "usesTemporaryScopeFile": true,
+    "syntheticDecision": "APPROVED_NEW_SCOPE",
+    "syntheticCredentialReaderCalls": 1,
+    "syntheticProviderCalls": 0,
+    "syntheticSocketCalls": 0,
+    "liveBatchChanged": false,
+    "finding": "The guard accepts mutable approval fields without a pinned scope-decision/proposal/plan identity."
+  },
+  "sourceIdentity": {
+    "liveControllerSha256": "8df42436b1caf81c719f24d88c1615b34d1697f29de83e247a662c50b9f70fb7",
+    "revision4BoundControllerSha256": "bda005614aa90c7f872f9451d0654a958204b2d4f5f807038d999245892d1d4e",
+    "scopeDecisionIncludedInRevision4PlanFiles": false,
+    "oldPlanStillBindsPreLockController": true
+  },
+  "verdict": "CURRENT_DECLINE_IS_BLOCKED_BEFORE_KEY; MUTABLE_SCOPE_FILE_IS_NOT_A_COMPLETE_FUTURE_FAIL_CLOSED_ANCHOR",
+  "requiredFollowUp": [
+    "Pin the declined decision bytes or its hash plus proposalSha256/sourcePlanSha256 in the paid guard.",
+    "Require a new plan and independent review for any future APPROVED_NEW_SCOPE; never mutate or reuse revision-4.",
+    "Add a negative test that mutates only the temporary scope decision and proves the credential reader remains at zero.",
+    "Keep scope checking at every real application/HTTP boundary or make those helpers private to run_next."
+  ]
+}

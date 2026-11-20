@@ -17,7 +17,6 @@ import sys
 import uuid
 from contextlib import contextmanager
 from decimal import Decimal
-from datetime import datetime
 
 from replan_durable_write import replace_with_retry
 from replan_stable_proxy import StableModelProxy, BASE_URL as STABLE_PROXY_URL
@@ -41,8 +40,16 @@ CANDIDATE = BASE / "reregistration-candidate"
 AUTH_SCHEMA = CANDIDATE / "human-paid-authorization.schema.json"
 AUTH_NAME = "human-paid-authorization.json"
 SCOPE_DECISION = BASE / "post-interruption-feasibility-20261120/human-scope-decision.json"
+SCOPE_PROPOSAL = BASE / "post-interruption-feasibility-20261120/proposal.json"
 NEW_FORMAT = "replan-d-reregistered-c1-v1"
 REGISTRATION = "batch-1/reregistered-dev-1/revision-4"
+# Revision-4 is permanently closed by the recorded direct-user decision.  These
+# identities are deliberately pinned in source: changing a mutable JSON field
+# cannot reopen this registration or reach the old authorization/key path.
+DECLINED_SCOPE_DECISION_SHA256 = "4e5b824568e7f2a87070b4390a24f6fa5f713c27afb17b68ee374adc8e509f87"
+DECLINED_SCOPE_PROPOSAL_SHA256 = "0c72656803e63dce968d8d94edf3eb5ed191274bdfc304c6004fee2018422c0c"
+DECLINED_SCOPE_SOURCE_PLAN_SHA256 = "da6c890b4149b14075dd28bc81281af77691b2c293ed8606778378f18a80a4fe"
+DECLINED_SCOPE_DECISION = "DECLINED_NO_ADDITIONAL_PAID_EVALUATION"
 REJECTED_FREE_PLAN_SHA = "91c67f5a2484fd6fd0e63a1f86c09ebb8e20737f5a7a3d4c4850b9b63c9c17b4"
 REJECTED_FREE_DECISION_SHA = "d1050ff782c6ab98e96dae5db29bc1b65d8f3aa13c5e378162dba74a97179242"
 REJECTED_FREE_MANIFEST_SHA = "af434a921708d5acbf5a402f9c733ff2e43ce60fbb506ca629caa708ef5b10b4"
@@ -445,55 +452,34 @@ def verify(plan, *, database=True):
 
 
 def require_human_authorization():
-    """File is minted only from an explicit human reply, never by prepare or review."""
-    # A later direct-user decision can close a previously consumed approval.
-    # Check this before touching the old authorization or any credential path.
-    # The old plan intentionally remains bound to its pre-lock source bytes;
-    # changing this file therefore makes that plan fail closed until a new plan
-    # and a new direct approval are created.
+    """Reject the closed revision before touching authorization or credentials.
+
+    The current registration is sealed by the exact decision/proposal/plan
+    identities below.  A future reopening therefore needs a new registration,
+    plan, direct authorization and independent review; editing this decision
+    file can never turn revision-4 back into an executable paid scope.
+    """
     require(SCOPE_DECISION.is_file() and not SCOPE_DECISION.is_symlink(),
             "Current paid-scope decision is missing; refuse paid execution")
-    scope_decision = d.read(SCOPE_DECISION)
-    require(scope_decision.get("newPaidAuthorizationGranted") is True
-            and scope_decision.get("decision") == "APPROVED_NEW_SCOPE",
-            "Direct user decision declines additional paid evaluation")
+    require(sha(SCOPE_DECISION) == DECLINED_SCOPE_DECISION_SHA256,
+            "Current paid-scope decision identity changed; refuse paid execution")
+    require(SCOPE_PROPOSAL.is_file() and not SCOPE_PROPOSAL.is_symlink(),
+            "Bound paid-scope proposal is missing; refuse paid execution")
+    require(sha(SCOPE_PROPOSAL) == DECLINED_SCOPE_PROPOSAL_SHA256,
+            "Bound paid-scope proposal identity changed; refuse paid execution")
     plan_path = d.BATCH / "plan.json"
-    auth_path = d.BATCH / AUTH_NAME
-    require(auth_path.is_file() and not auth_path.is_symlink(), "Explicit direct-user authorization for this extra paid DEV100 is absent")
-    auth = d.read(auth_path)
-    require(set(auth) == {"format", "approved", "authority", "scope", "planSha256", "approvedAt",
-            "directUserMessage", "directUserMessageSha256", "legacyManifestSha256", "limits", "acknowledgments"},
-            "Human authorization schema/fields mismatch")
-    require(auth.get("format") == "replan-d-direct-user-paid-authorization-v1" and auth.get("approved") is True
-            and auth.get("authority") == "DIRECT_HUMAN_USER"
-            and auth.get("scope") == "ONE_ADDITIONAL_FULL_DEV100_FIXED_C1_EXISTING_GATES"
-            and auth.get("planSha256") == sha(plan_path)
-            and auth.get("legacyManifestSha256") == PINNED["paid-interruption-manifest.json"],
-            "Human authorization is not for this exact new plan/paid scope")
-    message = auth.get("directUserMessage")
-    require(isinstance(message, str) and bool(message.strip())
-            and auth.get("directUserMessageSha256") == hashlib.sha256(message.encode("utf-8")).hexdigest(),
-            "Direct human approval message evidence is missing")
-    try:
-        approved = datetime.fromisoformat(auth["approvedAt"])
-        require(approved.tzinfo is not None and approved <= d.now(), "Human authorization timestamp invalid")
-    except (ValueError, TypeError, KeyError) as error:
-        raise Refused("Human authorization timestamp invalid") from error
-    require(auth["limits"] == dict(additionalDevelopmentQuestions=100, currentRouteRequests=902,
-        cumulativeRequests=970, cumulativeModelCalls=1940, totalYuan="1.00", reservationYuan="0.10"),
-        "Human authorization limits differ from the fixed proposal")
-    require(auth["acknowledgments"] == dict(oldBatchInterruptedNoReplay=True,
-        legacyRequests=68, legacyApplicationModelCalls=70, knownCostYuan="0.16312188",
-        commonUnknownHeldYuan="0.20", candidateUnknownHeldYuan="0.30",
-        unknownReservationsNeverReleased=True, twoQuotaLayersNeverSummedAsBill=True,
-        unseenStillLocked=True, engineeringAcceptanceAloneIsNotPaidAuthorization=True),
-        "Human authorization omits retained UNKNOWN/old-interruption conditions")
-    # Once consumed by any new paid round, its bytes are immutable too.
-    seal = dict(planSha256=sha(plan_path), authorizationSha256=sha(auth_path), legacyManifestSha256=auth["legacyManifestSha256"])
-    seal_path = d.BATCH / "human-authorization-consumed.json"
-    if seal_path.exists():
-        require(d.read(seal_path) == seal, "Previously consumed human authorization changed")
-    return seal
+    require(plan_path.is_file() and not plan_path.is_symlink()
+            and sha(plan_path) == DECLINED_SCOPE_SOURCE_PLAN_SHA256,
+            "Bound revision-4 source plan identity changed; refuse paid execution")
+    scope_decision = d.read(SCOPE_DECISION)
+    require(scope_decision.get("proposalSha256") == DECLINED_SCOPE_PROPOSAL_SHA256,
+            "Scope decision is not bound to the recorded proposal")
+    require(scope_decision.get("decision") == DECLINED_SCOPE_DECISION
+            and scope_decision.get("newPaidAuthorizationGranted") is False,
+            "Direct user decision declines additional paid evaluation")
+    # This revision is closed, even though the historical authorization file
+    # remains on disk as immutable evidence.  Never fall through to it.
+    raise Refused("Revision-4 paid scope is permanently closed by direct-user decision")
 
 
 def guarded_real_key():
