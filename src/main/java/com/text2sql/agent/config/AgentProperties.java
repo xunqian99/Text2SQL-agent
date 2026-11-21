@@ -38,7 +38,8 @@ public class AgentProperties {
     public void setRequestBudget(RequestBudgetConfig requestBudget) { this.requestBudget = requestBudget; }
 
     public static class RequestBudgetConfig {
-        // Enabled explicitly in application.yml; bare unit fixtures retain their synchronous contract.
+        // Evaluation launchers enable this explicitly; local business requests keep the legacy
+        // synchronous path unless a caller opts into a bounded evaluation run.
         private boolean enabled;
         private long timeoutMs = 15000;
         private int maxModelCalls = 2;

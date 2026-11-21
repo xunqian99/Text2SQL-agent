@@ -17,8 +17,11 @@ if (-not $Preview -and [string]::IsNullOrWhiteSpace($env:AGENT_LLM_API_KEY)) {
 
 # Secret stays in the child environment, never in Maven arguments or output.
 $profiles = if ($Mode -eq 'protected') { 'local,demo,protected' } else { "local,$Mode" }
-$applicationArgs = "--spring.profiles.active=$profiles --server.address=127.0.0.1 --server.port=$Port --agent.eval.enabled=false"
+$applicationArgs = "--spring.profiles.active=$profiles --server.address=127.0.0.1 --server.port=$Port --agent.eval.enabled=false --agent.request-budget.enabled=false"
 if ($Mode -eq 'protected') {
+  # Protected mode opts into its separate durable cost quota, which requires the
+  # bounded request ledger as a runtime safety mechanism.
+  $applicationArgs = $applicationArgs.Replace('--agent.request-budget.enabled=false', '--agent.request-budget.enabled=true')
   $applicationArgs += ' --agent.access.enabled=true'
   if (-not $Preview) {
     if ([string]::IsNullOrWhiteSpace($env:AGENT_ACCESS_TOKEN)) {

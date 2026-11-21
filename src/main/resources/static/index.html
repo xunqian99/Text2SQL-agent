@@ -1291,6 +1291,42 @@
       line-height: 1.6;
     }
 
+    .ai-status-summary {
+      padding: 12px 14px;
+      border: 1px solid #dfe6ec;
+      border-radius: 5px;
+      background: #f8fafc;
+    }
+    .ai-status-summary.is-danger {
+      border-color: #fbc4c4;
+      background: #fef0f0;
+    }
+    .ai-status-summary.is-warn {
+      border-color: #f5dab1;
+      background: #fdf6ec;
+    }
+    .ai-status-title {
+      color: #303133;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .ai-status-summary.is-danger .ai-status-title { color: #c45656; }
+    .ai-status-summary.is-warn .ai-status-title { color: #b88230; }
+    .ai-status-detail {
+      margin-top: 5px;
+      color: #606266;
+      font-size: 12.5px;
+      line-height: 1.6;
+    }
+    .ai-status-backend {
+      margin-top: 7px;
+      padding-top: 7px;
+      border-top: 1px solid rgba(144, 147, 153, 0.22);
+      color: #909399;
+      font-size: 11.5px;
+      line-height: 1.5;
+    }
+
     /* 视图切换按钮组 */
     .view-segmented-group {
       display: inline-flex;
@@ -3413,6 +3449,8 @@
       'city': '所在城市',
       'gmv': '成交总额 GMV (元)',
       'sales_amount': '销售总额 (元)',
+      'sales_amount_excl_freight': '不含运费商品金额 (元)',
+      'sales_without_freight': '不含运费商品金额 (元)',
       'total_amount': '总金额 (元)',
       'total_sales': '销售总额 (元)',
       'total_gmv': '成交总额 GMV (元)',
@@ -3617,6 +3655,47 @@
       NOT_CONFIGURED: '模型未配置'
     };
 
+    const TRACE_STATUS_COPY = {
+      GENERATION_FAILED: {
+        title: '模型没有生成可执行 SQL',
+        detail: '请求停在模型生成阶段，还没有进入数据库执行。请检查模型 Key、上游服务或网络，然后重试。',
+        tone: 'danger'
+      },
+      EXECUTION_FAILED: {
+        title: 'SQL 已生成，但数据库执行失败',
+        detail: '问题出在数据库执行阶段。展开“执行证据”，查看数据库返回的具体原因。',
+        tone: 'danger'
+      },
+      REJECTED: {
+        title: '查询被安全规则拦截',
+        detail: 'SQL 触发了只读或危险操作规则，数据库没有执行这条语句。',
+        tone: 'warn'
+      },
+      REQUEST_TIMEOUT: {
+        title: '请求超时',
+        detail: '处理时间超过当前请求上限，可以稍后重试或缩小问题范围。',
+        tone: 'warn'
+      },
+      RESOURCE_LIMITED: {
+        title: '评测请求预算已用完',
+        detail: '这是评测启动器的调用预算提示，正常项目运行不会默认套用这个上限。',
+        tone: 'warn'
+      },
+      NOT_CONFIGURED: {
+        title: '尚未配置模型服务',
+        detail: '请点击右上角“配置大模型 Key”，保存后再提交问题。',
+        tone: 'warn'
+      }
+    };
+
+    function getTraceStatusCopy(resp) {
+      return TRACE_STATUS_COPY[resp.status] || {
+        title: '查询未完成',
+        detail: '请展开“执行证据”，确认请求停在哪一个阶段。',
+        tone: 'danger'
+      };
+    }
+
     function traceText(value, fallback = '—') {
       return value === null || value === undefined || String(value).trim() === ''
         ? fallback : escapeHtml(String(value));
@@ -3744,11 +3823,13 @@
         }
         html += `</div>`;
       } else if (!isOk) {
+        const statusCopy = getTraceStatusCopy(resp);
         html += `
-          <div style="color: #f56c6c; font-weight: 700; margin-bottom: 6px;">
-            <i class="ri-error-warning-line"></i> 语句被安全沙箱拦截或执行异常 [${escapeHtml(resp.status)}]
+          <div class="ai-status-summary is-${statusCopy.tone}">
+            <div class="ai-status-title"><i class="ri-error-warning-line"></i> ${escapeHtml(statusCopy.title)}</div>
+            <div class="ai-status-detail">${escapeHtml(statusCopy.detail)}</div>
+            ${resp.message ? `<div class="ai-status-backend">系统提示：${escapeHtml(resp.message)}</div>` : ''}
           </div>
-          <div style="font-size: 13px; color: #606266;">${escapeHtml(resp.message || '查询未通过校验')}</div>
         `;
       } else {
         const ms = (resp.timings && resp.timings.totalMs) || (resp.llm && resp.llm.latencyMs) || 290;

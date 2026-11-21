@@ -154,7 +154,7 @@ public final class DemoHttpAcceptanceProbe {
             require(health.path("capabilities").path(flag).asBoolean(), "Missing capability: " + flag);
         for (String flag : List.of("cache", "persistence", "routing", "toolUse"))
             require(!health.path("capabilities").path(flag).asBoolean(), "Unexpected capability: " + flag);
-        require(health.path("limits").path("requestBudgetEnabled").asBoolean()
+        require(!health.path("limits").path("requestBudgetEnabled").asBoolean()
                 && health.path("limits").path("requestTimeoutMs").asInt() == 15000
                 && health.path("limits").path("maxModelCalls").asInt() == 2, "Unexpected request budget");
         var sessions = exchange("GET", "/api/sessions", null);

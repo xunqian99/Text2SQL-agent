@@ -11,7 +11,7 @@ if [ "$DRY_RUN" != "true" ] && [ -z "${AGENT_LLM_API_KEY:-}" ]; then
   exit 1
 fi
 
-ARGS="--spring.profiles.active=local --server.port=$PORT --agent.eval.enabled=true --agent.eval.split=$SPLIT --agent.eval.limit=$LIMIT"
+ARGS="--spring.profiles.active=local --server.port=$PORT --agent.eval.enabled=true --agent.eval.split=$SPLIT --agent.eval.limit=$LIMIT --agent.request-budget.enabled=true --agent.request-budget.timeout-ms=15000 --agent.request-budget.max-model-calls=2 --agent.request-budget.min-retry-remaining-ms=2000"
 if [ "$DRY_RUN" = "true" ]; then
   ARGS="$ARGS --agent.eval.dry-run=true"
 fi

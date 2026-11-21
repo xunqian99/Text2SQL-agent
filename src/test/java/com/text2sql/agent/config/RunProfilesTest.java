@@ -18,7 +18,7 @@ class RunProfilesTest {
     static class PropertiesOnly { }
 
     @Test
-    void demoLoadsActualYamlWithBoundedCallsAndWithoutAutomaticEvaluation() {
+    void demoLoadsActualYamlWithoutEvaluationBudgetOrAutomaticEvaluation() {
         runner.withPropertyValues("spring.profiles.active=demo").run(context -> {
             assertThat(context).hasNotFailed();
             var p = context.getBean(AgentProperties.class);
@@ -28,7 +28,7 @@ class RunProfilesTest {
             assertThat(p.getSelfCorrection().isEnabled()).isTrue();
             assertThat(p.getResultChecker().isEnabled()).isTrue();
             assertThat(p.getConversation().isEnabled()).isTrue();
-            assertThat(p.getRequestBudget().isEnabled()).isTrue();
+            assertThat(p.getRequestBudget().isEnabled()).isFalse();
             assertThat(p.getRequestBudget().getTimeoutMs()).isEqualTo(15000);
             assertThat(p.getRequestBudget().getMaxModelCalls()).isEqualTo(2);
             assertThat(p.getCache().isEnabled()).isFalse();
@@ -54,7 +54,7 @@ class RunProfilesTest {
             assertThat(p.getGuard().isRejectCartesianProduct()).isTrue();
             assertThat(p.getDb().getMaxRows()).isEqualTo(200);
             assertThat(p.getDb().getQueryTimeoutSeconds()).isEqualTo(10);
-            assertThat(p.getRequestBudget().isEnabled()).isTrue();
+            assertThat(p.getRequestBudget().isEnabled()).isFalse();
         });
     }
 
