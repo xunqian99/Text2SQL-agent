@@ -562,6 +562,350 @@
       .eval-failure-list { grid-template-columns: 1fr; }
     }
 
+    /* 业务指标字典：先展示业务含义，技术细节通过卡片内的 details 渐进展开。 */
+    .metrics-intro-card {
+      padding-bottom: 14px;
+      background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
+    }
+    .metrics-intro-main {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 18px;
+      padding-bottom: 16px;
+    }
+    .metrics-eyebrow {
+      margin-bottom: 5px;
+      color: var(--el-blue);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+    }
+    .metrics-page-title {
+      color: var(--text-main);
+      font-size: 24px;
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+    }
+    .metrics-page-subtitle {
+      margin-top: 7px;
+      color: var(--text-secondary);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .metrics-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .metrics-summary-item {
+      min-width: 0;
+      padding: 11px 13px;
+      border: 1px solid #e4edf7;
+      border-radius: 5px;
+      background: rgba(255, 255, 255, 0.78);
+    }
+    .metrics-summary-label {
+      display: block;
+      color: var(--text-secondary);
+      font-size: 11.5px;
+    }
+    .metrics-summary-value {
+      display: block;
+      margin-top: 4px;
+      color: var(--text-main);
+      font-size: 22px;
+      line-height: 1.15;
+      font-variant-numeric: tabular-nums;
+    }
+    .metrics-summary-help {
+      display: block;
+      margin-top: 4px;
+      color: var(--text-secondary);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .metrics-browser-card { padding-bottom: 20px; }
+    .metrics-browser-heading {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .metrics-section-title {
+      color: var(--text-main);
+      font-size: 15px;
+      font-weight: 700;
+    }
+    .metrics-section-help {
+      margin-top: 4px;
+      color: var(--text-secondary);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .metrics-result-count {
+      flex-shrink: 0;
+      color: var(--text-secondary);
+      font-size: 11.5px;
+    }
+    .metrics-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .metrics-search-box {
+      display: flex;
+      align-items: center;
+      flex: 1;
+      min-width: 0;
+      height: 34px;
+      padding: 0 10px;
+      border: 1px solid var(--border-dark);
+      border-radius: 4px;
+      background: #fff;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .metrics-search-box:focus-within {
+      border-color: var(--el-blue);
+      box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.1);
+    }
+    .metrics-search-box i {
+      flex-shrink: 0;
+      margin-right: 7px;
+      color: var(--text-secondary);
+      font-size: 15px;
+    }
+    .metrics-search-box input {
+      width: 100%;
+      min-width: 0;
+      height: 30px;
+      border: 0;
+      outline: 0;
+      color: var(--text-main);
+      background: transparent;
+      font: inherit;
+    }
+    .metrics-search-box input::placeholder { color: var(--text-placeholder); }
+    .metrics-filter-box {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      flex-shrink: 0;
+      color: var(--text-secondary);
+      font-size: 11.5px;
+      white-space: nowrap;
+    }
+    .metrics-filter-box .el-input {
+      min-width: 150px;
+      height: 34px;
+      color: var(--text-regular);
+      background: #fff;
+    }
+    .metrics-state {
+      display: none;
+      padding: 22px 12px;
+      border: 1px dashed var(--border-dark);
+      border-radius: 4px;
+      color: var(--text-secondary);
+      font-size: 12px;
+      line-height: 1.6;
+      text-align: center;
+      background: #fbfdff;
+    }
+    .metrics-state.visible { display: block; }
+    .metrics-state.is-error {
+      color: #b42318;
+      border-color: #f3b7b2;
+      background: #fff8f7;
+    }
+    .metrics-card-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .metric-card {
+      min-width: 0;
+      border: 1px solid #e4e9f0;
+      border-radius: 6px;
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(0, 21, 41, 0.04);
+      transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+    }
+    .metric-card:hover {
+      border-color: #b8d8f7;
+      box-shadow: 0 5px 16px rgba(64, 158, 255, 0.1);
+      transform: translateY(-1px);
+    }
+    .metric-card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 15px 11px;
+      border-bottom: 1px solid #f0f2f5;
+    }
+    .metric-card-header-main { min-width: 0; }
+    .metric-title-row {
+      display: flex;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 7px 9px;
+    }
+    .metric-title {
+      color: var(--text-main);
+      font-size: 15px;
+      line-height: 1.35;
+    }
+    .metric-id {
+      color: var(--text-secondary);
+      font: 11px/1.3 Consolas, Monaco, monospace;
+      word-break: break-all;
+    }
+    .metric-description {
+      margin-top: 5px;
+      color: var(--text-regular);
+      font-size: 12.5px;
+      line-height: 1.55;
+    }
+    .metric-type-tag {
+      flex-shrink: 0;
+      height: 21px;
+      line-height: 19px;
+      font-size: 11px;
+    }
+    .metric-card-body { padding: 12px 15px 0; }
+    .metric-info-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+      gap: 10px;
+    }
+    .metric-info-block { min-width: 0; }
+    .metric-info-label {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--text-secondary);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+    .metric-info-text {
+      color: var(--text-regular);
+      font-size: 12px;
+      line-height: 1.55;
+      word-break: break-word;
+    }
+    .metric-aliases { color: var(--text-regular); }
+    .metric-table-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+    .metric-table-tags .el-tag {
+      height: 20px;
+      padding: 0 6px;
+      line-height: 18px;
+      font-size: 11px;
+    }
+    .metric-rule-preview {
+      margin-top: 11px;
+      padding: 8px 9px;
+      border: 1px solid #f2d9a7;
+      border-radius: 2px;
+      background: #fdf9f1;
+    }
+    .metric-rule-preview .metric-info-label { color: #b88230; }
+    .metric-rule-preview.is-note {
+      border-color: #c6e2ff;
+      background: #f5f9ff;
+    }
+    .metric-rule-preview.is-note .metric-info-label { color: #337ecc; }
+    .metric-rule-preview code {
+      display: block;
+      color: #7a5a19;
+      font: 11px/1.5 Consolas, Monaco, monospace;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .metric-details {
+      margin-top: 12px;
+      border-top: 1px solid #f0f2f5;
+    }
+    .metric-details summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 10px 0 11px;
+      color: var(--el-blue);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 700;
+      list-style: none;
+      user-select: none;
+    }
+    .metric-details summary::-webkit-details-marker { display: none; }
+    .metric-details summary::after {
+      content: '展开';
+      color: var(--text-secondary);
+      font-size: 10.5px;
+      font-weight: 400;
+    }
+    .metric-details[open] summary::after { content: '收起'; }
+    .metric-detail-content {
+      display: grid;
+      gap: 10px;
+      padding: 0 0 13px;
+    }
+    .metric-detail-item { min-width: 0; }
+    .metric-detail-code {
+      max-height: 170px;
+      margin: 0;
+      padding: 8px 9px;
+      overflow: auto;
+      border: 1px solid #e8edf3;
+      border-radius: 3px;
+      background: #f8fafc;
+      color: #344054;
+      font: 10.5px/1.55 Consolas, Monaco, monospace;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .metric-detail-notes {
+      color: var(--text-regular);
+      font-size: 12px;
+      line-height: 1.65;
+      white-space: pre-line;
+    }
+    .metric-detail-muted { color: var(--text-secondary); font-size: 12px; }
+    @media (max-width: 900px) {
+      .metrics-card-list { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 720px) {
+      /* 小屏优先把侧栏收成图标栏，避免内容区只剩一条窄缝。 */
+      aside.sidebar { width: 56px; }
+      aside.sidebar .corp-title-wrap,
+      aside.sidebar .sidebar-group-title { display: none; }
+      aside.sidebar .sidebar-header { padding: 0; justify-content: center; }
+      aside.sidebar .menu-item { padding: 12px 0; justify-content: center; gap: 0; }
+      aside.sidebar .menu-item span,
+      aside.sidebar .menu-badge { display: none; }
+      aside.sidebar .menu-item i { margin: 0; font-size: 19px; }
+      header.top-navbar { padding: 0 8px; }
+      .breadcrumb-box { display: none; }
+      .top-right { gap: 4px; }
+      .top-btn { padding: 5px 7px; font-size: 0; }
+      .top-btn i { font-size: 14px; }
+      .user-name-text { display: none; }
+      .app-main { padding: 10px; }
+      .metrics-intro-main,
+      .metrics-browser-heading,
+      .metrics-toolbar { align-items: stretch; flex-direction: column; }
+      .metrics-intro-main { gap: 10px; }
+      .metrics-summary-grid { grid-template-columns: 1fr; }
+      .metrics-filter-box { justify-content: space-between; }
+      .metrics-filter-box .el-input { flex: 1; }
+      .metric-info-grid { grid-template-columns: 1fr; }
+      .metrics-page-title { font-size: 21px; }
+    }
+
     /* 经典后台面板 Card */
     .el-card {
       background: var(--bg-card);
@@ -1412,29 +1756,59 @@
 
       <!-- ================= 视图 4：数仓指标字典 ================= -->
       <div id="page-metrics" class="page-view">
-        <div class="el-card">
-          <div class="el-card-header">
-            <span class="el-card-title">数仓业务指标标准注册表 (Enterprise Metrics Layer)</span>
-            <span class="el-tag el-tag-primary">23 项财务/运营口径</span>
+        <div class="el-card metrics-intro-card">
+          <div class="metrics-intro-main">
+            <div>
+              <div class="metrics-eyebrow">业务口径中心</div>
+              <h1 class="metrics-page-title">业务指标字典</h1>
+              <p class="metrics-page-subtitle">先看这个指标回答什么问题，再按需展开计算公式和数据来源。</p>
+            </div>
+            <span id="metricsRegistryTag" class="el-tag el-tag-primary">正在读取</span>
           </div>
-          <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 14px; line-height: 1.6;">
-            本模块由企业数据治理委员会维护，作为统一业务口径中枢。Text2SQL Agent 自动绑定底层表映射与口径公式，杜绝由于算法或统计维度偏差导致的口径不一致。
-          </p>
-          <div class="table-responsive-box">
-            <table class="corp-table">
-              <thead>
-                <tr>
-                  <th style="width: 140px;">指标代码 (ID)</th>
-                  <th style="width: 160px;">指标名称</th>
-                  <th>业务定义与标准计算公式</th>
-                  <th style="width: 220px;">底层依赖物理表</th>
-                </tr>
-              </thead>
-              <tbody id="metricsTableBody">
-                <tr><td colspan="4" style="text-align: center; padding: 20px;">加载中...</td></tr>
-              </tbody>
-            </table>
+          <div class="metrics-summary-grid" aria-label="指标字典概览">
+            <div class="metrics-summary-item">
+              <span class="metrics-summary-label">已登记指标</span>
+              <strong id="metricsTotalCount" class="metrics-summary-value">—</strong>
+              <span class="metrics-summary-help">可作为统一业务口径</span>
+            </div>
+            <div class="metrics-summary-item">
+              <span class="metrics-summary-label">关联物理表</span>
+              <strong id="metricsTableCount" class="metrics-summary-value">—</strong>
+              <span class="metrics-summary-help">指标实际依赖的数据表</span>
+            </div>
+            <div class="metrics-summary-item">
+              <span class="metrics-summary-label">可展开技术详情</span>
+              <strong id="metricsDetailCount" class="metrics-summary-value">—</strong>
+              <span class="metrics-summary-help">公式、过滤条件和口径备注</span>
+            </div>
           </div>
+        </div>
+
+        <div class="el-card metrics-browser-card">
+          <div class="metrics-browser-heading">
+            <div>
+              <div class="metrics-section-title">按业务问题找指标</div>
+              <div class="metrics-section-help">支持搜索中文名称、英文 ID、口径说明和物理表名。</div>
+            </div>
+            <span id="metricsResultCount" class="metrics-result-count">—</span>
+          </div>
+          <div class="metrics-toolbar">
+            <label class="metrics-search-box" for="metricsSearchInput">
+              <i class="ri-search-line" aria-hidden="true"></i>
+              <input id="metricsSearchInput" type="search" autocomplete="off" placeholder="例如：客单价、复购率、订单、orders">
+            </label>
+            <label class="metrics-filter-box" for="metricsTypeFilter">
+              <span>指标类型</span>
+              <select id="metricsTypeFilter" class="el-input">
+                <option value="all">全部</option>
+                <option value="ratio">比率 / 百分比</option>
+                <option value="classification">分类 / 复杂口径</option>
+                <option value="amount">其他业务指标</option>
+              </select>
+            </label>
+          </div>
+          <div id="metricsState" class="metrics-state visible" role="status">正在读取指标口径...</div>
+          <div id="metricsCardList" class="metrics-card-list" aria-live="polite"></div>
         </div>
       </div>
 
@@ -2511,26 +2885,224 @@
     }
 
     // ================= 数仓指标字典 =================
+    let metricsRegistryData = [];
+    let metricsFilterBound = false;
+
+    function metricTypeKey(metric) {
+      if (metric && metric.outputUnit) return 'ratio';
+      if (metric && metric.queryPattern) return 'classification';
+      return 'amount';
+    }
+
+    function metricTypeLabel(metric) {
+      if (metricTypeKey(metric) === 'ratio') {
+        return metric.outputUnit === 'PERCENT' ? '百分比' : '小数比率';
+      }
+      if (metricTypeKey(metric) === 'classification') return '复杂口径';
+      return '其他业务指标';
+    }
+
+    function metricTitle(metric) {
+      return Array.isArray(metric.aliases) && metric.aliases.length > 0
+        ? metric.aliases[0]
+        : (metric.name || '未命名指标');
+    }
+
+    function metricNotesPreview(notes) {
+      const firstLine = String(notes || '').split(/\r?\n/).map(line => line.trim()).find(Boolean) || '';
+      const clean = firstLine.replace(/\*\*/g, '');
+      return clean.length > 150 ? `${clean.substring(0, 147)}...` : clean;
+    }
+
+    function metricOutputHint(metric) {
+      if (metric.outputUnit === 'PERCENT') {
+        return `默认输出为百分比，保留 ${metric.outputScale ?? '—'} 位小数`;
+      }
+      if (metric.outputUnit === 'DECIMAL_RATIO') {
+        return `默认输出为小数比率，保留 ${metric.outputScale ?? '—'} 位小数`;
+      }
+      return '';
+    }
+
+    function setMetricsState(message, isError = false) {
+      const state = document.getElementById('metricsState');
+      if (!state) return;
+      state.textContent = message;
+      state.classList.toggle('visible', Boolean(message));
+      state.classList.toggle('is-error', isError);
+    }
+
+    function updateMetricsSummary() {
+      const tableNames = new Set();
+      metricsRegistryData.forEach(metric => {
+        (Array.isArray(metric.tables) ? metric.tables : []).forEach(table => {
+          if (table) tableNames.add(table);
+        });
+      });
+      const detailCount = metricsRegistryData.filter(metric =>
+        metric.expression || metric.filter || metric.notes || metric.outputRule || metric.queryPattern
+      ).length;
+      document.getElementById('metricsTotalCount').textContent = metricsRegistryData.length;
+      document.getElementById('metricsTableCount').textContent = tableNames.size;
+      document.getElementById('metricsDetailCount').textContent = detailCount;
+      document.getElementById('metricsRegistryTag').textContent = `${metricsRegistryData.length} 项已加载`;
+    }
+
+    function renderMetrics() {
+      const list = document.getElementById('metricsCardList');
+      const searchInput = document.getElementById('metricsSearchInput');
+      const typeFilter = document.getElementById('metricsTypeFilter');
+      if (!list || !searchInput || !typeFilter) return;
+
+      const query = searchInput.value.trim().toLowerCase();
+      const selectedType = typeFilter.value;
+      const filtered = metricsRegistryData.filter(metric => {
+        const searchable = [
+          metric.name,
+          ...(Array.isArray(metric.aliases) ? metric.aliases : []),
+          metric.description,
+          metric.expression,
+          metric.filter,
+          ...(Array.isArray(metric.tables) ? metric.tables : []),
+          metric.notes,
+          metric.outputRule,
+          metric.queryPattern
+        ].filter(Boolean).join(' ').toLowerCase();
+        return (!query || searchable.includes(query))
+          && (selectedType === 'all' || metricTypeKey(metric) === selectedType);
+      });
+
+      document.getElementById('metricsResultCount').textContent = `显示 ${filtered.length} / ${metricsRegistryData.length} 项`;
+      if (filtered.length === 0) {
+        list.innerHTML = '';
+        setMetricsState(metricsRegistryData.length === 0
+          ? '当前没有已登记指标。'
+          : '没有匹配的指标，请清空搜索词或切换指标类型。');
+        return;
+      }
+
+      setMetricsState('');
+      list.innerHTML = filtered.map(metric => {
+        const aliases = Array.isArray(metric.aliases) && metric.aliases.length
+          ? metric.aliases.join('、')
+          : '暂无别名';
+        const tables = Array.isArray(metric.tables) ? metric.tables : [];
+        const notesPreview = metricNotesPreview(metric.notes);
+        const outputHint = metricOutputHint(metric);
+        const detailItems = [];
+        detailItems.push(`
+          <div class="metric-detail-item">
+            <span class="metric-info-label">计算公式</span>
+            <pre class="metric-detail-code">${escapeHtml(metric.expression || '暂无计算公式')}</pre>
+          </div>
+        `);
+        if (metric.filter) {
+          detailItems.push(`
+            <div class="metric-detail-item">
+              <span class="metric-info-label">默认过滤条件</span>
+              <pre class="metric-detail-code">${escapeHtml(metric.filter)}</pre>
+            </div>
+          `);
+        }
+        if (outputHint || metric.outputRule) {
+          detailItems.push(`
+            <div class="metric-detail-item">
+              <span class="metric-info-label">输出要求</span>
+              <div class="metric-detail-notes">${escapeHtml([outputHint, metric.outputRule].filter(Boolean).join('。'))}</div>
+            </div>
+          `);
+        }
+        if (metric.notes) {
+          detailItems.push(`
+            <div class="metric-detail-item">
+              <span class="metric-info-label">完整口径说明</span>
+              <div class="metric-detail-notes">${escapeHtml(String(metric.notes).replace(/\*\*/g, ''))}</div>
+            </div>
+          `);
+        }
+        if (metric.queryPattern) {
+          detailItems.push(`
+            <div class="metric-detail-item">
+              <span class="metric-info-label">推荐查询结构</span>
+              <pre class="metric-detail-code">${escapeHtml(metric.queryPattern)}</pre>
+            </div>
+          `);
+        }
+
+        return `
+          <article class="metric-card">
+            <header class="metric-card-header">
+              <div class="metric-card-header-main">
+                <div class="metric-title-row">
+                  <h2 class="metric-title">${escapeHtml(metricTitle(metric))}</h2>
+                  <span class="metric-id">${escapeHtml(metric.name || '—')}</span>
+                </div>
+                <p class="metric-description">${escapeHtml(metric.description || '暂无业务说明')}</p>
+              </div>
+              <span class="el-tag el-tag-primary metric-type-tag">${escapeHtml(metricTypeLabel(metric))}</span>
+            </header>
+            <div class="metric-card-body">
+              <div class="metric-info-grid">
+                <div class="metric-info-block">
+                  <span class="metric-info-label">常用叫法</span>
+                  <div class="metric-info-text metric-aliases">${escapeHtml(aliases)}</div>
+                </div>
+                <div class="metric-info-block">
+                  <span class="metric-info-label">数据来自</span>
+                  <div class="metric-table-tags">
+                    ${tables.length ? tables.map(table => `<span class="el-tag el-tag-info">${escapeHtml(table)}</span>`).join('') : '<span class="metric-detail-muted">暂无来源表</span>'}
+                  </div>
+                </div>
+              </div>
+              ${metric.filter ? `
+                <div class="metric-rule-preview">
+                  <span class="metric-info-label">默认口径过滤</span>
+                  <code>${escapeHtml(metric.filter)}</code>
+                </div>
+              ` : ''}
+              ${notesPreview ? `
+                <div class="metric-rule-preview is-note">
+                  <span class="metric-info-label">口径提醒</span>
+                  <div class="metric-info-text">${escapeHtml(notesPreview)}</div>
+                </div>
+              ` : ''}
+              <details class="metric-details">
+                <summary>查看计算公式与完整口径</summary>
+                <div class="metric-detail-content">${detailItems.join('')}</div>
+              </details>
+            </div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    function bindMetricsFilters() {
+      if (metricsFilterBound) return;
+      const searchInput = document.getElementById('metricsSearchInput');
+      const typeFilter = document.getElementById('metricsTypeFilter');
+      if (!searchInput || !typeFilter) return;
+      searchInput.addEventListener('input', renderMetrics);
+      typeFilter.addEventListener('change', renderMetrics);
+      metricsFilterBound = true;
+    }
+
     async function loadMetrics() {
-      const tbody = document.getElementById('metricsTableBody');
+      bindMetricsFilters();
+      setMetricsState('正在读取指标口径...');
       try {
         const res = await fetch('/api/metrics');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json = await res.json();
-        if (json.data) {
-          tbody.innerHTML = json.data.map(m => `
-            <tr>
-              <td style="font-family: monospace; font-weight: 700; color: var(--el-blue); font-size: 12px;">
-                <span class="cell-overflow copyable" data-tooltip="${escapeHtml(m.name)}" data-tooltip-title="指标英文标识" data-copy="${escapeHtml(m.name)}">${escapeHtml(m.name)}</span>
-              </td>
-              <td style="font-weight: 700; color: #303133;">${escapeHtml(m.name)}</td>
-              <td style="color: #606266; line-height: 1.5;" data-tooltip="${escapeHtml(m.expression || '')}" data-tooltip-title="${escapeHtml(m.name)} 计算公式">
-                ${escapeHtml(m.expression || '-')}
-              </td>
-              <td>${(m.tables || []).map(t => `<span class="el-tag el-tag-primary" style="margin: 2px;">${escapeHtml(t)}</span>`).join('')}</td>
-            </tr>
-          `).join('');
-        }
-      } catch (e) { tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 20px; color: red;">加载指标失败: ${escapeHtml(e.message)}</td></tr>`; }
+        metricsRegistryData = Array.isArray(json.data) ? json.data : [];
+        updateMetricsSummary();
+        renderMetrics();
+      } catch (e) {
+        metricsRegistryData = [];
+        updateMetricsSummary();
+        document.getElementById('metricsCardList').innerHTML = '';
+        document.getElementById('metricsResultCount').textContent = '加载失败';
+        setMetricsState(`加载指标失败：${e.message}`, true);
+      }
     }
 
     // ================= 系统用户管理 =================
