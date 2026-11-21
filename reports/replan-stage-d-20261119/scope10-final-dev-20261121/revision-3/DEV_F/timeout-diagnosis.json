@@ -1,0 +1,110 @@
+{
+  "format": "scope10-dev-timeout-diagnosis-v1",
+  "round": "DEV_F",
+  "planSha256": "943d9b7d34f2bfb278857aaa7cbb9f065ef85296e3e57a33f344e4771f1d4675",
+  "responsesSha256": "107d39b2462dd30e53a045e0750db62469693b4660cf60a87132e000065db5e9",
+  "timeoutDefinition": "unique question with proxy answer deadline or runtime deadline; no double counting",
+  "runtimeTimeoutCount": 0,
+  "proxyDeadlineCount": 10,
+  "lateQuestions": [
+    {
+      "id": "T2-012",
+      "status": "GENERATION_FAILED",
+      "termination": "COMPLETE",
+      "modelCalls": 1,
+      "runtimeElapsedMs": 14914,
+      "wallLatencyMs": 15023.768,
+      "modelStageMs": 14907
+    },
+    {
+      "id": "T2-036",
+      "status": "GENERATION_FAILED",
+      "termination": "COMPLETE",
+      "modelCalls": 1,
+      "runtimeElapsedMs": 14922,
+      "wallLatencyMs": 15008.472,
+      "modelStageMs": 14912
+    },
+    {
+      "id": "T4-036",
+      "status": "GENERATION_FAILED",
+      "termination": "COMPLETE",
+      "modelCalls": 1,
+      "runtimeElapsedMs": 14933,
+      "wallLatencyMs": 15015.98,
+      "modelStageMs": 14924
+    },
+    {
+      "id": "T4-041",
+      "status": "GENERATION_FAILED",
+      "termination": "COMPLETE",
+      "modelCalls": 1,
+      "runtimeElapsedMs": 14935,
+      "wallLatencyMs": 15016.489,
+      "modelStageMs": 14902
+    },
+    {
+      "id": "T5-019",
+      "status": "GENERATION_FAILED",
+      "termination": "COMPLETE",
+      "modelCalls": 1,
+      "runtimeElapsedMs": 14944,
+      "wallLatencyMs": 15017.118,
+      "modelStageMs": 14937
+    },
+    {
+      "id": "T6-014",
+      "status": "GENERATION_FAILED",
+      "termination": "COMPLETE",
+      "modelCalls": 1,
+      "runtimeElapsedMs": 14925,
+      "wallLatencyMs": 15009.443,
+      "modelStageMs": 14916
+    },
+    {
+      "id": "T6-016",
+      "status": "GENERATION_FAILED",
+      "termination": "COMPLETE",
+      "modelCalls": 1,
+      "runtimeElapsedMs": 14926,
+      "wallLatencyMs": 15021.562,
+      "modelStageMs": 14917
+    },
+    {
+      "id": "T6-021",
+      "status": "GENERATION_FAILED",
+      "termination": "COMPLETE",
+      "modelCalls": 1,
+      "runtimeElapsedMs": 14939,
+      "wallLatencyMs": 15027.118,
+      "modelStageMs": 14928
+    },
+    {
+      "id": "T6-023",
+      "status": "GENERATION_FAILED",
+      "termination": "COMPLETE",
+      "modelCalls": 1,
+      "runtimeElapsedMs": 14926,
+      "wallLatencyMs": 15014.548,
+      "modelStageMs": 14919
+    },
+    {
+      "id": "T6-025",
+      "status": "GENERATION_FAILED",
+      "termination": "COMPLETE",
+      "modelCalls": 1,
+      "runtimeElapsedMs": 14928,
+      "wallLatencyMs": 15017.657,
+      "modelStageMs": 14919
+    }
+  ],
+  "finding": {
+    "modelStageMsMin": 14902,
+    "modelStageMsMax": 14937,
+    "runtimeElapsedMsMin": 14914,
+    "runtimeElapsedMsMax": 14944,
+    "wallLatencyMsMin": 15008.472,
+    "wallLatencyMsMax": 15027.118,
+    "interpretation": "All ten failures are boundary overruns at the fixed 15-second end-to-end proxy deadline; no runtime deadline was reported. This evidence does not authorize relaxing the acceptance threshold or replaying the batch."
+  }
+}
