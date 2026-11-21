@@ -9,7 +9,7 @@
 - 适用项目：Text2SQL Agent 电商经营分析平台
 - 规格角色：产品规格（Product Specification）
 - 配套规格：[技术与架构规格](SALES_ANALYSIS_WORKBENCH_TECHNICAL_ARCHITECTURE.md) · [实施路线规格](SALES_ANALYSIS_WORKBENCH_ROADMAP.md)
-- 当前实现阶段：A-1 分析上下文契约
+- 当前实现阶段：C-1 多轮追问与结果恢复（A-1、B-1 已完成）
 - 当前数据源：本地 PostgreSQL Olist 分析快照
 - 当前数据规模：37 张业务表、27 个已登记业务指标
 
