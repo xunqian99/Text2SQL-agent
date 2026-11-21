@@ -1,0 +1,73 @@
+{
+  "format": "scope10-timeout-free-audit-v1",
+  "batch": "C:/Users/xunqian/Desktop/agent/reports/replan-stage-d-20261119/scope10-final-dev-20261121/revision-3",
+  "planSha256": "943d9b7d34f2bfb278857aaa7cbb9f065ef85296e3e57a33f344e4771f1d4675",
+  "apiCalls": 0,
+  "realKeyReads": 0,
+  "mutatedPaidBatch": false,
+  "replayAuthorized": false,
+  "thresholdChangeAuthorized": false,
+  "terminal": "DEVELOPMENT_FAILED_NO_C2",
+  "dev": {
+    "questions": 100,
+    "correct": 87,
+    "timeouts": 10,
+    "wallP95Ms": 15016.488699708134,
+    "wallMeanMs": 4890.462773018517,
+    "timeoutIds": [
+      "T2-012",
+      "T2-036",
+      "T4-036",
+      "T4-041",
+      "T5-019",
+      "T6-014",
+      "T6-016",
+      "T6-021",
+      "T6-023",
+      "T6-025"
+    ]
+  },
+  "deadlineEvidence": {
+    "runtimeTimeouts": 0,
+    "proxyDeadlineTimeouts": 10,
+    "javaElapsedMs": {
+      "min": 14914,
+      "max": 14944
+    },
+    "javaModelStageMs": {
+      "min": 14902,
+      "max": 14937
+    },
+    "proxyWallMs": {
+      "min": 15008.472200017422,
+      "max": 15027.118199970573
+    },
+    "timeoutDecisionSettlementSucceeded": false,
+    "timeoutDecisionDurableBeforeAnswer": true
+  },
+  "inputSizeCorrelationOnly": {
+    "lateMeanPromptChars": 7562.6,
+    "normalMeanPromptChars": 6339.47,
+    "lateMeanInputEstimate": 15012.7,
+    "normalMeanInputEstimate": 12979.57,
+    "causalConclusion": false
+  },
+  "accounting": {
+    "currentKnownCostYuan": "0.36742466",
+    "currentKnownUsageCalls": 100,
+    "currentUnknownUsageCalls": 0,
+    "lateKnownUsageCalls": 10,
+    "lateKnownCostYuan": "0.15659600",
+    "cumulativeKnownCostYuan": "0.661192120",
+    "cumulativeUnknownHeldYuan": "0.60",
+    "unknownFilledWithZero": false
+  },
+  "evidenceSha256": {
+    "state.json": "d474089f55237b312bfa730642b61834643298ecbb625c976a820b5d2b437505",
+    "timeout-diagnosis.json": "5c376d647da0f2b122e2e59998a53716ce3aa501eff06aa111c209d5765d17c0",
+    "input-size-diagnosis.json": "383679be52ceb30084de4395de7a92b9c1396a1a448c183b9e0286c4e7666e1b",
+    "proxy-answer-decisions.json": "35cd051ffacfca197635b18bd97f5a24a0b03313dc8746e642dcfc15af235937",
+    "responses.json": "107d39b2462dd30e53a045e0750db62469693b4660cf60a87132e000065db5e9"
+  },
+  "finding": "All ten failures are proxy answer-deadline overruns: Java completed its 15-second budget just before the proxy wall-clock deadline. Input size is correlated in the archived sample but is not a causal proof. No timing bug or replay authorization was established."
+}
