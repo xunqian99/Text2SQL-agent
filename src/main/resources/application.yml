@@ -205,6 +205,26 @@ agent:
     enabled: false
     dir: data/eval
     out-dir: reports
+    # P1 离线评测面板只读取这份白名单，不接受浏览器传入的文件路径。
+    # 同一候选的三次运行放在同一行，面板按原始报告重新聚合，避免只挑最好一轮。
+    dashboard:
+      reports:
+        - id: p15-formal-85-33
+          label: p15 固定候选正式三轮（85.33%，未通过 89% 门槛）
+          paths:
+            - reports/stage2-p15-regression-20261117/r1/eval-20261117-234816.json
+            - reports/stage2-p15-regression-20261117/r2/eval-20261117-235412.json
+            - reports/stage2-p15-regression-20261117/r3/eval-20261117-235952.json
+        - id: p18-formal-78-00
+          label: p18 后续候选正式三轮（78.00%，未通过 89% 门槛）
+          paths:
+            - reports/stage2-dimension-display-regression-20261118/r1/eval-20261118-223447.json
+            - reports/stage2-dimension-display-regression-20261118/r2/eval-20261118-224116.json
+            - reports/stage2-dimension-display-regression-20261118/r3/eval-20261118-224744.json
+        - id: p0-gold-dry-run
+          label: P0 Gold200 离线自检（dry-run）
+          paths:
+            - target/p0-gold/eval-20261121-180612-dryrun.json
     # 0 = 全部。阶段 1 验收用 50。
     limit: 0
     # 空 = 全部难度层。可以写 T1,T2 或 single_table_basic。

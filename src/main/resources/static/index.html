@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>某某电商集团 · 供应链数仓运营中台 (ERP/OMS V4.5)</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='8' fill='%23304156'/%3E%3Ctext x='32' y='43' text-anchor='middle' font-size='28' fill='white'%3ET2%3C/text%3E%3C/svg%3E">
   <!-- ECharts 5 统计图表库 -->
   <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
   <!-- RemixIcon 专业企业级矢量图标库 (v4.2.0) -->
@@ -507,6 +508,47 @@
     .trace-evidence-danger { color: #f56c6c; }
     @media (max-width: 720px) {
       .trace-evidence-grid { grid-template-columns: 1fr; }
+    }
+
+    /* P1 离线评测面板：只展示已落盘报告，明确版本、题集和 SHA。 */
+    .eval-kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin: 12px 0 16px;
+    }
+    .eval-kpi {
+      border: 1px solid #dfe6ec;
+      border-radius: 4px;
+      padding: 11px 12px;
+      background: #fbfdff;
+    }
+    .eval-kpi-label { color: #909399; font-size: 11.5px; }
+    .eval-kpi-value { margin-top: 4px; color: #303133; font-size: 20px; font-weight: 700; }
+    .eval-report-card { margin-bottom: 14px; }
+    .eval-report-subtitle { color: #909399; font-size: 11.5px; line-height: 1.6; }
+    .eval-meta-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 7px 16px;
+      margin: 10px 0;
+      padding: 10px;
+      background: #f8fafc;
+      border: 1px solid #ebeef5;
+      border-radius: 3px;
+      font-size: 11.5px;
+    }
+    .eval-meta-item { min-width: 0; word-break: break-word; }
+    .eval-meta-label { color: #909399; margin-right: 5px; }
+    .eval-meta-value { color: #303133; }
+    .eval-report-note { color: #909399; font-size: 11.5px; line-height: 1.6; }
+    .eval-warn { margin: 8px 0; padding: 8px 10px; color: #8a6d3b; background: #fcf8e3; border: 1px solid #faebcc; border-radius: 3px; font-size: 12px; }
+    .eval-source-list { margin: 8px 0 0; padding-left: 18px; color: #606266; font: 11px/1.6 Consolas, Monaco, monospace; }
+    .eval-source-list li { word-break: break-all; }
+    .eval-section-title { margin: 12px 0 6px; color: #606266; font-size: 12.5px; font-weight: 700; }
+    @media (max-width: 900px) {
+      .eval-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .eval-meta-grid { grid-template-columns: 1fr; }
     }
 
     /* 经典后台面板 Card */
@@ -1115,6 +1157,11 @@
         <span>AI 智能问数分析</span>
         <span class="menu-badge badge-agent">Agent</span>
       </div>
+      <div class="menu-item" title="离线评测结果面板" onclick="switchPage('evaluation', '智能分析', '离线评测结果面板')">
+        <i class="ri-line-chart-line"></i>
+        <span>离线评测面板</span>
+        <span class="menu-badge badge-agent">P1</span>
+      </div>
 
       <div class="sidebar-group-title">系统管理</div>
       <div class="menu-item" title="用户与权限分配" onclick="switchPage('users', '系统管理', '用户与权限分配')">
@@ -1434,7 +1481,23 @@
         </div>
       </div>
 
-      <!-- ================= 视图 6：用户与角色管理 ================= -->
+      <!-- ================= 视图 6：离线评测结果面板 ================= -->
+      <div id="page-evaluation" class="page-view">
+        <div class="el-card">
+          <div class="el-card-header">
+            <span class="el-card-title">Text2SQL 离线评测结果面板 (Evaluation Evidence)</span>
+            <button class="el-button el-button-primary el-button-sm" onclick="loadEvaluationReports()"><i class="ri-refresh-line"></i> 刷新报告</button>
+          </div>
+          <div style="font-size: 12px; color: #606266; line-height: 1.7;">
+            面板只读取配置白名单中的 JSON/JSONL 文件，不启动模型、不执行 SQL。每个版本保留题集指纹、代码版本、源文件 SHA 和失败分类；三轮正式结果按全部源文件聚合，禁止挑最好一轮。
+          </div>
+          <div id="evaluationDashboardState" class="eval-report-note" style="margin-top: 9px;">正在读取离线报告...</div>
+          <div id="evaluationKpiGrid" class="eval-kpi-grid"></div>
+        </div>
+        <div id="evaluationReportsContainer"></div>
+      </div>
+
+      <!-- ================= 视图 7：用户与角色管理 ================= -->
       <div id="page-users" class="page-view">
         <div class="el-card">
           <div class="el-card-header">
@@ -1462,7 +1525,7 @@
         </div>
       </div>
 
-      <!-- ================= 视图 7：系统操作审计日志 ================= -->
+      <!-- ================= 视图 8：系统操作审计日志 ================= -->
       <div id="page-logs" class="page-view">
         <div class="el-card">
           <div class="el-card-header">
@@ -2027,6 +2090,7 @@
       if (pageId === 'products') { loadProdCategories(); loadProducts(1); }
       if (pageId === 'orders') loadOrders(1);
       if (pageId === 'metrics') loadMetrics();
+      if (pageId === 'evaluation') loadEvaluationReports();
       if (pageId === 'users') loadUsers();
       if (pageId === 'logs') loadLogs();
     }
@@ -2529,6 +2593,109 @@
           `).join('');
         }
       } catch (e) { console.error(e); }
+    }
+
+    // ================= P1 离线评测报告面板 =================
+    function evalNumber(value, digits = 0) {
+      if (value === null || value === undefined || Number.isNaN(Number(value))) return '—';
+      return Number(value).toLocaleString('zh-CN', { maximumFractionDigits: digits });
+    }
+
+    function evalPercent(value) {
+      if (value === null || value === undefined || Number.isNaN(Number(value))) return '—';
+      return `${(Number(value) * 100).toFixed(2)}%`;
+    }
+
+    function evalText(value, fallback = '—') {
+      return value === null || value === undefined || String(value).trim() === ''
+        ? fallback : escapeHtml(String(value));
+    }
+
+    function renderEvaluationReport(report) {
+      const failureRows = [
+        ['结果不匹配', report.resultMismatchCount],
+        ['请求超时', report.timeoutCount],
+        ['需要澄清', report.clarificationCount],
+        ['校验拒绝', report.validationRejectedCount],
+        ['执行失败', report.executionFailedCount],
+        ['生成失败', report.generationFailedCount]
+      ];
+      const layerRows = Object.entries(report.byLayer || {}).map(([name, row]) => `
+        <tr><td>${escapeHtml(name)}</td><td class="tabular-nums">${evalNumber(row.sampleCount)}</td><td class="tabular-nums">${evalNumber(row.correct)}</td><td class="tabular-nums">${evalPercent(row.accuracy)}</td><td class="tabular-nums">${evalNumber(row.sqlValid)}</td><td class="tabular-nums">${evalNumber(row.p95LatencyMs)} ms</td></tr>
+      `).join('');
+      const sourceRows = (report.sourceFiles || []).map(file => `<li>${escapeHtml(file.path)}<br>SHA-256: ${escapeHtml(file.sha256)}</li>`).join('');
+      return `
+        <div class="el-card eval-report-card">
+          <div class="el-card-header">
+            <div>
+              <div class="el-card-title">${evalText(report.label, report.id)}</div>
+              <div class="eval-report-subtitle">${evalText(report.format)} · ${evalText(report.dryRun ? 'dry-run：Gold 自检' : '模型评测')} · ${evalText(report.timestamp)}</div>
+            </div>
+            <span class="el-tag ${report.passedEvidenceAudit === false ? 'el-tag-warning' : 'el-tag-success'}">只读证据</span>
+          </div>
+          <div class="eval-kpi-grid">
+            <div class="eval-kpi"><div class="eval-kpi-label">题目数</div><div class="eval-kpi-value tabular-nums">${evalNumber(report.sampleCount)}</div></div>
+            <div class="eval-kpi"><div class="eval-kpi-label">准确率</div><div class="eval-kpi-value tabular-nums">${evalPercent(report.accuracy)}</div></div>
+            <div class="eval-kpi"><div class="eval-kpi-label">SQL 有效率</div><div class="eval-kpi-value tabular-nums">${evalPercent(report.sqlValidRate)}</div></div>
+            <div class="eval-kpi"><div class="eval-kpi-label">P95 / P50</div><div class="eval-kpi-value tabular-nums" style="font-size: 16px;">${evalNumber(report.p95LatencyMs)} / ${evalNumber(report.p50LatencyMs)} ms</div></div>
+          </div>
+          <div class="eval-meta-grid">
+            <div class="eval-meta-item"><span class="eval-meta-label">正确数</span><span class="eval-meta-value tabular-nums">${evalNumber(report.correct)}</span></div>
+            <div class="eval-meta-item"><span class="eval-meta-label">SQL 有效数</span><span class="eval-meta-value tabular-nums">${evalNumber(report.sqlValid)}</span></div>
+            <div class="eval-meta-item"><span class="eval-meta-label">Prompt 版本</span><span class="eval-meta-value">${evalText(report.promptVersion)}</span></div>
+            <div class="eval-meta-item"><span class="eval-meta-label">模型</span><span class="eval-meta-value">${evalText(report.model)}</span></div>
+            <div class="eval-meta-item"><span class="eval-meta-label">代码版本</span><span class="eval-meta-value">${evalText(report.codeCommit)}</span></div>
+            <div class="eval-meta-item"><span class="eval-meta-label">题集 SHA</span><span class="eval-meta-value">${evalText(report.datasetSha256)}</span></div>
+            <div class="eval-meta-item"><span class="eval-meta-label">题目 ID SHA</span><span class="eval-meta-value">${evalText(report.sampleIdsSha256)}</span></div>
+            <div class="eval-meta-item"><span class="eval-meta-label">Token</span><span class="eval-meta-value tabular-nums">${evalNumber(report.totalTokens)}</span></div>
+            <div class="eval-meta-item"><span class="eval-meta-label">已知费用</span><span class="eval-meta-value tabular-nums">¥${Number(report.costYuan || 0).toFixed(6)}</span></div>
+            <div class="eval-meta-item"><span class="eval-meta-label">UNKNOWN 用量</span><span class="eval-meta-value tabular-nums">${evalNumber(report.unknownUsageCalls)}</span></div>
+          </div>
+
+          <div class="eval-section-title">失败分类</div>
+          <div class="table-responsive-box">
+            <table class="corp-table"><thead><tr><th>分类</th><th>数量</th></tr></thead><tbody>
+              ${failureRows.map(row => `<tr><td>${row[0]}</td><td class="tabular-nums">${evalNumber(row[1])}</td></tr>`).join('')}
+            </tbody></table>
+          </div>
+
+          <div class="eval-section-title">按难度层</div>
+          <div class="table-responsive-box">
+            <table class="corp-table"><thead><tr><th>层级</th><th>题数</th><th>正确</th><th>准确率</th><th>SQL 有效</th><th>P95</th></tr></thead><tbody>
+              ${layerRows || '<tr><td colspan="6">报告未提供难度层明细</td></tr>'}
+            </tbody></table>
+          </div>
+
+          <details style="margin-top: 10px;"><summary style="cursor: pointer; color: #409eff; font-size: 12px;">查看源文件 SHA-256</summary>
+            <ul class="eval-source-list">${sourceRows || '<li>无</li>'}</ul>
+          </details>
+          <div class="eval-report-note" style="margin-top: 8px;">百分位来自源报告的平均 P50/P95；它不是把不同版本的单题延迟拼成一个新分布。面板不把 UNKNOWN 用量当成零成本。</div>
+        </div>`;
+    }
+
+    async function loadEvaluationReports() {
+      const state = document.getElementById('evaluationDashboardState');
+      const kpi = document.getElementById('evaluationKpiGrid');
+      const container = document.getElementById('evaluationReportsContainer');
+      if (!state || !kpi || !container) return;
+      state.textContent = '正在读取离线报告...';
+      try {
+        const res = await fetch('/api/evaluation/reports', { cache: 'no-store' });
+        const snapshot = await res.json();
+        const reports = Array.isArray(snapshot.reports) ? snapshot.reports : [];
+        const warnings = Array.isArray(snapshot.warnings) ? snapshot.warnings : [];
+        state.innerHTML = `只读模式 · ${evalNumber(reports.length)} 个版本 · 生成时间 ${evalText(snapshot.generatedAt)}${warnings.length ? ` · ${evalNumber(warnings.length)} 条读取提示` : ''}`;
+        kpi.innerHTML = `
+          <div class="eval-kpi"><div class="eval-kpi-label">已加载版本</div><div class="eval-kpi-value tabular-nums">${evalNumber(reports.length)}</div></div>
+          <div class="eval-kpi"><div class="eval-kpi-label">85.33% / 78.00%</div><div class="eval-kpi-value">历史正式候选</div></div>
+          <div class="eval-kpi"><div class="eval-kpi-label">模型调用</div><div class="eval-kpi-value">0 次</div></div>
+          <div class="eval-kpi"><div class="eval-kpi-label">业务库写操作</div><div class="eval-kpi-value">0 次</div></div>`;
+        container.innerHTML = warnings.map(w => `<div class="eval-warn">${escapeHtml(w)}</div>`).join('') + reports.map(renderEvaluationReport).join('');
+      } catch (error) {
+        state.innerHTML = '<span class="trace-evidence-danger">读取离线评测报告失败</span>';
+        kpi.innerHTML = '';
+        container.innerHTML = `<div class="eval-warn">${escapeHtml(error && error.message ? error.message : '未知错误')}</div>`;
+      }
     }
 
     // ================= AI 问数模块 (Text2SQL Agent) =================

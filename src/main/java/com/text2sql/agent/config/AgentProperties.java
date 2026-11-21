@@ -1278,6 +1278,15 @@ public class AgentProperties {
         private boolean enabled = false;
         private String dir = "data/eval";
 
+        /**
+         * 课程设计离线评测面板读取的固定报告集合。
+         *
+         * <p>它与 {@code outDir} 分开：outDir 是评估运行器的输出目录，
+         * dashboardReports 是只读展示白名单。页面不能通过请求参数指定路径，
+         * 避免把本地文件读取能力暴露成接口。
+         */
+        private Dashboard dashboard = new Dashboard();
+
         /** Optional frozen suite manifest; checked before Gold or paid model calls. */
         private String suiteManifest = "";
         private String outDir = "reports";
@@ -1387,6 +1396,14 @@ public class AgentProperties {
             this.dir = dir;
         }
 
+        public Dashboard getDashboard() {
+            return dashboard;
+        }
+
+        public void setDashboard(Dashboard dashboard) {
+            this.dashboard = dashboard == null ? new Dashboard() : dashboard;
+        }
+
         public String getSuiteManifest() { return suiteManifest; }
 
         public void setSuiteManifest(String suiteManifest) { this.suiteManifest = suiteManifest; }
@@ -1469,6 +1486,59 @@ public class AgentProperties {
 
         public void setExitAfterRun(boolean exitAfterRun) {
             this.exitAfterRun = exitAfterRun;
+        }
+
+        /** 只读离线评测面板的报告白名单。 */
+        public static class Dashboard {
+            private List<DashboardReport> reports = new ArrayList<>();
+
+            public List<DashboardReport> getReports() {
+                return reports;
+            }
+
+            public void setReports(List<DashboardReport> reports) {
+                this.reports = reports == null ? new ArrayList<>() : reports;
+            }
+        }
+
+        /** 一行面板配置可对应一次运行或同一候选的多次运行。 */
+        public static class DashboardReport {
+            private String id = "";
+            private String label = "";
+            private List<String> paths = new ArrayList<>();
+
+            public DashboardReport() {
+            }
+
+            public DashboardReport(String id, String label, List<String> paths) {
+                setId(id);
+                setLabel(label);
+                setPaths(paths);
+            }
+
+            public String getId() {
+                return id;
+            }
+
+            public void setId(String id) {
+                this.id = id == null ? "" : id;
+            }
+
+            public String getLabel() {
+                return label;
+            }
+
+            public void setLabel(String label) {
+                this.label = label == null ? "" : label;
+            }
+
+            public List<String> getPaths() {
+                return paths;
+            }
+
+            public void setPaths(List<String> paths) {
+                this.paths = paths == null ? new ArrayList<>() : paths;
+            }
         }
     }
 }

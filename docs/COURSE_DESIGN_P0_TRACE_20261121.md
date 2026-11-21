@@ -78,4 +78,4 @@ P0 已完成。`POST /api/ask` 的成功、需要澄清、校验拒绝、执行�
 - **调用成本**：看响应中的 `llm.promptTokens`、`completionTokens`、`totalTokens`、`costYuan` 和 `budget`；本次 Gold 自检没有模型调用，不能用 ¥0 推断真实模型成本。
 - **错误归因**：先看 `status`、`violations`、`message` 和四类 provenance，再判断是表召回、SQL 生成、校验护栏、数据库执行还是结果口径问题。
 
-本阶段不需要用户启动 Docker、提供 Key 或确认业务口径。P1 离线评测面板暂不自动开始，需在本阶段版本验收后单独推进。
+本阶段不需要用户启动 Docker、提供 Key 或确认业务口径。P1 已在本阶段验收后单独完成，结果见 [P1 离线评测面板阶段报告](COURSE_DESIGN_P1_EVALUATION_20261121.md)。
