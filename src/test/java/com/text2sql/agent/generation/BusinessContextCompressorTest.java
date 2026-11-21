@@ -176,6 +176,21 @@ class BusinessContextCompressorTest {
     }
 
     @Test
+    void doesNotNormalizeTrailingWhitespaceIntoExactDuplicate() {
+        String padded = "共同说明：尾部空格会改变原始行身份。".repeat(5) + "  ";
+        String input = "METRIC first  -- first\n"
+                + "  " + padded + "\n\n"
+                + "METRIC second  -- second\n"
+                + "  " + padded;
+
+        var result = new BusinessContextCompressor().compress(input, TRACEABLE);
+
+        assertThat(result.compressed()).isFalse();
+        assertThat(result.reason()).isEqualTo("no-cross-metric-duplicate");
+        assertThat(result.text()).isEqualTo(input);
+    }
+
+    @Test
     void keepsDuplicateOccurrencesAndMalformedHeadersFailOpen() {
         String repeated = "重复约束：这两个位置的相同文字可能属于不同作用域。".repeat(4);
         String repeatedInput = "METRIC first  -- first\n"

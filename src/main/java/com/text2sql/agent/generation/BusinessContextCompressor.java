@@ -256,7 +256,8 @@ public final class BusinessContextCompressor {
         // notes.  Three or more spaces are nested/ambiguous content and must
         // never be normalized into the shared section.
         if (line == null || line.length() < 3 || !line.startsWith("  ")
-                || Character.isWhitespace(line.charAt(2))) {
+                || Character.isWhitespace(line.charAt(2))
+                || !line.equals(line.stripTrailing())) {
             return false;
         }
         String value = line.strip();
