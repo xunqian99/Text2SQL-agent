@@ -529,6 +529,88 @@ class AccountingProxyTests(unittest.TestCase):
             running.drain(1)
             self.assertEqual(len(stub.requests), 1)
 
+    def test_durable_before_answer_waits_for_successful_after_before_sql(self):
+        rec = Recorder(budget=.25)
+        settled = threading.Event()
+        def after(permit, result):
+            time.sleep(.045)
+            rec.after.append((permit, result))
+            settled.set()
+        rec.after_send = after
+        with Stub() as stub, proxy(stub, rec, durable_before_answer=True) as running:
+            status, body, elapsed = request()
+            self.assertEqual((status, body), (200, BODY))
+            self.assertTrue(settled.is_set())
+            self.assertGreaterEqual(elapsed, .04)
+            running.drain(1)
+            result = self.assert_result(rec)
+            self.assertTrue(result["providerBodyTimely"])
+            self.assertTrue(result["answerEligible"])
+            self.assertTrue(result["durableBeforeAnswer"])
+            self.assertIsNone(result["answerReturnedAtUtc"])
+            self.assertIn("PROVIDER_BODY_READINESS_ONLY", result["eligibilityScope"])
+            self.assertIsNotNone(result["bodyReadyAtUtc"])
+            self.assertEqual(running.metrics["afterCalls"], 1)
+
+    def test_slow_durable_after_cannot_extend_http_deadline_or_backfill_sql(self):
+        rec = Recorder(budget=.08, after_delay=.3)
+        with Stub() as stub, proxy(stub, rec, durable_before_answer=True) as running:
+            status, body, elapsed = request()
+            self.assertEqual(status, 504)
+            self.assertNotIn(b"SELECT", body)
+            self.assertLess(elapsed, .2)
+            self.assertEqual(rec.after, [])
+            running.drain(1)
+            result = self.assert_result(rec)
+            # Qualification is explicitly about the timely body. Actual HTTP is
+            # 504 above; these fields must never be read as delivery evidence.
+            self.assertTrue(result["providerBodyTimely"])
+            self.assertTrue(result["answerEligible"])
+            self.assertFalse(result["late"])
+            self.assertFalse(result["accountingOnly"])
+            self.assertIsNone(result["answerReturnedAtUtc"])
+            self.assertIn("HTTP delivery is controller evidence", result["eligibilityScope"])
+            self.assertEqual(running.metrics["afterCalls"], 1)
+            self.assertEqual(len(stub.requests), 1)
+
+    def test_durable_after_failure_never_delivers_timely_sql_and_blocks_next_send(self):
+        rec = Recorder()
+        def fail(permit, result):
+            rec.after.append((permit, result))
+            raise OSError("synthetic durable settlement failed")
+        rec.after_send = fail
+        with Stub() as stub, proxy(stub, rec, durable_before_answer=True) as running:
+            status, body, elapsed = request()
+            self.assertEqual(status, 502)
+            self.assertNotIn(b"SELECT", body)
+            self.assertIn(b"durable settlement failed", body)
+            running.drain(1)
+            self.assertTrue(running.errors)
+            self.assertEqual(request()[0], 503)
+            running.drain(1)
+            self.assertEqual(len(rec.before), 1)
+            self.assertEqual(len(rec.after), 1)
+            self.assertEqual(len(stub.requests), 1)
+            self.assertEqual(running.metrics["afterCalls"], 1)
+
+    def test_late_body_in_durable_mode_stays_accounting_only_with_one_after(self):
+        rec = Recorder(budget=.08, after_delay=.025)
+        with Stub(delay=.2) as stub, proxy(stub, rec, durable_before_answer=True) as running:
+            status, body, elapsed = request()
+            self.assertEqual(status, 504)
+            self.assertLess(elapsed, .18)
+            self.assertNotIn(b"SELECT", body)
+            running.drain(1)
+            result = self.assert_result(rec, late=True)
+            self.assertFalse(result["providerBodyTimely"])
+            self.assertFalse(result["answerEligible"])
+            self.assertTrue(result["accountingOnly"])
+            self.assertIsNone(result["answerReturnedAtUtc"])
+            self.assertTrue(result["usageKnown"])
+            self.assertEqual(result["responseBodyRaw"], BODY)
+            self.assertEqual(running.metrics["afterCalls"], 1)
+            self.assertEqual(len(stub.requests), 1)
+
     def test_second_listener_is_refused_with_no_alternate_port(self):
         rec = Recorder()
         with Stub() as stub, proxy(stub, rec) as owner:

@@ -72,6 +72,7 @@ class _Collection:
     permit: object
     body: bytearray = field(default_factory=bytearray)
     done: threading.Event = field(default_factory=threading.Event)
+    after_done: threading.Event = field(default_factory=threading.Event)
     answer_decided: threading.Event = field(default_factory=threading.Event)
     abort: threading.Event = field(default_factory=threading.Event)
     lock: threading.Lock = field(default_factory=threading.Lock)
@@ -86,6 +87,8 @@ class _Collection:
     answer_frozen: bool = False
     answer_returned: str | None = None
     ready_at: float = 0.0
+    after_succeeded: bool = False
+    after_error: str | None = None
     status: int = 502
     headers: dict = field(default_factory=dict)
     result: dict = field(default_factory=dict)
@@ -128,13 +131,20 @@ class ModelProxy(StableModelProxy):
     write. The proxy also independently enforces the 120-second wall-clock guard.
     Lower resource limits and shorter accounting grace support free loopback
     tests; they can never increase the production limits.
+
+    durable_before_answer=True withholds a timely SQL response until after_send
+    has successfully persisted the raw evidence and settlement. The independent
+    HTTP deadline still returns 504 while slow accounting completes. In this
+    mode late/accountingOnly/answerEligible describe provider-body readiness,
+    never successful HTTP delivery; the controller records actual HTTP facts.
     """
 
     def __init__(self, key, before_send, after_send, upstream_url=frozen.OFFICIAL_URL,
                  allow_loopback_test=False, *, check_send=None, clock=None,
                  accounting_extra_seconds=ACCOUNTING_EXTRA_SECONDS,
                  max_collectors=MAX_COLLECTORS, max_body_bytes=MAX_RESPONSE_BYTES,
-                 max_active_body_bytes=MAX_ACTIVE_BODY_BYTES):
+                 max_active_body_bytes=MAX_ACTIVE_BODY_BYTES,
+                 durable_before_answer=False):
         super().__init__(key, before_send, after_send, upstream_url, allow_loopback_test)
         for value, ceiling, name in ((max_collectors, MAX_COLLECTORS, "collectors"),
                                      (max_body_bytes, MAX_RESPONSE_BYTES, "body bytes"),
@@ -146,10 +156,13 @@ class ModelProxy(StableModelProxy):
             raise ValueError("accounting grace cannot exceed 105 seconds")
         if check_send is not None and not callable(check_send):
             raise TypeError("check_send must be callable")
+        if type(durable_before_answer) is not bool:
+            raise TypeError("durable_before_answer must be a boolean")
         if clock is not None and (not allow_loopback_test or self._endpoint[0] != "http"):
             raise ValueError("clock injection is restricted to loopback tests")
         self._clock = clock or (lambda: datetime.now(timezone.utc))
         self._send_check = check_send
+        self._durable_before_answer = durable_before_answer
         self._grace = grace
         self._max_collectors = max_collectors
         self._max_body = max_body_bytes
@@ -483,24 +496,41 @@ class ModelProxy(StableModelProxy):
                                 responseBodySha256=hashlib.sha256(body).hexdigest(),
                                 finishedAtUtc=frozen._utc_now())
             state.ready_at = time.monotonic()
+            body_timely = state.result["responseComplete"] and state.ready_at < state.answer_deadline
+            state.result.update(providerBodyTimely=body_timely,
+                                bodyReadyAtUtc=frozen._utc_now(),
+                                bodyReadyAtMonotonic=state.ready_at,
+                                durableBeforeAnswer=self._durable_before_answer)
             state.done.set()
-            # Answer eligibility is frozen by the independent HTTP handler, not
-            # by how long durable accounting happens to take.
-            state.answer_decided.wait()
-            state.result.update(late=state.answer_frozen,
-                                accountingOnly=state.answer_frozen,
-                                answerEligible=not state.answer_frozen and state.result["error"] is None,
-                                answerReturnedAtUtc=state.answer_returned,
-                                lateSqlBackfill=False,
+            if self._durable_before_answer:
+                # This immutable callback snapshot precedes HTTP delivery. A
+                # timely body remains timely if the local durable write is slow;
+                # only the independent HTTP evidence can claim answer delivery.
+                eligible = body_timely and state.result["error"] is None
+                state.result.update(late=state.ready_at >= state.answer_deadline,
+                                    accountingOnly=not eligible, answerEligible=eligible,
+                                    answerReturnedAtUtc=None,
+                                    eligibilityScope="PROVIDER_BODY_READINESS_ONLY; HTTP delivery is controller evidence")
+            else:
+                state.answer_decided.wait()
+                state.result.update(late=state.answer_frozen,
+                                    accountingOnly=state.answer_frozen,
+                                    answerEligible=not state.answer_frozen and state.result["error"] is None,
+                                    answerReturnedAtUtc=state.answer_returned,
+                                    eligibilityScope="PROXY_ANSWER_DECISION_ONLY; not client receipt")
+            state.result.update(lateSqlBackfill=False,
                                 sameSentConnectionReadOnly=state.wire_complete,
                                 reconnects=0, resends=0)
             try:
                 with self._condition:
                     self.metrics["afterCalls"] += 1
                 self._after_send(copy.deepcopy(state.permit), copy.deepcopy(state.result))
+                state.after_succeeded = True
             except Exception as exc:
+                state.after_error = self._redact(f"{type(exc).__name__}:{exc}")
                 self._record_error("after_send", exc)
             finally:
+                state.after_done.set()
                 self._release(state)
                 with self._condition:
                     self._collectors.discard(threading.current_thread())
@@ -556,12 +586,16 @@ class ModelProxy(StableModelProxy):
             return
         try:
             state.done.wait(max(0, answer_deadline - time.monotonic()))
+            if self._durable_before_answer and state.done.is_set():
+                state.after_done.wait(max(0, answer_deadline - time.monotonic()))
             state.answer_frozen = not state.done.is_set() or state.ready_at > answer_deadline or time.monotonic() >= answer_deadline
             state.answer_returned = frozen._utc_now()
             state.answer_decided.set()
             if state.answer_frozen:
                 handler.connection.settimeout(1)
                 handler._error(504, "D_LOCAL_TRANSPORT:answer deadline expired; accounting only")
+            elif self._durable_before_answer and not state.after_succeeded:
+                handler._error(502, "D_LOCAL_ACCOUNTING:durable settlement failed before answer")
             elif state.result["error"] is None:
                 handler.connection.settimeout(max(.001, answer_deadline - time.monotonic()))
                 handler._reply(state.status, state.result["responseBodyRaw"], **state.headers)
