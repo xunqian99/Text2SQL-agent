@@ -623,7 +623,19 @@ class ModelProxy(StableModelProxy):
             state.done.wait(max(0, answer_deadline - time.monotonic()))
             if self._durable_before_answer and state.done.is_set():
                 state.after_done.wait(max(0, answer_deadline - time.monotonic()))
-            state.answer_frozen = not state.done.is_set() or state.ready_at > answer_deadline or time.monotonic() >= answer_deadline
+            # A timely provider body is still ineligible while the durable
+            # callback is outstanding.  The old check could wake from
+            # ``after_done.wait`` at the deadline edge, observe
+            # ``after_succeeded`` as false, and return 502 even though the
+            # callback had not settled yet.  That is a transport timeout
+            # with UNKNOWN accounting, so freeze it as 504 until the
+            # callback event is durably observed.
+            state.answer_frozen = (
+                not state.done.is_set()
+                or state.ready_at > answer_deadline
+                or time.monotonic() >= answer_deadline
+                or (self._durable_before_answer and not state.after_done.is_set())
+            )
             state.answer_returned = frozen._utc_now()
             state.answer_decided.set()
             if state.answer_frozen:
