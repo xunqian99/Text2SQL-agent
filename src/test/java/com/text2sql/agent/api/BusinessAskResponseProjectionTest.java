@@ -71,6 +71,23 @@ class BusinessAskResponseProjectionTest {
     }
 
     @Test
+    void nullCellsInCategoryRowsRemainSerializable() {
+        AgentResponse source = AgentResponse.success(
+                "按品类展示销售额", "SELECT ...", false,
+                new AgentResponse.QueryOutcome(
+                        List.of("category", "gmv"),
+                        List.of(List.of("未分类", "100.00"), java.util.Arrays.asList(null, "0.00")), false),
+                CALL, 1, List.of("orders", "order_items"), 64,
+                new AgentResponse.Timings(1, 2, 1, 3, 7));
+
+        AskController.BusinessAskResponse result = AskController.BusinessAskResponse.from(source);
+
+        assertThat(result.rows()).hasSize(2);
+        assertThat(result.rows().get(1).get(0)).isNull();
+        assertThat(JSON.valueToTree(result).path("rows").get(1).get(0).isNull()).isTrue();
+    }
+
+    @Test
     void internalFailureBecomesBusinessSafeMessage() {
         AgentResponse source = AgentResponse.failed(
                 "查销售额", AgentResponse.Status.EXECUTION_FAILED, "SELECT secret",

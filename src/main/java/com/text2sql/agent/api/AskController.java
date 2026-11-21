@@ -263,7 +263,7 @@ public class AskController {
             List<String> columns = sourceColumns.stream().map(BusinessAskResponse::friendlyColumn).toList();
             List<List<String>> rows = source.rows() == null
                     ? List.of()
-                    : source.rows().stream().map(row -> row == null ? List.<String>of() : List.copyOf(row)).toList();
+                    : source.rows().stream().map(BusinessAskResponse::copyRowPreservingNulls).toList();
             String status = publicStatus(source.status());
             String message = businessMessage(source);
             String metricColumn = metricColumn(sourceColumns);
@@ -343,6 +343,12 @@ public class AskController {
             } catch (NumberFormatException ignored) {
                 return value;
             }
+        }
+
+        private static List<String> copyRowPreservingNulls(List<String> row) {
+            if (row == null) return List.of();
+            // SQL 聚合/左连接结果允许出现 NULL；List.copyOf 会拒绝 NULL，导致整个业务接口 500。
+            return java.util.Collections.unmodifiableList(new java.util.ArrayList<>(row));
         }
 
         private static String friendlyColumn(String column) {
