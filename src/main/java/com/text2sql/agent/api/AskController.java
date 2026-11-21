@@ -69,13 +69,33 @@ public class AskController {
     public ResponseEntity<AskResponse> ask(
             @Valid @RequestBody AskRequest request,
             @RequestHeader(value = "X-Api-Key", required = false) String headerApiKey) {
+        AgentResponse response = execute(request, headerApiKey);
+        return ResponseEntity.status(httpStatus(response)).body(AskResponse.from(response));
+    }
+
+    /**
+     * 业务工作台专用入口。它复用同一条只读问数链路，但只投影业务字段，
+     * 避免页面通过 CSS 隐藏 SQL、Token 或模型诊断来假装完成隔离。
+     */
+    @PostMapping("/business/ask")
+    public ResponseEntity<BusinessAskResponse> businessAsk(
+            @Valid @RequestBody AskRequest request,
+            @RequestHeader(value = "X-Api-Key", required = false) String headerApiKey) {
+        AgentResponse response = execute(request, headerApiKey);
+        return ResponseEntity.status(httpStatus(response)).body(BusinessAskResponse.from(response));
+    }
+
+    private AgentResponse execute(AskRequest request, String headerApiKey) {
         String apiKey = (request.apiKey() != null && !request.apiKey().isBlank())
                 ? request.apiKey()
                 : headerApiKey;
-        AgentResponse response = Boolean.TRUE.equals(request.endSession())
+        return Boolean.TRUE.equals(request.endSession())
                 ? orchestrator.ask(request.question(), request.sessionId(), apiKey, true)
                 : orchestrator.ask(request.question(), request.sessionId(), apiKey);
-        HttpStatus status = switch (response.status()) {
+    }
+
+    private static HttpStatus httpStatus(AgentResponse response) {
+        return switch (response.status()) {
             case SUCCESS -> HttpStatus.OK;
             case NOT_CONFIGURED -> HttpStatus.SERVICE_UNAVAILABLE;
             case REJECTED -> HttpStatus.UNPROCESSABLE_ENTITY;
@@ -85,7 +105,6 @@ public class AskController {
             case REQUEST_TIMEOUT -> HttpStatus.GATEWAY_TIMEOUT;
             case RESOURCE_LIMITED -> HttpStatus.SERVICE_UNAVAILABLE;
         };
-        return ResponseEntity.status(status).body(AskResponse.from(response));
     }
 
     /**
@@ -215,6 +234,132 @@ public class AskController {
                     r.columns(), r.rows(), r.truncated(), r.rewritten(), r.rowCount(),
                     r.schemaTableCount(), r.retrievedTables(), r.schemaDdlChars(),
                     llm, timings, r.sessionId(), r.rewrittenQuestion(), r.schemaReused(), r.budget(), provenance);
+        }
+    }
+
+    /**
+     * 业务工作台响应白名单。内部执行证据只通过 {@link AskResponse} 提供给诊断入口，
+     * 不能把完整 AgentResponse 直接序列化到业务页面。
+     */
+    public record BusinessAskResponse(
+            String status,
+            String question,
+            String message,
+            String title,
+            String unit,
+            String summary,
+            List<String> columns,
+            List<List<String>> rows,
+            boolean truncated,
+            int rowCount,
+            String sessionId,
+            List<String> availableDrilldowns,
+            String dataAsOf) {
+
+        private static final String DATA_AS_OF = "Olist 本地分析快照";
+
+        public static BusinessAskResponse from(AgentResponse source) {
+            List<String> sourceColumns = source.columns() == null ? List.of() : source.columns();
+            List<String> columns = sourceColumns.stream().map(BusinessAskResponse::friendlyColumn).toList();
+            List<List<String>> rows = source.rows() == null
+                    ? List.of()
+                    : source.rows().stream().map(row -> row == null ? List.<String>of() : List.copyOf(row)).toList();
+            String status = publicStatus(source.status());
+            String message = businessMessage(source);
+            String metricColumn = metricColumn(sourceColumns);
+            String unit = inferUnit(metricColumn);
+            String title = source.status() == AgentResponse.Status.SUCCESS
+                    ? friendlyColumn(metricColumn == null ? "result" : metricColumn)
+                    : null;
+            String summary = source.status() == AgentResponse.Status.SUCCESS && rows.size() == 1
+                    && rows.getFirst().size() == 1
+                    ? formatSummary(rows.getFirst().getFirst(), unit)
+                    : null;
+            String contextQuestion = source.rewrittenQuestion() == null
+                    ? source.question() : source.rewrittenQuestion();
+            return new BusinessAskResponse(status, source.question(), message, title, unit, summary,
+                    columns, rows, source.truncated(), rows.size(), source.sessionId(),
+                    drilldowns(source.status(), contextQuestion, sourceColumns), DATA_AS_OF);
+        }
+
+        private static String publicStatus(AgentResponse.Status status) {
+            return switch (status) {
+                case SUCCESS -> "SUCCESS";
+                case NEEDS_CLARIFICATION -> "NEEDS_CLARIFICATION";
+                default -> "FAILED";
+            };
+        }
+
+        private static String businessMessage(AgentResponse source) {
+            if (source.status() == AgentResponse.Status.NEEDS_CLARIFICATION) return source.message();
+            if (source.status() == AgentResponse.Status.SUCCESS) return null;
+            return switch (source.status()) {
+                case NOT_CONFIGURED -> "分析服务暂不可用，请联系系统管理员。";
+                case REJECTED -> "这个问题无法安全执行，请缩小范围或换一种问法。";
+                default -> "暂时无法完成分析，请稍后重试。";
+            };
+        }
+
+        private static List<String> drilldowns(AgentResponse.Status status, String question, List<String> columns) {
+            if (status != AgentResponse.Status.SUCCESS || question == null
+                    || !question.matches("(?s).*(销售额|GMV|成交总额|商品交易总额).*") ) {
+                return List.of();
+            }
+            String normalized = String.join("|", columns).toLowerCase(java.util.Locale.ROOT);
+            var result = new java.util.ArrayList<String>();
+            if (!normalized.contains("month") && !normalized.contains("月份")) result.add("MONTH");
+            if (!normalized.contains("categor") && !normalized.contains("品类")) result.add("CATEGORY");
+            if (!normalized.contains("state") && !normalized.contains("地区") && !normalized.contains("州")) result.add("REGION");
+            return List.copyOf(result);
+        }
+
+        private static String metricColumn(List<String> columns) {
+            return columns.stream().filter(c -> c != null && isMetric(c)).findFirst()
+                    .orElse(columns.isEmpty() ? null : columns.getLast());
+        }
+
+        private static boolean isMetric(String column) {
+            String key = column.toLowerCase(java.util.Locale.ROOT);
+            return key.contains("gmv") || key.contains("sales") || key.contains("amount")
+                    || key.contains("price") || key.contains("freight") || key.contains("count")
+                    || key.contains("rate") || key.contains("ratio") || key.contains("pct");
+        }
+
+        private static String inferUnit(String column) {
+            if (column == null) return "TEXT";
+            String key = column.toLowerCase(java.util.Locale.ROOT);
+            if (key.contains("rate") || key.contains("ratio") || key.contains("pct") || key.contains("percent")) return "PERCENT";
+            if (key.contains("count") || key.contains("orders") || key.contains("items")) return "COUNT";
+            if (key.contains("gmv") || key.contains("sales") || key.contains("amount")
+                    || key.contains("price") || key.contains("freight") || key.contains("payment")) return "CNY";
+            return "TEXT";
+        }
+
+        private static String formatSummary(String value, String unit) {
+            if (value == null || value.isBlank()) return value;
+            if (!"CNY".equals(unit)) return value;
+            try {
+                return "¥" + String.format(java.util.Locale.ROOT, "%,.2f", new java.math.BigDecimal(value));
+            } catch (NumberFormatException ignored) {
+                return value;
+            }
+        }
+
+        private static String friendlyColumn(String column) {
+            if (column == null || column.isBlank() || "result".equals(column)) return "分析结果";
+            return switch (column.toLowerCase(java.util.Locale.ROOT)) {
+                case "gmv", "gmv_with_freight", "total_gmv" -> "成交总额 GMV";
+                case "sales_without_freight", "sales_amount_excl_freight" -> "不含运费商品金额";
+                case "sales_amount", "total_sales" -> "销售额";
+                case "month", "order_month" -> "月份";
+                case "product_category_name", "category_name" -> "商品品类";
+                case "customer_state" -> "客户地区";
+                case "seller_state" -> "卖家地区";
+                case "state" -> "地区";
+                case "city" -> "城市";
+                case "order_count", "orders_count", "total_orders", "cnt" -> "订单数";
+                default -> column.replace('_', ' ');
+            };
         }
     }
 }

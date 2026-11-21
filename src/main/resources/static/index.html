@@ -1326,6 +1326,38 @@
       font-size: 11.5px;
       line-height: 1.5;
     }
+    .ai-business-summary {
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      border-left: 3px solid var(--el-blue);
+      border-radius: 4px;
+      background: #f5f9ff;
+    }
+    .ai-business-summary-label {
+      color: #606266;
+      font-size: 12px;
+    }
+    .ai-business-summary-value {
+      margin-top: 3px;
+      color: #1f2d3d;
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+    }
+    .ai-business-summary-source {
+      margin-top: 5px;
+      color: #909399;
+      font-size: 11px;
+    }
+    .ai-business-drilldowns {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 10px 0;
+      color: #606266;
+      font-size: 12px;
+    }
 
     /* 视图切换按钮组 */
     .view-segmented-group {
@@ -3416,12 +3448,12 @@
       chatArea.insertAdjacentHTML('beforeend', `<div class="chat-bubble-user">${escapeHtml(q)}</div>`);
 
       const loadId = 'load-' + Date.now();
-      chatArea.insertAdjacentHTML('beforeend', `<div class="chat-bubble-ai" id="${loadId}" style="color: #909399;"><i class="ri-loader-4-line ri-spin" style="margin-right: 4px;"></i> 正在加权外键图多表拓扑寻路并执行 AST 安全护栏规则...</div>`);
+      chatArea.insertAdjacentHTML('beforeend', `<div class="chat-bubble-ai" id="${loadId}" style="color: #909399;"><i class="ri-loader-4-line ri-spin" style="margin-right: 4px;"></i> 正在分析数据，请稍候...</div>`);
       chatArea.scrollTop = chatArea.scrollHeight;
 
       try {
         const key = localStorage.getItem('AGENT_API_KEY') || '';
-        const res = await fetch('/api/ask', {
+        const res = await fetch('/api/business/ask', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-Api-Key': key },
           body: JSON.stringify({ question: q, apiKey: key, sessionId: currentSessionId })
@@ -3784,9 +3816,24 @@
         </details>`;
     }
 
+    function formatBusinessCell(unit, value) {
+      if (value === null || value === undefined) return '';
+      const raw = String(value).trim();
+      if (unit === 'CNY') {
+        const number = Number(raw);
+        if (!Number.isNaN(number)) return `¥${number.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      }
+      if (unit === 'COUNT') {
+        const number = Number(raw);
+        if (Number.isInteger(number)) return `${number.toLocaleString('zh-CN')} 笔`;
+      }
+      return escapeHtml(raw);
+    }
+
     function renderAiResult(container, resp) {
       chartCounter++;
       const chartId = 'aiChart-' + chartCounter;
+      const isBusinessResponse = !Object.prototype.hasOwnProperty.call(resp, 'sql');
       const isOk = resp.status === 'SUCCESS';
       const rows = resp.rows || resp.data || [];
       const columns = resp.columns || (rows.length > 0 ? (Array.isArray(rows[0]) ? ['列1', '列2'] : Object.keys(rows[0])) : []);
@@ -3829,19 +3876,37 @@
         }
         html += `</div>`;
       } else if (!isOk) {
-        const statusCopy = getTraceStatusCopy(resp);
-        html += `
-          <div class="ai-status-summary is-${statusCopy.tone}">
-            <div class="ai-status-title"><i class="ri-error-warning-line"></i> ${escapeHtml(statusCopy.title)}</div>
-            <div class="ai-status-detail">${escapeHtml(statusCopy.detail)}</div>
-            ${resp.message ? `<div class="ai-status-backend">系统提示：${escapeHtml(resp.message)}</div>` : ''}
-          </div>
-        `;
+        if (isBusinessResponse) {
+          html += `
+            <div class="ai-status-summary is-warn">
+              <div class="ai-status-title"><i class="ri-error-warning-line"></i> 暂时无法完成分析</div>
+              <div class="ai-status-detail">${escapeHtml(resp.message || '请稍后重试。')}</div>
+            </div>
+          `;
+        } else {
+          const statusCopy = getTraceStatusCopy(resp);
+          html += `
+            <div class="ai-status-summary is-${statusCopy.tone}">
+              <div class="ai-status-title"><i class="ri-error-warning-line"></i> ${escapeHtml(statusCopy.title)}</div>
+              <div class="ai-status-detail">${escapeHtml(statusCopy.detail)}</div>
+              ${resp.message ? `<div class="ai-status-backend">系统提示：${escapeHtml(resp.message)}</div>` : ''}
+            </div>
+          `;
+        }
       } else {
+        if (isBusinessResponse && resp.summary) {
+          html += `
+            <div class="ai-business-summary">
+              <div class="ai-business-summary-label">${escapeHtml(resp.title || '分析结果')}</div>
+              <div class="ai-business-summary-value">${escapeHtml(resp.summary)}</div>
+              <div class="ai-business-summary-source">数据源：${escapeHtml(resp.dataAsOf || '分析快照')}</div>
+            </div>
+          `;
+        }
         const ms = (resp.timings && resp.timings.totalMs) || (resp.llm && resp.llm.latencyMs) || 290;
         html += `
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
-            <span class="el-tag el-tag-success"><i class="ri-checkbox-circle-line"></i> 数仓计算完成 (耗时: ${ms}ms)</span>
+            <span class="el-tag el-tag-success"><i class="ri-checkbox-circle-line"></i> 分析完成${isBusinessResponse ? '' : ` (耗时: ${ms}ms)`}</span>
             <div class="view-segmented-group" id="btn-group-${chartId}">
               <button class="view-segmented-btn active" id="btn-table-${chartId}" onclick="toggleAiView('${chartId}', false)">
                 <i class="ri-table-line"></i> 表格视图
@@ -3854,14 +3919,23 @@
         `;
       }
 
-      // 五类终态都展示同一份证据面板，避免成功能解释、失败只能看一句红字。
-      html += renderTraceEvidence(resp);
+      // 业务页面只展示结果；诊断入口继续展示完整执行证据。
+      if (!isBusinessResponse) html += renderTraceEvidence(resp);
+
+      if (isBusinessResponse && isOk && Array.isArray(resp.availableDrilldowns) && resp.availableDrilldowns.length) {
+        const drilldownLabels = { MONTH: '按月份查看', CATEGORY: '按品类查看', REGION: '按地区查看' };
+        const drilldownQuestions = { MONTH: '按月份展示', CATEGORY: '按品类展示', REGION: '按地区展示' };
+        html += `<div class="ai-business-drilldowns"><span>继续分析：</span>${resp.availableDrilldowns.map(kind =>
+          `<button class="view-segmented-btn" onclick="askAiQuery('${drilldownQuestions[kind] || ''}')">${drilldownLabels[kind] || '继续查看'}</button>`).join('')}</div>`;
+      }
 
       if (rows && rows.length > 0) {
         html += `
           <div id="table-wrap-${chartId}" class="table-responsive-box" style="margin-top: 8px;">
             <table class="corp-table">
-              <thead><tr>${columns.map(c => `<th title="物理字段: ${escapeHtml(String(c))}">${escapeHtml(getColumnTitle(c))}</th>`).join('')}</tr></thead>
+              <thead><tr>${columns.map(c => isBusinessResponse
+                ? `<th>${escapeHtml(String(c))}</th>`
+                : `<th title="物理字段: ${escapeHtml(String(c))}">${escapeHtml(getColumnTitle(c))}</th>`).join('')}</tr></thead>
               <tbody>
                 ${rows.map(r => `<tr>${columns.map((c, idx) => {
                   const rawVal = isArrayRow ? r[idx] : r[c];
@@ -3896,8 +3970,8 @@
                     </td>`;
                   }
 
-                  // 4. 其他常规值（含金额、计数等自动格式化）
-                  return `<td>${formatCellSemantic(colName, rawVal)}</td>`;
+                  // 4. 其他常规值（业务响应按服务端给出的单位格式化）
+                  return `<td>${isBusinessResponse ? formatBusinessCell(resp.unit, rawVal) : formatCellSemantic(colName, rawVal)}</td>`;
                 }).join('')}</tr>`).join('')}
               </tbody>
             </table>
