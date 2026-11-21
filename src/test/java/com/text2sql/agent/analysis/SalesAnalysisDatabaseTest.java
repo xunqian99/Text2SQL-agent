@@ -37,7 +37,9 @@ class SalesAnalysisDatabaseTest {
         var context = new AnalysisContext(
                 "integration-session", "integration-analysis",
                 new AnalysisContext.MetricRef("gmv_with_freight", AnalysisContext.Source.METRIC_DEFINITION),
-                new AnalysisContext.Period("YEAR", "2018"), List.of(), List.of(), null,
+                new AnalysisContext.Period("YEAR", "2018"),
+                List.of(new AnalysisContext.DimensionRef("customer_state", AnalysisContext.Source.USER_DIRECT)),
+                List.of(), null,
                 "sha256:metric-v1");
 
         List<Long> elapsed = new ArrayList<>();
@@ -53,6 +55,16 @@ class SalesAnalysisDatabaseTest {
                 assertThat(new BigDecimal(result.rows().getFirst().getFirst())).isPositive();
             }
         }
+        var sellerContext = new AnalysisContext(
+                "integration-session-seller", "integration-analysis-seller",
+                new AnalysisContext.MetricRef("gmv_with_freight", AnalysisContext.Source.METRIC_DEFINITION),
+                new AnalysisContext.Period("YEAR", "2018"),
+                List.of(new AnalysisContext.DimensionRef("seller_state", AnalysisContext.Source.USER_DIRECT)),
+                List.of(), null, "sha256:metric-v1");
+        SalesAnalysisResult sellerRegion = service.analyze(sellerContext, SalesAnalysisView.REGION);
+        assertThat(sellerRegion.rows()).as("seller region should return data").isNotEmpty();
+        assertThat(sellerRegion.truncated()).isFalse();
+        assertThat(sellerRegion.elapsedMs()).isLessThan(8_000);
         Collections.sort(elapsed);
         long p95 = elapsed.get((int) Math.ceil(elapsed.size() * 0.95) - 1);
         System.out.printf("B-1 real snapshot: views=4, rows=%s, elapsedMs=%s, p95Ms=%d, modelCalls=0, apiCost=0%n",

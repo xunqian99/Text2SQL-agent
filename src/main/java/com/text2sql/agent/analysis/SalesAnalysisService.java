@@ -26,7 +26,7 @@ public class SalesAnalysisService {
     public SalesAnalysisResult analyze(AnalysisContext context, SalesAnalysisView view) {
         Objects.requireNonNull(context, "context must not be null");
         Objects.requireNonNull(view, "view must not be null");
-        AnalysisContext effective = view == SalesAnalysisView.TOTAL
+        AnalysisContext effective = view == SalesAnalysisView.TOTAL || view == SalesAnalysisView.REGION
                 ? context
                 : context.withDimension(view.dimension(), AnalysisContext.Source.INHERITED);
         SalesAnalysisQuery query = queryBuilder.build(effective, view);

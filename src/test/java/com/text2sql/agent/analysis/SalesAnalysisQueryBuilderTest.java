@@ -59,13 +59,35 @@ class SalesAnalysisQueryBuilderTest {
     @Test
     @DisplayName("地区下钻使用客户收货州并保留并列排序")
     void buildsRegionDrilldownQuery() {
-        SalesAnalysisQuery query = builder.build(context("gmv_with_freight"), SalesAnalysisView.REGION);
+        SalesAnalysisQuery query = builder.build(
+                context("gmv_with_freight").withDimension("customer_state", AnalysisContext.Source.USER_DIRECT),
+                SalesAnalysisView.REGION);
 
         assertThat(query.sql()).contains("JOIN customers c ON c.customer_id = o.customer_id")
                 .contains("c.customer_state AS region")
                 .contains("ORDER BY metric_value DESC NULLS LAST, region ASC")
                 .contains("LIMIT 200");
         assertThat(query.columns()).containsExactly("region", "metric_value");
+    }
+
+    @Test
+    @DisplayName("卖家地区澄清后使用 sellers.seller_state，不偷偷改成客户地区")
+    void buildsSellerRegionDrilldownQuery() {
+        SalesAnalysisQuery query = builder.build(
+                context("gmv_with_freight").withDimension("seller_state", AnalysisContext.Source.USER_DIRECT),
+                SalesAnalysisView.REGION);
+
+        assertThat(query.sql()).contains("JOIN sellers s ON s.seller_id = oi.seller_id")
+                .contains("s.seller_state AS region")
+                .doesNotContain("JOIN customers c ON c.customer_id = o.customer_id");
+    }
+
+    @Test
+    @DisplayName("没有完成地区来源澄清时拒绝地区下钻")
+    void rejectsRegionWithoutClarifiedBasis() {
+        assertThatThrownBy(() -> builder.build(context("gmv_with_freight"), SalesAnalysisView.REGION))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("region basis");
     }
 
     @Test

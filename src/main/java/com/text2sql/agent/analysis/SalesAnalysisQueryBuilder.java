@@ -26,11 +26,16 @@ public class SalesAnalysisQueryBuilder {
 
         String metricExpression = metricExpression(context.metric().name());
         int year = year(context.period());
+        RegionBasis regionBasis = view == SalesAnalysisView.REGION ? resolveRegionBasis(context) : null;
         boolean categoryJoin = view == SalesAnalysisView.CATEGORY
                 || context.filters().stream().anyMatch(filter -> filter.field().equals("category"));
-        boolean customerJoin = view == SalesAnalysisView.REGION
-                || context.filters().stream().anyMatch(filter ->
-                filter.field().equals("customer_state") || filter.field().equals("region"));
+        boolean customerJoin = regionBasis == RegionBasis.CUSTOMER
+                || context.filters().stream().anyMatch(filter -> filter.field().equals("customer_state")
+                || (filter.field().equals("region") && regionBasis == RegionBasis.CUSTOMER));
+        boolean sellerJoin = regionBasis == RegionBasis.SELLER
+                || context.filters().stream().anyMatch(filter -> filter.field().equals("seller_state")
+                || (filter.field().equals("region") && regionBasis == RegionBasis.SELLER));
+        String regionExpression = regionBasis == RegionBasis.SELLER ? "s.seller_state" : "c.customer_state";
 
         StringBuilder sql = new StringBuilder("SELECT ");
         switch (view) {
@@ -42,7 +47,7 @@ public class SalesAnalysisQueryBuilder {
             case CATEGORY -> sql.append(CATEGORY_EXPRESSION).append(" AS category, ")
                     .append("ROUND(COALESCE(").append(metricExpression)
                     .append(", 0), 2) AS metric_value");
-            case REGION -> sql.append("c.customer_state AS region, ")
+            case REGION -> sql.append(regionExpression).append(" AS region, ")
                     .append("ROUND(COALESCE(").append(metricExpression)
                     .append(", 0), 2) AS metric_value");
         }
@@ -57,13 +62,16 @@ public class SalesAnalysisQueryBuilder {
         if (customerJoin) {
             sql.append(" JOIN customers c ON c.customer_id = o.customer_id");
         }
+        if (sellerJoin) {
+            sql.append(" JOIN sellers s ON s.seller_id = oi.seller_id");
+        }
 
         List<String> predicates = new ArrayList<>();
         predicates.add("o.order_status NOT IN ('canceled', 'unavailable')");
         predicates.add("o.order_purchase_timestamp >= DATE '%04d-01-01'".formatted(year));
         predicates.add("o.order_purchase_timestamp < DATE '%04d-01-01'".formatted(year + 1));
         for (AnalysisFilter filter : context.filters()) {
-            predicates.add(renderFilter(filter));
+            predicates.add(renderFilter(filter, regionBasis));
         }
         sql.append(" WHERE ").append(String.join(" AND ", predicates));
 
@@ -110,17 +118,48 @@ public class SalesAnalysisQueryBuilder {
         }
     }
 
-    private static String renderFilter(AnalysisFilter filter) {
+    private static String renderFilter(AnalysisFilter filter, RegionBasis regionBasis) {
         if (filter.operator() != AnalysisFilter.Operator.EQ) {
             throw new IllegalArgumentException("Only EQ filters are supported in B-1: " + filter.field());
         }
         String expression = switch (filter.field()) {
             case "category" -> CATEGORY_EXPRESSION;
-            case "customer_state", "region" -> "c.customer_state";
+            case "customer_state" -> "c.customer_state";
+            case "seller_state" -> "s.seller_state";
+            case "region" -> regionFilterExpression(regionBasis);
             case "order_status" -> "o.order_status";
             default -> throw new IllegalArgumentException("Unsupported sales filter: " + filter.field());
         };
         return expression + " = " + quoteLiteral(filter.value());
+    }
+
+    private static RegionBasis resolveRegionBasis(AnalysisContext context) {
+        boolean customer = context.dimensions().stream()
+                .anyMatch(dimension -> dimension.name().equals("customer_state"));
+        boolean seller = context.dimensions().stream()
+                .anyMatch(dimension -> dimension.name().equals("seller_state"));
+        if (customer == seller) {
+            throw unresolvedRegionBasis();
+        }
+        return customer ? RegionBasis.CUSTOMER : RegionBasis.SELLER;
+    }
+
+    private static String regionFilterExpression(RegionBasis regionBasis) {
+        if (regionBasis == RegionBasis.SELLER) {
+            return "s.seller_state";
+        }
+        if (regionBasis == RegionBasis.CUSTOMER) {
+            return "c.customer_state";
+        }
+        throw unresolvedRegionBasis();
+    }
+
+    private static IllegalArgumentException unresolvedRegionBasis() {
+        return new IllegalArgumentException("Sales region basis must be clarified as customer_state or seller_state");
+    }
+
+    private enum RegionBasis {
+        CUSTOMER, SELLER
     }
 
     private static String quoteLiteral(String value) {

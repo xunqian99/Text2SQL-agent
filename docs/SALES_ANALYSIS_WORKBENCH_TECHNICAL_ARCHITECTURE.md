@@ -42,7 +42,7 @@
 以“查看 2018 年按品类销售额”为例：
 
 1. 页面提交 `POST /api/analysis/turns`，包含问题、`sessionId`（首轮为空）和幂等键。
-2. 会话服务创建 `sessionId`、`analysisId`，解析出指标 `gmv_with_freight`、时间范围 `2018` 和维度 `category`。
+2. 会话服务先运行口径澄清；用户确认含运费后，创建 `sessionId`、`analysisId`，解析出指标 `gmv_with_freight`、时间范围 `2018` 和维度 `category`。地区来源也必须先进入上下文，不能在查询模板里猜测。
 3. 指标注册表提供表达式、有效订单过滤、依赖表和 `metricDefinitionSha256`。
 4. Schema 检索记录直接命中的表到 `directHits`，关系扩展表到 `expandedTables`；只有 Join 图断开时才加入 `safetyBridges`。
 5. 生成器只接收结构化上下文和必要 Schema，SQL 经过 AST 只读校验、LIMIT 补全和超时执行。
@@ -62,7 +62,7 @@ AnalysisContext {
   analysisId: String
   metric: MetricRef
   period: Period
-  dimensions: List<DimensionRef>
+  dimensions: List<DimensionRef> // customer_state / seller_state 必须来自澄清结果
   filters: List<AnalysisFilter>
   sort: SortSpec?
   metricDefinitionSha256: String
@@ -116,6 +116,8 @@ POST /api/analysis/{analysisId}/close
 - 同一分析对象只允许一个 `RUNNING` 执行者，其他请求读取状态或返回冲突，不启动第二个模型调用。
 
 当前 C-1 实现由 `AnalysisStore` 承担内存状态、会话轮数、幂等索引和关闭标记；后续接入数据库持久化时保持同一状态机接口。
+
+B-1 的地区查询只接受已澄清的 `customer_state` 或 `seller_state`，缺失时在查询构建阶段安全失败。
 
 ## 8. 安全与性能
 

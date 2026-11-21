@@ -44,7 +44,9 @@ class SalesAnalysisServiceTest {
                 List.of(Arrays.asList(null, "1.0")), true, 8));
         SalesAnalysisService service = new SalesAnalysisService(executor, new SalesAnalysisQueryBuilder());
 
-        SalesAnalysisResult result = service.analyze(context(), SalesAnalysisView.REGION);
+        SalesAnalysisResult result = service.analyze(
+                context().withDimension("customer_state", AnalysisContext.Source.USER_DIRECT),
+                SalesAnalysisView.REGION);
 
         assertThat(result.rows()).containsExactly(Arrays.asList(null, "1.0"));
         assertThat(result.truncated()).isTrue();
