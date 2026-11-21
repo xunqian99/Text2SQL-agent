@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -86,11 +87,108 @@ class EvaluationReportReaderTest {
 
         mvc.perform(get("/api/evaluation/reports"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.format").value("evaluation-dashboard-v1"))
+                .andExpect(jsonPath("$.format").value("evaluation-dashboard-v2"))
                 .andExpect(jsonPath("$.readOnly").value(true))
                 .andExpect(jsonPath("$.reports[0].id").value("api"))
                 .andExpect(jsonPath("$.reports[0].sourceFiles[0].sha256").isNotEmpty())
                 .andExpect(jsonPath("$.reports[0].sampleCount").value(2));
+    }
+
+    @Test
+    void attributesFailuresIntoAllStableCategoriesAndKeepsSourceIndex() throws Exception {
+        Path first = writeJson("round-1.json", Map.of(
+                "overall", Map.of("total", 7, "correct", 0, "sqlValid", 6),
+                "retrieval", Map.of("incompleteCases", List.of(Map.of("id", "T1-001"))),
+                "itemEvidence", List.of(
+                        evidence("T1-001", "SUCCESS", false),
+                        evidence("T1-002", "GENERATION_FAILED", false),
+                        evidence("T1-003", "REJECTED", false),
+                        evidence("T1-004", "EXECUTION_FAILED", false),
+                        evidence("T1-005", "REQUEST_TIMEOUT", false),
+                        evidence("T1-006", "NEEDS_CLARIFICATION", false),
+                        evidence("T1-007", "SUCCESS", false))));
+        Path second = writeJson("round-2.json", Map.of(
+                "overall", Map.of("total", 1, "correct", 0, "sqlValid", 1),
+                "itemEvidence", List.of(evidence("T1-001", "SUCCESS", false))));
+
+        EvaluationReportReader reader = new EvaluationReportReader(JSON,
+                propertiesFor(new AgentProperties.Eval.DashboardReport("fixture", "fixture",
+                        List.of(first.toString(), second.toString()))));
+        EvaluationReportReader.ReportSummary summary = reader.read().reports().get(0);
+
+        assertThat(summary.failureAttribution()).containsExactlyInAnyOrderEntriesOf(Map.of(
+                "RETRIEVAL", 1, "GENERATION", 1, "VALIDATION", 1,
+                "EXECUTION", 1, "TIMEOUT", 1, "CLARIFICATION", 1,
+                "RESULT_MISMATCH", 2));
+        assertThat(summary.replayItems()).extracting(EvaluationReportReader.ReplayIndex::sourceIndex)
+                .containsExactly(0, 0, 0, 0, 0, 0, 0, 1);
+        assertThat(summary.replayItems()).extracting(EvaluationReportReader.ReplayIndex::itemId)
+                .containsExactly("T1-001", "T1-002", "T1-003", "T1-004", "T1-005", "T1-006", "T1-007", "T1-001");
+    }
+
+    @Test
+    void replaysSavedEvidenceAndGoldWithoutCallingModelOrDatabase() throws Exception {
+        Path evalDir = temp.resolve("eval");
+        Files.createDirectories(evalDir);
+        Files.writeString(evalDir.resolve("T1_fixture.yaml"), "- id: T1-001\n"
+                + "  difficulty: single_table_basic\n"
+                + "  question: 一共有多少笔订单？\n"
+                + "  gold_sql: SELECT COUNT(*) FROM orders;\n");
+        Files.writeString(evalDir.resolve("gold_results.json"), "{\"T1-001\":{"
+                + "\"file\":\"T1_fixture.yaml\",\"digest\":\"gold-digest\","
+                + "\"rows\":[[\"100\"]],\"row_count\":1}}\n");
+        Path report = writeJson("replay.json", Map.of(
+                "overall", Map.of("total", 1, "correct", 0, "sqlValid", 1),
+                "itemEvidence", List.of(Map.of(
+                        "id", "T1-001", "status", "SUCCESS", "correct", false,
+                        "finalSql", "SELECT COUNT(*) FROM orders WHERE order_status = 'canceled';",
+                        "message", "结果不一致", "wallLatencyMs", 42,
+                        "productionAttempts", List.of(Map.of("number", 1, "stage", "INITIAL_SQL",
+                                "status", "SUCCESS", "sql", "SELECT COUNT(*) FROM orders WHERE order_status = 'canceled';",
+                                "message", "", "correct", false, "resultSha256", "observed-sha"))))));
+
+        AgentProperties properties = propertiesFor(new AgentProperties.Eval.DashboardReport(
+                "fixture", "fixture", List.of(report.toString())));
+        properties.getEval().setDir(evalDir.toString());
+        EvaluationReportReader reader = new EvaluationReportReader(JSON, properties,
+                Clock.fixed(Instant.parse("2026-11-21T11:00:00Z"), ZoneOffset.UTC));
+
+        EvaluationReportReader.ReplaySnapshot replay = reader.replay("fixture", 0, "T1-001");
+        assertThat(replay.offlineReplay()).isTrue();
+        assertThat(replay.sourceIndex()).isZero();
+        assertThat(replay.question()).isEqualTo("一共有多少笔订单？");
+        assertThat(replay.goldSql()).contains("COUNT(*)");
+        assertThat(replay.goldResult().path("rows").get(0).get(0).asText()).isEqualTo("100");
+        assertThat(replay.goldResultSha256()).isEqualTo("gold-digest");
+        assertThat(replay.generatedSql()).contains("canceled");
+        assertThat(replay.attempts()).hasSize(1);
+        assertThat(replay.attempts().get(0).resultSha256()).isEqualTo("observed-sha");
+        assertThat(replay.category()).isEqualTo("RESULT_MISMATCH");
+
+        MockMvc mvc = MockMvcBuilders.standaloneSetup(new EvaluationReportController(reader)).build();
+        mvc.perform(get("/api/evaluation/reports/fixture/sources/0/items/T1-001/replay"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.offlineReplay").value(true))
+                .andExpect(jsonPath("$.goldSql").value("SELECT COUNT(*) FROM orders;"))
+                .andExpect(jsonPath("$.attempts[0].resultSha256").value("observed-sha"));
+    }
+
+    @Test
+    void replayFailsClosedWhenGoldEvidenceIsMissingAndControllerReturnsNotFound() throws Exception {
+        Path report = writeJson("missing-gold.json", Map.of(
+                "itemEvidence", List.of(evidence("T1-001", "SUCCESS", false))));
+        AgentProperties properties = propertiesFor(new AgentProperties.Eval.DashboardReport(
+                "fixture", "fixture", List.of(report.toString())));
+        properties.getEval().setDir(temp.resolve("missing-eval").toString());
+        EvaluationReportReader reader = new EvaluationReportReader(JSON, properties);
+
+        assertThatThrownBy(() -> reader.replay("fixture", 0, "T1-001"))
+                .isInstanceOf(EvaluationReportReader.ReplayUnavailableException.class)
+                .hasMessageContaining("Gold");
+        MockMvc mvc = MockMvcBuilders.standaloneSetup(new EvaluationReportController(reader)).build();
+        mvc.perform(get("/api/evaluation/reports/fixture/sources/0/items/T1-001/replay"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("REPLAY_UNAVAILABLE"));
     }
 
     @Test
@@ -155,5 +253,11 @@ class EvaluationReportReaderTest {
                 "correct", correct, "totalUsage", Map.of("promptTokens", 10, "completionTokens", 2,
                         "totalTokens", 12, "costYuan", 0.005),
                 "budget", Map.of("unknownUsageCalls", status.equals("REQUEST_TIMEOUT") ? 1 : 0));
+    }
+
+    private Map<String, Object> evidence(String id, String status, boolean correct) {
+        return Map.of("id", id, "difficulty", "single_table_basic", "status", status,
+                "correct", correct, "finalSql", correct ? "SELECT 1" : "SELECT 2",
+                "wallLatencyMs", 12);
     }
 }

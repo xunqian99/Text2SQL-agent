@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.text2sql.agent.config.AgentProperties;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -21,6 +22,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * 只读评测报告读取器。
@@ -34,6 +37,7 @@ import java.util.Map;
 public class EvaluationReportReader {
 
     private final ObjectMapper mapper;
+    private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory());
     private final AgentProperties properties;
     private final Clock clock;
 
@@ -64,13 +68,14 @@ public class EvaluationReportReader {
                     continue;
                 }
                 List<ReportFile> files = new ArrayList<>();
-                for (String configuredPath : spec.getPaths()) {
+                for (int sourceIndex = 0; sourceIndex < spec.getPaths().size(); sourceIndex++) {
+                    String configuredPath = spec.getPaths().get(sourceIndex);
                     if (configuredPath == null || configuredPath.isBlank()) {
                         warnings.add("跳过空评测文件路径：" + safe(spec.getId()));
                         continue;
                     }
                     try {
-                        files.add(readFile(configuredPath));
+                        files.add(readFile(sourceIndex, configuredPath));
                     } catch (IOException | RuntimeException error) {
                         warnings.add("无法读取评测文件 " + configuredPath + "：" + error.getMessage());
                     }
@@ -80,11 +85,177 @@ public class EvaluationReportReader {
                 }
             }
         }
-        return new DashboardSnapshot("evaluation-dashboard-v1", true,
+        return new DashboardSnapshot("evaluation-dashboard-v2", true,
                 Instant.now(clock).toString(), reports, warnings);
     }
 
-    private ReportFile readFile(String configuredPath) throws IOException {
+    /**
+     * 读取一条已落盘评测证据并拼出离线回放快照。
+     *
+     * <p>reportId、sourceIndex 和 itemId 只用于选择配置白名单中的已有文件；
+     * 这个方法不会创建模型客户端、不会访问 JdbcTemplate，也不会执行任何 SQL。
+     */
+    public ReplaySnapshot replay(String reportId, int sourceIndex, String itemId) {
+        AgentProperties.Eval.DashboardReport spec = configuredReport(reportId);
+        if (sourceIndex < 0 || sourceIndex >= spec.getPaths().size()) {
+            throw replayUnavailable("源报告索引不存在：" + sourceIndex);
+        }
+        String configuredPath = spec.getPaths().get(sourceIndex);
+        if (configuredPath == null || configuredPath.isBlank()) {
+            throw replayUnavailable("源报告路径为空：" + sourceIndex);
+        }
+        final ReportFile file;
+        try {
+            file = readFile(sourceIndex, configuredPath);
+        } catch (IOException | RuntimeException error) {
+            throw replayUnavailable("无法读取源报告：" + configuredPath, error);
+        }
+        if (!file.root().isObject()) {
+            throw replayUnavailable("源报告不是对象格式，无法回放：" + configuredPath);
+        }
+        JsonNode evidence = findItemEvidence(file.root(), itemId);
+        if (evidence == null) {
+            throw replayUnavailable("源报告中没有题目证据：" + itemId);
+        }
+
+        String normalizedItemId = evidence.path("id").asText("");
+        if (normalizedItemId.isBlank()) {
+            throw replayUnavailable("题目证据缺少 id：" + itemId);
+        }
+        GoldFixture gold = readGoldFixture(normalizedItemId);
+        String category = classify(evidence.path("status").asText("").toUpperCase(Locale.ROOT),
+                evidence.path("correct").asBoolean(false), retrievalIds(file.root()).contains(normalizedItemId));
+        if (category == null) category = "RESULT_MISMATCH";
+        return new ReplaySnapshot(
+                "evaluation-replay-v1",
+                true,
+                safe(spec.getId()),
+                sourceIndex,
+                file.path(),
+                file.sha256(),
+                normalizedItemId,
+                category,
+                evidence.path("status").asText(""),
+                gold.difficulty(),
+                gold.question(),
+                gold.goldSql(),
+                gold.result(),
+                gold.resultSha256(),
+                firstNonBlank(evidence.path("finalSql").asText(""), evidence.path("generatedSql").asText("")),
+                evidence.path("message").isNull() ? "" : evidence.path("message").asText(""),
+                evidence.path("correct").asBoolean(false),
+                firstNonBlank(evidence.path("observedResultSha256").asText(""),
+                        evidence.path("resultSha256").asText("")),
+                replayAttempts(evidence));
+    }
+
+    private AgentProperties.Eval.DashboardReport configuredReport(String reportId) {
+        AgentProperties.Eval eval = properties.getEval();
+        AgentProperties.Eval.Dashboard dashboard = eval == null ? null : eval.getDashboard();
+        List<AgentProperties.Eval.DashboardReport> reports = dashboard == null ? List.of() : dashboard.getReports();
+        if (reports != null) {
+            for (AgentProperties.Eval.DashboardReport report : reports) {
+                if (report != null && safe(report.getId()).equals(safe(reportId))) return report;
+            }
+        }
+        throw replayUnavailable("评测版本不在配置白名单中：" + reportId);
+    }
+
+    private JsonNode findItemEvidence(JsonNode root, String itemId) {
+        if (itemId == null || itemId.isBlank()) return null;
+        JsonNode items = root.path("itemEvidence");
+        if (!items.isArray()) return null;
+        for (JsonNode item : items) {
+            if (itemId.equals(item.path("id").asText(""))) return item;
+        }
+        return null;
+    }
+
+    private GoldFixture readGoldFixture(String itemId) {
+        String evalDir = properties.getEval() == null ? "data/eval" : properties.getEval().getDir();
+        if (evalDir == null || evalDir.isBlank()) throw replayUnavailable("评测集目录未配置");
+        Path base = Path.of(evalDir).normalize();
+        Path resultsPath = base.resolve("gold_results.json").normalize();
+        try {
+            if (!Files.isRegularFile(resultsPath)) {
+                throw replayUnavailable("缺少 Gold 结果文件：" + resultsPath);
+            }
+            JsonNode results = mapper.readTree(Files.readAllBytes(resultsPath));
+            JsonNode result = results.path(itemId);
+            if (!result.isObject() || !result.has("rows")) {
+                throw replayUnavailable("Gold 结果中没有题目：" + itemId);
+            }
+            String yamlName = result.path("file").asText("");
+            Path yamlPath = yamlName.isBlank() ? findYaml(base, itemId) : base.resolve(yamlName).normalize();
+            if (!yamlPath.startsWith(base) || !Files.isRegularFile(yamlPath)) {
+                throw replayUnavailable("缺少题目 Gold YAML：" + yamlPath);
+            }
+            JsonNode yamlRoot = yamlMapper.readTree(Files.readAllBytes(yamlPath));
+            JsonNode item = findYamlItem(yamlRoot, itemId);
+            if (item == null) throw replayUnavailable("Gold YAML 中没有题目：" + itemId);
+            String question = item.path("question").asText("");
+            String goldSql = item.path("gold_sql").asText("");
+            String difficulty = item.path("difficulty").asText("");
+            if (question.isBlank() || goldSql.isBlank() || difficulty.isBlank()) {
+                throw replayUnavailable("Gold YAML 证据不完整：" + itemId);
+            }
+            String digest = firstNonBlank(result.path("sha256").asText(""), result.path("digest").asText(""));
+            return new GoldFixture(question, goldSql, difficulty, result, digest);
+        } catch (IOException | RuntimeException error) {
+            if (error instanceof ReplayUnavailableException unavailable) throw unavailable;
+            throw replayUnavailable("读取 Gold 证据失败：" + itemId, error);
+        }
+    }
+
+    private Path findYaml(Path base, String itemId) throws IOException {
+        try (Stream<Path> paths = Files.list(base)) {
+            return paths.filter(path -> path.getFileName().toString().endsWith(".yaml"))
+                    .filter(path -> {
+                        try {
+                            return findYamlItem(yamlMapper.readTree(Files.readAllBytes(path)), itemId) != null;
+                        } catch (IOException ignored) {
+                            return false;
+                        }
+                    }).findFirst().orElse(base.resolve("missing-" + itemId + ".yaml"));
+        }
+    }
+
+    private JsonNode findYamlItem(JsonNode root, String itemId) {
+        if (root == null || !root.isArray()) return null;
+        for (JsonNode item : root) if (itemId.equals(item.path("id").asText(""))) return item;
+        return null;
+    }
+
+    private List<ReplayAttempt> replayAttempts(JsonNode evidence) {
+        JsonNode attempts = evidence.path("productionAttempts");
+        if (!attempts.isArray()) return List.of();
+        List<ReplayAttempt> result = new ArrayList<>();
+        for (JsonNode attempt : attempts) {
+            result.add(new ReplayAttempt(
+                    intValue(attempt, "number", result.size() + 1),
+                    attempt.path("stage").asText(""),
+                    attempt.path("status").asText(""),
+                    attempt.path("sql").isNull() ? "" : attempt.path("sql").asText(""),
+                    attempt.path("message").isNull() ? "" : attempt.path("message").asText(""),
+                    attempt.path("correct").asBoolean(false),
+                    firstNonBlank(attempt.path("resultSha256").asText(""), attempt.path("observedResultSha256").asText(""))));
+        }
+        return List.copyOf(result);
+    }
+
+    private static String firstNonBlank(String first, String second) {
+        return first != null && !first.isBlank() ? first : second == null ? "" : second;
+    }
+
+    private static ReplayUnavailableException replayUnavailable(String message) {
+        return new ReplayUnavailableException(message);
+    }
+
+    private static ReplayUnavailableException replayUnavailable(String message, Throwable cause) {
+        return new ReplayUnavailableException(message, cause);
+    }
+
+    private ReportFile readFile(int sourceIndex, String configuredPath) throws IOException {
         Path path = Path.of(configuredPath).normalize();
         byte[] bytes = Files.readAllBytes(path);
         String lower = configuredPath.toLowerCase(Locale.ROOT);
@@ -99,7 +270,7 @@ public class EvaluationReportReader {
             root = mapper.readTree(bytes);
         }
         if (root == null) throw new IOException("报告内容为空");
-        return new ReportFile(configuredPath, sha256(bytes), root);
+        return new ReportFile(sourceIndex, configuredPath, sha256(bytes), root);
     }
 
     private ReportSummary summarize(AgentProperties.Eval.DashboardReport spec,
@@ -115,6 +286,7 @@ public class EvaluationReportReader {
         for (ReportFile file : files) {
             fingerprints.add(new FileFingerprint(file.path(), file.sha256()));
             JsonNode root = file.root();
+            Set<String> retrievalIds = retrievalIds(root);
             if (root.isArray()) {
                 format = format.equals("unknown") ? "jsonl" : format;
                 counters.total += root.size();
@@ -124,7 +296,7 @@ public class EvaluationReportReader {
                 counters.completionTokens += sumUsage(root, "completionTokens");
                 counters.totalTokens += sumUsage(root, "totalTokens");
                 counters.costYuan += sumUsageDouble(root, "costYuan");
-                aggregateItems(root, counters, layers);
+                aggregateItems(root, counters, layers, retrievalIds, file);
                 continue;
             }
             format = format.equals("unknown") ? "json" : format;
@@ -135,7 +307,7 @@ public class EvaluationReportReader {
                 boolean current = root.path("passedEvidenceAudit").asBoolean(false);
                 evidenceAudit = evidenceAudit == null ? current : evidenceAudit && current;
             }
-            aggregateRoot(root, counters, layers);
+            aggregateRoot(root, counters, layers, retrievalIds, file);
         }
 
         if (counters.total == 0) {
@@ -174,11 +346,15 @@ public class EvaluationReportReader {
                 counters.unknownUsage,
                 evidenceAudit,
                 fingerprints,
-                toLayerSummaries(layers));
+                toLayerSummaries(layers),
+                orderedAttributions(counters.attribution),
+                List.copyOf(counters.replayItems));
     }
 
     private void aggregateRoot(JsonNode root, Counters counters,
-                               Map<String, LayerCounter> layers) {
+                               Map<String, LayerCounter> layers,
+                               Set<String> retrievalIds,
+                               ReportFile file) {
         JsonNode overall = root.path("overall");
         JsonNode items = root.path("itemEvidence");
         int itemCount = items.isArray() ? items.size() : 0;
@@ -193,24 +369,33 @@ public class EvaluationReportReader {
         addIfNumber(counters.p50Values, overall, "p50LatencyMs");
         addIfNumber(counters.p95Values, overall, "p95LatencyMs");
         if (items.isArray() && !items.isEmpty()) {
-            aggregateItems(items, counters, layers);
+            aggregateItems(items, counters, layers, retrievalIds, file);
         } else {
             aggregateLayers(root.path("byLayer"), layers);
         }
     }
 
     private void aggregateItems(JsonNode items, Counters counters,
-                                Map<String, LayerCounter> layers) {
+                                Map<String, LayerCounter> layers,
+                                Set<String> retrievalIds,
+                                ReportFile file) {
         if (items == null || !items.isArray()) return;
         for (JsonNode item : items) {
             String status = item.path("status").asText("").toUpperCase(Locale.ROOT);
             boolean correct = item.path("correct").asBoolean(false);
-            if (status.equals("REQUEST_TIMEOUT")) counters.timeout++;
+            if (status.equals("REQUEST_TIMEOUT") || status.equals("RESOURCE_LIMITED")) counters.timeout++;
             else if (status.equals("NEEDS_CLARIFICATION")) counters.clarification++;
             else if (status.equals("REJECTED")) counters.validationRejected++;
             else if (status.equals("EXECUTION_FAILED")) counters.executionFailed++;
-            else if (status.equals("GENERATION_FAILED")) counters.generationFailed++;
+            else if (status.equals("GENERATION_FAILED") || status.equals("NOT_CONFIGURED")) counters.generationFailed++;
             else if (status.equals("SUCCESS") && !correct) counters.resultMismatch++;
+            String category = classify(status, correct, retrievalIds.contains(item.path("id").asText("")));
+            if (category != null) {
+                counters.attribution.merge(category, 1, Integer::sum);
+                counters.replayItems.add(new ReplayIndex(file.sourceIndex(), file.path(),
+                        item.path("id").asText(""), category, status,
+                        correct, longValue(item, "wallLatencyMs", 0)));
+            }
             counters.unknownUsage += intValue(item.path("budget"), "unknownUsageCalls", 0);
             String difficulty = item.path("difficulty").asText("");
             if (!difficulty.isBlank()) {
@@ -220,6 +405,37 @@ public class EvaluationReportReader {
                 if (status.equals("SUCCESS") || status.equals("EXECUTION_FAILED")) layer.sqlValid++;
             }
         }
+    }
+
+    private Set<String> retrievalIds(JsonNode root) {
+        Set<String> ids = new LinkedHashSet<>();
+        JsonNode incomplete = root.isObject() ? root.path("retrieval").path("incompleteCases") : null;
+        if (incomplete != null && incomplete.isArray()) {
+            for (JsonNode entry : incomplete) {
+                String id = entry.path("id").asText("");
+                if (!id.isBlank()) ids.add(id);
+            }
+        }
+        return ids;
+    }
+
+    private static String classify(String status, boolean correct, boolean retrievalMiss) {
+        if (status.equals("REQUEST_TIMEOUT") || status.equals("RESOURCE_LIMITED")) return "TIMEOUT";
+        if (status.equals("NEEDS_CLARIFICATION")) return "CLARIFICATION";
+        if (status.equals("REJECTED")) return "VALIDATION";
+        if (status.equals("EXECUTION_FAILED")) return "EXECUTION";
+        if (status.equals("GENERATION_FAILED") || status.equals("NOT_CONFIGURED")) return "GENERATION";
+        if (status.equals("SUCCESS") && !correct) return retrievalMiss ? "RETRIEVAL" : "RESULT_MISMATCH";
+        return null;
+    }
+
+    private static Map<String, Integer> orderedAttributions(Map<String, Integer> values) {
+        Map<String, Integer> ordered = new LinkedHashMap<>();
+        for (String category : List.of("RETRIEVAL", "GENERATION", "VALIDATION", "EXECUTION",
+                "TIMEOUT", "CLARIFICATION", "RESULT_MISMATCH")) {
+            ordered.put(category, values.getOrDefault(category, 0));
+        }
+        return ordered;
     }
 
     private void aggregateLayers(JsonNode node, Map<String, LayerCounter> layers) {
@@ -326,16 +542,19 @@ public class EvaluationReportReader {
     }
 
     private static final class ReportFile {
+        private final int sourceIndex;
         private final String path;
         private final String sha256;
         private final JsonNode root;
 
-        private ReportFile(String path, String sha256, JsonNode root) {
+        private ReportFile(int sourceIndex, String path, String sha256, JsonNode root) {
+            this.sourceIndex = sourceIndex;
             this.path = path;
             this.sha256 = sha256;
             this.root = root;
         }
 
+        int sourceIndex() { return sourceIndex; }
         String path() { return path; }
         String sha256() { return sha256; }
         JsonNode root() { return root; }
@@ -356,6 +575,8 @@ public class EvaluationReportReader {
         int generationFailed;
         int resultMismatch;
         int unknownUsage;
+        Map<String, Integer> attribution = new LinkedHashMap<>();
+        List<ReplayIndex> replayItems = new ArrayList<>();
         List<Double> p50Values = new ArrayList<>();
         List<Double> p95Values = new ArrayList<>();
     }
@@ -383,7 +604,9 @@ public class EvaluationReportReader {
                                 int generationFailedCount, int resultMismatchCount,
                                 int unknownUsageCalls, Boolean passedEvidenceAudit,
                                 List<FileFingerprint> sourceFiles,
-                                Map<String, LayerSummary> byLayer) {
+                                Map<String, LayerSummary> byLayer,
+                                Map<String, Integer> failureAttribution,
+                                List<ReplayIndex> replayItems) {
     }
 
     public record FileFingerprint(String path, String sha256) {
@@ -391,5 +614,40 @@ public class EvaluationReportReader {
 
     public record LayerSummary(int sampleCount, int correct, double accuracy,
                                int sqlValid, long p95LatencyMs) {
+    }
+
+    public record ReplayIndex(int sourceIndex, String sourceFile, String itemId,
+                              String category, String status, boolean correct,
+                              long latencyMs) {
+    }
+
+    public record ReplaySnapshot(String format, boolean offlineReplay,
+                                 String reportId, int sourceIndex, String sourceFile,
+                                 String sourceSha256, String itemId, String category,
+                                 String status, String difficulty, String question,
+                                 String goldSql, JsonNode goldResult,
+                                 String goldResultSha256, String generatedSql,
+                                 String message, boolean correct,
+                                 String observedResultSha256,
+                                 List<ReplayAttempt> attempts) {
+    }
+
+    public record ReplayAttempt(int number, String stage, String status,
+                                String sql, String message, boolean correct,
+                                String resultSha256) {
+    }
+
+    private record GoldFixture(String question, String goldSql, String difficulty,
+                               JsonNode result, String resultSha256) {
+    }
+
+    public static class ReplayUnavailableException extends RuntimeException {
+        public ReplayUnavailableException(String message) {
+            super(message);
+        }
+
+        public ReplayUnavailableException(String message, Throwable cause) {
+            super(message, cause);
+        }
     }
 }

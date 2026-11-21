@@ -2,7 +2,9 @@ package com.text2sql.agent.api;
 
 import com.text2sql.agent.evaluation.EvaluationReportReader;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -26,5 +28,20 @@ public class EvaluationReportController {
     @GetMapping("/reports")
     public ResponseEntity<EvaluationReportReader.DashboardSnapshot> reports() {
         return ResponseEntity.ok(reader.read());
+    }
+
+    @GetMapping("/reports/{reportId}/sources/{sourceIndex}/items/{itemId}/replay")
+    public ResponseEntity<?> replay(@PathVariable String reportId,
+                                    @PathVariable int sourceIndex,
+                                    @PathVariable String itemId) {
+        try {
+            return ResponseEntity.ok(reader.replay(reportId, sourceIndex, itemId));
+        } catch (EvaluationReportReader.ReplayUnavailableException error) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ReplayError("REPLAY_UNAVAILABLE", error.getMessage()));
+        }
+    }
+
+    private record ReplayError(String code, String message) {
     }
 }
