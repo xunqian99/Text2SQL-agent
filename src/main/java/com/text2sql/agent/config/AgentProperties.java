@@ -484,12 +484,26 @@ public class AgentProperties {
         /** 单因素消融入口：默认保留四步指令；关闭不改变供应商reasoning_effort。 */
         private boolean explicitReasoningEnabled = true;
 
+        /**
+         * N1 候选：只压缩同一请求中跨指标完全重复的自然语言约束。
+         * 默认关闭，保证当前 C1 生产 prompt 字节级保持不变；无法追踪来源时压缩器也会回退原文。
+         */
+        private boolean businessContextCompressionEnabled = false;
+
         public boolean isExplicitReasoningEnabled() {
             return explicitReasoningEnabled;
         }
 
         public void setExplicitReasoningEnabled(boolean explicitReasoningEnabled) {
             this.explicitReasoningEnabled = explicitReasoningEnabled;
+        }
+
+        public boolean isBusinessContextCompressionEnabled() {
+            return businessContextCompressionEnabled;
+        }
+
+        public void setBusinessContextCompressionEnabled(boolean businessContextCompressionEnabled) {
+            this.businessContextCompressionEnabled = businessContextCompressionEnabled;
         }
 
         /**

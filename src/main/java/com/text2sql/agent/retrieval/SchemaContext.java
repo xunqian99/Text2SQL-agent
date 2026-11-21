@@ -1,6 +1,8 @@
 package com.text2sql.agent.retrieval;
 
 import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Collections;
 import java.util.Set;
 
 /**
@@ -20,14 +22,54 @@ public record SchemaContext(
         String ddlText,
         String metricsText,   // 命中的业务指标定义（阶段 4，可选，可能为空串）
         List<com.text2sql.agent.fewshot.Example> examples, // Few-shot 参考示例（阶段 A，可选）
-        String valueHints) { // 实体与枚举值取值对齐提示（阶段 E，可选）
+        String valueHints, // 实体与枚举值取值对齐提示（阶段 E，可选）
+        SourceProvenance sourceProvenance) { // 本次请求的来源凭据（可选）
+
+    /**
+     * 记录 schema 子集的来源身份。四类集合故意分开，不能合并成一个“相关表”集合：
+     * 直接命中和图扩展的排序语义不同，指标依赖与安全桥表也不参加 lexical Top-K。
+     * {@code traceable=false} 表示旧调用点没有提供完整凭据，任何依赖来源审计的候选逻辑
+     * 都必须 fail-open 回退原文。
+     */
+    public record SourceProvenance(
+            Set<String> directHits,
+            Set<String> expandedTables,
+            Set<String> metricDependencies,
+            Set<String> safetyBridges,
+            boolean fallback,
+            boolean traceable) {
+
+        public SourceProvenance {
+            directHits = immutableNames(directHits);
+            expandedTables = immutableNames(expandedTables);
+            metricDependencies = immutableNames(metricDependencies);
+            safetyBridges = immutableNames(safetyBridges);
+        }
+
+        public static SourceProvenance unknown() {
+            return new SourceProvenance(Set.of(), Set.of(), Set.of(), Set.of(), false, false);
+        }
+
+        public static SourceProvenance fallback(Set<String> metricDependencies) {
+            return new SourceProvenance(Set.of(), Set.of(), metricDependencies, Set.of(), true, true);
+        }
+
+        private static Set<String> immutableNames(Set<String> values) {
+            if (values == null || values.isEmpty()) return Set.of();
+            var copy = new LinkedHashSet<String>();
+            for (String value : values) {
+                if (value != null && !value.isBlank()) copy.add(value);
+            }
+            return Collections.unmodifiableSet(copy);
+        }
+    }
 
     /**
      * 兼容旧签名的构造器：不注入业务指标、Few-shot 示例与实体对齐。
      */
     public SchemaContext(List<Table> tables, List<ForeignKey> foreignKeys,
                          String dataProfile, String ddlText) {
-        this(tables, foreignKeys, dataProfile, ddlText, "", List.of(), "");
+        this(tables, foreignKeys, dataProfile, ddlText, "", List.of(), "", SourceProvenance.unknown());
     }
 
     /**
@@ -35,7 +77,7 @@ public record SchemaContext(
      */
     public SchemaContext(List<Table> tables, List<ForeignKey> foreignKeys,
                          String dataProfile, String ddlText, String metricsText) {
-        this(tables, foreignKeys, dataProfile, ddlText, metricsText, List.of(), "");
+        this(tables, foreignKeys, dataProfile, ddlText, metricsText, List.of(), "", SourceProvenance.unknown());
     }
 
     /**
@@ -44,7 +86,18 @@ public record SchemaContext(
     public SchemaContext(List<Table> tables, List<ForeignKey> foreignKeys,
                          String dataProfile, String ddlText, String metricsText,
                          List<com.text2sql.agent.fewshot.Example> examples) {
-        this(tables, foreignKeys, dataProfile, ddlText, metricsText, examples, "");
+        this(tables, foreignKeys, dataProfile, ddlText, metricsText, examples, "", SourceProvenance.unknown());
+    }
+
+    /**
+     * 兼容现有七参数调用点；旧调用没有来源审计信息，显式标记为 unknown。
+     */
+    public SchemaContext(List<Table> tables, List<ForeignKey> foreignKeys,
+                         String dataProfile, String ddlText, String metricsText,
+                         List<com.text2sql.agent.fewshot.Example> examples,
+                         String valueHints) {
+        this(tables, foreignKeys, dataProfile, ddlText, metricsText, examples, valueHints,
+                SourceProvenance.unknown());
     }
 
     /** 是否注入了业务指标定义。 */
@@ -134,14 +187,16 @@ public record SchemaContext(
         List<ForeignKey> keptEdges = foreignKeys.stream()
                 .filter(fk -> tableNames.contains(fk.fromTable()) && tableNames.contains(fk.toTable()))
                 .toList();
-        return new SchemaContext(customTables, keptEdges, dataProfile, ddlText, metricsText, examples, valueHints);
+        return new SchemaContext(customTables, keptEdges, dataProfile, ddlText, metricsText, examples,
+                valueHints, sourceProvenance);
     }
 
     /**
      * 附加业务指标定义，返回新实例。
      */
     public SchemaContext withMetrics(String metricsText) {
-        return new SchemaContext(tables, foreignKeys, dataProfile, ddlText, metricsText, examples, valueHints);
+        return new SchemaContext(tables, foreignKeys, dataProfile, ddlText, metricsText, examples,
+                valueHints, sourceProvenance);
     }
 
     /**
@@ -149,7 +204,7 @@ public record SchemaContext(
      */
     public SchemaContext withExamples(List<com.text2sql.agent.fewshot.Example> examples) {
         return new SchemaContext(tables, foreignKeys, dataProfile, ddlText, metricsText,
-                examples == null ? List.of() : List.copyOf(examples), valueHints);
+                examples == null ? List.of() : List.copyOf(examples), valueHints, sourceProvenance);
     }
 
     /**
@@ -157,6 +212,12 @@ public record SchemaContext(
      */
     public SchemaContext withValueHints(String valueHints) {
         return new SchemaContext(tables, foreignKeys, dataProfile, ddlText, metricsText, examples,
-                valueHints == null ? "" : valueHints);
+                valueHints == null ? "" : valueHints, sourceProvenance);
+    }
+
+    /** 附加本次请求的来源凭据，不改变表、列、排序或文本内容。 */
+    public SchemaContext withSourceProvenance(SourceProvenance sourceProvenance) {
+        return new SchemaContext(tables, foreignKeys, dataProfile, ddlText, metricsText, examples,
+                valueHints, sourceProvenance == null ? SourceProvenance.unknown() : sourceProvenance);
     }
 }

@@ -1,0 +1,66 @@
+{
+  "format": "replan-n1-free-audit-v1",
+  "status": "FAIL_PRECHECK",
+  "modelCalls": 0,
+  "providerCalls": 0,
+  "realKeyReads": 0,
+  "scope": "only metrics component may change; all other prompt components and retrieval stay frozen",
+  "baseline": {
+    "path": "reports/replan-stage-a-20261119/input-inventory/capture-original-200.json",
+    "sha256": "8838dc9e5c88cb5d571cbfd161719c5cd038a5f0de5df64368995756369bef71",
+    "promptVersion": "p21-period-ranking-v21",
+    "items": 200,
+    "totalPromptChars": 1657683,
+    "promptP95Chars": 10101,
+    "metricItems": 61,
+    "metricChars": 58478,
+    "componentChars": {
+      "system": 1065400,
+      "ddlAndJoinHints": 302431,
+      "dataProfile": 76000,
+      "metrics": 58478,
+      "valueHints": 2601,
+      "exampleContents": 122758,
+      "question": 4081,
+      "framingAndInstructions": 25934
+    }
+  },
+  "optimisticUpperBound": {
+    "assumption": "delete every metric character, including rules that must actually be retained",
+    "totalPromptChars": 1599205,
+    "promptP95Chars": 8812,
+    "maxReductionFraction": 0.03527694981489223,
+    "maxReductionPercent": 3.527694981489223,
+    "gateRequiredPercent": 20.0
+  },
+  "lateTimeoutSubset": {
+    "ids": [
+      "T2-012",
+      "T2-036",
+      "T4-036",
+      "T4-041",
+      "T5-019",
+      "T6-014",
+      "T6-016",
+      "T6-021",
+      "T6-023",
+      "T6-025"
+    ],
+    "beforeMeanPromptChars": 9380.6,
+    "optimisticMeanPromptChars": 8470.8,
+    "maxReductionFraction": 0.09698739952668273,
+    "maxReductionPercent": 9.698739952668273,
+    "gateRequiredPercent": 10.0
+  },
+  "whyRejected": [
+    "The optimistic global upper bound is 3.5277%, below the required 20%.",
+    "The optimistic late-timeout upper bound is 9.6987%, below the required 10%.",
+    "Meeting either gate would require deleting schema, examples, system obligations, or changing the frozen scope."
+  ],
+  "independentChecksRequired": [
+    "51 semantic obligations and fail-open cases",
+    "9/9 dangerous negatives",
+    "four provenance sets: directHits, expandedTables, metricDependencies, safetyBridges",
+    "full build and read-only Gold200 self-check"
+  ]
+}

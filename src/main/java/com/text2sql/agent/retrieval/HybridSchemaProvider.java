@@ -119,7 +119,14 @@ public class HybridSchemaProvider implements SchemaProvider {
 
         if (result.fellBack()) {
             log.info("检索未命中任何词典词，回退全量 schema（{} 张表）", full.tables().size());
-            SchemaContext res = full;
+            Set<String> metricDependencies = new LinkedHashSet<>();
+            if (properties.getSemantic().isEnabled() && metricRegistry != null) {
+                metricRegistry.findApplicable(question, Set.copyOf(full.tableNames())).stream()
+                        .flatMap(metric -> metric.tables().stream())
+                        .forEach(metricDependencies::add);
+            }
+            SchemaContext res = full.withSourceProvenance(new SchemaContext.SourceProvenance(
+                    Set.of(), Set.of(), metricDependencies, Set.of(), true, true));
             if (properties.getSemantic().isEnabled() && metricRegistry != null) {
                 res = res.withMetrics(metricRegistry.appendPolicies(question, res.tables(),
                         metricsFor(question, Set.copyOf(res.tableNames()))));
@@ -149,7 +156,9 @@ public class HybridSchemaProvider implements SchemaProvider {
         }
         // 核心领域中枢保全：若同时召回 members 与 orders，业务中枢桥接表必定是 customers
         // 杜绝被客服工单 support_tickets 伪连通所掩盖导致漏召回真实主干表
-        if (names.contains("members") && names.contains("orders") && full.tableNames().contains("customers")) {
+        boolean safetyBridgeAdded = names.contains("members") && names.contains("orders")
+                && !names.contains("customers") && full.tableNames().contains("customers");
+        if (safetyBridgeAdded) {
             names.add("customers");
         }
         Map<String, SchemaContext.Table> byName = new LinkedHashMap<>();
@@ -209,7 +218,40 @@ public class HybridSchemaProvider implements SchemaProvider {
                     log.debug("  {} <- {}", name, result.evidence().getOrDefault(name, List.of())));
         }
 
-        SchemaContext sub = full.subset(tablesForContext, names, ddl).withMetrics(metricsFor(question, names));
+        // RetrievalResult.evidence/scores retain every candidate considered before
+        // Top-K.  Provenance must describe the tables actually injected into this
+        // SchemaContext, so intersect lexical evidence with the final table set;
+        // otherwise an evicted candidate would be falsely reported as a direct hit.
+        Set<String> selectedNames = names.stream()
+                .map(name -> name.toLowerCase(Locale.ROOT))
+                .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
+        Set<String> expandedSources = new LinkedHashSet<>();
+        if (result.expandedTables() != null) {
+            result.expandedTables().stream()
+                    .filter(name -> selectedNames.contains(name.toLowerCase(Locale.ROOT)))
+                    .forEach(expandedSources::add);
+        }
+        Set<String> expandedSourceKeys = expandedSources.stream()
+                .map(name -> name.toLowerCase(Locale.ROOT))
+                .collect(java.util.stream.Collectors.toSet());
+        Set<String> metricDependencies = new LinkedHashSet<>();
+        for (var metric : applicableMetrics) {
+            if (metric.tables() != null) metricDependencies.addAll(metric.tables());
+        }
+        Set<String> safetyBridges = safetyBridgeAdded ? Set.of("customers") : Set.of();
+        Set<String> directHits = new LinkedHashSet<>();
+        if (result.evidence() != null) {
+            result.evidence().keySet().stream()
+                    .filter(name -> selectedNames.contains(name.toLowerCase(Locale.ROOT)))
+                    .filter(name -> !expandedSourceKeys.contains(name.toLowerCase(Locale.ROOT)))
+                    .forEach(directHits::add);
+        }
+        SchemaContext.SourceProvenance provenance = new SchemaContext.SourceProvenance(
+                directHits, expandedSources, metricDependencies, safetyBridges,
+                result.fellBack(), true);
+        SchemaContext sub = full.subset(tablesForContext, names, ddl)
+                .withSourceProvenance(provenance)
+                .withMetrics(metricsFor(question, names));
         if (properties.getSemantic().isEnabled() && metricRegistry != null) {
             sub = sub.withMetrics(metricRegistry.appendPolicies(question, tablesForContext, sub.metricsText()));
         }

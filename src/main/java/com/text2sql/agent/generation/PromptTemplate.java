@@ -27,6 +27,7 @@ public class PromptTemplate {
     public static final String NO_EXPLICIT_STEPS_VERSION = "p22-c1-consolidated-v22-no-explicit-steps-v1";
 
     private final AgentProperties properties;
+    private final BusinessContextCompressor businessContextCompressor = new BusinessContextCompressor();
 
     public PromptTemplate() {
         this(new AgentProperties());
@@ -38,7 +39,9 @@ public class PromptTemplate {
     }
 
     public static String versionFor(AgentProperties properties) {
-        return properties.getPrompt().isExplicitReasoningEnabled() ? VERSION : NO_EXPLICIT_STEPS_VERSION;
+        String base = properties.getPrompt().isExplicitReasoningEnabled() ? VERSION : NO_EXPLICIT_STEPS_VERSION;
+        return properties.getPrompt().isBusinessContextCompressionEnabled()
+                ? base + "-n1-shared-v1" : base;
     }
 
     public String version() {
@@ -116,8 +119,13 @@ public class PromptTemplate {
         // 而问题必须在最后（模型对末尾注意力更强）。放在 schema 和问题中间，
         // 既在背景区，又离问题最近——需要引用时最容易够到。
         if (schema.hasMetrics()) {
+            String metricsText = schema.metricsText();
+            if (properties.getPrompt().isBusinessContextCompressionEnabled()) {
+                metricsText = businessContextCompressor
+                        .compress(metricsText, schema.sourceProvenance()).text();
+            }
             sb.append("=== 业务指标口径约定（数仓标准度量）===\n")
-                    .append(schema.metricsText()).append("\n\n");
+                    .append(metricsText).append("\n\n");
         }
         if (schema.hasValueHints()) {
             sb.append("=== 字段枚举与实体取值对齐（请直接使用以下库内真实物理值）===\n")
