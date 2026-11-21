@@ -1,0 +1,222 @@
+# Text2SQL Agent 配置。
+#
+# 三条阅读线索：
+#   1. spring.datasource.*  连接 PostgreSQL（只读查询用）
+#   2. spring.ai.model.*    显式关闭 Spring AI 自动配置，见下面的详细说明
+#   3. agent.*              项目自己的参数，对应 AgentProperties
+
+server:
+  port: 8080
+
+spring:
+  application:
+    name: text2sql-agent
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/olist
+    # 【阶段 5 的第三层防线】应用连库用**只读账号**，不是建库用的超级用户。
+    #
+    # 为什么必须有这一层：AST 校验是个软件组件，可能有洞；一旦被绕过，
+    # 攻击者拿到的权限就取决于这个账号。用 text2sql（POSTGRES_USER，超级用户）
+    # 意味着最坏情况是删库；用 text2sql_ro 意味着最坏情况只是读到了不该读的数据。
+    #
+    # 账号由 data/schema/05_readonly_role.sql 创建，只授 SELECT，
+    # 并显式 REVOKE 掉 INSERT/UPDATE/DELETE/TRUNCATE 和 CREATE。
+    # 建库/导数脚本仍然用 text2sql，那是另一条路径，不经过应用。
+    username: ${AGENT_DB_USERNAME:text2sql_ro}
+    password: ${AGENT_DB_PASSWORD:text2sql_ro}
+    hikari:
+      # 评估是串行的，5 个连接绰绰有余。池子开大没有收益，
+      # 反而会在数据库端占用更多资源，掩盖连接泄漏问题。
+      maximum-pool-size: 5
+      connection-timeout: 10000
+      initialization-fail-timeout: -1
+
+  # ---------------------------------------------------------------------------
+  # 关闭 Spring AI 的 OpenAI 自动配置。
+  #
+  # 为什么必须显式关闭：spring-ai-starter-model-openai 会在启动时
+  # 自动创建一个 OpenAiChatModel Bean。它与本项目手写的装配（见
+  # LlmSqlGenerator）冲突，而且没配 API Key 时会在启动阶段直接失败。
+  #
+  # 这些开关的默认值是 openai（matchIfMissing=true），所以「不配置」
+  # 等于「开启」。必须写成 none 才真正关掉。
+  #
+  # 代价：Spring AI 提供的自动配置能力不能用了，全部改成手工装配。
+  # 换来的是「没 Key 也能启动」，这是评估器自检能离线运行的前提。
+  # ---------------------------------------------------------------------------
+  ai:
+    model:
+      chat: none
+      embedding: none
+      image: none
+      audio:
+        speech: none
+        transcription: none
+      moderation: none
+
+agent:
+  request-budget:
+    enabled: true
+    timeout-ms: 15000
+    max-model-calls: 2
+    min-retry-remaining-ms: 2000
+  db:
+    # 结果集行数上限。设 200 的理由：评估集里最大的 gold_result 是 73 行，
+    # 200 有足够余量；同时 200 行 × 若干列的结果集在 JSON 响应里也只有几十 KB。
+    max-rows: 200
+    query-timeout-seconds: 10
+
+  guard:
+    # APPEND = 模型忘写 LIMIT 时自动补上；REJECT = 直接判定非法。
+    # 默认 APPEND，理由见 AgentProperties.Guard 的说明。
+    limit-mode: APPEND
+
+  llm:
+    provider: openai-compatible
+    # provider-default 不发 reasoning_effort；none 关闭思考须由供应商支持，先评测再启用。
+    reasoning-effort: ${AGENT_LLM_REASONING_EFFORT:provider-default}
+    # 默认 DeepSeek，因为它兼容 OpenAI 协议且价格低，适合跑 200 条评估。
+    # 换成通义/千帆/智谱/OpenAI 只需要改 base-url、completions-path、model 三行。
+    base-url: https://api.deepseek.com
+    # 补全端点路径。必须与 base-url 分开配：厂商之间路径不一样
+    # （通义 /v1/chat/completions，千帆 /v2/chat/completions），
+    # 写死在代码里就做不到「只改配置换厂商」。
+    completions-path: /v1/chat/completions
+    model: deepseek-chat
+    temperature: 0.0
+    max-tokens: 1024
+    timeout-seconds: 60
+    # API Key 从环境变量读，绝不写进这个文件。
+    # 启动前设置：$env:AGENT_LLM_API_KEY="sk-..."
+    api-key: ${AGENT_LLM_API_KEY:}
+    # 成本单价（元 / 千 token）。填真实单价后，评估报告里的成本数字才有意义。
+    # 留 0 表示只统计 token 不估算金额。
+    input-price-per-1k: 0.0
+    output-price-per-1k: 0.0
+
+  prompt:
+    # 是否把数据画像（行数、时间范围）塞进上下文。默认开。
+    # 关掉它可以让 T3 时间层整层归零，是一个值得做的消融实验。
+    include-data-profile: true
+    include-foreign-keys: true
+
+  retrieval:
+    # 阶段 2 的检索开关。false = 阶段 1 的全量 schema（baseline）；
+    # true = 按问题召回相关表。这个布尔值就是消融实验「+schema 检索」那一行。
+    #
+    # 默认 false 的理由：baseline 是验收的参照系，必须随时可复现。
+    # 优化要显式开启，而不是靠默认值悄悄生效。
+    #
+    # 跑检索版：
+    #   --agent.retrieval.enabled=true
+    enabled: false
+    # 交给模型的表数量上限。8 的取法：评估集里 4 表以上的问题只占 20 条，
+    # 且实测多表问题的 gold_sql 最多用到 6 张表，8 留了余量。
+    top-k: 8
+    # 关系扩展跳数。1 跳 = 带上直接命中表的外键邻居。
+    relation-hops: 1
+    # 每扩展一跳的分数衰减。0.4 让「直接命中」永远排在「扩展进来的」前面。
+    relation-decay: 0.4
+    # 最多从几张表出发做扩展，避免一个宽泛问题扩展出十几张表。
+    expansion-seed-limit: 3
+    # 单字别名（州/券/仓）的权重折扣，兼顾召回与误命中。
+    single-char-weight-factor: 0.5
+    # 连通性修复：Top-K 出来的表如果连不成一张图，自动补入关系图上
+    # 最短的桥接表。这是纯词法检索的结构性补丁——用户问「每个大区的
+    # 商品销售额」时不会说「客户」，但 customers 是 regions 与 orders
+    # 之间唯一的通路，漏了它 SQL 根本 join 不出来。
+    #
+    # 它和「把 top-k 调大」的区别：只补能消除不连通的那几张，
+    # 已经连通的问题一张都不补。代价是最终表数会变成
+    # top-k + bridge-repair-max-tables，这一点在报告里如实记录。
+    bridge-repair-enabled: true
+    # 最多额外补几张桥接表。不封顶会一路补到接近全量。
+    bridge-repair-max-tables: 2
+    # 英文标识符直接出现在问题里时的权重。
+    identifier-hit-weight: 1.5
+
+  # 阶段 A：Few-shot 动态示例注入。默认关闭，保持 baseline 干净。
+  fewshot:
+    enabled: false
+    max-examples: 3
+
+  # 阶段 B：启发式结果校验。默认关闭，开启后可拦截空结果、越界等静默错误并触发自纠错。
+  result-checker:
+    enabled: false
+
+  # 阶段 C：智能体侦察工具循环（Agent Tool Use）。默认关闭。
+  tool-use:
+    enabled: false
+    table-threshold: 3
+    max-rounds: 3
+
+  # 阶段 D：多轮对话记忆与指代消解。会话期间纯内存缓存，会话结束时落库。
+  conversation:
+    enabled: false
+    max-turns: 5
+    timeout-minutes: 30
+    reuse-schema: true
+    rewrite-with-llm: true
+
+  # 阶段 5：口径歧义时先反问，不猜。
+  # 交互式问数与工作台演示默认开启，遇歧义主动弹出反问卡片确认口径；跑纯离线评测时可通过参数覆盖关闭。
+  clarification:
+    enabled: true
+
+  # 阶段 5：执行失败时把真实错误回灌给模型重试一次。默认关闭，
+  # 因为首答 SQL 有效率已在 96–100%，没有多少错误信号可回灌。
+  self-correction:
+    enabled: false
+    max-attempts: 1
+
+  # 阶段 6：语义缓存。缓存 SQL 而不是结果集——结果集会过期，且过期了看不出来。
+  # 命中之后仍然走完整校验，缓存不是免检通道。
+  cache:
+    enabled: false
+    max-entries: 1000
+
+  # 阶段 6：持久化连接。刻意用**第二个账号**而不是复用业务那个——
+  # 业务账号是只读的（阶段 5 的第三层防线），同一个账号既不该也不能写。
+  # text2sql_rw 只对语义缓存、调用日志、会话四张持久化表有权限，业务表碰不到。
+  persistence:
+    enabled: false
+    url: jdbc:postgresql://localhost:5432/olist
+    username: ${AGENT_DB_PERSISTENCE_USERNAME:text2sql_rw}
+    password: ${AGENT_DB_PERSISTENCE_PASSWORD:text2sql_rw}
+
+  # 阶段 6：每次模型调用落一行 JSONL，回答「每次调用花了多少」。
+  # include-content 默认关闭：prompt 里有用户原始问题，落盘前要显式决定。
+  observability:
+    enabled: true
+    dir: reports/llm-calls
+    include-content: false
+
+  # 阶段 6：分层模型路由。默认关闭，原因是成本要等单价填好才算得出来。
+  # escalation-model 留空表示不升级；填成强模型名后，
+  # 首答跑不通时会换这个模型重试一次。
+  routing:
+    enabled: false
+    escalation-model: ""
+
+  eval:
+    # 默认关闭。跑评估时用命令行开启：
+    #   mvn spring-boot:run -Dspring-boot.run.arguments="--agent.eval.enabled=true --agent.eval.limit=50"
+    enabled: false
+    dir: data/eval
+    out-dir: reports
+    # 0 = 全部。阶段 1 验收用 50。
+    limit: 0
+    # 空 = 全部难度层。可以写 T1,T2 或 single_table_basic。
+    layers: []
+    # true = 用 gold_sql 冒充模型输出，验证评估器本身没 bug。必须先跑通这个。
+    dry-run: false
+    # gold_sql 始终当场执行（不读快照），避免快照与当前库分叉。
+
+logging:
+  level:
+    root: INFO
+    com.text2sql.agent: INFO
+    com.ecommerce.platform: INFO
+    # 打开可以看 Hikari 连接池与 SQL 执行细节，排查问题时用。
+    org.springframework.jdbc.core: INFO

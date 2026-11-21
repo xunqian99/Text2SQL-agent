@@ -1,0 +1,130 @@
+{
+  "token": "8928ef0d9f3341c88282a92b375cb1ef",
+  "round": "DEV_F",
+  "questionId": "T3-022",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2302359.1550499,
+  "answerDeadlineMonotonic": 2302359.1550499,
+  "wholeRoundDeadlineMonotonic": 2303898.4987276,
+  "offPeakBoundaryMonotonic": 2454502.5484570004,
+  "accountingDeadlineMonotonic": 2302464.1550499,
+  "admittedAt": "2026-11-21T06:44:01.765284+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-21T06:44:01.765087+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "b72d73e9d7e69a52a452556f42cbcc65267e7884a106958091a161148be2ad7d",
+  "requestBytes": 10694,
+  "inputTokenEstimate": 11718,
+  "promptChars": 5495,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00090564",
+  "result": {
+    "startedAtUtc": "2026-11-21T06:44:01.808Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "0e5125be-835a-439c-b9e2-93eb699aa504",
+      "object": "chat.completion",
+      "created": 1795243441,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT DATE_TRUNC('month', r.requested_at) AS month,\n       ROUND(SUM(r.refund_amount), 2) AS refund_amount\nFROM refunds r\nGROUP BY 1\nORDER BY 1\nLIMIT 100;",
+            "reasoning_content": "Simple: monthly refund amount sum from refunds by requested_at month. Use SUM(refund_amount). No extra filters. LIMIT needed? Aggregate with GROUP BY - rule says must LIMIT, single-row no-group aggregate exempt. Grouped aggregate needs LIMIT. Hmm, \"必须LIMIT，单行无GROUP BY的COUNT/SUM/AVG等聚合除外\" - grouped query technically should have LIMIT. But month series... I'll add LIMIT 100.\n\nOrdering time ascending."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2665,
+        "completion_tokens": 156,
+        "total_tokens": 2821,
+        "prompt_tokens_details": {
+          "cached_tokens": 2432
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 103
+        },
+        "prompt_cache_hit_tokens": 2432,
+        "prompt_cache_miss_tokens": 233
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseComplete": true,
+    "upstreamAttempted": true,
+    "requestWireComplete": true,
+    "requestWireStartedAtUtc": "2026-11-21T06:44:01.894Z",
+    "requestWireCompleteAtUtc": "2026-11-21T06:44:01.894Z",
+    "usageKnown": true,
+    "error": null,
+    "permitSnapshot": {
+      "token": "8928ef0d9f3341c88282a92b375cb1ef",
+      "round": "DEV_F",
+      "questionId": "T3-022",
+      "attempt": 1,
+      "upstreamDeadlineMonotonic": 2302359.1550499,
+      "answerDeadlineMonotonic": 2302359.1550499,
+      "wholeRoundDeadlineMonotonic": 2303898.4987276,
+      "offPeakBoundaryMonotonic": 2454502.5484570004,
+      "accountingDeadlineMonotonic": 2302464.1550499,
+      "admittedAt": "2026-11-21T06:44:01.765284+00:00",
+      "offPeak": {
+        "allowed": true,
+        "reason": "OFF_PEAK",
+        "checkedAt": "2026-11-21T06:44:01.765087+00:00",
+        "guardSeconds": 135
+      },
+      "requestBodySha256": "b72d73e9d7e69a52a452556f42cbcc65267e7884a106958091a161148be2ad7d",
+      "requestBytes": 10694,
+      "inputTokenEstimate": 11718,
+      "promptChars": 5495,
+      "reservedYuan": "0.10"
+    },
+    "permitSha256": "97a6d1ea89951fbabbf0986c3633d521e66c86e5e600f028337b6bb9e2efdb34",
+    "answerDeadlineMonotonic": 2302359.1550499,
+    "upstreamDeadlineMonotonic": 2302359.1550499,
+    "accountingDeadlineMonotonic": 2302464.1550499,
+    "postSendAccountingDeadlineMonotonic": 2302464.1550499,
+    "wholeRoundDeadlineMonotonic": 2303898.4987276,
+    "offPeakBoundaryMonotonic": 2454502.5484570004,
+    "responseHeaderAtUtc": "2026-11-21T06:44:02.033Z",
+    "responseCompleteAtUtc": "2026-11-21T06:44:03.176Z",
+    "responseBytes": 1130,
+    "responseBodySha256": "9f64a7b6ab7dde27b028c0a98a4c56c09af369ba8cb8270a1879a906a5f16e65",
+    "finishedAtUtc": "2026-11-21T06:44:03.177Z",
+    "providerBodyTimely": true,
+    "bodyReadyAtUtc": "2026-11-21T06:44:03.177Z",
+    "bodyReadyAtMonotonic": 2302345.7257535,
+    "durableBeforeAnswer": true,
+    "late": false,
+    "accountingOnly": false,
+    "answerEligible": true,
+    "answerReturnedAtUtc": null,
+    "eligibilityScope": "PROVIDER_BODY_READINESS_ONLY; HTTP delivery is controller evidence",
+    "lateSqlBackfill": false,
+    "sameSentConnectionReadOnly": true,
+    "reconnects": 0,
+    "resends": 0,
+    "responseBodyFile": "8928ef0d9f3341c88282a92b375cb1ef-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 2665,
+    "completion_tokens": 156,
+    "total_tokens": 2821,
+    "prompt_tokens_details": {
+      "cached_tokens": 2432
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 103
+    },
+    "prompt_cache_hit_tokens": 2432,
+    "prompt_cache_miss_tokens": 233
+  }
+}

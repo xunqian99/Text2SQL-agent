@@ -1,0 +1,130 @@
+{
+  "token": "84b4dd2a944047c4920571f6996987ad",
+  "round": "DEV_F",
+  "questionId": "T3-002",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2302311.2851396,
+  "answerDeadlineMonotonic": 2302311.2851396,
+  "wholeRoundDeadlineMonotonic": 2303898.4987276,
+  "offPeakBoundaryMonotonic": 2454502.5484571,
+  "accountingDeadlineMonotonic": 2302416.2851396,
+  "admittedAt": "2026-11-21T06:43:13.877768+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-21T06:43:13.877574+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "b5d5bfa4d3a50c8d47a2b17f1f9f9ec26e0c41ebf1ca7b0532c1a32ae75bc4fb",
+  "requestBytes": 11551,
+  "inputTokenEstimate": 12575,
+  "promptChars": 6405,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00133076",
+  "result": {
+    "startedAtUtc": "2026-11-21T06:43:13.918Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "dc36ad47-8a07-49cf-a683-3e0e7f779ebb",
+      "object": "chat.completion",
+      "created": 1795243393,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT EXTRACT(YEAR FROM order_purchase_timestamp)::int AS year,\n       COUNT(*) AS order_count\nFROM orders\nWHERE EXTRACT(YEAR FROM order_purchase_timestamp) IN (2017, 2018)\nGROUP BY 1\nORDER BY 1\nLIMIT 2;",
+            "reasoning_content": "We need answer SQL only. Need understand schema. User asks 2017 and 2018 each how many orders. Count orders by year based on order_purchase_timestamp likely. Need output year and order count. Only SELECT. Must LIMIT. Need perhaps order count per year for 2017/2018. Use orders. Time filter year 2017 or 2018. Group by EXTRACT(YEAR...)::int. Need order count. Count(*) per order table unique. SQL:\n\nSELECT EXTRACT(YEAR FROM order_purchase_timestamp)::int AS year, COUNT(*) AS order_count\nFROM orders\nWHERE EXTRACT(YEAR FROM order_purchase_timestamp) IN (2017,2018)\nGROUP BY 1\nORDER BY 1\nLIMIT 10;\n\nNeed maybe no explicit filter? User asks 2017 and 2018 only. yes. Use date boundary or EXTRACT. They said by time grouping year default EXTRACT. Good. Limit. Direct SQL. No explanation."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2873,
+        "completion_tokens": 273,
+        "total_tokens": 3146,
+        "prompt_tokens_details": {
+          "cached_tokens": 2688
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 209
+        },
+        "prompt_cache_hit_tokens": 2688,
+        "prompt_cache_miss_tokens": 185
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseComplete": true,
+    "upstreamAttempted": true,
+    "requestWireComplete": true,
+    "requestWireStartedAtUtc": "2026-11-21T06:43:13.991Z",
+    "requestWireCompleteAtUtc": "2026-11-21T06:43:13.991Z",
+    "usageKnown": true,
+    "error": null,
+    "permitSnapshot": {
+      "token": "84b4dd2a944047c4920571f6996987ad",
+      "round": "DEV_F",
+      "questionId": "T3-002",
+      "attempt": 1,
+      "upstreamDeadlineMonotonic": 2302311.2851396,
+      "answerDeadlineMonotonic": 2302311.2851396,
+      "wholeRoundDeadlineMonotonic": 2303898.4987276,
+      "offPeakBoundaryMonotonic": 2454502.5484571,
+      "accountingDeadlineMonotonic": 2302416.2851396,
+      "admittedAt": "2026-11-21T06:43:13.877768+00:00",
+      "offPeak": {
+        "allowed": true,
+        "reason": "OFF_PEAK",
+        "checkedAt": "2026-11-21T06:43:13.877574+00:00",
+        "guardSeconds": 135
+      },
+      "requestBodySha256": "b5d5bfa4d3a50c8d47a2b17f1f9f9ec26e0c41ebf1ca7b0532c1a32ae75bc4fb",
+      "requestBytes": 11551,
+      "inputTokenEstimate": 12575,
+      "promptChars": 6405,
+      "reservedYuan": "0.10"
+    },
+    "permitSha256": "63a963b390bd3de1756a7dc6e2dd9ba3b553c8bab393b74cc090289eb51a8570",
+    "answerDeadlineMonotonic": 2302311.2851396,
+    "upstreamDeadlineMonotonic": 2302311.2851396,
+    "accountingDeadlineMonotonic": 2302416.2851396,
+    "postSendAccountingDeadlineMonotonic": 2302416.2851396,
+    "wholeRoundDeadlineMonotonic": 2303898.4987276,
+    "offPeakBoundaryMonotonic": 2454502.5484571,
+    "responseHeaderAtUtc": "2026-11-21T06:43:14.105Z",
+    "responseCompleteAtUtc": "2026-11-21T06:43:16.338Z",
+    "responseBytes": 1542,
+    "responseBodySha256": "46c272be0fbf6a366e5eb4ed04d2538e04f96ebe52f461ce79e413d8efac0873",
+    "finishedAtUtc": "2026-11-21T06:43:16.339Z",
+    "providerBodyTimely": true,
+    "bodyReadyAtUtc": "2026-11-21T06:43:16.339Z",
+    "bodyReadyAtMonotonic": 2302298.88749,
+    "durableBeforeAnswer": true,
+    "late": false,
+    "accountingOnly": false,
+    "answerEligible": true,
+    "answerReturnedAtUtc": null,
+    "eligibilityScope": "PROVIDER_BODY_READINESS_ONLY; HTTP delivery is controller evidence",
+    "lateSqlBackfill": false,
+    "sameSentConnectionReadOnly": true,
+    "reconnects": 0,
+    "resends": 0,
+    "responseBodyFile": "84b4dd2a944047c4920571f6996987ad-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 2873,
+    "completion_tokens": 273,
+    "total_tokens": 3146,
+    "prompt_tokens_details": {
+      "cached_tokens": 2688
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 209
+    },
+    "prompt_cache_hit_tokens": 2688,
+    "prompt_cache_miss_tokens": 185
+  }
+}

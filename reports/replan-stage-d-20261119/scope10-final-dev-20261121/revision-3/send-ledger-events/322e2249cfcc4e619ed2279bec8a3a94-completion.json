@@ -1,0 +1,130 @@
+{
+  "token": "322e2249cfcc4e619ed2279bec8a3a94",
+  "round": "DEV_F",
+  "questionId": "T4-021",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2302422.026956,
+  "answerDeadlineMonotonic": 2302422.026956,
+  "wholeRoundDeadlineMonotonic": 2303898.4987276,
+  "offPeakBoundaryMonotonic": 2454502.5484566,
+  "accountingDeadlineMonotonic": 2302527.026956,
+  "admittedAt": "2026-11-21T06:45:04.642732+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-21T06:45:04.642476+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "36fb947f79b6972e8c3975a0c22c576a8da22f23c47cc793842b887294d2856f",
+  "requestBytes": 11476,
+  "inputTokenEstimate": 12500,
+  "promptChars": 6176,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00115176",
+  "result": {
+    "startedAtUtc": "2026-11-21T06:45:04.686Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "edbc245b-cd78-4643-878f-6e464a149536",
+      "object": "chat.completion",
+      "created": 1795243504,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT ca.campaign_id, COUNT(cu.usage_id) AS usage_count\nFROM campaigns ca\nJOIN coupons c ON c.campaign_id = ca.campaign_id\nJOIN coupon_usages cu ON cu.coupon_id = c.coupon_id\nGROUP BY ca.campaign_id\nORDER BY ca.campaign_id\nLIMIT 100;",
+            "reasoning_content": "Simple: campaigns -> coupons -> coupon_usages. Count usage records per campaign, only those with usages. \"使用记录数\" = count records in coupon_usages, count usage_id. Only campaigns having usages: INNER JOIN suffices.\n\nSELECT ca.campaign_id, COUNT(cu.usage_id) AS usage_count FROM campaigns ca JOIN coupons c ON c.campaign_id = ca.campaign_id JOIN coupon_usages cu ON cu.coupon_id = c.coupon_id GROUP BY ca.campaign_id ORDER BY ca.campaign_id LIMIT ... need limit. Add LIMIT 100? Required LIMIT. Use LIMIT 1000? Just add LIMIT 100.\n\nOrdering: not specified; order by campaign_id."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2874,
+        "completion_tokens": 228,
+        "total_tokens": 3102,
+        "prompt_tokens_details": {
+          "cached_tokens": 2688
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 153
+        },
+        "prompt_cache_hit_tokens": 2688,
+        "prompt_cache_miss_tokens": 186
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseComplete": true,
+    "upstreamAttempted": true,
+    "requestWireComplete": true,
+    "requestWireStartedAtUtc": "2026-11-21T06:45:04.783Z",
+    "requestWireCompleteAtUtc": "2026-11-21T06:45:04.783Z",
+    "usageKnown": true,
+    "error": null,
+    "permitSnapshot": {
+      "token": "322e2249cfcc4e619ed2279bec8a3a94",
+      "round": "DEV_F",
+      "questionId": "T4-021",
+      "attempt": 1,
+      "upstreamDeadlineMonotonic": 2302422.026956,
+      "answerDeadlineMonotonic": 2302422.026956,
+      "wholeRoundDeadlineMonotonic": 2303898.4987276,
+      "offPeakBoundaryMonotonic": 2454502.5484566,
+      "accountingDeadlineMonotonic": 2302527.026956,
+      "admittedAt": "2026-11-21T06:45:04.642732+00:00",
+      "offPeak": {
+        "allowed": true,
+        "reason": "OFF_PEAK",
+        "checkedAt": "2026-11-21T06:45:04.642476+00:00",
+        "guardSeconds": 135
+      },
+      "requestBodySha256": "36fb947f79b6972e8c3975a0c22c576a8da22f23c47cc793842b887294d2856f",
+      "requestBytes": 11476,
+      "inputTokenEstimate": 12500,
+      "promptChars": 6176,
+      "reservedYuan": "0.10"
+    },
+    "permitSha256": "d860a8e334c62bbf3f9aad7123876865ef9bfadf789b44fdf49c8399852d5b19",
+    "answerDeadlineMonotonic": 2302422.026956,
+    "upstreamDeadlineMonotonic": 2302422.026956,
+    "accountingDeadlineMonotonic": 2302527.026956,
+    "postSendAccountingDeadlineMonotonic": 2302527.026956,
+    "wholeRoundDeadlineMonotonic": 2303898.4987276,
+    "offPeakBoundaryMonotonic": 2454502.5484566,
+    "responseHeaderAtUtc": "2026-11-21T06:45:04.905Z",
+    "responseCompleteAtUtc": "2026-11-21T06:45:06.150Z",
+    "responseBytes": 1372,
+    "responseBodySha256": "40e9d1e67230f301f5ea844b8cf84ba883f305d37a4d285a4298337067a21009",
+    "finishedAtUtc": "2026-11-21T06:45:06.151Z",
+    "providerBodyTimely": true,
+    "bodyReadyAtUtc": "2026-11-21T06:45:06.151Z",
+    "bodyReadyAtMonotonic": 2302408.6994912,
+    "durableBeforeAnswer": true,
+    "late": false,
+    "accountingOnly": false,
+    "answerEligible": true,
+    "answerReturnedAtUtc": null,
+    "eligibilityScope": "PROVIDER_BODY_READINESS_ONLY; HTTP delivery is controller evidence",
+    "lateSqlBackfill": false,
+    "sameSentConnectionReadOnly": true,
+    "reconnects": 0,
+    "resends": 0,
+    "responseBodyFile": "322e2249cfcc4e619ed2279bec8a3a94-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 2874,
+    "completion_tokens": 228,
+    "total_tokens": 3102,
+    "prompt_tokens_details": {
+      "cached_tokens": 2688
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 153
+    },
+    "prompt_cache_hit_tokens": 2688,
+    "prompt_cache_miss_tokens": 186
+  }
+}

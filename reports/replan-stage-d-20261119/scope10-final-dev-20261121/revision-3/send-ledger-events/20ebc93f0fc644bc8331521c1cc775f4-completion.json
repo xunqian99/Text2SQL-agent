@@ -1,0 +1,130 @@
+{
+  "token": "20ebc93f0fc644bc8331521c1cc775f4",
+  "round": "DEV_F",
+  "questionId": "T2-014",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2302263.0187386,
+  "answerDeadlineMonotonic": 2302263.0187386,
+  "wholeRoundDeadlineMonotonic": 2303898.4987276,
+  "offPeakBoundaryMonotonic": 2454502.548457,
+  "accountingDeadlineMonotonic": 2302368.0187386,
+  "admittedAt": "2026-11-21T06:42:25.619746+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-21T06:42:25.619622+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "fb760e61a6097eccd469b158219eed3bc29a720d05b86a3f691a44a369adfc7d",
+  "requestBytes": 10453,
+  "inputTokenEstimate": 11477,
+  "promptChars": 5065,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00132264",
+  "result": {
+    "startedAtUtc": "2026-11-21T06:42:25.659Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "32ec05e9-be39-4797-8ce9-b94a358d0055",
+      "object": "chat.completion",
+      "created": 1795243345,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT COUNT(*) FILTER (WHERE payment_type = 'credit_card') AS credit_card_count,\n       COUNT(*) FILTER (WHERE payment_type = 'boleto') AS boleto_count\nFROM order_payments;",
+            "reasoning_content": "We need answer SQL only. Need interpret question: 支付方式里信用卡和 boleto 各占多少笔？ Contract named_filter_counts_v1 says one row exactly 2 count columns, no group, order credit_card then boleto. Need count records in order_payments? \"多少笔\" likely payments rows. Contract explicit COUNT(*) FILTER. Need use order_payments. Output columns? Need aliases perhaps credit_card_count, boleto_count? It says first column COUNT(*) FILTER... second. Need direct SQL. Must LIMIT? Single row no GROUP BY aggregate exempt. No code fences. Need perhaps alias exactly? Could write SELECT COUNT(*) FILTER (WHERE payment_type = 'credit_card') AS credit_card, COUNT(*) FILTER (WHERE payment_type = 'boleto') AS boleto FROM order_payments; That yields one row two counts. Need no extra filters. Use physical values. No need join orders unless \"支付方式里\" all payments. Yes.\n\nNeed ensure \"各占多少笔\" maybe percentage? But contract says counts. It overrides. We follow. No explanation."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2602,
+        "completion_tokens": 276,
+        "total_tokens": 2878,
+        "prompt_tokens_details": {
+          "cached_tokens": 2432
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 231
+        },
+        "prompt_cache_hit_tokens": 2432,
+        "prompt_cache_miss_tokens": 170
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseComplete": true,
+    "upstreamAttempted": true,
+    "requestWireComplete": true,
+    "requestWireStartedAtUtc": "2026-11-21T06:42:25.741Z",
+    "requestWireCompleteAtUtc": "2026-11-21T06:42:25.741Z",
+    "usageKnown": true,
+    "error": null,
+    "permitSnapshot": {
+      "token": "20ebc93f0fc644bc8331521c1cc775f4",
+      "round": "DEV_F",
+      "questionId": "T2-014",
+      "attempt": 1,
+      "upstreamDeadlineMonotonic": 2302263.0187386,
+      "answerDeadlineMonotonic": 2302263.0187386,
+      "wholeRoundDeadlineMonotonic": 2303898.4987276,
+      "offPeakBoundaryMonotonic": 2454502.548457,
+      "accountingDeadlineMonotonic": 2302368.0187386,
+      "admittedAt": "2026-11-21T06:42:25.619746+00:00",
+      "offPeak": {
+        "allowed": true,
+        "reason": "OFF_PEAK",
+        "checkedAt": "2026-11-21T06:42:25.619622+00:00",
+        "guardSeconds": 135
+      },
+      "requestBodySha256": "fb760e61a6097eccd469b158219eed3bc29a720d05b86a3f691a44a369adfc7d",
+      "requestBytes": 10453,
+      "inputTokenEstimate": 11477,
+      "promptChars": 5065,
+      "reservedYuan": "0.10"
+    },
+    "permitSha256": "cb2533ffedbbe3d436a49a54eefecff3a8ae291abeaf404782e5fc8b0c8310a7",
+    "answerDeadlineMonotonic": 2302263.0187386,
+    "upstreamDeadlineMonotonic": 2302263.0187386,
+    "accountingDeadlineMonotonic": 2302368.0187386,
+    "postSendAccountingDeadlineMonotonic": 2302368.0187386,
+    "wholeRoundDeadlineMonotonic": 2303898.4987276,
+    "offPeakBoundaryMonotonic": 2454502.548457,
+    "responseHeaderAtUtc": "2026-11-21T06:42:25.884Z",
+    "responseCompleteAtUtc": "2026-11-21T06:42:27.607Z",
+    "responseBytes": 1725,
+    "responseBodySha256": "5763ad23484b794f2ec7a9d96b7eee44f53421c4a891cd873d699c55c78e7fc3",
+    "finishedAtUtc": "2026-11-21T06:42:27.608Z",
+    "providerBodyTimely": true,
+    "bodyReadyAtUtc": "2026-11-21T06:42:27.608Z",
+    "bodyReadyAtMonotonic": 2302250.1567499,
+    "durableBeforeAnswer": true,
+    "late": false,
+    "accountingOnly": false,
+    "answerEligible": true,
+    "answerReturnedAtUtc": null,
+    "eligibilityScope": "PROVIDER_BODY_READINESS_ONLY; HTTP delivery is controller evidence",
+    "lateSqlBackfill": false,
+    "sameSentConnectionReadOnly": true,
+    "reconnects": 0,
+    "resends": 0,
+    "responseBodyFile": "20ebc93f0fc644bc8331521c1cc775f4-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 2602,
+    "completion_tokens": 276,
+    "total_tokens": 2878,
+    "prompt_tokens_details": {
+      "cached_tokens": 2432
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 231
+    },
+    "prompt_cache_hit_tokens": 2432,
+    "prompt_cache_miss_tokens": 170
+  }
+}

@@ -1,0 +1,130 @@
+{
+  "token": "df3e4755e3354c8e91f0253ca9b6a63e",
+  "round": "DEV_F",
+  "questionId": "T4-009",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2302388.3372584,
+  "answerDeadlineMonotonic": 2302388.3372584,
+  "wholeRoundDeadlineMonotonic": 2303898.4987276,
+  "offPeakBoundaryMonotonic": 2454502.5484569003,
+  "accountingDeadlineMonotonic": 2302493.3372584,
+  "admittedAt": "2026-11-21T06:44:30.946022+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-21T06:44:30.945883+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "6e55ed62778b408b74b37055790b6320a08ef53aa422e4c5c7df7f1987ade181",
+  "requestBytes": 9679,
+  "inputTokenEstimate": 10703,
+  "promptChars": 4619,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00275452",
+  "result": {
+    "startedAtUtc": "2026-11-21T06:44:30.997Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "6b408418-48ae-4ce2-9463-6ebf6b4a22fe",
+      "object": "chat.completion",
+      "created": 1795243470,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT payment_type, ROUND(AVG(payment_value), 2) AS avg_payment_value\nFROM order_payments\nGROUP BY payment_type\nLIMIT 100;",
+            "reasoning_content": "We need answer only SQL. Need parse question. Tables order_payments payment_type, payment_value. \"按支付方式原值分组，统计每条支付记录等权的平均支付金额，未知方式保留为NULL组，金额两位。\" Need group by payment_type original value, average payment amount per payment record equal weight. Unknown payment_type as NULL group, preserve. Need amount rounded two decimals. SQL SELECT payment_type, ROUND(AVG(payment_value),2) AS avg_payment_value? Need consider AVG numeric returns numeric, round two. Group by payment_type. Should we include NULL group? GROUP BY includes NULL. \"未知方式保留为NULL组\" means do not filter null or convert maybe just group by payment_type. Need maybe ORDER BY? Not specified. Hard rules only necessary fields, no extra order unless requested? For grouping, no sort required. But maybe dimension order? Default? No explicit sorting. Could output SELECT payment_type, ROUND(AVG(payment_value),2) AS avg_payment_value FROM order_payments GROUP BY payment_type; Need LIMIT? Group query no LIMIT? Rule must LIMIT, except single row aggregate. It says 必须LIMIT，单行无GROUP BY COUNT/SUM/AVG等聚合除外. This has GROUP BY, so must LIMIT. But unknown number of payment types, could LIMIT maybe 100. Need if must LIMIT, add LIMIT 100. Does that harm? User asked all groups; LIMIT arbitrary could truncate, but hard rule requires LIMIT. Maybe \"LIMIT 100\" acceptable. Or \"LIMIT 1000\"? We need include all payment types likely 5. But must. Could use LIMIT 100. No ORDER BY? Need deterministic? If limit without order not deterministic, but no requested order. Could maybe order by payment_type NULLS LAST? Rule says only for list null last, but grouping not list? Query needs top? Not top. Must LIMIT. Could choose LIMIT 1000 to cover all. The hard rule says 必须LIMIT. We'll output SELECT payment_type, ROUND(AVG(payment_value),2) AS avg_payment_value FROM order_payments GROUP BY payment_type LIMIT 100; Does \"每条支付记录等权\" means each row payment record equal weight; AVG(payment_value) indeed each row equal weight. Could maybe payment_value per record; order_payments primary key composite, each row a payment record. Good.\n\nNeed ensure unknown payment_type preserved as NULL group. No filter. Good.\n\nPotential issue: \"按支付方式原值分组\" means group by payment_type not payment_type name. output original value. Good.\n\nNo need join orders. Avg payment amount amount two decimals. payment_value numeric. ROUND okay.\n\nNeed only SQL no markdown. Final."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2399,
+        "completion_tokens": 622,
+        "total_tokens": 3021,
+        "prompt_tokens_details": {
+          "cached_tokens": 2176
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 585
+        },
+        "prompt_cache_hit_tokens": 2176,
+        "prompt_cache_miss_tokens": 223
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseComplete": true,
+    "upstreamAttempted": true,
+    "requestWireComplete": true,
+    "requestWireStartedAtUtc": "2026-11-21T06:44:31.077Z",
+    "requestWireCompleteAtUtc": "2026-11-21T06:44:31.077Z",
+    "usageKnown": true,
+    "error": null,
+    "permitSnapshot": {
+      "token": "df3e4755e3354c8e91f0253ca9b6a63e",
+      "round": "DEV_F",
+      "questionId": "T4-009",
+      "attempt": 1,
+      "upstreamDeadlineMonotonic": 2302388.3372584,
+      "answerDeadlineMonotonic": 2302388.3372584,
+      "wholeRoundDeadlineMonotonic": 2303898.4987276,
+      "offPeakBoundaryMonotonic": 2454502.5484569003,
+      "accountingDeadlineMonotonic": 2302493.3372584,
+      "admittedAt": "2026-11-21T06:44:30.946022+00:00",
+      "offPeak": {
+        "allowed": true,
+        "reason": "OFF_PEAK",
+        "checkedAt": "2026-11-21T06:44:30.945883+00:00",
+        "guardSeconds": 135
+      },
+      "requestBodySha256": "6e55ed62778b408b74b37055790b6320a08ef53aa422e4c5c7df7f1987ade181",
+      "requestBytes": 9679,
+      "inputTokenEstimate": 10703,
+      "promptChars": 4619,
+      "reservedYuan": "0.10"
+    },
+    "permitSha256": "474039a3b4d705c6a4679c0933a076a527ab54d6b95948494563100a6ec3462a",
+    "answerDeadlineMonotonic": 2302388.3372584,
+    "upstreamDeadlineMonotonic": 2302388.3372584,
+    "accountingDeadlineMonotonic": 2302493.3372584,
+    "postSendAccountingDeadlineMonotonic": 2302493.3372584,
+    "wholeRoundDeadlineMonotonic": 2303898.4987276,
+    "offPeakBoundaryMonotonic": 2454502.5484569003,
+    "responseHeaderAtUtc": "2026-11-21T06:44:31.178Z",
+    "responseCompleteAtUtc": "2026-11-21T06:44:35.346Z",
+    "responseBytes": 3239,
+    "responseBodySha256": "2cacb0f3857a42d48da97fdce0d1afcb1e3cf8e582d220aed06649c57b3c4860",
+    "finishedAtUtc": "2026-11-21T06:44:35.346Z",
+    "providerBodyTimely": true,
+    "bodyReadyAtUtc": "2026-11-21T06:44:35.346Z",
+    "bodyReadyAtMonotonic": 2302377.8952617,
+    "durableBeforeAnswer": true,
+    "late": false,
+    "accountingOnly": false,
+    "answerEligible": true,
+    "answerReturnedAtUtc": null,
+    "eligibilityScope": "PROVIDER_BODY_READINESS_ONLY; HTTP delivery is controller evidence",
+    "lateSqlBackfill": false,
+    "sameSentConnectionReadOnly": true,
+    "reconnects": 0,
+    "resends": 0,
+    "responseBodyFile": "df3e4755e3354c8e91f0253ca9b6a63e-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 2399,
+    "completion_tokens": 622,
+    "total_tokens": 3021,
+    "prompt_tokens_details": {
+      "cached_tokens": 2176
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 585
+    },
+    "prompt_cache_hit_tokens": 2176,
+    "prompt_cache_miss_tokens": 223
+  }
+}

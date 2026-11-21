@@ -1,0 +1,130 @@
+{
+  "token": "366bf9642ec8447bb5f71b2c94667b66",
+  "round": "DEV_F",
+  "questionId": "T3-017",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2302351.3241957,
+  "answerDeadlineMonotonic": 2302351.3241957,
+  "wholeRoundDeadlineMonotonic": 2303898.4987276,
+  "offPeakBoundaryMonotonic": 2454502.5484565003,
+  "accountingDeadlineMonotonic": 2302456.3241957,
+  "admittedAt": "2026-11-21T06:43:53.934508+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-21T06:43:53.934360+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "ff66c309736aa817ae77fc3b6b4c0f750f30ee275b1cc18ac6c7854a2005fc30",
+  "requestBytes": 11762,
+  "inputTokenEstimate": 12786,
+  "promptChars": 6565,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00122076",
+  "result": {
+    "startedAtUtc": "2026-11-21T06:43:53.977Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "939d4942-3a64-4221-93a0-b8c987139a7d",
+      "object": "chat.completion",
+      "created": 1795243433,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT ROUND(AVG(EXTRACT(EPOCH FROM (order_delivered_customer_date - order_purchase_timestamp)) / 86400)::numeric, 2) AS avg_delivery_days\nFROM orders\nWHERE order_delivered_customer_date IS NOT NULL\n  AND order_purchase_timestamp IS NOT NULL;",
+            "reasoning_content": "Need average days from order purchase to delivery. Use orders, both timestamps non-null. Average of delivered - purchase. Filter where order_delivered_customer_date not null implicitly AVG ignores nulls. Aggregate single row. Round two decimals.\n\nSQL: SELECT ROUND(AVG(EXTRACT(EPOCH FROM (order_delivered_customer_date - order_purchase_timestamp))/86400)::numeric, 2) AS avg_delivery_days FROM orders WHERE order_delivered_customer_date IS NOT NULL AND order_purchase_timestamp IS NOT NULL;\n\nEXTRACT returns numeric in Postgres for timestamp difference? EXTRACT(EPOCH) returns numeric (in PG it's numeric). Cast anyway safe. Single row aggregate no LIMIT."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2927,
+        "completion_tokens": 232,
+        "total_tokens": 3159,
+        "prompt_tokens_details": {
+          "cached_tokens": 2688
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 158
+        },
+        "prompt_cache_hit_tokens": 2688,
+        "prompt_cache_miss_tokens": 239
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseComplete": true,
+    "upstreamAttempted": true,
+    "requestWireComplete": true,
+    "requestWireStartedAtUtc": "2026-11-21T06:43:54.096Z",
+    "requestWireCompleteAtUtc": "2026-11-21T06:43:54.096Z",
+    "usageKnown": true,
+    "error": null,
+    "permitSnapshot": {
+      "token": "366bf9642ec8447bb5f71b2c94667b66",
+      "round": "DEV_F",
+      "questionId": "T3-017",
+      "attempt": 1,
+      "upstreamDeadlineMonotonic": 2302351.3241957,
+      "answerDeadlineMonotonic": 2302351.3241957,
+      "wholeRoundDeadlineMonotonic": 2303898.4987276,
+      "offPeakBoundaryMonotonic": 2454502.5484565003,
+      "accountingDeadlineMonotonic": 2302456.3241957,
+      "admittedAt": "2026-11-21T06:43:53.934508+00:00",
+      "offPeak": {
+        "allowed": true,
+        "reason": "OFF_PEAK",
+        "checkedAt": "2026-11-21T06:43:53.934360+00:00",
+        "guardSeconds": 135
+      },
+      "requestBodySha256": "ff66c309736aa817ae77fc3b6b4c0f750f30ee275b1cc18ac6c7854a2005fc30",
+      "requestBytes": 11762,
+      "inputTokenEstimate": 12786,
+      "promptChars": 6565,
+      "reservedYuan": "0.10"
+    },
+    "permitSha256": "31fa1d6a4d5c98525d0b13c3f1e95f4746fbd69123bc707e5b2f6dea4df2fb95",
+    "answerDeadlineMonotonic": 2302351.3241957,
+    "upstreamDeadlineMonotonic": 2302351.3241957,
+    "accountingDeadlineMonotonic": 2302456.3241957,
+    "postSendAccountingDeadlineMonotonic": 2302456.3241957,
+    "wholeRoundDeadlineMonotonic": 2303898.4987276,
+    "offPeakBoundaryMonotonic": 2454502.5484565003,
+    "responseHeaderAtUtc": "2026-11-21T06:43:54.203Z",
+    "responseCompleteAtUtc": "2026-11-21T06:43:56.037Z",
+    "responseBytes": 1445,
+    "responseBodySha256": "b09392117cd11667182d634fb84ea0ca133dbda01a39960c31d44ec31a0792bb",
+    "finishedAtUtc": "2026-11-21T06:43:56.038Z",
+    "providerBodyTimely": true,
+    "bodyReadyAtUtc": "2026-11-21T06:43:56.038Z",
+    "bodyReadyAtMonotonic": 2302338.5870377,
+    "durableBeforeAnswer": true,
+    "late": false,
+    "accountingOnly": false,
+    "answerEligible": true,
+    "answerReturnedAtUtc": null,
+    "eligibilityScope": "PROVIDER_BODY_READINESS_ONLY; HTTP delivery is controller evidence",
+    "lateSqlBackfill": false,
+    "sameSentConnectionReadOnly": true,
+    "reconnects": 0,
+    "resends": 0,
+    "responseBodyFile": "366bf9642ec8447bb5f71b2c94667b66-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 2927,
+    "completion_tokens": 232,
+    "total_tokens": 3159,
+    "prompt_tokens_details": {
+      "cached_tokens": 2688
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 158
+    },
+    "prompt_cache_hit_tokens": 2688,
+    "prompt_cache_miss_tokens": 239
+  }
+}

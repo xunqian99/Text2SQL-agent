@@ -1,0 +1,130 @@
+{
+  "token": "d44e791812c6420cbacdf5b7f9c2b32d",
+  "round": "DEV_F",
+  "questionId": "T3-019",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2302354.0359068,
+  "answerDeadlineMonotonic": 2302354.0359068,
+  "wholeRoundDeadlineMonotonic": 2303898.4987276,
+  "offPeakBoundaryMonotonic": 2454502.5484569,
+  "accountingDeadlineMonotonic": 2302459.0359068,
+  "admittedAt": "2026-11-21T06:43:56.635485+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-21T06:43:56.635329+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "4d5284215a785fd9c0537b532f8227e139d34c38b609b2e94ce5527b3869c03b",
+  "requestBytes": 11636,
+  "inputTokenEstimate": 12660,
+  "promptChars": 6364,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00114876",
+  "result": {
+    "startedAtUtc": "2026-11-21T06:43:56.676Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "48b17381-887b-40e4-8c4f-89bc0b5e3c62",
+      "object": "chat.completion",
+      "created": 1795243436,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT COUNT(*) AS late_order_count\nFROM orders\nWHERE order_delivered_customer_date > order_estimated_delivery_date;",
+            "reasoning_content": "We need answer SQL only. Need parse schema. User asks count orders where actual delivery time later than estimated delivery time. orders has order_delivered_customer_date and order_estimated_delivery_date. Need count orders likely distinct order_id. Need consider actual and estimated non-null implicitly comparison excludes null. \"有多少笔\" count orders. Use COUNT(*) from orders where order_delivered_customer_date > order_estimated_delivery_date. Must include LIMIT? Rule 3: must LIMIT, single-row no GROUP BY COUNT exception. So no LIMIT needed because aggregate. Output maybe count alias. Need no extra filters. SQL: SELECT COUNT(*) AS late_order_count FROM orders WHERE order_delivered_customer_date > order_estimated_delivery_date; That's it. Need think if \"实际送达时间晚于预计送达时间\" = delivered customer date > estimated. Yes.\n\nNeed produce no code fence. Ensure SELECT only. Final."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2879,
+        "completion_tokens": 226,
+        "total_tokens": 3105,
+        "prompt_tokens_details": {
+          "cached_tokens": 2688
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 197
+        },
+        "prompt_cache_hit_tokens": 2688,
+        "prompt_cache_miss_tokens": 191
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseComplete": true,
+    "upstreamAttempted": true,
+    "requestWireComplete": true,
+    "requestWireStartedAtUtc": "2026-11-21T06:43:56.752Z",
+    "requestWireCompleteAtUtc": "2026-11-21T06:43:56.752Z",
+    "usageKnown": true,
+    "error": null,
+    "permitSnapshot": {
+      "token": "d44e791812c6420cbacdf5b7f9c2b32d",
+      "round": "DEV_F",
+      "questionId": "T3-019",
+      "attempt": 1,
+      "upstreamDeadlineMonotonic": 2302354.0359068,
+      "answerDeadlineMonotonic": 2302354.0359068,
+      "wholeRoundDeadlineMonotonic": 2303898.4987276,
+      "offPeakBoundaryMonotonic": 2454502.5484569,
+      "accountingDeadlineMonotonic": 2302459.0359068,
+      "admittedAt": "2026-11-21T06:43:56.635485+00:00",
+      "offPeak": {
+        "allowed": true,
+        "reason": "OFF_PEAK",
+        "checkedAt": "2026-11-21T06:43:56.635329+00:00",
+        "guardSeconds": 135
+      },
+      "requestBodySha256": "4d5284215a785fd9c0537b532f8227e139d34c38b609b2e94ce5527b3869c03b",
+      "requestBytes": 11636,
+      "inputTokenEstimate": 12660,
+      "promptChars": 6364,
+      "reservedYuan": "0.10"
+    },
+    "permitSha256": "6a26adb14627eeec3fbaf8d6820c632781384ca63ef27c0660609abd4e98be08",
+    "answerDeadlineMonotonic": 2302354.0359068,
+    "upstreamDeadlineMonotonic": 2302354.0359068,
+    "accountingDeadlineMonotonic": 2302459.0359068,
+    "postSendAccountingDeadlineMonotonic": 2302459.0359068,
+    "wholeRoundDeadlineMonotonic": 2303898.4987276,
+    "offPeakBoundaryMonotonic": 2454502.5484569,
+    "responseHeaderAtUtc": "2026-11-21T06:43:56.887Z",
+    "responseCompleteAtUtc": "2026-11-21T06:43:58.946Z",
+    "responseBytes": 1577,
+    "responseBodySha256": "fbea875dca845a59aeefa70799abe0239fab5c1278d0d4ebad753eb216a28b19",
+    "finishedAtUtc": "2026-11-21T06:43:58.946Z",
+    "providerBodyTimely": true,
+    "bodyReadyAtUtc": "2026-11-21T06:43:58.946Z",
+    "bodyReadyAtMonotonic": 2302341.4953554,
+    "durableBeforeAnswer": true,
+    "late": false,
+    "accountingOnly": false,
+    "answerEligible": true,
+    "answerReturnedAtUtc": null,
+    "eligibilityScope": "PROVIDER_BODY_READINESS_ONLY; HTTP delivery is controller evidence",
+    "lateSqlBackfill": false,
+    "sameSentConnectionReadOnly": true,
+    "reconnects": 0,
+    "resends": 0,
+    "responseBodyFile": "d44e791812c6420cbacdf5b7f9c2b32d-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 2879,
+    "completion_tokens": 226,
+    "total_tokens": 3105,
+    "prompt_tokens_details": {
+      "cached_tokens": 2688
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 197
+    },
+    "prompt_cache_hit_tokens": 2688,
+    "prompt_cache_miss_tokens": 191
+  }
+}

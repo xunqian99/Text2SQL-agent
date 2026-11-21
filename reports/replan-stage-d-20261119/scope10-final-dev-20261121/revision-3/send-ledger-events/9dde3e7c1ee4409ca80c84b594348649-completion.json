@@ -1,0 +1,130 @@
+{
+  "token": "9dde3e7c1ee4409ca80c84b594348649",
+  "round": "DEV_F",
+  "questionId": "T6-001",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2302612.2425404,
+  "answerDeadlineMonotonic": 2302612.2425404,
+  "wholeRoundDeadlineMonotonic": 2303898.4987276,
+  "offPeakBoundaryMonotonic": 2454502.5484566,
+  "accountingDeadlineMonotonic": 2302717.2425404,
+  "admittedAt": "2026-11-21T06:48:14.898493+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-21T06:48:14.898180+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "a068283e43df78ba5832cab6d16483a66e18b4351dcc8f376636b930b3990386",
+  "requestBytes": 11759,
+  "inputTokenEstimate": 12783,
+  "promptChars": 6200,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00194684",
+  "result": {
+    "startedAtUtc": "2026-11-21T06:48:14.951Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "ada5fbaa-1c8b-4d68-8f04-ed9bf26b94bb",
+      "object": "chat.completion",
+      "created": 1795243694,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT ROUND(SUM(oi.price + oi.freight_value), 2) AS gmv_with_freight,\n       ROUND(SUM(oi.price), 2) AS sales_without_freight\nFROM orders o\nJOIN order_items oi ON oi.order_id = o.order_id\nWHERE o.order_purchase_timestamp >= '2018-01-01'\n  AND o.order_purchase_timestamp < '2019-01-01'\n  AND o.order_status NOT IN ('canceled', 'unavailable');",
+            "reasoning_content": "Need SQL: 2018 year, GMV with freight and sales without freight. Apply default filter order_status NOT IN ('canceled','unavailable'). Join orders and order_items. Time window 2018: >= '2018-01-01' and < '2019-01-01'.\n\nOutput two columns. ROUND 2. LIMIT? Aggregate single row, no limit needed (rule allows)."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2899,
+        "completion_tokens": 201,
+        "total_tokens": 3100,
+        "prompt_tokens_details": {
+          "cached_tokens": 1792
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 85
+        },
+        "prompt_cache_hit_tokens": 1792,
+        "prompt_cache_miss_tokens": 1107
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseComplete": true,
+    "upstreamAttempted": true,
+    "requestWireComplete": true,
+    "requestWireStartedAtUtc": "2026-11-21T06:48:15.027Z",
+    "requestWireCompleteAtUtc": "2026-11-21T06:48:15.027Z",
+    "usageKnown": true,
+    "error": null,
+    "permitSnapshot": {
+      "token": "9dde3e7c1ee4409ca80c84b594348649",
+      "round": "DEV_F",
+      "questionId": "T6-001",
+      "attempt": 1,
+      "upstreamDeadlineMonotonic": 2302612.2425404,
+      "answerDeadlineMonotonic": 2302612.2425404,
+      "wholeRoundDeadlineMonotonic": 2303898.4987276,
+      "offPeakBoundaryMonotonic": 2454502.5484566,
+      "accountingDeadlineMonotonic": 2302717.2425404,
+      "admittedAt": "2026-11-21T06:48:14.898493+00:00",
+      "offPeak": {
+        "allowed": true,
+        "reason": "OFF_PEAK",
+        "checkedAt": "2026-11-21T06:48:14.898180+00:00",
+        "guardSeconds": 135
+      },
+      "requestBodySha256": "a068283e43df78ba5832cab6d16483a66e18b4351dcc8f376636b930b3990386",
+      "requestBytes": 11759,
+      "inputTokenEstimate": 12783,
+      "promptChars": 6200,
+      "reservedYuan": "0.10"
+    },
+    "permitSha256": "7b8361807412a489105680b4e1bb8cd3d3c3764048a07dc57fd5f4f7fcbce7df",
+    "answerDeadlineMonotonic": 2302612.2425404,
+    "upstreamDeadlineMonotonic": 2302612.2425404,
+    "accountingDeadlineMonotonic": 2302717.2425404,
+    "postSendAccountingDeadlineMonotonic": 2302717.2425404,
+    "wholeRoundDeadlineMonotonic": 2303898.4987276,
+    "offPeakBoundaryMonotonic": 2454502.5484566,
+    "responseHeaderAtUtc": "2026-11-21T06:48:15.137Z",
+    "responseCompleteAtUtc": "2026-11-21T06:48:16.336Z",
+    "responseBytes": 1197,
+    "responseBodySha256": "bd2d4b866cefc7bb466412dffc2150d070ddf12075c7ef14ff3a55ec7ea8d89b",
+    "finishedAtUtc": "2026-11-21T06:48:16.337Z",
+    "providerBodyTimely": true,
+    "bodyReadyAtUtc": "2026-11-21T06:48:16.337Z",
+    "bodyReadyAtMonotonic": 2302598.8859387,
+    "durableBeforeAnswer": true,
+    "late": false,
+    "accountingOnly": false,
+    "answerEligible": true,
+    "answerReturnedAtUtc": null,
+    "eligibilityScope": "PROVIDER_BODY_READINESS_ONLY; HTTP delivery is controller evidence",
+    "lateSqlBackfill": false,
+    "sameSentConnectionReadOnly": true,
+    "reconnects": 0,
+    "resends": 0,
+    "responseBodyFile": "9dde3e7c1ee4409ca80c84b594348649-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 2899,
+    "completion_tokens": 201,
+    "total_tokens": 3100,
+    "prompt_tokens_details": {
+      "cached_tokens": 1792
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 85
+    },
+    "prompt_cache_hit_tokens": 1792,
+    "prompt_cache_miss_tokens": 1107
+  }
+}

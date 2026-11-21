@@ -1,0 +1,130 @@
+{
+  "token": "668e336bfff8404a8503eaaeb57f2802",
+  "round": "DEV_F",
+  "questionId": "T4-003",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2302378.0422544,
+  "answerDeadlineMonotonic": 2302378.0422544,
+  "wholeRoundDeadlineMonotonic": 2303898.4987276,
+  "offPeakBoundaryMonotonic": 2454502.5484567,
+  "accountingDeadlineMonotonic": 2302483.0422544,
+  "admittedAt": "2026-11-21T06:44:20.656177+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-21T06:44:20.655949+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "f1df8b9e679150ce66680a711b69c0f7c699d974bf706f66a67b8adcff8780e2",
+  "requestBytes": 12619,
+  "inputTokenEstimate": 13643,
+  "promptChars": 6775,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00082488",
+  "result": {
+    "startedAtUtc": "2026-11-21T06:44:20.700Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "9e01105f-37d1-4661-adf9-3b51a937efce",
+      "object": "chat.completion",
+      "created": 1795243460,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT p.product_category_name, COUNT(DISTINCT oi.order_id) AS order_count\nFROM order_items oi\nJOIN products p ON p.product_id = oi.product_id\nWHERE p.product_category_name IS NOT NULL\nGROUP BY p.product_category_name\nORDER BY order_count DESC\nLIMIT 100;",
+            "reasoning_content": "Simple: group by product_category_name, count distinct orders. Apply null policy: exclude null category. Need join order_items -> products. Count distinct oi.order_id per category.\n\nNo ordering specified; can just limit. Maybe order by count desc? Not requested. Just LIMIT? Rule 3 requires LIMIT. Use LIMIT 1000. Provide category and order count.\n\nOutput columns: product_category_name, count."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 3098,
+        "completion_tokens": 153,
+        "total_tokens": 3251,
+        "prompt_tokens_details": {
+          "cached_tokens": 2944
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 86
+        },
+        "prompt_cache_hit_tokens": 2944,
+        "prompt_cache_miss_tokens": 154
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseComplete": true,
+    "upstreamAttempted": true,
+    "requestWireComplete": true,
+    "requestWireStartedAtUtc": "2026-11-21T06:44:20.845Z",
+    "requestWireCompleteAtUtc": "2026-11-21T06:44:20.845Z",
+    "usageKnown": true,
+    "error": null,
+    "permitSnapshot": {
+      "token": "668e336bfff8404a8503eaaeb57f2802",
+      "round": "DEV_F",
+      "questionId": "T4-003",
+      "attempt": 1,
+      "upstreamDeadlineMonotonic": 2302378.0422544,
+      "answerDeadlineMonotonic": 2302378.0422544,
+      "wholeRoundDeadlineMonotonic": 2303898.4987276,
+      "offPeakBoundaryMonotonic": 2454502.5484567,
+      "accountingDeadlineMonotonic": 2302483.0422544,
+      "admittedAt": "2026-11-21T06:44:20.656177+00:00",
+      "offPeak": {
+        "allowed": true,
+        "reason": "OFF_PEAK",
+        "checkedAt": "2026-11-21T06:44:20.655949+00:00",
+        "guardSeconds": 135
+      },
+      "requestBodySha256": "f1df8b9e679150ce66680a711b69c0f7c699d974bf706f66a67b8adcff8780e2",
+      "requestBytes": 12619,
+      "inputTokenEstimate": 13643,
+      "promptChars": 6775,
+      "reservedYuan": "0.10"
+    },
+    "permitSha256": "b16159d0adc9a11a2174f22a6c5bd1a2bd0f5508ec8c8b32d0250a633d7e7e1a",
+    "answerDeadlineMonotonic": 2302378.0422544,
+    "upstreamDeadlineMonotonic": 2302378.0422544,
+    "accountingDeadlineMonotonic": 2302483.0422544,
+    "postSendAccountingDeadlineMonotonic": 2302483.0422544,
+    "wholeRoundDeadlineMonotonic": 2303898.4987276,
+    "offPeakBoundaryMonotonic": 2454502.5484567,
+    "responseHeaderAtUtc": "2026-11-21T06:44:21.074Z",
+    "responseCompleteAtUtc": "2026-11-21T06:44:22.477Z",
+    "responseBytes": 1198,
+    "responseBodySha256": "519f3928f712e5eff93d6f247570d06381c7d6726ebab6d00d466680b38b29b4",
+    "finishedAtUtc": "2026-11-21T06:44:22.478Z",
+    "providerBodyTimely": true,
+    "bodyReadyAtUtc": "2026-11-21T06:44:22.478Z",
+    "bodyReadyAtMonotonic": 2302365.0265926,
+    "durableBeforeAnswer": true,
+    "late": false,
+    "accountingOnly": false,
+    "answerEligible": true,
+    "answerReturnedAtUtc": null,
+    "eligibilityScope": "PROVIDER_BODY_READINESS_ONLY; HTTP delivery is controller evidence",
+    "lateSqlBackfill": false,
+    "sameSentConnectionReadOnly": true,
+    "reconnects": 0,
+    "resends": 0,
+    "responseBodyFile": "668e336bfff8404a8503eaaeb57f2802-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 3098,
+    "completion_tokens": 153,
+    "total_tokens": 3251,
+    "prompt_tokens_details": {
+      "cached_tokens": 2944
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 86
+    },
+    "prompt_cache_hit_tokens": 2944,
+    "prompt_cache_miss_tokens": 154
+  }
+}

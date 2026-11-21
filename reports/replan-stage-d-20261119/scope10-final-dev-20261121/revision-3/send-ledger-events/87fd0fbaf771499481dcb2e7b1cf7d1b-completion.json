@@ -1,0 +1,130 @@
+{
+  "token": "87fd0fbaf771499481dcb2e7b1cf7d1b",
+  "round": "DEV_F",
+  "questionId": "T5-008",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2302553.8784279,
+  "answerDeadlineMonotonic": 2302553.8784279,
+  "wholeRoundDeadlineMonotonic": 2303898.4987276,
+  "offPeakBoundaryMonotonic": 2454502.5484567,
+  "accountingDeadlineMonotonic": 2302658.8784279,
+  "admittedAt": "2026-11-21T06:47:16.475962+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-21T06:47:16.475829+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "1abe4f4ecec37709828d5e66a6af15bc10ab03e21cb8becb00827f9cb06facc2",
+  "requestBytes": 11662,
+  "inputTokenEstimate": 12686,
+  "promptChars": 6301,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00312684",
+  "result": {
+    "startedAtUtc": "2026-11-21T06:47:16.527Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "f39968e4-3041-4a2f-b760-2551198cd968",
+      "object": "chat.completion",
+      "created": 1795243636,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT mr.level_id AS referrer_level_id, mi.level_id AS invitee_level_id,\n       COUNT(*) AS referral_count,\n       ROUND(SUM(rf.reward_amount), 2) AS reward_total\nFROM referrals rf\nLEFT JOIN members mr ON mr.member_id = rf.referrer_member_id\nLEFT JOIN members mi ON mi.member_id = rf.invitee_member_id\nGROUP BY 1, 2\nORDER BY referral_count DESC LIMIT 100;",
+            "reasoning_content": "- 表：referrals rf\n- JOIN members mr ON mr.member_id = rf.referrer_member_id\n- JOIN members mi ON mi.member_id = rf.invitee_member_id\n- 需要保留未知等级为NULL，所以用LEFT JOIN members（推荐人/被推荐人可能不在members里？未知等级保留NULL → 用LEFT JOIN）\n- GROUP BY 两个 level_id\n- 指标：COUNT(*) 全部推荐记录数，ROUND(SUM(reward_amount),2)\n- 输出两个等级ID和两项指标\n\n注意：reward_amount 可能为NULL，SUM保留NULL语义。COUNT(*) 计全部推荐记录。\n\nLEFT JOIN 保留推荐关系。GROUP BY 1,2。排序按推荐数DESC。LIMIT 需要（有GROUP BY，必须LIMIT？规则3：必须LIMIT，聚合单行除外。有GROUP BY需LIMIT）。用LIMIT 100？默认TopN至多N行但问题没要求N...还是要加LIMIT，比如LIMIT 200。用LIMIT 100合理。\n\n注意级别ID：referrer level id 和 invitee level id。未知等级保留NULL → mr.level_id 为 NULL 时仍出现在分组。\n\nSQL:\nSELECT mr.level_id AS referrer_level_id, mi.level_id AS invitee_level_id,\nCOUNT(*) AS referrals, ROUND(SUM(rf.reward_amount), 2) AS reward_amount\nFROM referrals rf\nLEFT JOIN members mr ON mr.member_id = rf.referrer_member_id\nLEFT JOIN members mi ON mi.member_id = rf.invitee_member_id\nGROUP BY 1, 2\nORDER BY referrals DESC LIMIT 100;\n\n注意 members.member_id 是主键，不会重复。OK。"
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2943,
+        "completion_tokens": 485,
+        "total_tokens": 3428,
+        "prompt_tokens_details": {
+          "cached_tokens": 1792
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 381
+        },
+        "prompt_cache_hit_tokens": 1792,
+        "prompt_cache_miss_tokens": 1151
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseComplete": true,
+    "upstreamAttempted": true,
+    "requestWireComplete": true,
+    "requestWireStartedAtUtc": "2026-11-21T06:47:16.617Z",
+    "requestWireCompleteAtUtc": "2026-11-21T06:47:16.617Z",
+    "usageKnown": true,
+    "error": null,
+    "permitSnapshot": {
+      "token": "87fd0fbaf771499481dcb2e7b1cf7d1b",
+      "round": "DEV_F",
+      "questionId": "T5-008",
+      "attempt": 1,
+      "upstreamDeadlineMonotonic": 2302553.8784279,
+      "answerDeadlineMonotonic": 2302553.8784279,
+      "wholeRoundDeadlineMonotonic": 2303898.4987276,
+      "offPeakBoundaryMonotonic": 2454502.5484567,
+      "accountingDeadlineMonotonic": 2302658.8784279,
+      "admittedAt": "2026-11-21T06:47:16.475962+00:00",
+      "offPeak": {
+        "allowed": true,
+        "reason": "OFF_PEAK",
+        "checkedAt": "2026-11-21T06:47:16.475829+00:00",
+        "guardSeconds": 135
+      },
+      "requestBodySha256": "1abe4f4ecec37709828d5e66a6af15bc10ab03e21cb8becb00827f9cb06facc2",
+      "requestBytes": 11662,
+      "inputTokenEstimate": 12686,
+      "promptChars": 6301,
+      "reservedYuan": "0.10"
+    },
+    "permitSha256": "f8d6ddbb4d0eb41920639bffee4b99fa3afd7f28bc51b894d629748980a02841",
+    "answerDeadlineMonotonic": 2302553.8784279,
+    "upstreamDeadlineMonotonic": 2302553.8784279,
+    "accountingDeadlineMonotonic": 2302658.8784279,
+    "postSendAccountingDeadlineMonotonic": 2302658.8784279,
+    "wholeRoundDeadlineMonotonic": 2303898.4987276,
+    "offPeakBoundaryMonotonic": 2454502.5484567,
+    "responseHeaderAtUtc": "2026-11-21T06:47:16.717Z",
+    "responseCompleteAtUtc": "2026-11-21T06:47:19.841Z",
+    "responseBytes": 2284,
+    "responseBodySha256": "08dc17abd3ee03a57fdcc4d4af85950ba7b209815fa8320a47caf0232740e698",
+    "finishedAtUtc": "2026-11-21T06:47:19.842Z",
+    "providerBodyTimely": true,
+    "bodyReadyAtUtc": "2026-11-21T06:47:19.842Z",
+    "bodyReadyAtMonotonic": 2302542.3910949,
+    "durableBeforeAnswer": true,
+    "late": false,
+    "accountingOnly": false,
+    "answerEligible": true,
+    "answerReturnedAtUtc": null,
+    "eligibilityScope": "PROVIDER_BODY_READINESS_ONLY; HTTP delivery is controller evidence",
+    "lateSqlBackfill": false,
+    "sameSentConnectionReadOnly": true,
+    "reconnects": 0,
+    "resends": 0,
+    "responseBodyFile": "87fd0fbaf771499481dcb2e7b1cf7d1b-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 2943,
+    "completion_tokens": 485,
+    "total_tokens": 3428,
+    "prompt_tokens_details": {
+      "cached_tokens": 1792
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 381
+    },
+    "prompt_cache_hit_tokens": 1792,
+    "prompt_cache_miss_tokens": 1151
+  }
+}

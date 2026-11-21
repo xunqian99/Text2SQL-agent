@@ -1,0 +1,130 @@
+{
+  "token": "b637cb164fbb40d28fe2e22eaaff1ab0",
+  "round": "DEV_F",
+  "questionId": "T1-024",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2302209.6819984,
+  "answerDeadlineMonotonic": 2302209.6819984,
+  "wholeRoundDeadlineMonotonic": 2303898.4987276,
+  "offPeakBoundaryMonotonic": 2454502.5484567997,
+  "accountingDeadlineMonotonic": 2302314.6819984,
+  "admittedAt": "2026-11-21T06:41:32.262686+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-21T06:41:32.262524+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "9c5946e9984286f43a1e4eb16fc6351607dfb79cc543223e2797df3879dcf685",
+  "requestBytes": 10393,
+  "inputTokenEstimate": 11417,
+  "promptChars": 5238,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00084964",
+  "result": {
+    "startedAtUtc": "2026-11-21T06:41:32.294Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "f2dcb325-2173-447d-acea-845474760639",
+      "object": "chat.completion",
+      "created": 1795243292,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT COUNT(*) AS member_count\nFROM members m\nJOIN member_levels ml ON ml.level_id = m.level_id\nWHERE ml.level_name = '黄金会员';",
+            "reasoning_content": "Count members with level_name='黄金会员'. Need join member_levels. Count members, presumably member_id distinct. Question: 黄金会员有多少人？ Count members rows joined where level_name='黄金会员'.\n\nSingle aggregate no group by, no limit needed.\n\nShould status filter? No, don't add. Just count members.\n\nSQL: SELECT COUNT(*) AS member_count FROM members m JOIN member_levels ml ON ml.level_id = m.level_id WHERE ml.level_name = '黄金会员';\n\nCount of members — maybe count distinct member_id, but member_id PK so COUNT(*) fine."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2617,
+        "completion_tokens": 154,
+        "total_tokens": 2771,
+        "prompt_tokens_details": {
+          "cached_tokens": 2432
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 118
+        },
+        "prompt_cache_hit_tokens": 2432,
+        "prompt_cache_miss_tokens": 185
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseComplete": true,
+    "upstreamAttempted": true,
+    "requestWireComplete": true,
+    "requestWireStartedAtUtc": "2026-11-21T06:41:32.382Z",
+    "requestWireCompleteAtUtc": "2026-11-21T06:41:32.382Z",
+    "usageKnown": true,
+    "error": null,
+    "permitSnapshot": {
+      "token": "b637cb164fbb40d28fe2e22eaaff1ab0",
+      "round": "DEV_F",
+      "questionId": "T1-024",
+      "attempt": 1,
+      "upstreamDeadlineMonotonic": 2302209.6819984,
+      "answerDeadlineMonotonic": 2302209.6819984,
+      "wholeRoundDeadlineMonotonic": 2303898.4987276,
+      "offPeakBoundaryMonotonic": 2454502.5484567997,
+      "accountingDeadlineMonotonic": 2302314.6819984,
+      "admittedAt": "2026-11-21T06:41:32.262686+00:00",
+      "offPeak": {
+        "allowed": true,
+        "reason": "OFF_PEAK",
+        "checkedAt": "2026-11-21T06:41:32.262524+00:00",
+        "guardSeconds": 135
+      },
+      "requestBodySha256": "9c5946e9984286f43a1e4eb16fc6351607dfb79cc543223e2797df3879dcf685",
+      "requestBytes": 10393,
+      "inputTokenEstimate": 11417,
+      "promptChars": 5238,
+      "reservedYuan": "0.10"
+    },
+    "permitSha256": "e1d4d15029d4ba637c1f5535f68afce82601aaa57e6885225ca05c6431768ec1",
+    "answerDeadlineMonotonic": 2302209.6819984,
+    "upstreamDeadlineMonotonic": 2302209.6819984,
+    "accountingDeadlineMonotonic": 2302314.6819984,
+    "postSendAccountingDeadlineMonotonic": 2302314.6819984,
+    "wholeRoundDeadlineMonotonic": 2303898.4987276,
+    "offPeakBoundaryMonotonic": 2454502.5484567997,
+    "responseHeaderAtUtc": "2026-11-21T06:41:32.657Z",
+    "responseCompleteAtUtc": "2026-11-21T06:41:34.077Z",
+    "responseBytes": 1235,
+    "responseBodySha256": "8961df51b889d73cc030f3b7e5dcf208ced4c79caab9e9cb71e4ca8d9d2fc761",
+    "finishedAtUtc": "2026-11-21T06:41:34.077Z",
+    "providerBodyTimely": true,
+    "bodyReadyAtUtc": "2026-11-21T06:41:34.077Z",
+    "bodyReadyAtMonotonic": 2302196.6262085,
+    "durableBeforeAnswer": true,
+    "late": false,
+    "accountingOnly": false,
+    "answerEligible": true,
+    "answerReturnedAtUtc": null,
+    "eligibilityScope": "PROVIDER_BODY_READINESS_ONLY; HTTP delivery is controller evidence",
+    "lateSqlBackfill": false,
+    "sameSentConnectionReadOnly": true,
+    "reconnects": 0,
+    "resends": 0,
+    "responseBodyFile": "b637cb164fbb40d28fe2e22eaaff1ab0-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 2617,
+    "completion_tokens": 154,
+    "total_tokens": 2771,
+    "prompt_tokens_details": {
+      "cached_tokens": 2432
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 118
+    },
+    "prompt_cache_hit_tokens": 2432,
+    "prompt_cache_miss_tokens": 185
+  }
+}

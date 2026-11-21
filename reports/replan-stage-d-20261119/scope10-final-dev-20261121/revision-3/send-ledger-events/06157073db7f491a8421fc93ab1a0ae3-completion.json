@@ -1,0 +1,130 @@
+{
+  "token": "06157073db7f491a8421fc93ab1a0ae3",
+  "round": "DEV_F",
+  "questionId": "T2-038",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2302308.8836122,
+  "answerDeadlineMonotonic": 2302308.8836122,
+  "wholeRoundDeadlineMonotonic": 2303898.4987276,
+  "offPeakBoundaryMonotonic": 2454502.5484566996,
+  "accountingDeadlineMonotonic": 2302413.8836122,
+  "admittedAt": "2026-11-21T06:43:11.559696+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-21T06:43:11.559609+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "8849e4a338414c9dae247c04eddd40a5d4ce7b0cb9c90cd4c9d76f5c8f07495d",
+  "requestBytes": 10916,
+  "inputTokenEstimate": 11940,
+  "promptChars": 5795,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.0007962",
+  "result": {
+    "startedAtUtc": "2026-11-21T06:43:11.599Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "a6db1f03-9399-4174-9872-ffaeca9c0b08",
+      "object": "chat.completion",
+      "created": 1795243391,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT ROUND(MAX(price), 2) AS max_price,\n       ROUND(MIN(price), 2) AS min_price\nFROM order_items;",
+            "reasoning_content": "Need max and min price in order_items, one row? Question: \"订单明细里最贵的一件商品价格是多少？最便宜的呢？\" Just min and max price from order_items. Two aggregates one row. No group by, aggregate exception. Shape: two columns.\n\nSELECT MAX(price) AS max_price, MIN(price) AS min_price FROM order_items; Should we round? price numeric, round two decimals per rule. ROUND(MAX(price),2). Also maybe nulls ignored. Fine.\n\nNo limit needed as aggregate single row."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2705,
+        "completion_tokens": 150,
+        "total_tokens": 2855,
+        "prompt_tokens_details": {
+          "cached_tokens": 2560
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 115
+        },
+        "prompt_cache_hit_tokens": 2560,
+        "prompt_cache_miss_tokens": 145
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseComplete": true,
+    "upstreamAttempted": true,
+    "requestWireComplete": true,
+    "requestWireStartedAtUtc": "2026-11-21T06:43:11.732Z",
+    "requestWireCompleteAtUtc": "2026-11-21T06:43:11.732Z",
+    "usageKnown": true,
+    "error": null,
+    "permitSnapshot": {
+      "token": "06157073db7f491a8421fc93ab1a0ae3",
+      "round": "DEV_F",
+      "questionId": "T2-038",
+      "attempt": 1,
+      "upstreamDeadlineMonotonic": 2302308.8836122,
+      "answerDeadlineMonotonic": 2302308.8836122,
+      "wholeRoundDeadlineMonotonic": 2303898.4987276,
+      "offPeakBoundaryMonotonic": 2454502.5484566996,
+      "accountingDeadlineMonotonic": 2302413.8836122,
+      "admittedAt": "2026-11-21T06:43:11.559696+00:00",
+      "offPeak": {
+        "allowed": true,
+        "reason": "OFF_PEAK",
+        "checkedAt": "2026-11-21T06:43:11.559609+00:00",
+        "guardSeconds": 135
+      },
+      "requestBodySha256": "8849e4a338414c9dae247c04eddd40a5d4ce7b0cb9c90cd4c9d76f5c8f07495d",
+      "requestBytes": 10916,
+      "inputTokenEstimate": 11940,
+      "promptChars": 5795,
+      "reservedYuan": "0.10"
+    },
+    "permitSha256": "4932982322138da77b625ac7c568bcabcd0d422dd56a43206a454d2acc365b6d",
+    "answerDeadlineMonotonic": 2302308.8836122,
+    "upstreamDeadlineMonotonic": 2302308.8836122,
+    "accountingDeadlineMonotonic": 2302413.8836122,
+    "postSendAccountingDeadlineMonotonic": 2302413.8836122,
+    "wholeRoundDeadlineMonotonic": 2303898.4987276,
+    "offPeakBoundaryMonotonic": 2454502.5484566996,
+    "responseHeaderAtUtc": "2026-11-21T06:43:11.839Z",
+    "responseCompleteAtUtc": "2026-11-21T06:43:13.272Z",
+    "responseBytes": 1131,
+    "responseBodySha256": "e703b904a1d6b355406814cd00db2300e1f2006a21ec41d935aeb61f06efca78",
+    "finishedAtUtc": "2026-11-21T06:43:13.272Z",
+    "providerBodyTimely": true,
+    "bodyReadyAtUtc": "2026-11-21T06:43:13.272Z",
+    "bodyReadyAtMonotonic": 2302295.8210154,
+    "durableBeforeAnswer": true,
+    "late": false,
+    "accountingOnly": false,
+    "answerEligible": true,
+    "answerReturnedAtUtc": null,
+    "eligibilityScope": "PROVIDER_BODY_READINESS_ONLY; HTTP delivery is controller evidence",
+    "lateSqlBackfill": false,
+    "sameSentConnectionReadOnly": true,
+    "reconnects": 0,
+    "resends": 0,
+    "responseBodyFile": "06157073db7f491a8421fc93ab1a0ae3-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 2705,
+    "completion_tokens": 150,
+    "total_tokens": 2855,
+    "prompt_tokens_details": {
+      "cached_tokens": 2560
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 115
+    },
+    "prompt_cache_hit_tokens": 2560,
+    "prompt_cache_miss_tokens": 145
+  }
+}

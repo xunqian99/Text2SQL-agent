@@ -1,0 +1,53 @@
+# Use after local: --spring.profiles.active=local,demo
+# Local single-user demonstration only. This profile does not add authentication.
+server:
+  address: 127.0.0.1
+
+agent:
+  eval:
+    enabled: false
+  retrieval:
+    enabled: true
+    top-k: 8
+    column-pruning-enabled: true
+    join-hints-enabled: true
+    join-list-enabled: false
+    join-plan-enabled: true
+  semantic:
+    enabled: true
+  fewshot:
+    enabled: true
+    max-examples: 2
+    require-available-tables: false
+  clarification:
+    enabled: true
+  self-correction:
+    enabled: true
+    max-attempts: 2
+  result-checker:
+    enabled: true
+  conversation:
+    enabled: true
+    max-turns: 5
+    reuse-schema: true
+    rewrite-with-llm: true
+  guard:
+    explain-cost-guard-enabled: true
+    max-allowed-cost: 100000.0
+    reject-cartesian-product: true
+  request-budget:
+    enabled: true
+    timeout-ms: 15000
+    max-model-calls: 2
+    min-retry-remaining-ms: 2000
+  cache:
+    enabled: false
+  persistence:
+    enabled: false
+  tool-use:
+    enabled: false
+  routing:
+    enabled: false
+  observability:
+    enabled: true
+    include-content: false

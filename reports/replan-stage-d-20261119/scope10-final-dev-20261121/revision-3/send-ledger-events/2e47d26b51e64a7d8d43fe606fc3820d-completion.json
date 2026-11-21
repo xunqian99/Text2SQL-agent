@@ -1,0 +1,130 @@
+{
+  "token": "2e47d26b51e64a7d8d43fe606fc3820d",
+  "round": "DEV_F",
+  "questionId": "T6-005",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2302617.8420199,
+  "answerDeadlineMonotonic": 2302617.8420199,
+  "wholeRoundDeadlineMonotonic": 2303898.4987276,
+  "offPeakBoundaryMonotonic": 2454502.5484569003,
+  "accountingDeadlineMonotonic": 2302722.8420199,
+  "admittedAt": "2026-11-21T06:48:20.469324+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-21T06:48:20.469110+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "95779523403a2d2f9700411f23f4691394d1847895141e18bd7f6e7365402eb2",
+  "requestBytes": 16640,
+  "inputTokenEstimate": 17664,
+  "promptChars": 8728,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00298184",
+  "result": {
+    "startedAtUtc": "2026-11-21T06:48:20.526Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "be2310b9-aa73-4436-ae35-eb40a9cac36d",
+      "object": "chat.completion",
+      "created": 1795243700,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT ROUND(100.0 * COUNT(DISTINCT o.order_id) FILTER (WHERE m.member_id IS NOT NULL)\n/ NULLIF(COUNT(DISTINCT o.order_id), 0), 2) AS member_order_pct\nFROM orders o\nLEFT JOIN customers c ON c.customer_id = o.customer_id\nLEFT JOIN members m ON m.customer_unique_id = c.customer_unique_id\nWHERE o.order_status NOT IN ('canceled', 'unavailable');",
+            "reasoning_content": "用户要求会员渗透率，直接按推荐查询结构。\n\n输出列别名可用 member_order_pct。需要LIMIT？规则3：单行无GROUP BY的聚合除外，所以无需LIMIT。\n\n注意表中没有 customer_state 等，但这里用推荐结构，customers.customer_id 存在。OK。"
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 4062,
+        "completion_tokens": 169,
+        "total_tokens": 4231,
+        "prompt_tokens_details": {
+          "cached_tokens": 1792
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 66
+        },
+        "prompt_cache_hit_tokens": 1792,
+        "prompt_cache_miss_tokens": 2270
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseComplete": true,
+    "upstreamAttempted": true,
+    "requestWireComplete": true,
+    "requestWireStartedAtUtc": "2026-11-21T06:48:20.712Z",
+    "requestWireCompleteAtUtc": "2026-11-21T06:48:20.712Z",
+    "usageKnown": true,
+    "error": null,
+    "permitSnapshot": {
+      "token": "2e47d26b51e64a7d8d43fe606fc3820d",
+      "round": "DEV_F",
+      "questionId": "T6-005",
+      "attempt": 1,
+      "upstreamDeadlineMonotonic": 2302617.8420199,
+      "answerDeadlineMonotonic": 2302617.8420199,
+      "wholeRoundDeadlineMonotonic": 2303898.4987276,
+      "offPeakBoundaryMonotonic": 2454502.5484569003,
+      "accountingDeadlineMonotonic": 2302722.8420199,
+      "admittedAt": "2026-11-21T06:48:20.469324+00:00",
+      "offPeak": {
+        "allowed": true,
+        "reason": "OFF_PEAK",
+        "checkedAt": "2026-11-21T06:48:20.469110+00:00",
+        "guardSeconds": 135
+      },
+      "requestBodySha256": "95779523403a2d2f9700411f23f4691394d1847895141e18bd7f6e7365402eb2",
+      "requestBytes": 16640,
+      "inputTokenEstimate": 17664,
+      "promptChars": 8728,
+      "reservedYuan": "0.10"
+    },
+    "permitSha256": "237fab832e06d8f57cf2f1652fc6d3358083d3f7ce7a2fdebd5821d32f97d654",
+    "answerDeadlineMonotonic": 2302617.8420199,
+    "upstreamDeadlineMonotonic": 2302617.8420199,
+    "accountingDeadlineMonotonic": 2302722.8420199,
+    "postSendAccountingDeadlineMonotonic": 2302722.8420199,
+    "wholeRoundDeadlineMonotonic": 2303898.4987276,
+    "offPeakBoundaryMonotonic": 2454502.5484569003,
+    "responseHeaderAtUtc": "2026-11-21T06:48:20.828Z",
+    "responseCompleteAtUtc": "2026-11-21T06:48:21.869Z",
+    "responseBytes": 1180,
+    "responseBodySha256": "323e9555dd0efc7bcfb7c6c05aa515df532097dc8bd8f4023aa169fbf170d334",
+    "finishedAtUtc": "2026-11-21T06:48:21.869Z",
+    "providerBodyTimely": true,
+    "bodyReadyAtUtc": "2026-11-21T06:48:21.869Z",
+    "bodyReadyAtMonotonic": 2302604.4179013,
+    "durableBeforeAnswer": true,
+    "late": false,
+    "accountingOnly": false,
+    "answerEligible": true,
+    "answerReturnedAtUtc": null,
+    "eligibilityScope": "PROVIDER_BODY_READINESS_ONLY; HTTP delivery is controller evidence",
+    "lateSqlBackfill": false,
+    "sameSentConnectionReadOnly": true,
+    "reconnects": 0,
+    "resends": 0,
+    "responseBodyFile": "2e47d26b51e64a7d8d43fe606fc3820d-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 4062,
+    "completion_tokens": 169,
+    "total_tokens": 4231,
+    "prompt_tokens_details": {
+      "cached_tokens": 1792
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 66
+    },
+    "prompt_cache_hit_tokens": 1792,
+    "prompt_cache_miss_tokens": 2270
+  }
+}

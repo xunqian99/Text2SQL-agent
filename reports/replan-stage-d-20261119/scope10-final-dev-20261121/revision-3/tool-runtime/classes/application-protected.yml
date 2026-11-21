@@ -1,0 +1,16 @@
+# Load after local,demo. Single-user LOCAL demonstration, not a public deployment profile.
+server:
+  address: 127.0.0.1
+
+agent:
+  access:
+    enabled: true
+    token: ${AGENT_ACCESS_TOKEN:}
+    burst: 10
+    requests-per-minute: 30
+    max-concurrent: 2
+  cost-quota:
+    enabled: true
+    state-file: ${AGENT_COST_STATE_FILE:.private/runtime/cost-quota.json}
+    total-yuan: 1.00
+    reservation-yuan: 0.10

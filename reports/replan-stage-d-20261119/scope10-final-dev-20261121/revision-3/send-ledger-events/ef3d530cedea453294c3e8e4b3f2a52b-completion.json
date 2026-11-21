@@ -1,0 +1,130 @@
+{
+  "token": "ef3d530cedea453294c3e8e4b3f2a52b",
+  "round": "DEV_F",
+  "questionId": "T4-023",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2302424.2108895,
+  "answerDeadlineMonotonic": 2302424.2108895,
+  "wholeRoundDeadlineMonotonic": 2303898.4987276,
+  "offPeakBoundaryMonotonic": 2454502.5484567,
+  "accountingDeadlineMonotonic": 2302529.2108895,
+  "admittedAt": "2026-11-21T06:45:06.817572+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-21T06:45:06.817444+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "dce97e9eeb6442b5589003bd428b97d325205cc3721f0dd3face91d7d7215e0a",
+  "requestBytes": 11360,
+  "inputTokenEstimate": 12384,
+  "promptChars": 6036,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00434076",
+  "result": {
+    "startedAtUtc": "2026-11-21T06:45:06.865Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "bf79e563-f6df-4aca-8f0a-1433700a55f1",
+      "object": "chat.completion",
+      "created": 1795243506,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT c.discount_type, ROUND(SUM(cu.discount_amount), 2) AS total_discount_amount\nFROM coupon_usages cu\nJOIN coupons c ON c.coupon_id = cu.coupon_id\nGROUP BY c.discount_type\nLIMIT 100;",
+            "reasoning_content": "We need answer SQL only. Need parse question: \"每种折扣类型的优惠券分别带来了多少优惠金额？\" Need group by coupons.discount_type sum coupon_usages.discount_amount. Tables coupon_usages join coupons. Need filter? No, all discount types. Need select discount_type and sum discount_amount rounded 2. Group by. ORDER? likely by discount_type? No need maybe. Must LIMIT because not aggregate no group? Has group, still hard rule requires LIMIT unless single-row count? It says must LIMIT, single row no group aggregate except. For grouped query add LIMIT maybe default TopN? But question not topN. However hard rule says must LIMIT. Could use LIMIT 100? They didn't specify. Need only output one SELECT. Need Chinese maybe. SQL alias. \"每种折扣类型的优惠券分别带来了多少优惠金额\" output discount_type, total_discount_amount. Sum discount_amount. Join coupon_usages cu ON cu.coupon_id = c.coupon_id. Group by c.discount_type. We should include both physical types, maybe no filter. Round sum numeric. ORDER BY maybe discount_type? It isn't requested; but grouping output no sort? Need maybe ORDER BY total DESC? \"每种\" no ordering. Hard rule 11 don't add sorting unless needed. But need LIMIT. We can ORDER BY discount_type to deterministic, but not required. LIMIT? Since result small, add LIMIT 100. But adding ordering not requested. If must LIMIT, can use LIMIT 100 without order. However test likely expects no extra unnecessary? Need comply hard rule. Include LIMIT 100. Maybe SQL:\nSELECT c.discount_type, ROUND(SUM(cu.discount_amount), 2) AS total_discount_amount\nFROM coupon_usages cu\nJOIN coupons c ON c.coupon_id = cu.coupon_id\nGROUP BY c.discount_type\nORDER BY c.discount_type\nLIMIT 100;\nQuestion says \"每种折扣类型的优惠券分别带来了多少优惠金额\" Need no alias maybe total_discount. Could output discount_type, total_discount_amount. \"优惠金额\" sum coupon_usages.discount_amount. No need count usage. Should include all discount types including no usage? \"优惠券分别带来了多少优惠金额\" likely only those used (coupon_usages fact). If need every discount type from coupons including unused then LEFT JOIN coupons to usages, SUM null = 0? The entity is \"每种折扣类型的优惠券带来的优惠金额\", coupon_usages records usages. Usually group coupons join usages; if no usage for type, zero? Does \"每种折扣类型\" imply types present in coupons? Hmm important.\n\nNeed determine from schema: coupons has discount_type. coupon_usages has used coupons. The question asks each discount type of coupons how much discount amount brought. The discount amount is in coupon_usages. If a coupon type exists but no usages, should it appear with 0? \"每种折扣类型\" may refer all discount types in coupons. But \"带来了多少优惠金额\" by usage. Should we start from coupons LEFT JOIN coupon_usages to preserve all types? Rule says every metric facts universe: \"标签覆盖会员数含无订单会员\" for coverage. Here it's not coverage; amount requires usages. If no usage, sum is NULL (not zero) unless explicitly no fact count 0. For discount amount, no usage means 0? Business might consider brought discount amount 0. But output \"每种折扣类型\" likely all types. Need think.\n\nUser asks \"每种折扣类型的优惠券分别带来了多少优惠金额？\" Could interpret as group by discount type in coupons, sum discount_amount of usages. Typically SQL:\nSELECT c.discount_type, SUM(cu.discount_amount)\nFROM coupon_usages cu JOIN coupons c ...\nGROUP BY c.discount_type;\nThis excludes types never used, but since type categories are only fixed/percent, likely both have usages. Data maybe no issue.\n\nNeed no code fences, direct SQL. Since hard rule says LIMIT. Could include ORDER BY? If grouping by discount_type only, result could be unordered. But not requested; maybe ORDER BY discount_type not harmful? It adds sort but not an output column? It's allowed? Rule 11 \"不为信息更全加列、分组或排序\". So avoid ORDER BY unless needed. But LIMIT without order okay. Use LIMIT 100.\n\nNeed alias maybe \"total_discount_amount\". ROUND(SUM(cu.discount_amount), 2). Since sum numeric. Good.\n\nPotential issue: discount_amount may be negative? Not specified. Sum.\n\nLet's craft final only SQL."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2835,
+        "completion_tokens": 1035,
+        "total_tokens": 3870,
+        "prompt_tokens_details": {
+          "cached_tokens": 2688
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 974
+        },
+        "prompt_cache_hit_tokens": 2688,
+        "prompt_cache_miss_tokens": 147
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseComplete": true,
+    "upstreamAttempted": true,
+    "requestWireComplete": true,
+    "requestWireStartedAtUtc": "2026-11-21T06:45:06.956Z",
+    "requestWireCompleteAtUtc": "2026-11-21T06:45:06.957Z",
+    "usageKnown": true,
+    "error": null,
+    "permitSnapshot": {
+      "token": "ef3d530cedea453294c3e8e4b3f2a52b",
+      "round": "DEV_F",
+      "questionId": "T4-023",
+      "attempt": 1,
+      "upstreamDeadlineMonotonic": 2302424.2108895,
+      "answerDeadlineMonotonic": 2302424.2108895,
+      "wholeRoundDeadlineMonotonic": 2303898.4987276,
+      "offPeakBoundaryMonotonic": 2454502.5484567,
+      "accountingDeadlineMonotonic": 2302529.2108895,
+      "admittedAt": "2026-11-21T06:45:06.817572+00:00",
+      "offPeak": {
+        "allowed": true,
+        "reason": "OFF_PEAK",
+        "checkedAt": "2026-11-21T06:45:06.817444+00:00",
+        "guardSeconds": 135
+      },
+      "requestBodySha256": "dce97e9eeb6442b5589003bd428b97d325205cc3721f0dd3face91d7d7215e0a",
+      "requestBytes": 11360,
+      "inputTokenEstimate": 12384,
+      "promptChars": 6036,
+      "reservedYuan": "0.10"
+    },
+    "permitSha256": "33bdec7bec5318684a33a4998d39e73d9c9998dfc63af6b2f4e6c7cbb4483b3f",
+    "answerDeadlineMonotonic": 2302424.2108895,
+    "upstreamDeadlineMonotonic": 2302424.2108895,
+    "accountingDeadlineMonotonic": 2302529.2108895,
+    "postSendAccountingDeadlineMonotonic": 2302529.2108895,
+    "wholeRoundDeadlineMonotonic": 2303898.4987276,
+    "offPeakBoundaryMonotonic": 2454502.5484567,
+    "responseHeaderAtUtc": "2026-11-21T06:45:07.074Z",
+    "responseCompleteAtUtc": "2026-11-21T06:45:13.811Z",
+    "responseBytes": 5087,
+    "responseBodySha256": "baafc69771c4d03e1fa194b311616ad411af70c441d5b986f594ed8b42ef2049",
+    "finishedAtUtc": "2026-11-21T06:45:13.811Z",
+    "providerBodyTimely": true,
+    "bodyReadyAtUtc": "2026-11-21T06:45:13.811Z",
+    "bodyReadyAtMonotonic": 2302416.3604174,
+    "durableBeforeAnswer": true,
+    "late": false,
+    "accountingOnly": false,
+    "answerEligible": true,
+    "answerReturnedAtUtc": null,
+    "eligibilityScope": "PROVIDER_BODY_READINESS_ONLY; HTTP delivery is controller evidence",
+    "lateSqlBackfill": false,
+    "sameSentConnectionReadOnly": true,
+    "reconnects": 0,
+    "resends": 0,
+    "responseBodyFile": "ef3d530cedea453294c3e8e4b3f2a52b-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 2835,
+    "completion_tokens": 1035,
+    "total_tokens": 3870,
+    "prompt_tokens_details": {
+      "cached_tokens": 2688
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 974
+    },
+    "prompt_cache_hit_tokens": 2688,
+    "prompt_cache_miss_tokens": 147
+  }
+}

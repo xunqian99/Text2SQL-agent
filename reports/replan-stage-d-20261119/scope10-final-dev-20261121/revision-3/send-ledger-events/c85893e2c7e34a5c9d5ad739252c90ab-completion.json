@@ -1,0 +1,130 @@
+{
+  "token": "c85893e2c7e34a5c9d5ad739252c90ab",
+  "round": "DEV_F",
+  "questionId": "T2-018",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2302267.7766068,
+  "answerDeadlineMonotonic": 2302267.7766068,
+  "wholeRoundDeadlineMonotonic": 2303898.4987276,
+  "offPeakBoundaryMonotonic": 2454502.5484566,
+  "accountingDeadlineMonotonic": 2302372.7766068,
+  "admittedAt": "2026-11-21T06:42:30.376508+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-21T06:42:30.376296+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "fb592c31c1313e9cfb80792edd1d6b52f9d0a741a7b3bf126ac992874313fac3",
+  "requestBytes": 10073,
+  "inputTokenEstimate": 11097,
+  "promptChars": 5001,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00163108",
+  "result": {
+    "startedAtUtc": "2026-11-21T06:42:30.418Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "0be8c914-7aff-4b3d-a046-85a1f456f901",
+      "object": "chat.completion",
+      "created": 1795243349,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT campaign_type, COUNT(*) AS campaign_count\nFROM campaigns\nGROUP BY campaign_type\nLIMIT 1000;",
+            "reasoning_content": "We need answer SQL only. Need translate question: \"每种营销活动类型各有多少个活动？\" Table campaigns has campaign_type, campaign_id. Count activities per campaign_type. Need SELECT campaign_type, COUNT(*) maybe count campaign_id. GROUP BY campaign_type. Need LIMIT due rule 3? Aggregated with GROUP BY: must LIMIT? Hard rule 3: 必须LIMIT，单行无GROUP BY的COUNT/SUM/AVG等聚合除外。 So GROUP BY requires LIMIT. We need maybe LIMIT large? Need no arbitrary? Could use LIMIT 100. But rule 8 TopN? User didn't ask top. Need all types. Yet hard rule requires LIMIT. How to satisfy both? Could use LIMIT 1000. But \"每种\" all types. We can maybe LIMIT 1000 sufficient unknown. SQL: SELECT campaign_type, COUNT(*) AS campaign_count FROM campaigns GROUP BY campaign_type ORDER BY campaign_type LIMIT 1000; Does adding order okay? Not explicitly requested but needed deterministic? Rule 11 don't add sorting? It says don't add columns, groups, sorting if not needed. Hmm. Need only dim/metric. Could no order. LIMIT 1000. But if types >1000 impossible? campaign_type likely small. Use COUNT(*) counts each campaign row. Could count campaign_id. Since campaign_id PK non-null. Count activities. \"多少个活动\" count campaigns. Use COUNT(*) fine.\n\nNeed output SQL only no code fence."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2533,
+        "completion_tokens": 339,
+        "total_tokens": 2872,
+        "prompt_tokens_details": {
+          "cached_tokens": 2304
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 314
+        },
+        "prompt_cache_hit_tokens": 2304,
+        "prompt_cache_miss_tokens": 229
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseComplete": true,
+    "upstreamAttempted": true,
+    "requestWireComplete": true,
+    "requestWireStartedAtUtc": "2026-11-21T06:42:30.501Z",
+    "requestWireCompleteAtUtc": "2026-11-21T06:42:30.501Z",
+    "usageKnown": true,
+    "error": null,
+    "permitSnapshot": {
+      "token": "c85893e2c7e34a5c9d5ad739252c90ab",
+      "round": "DEV_F",
+      "questionId": "T2-018",
+      "attempt": 1,
+      "upstreamDeadlineMonotonic": 2302267.7766068,
+      "answerDeadlineMonotonic": 2302267.7766068,
+      "wholeRoundDeadlineMonotonic": 2303898.4987276,
+      "offPeakBoundaryMonotonic": 2454502.5484566,
+      "accountingDeadlineMonotonic": 2302372.7766068,
+      "admittedAt": "2026-11-21T06:42:30.376508+00:00",
+      "offPeak": {
+        "allowed": true,
+        "reason": "OFF_PEAK",
+        "checkedAt": "2026-11-21T06:42:30.376296+00:00",
+        "guardSeconds": 135
+      },
+      "requestBodySha256": "fb592c31c1313e9cfb80792edd1d6b52f9d0a741a7b3bf126ac992874313fac3",
+      "requestBytes": 10073,
+      "inputTokenEstimate": 11097,
+      "promptChars": 5001,
+      "reservedYuan": "0.10"
+    },
+    "permitSha256": "d9b1c9d62f14d4cd84dc63ad11d72344fcc29b6d41bcb6156b076036c0fc90fb",
+    "answerDeadlineMonotonic": 2302267.7766068,
+    "upstreamDeadlineMonotonic": 2302267.7766068,
+    "accountingDeadlineMonotonic": 2302372.7766068,
+    "postSendAccountingDeadlineMonotonic": 2302372.7766068,
+    "wholeRoundDeadlineMonotonic": 2303898.4987276,
+    "offPeakBoundaryMonotonic": 2454502.5484566,
+    "responseHeaderAtUtc": "2026-11-21T06:42:30.601Z",
+    "responseCompleteAtUtc": "2026-11-21T06:42:32.832Z",
+    "responseBytes": 1954,
+    "responseBodySha256": "ec45fbbdd1fed17672a849032fecd7854661b925b040d36925a0335a77be88dd",
+    "finishedAtUtc": "2026-11-21T06:42:32.832Z",
+    "providerBodyTimely": true,
+    "bodyReadyAtUtc": "2026-11-21T06:42:32.832Z",
+    "bodyReadyAtMonotonic": 2302255.3813987,
+    "durableBeforeAnswer": true,
+    "late": false,
+    "accountingOnly": false,
+    "answerEligible": true,
+    "answerReturnedAtUtc": null,
+    "eligibilityScope": "PROVIDER_BODY_READINESS_ONLY; HTTP delivery is controller evidence",
+    "lateSqlBackfill": false,
+    "sameSentConnectionReadOnly": true,
+    "reconnects": 0,
+    "resends": 0,
+    "responseBodyFile": "c85893e2c7e34a5c9d5ad739252c90ab-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 2533,
+    "completion_tokens": 339,
+    "total_tokens": 2872,
+    "prompt_tokens_details": {
+      "cached_tokens": 2304
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 314
+    },
+    "prompt_cache_hit_tokens": 2304,
+    "prompt_cache_miss_tokens": 229
+  }
+}

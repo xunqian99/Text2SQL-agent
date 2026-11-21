@@ -1,0 +1,130 @@
+{
+  "token": "a07ab5115abd44b9bfad9cdfafcf5e87",
+  "round": "DEV_F",
+  "questionId": "T1-013",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2302195.3607531,
+  "answerDeadlineMonotonic": 2302195.3607531,
+  "wholeRoundDeadlineMonotonic": 2303898.4987276,
+  "offPeakBoundaryMonotonic": 2454502.5484571,
+  "accountingDeadlineMonotonic": 2302300.3607531,
+  "admittedAt": "2026-11-21T06:41:17.968157+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-21T06:41:17.968005+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "2d76852c7d0dc81e5026ba77b3754b807886b992706ade7c0d61df9b051495bf",
+  "requestBytes": 11414,
+  "inputTokenEstimate": 12438,
+  "promptChars": 6169,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00150976",
+  "result": {
+    "startedAtUtc": "2026-11-21T06:41:17.999Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "05bdd43d-3041-42eb-a61b-29cc548c4be6",
+      "object": "chat.completion",
+      "created": 1795243277,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT order_id, order_item_id, freight_value\nFROM order_items\nWHERE freight_value IS NOT NULL\nORDER BY freight_value DESC, order_id ASC, order_item_id ASC\nLIMIT 5;",
+            "reasoning_content": "我们需要回答用户问题，只输出SQL。需要理解schema给的表。用户问“运费最高的 5 条订单明细是哪几条？” 表 order_items 有 freight_value，主键(order_id, order_item_id)。需要选订单明细，按运费降序前5。应输出什么字段？ “哪几条” 需要标识订单明细，完整主键 order_id, order_item_id，以及运费。可能还 product_id/seller_id? 规则8：明确名称/编号/编码/输出列优先。问订单明细是哪几条，应该保留完整实体标识与指标。订单明细的完整主键是 order_id, order_item_id；指标 freight_value。可能输出 order_id, order_item_id, freight_value。不要加产品等未要求。按freight_value DESC。NULL处理：最值实体：仅该属性非NULL者参与最值。所以 WHERE freight_value IS NOT NULL。排序按运费降序，若同值按完整实体身份元组升序？规则8：主指标优先，仅同值按完整维度/实体身份元组升序、NULLS LAST裁决。因此 ORDER BY freight_value DESC, order_id ASC, order_item_id ASC LIMIT 5。只输出SQL。无代码围栏。注意不要引号。单表。需要LIMIT 5。最终只SELECT。"
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2840,
+        "completion_tokens": 326,
+        "total_tokens": 3166,
+        "prompt_tokens_details": {
+          "cached_tokens": 2688
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 283
+        },
+        "prompt_cache_hit_tokens": 2688,
+        "prompt_cache_miss_tokens": 152
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseComplete": true,
+    "upstreamAttempted": true,
+    "requestWireComplete": true,
+    "requestWireStartedAtUtc": "2026-11-21T06:41:18.085Z",
+    "requestWireCompleteAtUtc": "2026-11-21T06:41:18.085Z",
+    "usageKnown": true,
+    "error": null,
+    "permitSnapshot": {
+      "token": "a07ab5115abd44b9bfad9cdfafcf5e87",
+      "round": "DEV_F",
+      "questionId": "T1-013",
+      "attempt": 1,
+      "upstreamDeadlineMonotonic": 2302195.3607531,
+      "answerDeadlineMonotonic": 2302195.3607531,
+      "wholeRoundDeadlineMonotonic": 2303898.4987276,
+      "offPeakBoundaryMonotonic": 2454502.5484571,
+      "accountingDeadlineMonotonic": 2302300.3607531,
+      "admittedAt": "2026-11-21T06:41:17.968157+00:00",
+      "offPeak": {
+        "allowed": true,
+        "reason": "OFF_PEAK",
+        "checkedAt": "2026-11-21T06:41:17.968005+00:00",
+        "guardSeconds": 135
+      },
+      "requestBodySha256": "2d76852c7d0dc81e5026ba77b3754b807886b992706ade7c0d61df9b051495bf",
+      "requestBytes": 11414,
+      "inputTokenEstimate": 12438,
+      "promptChars": 6169,
+      "reservedYuan": "0.10"
+    },
+    "permitSha256": "bb7be1a96265f35489ffd4e8e9a695167ac68f8e8f4475706fb285e373da7355",
+    "answerDeadlineMonotonic": 2302195.3607531,
+    "upstreamDeadlineMonotonic": 2302195.3607531,
+    "accountingDeadlineMonotonic": 2302300.3607531,
+    "postSendAccountingDeadlineMonotonic": 2302300.3607531,
+    "wholeRoundDeadlineMonotonic": 2303898.4987276,
+    "offPeakBoundaryMonotonic": 2454502.5484571,
+    "responseHeaderAtUtc": "2026-11-21T06:41:18.222Z",
+    "responseCompleteAtUtc": "2026-11-21T06:41:20.727Z",
+    "responseBytes": 1885,
+    "responseBodySha256": "5564d9ece9d5630777b97135f26c9d5bcddff7d5fb5dca65df4a8b1ebd47611f",
+    "finishedAtUtc": "2026-11-21T06:41:20.727Z",
+    "providerBodyTimely": true,
+    "bodyReadyAtUtc": "2026-11-21T06:41:20.727Z",
+    "bodyReadyAtMonotonic": 2302183.2761379,
+    "durableBeforeAnswer": true,
+    "late": false,
+    "accountingOnly": false,
+    "answerEligible": true,
+    "answerReturnedAtUtc": null,
+    "eligibilityScope": "PROVIDER_BODY_READINESS_ONLY; HTTP delivery is controller evidence",
+    "lateSqlBackfill": false,
+    "sameSentConnectionReadOnly": true,
+    "reconnects": 0,
+    "resends": 0,
+    "responseBodyFile": "a07ab5115abd44b9bfad9cdfafcf5e87-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 2840,
+    "completion_tokens": 326,
+    "total_tokens": 3166,
+    "prompt_tokens_details": {
+      "cached_tokens": 2688
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 283
+    },
+    "prompt_cache_hit_tokens": 2688,
+    "prompt_cache_miss_tokens": 152
+  }
+}

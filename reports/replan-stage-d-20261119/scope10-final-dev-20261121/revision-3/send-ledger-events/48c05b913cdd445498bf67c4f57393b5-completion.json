@@ -1,0 +1,130 @@
+{
+  "token": "48c05b913cdd445498bf67c4f57393b5",
+  "round": "DEV_F",
+  "questionId": "T6-023",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2302686.7468056,
+  "answerDeadlineMonotonic": 2302686.7468056,
+  "wholeRoundDeadlineMonotonic": 2303898.4987276,
+  "offPeakBoundaryMonotonic": 2454502.5484565003,
+  "accountingDeadlineMonotonic": 2302791.7468056,
+  "admittedAt": "2026-11-21T06:49:29.354288+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-21T06:49:29.354134+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "b1fa1fdb6f17c611bffcbc2ec4578dab8d421bc5e338d8d5d638a1014bae48cf",
+  "requestBytes": 12496,
+  "inputTokenEstimate": 13520,
+  "promptChars": 6819,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.01887784",
+  "result": {
+    "startedAtUtc": "2026-11-21T06:49:29.416Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "8b5ad9c3-a18a-4d07-96ef-f86781ab5dd2",
+      "object": "chat.completion",
+      "created": 1795243768,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "WITH ref AS (\n  SELECT MAX(moved_at)::date AS max_date\n  FROM inventory_movements\n),\ninv AS (\n  SELECT warehouse_id, SUM(quantity) AS current_qty\n  FROM inventory\n  GROUP BY warehouse_id\n),\noutb AS (\n  SELECT im.warehouse_id,\n         SUM(im.quantity) AS outbound_qty\n  FROM inventory_movements im\n  CROSS JOIN ref r\n  WHERE im.movement_type = '2'\n    AND r.max_date IS NOT NULL\n    AND im.moved_at >= r.max_date - INTERVAL '89 days'\n    AND im.moved_at < r.max_date + INTERVAL '1 day'\n  GROUP BY im.warehouse_id\n)\nSELECT w.warehouse_id,\n       inv.current_qty AS current_inventory,\n       CASE WHEN r.max_date IS NULL THEN NULL\n            ELSE COALESCE(outb.outbound_qty, 0)\n       END AS outbound_quantity_90d,\n       CASE WHEN r.max_date IS NULL THEN NULL\n            WHEN COALESCE(outb.outbound_qty, 0) = 0 THEN NULL\n            ELSE ROUND(90.0 * inv.current_qty::numeric / outb.outbound_qty::numeric, 1)\n       END AS inventory_turnover_days\nFROM warehouses w\nCROSS JOIN ref r\nLEFT JOIN inv ON inv.warehouse_id = w.warehouse_id\nLEFT JOIN outb ON outb.warehouse_id = w.warehouse_id\nORDER BY w.warehouse_id\nLIMIT 1000;",
+            "reasoning_content": "我们需要回答SQL。需要解析问题。需要按仓库ID列出全部仓库当前库存量、最近90个自然日出库数量和库存周转天数一位；参考日取全部库存流水最大日期且含当日，无出库记0，未有参考日期时未知；周转天数=90*当前库存/出库量，出库为0时NULL。\n\n需要只输出SELECT。需要涉及 warehouses? \"全部仓库\" 按仓库ID。当前库存量来自 inventory，按仓库SUM(quantity)？ 仓库所有商品库存合计。出库数量来自 inventory_movements movement_type=2，最近90自然日含参考日，即 moved_at >= max_date - 89 days AND moved_at < max_date + 1 day? 参考日取全部库存流水最大日期且含当日。最大日期是 MAX(moved_at) 的日期（timestamp日期）。如果没有参考日期（全表无流水? 或 max null）则最近90天出库未知? \"未有参考日期时未知\" 可能指库存周转天数？句子：无出库记0，未有参考日期时未知；周转天数=...出库为0时NULL。需要处理全表最大日期NULL。参考日取全部库存流水最大日期且含当日。窗口为 date max_date - interval '89 days' 到 max_date::date + 1 day? 包含当日。如果 max timestamp 具体时间，用日期边界：moved_at >= (max_date::date - INTERVAL '89 days') AND moved_at < (max_date::date + INTERVAL '1 day')。或者最近90自然日含当日等于 >= max_date::date - 89 days and < max_date::date+1。 当前库存无时间限制 inventory.quantity current. 全部仓库: warehouses left join inventory? 库存表可能没有仓库? 全部仓库意味着 warehouses 所有 warehouse_id，即使没有库存也显示 current inventory 0? 问题\"列出全部仓库当前库存量\" 全部仓库，所以从 warehouses 左连接聚合库存和出库。或者仓库ID来自warehouses。库存量没有记录记0? \"当前库存量\" 若仓库无库存记录，SUM为NULL；通常应显示0？问题只说无出库记0，未说无库存记0。但\"全部仓库\"意味着库存为0合理。需要谨慎。规则：空缺计数仅明确无事实计0或证实完整观测才补0，否则NULL；缺金额/均值不造0。 库存量是数量聚合，可能用COALESCE(SUM(i.quantity),0)？ 没有明确说无库存记0。但\"当前库存量\"每仓库，全部仓库，当前库存如果无库存记录，实际库存可能0。 业务契约？ inventory 主键 warehouse,product，没有记录可能没有库存，不是零库存? 但全部仓库当前库存量，通常补0。但规则说缺金额/均值不造0，数量类似COUNT? 但\"无出库记0\"明确出库0； 库存未说，不应 COALESCE? 然而\"当前库存量\" 是 SUM(i.quantity)，全仓库无记录 NULL 可能不符合。 需要决定。\n\n库存周转天数 = 90 * 当前库存 / 出库量，出库为0时NULL。 如果 current inventory NULL? 需计算。 公式用 SUM(i.quantity) 和 SUM(im.quantity)。出库为0时 NULLIF(SUM(im.quantity),0) 返回 NULL，ROUND。 但\"无出库记0\" 展示出库数量0，同时周转用 NULLIF 得到NULL。 如果出库窗口没有记录，SUM(im.quantity)=NULL，需要 COALESCE(...,0) 展示0，但周转用 NULLIF(COALESCE(...,0),0)。 需要注意如果全表无参考日期，出库未知还是0? \"未有参考日期时未知\" 可能指最近90天出库数量应未知 NULL，而非0，因为没有参考日无法定义窗口。 周转天数也未知。 \"无出库记0\" 只在有参考日期且窗口内无出库。 所以需要条件：如果 max_date IS NULL，出库数量 NULL；否则 COALESCE(sum within window,0)。 周转：如果 max_date IS NULL 或 出库=0 -> NULL；否则 90*库存/出库。 库存可能为 NULL? 周转 NULL 如果库存NULL? 若补0则 0/出库=0。 但库存周转天数如果库存0 and 出库>0 =>0，合理。 如果库存无记录且无库存补0，天数0? 但\"当前库存量\"全部仓库，应该0。 但未明确，为避免造假? 在零售库存，无记录可能0。 全部仓库当前库存量，我们可以 COALESCE(SUM(i.quantity),0) 作为当前库存。 这符合\"全部仓库\"和\"当前库存量\"通常。 但规则7? 事实过滤须有请求或业务契约依据；不得擅加过滤，已有合法过滤仍执行。规则9: 标签覆盖会员数含无订单会员，商品均价只含已有价格；LEFT JOIN保留会员或分别聚合合并，只有明确要求有订单/商品才限缩。 这里全部仓库，保留仓库；库存无记录应保留仓库，库存 SUM NULL。 是否 COALESCE? \"当前库存量\"指标在无库存记录时可能未知，不是0。 但库存量是库存表已有数量，无记录不一定是0? 但是全部仓库，应有当前库存量。 在数据库中仓库没有库存行可能表示没有库存。 常见查询会 COALESCE(SUM(quantity),0). 需要决定。\n\n需要输出列：warehouse_id, current inventory, recent90 outbound quantity, turnover days (one decimal). 别名可用中文? 尽量英文。 需要ORDER BY? 未指定排序。可以按warehouse_id升序以稳定。 LIMIT 必须，全部仓库数量少，可以 LIMIT? 必须LIMIT。 \"全部仓库\"不能限制少量? 硬性必须LIMIT，可以用 LIMIT 1000 or 100? 需要保证全部仓库。没有warehouses数量，可能少。 LIMIT 1000。 但规则2必须LIMIT；如果不加会违反。 用 LIMIT 1000。\n\nSQL 设计：\nWITH ref AS (\n  SELECT MAX(moved_at)::date AS max_date FROM inventory_movements\n), inv AS (\n  SELECT warehouse_id, SUM(quantity) AS current_qty\n  FROM inventory\n  GROUP BY warehouse_id\n), outb AS (\n  SELECT im.warehouse_id,\n         CASE WHEN (SELECT max_date FROM ref) IS NULL THEN NULL\n              ELSE COALESCE(SUM(im.quantity),0) END AS outbound_qty\n  FROM inventory_movements im, ref r\n  WHERE im.movement_type = 2\n    AND r.max_date IS NOT NULL\n    AND im.moved_at >= (r.max_date - INTERVAL '89 days')\n    AND im.moved_at < (r.max_date + INTERVAL '1 day')\n  GROUP BY im.warehouse_id\n)\nSELECT w.warehouse_id,\n       COALESCE(inv.current_qty,0) AS current_inventory,\n       CASE WHEN r.max_date IS NULL THEN NULL ELSE COALESCE(outb.outbound_qty,0) END AS outbound_quantity_90d,\n       CASE WHEN r.max_date IS NULL THEN NULL\n            WHEN COALESCE(outb.outbound_qty,0) = 0 THEN NULL\n            ELSE ROUND(90.0 * COALESCE(inv.current_qty,0)::numeric / outb.outbound_qty::numeric, 1)\n       END AS inventory_turnover_days\nFROM warehouses w\nCROSS JOIN ref r\nLEFT JOIN inv ON inv.warehouse_id = w.warehouse_id\nLEFT JOIN outb ON outb.warehouse_id = w.warehouse_id\nORDER BY w.warehouse_id\nLIMIT 1000;\n\n问题：outb CTE 如果 ref max_date NULL，则 WHERE r.max_date IS NOT NULL 导致无行，LEFT JOIN 给NULL。 SELECT CASE WHEN max NULL THEN NULL ELSE COALESCE(outb,0) END. 如果 max_date not null but warehouse no outbound, outb null => 0. Good.\n\n但 outb CTE GROUP BY im.warehouse_id only includes warehouses with outbound. Left join.\n\nPotential issue: 使用 INNER from inventory_movements, ref: ref returns one row even max null. WHERE r.max_date IS NOT NULL. Fine. Could simpler.\n\nCurrent inventory: COALESCE(inv,0). If inventory qty could be negative? not worry. SUM integer. ROUND with numeric.\n\nMovement_type is smallint but enum says '2'. We should use movement_type = 2 or '2'? \"字段枚举对齐：movement_type = '2'\". Physical smallint; literal '2' cast. Use movement_type = 2? In规则使用真实过滤条件 movement_type='2'. 可以写 movement_type = 2? It says direct use '2'. We'll use movement_type = 2? Better use = 2 (smallint). But \"真实过滤条件：movement_type = '2'\". PostgreSQL casts unknown literal. Use movement_type = '2'. Fine.\n\n参考日取全部库存流水最大日期且含当日: max(moved_at)::date. Window >= max_date - 89 days and < max_date + 1 day. If max time is 2018-10-17 17:00, including day means all movements that day, even after max timestamp? There are none after max in full table, but if max date same. Good. The max(timestamp) date may exclude? Actually window < max_date +1 includes all that date. Good.\n\nNo reference date when max NULL: Then \"最近90出库数量\" unknown NULL, turnover unknown. Current inventory still. Good.\n\n\"按仓库ID列出全部仓库\" from warehouses. If there are inventory movements with warehouse_id not in warehouses? Should not, but \"全部仓库\" from warehouses. JOIN PLAN uses warehouses. Good.\n\nNeed only one SELECT. CTE is one select? It includes WITH and SELECT; allowed? \"只输出一条SELECT\" CTE is not separate? It's one statement. Fine.\n\nNeed consider \"库存周转天数一位\" means round one. Yes.\n\nCould simplify with subqueries. Need no code fences.\n\nPotential issue ROUND numeric: 90.0 * COALESCE(inv.current_qty,0)::numeric / NULLIF? We use when outb=0 null. current qty int. 90.0 numeric. Fine.\n\nNeed output alias maybe Chinese? Not necessary. Columns: warehouse_id, current_inventory, outbound_quantity_90d, inventory_turnover_days.\n\nShould we include turnover one decimal even integer 0? ROUND returns numeric e.g. 0.0? If current 0 and outbound>0, 90.0*0/out =0.0? PostgreSQL numeric displays 0? ROUND(0.0,1) returns 0.0? likely 0.0. Fine.\n\nNeed decide COALESCE current inventory. Let's re-read rules: \"无出库记0，未有参考日期时未知；\" explicitly only outbound zero. \"当前库存量\" from inventory sum. For all warehouses, if no inventory records, what is current inventory? \"全部仓库当前库存量\" could be 0. Usually left join SUM gives NULL, but \"当前库存量\" empty warehouse = 0 maybe. But rule 13: \"空缺计数仅明确无事实计0或证实完整观测才补0，否则NULL；缺金额/均值不造0\".库存量不是计数/金额/均值? It's sum of quantities. \"无出库记0\" explicit. No mention inventory -> do not COALESCE? But \"全部仓库\" implies include warehouses with no inventory, and current inventory could be unknown? However stock quantity is an additive measure; no inventory row might mean no stock (zero). But strict rules favor not inventing 0 except explicit. Hmm.\n\nNeed infer from metric inventory_turnover_days expression: ROUND(90.0 * SUM(i.quantity) / NULLIF(SUM(im.quantity), 0), 1). It doesn't wrap SUM(i.quantity) in COALESCE. If no inventory, numerator NULL, result NULL. So metric convention doesn't coerce inventory to 0. The problem says formula =90*当前库存/出库量. If current inventory unknown, turnover unknown. But asks \"全部仓库当前库存量\". We can output NULL for no inventory. But maybe \"当前库存量\" should be 0? The metric expression uses SUM(i.quantity) no coalesce. Rule 7 says current METRICS expression used unless user overrides. User did not state no stock 0. So we should not COALESCE current inventory? But user explicitly \"无出库记0\"; not inventory. So keep inventory as SUM, NULL if none. Then turnover if inventory NULL -> NULL automatically. If inventory 0 (record exists with sum 0) and outbound 0 -> NULL due outbound 0. If inventory 0 and outbound>0 -> 0.0. Good.\n\nNeed make outbound quantity \"无出库记0\" when ref exists; if no reference date null. So COALESCE outbound to 0 only if max_date not null. Good.\n\nInventory current: inv.current_qty (NULL if no rows). All warehouses. Should we sum only? yes.\n\nTurnover formula with inv.current_qty and outbound. If outbound 0 -> NULL. If ref null -> NULL. If outbound NULL due no outbound record but ref non-null: use 0, then NULL due 0. If inv current NULL -> NULL. Formula:\nCASE WHEN r.max_date IS NULL THEN NULL\n     WHEN COALESCE(outb.outbound_qty,0) = 0 THEN NULL\n     ELSE ROUND(90.0 * inv.current_qty::numeric / outb.outbound_qty::numeric,1)\nEND\nBut if outb null and coalesce=0 -> null. If outb>0 and inv null -> expression NULL; round null -> null. Good. If outb >0, inv 0 -> 0.0.\n\nNeed outbound quantity expression:\nCASE WHEN r.max_date IS NULL THEN NULL ELSE COALESCE(outb.outbound_qty,0) END\nIf no ref, outb CTE empty, outb null, r.max_date null -> null. Good.\n\nPotential issue with outb CTE and ref: If ref max_date null, WHERE r.max_date IS NOT NULL yields no rows. If max_date not null, it filters window. Good. But outb CTE groups only movement_type=2. Need if movement quantity maybe negative? Outbound quantity positive? likely. Use SUM(quantity). Fine.\n\nCould use `im.moved_at >= r.max_date - INTERVAL '89 days'` where r.max_date is date. Date - interval yields timestamp? date - interval returns timestamp. Good. `im.moved_at < r.max_date + INTERVAL '1 day'`. Good.\n\nNow user says \"最近90个自然日出库数量\" and \"参考日取全部库存流水最大日期且含当日\". Use max_date - 89 days ensures 90 days inclusive: if max_date 2018-10-17, start 2018-07-20, includes 90 days (Jul20-Oct17). Yes.\n\nNeed maybe \"全部库存流水最大日期\" includes all movements, not just outbound. yes ref from all inventory_movements. Good.\n\nWhat about warehouse with no inventory_movements but inventory? outb null. If ref exists globally, outbound 0. Good.\n\nShould we include warehouses with no inventory but outbound? yes via left.\n\nNow SQL with CTE. Need only one SELECT. Comments? Could omit. Hard rule output executable SQL no fences. CTE okay. Need LIMIT. Use LIMIT 1000. Could order by warehouse_id. Good.\n\nLet's craft final. Need no explanation. Ensure table/columns lowercase. Use `moved_at::date`? max date. `MAX(moved_at)::date AS max_date`. Fine.\n\nSQL:\n\nWITH ref AS (\n  SELECT MAX(moved_at)::date AS max_date\n  FROM inventory_movements\n),\ninv AS (\n  SELECT warehouse_id, SUM(quantity) AS current_qty\n  FROM inventory\n  GROUP BY warehouse_id\n),\noutb AS (\n  SELECT im.warehouse_id,\n         SUM(im.quantity) AS outbound_qty\n  FROM inventory_movements im\n  CROSS JOIN ref r\n  WHERE im.movement_type = '2'\n    AND r.max_date IS NOT NULL\n    AND im.moved_at >= r.max_date - INTERVAL '89 days'\n    AND im.moved_at < r.max_date + INTERVAL '1 day'\n  GROUP BY im.warehouse_id\n)\nSELECT w.warehouse_id,\n       inv.current_qty AS current_inventory,\n       CASE WHEN r.max_date IS NULL THEN NULL\n            ELSE COALESCE(outb.outbound_qty, 0)\n       END AS outbound_quantity_90d,\n       CASE WHEN r.max_date IS NULL THEN NULL\n            WHEN COALESCE(outb.outbound_qty, 0) = 0 THEN NULL\n            ELSE ROUND(90.0 * inv.current_qty::numeric / outb.outbound_qty::numeric, 1)\n       END AS inventory_turnover_days\nFROM warehouses w\nCROSS JOIN ref r\nLEFT JOIN inv ON inv.warehouse_id = w.warehouse_id\nLEFT JOIN outb ON outb.warehouse_id = w.warehouse_id\nORDER BY w.warehouse_id\nLIMIT 1000;\n\nNeed check if `inv.current_qty::numeric` when current_qty null: okay NULL::numeric. But expression within ELSE only if outbound >0. If current_qty NULL, ROUND(NULL,1) returns NULL. Fine. However `inv.current_qty::numeric` syntax works? `inv.current_qty::numeric` yes column cast. `outb.outbound_qty::numeric` yes.\n\nPotential issue `r.max_date - INTERVAL '89 days'` returns timestamp without time zone? r.max_date is date, date - interval -> timestamp. Good.\n\nShould current_inventory alias maybe stock? Not issue.\n\nNeed include \"库存周转天数一位\" - round one. Good.\n\nWould there be duplicate outb? group by. Good.\n\nNeed maybe if max date null, current inventory still. Good.\n\nNow final only SQL."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 3110,
+        "completion_tokens": 4381,
+        "total_tokens": 7491,
+        "prompt_tokens_details": {
+          "cached_tokens": 1792
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 4042
+        },
+        "prompt_cache_hit_tokens": 1792,
+        "prompt_cache_miss_tokens": 1318
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseComplete": true,
+    "upstreamAttempted": true,
+    "requestWireComplete": true,
+    "requestWireStartedAtUtc": "2026-11-21T06:49:29.507Z",
+    "requestWireCompleteAtUtc": "2026-11-21T06:49:29.507Z",
+    "usageKnown": true,
+    "error": null,
+    "permitSnapshot": {
+      "token": "48c05b913cdd445498bf67c4f57393b5",
+      "round": "DEV_F",
+      "questionId": "T6-023",
+      "attempt": 1,
+      "upstreamDeadlineMonotonic": 2302686.7468056,
+      "answerDeadlineMonotonic": 2302686.7468056,
+      "wholeRoundDeadlineMonotonic": 2303898.4987276,
+      "offPeakBoundaryMonotonic": 2454502.5484565003,
+      "accountingDeadlineMonotonic": 2302791.7468056,
+      "admittedAt": "2026-11-21T06:49:29.354288+00:00",
+      "offPeak": {
+        "allowed": true,
+        "reason": "OFF_PEAK",
+        "checkedAt": "2026-11-21T06:49:29.354134+00:00",
+        "guardSeconds": 135
+      },
+      "requestBodySha256": "b1fa1fdb6f17c611bffcbc2ec4578dab8d421bc5e338d8d5d638a1014bae48cf",
+      "requestBytes": 12496,
+      "inputTokenEstimate": 13520,
+      "promptChars": 6819,
+      "reservedYuan": "0.10"
+    },
+    "permitSha256": "e9ce807eb9f59f77e853edde4356ba521b58275d41cede417c32a714bca72716",
+    "answerDeadlineMonotonic": 2302686.7468056,
+    "upstreamDeadlineMonotonic": 2302686.7468056,
+    "accountingDeadlineMonotonic": 2302791.7468056,
+    "postSendAccountingDeadlineMonotonic": 2302791.7468056,
+    "wholeRoundDeadlineMonotonic": 2303898.4987276,
+    "offPeakBoundaryMonotonic": 2454502.5484565003,
+    "responseHeaderAtUtc": "2026-11-21T06:49:29.609Z",
+    "responseCompleteAtUtc": "2026-11-21T06:49:54.528Z",
+    "responseBytes": 17051,
+    "responseBodySha256": "3176544ff9188e16bb08fff03c6f9a259a6f80e9114917445db198580163c7a0",
+    "finishedAtUtc": "2026-11-21T06:49:54.529Z",
+    "providerBodyTimely": false,
+    "bodyReadyAtUtc": "2026-11-21T06:49:54.529Z",
+    "bodyReadyAtMonotonic": 2302697.0777294,
+    "durableBeforeAnswer": true,
+    "late": true,
+    "accountingOnly": true,
+    "answerEligible": false,
+    "answerReturnedAtUtc": null,
+    "eligibilityScope": "PROVIDER_BODY_READINESS_ONLY; HTTP delivery is controller evidence",
+    "lateSqlBackfill": false,
+    "sameSentConnectionReadOnly": true,
+    "reconnects": 0,
+    "resends": 0,
+    "responseBodyFile": "48c05b913cdd445498bf67c4f57393b5-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 3110,
+    "completion_tokens": 4381,
+    "total_tokens": 7491,
+    "prompt_tokens_details": {
+      "cached_tokens": 1792
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 4042
+    },
+    "prompt_cache_hit_tokens": 1792,
+    "prompt_cache_miss_tokens": 1318
+  }
+}

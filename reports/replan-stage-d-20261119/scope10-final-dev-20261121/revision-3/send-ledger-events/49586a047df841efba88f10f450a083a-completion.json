@@ -1,0 +1,130 @@
+{
+  "token": "49586a047df841efba88f10f450a083a",
+  "round": "DEV_F",
+  "questionId": "T2-027",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2302278.3051961,
+  "answerDeadlineMonotonic": 2302278.3051961,
+  "wholeRoundDeadlineMonotonic": 2303898.4987276,
+  "offPeakBoundaryMonotonic": 2454502.5484567997,
+  "accountingDeadlineMonotonic": 2302383.3051961,
+  "admittedAt": "2026-11-21T06:42:40.889159+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-21T06:42:40.889063+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "5b5c8f1ceb0f956f21d3bd5517439590ec77f1267f269b5ceab141cf4ef071d7",
+  "requestBytes": 9489,
+  "inputTokenEstimate": 10513,
+  "promptChars": 4499,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00107152",
+  "result": {
+    "startedAtUtc": "2026-11-21T06:42:40.926Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "5a456a18-4465-4c1e-b6b2-8a74d9884b7d",
+      "object": "chat.completion",
+      "created": 1795243360,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT movement_type, COUNT(*) AS record_count\nFROM inventory_movements\nGROUP BY movement_type\nORDER BY movement_type\nLIMIT 100;",
+            "reasoning_content": "We need answer SQL only. Need interpret question: 每种库存变动类型各有多少条记录？ Table inventory_movements has movement_type. Need group by movement_type count records. Output type and count. Need maybe Chinese alias? Use movement_type, COUNT(*) AS count? Need ensure no extra. Limit? Group by all rows no need limit? Rule must LIMIT except aggregate single row. For group by multiple rows need LIMIT. But if types finite, can still LIMIT maybe 100. Query: SELECT movement_type, COUNT(*) AS record_count FROM inventory_movements GROUP BY movement_type ORDER BY movement_type; add LIMIT 100. Is limit violating? No. Need only select required. Use lowercase. Alias maybe record_count. No filter. Should we join labels? No. \"每种\" = each type. Use movement_type raw value. Done. Ensure one SELECT."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2348,
+        "completion_tokens": 214,
+        "total_tokens": 2562,
+        "prompt_tokens_details": {
+          "cached_tokens": 2176
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 182
+        },
+        "prompt_cache_hit_tokens": 2176,
+        "prompt_cache_miss_tokens": 172
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseComplete": true,
+    "upstreamAttempted": true,
+    "requestWireComplete": true,
+    "requestWireStartedAtUtc": "2026-11-21T06:42:41.031Z",
+    "requestWireCompleteAtUtc": "2026-11-21T06:42:41.031Z",
+    "usageKnown": true,
+    "error": null,
+    "permitSnapshot": {
+      "token": "49586a047df841efba88f10f450a083a",
+      "round": "DEV_F",
+      "questionId": "T2-027",
+      "attempt": 1,
+      "upstreamDeadlineMonotonic": 2302278.3051961,
+      "answerDeadlineMonotonic": 2302278.3051961,
+      "wholeRoundDeadlineMonotonic": 2303898.4987276,
+      "offPeakBoundaryMonotonic": 2454502.5484567997,
+      "accountingDeadlineMonotonic": 2302383.3051961,
+      "admittedAt": "2026-11-21T06:42:40.889159+00:00",
+      "offPeak": {
+        "allowed": true,
+        "reason": "OFF_PEAK",
+        "checkedAt": "2026-11-21T06:42:40.889063+00:00",
+        "guardSeconds": 135
+      },
+      "requestBodySha256": "5b5c8f1ceb0f956f21d3bd5517439590ec77f1267f269b5ceab141cf4ef071d7",
+      "requestBytes": 9489,
+      "inputTokenEstimate": 10513,
+      "promptChars": 4499,
+      "reservedYuan": "0.10"
+    },
+    "permitSha256": "88e9af3da1232c7c342e60f66b4df45064b572822fe1c98deb2cf3a4d92533df",
+    "answerDeadlineMonotonic": 2302278.3051961,
+    "upstreamDeadlineMonotonic": 2302278.3051961,
+    "accountingDeadlineMonotonic": 2302383.3051961,
+    "postSendAccountingDeadlineMonotonic": 2302383.3051961,
+    "wholeRoundDeadlineMonotonic": 2303898.4987276,
+    "offPeakBoundaryMonotonic": 2454502.5484567997,
+    "responseHeaderAtUtc": "2026-11-21T06:42:41.141Z",
+    "responseCompleteAtUtc": "2026-11-21T06:42:42.648Z",
+    "responseBytes": 1489,
+    "responseBodySha256": "7e7e01a1d310fcae028212237b00f8a78c01406aa8029ec9f36475f822beb525",
+    "finishedAtUtc": "2026-11-21T06:42:42.649Z",
+    "providerBodyTimely": true,
+    "bodyReadyAtUtc": "2026-11-21T06:42:42.649Z",
+    "bodyReadyAtMonotonic": 2302265.1979285,
+    "durableBeforeAnswer": true,
+    "late": false,
+    "accountingOnly": false,
+    "answerEligible": true,
+    "answerReturnedAtUtc": null,
+    "eligibilityScope": "PROVIDER_BODY_READINESS_ONLY; HTTP delivery is controller evidence",
+    "lateSqlBackfill": false,
+    "sameSentConnectionReadOnly": true,
+    "reconnects": 0,
+    "resends": 0,
+    "responseBodyFile": "49586a047df841efba88f10f450a083a-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 2348,
+    "completion_tokens": 214,
+    "total_tokens": 2562,
+    "prompt_tokens_details": {
+      "cached_tokens": 2176
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 182
+    },
+    "prompt_cache_hit_tokens": 2176,
+    "prompt_cache_miss_tokens": 172
+  }
+}

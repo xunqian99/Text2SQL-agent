@@ -1,0 +1,130 @@
+{
+  "token": "8b2c064d789346d89dca933b6fa9ba00",
+  "round": "DEV_F",
+  "questionId": "T2-016",
+  "attempt": 1,
+  "upstreamDeadlineMonotonic": 2302265.5682436,
+  "answerDeadlineMonotonic": 2302265.5682436,
+  "wholeRoundDeadlineMonotonic": 2303898.4987276,
+  "offPeakBoundaryMonotonic": 2454502.5484575997,
+  "accountingDeadlineMonotonic": 2302370.5682436,
+  "admittedAt": "2026-11-21T06:42:28.158645+00:00",
+  "offPeak": {
+    "allowed": true,
+    "reason": "OFF_PEAK",
+    "checkedAt": "2026-11-21T06:42:28.158549+00:00",
+    "guardSeconds": 135
+  },
+  "requestBodySha256": "64933f976d2f4f249af7f436fa8f13d338d38ce60db7c938be4e064bfeca69ee",
+  "requestBytes": 11224,
+  "inputTokenEstimate": 12248,
+  "promptChars": 6059,
+  "reservedYuan": "0.10",
+  "usageKnown": true,
+  "costYuan": "0.00071076",
+  "result": {
+    "startedAtUtc": "2026-11-21T06:42:28.195Z",
+    "httpStatus": 200,
+    "responseJson": {
+      "id": "51efd598-af13-4703-be9a-b5c31e2c2c11",
+      "object": "chat.completion",
+      "created": 1795243347,
+      "model": "deepseek-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "SELECT status, COUNT(*) AS member_count\nFROM members\nGROUP BY status\nORDER BY status\nLIMIT 100;",
+            "reasoning_content": "Need count members per status. Output status and count. Status raw value. Group by status. Limit? aggregate with group by needs LIMIT per rules. Use LIMIT... topN? no ordering specified; just list. Add ORDER BY status, LIMIT maybe 10 or large. Rule 3 must LIMIT. Use LIMIT 100.\n\nCount members: COUNT(*) per status, member_id primary key unique so fine. Could COUNT(member_id). Output status, member count."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2845,
+        "completion_tokens": 125,
+        "total_tokens": 2970,
+        "prompt_tokens_details": {
+          "cached_tokens": 2688
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 99
+        },
+        "prompt_cache_hit_tokens": 2688,
+        "prompt_cache_miss_tokens": 157
+      },
+      "system_fingerprint": "bc19ba97cbe016479903222bb1578db6"
+    },
+    "responseComplete": true,
+    "upstreamAttempted": true,
+    "requestWireComplete": true,
+    "requestWireStartedAtUtc": "2026-11-21T06:42:28.335Z",
+    "requestWireCompleteAtUtc": "2026-11-21T06:42:28.335Z",
+    "usageKnown": true,
+    "error": null,
+    "permitSnapshot": {
+      "token": "8b2c064d789346d89dca933b6fa9ba00",
+      "round": "DEV_F",
+      "questionId": "T2-016",
+      "attempt": 1,
+      "upstreamDeadlineMonotonic": 2302265.5682436,
+      "answerDeadlineMonotonic": 2302265.5682436,
+      "wholeRoundDeadlineMonotonic": 2303898.4987276,
+      "offPeakBoundaryMonotonic": 2454502.5484575997,
+      "accountingDeadlineMonotonic": 2302370.5682436,
+      "admittedAt": "2026-11-21T06:42:28.158645+00:00",
+      "offPeak": {
+        "allowed": true,
+        "reason": "OFF_PEAK",
+        "checkedAt": "2026-11-21T06:42:28.158549+00:00",
+        "guardSeconds": 135
+      },
+      "requestBodySha256": "64933f976d2f4f249af7f436fa8f13d338d38ce60db7c938be4e064bfeca69ee",
+      "requestBytes": 11224,
+      "inputTokenEstimate": 12248,
+      "promptChars": 6059,
+      "reservedYuan": "0.10"
+    },
+    "permitSha256": "f584db13e9ff661b98670d80717cb20522f10afcdd9f500f1e378840f569d6c0",
+    "answerDeadlineMonotonic": 2302265.5682436,
+    "upstreamDeadlineMonotonic": 2302265.5682436,
+    "accountingDeadlineMonotonic": 2302370.5682436,
+    "postSendAccountingDeadlineMonotonic": 2302370.5682436,
+    "wholeRoundDeadlineMonotonic": 2303898.4987276,
+    "offPeakBoundaryMonotonic": 2454502.5484575997,
+    "responseHeaderAtUtc": "2026-11-21T06:42:28.429Z",
+    "responseCompleteAtUtc": "2026-11-21T06:42:29.581Z",
+    "responseBytes": 1046,
+    "responseBodySha256": "d5b938954a11776cfadd464729a284f3b7d5380918c56362077f74555f30c42d",
+    "finishedAtUtc": "2026-11-21T06:42:29.581Z",
+    "providerBodyTimely": true,
+    "bodyReadyAtUtc": "2026-11-21T06:42:29.581Z",
+    "bodyReadyAtMonotonic": 2302252.1302081,
+    "durableBeforeAnswer": true,
+    "late": false,
+    "accountingOnly": false,
+    "answerEligible": true,
+    "answerReturnedAtUtc": null,
+    "eligibilityScope": "PROVIDER_BODY_READINESS_ONLY; HTTP delivery is controller evidence",
+    "lateSqlBackfill": false,
+    "sameSentConnectionReadOnly": true,
+    "reconnects": 0,
+    "resends": 0,
+    "responseBodyFile": "8b2c064d789346d89dca933b6fa9ba00-upstream.body.bin"
+  },
+  "usage": {
+    "prompt_tokens": 2845,
+    "completion_tokens": 125,
+    "total_tokens": 2970,
+    "prompt_tokens_details": {
+      "cached_tokens": 2688
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 99
+    },
+    "prompt_cache_hit_tokens": 2688,
+    "prompt_cache_miss_tokens": 157
+  }
+}
