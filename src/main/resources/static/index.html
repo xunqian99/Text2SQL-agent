@@ -2236,9 +2236,8 @@
     let productCache = {};
     // 订单行同理：状态流转按钮只传行号，订单号不进入 HTML 属性。
     let orderCache = {};
-    // 当前多轮会话 ID。后端 /api/ask 支持 sessionId 参数并在响应里回传，
-    // 但前端此前从不发送、也不保存，导致多轮追问永远当成首轮——
-    // 上下文压缩、历史轮次落库、追问改写这些能力全都用不上。
+    // 当前多轮会话 ID。首轮请求先由前端生成，后续请求沿用同一个 ID，
+    // 这样后端才能保存待确认口径并把“按月份展示”等追问改写到原问题上。
     let currentSessionId = null;
 
     // 多标签页状态
@@ -3403,6 +3402,13 @@
       const q = input.value.trim();
       if (!q) return;
 
+      // 首轮也必须带 sessionId，否则后端会按单轮请求处理，澄清按钮无法恢复上下文。
+      if (!currentSessionId) {
+        currentSessionId = window.crypto && typeof window.crypto.randomUUID === 'function'
+          ? `ui-${window.crypto.randomUUID()}`
+          : `ui-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      }
+
       const chatArea = document.getElementById('aiChatArea');
       input.value = '';
 
@@ -3802,8 +3808,8 @@
         if (msg.includes('销售额')) {
           html += `
             <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;">
-              <button class="view-segmented-btn" style="border: 1px solid #dcdfe6; background: #fff; color: #409eff; padding: 4px 12px; cursor: pointer; border-radius: 4px; font-size: 12px;" onclick="askAiQuery('含运费的销售额')">含运费 GMV</button>
-              <button class="view-segmented-btn" style="border: 1px solid #dcdfe6; background: #fff; color: #409eff; padding: 4px 12px; cursor: pointer; border-radius: 4px; font-size: 12px;" onclick="askAiQuery('不含运费的销售额')">不含运费 商品金额</button>
+              <button class="view-segmented-btn" style="border: 1px solid #dcdfe6; background: #fff; color: #409eff; padding: 4px 12px; cursor: pointer; border-radius: 4px; font-size: 12px;" onclick="askAiQuery('含运费')">含运费 GMV</button>
+              <button class="view-segmented-btn" style="border: 1px solid #dcdfe6; background: #fff; color: #409eff; padding: 4px 12px; cursor: pointer; border-radius: 4px; font-size: 12px;" onclick="askAiQuery('不含运费')">不含运费 商品金额</button>
             </div>
           `;
         } else if (msg.includes('活跃用户')) {
