@@ -1,9 +1,15 @@
-# 销售额分析闭环需求文档
+# 销售额分析闭环产品规格（PRD / SDD）
+
+> 本文是 Spec-Driven Development 的产品规格，不是开发总结。
+> 需求编号（FR）、验收指标和阶段编号必须先于代码存在；实现、测试和路线文档都必须回链到这些编号。
 
 - 文档状态：提案，待进入实现阶段
 - 版本：v1.0
 - 日期：2026-11-21
 - 适用项目：Text2SQL Agent 电商经营分析平台
+- 规格角色：产品规格（Product Specification）
+- 配套规格：[技术与架构规格](SALES_ANALYSIS_WORKBENCH_TECHNICAL_ARCHITECTURE.md) · [实施路线规格](SALES_ANALYSIS_WORKBENCH_ROADMAP.md)
+- 当前实现阶段：A-1 分析上下文契约
 - 当前数据源：本地 PostgreSQL Olist 分析快照
 - 当前数据规模：37 张业务表、27 个已登记业务指标
 
