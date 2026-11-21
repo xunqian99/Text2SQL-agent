@@ -88,6 +88,7 @@ class _Collection:
     answer_returned: str | None = None
     ready_at: float = 0.0
     after_succeeded: bool = False
+    decision_owner: bool = False
     after_error: str | None = None
     status: int = 502
     headers: dict = field(default_factory=dict)
@@ -171,9 +172,39 @@ class ModelProxy(StableModelProxy):
         self._collectors = set()
         self._reserved = 0
         self._buffered = 0
+        self._answer_decisions = {}
         self.metrics = dict(peakCollectors=0, peakReservedBodyBytes=0,
                             peakBufferedBodyBytes=0, resourceRejections=0,
                             upstreamPosts=0, afterCalls=0)
+
+    def get_answer_decisions(self):
+        """Return detached final HTTP decisions, independent of body completions.
+
+        These are selected responses, not proof the client received them. Drain
+        before create-only persistence, then reconcile with controller HTTP
+        evidence. A token gets one decision; callers cannot mutate the archive.
+        """
+        with self._condition:
+            return copy.deepcopy(list(self._answer_decisions.values()))
+
+    def _record_answer_decision(self, state, status, exceeded):
+        permit = state.permit if isinstance(state.permit, dict) else {}
+        token = permit.get("token")
+        if not state.decision_owner or not isinstance(token, str) or not token:
+            return
+        decision = dict(token=token, questionId=permit.get("questionId"),
+                        round=permit.get("round"), ordinal=permit.get("ordinal"),
+                        attempt=permit.get("attempt"), requestId=permit.get("requestId"),
+                        answerDeadlineExceeded=bool(exceeded), selectedHttpStatus=status,
+                        decisionAtUtc=frozen._utc_now(),
+                        bodyTimely=bool(state.result.get("providerBodyTimely", False)),
+                        durableSettlementSucceeded=state.after_succeeded,
+                        durableBeforeAnswer=self._durable_before_answer,
+                        decisionScope="SELECTED_HTTP_RESPONSE; client receipt is controller evidence")
+        with self._condition:
+            # An attempted token replay cannot replace the original decision.
+            if token not in self._answer_decisions:
+                self._answer_decisions[token] = decision
 
     def _reserve(self):
         with self._condition:
@@ -200,7 +231,10 @@ class ModelProxy(StableModelProxy):
 
     def _validate(self, state, raw_body):
         permit = state.permit
-        upstream = self._validate_permit(permit)
+        with self._condition:
+            token = permit.get("token") if isinstance(permit, dict) else None
+            state.decision_owner = isinstance(token, str) and bool(token) and token not in self._tokens
+            upstream = self._validate_permit(permit)
         answer = _number(permit.get("answerDeadlineMonotonic", upstream), "answer deadline")
         round_end = _number(permit.get("wholeRoundDeadlineMonotonic"), "round deadline")
         accounting = permit.get("accountingDeadlineMonotonic", permit.get("postSendAccountingDeadlineMonotonic"))
@@ -582,6 +616,7 @@ class ModelProxy(StableModelProxy):
                 self._record_error("after_send", callback_error)
             finally:
                 self._release(state)
+            self._record_answer_decision(state, 503, False)
             handler._error(503, "D_LOCAL_GATE:collector start failed")
             return
         try:
@@ -592,14 +627,18 @@ class ModelProxy(StableModelProxy):
             state.answer_returned = frozen._utc_now()
             state.answer_decided.set()
             if state.answer_frozen:
+                self._record_answer_decision(state, 504, True)
                 handler.connection.settimeout(1)
                 handler._error(504, "D_LOCAL_TRANSPORT:answer deadline expired; accounting only")
             elif self._durable_before_answer and not state.after_succeeded:
+                self._record_answer_decision(state, 502, False)
                 handler._error(502, "D_LOCAL_ACCOUNTING:durable settlement failed before answer")
             elif state.result["error"] is None:
+                self._record_answer_decision(state, state.status, False)
                 handler.connection.settimeout(max(.001, answer_deadline - time.monotonic()))
                 handler._reply(state.status, state.result["responseBodyRaw"], **state.headers)
             else:
+                self._record_answer_decision(state, state.status, False)
                 handler._error(state.status, state.result["error"])
         finally:
             state.answer_decided.set()

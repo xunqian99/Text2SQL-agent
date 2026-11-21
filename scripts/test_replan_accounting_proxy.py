@@ -212,6 +212,9 @@ class AccountingProxyTests(unittest.TestCase):
             self.assertEqual(running.metrics["upstreamPosts"], 1)
             self.assertGreaterEqual(len(rec.checks), 6)
             self.assertFalse(running.errors)
+            decision = running.get_answer_decisions()[0]
+            self.assertFalse(decision["answerDeadlineExceeded"])
+            self.assertEqual(decision["selectedHttpStatus"], 200)
 
     def test_late_headers_read_original_connection_without_answer_backfill(self):
         rec = Recorder()
@@ -552,6 +555,17 @@ class AccountingProxyTests(unittest.TestCase):
             self.assertIsNotNone(result["bodyReadyAtUtc"])
             self.assertEqual(running.metrics["afterCalls"], 1)
 
+            decisions = running.get_answer_decisions()
+            self.assertEqual(len(decisions), 1)
+            decision = decisions[0]
+            self.assertFalse(decision["answerDeadlineExceeded"])
+            self.assertEqual(decision["selectedHttpStatus"], 200)
+            self.assertTrue(decision["bodyTimely"])
+            self.assertTrue(decision["durableSettlementSucceeded"])
+            self.assertEqual(decision["questionId"], rec.before[0]["questionId"])
+            decision["selectedHttpStatus"] = 599
+            self.assertEqual(running.get_answer_decisions()[0]["selectedHttpStatus"], 200)
+
     def test_slow_durable_after_cannot_extend_http_deadline_or_backfill_sql(self):
         rec = Recorder(budget=.08, after_delay=.3)
         with Stub() as stub, proxy(stub, rec, durable_before_answer=True) as running:
@@ -560,6 +574,11 @@ class AccountingProxyTests(unittest.TestCase):
             self.assertNotIn(b"SELECT", body)
             self.assertLess(elapsed, .2)
             self.assertEqual(rec.after, [])
+            initial_decision = running.get_answer_decisions()[0]
+            self.assertTrue(initial_decision["answerDeadlineExceeded"])
+            self.assertEqual(initial_decision["selectedHttpStatus"], 504)
+            self.assertTrue(initial_decision["bodyTimely"])
+            self.assertFalse(initial_decision["durableSettlementSucceeded"])
             running.drain(1)
             result = self.assert_result(rec)
             # Qualification is explicitly about the timely body. Actual HTTP is
@@ -572,6 +591,7 @@ class AccountingProxyTests(unittest.TestCase):
             self.assertIn("HTTP delivery is controller evidence", result["eligibilityScope"])
             self.assertEqual(running.metrics["afterCalls"], 1)
             self.assertEqual(len(stub.requests), 1)
+            self.assertEqual(running.get_answer_decisions(), [initial_decision])
 
     def test_durable_after_failure_never_delivers_timely_sql_and_blocks_next_send(self):
         rec = Recorder()
@@ -593,6 +613,12 @@ class AccountingProxyTests(unittest.TestCase):
             self.assertEqual(len(stub.requests), 1)
             self.assertEqual(running.metrics["afterCalls"], 1)
 
+            decision = running.get_answer_decisions()[0]
+            self.assertFalse(decision["answerDeadlineExceeded"])
+            self.assertEqual(decision["selectedHttpStatus"], 502)
+            self.assertTrue(decision["bodyTimely"])
+            self.assertFalse(decision["durableSettlementSucceeded"])
+
     def test_late_body_in_durable_mode_stays_accounting_only_with_one_after(self):
         rec = Recorder(budget=.08, after_delay=.025)
         with Stub(delay=.2) as stub, proxy(stub, rec, durable_before_answer=True) as running:
@@ -610,6 +636,11 @@ class AccountingProxyTests(unittest.TestCase):
             self.assertEqual(result["responseBodyRaw"], BODY)
             self.assertEqual(running.metrics["afterCalls"], 1)
             self.assertEqual(len(stub.requests), 1)
+
+            decision = running.get_answer_decisions()[0]
+            self.assertTrue(decision["answerDeadlineExceeded"])
+            self.assertEqual(decision["selectedHttpStatus"], 504)
+            self.assertFalse(decision["bodyTimely"])
 
     def test_second_listener_is_refused_with_no_alternate_port(self):
         rec = Recorder()
