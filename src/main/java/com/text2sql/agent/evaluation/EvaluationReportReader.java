@@ -125,7 +125,16 @@ public class EvaluationReportReader {
         GoldFixture gold = readGoldFixture(normalizedItemId);
         String category = classify(evidence.path("status").asText("").toUpperCase(Locale.ROOT),
                 evidence.path("correct").asBoolean(false), retrievalIds(file.root()).contains(normalizedItemId));
-        if (category == null) category = "RESULT_MISMATCH";
+        if (category == null) category = evidence.path("correct").asBoolean(false) ? "SUCCESS" : "RESULT_MISMATCH";
+        List<ReplayAttempt> attempts = replayAttempts(evidence);
+        String observedResultSha = firstNonBlank(evidence.path("observedResultSha256").asText(""),
+                evidence.path("resultSha256").asText(""));
+        if (observedResultSha.isBlank()) {
+            for (ReplayAttempt attempt : attempts) {
+                if (!attempt.resultSha256().isBlank()) observedResultSha = attempt.resultSha256();
+            }
+        }
+        String goldResultSha = firstNonBlank(evidence.path("goldResultSha256").asText(""), gold.resultSha256());
         return new ReplaySnapshot(
                 "evaluation-replay-v1",
                 true,
@@ -140,13 +149,12 @@ public class EvaluationReportReader {
                 gold.question(),
                 gold.goldSql(),
                 gold.result(),
-                gold.resultSha256(),
+                goldResultSha,
                 firstNonBlank(evidence.path("finalSql").asText(""), evidence.path("generatedSql").asText("")),
                 evidence.path("message").isNull() ? "" : evidence.path("message").asText(""),
                 evidence.path("correct").asBoolean(false),
-                firstNonBlank(evidence.path("observedResultSha256").asText(""),
-                        evidence.path("resultSha256").asText("")),
-                replayAttempts(evidence));
+                observedResultSha,
+                attempts);
     }
 
     private AgentProperties.Eval.DashboardReport configuredReport(String reportId) {

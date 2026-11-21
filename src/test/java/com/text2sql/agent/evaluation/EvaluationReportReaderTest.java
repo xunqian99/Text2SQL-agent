@@ -163,6 +163,7 @@ class EvaluationReportReaderTest {
         assertThat(replay.generatedSql()).contains("canceled");
         assertThat(replay.attempts()).hasSize(1);
         assertThat(replay.attempts().get(0).resultSha256()).isEqualTo("observed-sha");
+        assertThat(replay.observedResultSha256()).isEqualTo("observed-sha");
         assertThat(replay.category()).isEqualTo("RESULT_MISMATCH");
 
         MockMvc mvc = MockMvcBuilders.standaloneSetup(new EvaluationReportController(reader)).build();
