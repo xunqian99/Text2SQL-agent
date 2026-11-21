@@ -454,6 +454,61 @@
       flex-shrink: 0;
     }
 
+    /* 问数执行证据：结果与链路证据放在同一个可折叠面板，便于课堂演示和失败定位。 */
+    .trace-evidence {
+      margin: 10px 0 12px;
+      border: 1px solid #dfe6ec;
+      border-radius: 4px;
+      background: #fbfdff;
+      font-size: 12px;
+    }
+    .trace-evidence summary {
+      cursor: pointer;
+      list-style: none;
+      padding: 9px 12px;
+      color: #409eff;
+      font-weight: 700;
+      user-select: none;
+    }
+    .trace-evidence summary::-webkit-details-marker { display: none; }
+    .trace-evidence summary::before { content: '▸'; margin-right: 6px; }
+    .trace-evidence[open] summary::before { content: '▾'; }
+    .trace-evidence-body { padding: 0 12px 12px; border-top: 1px solid #ebeef5; }
+    .trace-evidence-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px 18px;
+      padding: 10px 0;
+    }
+    .trace-evidence-item { min-width: 0; line-height: 1.55; }
+    .trace-evidence-label { color: #909399; margin-right: 6px; }
+    .trace-evidence-value { color: #303133; word-break: break-word; }
+    .trace-evidence-code {
+      margin: 8px 0 0;
+      padding: 9px 10px;
+      max-height: 180px;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      border: 1px solid #ebeef5;
+      border-radius: 3px;
+      background: #f5f7fa;
+      color: #303133;
+      font: 11.5px/1.55 Consolas, Monaco, monospace;
+    }
+    .trace-evidence-section-title {
+      margin-top: 10px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid #ebeef5;
+      color: #606266;
+      font-weight: 700;
+    }
+    .trace-evidence-warn { color: #b88230; }
+    .trace-evidence-danger { color: #f56c6c; }
+    @media (max-width: 720px) {
+      .trace-evidence-grid { grid-template-columns: 1fr; }
+    }
+
     /* 经典后台面板 Card */
     .el-card {
       background: var(--bg-card);
@@ -2726,6 +2781,99 @@
       return escapeHtml(valStr);
     }
 
+    const TRACE_STATUS_LABELS = {
+      SUCCESS: '成功',
+      NEEDS_CLARIFICATION: '需要澄清',
+      REJECTED: '校验拒绝',
+      EXECUTION_FAILED: '执行失败',
+      GENERATION_FAILED: '生成失败',
+      REQUEST_TIMEOUT: '请求超时',
+      RESOURCE_LIMITED: '资源受限',
+      NOT_CONFIGURED: '模型未配置'
+    };
+
+    function traceText(value, fallback = '—') {
+      return value === null || value === undefined || String(value).trim() === ''
+        ? fallback : escapeHtml(String(value));
+    }
+
+    function traceList(value, fallback = '无') {
+      if (!Array.isArray(value) || value.length === 0) return fallback;
+      return value.map(v => escapeHtml(String(v))).join('、');
+    }
+
+    function traceMs(value) {
+      return value === null || value === undefined ? '—' : `${Number(value) || 0} ms`;
+    }
+
+    function renderTraceEvidence(resp) {
+      const provenance = resp.provenance || {};
+      const timings = resp.timings || {};
+      const llm = resp.llm || {};
+      const budget = resp.budget || {};
+      const status = TRACE_STATUS_LABELS[resp.status] || resp.status || '未知';
+      const sourceState = provenance.traceable === false
+        ? '<span class="trace-evidence-warn">来源不可追踪（只读兜底）</span>'
+        : provenance.fallback
+          ? '<span class="trace-evidence-warn">检索回退，来源凭据有限</span>'
+          : '<span class="trace-evidence-value">来源凭据完整</span>';
+      const violations = Array.isArray(resp.violations) && resp.violations.length
+        ? resp.violations.map(v => `<li>${escapeHtml(String(v))}</li>`).join('')
+        : '<li>无</li>';
+      const sqlBlock = resp.sql
+        ? `<pre class="trace-evidence-code">${escapeHtml(String(resp.sql))}</pre>`
+        : '<div class="trace-evidence-value">本轮没有可执行 SQL</div>';
+      const budgetState = budget.requestId
+        ? `${traceText(budget.termination, '进行中')} · 当前阶段 ${traceText(budget.stage, '—')} · 模型调用 ${traceText(budget.modelCalls, '0')} 次 · UNKNOWN ${traceText(budget.unknownUsageCalls, '0')} 次`
+        : '未启用请求预算快照';
+      return `
+        <details class="trace-evidence">
+          <summary>执行证据 · ${escapeHtml(status)}</summary>
+          <div class="trace-evidence-body">
+            <div class="trace-evidence-grid">
+              <div class="trace-evidence-item"><span class="trace-evidence-label">用户问题</span><span class="trace-evidence-value">${traceText(resp.question || resp.rewrittenQuestion)}</span></div>
+              <div class="trace-evidence-item"><span class="trace-evidence-label">会话 ID</span><span class="trace-evidence-value">${traceText(resp.sessionId)}</span></div>
+              <div class="trace-evidence-item"><span class="trace-evidence-label">终态</span><span class="trace-evidence-value">${escapeHtml(status)} (${escapeHtml(resp.status || 'UNKNOWN')})</span></div>
+              <div class="trace-evidence-item"><span class="trace-evidence-label">问题改写</span><span class="trace-evidence-value">${resp.rewritten ? '是（校验层改写 SQL）' : (resp.rewrittenQuestion ? '是（会话问题改写）' : '否')}</span></div>
+              <div class="trace-evidence-item"><span class="trace-evidence-label">实际检索表</span><span class="trace-evidence-value">${traceList(resp.retrievedTables)}</span></div>
+              <div class="trace-evidence-item"><span class="trace-evidence-label">Schema 规模</span><span class="trace-evidence-value">${traceText(resp.schemaTableCount, '0')} 张表 · ${traceText(resp.schemaDdlChars, '0')} 字符</span></div>
+              <div class="trace-evidence-item"><span class="trace-evidence-label">来源审计</span><span class="trace-evidence-value">${sourceState}</span></div>
+              <div class="trace-evidence-item"><span class="trace-evidence-label">Schema 复用</span><span class="trace-evidence-value">${resp.schemaReused ? '是' : '否'}</span></div>
+            </div>
+
+            <div class="trace-evidence-section-title">来源凭据（四类集合分开保留）</div>
+            <div class="trace-evidence-grid">
+              <div class="trace-evidence-item"><span class="trace-evidence-label">directHits</span><span class="trace-evidence-value">${traceList(provenance.directHits)}</span></div>
+              <div class="trace-evidence-item"><span class="trace-evidence-label">expandedTables</span><span class="trace-evidence-value">${traceList(provenance.expandedTables)}</span></div>
+              <div class="trace-evidence-item"><span class="trace-evidence-label">metricDependencies</span><span class="trace-evidence-value">${traceList(provenance.metricDependencies)}</span></div>
+              <div class="trace-evidence-item"><span class="trace-evidence-label">safetyBridges</span><span class="trace-evidence-value">${traceList(provenance.safetyBridges)}</span></div>
+            </div>
+
+            <div class="trace-evidence-section-title">校验与执行</div>
+            <div class="trace-evidence-grid">
+              <div class="trace-evidence-item"><span class="trace-evidence-label">校验状态</span><span class="trace-evidence-value">${resp.status === 'REJECTED' ? '已拒绝' : '未发现校验拒绝'}</span></div>
+              <div class="trace-evidence-item"><span class="trace-evidence-label">执行状态</span><span class="trace-evidence-value">${escapeHtml(status)}</span></div>
+              <div class="trace-evidence-item"><span class="trace-evidence-label">结果行数</span><span class="trace-evidence-value">${traceText(resp.rowCount, '0')}${resp.truncated ? '（已截断）' : ''}</span></div>
+              <div class="trace-evidence-item"><span class="trace-evidence-label">失败/提示</span><span class="trace-evidence-value">${traceText(resp.message)}</span></div>
+            </div>
+            <ul style="margin: 4px 0 0 18px; padding: 0; color: #606266;">${violations}</ul>
+            <div class="trace-evidence-label" style="margin-top: 8px;">最终 SQL</div>
+            ${sqlBlock}
+
+            <div class="trace-evidence-section-title">耗时、Token 与预算</div>
+            <div class="trace-evidence-grid">
+              <div class="trace-evidence-item"><span class="trace-evidence-label">检索 / 生成</span><span class="trace-evidence-value">${traceMs(timings.retrievalMs)} / ${traceMs(timings.generationMs)}</span></div>
+              <div class="trace-evidence-item"><span class="trace-evidence-label">校验 / 执行</span><span class="trace-evidence-value">${traceMs(timings.validationMs)} / ${traceMs(timings.executionMs)}</span></div>
+              <div class="trace-evidence-item"><span class="trace-evidence-label">端到端总耗时</span><span class="trace-evidence-value">${traceMs(timings.totalMs)}</span></div>
+              <div class="trace-evidence-item"><span class="trace-evidence-label">模型</span><span class="trace-evidence-value">${traceText(llm.model, '未发生模型调用')}</span></div>
+              <div class="trace-evidence-item"><span class="trace-evidence-label">输入 / 输出 / 总 Token</span><span class="trace-evidence-value">${traceText(llm.promptTokens, '0')} / ${traceText(llm.completionTokens, '0')} / ${traceText(llm.totalTokens, '0')}</span></div>
+              <div class="trace-evidence-item"><span class="trace-evidence-label">模型费用</span><span class="trace-evidence-value">${llm.costYuan === undefined ? '—' : `¥${Number(llm.costYuan).toFixed(6)}`}</span></div>
+              <div class="trace-evidence-item" style="grid-column: 1 / -1;"><span class="trace-evidence-label">预算快照</span><span class="trace-evidence-value">${budgetState}</span></div>
+            </div>
+          </div>
+        </details>`;
+    }
+
     function renderAiResult(container, resp) {
       chartCounter++;
       const chartId = 'aiChart-' + chartCounter;
@@ -2793,6 +2941,9 @@
           </div>
         `;
       }
+
+      // 五类终态都展示同一份证据面板，避免成功能解释、失败只能看一句红字。
+      html += renderTraceEvidence(resp);
 
       if (rows && rows.length > 0) {
         html += `

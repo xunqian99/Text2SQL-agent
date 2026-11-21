@@ -1,6 +1,7 @@
 package com.text2sql.agent.orchestrator;
 
 import com.text2sql.agent.observability.LlmCallRecord;
+import com.text2sql.agent.retrieval.SchemaContext;
 
 import java.util.List;
 
@@ -39,6 +40,7 @@ import java.util.List;
  *                        因此这个字段在两种配置下语义一致（都是「模型看到了哪些表」），
  *                        可以直接用来对比。
  * @param timings         各阶段耗时
+ * @param sourceProvenance 本次上下文来源凭据；四类集合分别保留直接命中、图扩展、指标依赖和安全桥接
  */
 public record AgentResponse(
         String question,
@@ -58,7 +60,8 @@ public record AgentResponse(
         String sessionId,
         String rewrittenQuestion,
         boolean schemaReused,
-        com.text2sql.agent.budget.RequestBudget.Snapshot budget) {
+        com.text2sql.agent.budget.RequestBudget.Snapshot budget,
+        SchemaContext.SourceProvenance sourceProvenance) {
 
     public AgentResponse(String question, Status status, String sql, String message,
                          List<String> violations, List<String> columns, List<List<String>> rows,
@@ -66,7 +69,20 @@ public record AgentResponse(
                          int schemaTableCount, List<String> retrievedTables, int schemaDdlChars,
                          Timings timings, String sessionId, String rewrittenQuestion, boolean schemaReused) {
         this(question, status, sql, message, violations, columns, rows, truncated, rewritten, llmCall,
-                schemaTableCount, retrievedTables, schemaDdlChars, timings, sessionId, rewrittenQuestion, schemaReused, null);
+                schemaTableCount, retrievedTables, schemaDdlChars, timings, sessionId, rewrittenQuestion, schemaReused,
+                null, SchemaContext.SourceProvenance.unknown());
+    }
+
+    /** 兼容带预算快照的旧构造签名。 */
+    public AgentResponse(String question, Status status, String sql, String message,
+                         List<String> violations, List<String> columns, List<List<String>> rows,
+                         boolean truncated, boolean rewritten, LlmCallRecord llmCall,
+                         int schemaTableCount, List<String> retrievedTables, int schemaDdlChars,
+                         Timings timings, String sessionId, String rewrittenQuestion, boolean schemaReused,
+                         com.text2sql.agent.budget.RequestBudget.Snapshot budget) {
+        this(question, status, sql, message, violations, columns, rows, truncated, rewritten, llmCall,
+                schemaTableCount, retrievedTables, schemaDdlChars, timings, sessionId, rewrittenQuestion,
+                schemaReused, budget, SchemaContext.SourceProvenance.unknown());
     }
 
     public AgentResponse withBudget(com.text2sql.agent.budget.RequestBudget.Snapshot value) {
@@ -74,12 +90,14 @@ public record AgentResponse(
         // Without a budget, keep the legacy attempt-local timings unchanged.
         Timings measured = value == null ? timings : value.responseTimings();
         return new AgentResponse(question, status, sql, message, violations, columns, rows, truncated, rewritten,
-                llmCall, schemaTableCount, retrievedTables, schemaDdlChars, measured, sessionId, rewrittenQuestion, schemaReused, value);
+                llmCall, schemaTableCount, retrievedTables, schemaDdlChars, measured, sessionId, rewrittenQuestion,
+                schemaReused, value, sourceProvenance);
     }
 
     public AgentResponse withUsage(LlmCallRecord usage) {
         return new AgentResponse(question, status, sql, message, violations, columns, rows, truncated, rewritten,
-                usage, schemaTableCount, retrievedTables, schemaDdlChars, timings, sessionId, rewrittenQuestion, schemaReused, budget);
+                usage, schemaTableCount, retrievedTables, schemaDdlChars, timings, sessionId, rewrittenQuestion,
+                schemaReused, budget, sourceProvenance);
     }
 
     public AgentResponse(String question, Status status, String sql, String message,
@@ -94,7 +112,14 @@ public record AgentResponse(
     public AgentResponse withConversation(String sessionId, String rewrittenQuestion, boolean schemaReused) {
         return new AgentResponse(question, status, sql, message, violations, columns, rows,
                 truncated, rewritten, llmCall, schemaTableCount, retrievedTables, schemaDdlChars, timings,
-                sessionId, rewrittenQuestion, schemaReused, budget);
+                sessionId, rewrittenQuestion, schemaReused, budget, sourceProvenance);
+    }
+
+    /** 附加检索来源凭据，不改变 SQL、校验结果或模型调用记录。 */
+    public AgentResponse withSourceProvenance(SchemaContext.SourceProvenance value) {
+        return new AgentResponse(question, status, sql, message, violations, columns, rows, truncated, rewritten,
+                llmCall, schemaTableCount, retrievedTables, schemaDdlChars, timings, sessionId, rewrittenQuestion,
+                schemaReused, budget, value == null ? SchemaContext.SourceProvenance.unknown() : value);
     }
 
     /**
@@ -174,7 +199,8 @@ public record AgentResponse(
                 selected.rewritten(),
                 com.text2sql.agent.observability.LlmCallRecord.combine(first.llmCall(), second.llmCall()),
                 selected.schemaTableCount(), selected.retrievedTables(), selected.schemaDdlChars(), summed,
-                selected.sessionId(), selected.rewrittenQuestion(), selected.schemaReused());
+                selected.sessionId(), selected.rewrittenQuestion(), selected.schemaReused(), selected.budget(),
+                selected.sourceProvenance());
     }
 
     private static long ms(Timings t, java.util.function.ToLongFunction<Timings> getter) {

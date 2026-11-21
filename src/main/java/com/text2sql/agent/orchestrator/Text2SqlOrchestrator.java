@@ -383,7 +383,8 @@ public class Text2SqlOrchestrator {
                             LlmCallRecord.combine(e.getCallRecord(), e2.getCallRecord()));
                     AgentResponse fail = AgentResponse.failed(question, status, null, e2.getMessage(), failedCalls,
                             tableCount, retrievedTables, ddlChars,
-                            timings(retrievalMs, generationMs, 0, 0, elapsedMs(totalStarted)));
+                            timings(retrievalMs, generationMs, 0, 0, elapsedMs(totalStarted)))
+                            .withSourceProvenance(schema.sourceProvenance());
                     if (convEnabled) {
                         return fail.withConversation(sessionId, rewrittenQuestion, schemaReused);
                     }
@@ -398,7 +399,8 @@ public class Text2SqlOrchestrator {
                 LlmCallRecord failedCalls = LlmCallRecord.combine(rewriteCall, e.getCallRecord());
                 AgentResponse fail = AgentResponse.failed(question, status, null, e.getMessage(), failedCalls,
                         tableCount, retrievedTables, ddlChars,
-                        timings(retrievalMs, generationMs, 0, 0, elapsedMs(totalStarted)));
+                        timings(retrievalMs, generationMs, 0, 0, elapsedMs(totalStarted)))
+                        .withSourceProvenance(schema.sourceProvenance());
                 if (convEnabled) {
                     return fail.withConversation(sessionId, rewrittenQuestion, schemaReused);
                 }
@@ -842,7 +844,8 @@ public class Text2SqlOrchestrator {
                     : AgentResponse.Status.GENERATION_FAILED;
             return AgentResponse.failed(question, status, null, e.getMessage(), e.getCallRecord(), tableCount,
                     retrievedTables, ddlChars,
-                    timings(retrievalMs, generationMs, 0, 0, elapsedMs(totalStarted)));
+                    timings(retrievalMs, generationMs, 0, 0, elapsedMs(totalStarted)))
+                    .withSourceProvenance(schema.sourceProvenance());
         }
         long generationMs = elapsedMs(generationStarted);
         return validateAndExecute(question, generated.sql(), generated.call(), schema, tableCount,
@@ -864,7 +867,8 @@ public class Text2SqlOrchestrator {
             validationSchema = authorizedCatalog.require();
         } catch (BusinessSchemaUnavailableException unavailable) {
             return catalogUnavailable(question, sql, llmCall, tableCount, retrievedTables, ddlChars,
-                    retrievalMs, generationMs, elapsedMs(validationStarted), totalStarted);
+                    retrievalMs, generationMs, elapsedMs(validationStarted), totalStarted)
+                    .withSourceProvenance(schema.sourceProvenance());
         }
         ValidationResult validation = validator.validate(sql, validationSchema);
         long validationMs = elapsedMs(validationStarted);
@@ -876,7 +880,8 @@ public class Text2SqlOrchestrator {
             log.info("SQL 被校验层拦下：{}", validation.describe());
             return AgentResponse.rejected(question, validation.sql(), violations, llmCall, tableCount,
                     retrievedTables, ddlChars,
-                    timings(retrievalMs, generationMs, validationMs, 0, elapsedMs(totalStarted)));
+                    timings(retrievalMs, generationMs, validationMs, 0, elapsedMs(totalStarted)))
+                    .withSourceProvenance(schema.sourceProvenance());
         }
 
         // 阶段 5 闭环防御：EXPLAIN 执行代价与全表笛卡尔积预执行护栏
@@ -892,7 +897,8 @@ public class Text2SqlOrchestrator {
                 List<String> violations = List.of("[HIGH_RISK_COST] " + analysis.riskDescription());
                 return AgentResponse.rejected(question, validation.sql(), violations, llmCall, tableCount,
                         retrievedTables, ddlChars,
-                        timings(retrievalMs, generationMs, validationMs, 0, elapsedMs(totalStarted)));
+                        timings(retrievalMs, generationMs, validationMs, 0, elapsedMs(totalStarted)))
+                        .withSourceProvenance(schema.sourceProvenance());
             }
         }
 
@@ -911,7 +917,8 @@ public class Text2SqlOrchestrator {
             return AgentResponse.failed(question, AgentResponse.Status.EXECUTION_FAILED, validation.sql(),
                     e.getMessage(), llmCall, tableCount,
                     retrievedTables, ddlChars,
-                    timings(retrievalMs, generationMs, validationMs, executionMs, elapsedMs(totalStarted)));
+                    timings(retrievalMs, generationMs, validationMs, executionMs, elapsedMs(totalStarted)))
+                    .withSourceProvenance(schema.sourceProvenance());
         }
         long executionMs = elapsedMs(executionStarted);
 
@@ -920,7 +927,8 @@ public class Text2SqlOrchestrator {
 
         return AgentResponse.success(question, validation.sql(), validation.rewritten(),
                 new AgentResponse.QueryOutcome(result.columns(), result.rows(), result.truncated()),
-                llmCall, tableCount, retrievedTables, ddlChars, timings);
+                llmCall, tableCount, retrievedTables, ddlChars, timings)
+                .withSourceProvenance(schema.sourceProvenance());
     }
 
     private static AgentResponse catalogUnavailable(String question, String sql, LlmCallRecord call,

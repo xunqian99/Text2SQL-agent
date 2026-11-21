@@ -2,6 +2,7 @@ package com.text2sql.agent.api;
 
 import com.text2sql.agent.orchestrator.AgentResponse;
 import com.text2sql.agent.orchestrator.Text2SqlOrchestrator;
+import com.text2sql.agent.retrieval.SchemaContext;
 import com.text2sql.agent.session.SessionStore;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -154,6 +155,7 @@ public class AskController {
      */
     public record AskResponse(
             String status,
+            String question,
             String sql,
             String message,
             java.util.List<String> violations,
@@ -178,7 +180,17 @@ public class AskController {
             String sessionId,
             String rewrittenQuestion,
             boolean schemaReused,
-            com.text2sql.agent.budget.RequestBudget.Snapshot budget) {
+            com.text2sql.agent.budget.RequestBudget.Snapshot budget,
+            Provenance provenance) {
+
+        /** 四类来源凭据单独保留，供页面解释“表为什么进入上下文”。 */
+        public record Provenance(java.util.Set<String> directHits,
+                                 java.util.Set<String> expandedTables,
+                                 java.util.Set<String> metricDependencies,
+                                 java.util.Set<String> safetyBridges,
+                                 boolean fallback,
+                                 boolean traceable) {
+        }
 
         public record Llm(String model, int promptTokens, int completionTokens, int totalTokens,
                           long latencyMs, double costYuan) {
@@ -195,10 +207,14 @@ public class AskController {
             Timings timings = r.timings() == null ? null : new Timings(
                     r.timings().retrievalMs(), r.timings().generationMs(), r.timings().validationMs(),
                     r.timings().executionMs(), r.timings().totalMs());
-            return new AskResponse(r.status().name(), r.sql(), r.message(), r.violations(),
+            SchemaContext.SourceProvenance source = r.sourceProvenance() == null
+                    ? SchemaContext.SourceProvenance.unknown() : r.sourceProvenance();
+            Provenance provenance = new Provenance(source.directHits(), source.expandedTables(),
+                    source.metricDependencies(), source.safetyBridges(), source.fallback(), source.traceable());
+            return new AskResponse(r.status().name(), r.question(), r.sql(), r.message(), r.violations(),
                     r.columns(), r.rows(), r.truncated(), r.rewritten(), r.rowCount(),
                     r.schemaTableCount(), r.retrievedTables(), r.schemaDdlChars(),
-                    llm, timings, r.sessionId(), r.rewrittenQuestion(), r.schemaReused(), r.budget());
+                    llm, timings, r.sessionId(), r.rewrittenQuestion(), r.schemaReused(), r.budget(), provenance);
         }
     }
 }

@@ -545,7 +545,8 @@ public class EvalRunner implements ApplicationRunner {
                 safe(a == null ? 0 : a.totalMs()) + safe(b == null ? 0 : b.totalMs()));
         return new AgentResponse(second.question(), second.status(), second.sql(), second.message(),
                 second.violations(), second.columns(), second.rows(), second.truncated(), second.rewritten(),
-                combinedCall, second.schemaTableCount(), second.retrievedTables(), second.schemaDdlChars(), timings);
+                combinedCall, second.schemaTableCount(), second.retrievedTables(), second.schemaDdlChars(), timings)
+                .withSourceProvenance(second.sourceProvenance());
     }
 
     private static long safe(long value) {
