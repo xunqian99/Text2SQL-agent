@@ -253,7 +253,7 @@ public class AskController {
             boolean truncated,
             int rowCount,
             String sessionId,
-            List<String> availableDrilldowns,
+            List<FollowUpSuggestion> followUpSuggestions,
             String dataAsOf) {
 
         private static final String DATA_AS_OF = "Olist 本地分析快照";
@@ -279,8 +279,17 @@ public class AskController {
                     ? source.question() : source.rewrittenQuestion();
             return new BusinessAskResponse(status, source.question(), message, title, unit, summary,
                     columns, rows, source.truncated(), rows.size(), source.sessionId(),
-                    drilldowns(source.status(), contextQuestion, sourceColumns), DATA_AS_OF);
+                    followUpSuggestions(source.status(), contextQuestion, sourceColumns, rows), DATA_AS_OF);
         }
+
+        /**
+         * 页面上的快捷追问只是当前结果的上下文提示，真正的追问仍然走输入框和同一个 sessionId。
+         *
+         * <p>这里不再根据“销售额”这个业务词硬编码下钻类型，而是根据结果列判断哪些维度还没有展示，
+         * 再生成普通自然语言问题。这样订单数、客单价、复购率等其他指标也会获得同一套能力；
+         * 已经返回的维度不会再次生成重复按钮，多行结果则补充排序和明细两个通用动作。</p>
+         */
+        public record FollowUpSuggestion(String label, String question) { }
 
         private static String publicStatus(AgentResponse.Status status) {
             return switch (status) {
@@ -300,17 +309,52 @@ public class AskController {
             };
         }
 
-        private static List<String> drilldowns(AgentResponse.Status status, String question, List<String> columns) {
-            if (status != AgentResponse.Status.SUCCESS || question == null
-                    || !question.matches("(?s).*(销售额|GMV|成交总额|商品交易总额).*") ) {
+        private static List<FollowUpSuggestion> followUpSuggestions(AgentResponse.Status status,
+                                                                      String question,
+                                                                      List<String> columns,
+                                                                      List<List<String>> rows) {
+            if (status != AgentResponse.Status.SUCCESS || question == null || question.isBlank()) {
                 return List.of();
             }
-            String normalized = String.join("|", columns).toLowerCase(java.util.Locale.ROOT);
-            var result = new java.util.ArrayList<String>();
-            if (!normalized.contains("month") && !normalized.contains("月份")) result.add("MONTH");
-            if (!normalized.contains("categor") && !normalized.contains("品类")) result.add("CATEGORY");
-            if (!normalized.contains("state") && !normalized.contains("地区") && !normalized.contains("州")) result.add("REGION");
+            String normalized = (columns == null ? List.<String>of() : columns).stream()
+                    .filter(java.util.Objects::nonNull)
+                    .map(column -> column.toLowerCase(java.util.Locale.ROOT))
+                    .collect(java.util.stream.Collectors.joining("|"));
+            var result = new java.util.ArrayList<FollowUpSuggestion>();
+            if (!hasTimeDimension(normalized)) {
+                result.add(new FollowUpSuggestion("按时间拆分", "按时间维度拆分这个结果"));
+            }
+            if (!hasCategoryDimension(normalized)) {
+                result.add(new FollowUpSuggestion("按品类拆分", "按品类维度拆分这个结果"));
+            }
+            if (!hasRegionDimension(normalized)) {
+                result.add(new FollowUpSuggestion("按地区拆分", "按地区维度拆分这个结果"));
+            }
+            if (rows != null && rows.size() > 1) {
+                result.add(new FollowUpSuggestion("查看排名", "按结果数值从高到低排序"));
+                result.add(new FollowUpSuggestion("查看明细", "查看这些结果对应的明细"));
+            }
             return List.copyOf(result);
+        }
+
+        private static boolean hasTimeDimension(String columns) {
+            return containsAny(columns, "month", "date", "year", "week", "quarter", "day", "月份", "日期", "年份", "季度", "周");
+        }
+
+        private static boolean hasCategoryDimension(String columns) {
+            return containsAny(columns, "categor", "product", "sku", "type", "status", "payment", "channel",
+                    "品类", "类别", "商品", "产品", "类型", "状态", "支付", "渠道");
+        }
+
+        private static boolean hasRegionDimension(String columns) {
+            return containsAny(columns, "state", "city", "region", "country", "area", "地区", "区域", "省", "州", "城市", "国家");
+        }
+
+        private static boolean containsAny(String value, String... needles) {
+            for (String needle : needles) {
+                if (value.contains(needle)) return true;
+            }
+            return false;
         }
 
         private static String metricColumn(List<String> columns) {

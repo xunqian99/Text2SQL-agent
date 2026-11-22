@@ -1349,14 +1349,30 @@
       color: #909399;
       font-size: 11px;
     }
-    .ai-business-drilldowns {
+    .ai-business-followups {
+      margin: 10px 0;
+      padding: 9px 10px;
+      border: 1px solid #e4e7ed;
+      border-radius: 4px;
+      background: #fafcff;
+      color: #606266;
+      font-size: 12px;
+    }
+    .ai-business-followups-head {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 7px;
+    }
+    .ai-business-followups-head small {
+      color: #909399;
+      font-size: 11px;
+    }
+    .ai-business-followups-actions {
       display: flex;
       align-items: center;
       gap: 8px;
       flex-wrap: wrap;
-      margin: 10px 0;
-      color: #606266;
-      font-size: 12px;
     }
 
     /* 视图切换按钮组 */
@@ -2265,7 +2281,7 @@
     // 订单行同理：状态流转按钮只传行号，订单号不进入 HTML 属性。
     let orderCache = {};
     // 当前多轮会话 ID。首轮请求先由前端生成，后续请求沿用同一个 ID，
-    // 这样后端才能保存待确认口径并把“按月份展示”等追问改写到原问题上。
+    // 这样后端才能保存上下文，并把任意自然语言追问改写到原问题上。
     let currentSessionId = null;
 
     // 多标签页状态
@@ -2451,6 +2467,13 @@
 
     // 点击复制完整文本
     document.addEventListener('click', function(e) {
+      const followUp = e.target.closest('[data-follow-up-question]');
+      if (followUp) {
+        const question = followUp.getAttribute('data-follow-up-question');
+        if (question) askAiQuery(question);
+        return;
+      }
+
       const copyEl = e.target.closest('.copyable, [data-copy]');
       if (!copyEl) return;
       const text = copyEl.getAttribute('data-copy') || copyEl.getAttribute('data-tooltip') || copyEl.innerText.trim();
@@ -3918,11 +3941,15 @@
       // 业务页面只展示结果；诊断入口继续展示完整执行证据。
       if (!isBusinessResponse) html += renderTraceEvidence(resp);
 
-      if (isBusinessResponse && isOk && Array.isArray(resp.availableDrilldowns) && resp.availableDrilldowns.length) {
-        const drilldownLabels = { MONTH: '按月份查看', CATEGORY: '按品类查看', REGION: '按地区查看' };
-        const drilldownQuestions = { MONTH: '按月份展示', CATEGORY: '按品类展示', REGION: '按地区展示' };
-        html += `<div class="ai-business-drilldowns"><span>继续分析：</span>${resp.availableDrilldowns.map(kind =>
-          `<button class="view-segmented-btn" onclick="askAiQuery('${drilldownQuestions[kind] || ''}')">${drilldownLabels[kind] || '继续查看'}</button>`).join('')}</div>`;
+      if (isBusinessResponse && isOk && Array.isArray(resp.followUpSuggestions) && resp.followUpSuggestions.length) {
+        const suggestions = resp.followUpSuggestions.filter(item => item && item.label && item.question);
+        if (suggestions.length) {
+          html += `<div class="ai-business-followups">
+            <div class="ai-business-followups-head"><strong>继续分析</strong><small>可直接输入任意追问，也可以点下面的快捷问题</small></div>
+            <div class="ai-business-followups-actions">${suggestions.map(item =>
+              `<button type="button" class="view-segmented-btn" data-follow-up-question="${escapeHtml(item.question)}">${escapeHtml(item.label)}</button>`).join('')}</div>
+          </div>`;
+        }
       }
 
       if (rows && rows.length > 0) {

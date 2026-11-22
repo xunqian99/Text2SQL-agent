@@ -31,7 +31,12 @@ class BusinessAskResponseProjectionTest {
         assertThat(result.title()).isEqualTo("成交总额 GMV");
         assertThat(result.unit()).isEqualTo("CNY");
         assertThat(result.summary()).isEqualTo("¥8,593,303.96");
-        assertThat(result.availableDrilldowns()).containsExactly("MONTH", "CATEGORY", "REGION");
+        assertThat(result.followUpSuggestions())
+                .extracting(AskController.BusinessAskResponse.FollowUpSuggestion::label)
+                .containsExactly("按时间拆分", "按品类拆分", "按地区拆分");
+        assertThat(result.followUpSuggestions())
+                .extracting(AskController.BusinessAskResponse.FollowUpSuggestion::question)
+                .containsExactly("按时间维度拆分这个结果", "按品类维度拆分这个结果", "按地区维度拆分这个结果");
         assertThat(result.dataAsOf()).isEqualTo("Olist 本地分析快照");
         assertThat(result.sessionId()).isEqualTo("session-001");
 
@@ -41,6 +46,8 @@ class BusinessAskResponseProjectionTest {
         assertThat(json.has("timings")).isFalse();
         assertThat(json.has("retrievedTables")).isFalse();
         assertThat(json.has("provenance")).isFalse();
+        assertThat(json.has("followUpSuggestions")).isTrue();
+        assertThat(json.has("availableDrilldowns")).isFalse();
     }
 
     @Test
@@ -68,6 +75,50 @@ class BusinessAskResponseProjectionTest {
 
         assertThat(result.title()).isEqualTo("成交总额 GMV");
         assertThat(result.columns()).containsExactly("成交总额 GMV");
+    }
+
+    @Test
+    void nonSalesMetricAlsoGetsContextualFollowUpSuggestions() {
+        AgentResponse source = AgentResponse.success(
+                "订单数量是多少", "SELECT ...", false,
+                new AgentResponse.QueryOutcome(
+                        List.of("order_count"), List.of(List.of("128")), false),
+                CALL, 1, List.of("orders"), 64,
+                new AgentResponse.Timings(1, 2, 1, 3, 7))
+                .withConversation("session-orders", "订单数量是多少", false);
+
+        AskController.BusinessAskResponse result = AskController.BusinessAskResponse.from(source);
+
+        assertThat(result.followUpSuggestions())
+                .extracting(AskController.BusinessAskResponse.FollowUpSuggestion::label)
+                .containsExactly("按时间拆分", "按品类拆分", "按地区拆分");
+    }
+
+    @Test
+    void suggestionsDoNotRepeatDimensionAlreadyPresentInResult() {
+        AgentResponse source = AgentResponse.success(
+                "按月份查看订单数量", "SELECT ...", false,
+                new AgentResponse.QueryOutcome(
+                        List.of("month", "order_count"),
+                        List.of(List.of("2018-01", "128"), List.of("2018-02", "96")), false),
+                CALL, 1, List.of("orders"), 64,
+                new AgentResponse.Timings(1, 2, 1, 3, 7));
+
+        AskController.BusinessAskResponse result = AskController.BusinessAskResponse.from(source);
+
+        assertThat(result.followUpSuggestions())
+                .extracting(AskController.BusinessAskResponse.FollowUpSuggestion::label)
+                .containsExactly("按品类拆分", "按地区拆分", "查看排名", "查看明细");
+    }
+
+    @Test
+    void failedResultNeverOffersFollowUpSuggestions() {
+        AskController.BusinessAskResponse result = AskController.BusinessAskResponse.from(
+                AgentResponse.failed("订单数量是多少", AgentResponse.Status.EXECUTION_FAILED,
+                        "SELECT secret", "relation does not exist", CALL, 1, List.of("orders"), 64,
+                        new AgentResponse.Timings(1, 2, 1, 3, 7)));
+
+        assertThat(result.followUpSuggestions()).isEmpty();
     }
 
     @Test
