@@ -4090,78 +4090,105 @@
         return isNaN(val) ? 0 : val;
       });
 
-      // 密度检测与防重叠倾斜算法
-      const isDense = xData.length > 7;
-      const rotateDeg = isDense ? 35 : (xData.some(d => String(d).length > 8) ? 25 : 0);
-      const bottomPadding = isDense ? '28%' : '18%';
+      // 高密度维度不适合把所有标签硬塞进柱状图：图表负责排名，表格负责完整明细。
+      const isDense = xData.length > 12;
+      const topN = 10;
+      const rawPairs = xData.map((name, index) => ({ name, value: yData[index] }));
+      const chartPairs = isDense
+        ? rawPairs.filter(pair => pair.name !== '').sort((a, b) => b.value - a.value).slice(0, topN)
+        : rawPairs;
+      const chartXData = chartPairs.map(pair => pair.name);
+      const chartYData = chartPairs.map(pair => pair.value);
+      const rotateDeg = xData.some(d => String(d).length > 8) ? 25 : 0;
+      const bottomPadding = '18%';
+      if (isDense) {
+        chartEl.style.height = `${Math.max(350, Math.min(480, chartPairs.length * 34 + 95))}px`;
+      }
+
+      const denseAxisLabel = {
+        color: '#606266',
+        fontSize: 11,
+        width: 150,
+        overflow: 'truncate',
+        formatter: function(val) {
+          const text = String(val || '');
+          return text.length > 24 ? text.substring(0, 22) + '..' : text;
+        }
+      };
+      const normalAxisLabel = {
+        interval: 0,
+        rotate: rotateDeg,
+        fontSize: 11,
+        color: '#606266',
+        lineHeight: 14,
+        formatter: function(val) {
+          if (!val) return '';
+          if (rotateDeg > 0) return val.length > 18 ? val.substring(0, 16) + '..' : val;
+          if (val.includes(' (')) return val.replace(' (', '\n(');
+          if (val.length > 8) return val.substring(0, 7) + '..';
+          return val;
+        }
+      };
 
       myChart.setOption({
         title: {
           text: `智能问数可视化：${friendlyX} ~ ${friendlyY}`,
+          subtext: isDense ? `默认展示数值最高的 ${chartPairs.length} 项，完整结果请切换表格` : '',
           left: 'center',
-          textStyle: { fontSize: 13, fontWeight: '700', color: '#303133' }
+          textStyle: { fontSize: 13, fontWeight: '700', color: '#303133' },
+          subtextStyle: { fontSize: 11, color: '#909399', padding: [5, 0, 0] }
         },
         tooltip: {
           trigger: 'axis',
+          axisPointer: { type: isDense ? 'shadow' : 'line' },
           formatter: function(params) {
             const p = params[0];
             return `<b>${escapeHtml(p.name)}</b><br/>${escapeHtml(friendlyY)}: <b>${Number(p.value).toLocaleString()}</b>`;
           }
         },
-        grid: { left: '3%', right: '4%', bottom: bottomPadding, top: '16%', containLabel: true },
-        xAxis: {
-          type: 'category',
-          data: xData,
-          axisLine: { lineStyle: { color: '#dcdfe6' } },
-          axisLabel: {
-            interval: 0,
-            rotate: rotateDeg,
-            fontSize: 11,
-            color: '#606266',
-            lineHeight: 14,
-            formatter: function(val) {
-              if (!val) return '';
-              if (rotateDeg > 0) {
-                // 已倾斜展示时，避免在格内换行导致重合
-                return val.length > 18 ? val.substring(0, 16) + '..' : val;
-              }
-              // 水平不倾斜时，如果包含括号解释，如 "beleza_saude (美妆个护)"，拆为两行
-              if (val.includes(' (')) {
-                return val.replace(' (', '\n(');
-              }
-              if (val.length > 8) {
-                return val.substring(0, 7) + '..';
-              }
-              return val;
-            }
-          }
+        grid: {
+          left: isDense ? '24%' : '3%',
+          right: isDense ? '10%' : '4%',
+          bottom: isDense ? '12%' : bottomPadding,
+          top: isDense ? '20%' : '16%',
+          containLabel: true
         },
-        yAxis: {
+        xAxis: isDense ? {
           type: 'value',
           splitLine: { lineStyle: { color: '#ebeef5' } },
-          axisLabel: {
-            color: '#606266',
-            fontSize: 11,
-            formatter: function(val) {
-              return Number(val).toLocaleString();
-            }
-          }
+          axisLabel: { color: '#606266', fontSize: 11, formatter: val => Number(val).toLocaleString() }
+        } : {
+          type: 'category',
+          data: chartXData,
+          axisLine: { lineStyle: { color: '#dcdfe6' } },
+          axisLabel: normalAxisLabel
+        },
+        yAxis: isDense ? {
+          type: 'category',
+          inverse: true,
+          data: chartXData,
+          axisLine: { lineStyle: { color: '#dcdfe6' } },
+          axisLabel: denseAxisLabel
+        } : {
+          type: 'value',
+          splitLine: { lineStyle: { color: '#ebeef5' } },
+          axisLabel: { color: '#606266', fontSize: 11, formatter: val => Number(val).toLocaleString() }
         },
         series: [{
           name: friendlyY,
           type: 'bar',
-          data: yData,
-          barMaxWidth: 65,
+          data: chartYData,
+          barMaxWidth: isDense ? 20 : 65,
           itemStyle: {
             color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
               { offset: 0, color: '#409eff' },
               { offset: 1, color: '#66b1ff' }
             ]),
-            borderRadius: [3, 3, 0, 0]
+            borderRadius: isDense ? [0, 3, 3, 0] : [3, 3, 0, 0]
           },
           label: {
             show: true,
-            position: 'top',
+            position: isDense ? 'right' : 'top',
             fontSize: 11,
             color: '#303133',
             fontWeight: '700',
@@ -4170,7 +4197,7 @@
             }
           }
         }]
-      });
+      }, { notMerge: true });
       setTimeout(() => myChart.resize(), 30);
     }
 
