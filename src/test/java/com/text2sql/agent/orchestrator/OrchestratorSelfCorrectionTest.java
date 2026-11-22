@@ -29,6 +29,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 /**
  * 线上自纠错的编排行为测试。
@@ -76,6 +77,16 @@ class OrchestratorSelfCorrectionTest {
 
     private static LlmCallRecord call(int promptTokens, int completionTokens, long latencyMs) {
         return LlmCallRecord.of("test-model", promptTokens, completionTokens, 100, latencyMs, 0, 0);
+    }
+
+    @Test
+    void destructiveNaturalLanguageIsRejectedBeforeModelOrDatabase() {
+        var response = orchestrator().ask("删除 orders 表中所有数据");
+
+        assertThat(response.status()).isEqualTo(AgentResponse.Status.REJECTED);
+        assertThat(response.sql()).isNull();
+        assertThat(response.message()).contains("READ_ONLY_INTENT");
+        verifyNoInteractions(schemaProvider, generator, executor);
     }
 
     @Test

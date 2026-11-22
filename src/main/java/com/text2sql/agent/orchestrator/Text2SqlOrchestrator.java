@@ -16,6 +16,7 @@ import com.text2sql.agent.retrieval.SchemaProvider;
 import com.text2sql.agent.validation.CheckResult;
 import com.text2sql.agent.validation.SqlValidator;
 import com.text2sql.agent.validation.ValidationResult;
+import com.text2sql.agent.validation.ReadOnlyIntentGuard;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -190,6 +191,17 @@ public class Text2SqlOrchestrator {
 
     private AgentResponse askPipeline(String question, String sessionId, String apiKey, ConversationOutcome conversation) {
         long totalStarted = System.nanoTime();
+        var readOnlyIntentViolation = ReadOnlyIntentGuard.violation(question);
+        if (readOnlyIntentViolation.isPresent()) {
+            RequestBudget.stage("VALIDATION");
+            AgentResponse blocked = AgentResponse.rejected(question, null,
+                    List.of(readOnlyIntentViolation.get()), null, 0, List.of(), 0,
+                    timings(0, 0, 0, 0, elapsedMs(totalStarted)));
+            if (conversation.session != null) {
+                return blocked.withConversation(sessionId, null, false);
+            }
+            return blocked;
+        }
         RequestBudget.stage("SESSION");
 
         ConversationSession session = conversation.session;
